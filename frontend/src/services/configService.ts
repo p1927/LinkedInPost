@@ -66,12 +66,12 @@ export class ConfigService {
       form.append(
         'metadata',
         new Blob(
-          [JSON.stringify({ name: CONFIG_FILENAME, parents: ['appDataFolder'] })],
+          [JSON.stringify({ name: CONFIG_FILENAME })],
           { type: 'application/json' }
         )
       );
       await axios.post(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&spaces=appDataFolder',
         form,
         { headers: this.headers }
       );
