@@ -2,9 +2,17 @@
 """
 One-time setup script for LinkedIn Bot.
 
-This script auto-creates all required Google resources (Sheet, Drive folder, Doc)
-using your service account, shares them with your personal Gmail, optionally fetches
-your LinkedIn Person URN, and prints the exact values needed as GitHub Secrets.
+This script creates all required Google resources inside a single 'LINKEDIN'
+folder in Google Drive:
+
+    LINKEDIN/
+    ├── Content Calendar          (Google Sheet)
+    ├── Images/                   (Drive folder — bot uploads images here)
+    └── Published Posts           (Google Doc)
+
+It uses your service account, shares the parent folder with your personal
+Gmail, optionally fetches your LinkedIn Person URN, and prints the exact
+values needed as GitHub Secrets.
 
 Usage:
     python setup.py
@@ -60,62 +68,140 @@ def main() -> None:
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     sheets = build('sheets', 'v4', credentials=creds)
     drive  = build('drive',  'v3', credentials=creds)
-    docs   = build('docs',   'v1', credentials=creds)
 
     print(f"\nService account: {service_account_email}")
-    user_email = input("Enter your personal Google email (for sharing access): ").strip()
-    if not user_email:
-        print("No email entered — resources will be owned by the service account only.")
+    user_email = "99pratyush@gmail.com"
+    print(f"Sharing resources with: {user_email}")
 
-    # ── 1. Google Sheet ───────────────────────────────────────────────────────
-    print("\n[1/3] Creating Google Sheet...")
-    spreadsheet = sheets.spreadsheets().create(body={
-        'properties': {'title': 'LinkedIn Bot Content Calendar'},
-        'sheets': [{
-            'properties': {'title': 'Sheet1', 'sheetId': 0},
-            'data': [{'startRow': 0, 'startColumn': 0, 'rowData': [{
-                'values': [{'userEnteredValue': {'stringValue': h}} for h in SHEET_HEADERS]
-            }]}],
-        }],
-    }).execute()
-    sheet_id = spreadsheet['spreadsheetId']
-    ok('Google Sheet ID', sheet_id)
-
-    if user_email:
-        drive.permissions().create(
-            fileId=sheet_id,
-            body={'type': 'user', 'role': 'writer', 'emailAddress': user_email}
-        ).execute()
-        ok('Sheet shared with', user_email)
-
-    # ── 2. Drive folder ───────────────────────────────────────────────────────
-    print("\n[2/3] Creating Google Drive folder for images...")
-    folder = drive.files().create(
-        body={'name': 'LinkedIn Bot Images', 'mimeType': 'application/vnd.google-apps.folder'},
-        fields='id',
+    # ── 0. Parent 'LINKEDIN' folder ───────────────────────────────────────────
+    print("\n[0/4] Checking for existing 'LINKEDIN' folder in Google Drive...")
+    
+    # Check if LINKEDIN folder already exists
+    existing = drive.files().list(
+        q="name='LINKEDIN' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+        spaces='drive',
+        fields='files(id, webViewLink)',
+        pageSize=1
     ).execute()
-    folder_id = folder['id']
-    ok('Google Drive Folder ID', folder_id)
-    # The Python bot (service account) is the only one that needs folder access.
-
-    # ── 3. Google Doc ─────────────────────────────────────────────────────────
-    print("\n[3/3] Creating Google Doc for published posts log...")
-    doc = docs.documents().create(body={'title': 'LinkedIn Bot - Published Posts'}).execute()
-    doc_id = doc['documentId']
-    ok('Google Doc ID', doc_id)
+    
+    if existing.get('files'):
+        linkedin_folder_id = existing['files'][0]['id']
+        ok('LINKEDIN folder ID (existing)', linkedin_folder_id)
+        ok('LINKEDIN folder URL', existing['files'][0].get('webViewLink', ''))
+    else:
+        print("  Creating new LINKEDIN folder...")
+        linkedin_folder = drive.files().create(
+            body={'name': 'LINKEDIN', 'mimeType': 'application/vnd.google-apps.folder'},
+            fields='id, webViewLink',
+        ).execute()
+        linkedin_folder_id = linkedin_folder['id']
+        ok('LINKEDIN folder ID (new)', linkedin_folder_id)
+        ok('LINKEDIN folder URL', linkedin_folder.get('webViewLink', ''))
 
     if user_email:
         drive.permissions().create(
-            fileId=doc_id,
+            fileId=linkedin_folder_id,
             body={'type': 'user', 'role': 'writer', 'emailAddress': user_email}
         ).execute()
-        ok('Doc shared with', user_email)
+        ok('LINKEDIN folder shared with', user_email)
+
+    # ── 1. Google Sheet (create via Drive API using MIME type) ─────────────────
+    print("\n[1/4] Checking for existing 'Content Calendar' sheet...")
+
+    existing_sheet = drive.files().list(
+        q=f"name='Content Calendar' and mimeType='application/vnd.google-apps.spreadsheet' and '{linkedin_folder_id}' in parents and trashed=false",
+        spaces='drive',
+        fields='files(id)',
+        pageSize=1
+    ).execute()
+
+    if existing_sheet.get('files'):
+        sheet_id = existing_sheet['files'][0]['id']
+        ok('Google Sheet ID (existing)', sheet_id)
+    else:
+        print("  Creating new Content Calendar sheet via Drive API...")
+        sheet_file = drive.files().create(
+            body={
+                'name': 'Content Calendar',
+                'mimeType': 'application/vnd.google-apps.spreadsheet',
+                'parents': [linkedin_folder_id],
+            },
+            fields='id',
+        ).execute()
+        sheet_id = sheet_file['id']
+
+        # Write headers using the Sheets API now that the file exists
+        try:
+            sheets = build('sheets', 'v4', credentials=creds)
+            sheets.spreadsheets().values().update(
+                spreadsheetId=sheet_id,
+                range='Sheet1!A1',
+                valueInputOption='RAW',
+                body={'values': [SHEET_HEADERS]},
+            ).execute()
+            ok('Google Sheet ID (new, with headers)', sheet_id)
+        except Exception as e:
+            ok('Google Sheet ID (new, headers failed — add manually)', sheet_id)
+            print(f"    Headers to add manually: {', '.join(SHEET_HEADERS)}")
+
+    # ── 2. Images subfolder inside LINKEDIN ───────────────────────────────────
+    print("\n[2/4] Checking for existing 'Images' subfolder...")
+    
+    # Check if Images folder already exists inside LINKEDIN
+    existing_images = drive.files().list(
+        q=f"name='Images' and mimeType='application/vnd.google-apps.folder' and '{linkedin_folder_id}' in parents and trashed=false",
+        spaces='drive',
+        fields='files(id)',
+        pageSize=1
+    ).execute()
+    
+    if existing_images.get('files'):
+        folder_id = existing_images['files'][0]['id']
+        ok('Google Drive Images Folder ID (existing)', folder_id)
+    else:
+        print("  Creating new Images folder...")
+        images_folder = drive.files().create(
+            body={
+                'name': 'Images',
+                'mimeType': 'application/vnd.google-apps.folder',
+                'parents': [linkedin_folder_id],
+            },
+            fields='id',
+        ).execute()
+        folder_id = images_folder['id']
+        ok('Google Drive Images Folder ID (new)', folder_id)
+
+    # ── 3. Google Doc (create via Drive API using MIME type) ───────────────────
+    print("\n[3/4] Checking for existing 'Published Posts' doc...")
+
+    existing_doc = drive.files().list(
+        q=f"name='Published Posts' and mimeType='application/vnd.google-apps.document' and '{linkedin_folder_id}' in parents and trashed=false",
+        spaces='drive',
+        fields='files(id)',
+        pageSize=1
+    ).execute()
+
+    if existing_doc.get('files'):
+        doc_id = existing_doc['files'][0]['id']
+        ok('Google Doc ID (existing)', doc_id)
+    else:
+        print("  Creating new Published Posts doc via Drive API...")
+        doc_file = drive.files().create(
+            body={
+                'name': 'Published Posts',
+                'mimeType': 'application/vnd.google-apps.document',
+                'parents': [linkedin_folder_id],
+            },
+            fields='id',
+        ).execute()
+        doc_id = doc_file['id']
+        ok('Google Doc ID (new)', doc_id)
 
     # ── Optional: LinkedIn Person URN ─────────────────────────────────────────
     li_urn = ''
     li_token = os.environ.get('LINKEDIN_ACCESS_TOKEN', '')
     if li_token:
-        print("\n[Optional] Fetching LinkedIn Person URN...")
+        print("\n[4/4] Fetching LinkedIn Person URN...")
         resp = requests.get(
             'https://api.linkedin.com/v2/me',
             headers={'Authorization': f'Bearer {li_token}'},
@@ -128,7 +214,8 @@ def main() -> None:
 
     # ── Print GitHub Secrets ──────────────────────────────────────────────────
     print("\n" + "=" * 64)
-    print("  ADD THESE TO: GitHub Repo \u2192 Settings \u2192 Secrets \u2192 Actions")
+    print("  All resources created inside your Google Drive 'LINKEDIN' folder.")
+    print("  ADD THESE TO: GitHub Repo → Settings → Secrets → Actions")
     print("=" * 64)
     print(f"GOOGLE_SHEET_ID         = {sheet_id}")
     print(f"GOOGLE_DRIVE_FOLDER_ID  = {folder_id}")
@@ -144,6 +231,10 @@ def main() -> None:
         print(f"LINKEDIN_PERSON_URN     = urn:li:person:<your_id>")
     print(f"VITE_GOOGLE_CLIENT_ID   = <your Google OAuth Web Client ID>")
     print("=" * 64)
+    print(f"\nYour Google Drive folder: LINKEDIN/")
+    print(f"  ├── Content Calendar          (Sheet  — ID: {sheet_id})")
+    print(f"  ├── Images/                   (Folder — ID: {folder_id})")
+    print(f"  └── Published Posts           (Doc    — ID: {doc_id})")
     print("\nSetup complete. See SETUP.md for full instructions.\n")
 
 

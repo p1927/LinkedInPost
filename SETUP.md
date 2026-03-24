@@ -60,12 +60,22 @@ python setup.py
 
 The script will:
 
-- Create the Google Sheet with the correct column headers
-- Create the Google Drive folder for images
-- Create the Google Doc for the published-posts log
-- Share the Sheet and Doc with your personal Gmail (enter it when prompted)
+- Create a parent **LINKEDIN** folder in your Google Drive
+- Create the Google Sheet (`LINKEDIN/Content Calendar`) with the correct column headers
+- Create the images subfolder (`LINKEDIN/Images`)
+- Create the Google Doc (`LINKEDIN/Published Posts`)
+- Share the LINKEDIN folder with your personal Gmail (Editor access — covers all contents)
 - Optionally fetch your LinkedIn Person URN if `LINKEDIN_ACCESS_TOKEN` is set
-- Print all the values you need for GitHub Secrets
+- Print all the values you need for GitHub Secrets, plus a tree view of the folder layout
+
+After the script completes, open your Google Drive — you will see:
+
+```
+LINKEDIN/
+├── Content Calendar      ← Google Sheet (your content calendar)
+├── Images/               ← Drive folder (bot uploads images here)
+└── Published Posts       ← Google Doc (log of every published post)
+```
 
 Copy the output — you will use it in Step 6.
 
@@ -129,9 +139,9 @@ Add each of the following:
 
 | Secret name | Where to get it |
 |---|---|
-| `GOOGLE_SHEET_ID` | Printed by `setup.py` |
-| `GOOGLE_DRIVE_FOLDER_ID` | Printed by `setup.py` |
-| `GOOGLE_DOC_ID` | Printed by `setup.py` |
+| `GOOGLE_SHEET_ID` | Printed by `setup.py` — `LINKEDIN/Content Calendar` |
+| `GOOGLE_DRIVE_FOLDER_ID` | Printed by `setup.py` — `LINKEDIN/Images` subfolder |
+| `GOOGLE_DOC_ID` | Printed by `setup.py` — `LINKEDIN/Published Posts` |
 | `GOOGLE_CREDENTIALS_JSON` | Full contents of your service account JSON file |
 | `GEMINI_API_KEY` | Google AI Studio (Step 3) |
 | `GOOGLE_SEARCH_API_KEY` | Google Cloud Console (Step 4) |
@@ -169,8 +179,10 @@ Add each of the following:
 ## Verification checklist
 
 - [ ] `python setup.py` completed without errors
-- [ ] Google Sheet has 14 columns (A through N) with correct headers
-- [ ] Service account email has Editor access to the Sheet, Drive folder, and Doc
+- [ ] A `LINKEDIN/` folder is visible in your Google Drive
+- [ ] `LINKEDIN/Content Calendar` sheet has 14 columns (A through N) with correct headers
+- [ ] `LINKEDIN/Images/` subfolder exists and is accessible to the service account
+- [ ] `LINKEDIN/Published Posts` doc exists and is shared with your Gmail
 - [ ] All 10 GitHub Secrets are set (verify at `Settings → Secrets → Actions`)
 - [ ] `VITE_GOOGLE_CLIENT_ID` Google OAuth origin includes your Pages URL
 - [ ] GitHub Pages is enabled (Settings → Pages → Source: GitHub Actions)
