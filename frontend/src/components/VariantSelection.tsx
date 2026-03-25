@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarClock, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
+import { Dialog } from './Dialog';
 
 interface Props {
   row: SheetRow;
@@ -10,6 +11,10 @@ interface Props {
   onRefine: (baseText: string, instructions: string) => Promise<void>;
   onCancel: () => void;
 }
+
+type PendingAction =
+  | { type: 'close' }
+  | { type: 'select'; nextIndex: number };
 
 export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) {
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
@@ -20,6 +25,8 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
   const [postTime, setPostTime] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [refining, setRefining] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const lastNavigationAtRef = useRef(0);
 
   const options = useMemo(
     () => [
@@ -56,11 +63,13 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
   useEffect(() => {
     if (selectedOptionIndex === null) {
       setEditableText('');
+      setRefinementPrompt('');
       return;
     }
 
     const selectedOption = options[selectedOptionIndex];
     setEditableText(selectedOption?.text || '');
+    setRefinementPrompt('');
 
     const matchingImageIndex = imageOptions.findIndex(
       (imageOption) => imageOption.originalIndex === selectedOption?.originalIndex && imageOption.imageUrl
@@ -95,8 +104,73 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
 
   const selectedImageUrl = selectedImageIndex === null ? '' : imageOptions[selectedImageIndex]?.imageUrl || '';
 
+  const hasUnsavedChanges = Boolean(
+    selectedOption
+      && (editableText !== selectedOption.text || refinementPrompt.trim().length > 0)
+  );
+
+  const applyPendingAction = (action: PendingAction) => {
+    if (action.type === 'close') {
+      onCancel();
+      return;
+    }
+
+    setSelectedOptionIndex(action.nextIndex);
+  };
+
+  const requestAction = (action: PendingAction) => {
+    if (action.type === 'select' && action.nextIndex === selectedOptionIndex) {
+      return;
+    }
+
+    if (hasUnsavedChanges) {
+      setPendingAction(action);
+      return;
+    }
+
+    applyPendingAction(action);
+  };
+
+  const changeVariantBy = (direction: -1 | 1) => {
+    if (options.length <= 1 || selectedOptionIndex === null) {
+      return;
+    }
+
+    const nextIndex = Math.max(0, Math.min(options.length - 1, selectedOptionIndex + direction));
+    requestAction({ type: 'select', nextIndex });
+  };
+
+  const handleCarouselWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (options.length <= 1 || selectedOptionIndex === null || Math.abs(event.deltaY) < 24) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const now = Date.now();
+    if (now - lastNavigationAtRef.current < 380) {
+      return;
+    }
+
+    lastNavigationAtRef.current = now;
+    changeVariantBy(event.deltaY > 0 ? 1 : -1);
+  };
+
+  const handleCarouselKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      changeVariantBy(1);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      changeVariantBy(-1);
+    }
+  };
+
   const selectOption = (index: number) => {
-    setSelectedOptionIndex(index);
+    requestAction({ type: 'select', nextIndex: index });
   };
 
   const handleRefine = async () => {
@@ -162,64 +236,126 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
         <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-[32px] border border-white/40 bg-gradient-to-b from-white/95 to-slate-50/95 shadow-2xl backdrop-blur-xl">
-          <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(280px,0.5fr)_minmax(0,1fr)_minmax(360px,0.8fr)]">
-            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-white/50 p-3 xl:border-b-0 xl:border-r xl:p-4">
-              <div className="min-h-0 overflow-y-auto pr-2 custom-scrollbar">
-                {options.length > 0 ? (
-                  <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-lg backdrop-blur-sm sm:p-6">
-                    <div className="space-y-5">
-                      {options.map((option, index) => (
-                        <div key={`option-${index}`}>
-                          <LinkedInPostPreview
-                            optionNumber={index + 1}
-                            text={option.text}
-                            imageUrl={option.imageUrl}
-                            selected={selectedOptionIndex === index}
-                            expanded={expandedOptions.includes(index)}
-                            onSelect={() => selectOption(index)}
-                            onToggleExpanded={() => toggleExpanded(index)}
-                            mode="carousel"
-                          />
-                        </div>
-                      ))}
+          <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
+            <section className="relative flex min-h-[460px] flex-col border-b border-slate-200/60 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.72),rgba(241,245,249,0.68))] p-3 xl:min-h-0 xl:border-b-0 xl:border-r xl:p-4">
+              {options.length > 0 ? (
+                <>
+                  <div className="absolute left-4 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-3 rounded-full border border-white/60 bg-white/80 px-2 py-3 shadow-lg backdrop-blur-sm">
+                    {options.map((_, index) => {
+                      const isActive = index === selectedOptionIndex;
+
+                      return (
+                        <button
+                          key={`variant-dot-${index}`}
+                          type="button"
+                          onClick={() => selectOption(index)}
+                          className={`group relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ${
+                            isActive
+                              ? 'bg-primary text-white shadow-md'
+                              : 'bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                          }`}
+                          aria-label={`Jump to draft ${index + 1}`}
+                          aria-pressed={isActive}
+                        >
+                          <span className="text-sm font-semibold">{index + 1}</span>
+                          <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                            Draft {index + 1}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="absolute right-5 top-5 z-10 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => changeVariantBy(-1)}
+                      disabled={selectedOptionIndex === null || selectedOptionIndex === 0}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/60 bg-white/85 text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                      aria-label="Previous draft"
+                    >
+                      <ChevronUp className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeVariantBy(1)}
+                      disabled={selectedOptionIndex === null || selectedOptionIndex === options.length - 1}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/60 bg-white/85 text-slate-700 shadow-md transition-all duration-200 hover:translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                      aria-label="Next draft"
+                    >
+                      <ChevronDown className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="mb-3 pl-16 pr-16 sm:pr-20">
+                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Draft Carousel</p>
+                    <div className="mt-2 flex items-end justify-between gap-4">
+                      <div>
+                        <h3 className="text-2xl font-semibold text-slate-900">Review one variant at a time</h3>
+                        <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
+                          Scroll the preview, use the arrow keys, or tap the left rail to move through drafts. The refine panel stays in sync with the active variant.
+                        </p>
+                      </div>
+                      <div className="hidden rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-right shadow-sm sm:block">
+                        <p className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">Active draft</p>
+                        <p className="mt-1 text-lg font-semibold text-slate-900">
+                          {(selectedOptionIndex ?? 0) + 1}
+                          <span className="ml-1 text-sm font-medium text-slate-500">/ {options.length}</span>
+                        </p>
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 px-6 py-16 text-center text-slate-500 shadow-sm">
-                    No draft variants are available for this topic yet.
-                  </div>
-                )}
-              </div>
-            </section>
 
-            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-slate-50/50 p-3 xl:border-b-0 xl:border-r xl:p-4">
-              <div className="min-h-0 overflow-y-auto custom-scrollbar">
-                {selectedOption ? (
-                  <LinkedInPostPreview
-                    optionNumber={(selectedOptionIndex ?? 0) + 1}
-                    text={selectedOption.text}
-                    imageUrl={selectedOption.imageUrl}
-                    selected={true}
-                    expanded={expandedOptions.includes(selectedOptionIndex ?? -1)}
-                    onSelect={() => undefined}
-                    onToggleExpanded={() => selectedOptionIndex !== null && toggleExpanded(selectedOptionIndex)}
-                    mode="hero"
-                  />
-                ) : (
-                  <div className="rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 px-6 py-16 text-center text-slate-500 shadow-sm">
-                    Pick a variant to see the larger preview.
+                  <div
+                    className="min-h-0 flex-1 overflow-hidden pl-16 pr-2 sm:pr-4"
+                    onWheel={handleCarouselWheel}
+                    onKeyDown={handleCarouselKeyDown}
+                    tabIndex={0}
+                  >
+                    <div className="h-full overflow-hidden rounded-[32px] border border-white/70 bg-white/75 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+                      <div
+                        className="flex h-full flex-col transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                        style={{ transform: `translateY(-${(selectedOptionIndex ?? 0) * 100}%)` }}
+                      >
+                        {options.map((option, index) => (
+                          <div key={`option-${index}`} className="flex min-h-full flex-shrink-0 items-center px-4 py-5 sm:px-6 sm:py-6">
+                            <LinkedInPostPreview
+                              optionNumber={index + 1}
+                              text={option.text}
+                              imageUrl={option.imageUrl}
+                              selected={selectedOptionIndex === index}
+                              expanded={expandedOptions.includes(index)}
+                              onSelect={() => selectOption(index)}
+                              onToggleExpanded={() => toggleExpanded(index)}
+                              mode="hero"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="flex h-full items-center justify-center rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 px-6 py-16 text-center text-slate-500 shadow-sm">
+                  No draft variants are available for this topic yet.
+                </div>
+              )}
             </section>
 
             <aside className="flex min-h-0 flex-col bg-white/60 p-3 xl:p-4 backdrop-blur-sm">
               <div className="flex h-full min-h-0 flex-col rounded-[32px] border border-white/60 bg-white/90 p-6 shadow-xl sm:p-8 backdrop-blur-md">
                 <div className="min-h-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <section>
-                  <div className="mb-3 flex items-center gap-2 text-[#1f2937]">
-                    <Sparkles className="h-4 w-4" />
-                    <h4 className="text-sm font-semibold">Improve this draft</h4>
+                  <div className="mb-3 flex items-center justify-between gap-4 text-[#1f2937]">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      <h4 className="text-sm font-semibold">Improve this draft</h4>
+                    </div>
+                    {selectedOptionIndex !== null ? (
+                      <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-primary">
+                        Draft {selectedOptionIndex + 1}
+                      </span>
+                    ) : null}
                   </div>
                   <label className="block text-sm font-medium text-[#374151]" htmlFor="editable-post-text">
                     Edit the post directly
@@ -329,7 +465,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     {submitting ? 'Approving...' : 'Approve selected post'}
                   </button>
                   <button
-                    onClick={onCancel}
+                    onClick={() => requestAction({ type: 'close' })}
                     disabled={submitting}
                     className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/50 px-6 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
@@ -339,6 +475,25 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
               </div>
             </aside>
           </div>
+
+          <Dialog
+            open={pendingAction !== null}
+            title="Discard unsaved draft edits?"
+            description={pendingAction?.type === 'close'
+              ? 'You have draft changes that have not been approved or refined yet. Closing now will remove those edits.'
+              : 'You have draft changes that have not been approved or refined yet. Switching variants will replace the edited draft and refinement notes.'}
+            confirmLabel={pendingAction?.type === 'close' ? 'Discard and close' : 'Discard and switch'}
+            onCancel={() => setPendingAction(null)}
+            onConfirm={() => {
+              if (!pendingAction) {
+                return;
+              }
+
+              const action = pendingAction;
+              setPendingAction(null);
+              applyPendingAction(action);
+            }}
+          />
         </div>
       </div>
     </div>
