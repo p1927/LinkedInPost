@@ -12,7 +12,58 @@ export const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
 ];
 
-export async function loadAvailableGoogleModels(): Promise<GoogleModelOption[]> {
+export function formatGoogleModelLabel(modelName: string): string {
+  return modelName
+    .split('-')
+    .map((part) => {
+      if (!part) {
+        return part;
+      }
+
+      if (/^\d/.test(part)) {
+        return part;
+      }
+
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(' ')
+    .replace(/\bLive\b/g, 'Live')
+    .replace(/\bTts\b/g, 'TTS');
+}
+
+function isGoogleModelOption(model: unknown): model is GoogleModelOption {
+  return Boolean(
+    model
+      && typeof model === 'object'
+      && typeof (model as GoogleModelOption).value === 'string'
+      && typeof (model as GoogleModelOption).label === 'string'
+      && (model as GoogleModelOption).value.trim()
+      && (model as GoogleModelOption).label.trim()
+  );
+}
+
+export function normalizeGoogleModelOptions(models: GoogleModelOption[], selectedModel?: string): GoogleModelOption[] {
+  const normalized = models
+    .filter(isGoogleModelOption)
+    .map((model) => ({
+      value: model.value.trim(),
+      label: model.label.trim(),
+    }));
+
+  const merged = normalized.length > 0 ? normalized : AVAILABLE_GOOGLE_MODELS;
+  const deduped = Array.from(new Map(merged.map((model) => [model.value, model])).values());
+
+  if (selectedModel && !deduped.some((model) => model.value === selectedModel)) {
+    deduped.unshift({
+      value: selectedModel,
+      label: formatGoogleModelLabel(selectedModel),
+    });
+  }
+
+  return deduped;
+}
+
+export async function loadAvailableGoogleModels(selectedModel?: string): Promise<GoogleModelOption[]> {
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}google-models.json`, {
       cache: 'no-store',
@@ -23,10 +74,9 @@ export async function loadAvailableGoogleModels(): Promise<GoogleModelOption[]> 
     }
 
     const payload = await response.json() as { models?: GoogleModelOption[] };
-    const models = payload.models?.filter(model => model?.value && model?.label) ?? [];
-    return models.length > 0 ? models : AVAILABLE_GOOGLE_MODELS;
+    return normalizeGoogleModelOptions(payload.models ?? [], selectedModel);
   } catch {
-    return AVAILABLE_GOOGLE_MODELS;
+    return normalizeGoogleModelOptions([], selectedModel);
   }
 }
 

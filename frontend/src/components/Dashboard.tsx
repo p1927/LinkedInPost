@@ -3,7 +3,9 @@ import { Bot, Plus, RefreshCw, Send, Settings, Trash2 } from 'lucide-react';
 import { BackendApi, isAuthErrorMessage, type AppSession } from '../services/backendApi';
 import {
   AVAILABLE_GOOGLE_MODELS,
+  DEFAULT_GOOGLE_MODEL,
   loadAvailableGoogleModels,
+  normalizeGoogleModelOptions,
   type BotConfig,
   type BotConfigUpdate,
   type GoogleModelOption,
@@ -50,13 +52,47 @@ export function Dashboard({
   }, [session.config.githubRepo, session.config.googleModel, session.config.hasGitHubToken, session.config.spreadsheetId, session.isAdmin]);
 
   useEffect(() => {
-    loadAvailableGoogleModels().then((models) => {
-      setAvailableModels(models);
-      if (!models.some((model) => model.value === googleModel)) {
-        setGoogleModel(models[0]?.value || session.config.googleModel);
+    let cancelled = false;
+
+    const syncModels = async () => {
+      try {
+        const models = normalizeGoogleModelOptions(await api.getGoogleModels(idToken), session.config.googleModel);
+        if (!cancelled) {
+          setAvailableModels(models);
+        }
+        return;
+      } catch {
+        const fallbackModels = await loadAvailableGoogleModels(session.config.googleModel);
+        if (!cancelled) {
+          setAvailableModels(fallbackModels);
+        }
       }
-    });
-  }, [googleModel, session.config.googleModel]);
+    };
+
+    void syncModels();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, idToken, session.config.googleModel]);
+
+  useEffect(() => {
+    if (availableModels.length === 0) {
+      return;
+    }
+
+    if (availableModels.some((model) => model.value === googleModel)) {
+      return;
+    }
+
+    const fallbackModel = availableModels.find((model) => model.value === session.config.googleModel)?.value
+      || availableModels[0]?.value
+      || DEFAULT_GOOGLE_MODEL;
+
+    if (fallbackModel !== googleModel) {
+      setGoogleModel(fallbackModel);
+    }
+  }, [availableModels, googleModel, session.config.googleModel]);
 
   useEffect(() => {
     if (!session.config.spreadsheetId) {

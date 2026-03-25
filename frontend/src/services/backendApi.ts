@@ -1,4 +1,4 @@
-import type { BotConfig, BotConfigUpdate } from './configService';
+import type { BotConfig, BotConfigUpdate, GoogleModelOption } from './configService';
 import { normalizeBotConfig } from './configService';
 import type { SheetRow } from './sheets';
 
@@ -91,6 +91,10 @@ export class BackendApi {
 
   async getRows(idToken: string): Promise<SheetRow[]> {
     return this.post<SheetRow[]>('getRows', idToken);
+  }
+
+  async getGoogleModels(idToken: string): Promise<GoogleModelOption[]> {
+    return this.post<GoogleModelOption[]>('getGoogleModels', idToken);
   }
 
   async addTopic(idToken: string, topic: string): Promise<void> {

@@ -6,6 +6,7 @@ interface Env {
   ADMIN_EMAILS?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_SERVICE_ACCOUNT_JSON: string;
+  GEMINI_API_KEY?: string;
   GITHUB_TOKEN_ENCRYPTION_KEY?: string;
   CORS_ALLOWED_ORIGINS?: string;
 }
@@ -99,6 +100,18 @@ interface SpreadsheetSheetMetadata {
   };
 }
 
+interface GoogleModelOption {
+  value: string;
+  label: string;
+}
+
+interface GeminiModelsResponse {
+  models?: Array<{
+    name?: string;
+    supportedGenerationMethods?: string[];
+  }>;
+}
+
 const CONFIG_KEY = 'shared-config';
 const GOOGLE_MODEL_DEFAULT = 'gemini-1.5-flash';
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
@@ -121,6 +134,12 @@ const PIPELINE_HEADERS = [
   'Selected Text',
   'Selected Image ID',
   'Post Time',
+];
+const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
 ];
 
 export default {
@@ -172,6 +191,8 @@ async function dispatchAction(
         isAdmin: session.isAdmin,
         config: toPublicConfig(storedConfig),
       } satisfies AppSession;
+    case 'getGoogleModels':
+      return listGoogleModels(env);
     case 'getRows':
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.getRows(storedConfig.spreadsheetId);
@@ -356,6 +377,65 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
   }
 
   return { success: true };
+}
+
+async function listGoogleModels(env: Env): Promise<GoogleModelOption[]> {
+  const apiKey = String(env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) {
+    return AVAILABLE_GOOGLE_MODELS;
+  }
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini model discovery failed with status ${response.status}`);
+    }
+
+    const payload = (await response.json()) as GeminiModelsResponse;
+    return normalizeGoogleModels(payload.models ?? []);
+  } catch {
+    return AVAILABLE_GOOGLE_MODELS;
+  }
+}
+
+function normalizeGoogleModels(models: GeminiModelsResponse['models']): GoogleModelOption[] {
+  const filtered = (models ?? [])
+    .filter((model) => typeof model?.name === 'string')
+    .filter((model) => model.name?.startsWith('models/gemini'))
+    .filter((model) => Array.isArray(model.supportedGenerationMethods))
+    .filter((model) => model.supportedGenerationMethods?.includes('generateContent'))
+    .map((model) => {
+      const value = String(model.name).replace(/^models\//, '');
+      return {
+        value,
+        label: formatGoogleModelLabel(value),
+      };
+    });
+
+  const deduped = Array.from(new Map(filtered.map((model) => [model.value, model])).values());
+  return deduped.length > 0 ? deduped : AVAILABLE_GOOGLE_MODELS;
+}
+
+function formatGoogleModelLabel(modelName: string): string {
+  return modelName
+    .split('-')
+    .map((part) => {
+      if (!part) {
+        return part;
+      }
+
+      if (/^\d/.test(part)) {
+        return part;
+      }
+
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(' ')
+    .replace(/\bLive\b/g, 'Live')
+    .replace(/\bTts\b/g, 'TTS');
 }
 
 class SheetsGateway {

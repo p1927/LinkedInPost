@@ -10,6 +10,7 @@ interface LinkedInPostPreviewProps {
   expanded: boolean;
   onSelect: () => void;
   onToggleExpanded: () => void;
+  mode?: 'hero' | 'carousel';
 }
 
 const SOCIAL_PROOF = [
@@ -61,11 +62,13 @@ export function LinkedInPostPreview({
   expanded,
   onSelect,
   onToggleExpanded,
+  mode = 'hero',
 }: LinkedInPostPreviewProps) {
   const proof = SOCIAL_PROOF[(optionNumber - 1) % SOCIAL_PROOF.length];
   const shouldClamp = text.length > 280 || text.split('\n').length > 5;
   const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
+  const isCarousel = mode === 'carousel';
 
   useEffect(() => {
     setImageLoadFailed(false);
@@ -75,51 +78,58 @@ export function LinkedInPostPreview({
     <button
       type="button"
       onClick={onSelect}
-      className={`group relative w-full rounded-[30px] border p-3 text-left transition duration-200 sm:p-4 ${
+      aria-pressed={selected}
+      className={`group relative w-full border text-left transition duration-200 ${
+        isCarousel ? 'h-full rounded-[26px] p-2.5 sm:p-3' : 'rounded-[30px] p-3 sm:p-4'
+      } ${
         selected
           ? 'border-[#0a66c2] bg-[#eef6ff] shadow-[0_18px_42px_rgba(10,102,194,0.18)]'
           : 'border-[#d8dce6] bg-[#f7f5f2] hover:border-[#9ebfe2] hover:shadow-[0_16px_34px_rgba(15,23,42,0.08)]'
       }`}
     >
-      <div className="mb-3 flex items-center justify-between gap-3 px-1">
+      <div className={`flex items-center justify-between gap-3 px-1 ${isCarousel ? 'mb-2.5' : 'mb-3'}`}>
         <div>
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[#6d7886]">Draft option {optionNumber}</p>
-          <p className="mt-1 text-sm text-[#394553]">Feed preview with text and image pairing</p>
+          <p className={`mt-1 text-[#394553] ${isCarousel ? 'text-[0.82rem]' : 'text-sm'}`}>
+            {isCarousel ? 'Tap to load this draft into the main view' : 'Feed preview with text and image pairing'}
+          </p>
         </div>
         <div
-          className={`flex h-8 min-w-8 items-center justify-center rounded-full border px-2 text-xs font-semibold ${
+          className={`flex min-w-8 items-center justify-center rounded-full border px-2 text-xs font-semibold ${
+            isCarousel ? 'h-7' : 'h-8'
+          } ${
             selected ? 'border-[#0a66c2] bg-[#0a66c2] text-white' : 'border-[#c9d0db] bg-white text-[#5b6674]'
           }`}
         >
-          {selected ? 'Selected' : `Pick ${optionNumber}`}
+          {selected ? (isCarousel ? 'Active' : 'Selected') : `Pick ${optionNumber}`}
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[24px] border border-[#d8dce6] bg-[#f3f2ef] p-3 sm:p-4">
-        <div className="mx-auto max-w-[430px] overflow-hidden rounded-[20px] border border-[#d8dce6] bg-white shadow-[0_20px_40px_rgba(15,23,42,0.10)]">
-          <div className="px-4 pb-4 pt-4 sm:px-5">
+      <div className={`overflow-hidden border border-[#d8dce6] bg-[#f3f2ef] ${isCarousel ? 'rounded-[22px] p-2.5 sm:p-3' : 'rounded-[24px] p-3 sm:p-4'}`}>
+        <div className={`mx-auto overflow-hidden border border-[#d8dce6] bg-white shadow-[0_20px_40px_rgba(15,23,42,0.10)] ${isCarousel ? 'max-w-none rounded-[18px]' : 'max-w-[430px] rounded-[20px]'}`}>
+          <div className={isCarousel ? 'px-3.5 pb-3.5 pt-3.5' : 'px-4 pb-4 pt-4 sm:px-5'}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0a66c2,#4c90d9)] text-sm font-bold text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)]">
+                <div className={`flex shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0a66c2,#4c90d9)] font-bold text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] ${isCarousel ? 'h-10 w-10 text-[0.82rem]' : 'h-12 w-12 text-sm'}`}>
                   LB
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[0.95rem] font-semibold text-[#191919]">LinkedIn Bot Preview</p>
-                  <p className="truncate text-[0.8rem] text-[#666666]">AI-assisted draft preview</p>
-                  <div className="mt-0.5 flex items-center gap-1 text-[0.75rem] text-[#666666]">
+                  <p className={`truncate font-semibold text-[#191919] ${isCarousel ? 'text-[0.88rem]' : 'text-[0.95rem]'}`}>LinkedIn Bot Preview</p>
+                  <p className={`truncate text-[#666666] ${isCarousel ? 'text-[0.72rem]' : 'text-[0.8rem]'}`}>AI-assisted draft preview</p>
+                  <div className={`mt-0.5 flex items-center gap-1 text-[#666666] ${isCarousel ? 'text-[0.68rem]' : 'text-[0.75rem]'}`}>
                     <span>Now</span>
                     <span aria-hidden="true">•</span>
-                    <Globe2 className="h-3.5 w-3.5" />
+                    <Globe2 className={isCarousel ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
                   </div>
                 </div>
               </div>
-              <MoreHorizontal className="mt-1 h-5 w-5 shrink-0 text-[#666666]" />
+              <MoreHorizontal className={`mt-1 shrink-0 text-[#666666] ${isCarousel ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </div>
 
-            <div className="mt-4 text-[0.95rem] leading-6 text-[#191919]">
+            <div className={`text-[#191919] ${isCarousel ? 'mt-3 text-[0.84rem] leading-5' : 'mt-4 text-[0.95rem] leading-6'}`}>
               <div
                 className={!expanded && shouldClamp ? 'overflow-hidden' : undefined}
-                style={!expanded && shouldClamp ? { display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical' } : undefined}
+                style={!expanded && shouldClamp ? { display: '-webkit-box', WebkitLineClamp: isCarousel ? 4 : 5, WebkitBoxOrient: 'vertical' } : undefined}
               >
                 {renderLinkedText(text)}
               </div>
@@ -130,7 +140,7 @@ export function LinkedInPostPreview({
                     event.stopPropagation();
                     onToggleExpanded();
                   }}
-                  className="mt-2 text-sm font-semibold text-[#666666] hover:text-[#191919]"
+                  className={`mt-2 font-semibold text-[#666666] hover:text-[#191919] ${isCarousel ? 'text-[0.78rem]' : 'text-sm'}`}
                 >
                   {expanded ? 'Show less' : '...see more'}
                 </button>
@@ -140,7 +150,7 @@ export function LinkedInPostPreview({
 
           {resolvedImageUrl && !imageLoadFailed ? (
             <div className="border-y border-[#e8e8e8] bg-[#f3f2ef]">
-              <div className="aspect-[4/5] bg-[#f3f2ef] sm:aspect-[1.2/1]">
+              <div className={`${isCarousel ? 'aspect-[4/3]' : 'aspect-[4/5] sm:aspect-[1.2/1]'} bg-[#f3f2ef]`}>
                 <img
                   src={resolvedImageUrl}
                   alt={`Preview media for option ${optionNumber}`}
@@ -173,7 +183,7 @@ export function LinkedInPostPreview({
             </div>
           ) : null}
 
-          <div className="px-4 py-2 text-[0.78rem] text-[#666666] sm:px-5">
+          <div className={`text-[#666666] ${isCarousel ? 'px-3.5 py-2 text-[0.7rem]' : 'px-4 py-2 text-[0.78rem] sm:px-5'}`}>
             <div className="flex items-center justify-between gap-2 border-b border-[#e8e8e8] pb-2.5">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-1">
@@ -191,10 +201,10 @@ export function LinkedInPostPreview({
             </div>
           </div>
 
-          <div className="grid grid-cols-4 px-2 pb-2 sm:px-3 sm:pb-3">
+          <div className={`grid grid-cols-4 ${isCarousel ? 'px-1.5 pb-1.5 pt-0.5' : 'px-2 pb-2 sm:px-3 sm:pb-3'}`}>
             {ACTIONS.map(({ label, icon: Icon }) => (
-              <div key={label} className="flex items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-[0.82rem] font-medium text-[#666666] transition group-hover:bg-[#f6f8fa]">
-                <Icon className="h-4 w-4" />
+              <div key={label} className={`flex items-center justify-center gap-1 rounded-xl font-medium text-[#666666] transition group-hover:bg-[#f6f8fa] ${isCarousel ? 'px-1.5 py-2 text-[0.68rem]' : 'px-2 py-2.5 text-[0.82rem]'}`}>
+                <Icon className={isCarousel ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                 <span>{label}</span>
               </div>
             ))}

@@ -494,6 +494,7 @@ def write_worker_dev_vars(worker_bootstrap: WorkerBootstrap, google_resources: G
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
         'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
         'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
+        'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
     }
@@ -512,6 +513,7 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: Go
     with build_wrangler_secrets_file(
         {
             'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
+            'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
             'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         }
     ) as secrets_file:

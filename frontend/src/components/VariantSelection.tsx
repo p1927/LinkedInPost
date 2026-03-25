@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CalendarClock, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarClock, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
@@ -20,7 +20,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
   const [postTime, setPostTime] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [refining, setRefining] = useState(false);
-  const [screen, setScreen] = useState<'gallery' | 'approval'>('gallery');
+  const carouselRef = useRef<HTMLDivElement | null>(null);
 
   const options = useMemo(
     () => [
@@ -38,6 +38,21 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
       .filter((option) => option.imageUrl.trim()),
     [row.imageLink1, row.imageLink2, row.imageLink3, row.imageLink4]
   );
+
+  useEffect(() => {
+    if (options.length === 0) {
+      setSelectedOptionIndex(null);
+      return;
+    }
+
+    setSelectedOptionIndex((current) => {
+      if (current === null || current >= options.length) {
+        return 0;
+      }
+
+      return current;
+    });
+  }, [options.length]);
 
   useEffect(() => {
     if (selectedOptionIndex === null) {
@@ -77,14 +92,24 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
     );
   };
 
-  const openApprovalScreen = (index: number) => {
-    setSelectedOptionIndex(index);
-    setScreen('approval');
-  };
-
   const selectedOption = selectedOptionIndex === null ? null : options[selectedOptionIndex] || null;
 
   const selectedImageUrl = selectedImageIndex === null ? '' : imageOptions[selectedImageIndex]?.imageUrl || '';
+
+  const scrollCarousel = (direction: 'previous' | 'next') => {
+    if (!carouselRef.current) {
+      return;
+    }
+
+    carouselRef.current.scrollBy({
+      left: direction === 'next' ? 360 : -360,
+      behavior: 'smooth',
+    });
+  };
+
+  const selectOption = (index: number) => {
+    setSelectedOptionIndex(index);
+  };
 
   const handleRefine = async () => {
     if (selectedOptionIndex === null) {
@@ -164,66 +189,35 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
               </button>
             </div>
           </div>
-
-          {screen === 'gallery' ? (
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6">
-              <div className="mx-auto max-w-6xl">
-                <div className="mb-6 flex flex-col gap-3 rounded-[28px] border border-[#d8dce6] bg-white/80 p-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)] sm:flex-row sm:items-end sm:justify-between">
-                  <div className="max-w-3xl">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Choose your direction</p>
-                    <h3 className="mt-2 text-2xl font-semibold text-[#1a2433]">Start with the draft that is closest to your final post</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#596577]">
-                      Selecting a draft opens a dedicated approval workspace with a larger editor, image chooser, and refinement controls. Use Back to return to the four-option gallery.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] px-4 py-3 text-sm text-[#4b5563]">
-                    {options.length} draft option{options.length === 1 ? '' : 's'} ready
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                  {options.map((option, index) => (
-                    <div key={`option-${index}`} className="space-y-3">
-                      <LinkedInPostPreview
-                        optionNumber={index + 1}
-                        text={option.text}
-                        imageUrl={option.imageUrl}
-                        selected={selectedOptionIndex === index}
-                        expanded={expandedOptions.includes(index)}
-                        onSelect={() => openApprovalScreen(index)}
-                        onToggleExpanded={() => toggleExpanded(index)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => openApprovalScreen(index)}
-                        className="inline-flex w-full items-center justify-center rounded-2xl border border-[#cfd6e1] bg-white px-4 py-3 text-sm font-semibold text-[#1f2937] transition hover:border-[#0a66c2] hover:text-[#0a66c2]"
-                      >
-                        Focus on draft option {index + 1}
-                      </button>
+          <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+            <section className="border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(244,247,252,0.96)_100%)] p-5 xl:border-b-0 xl:border-r xl:p-8">
+              <div className="mx-auto max-w-[760px] space-y-6">
+                <div className="rounded-[28px] border border-[#d8dce6] bg-white/80 p-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="max-w-3xl">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Variant carousel</p>
+                      <h3 className="mt-2 text-2xl font-semibold text-[#1a2433]">Keep one draft in focus while you compare the rest</h3>
+                      <p className="mt-2 text-sm leading-6 text-[#596577]">
+                        Swipe the carousel or use the controls to move through the variants. The active draft stays enlarged above so you can review edits without losing context.
+                      </p>
                     </div>
-                  ))}
+                    <div className="rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] px-4 py-3 text-sm text-[#4b5563]">
+                      {options.length} draft option{options.length === 1 ? '' : 's'} ready
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.25fr)]">
-              <div className="border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.88)_0%,rgba(244,247,252,0.95)_100%)] p-5 xl:border-b-0 xl:border-r xl:p-8">
-                <div className="mx-auto max-w-[520px] space-y-5 xl:sticky xl:top-6">
-                  <button
-                    type="button"
-                    onClick={() => setScreen('gallery')}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#d2d8e2] bg-white px-4 py-2 text-sm font-medium text-[#4b5563] transition hover:border-[#9ca9bb] hover:text-[#111827]"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to all drafts
-                  </button>
 
-                  <div>
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Focused approval view</p>
-                    <h3 className="mt-2 text-2xl font-semibold text-[#1a2433]">Draft option {selectedOptionIndex === null ? '' : selectedOptionIndex + 1}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#596577]">
-                      Make your final edits here, choose the image explicitly, and approve when the post is ready to move into scheduling.
-                    </p>
+                <div className="space-y-4">
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Featured draft</p>
+                      <h3 className="mt-2 text-2xl font-semibold text-[#1a2433]">
+                        {selectedOptionIndex === null ? 'Choose a draft' : `Draft option ${selectedOptionIndex + 1}`}
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-[#596577]">
+                        This larger view mirrors the draft currently loaded into the approval panel.
+                      </p>
+                    </div>
                   </div>
 
                   {selectedOption ? (
@@ -235,25 +229,85 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                       expanded={expandedOptions.includes(selectedOptionIndex ?? -1)}
                       onSelect={() => undefined}
                       onToggleExpanded={() => selectedOptionIndex !== null && toggleExpanded(selectedOptionIndex)}
+                      mode="hero"
                     />
-                  ) : null}
+                  ) : (
+                    <div className="rounded-[28px] border border-dashed border-[#cfd6e1] bg-white/70 px-6 py-12 text-center text-sm text-[#596577]">
+                      No draft variants are available for this topic yet.
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              <aside className="bg-white/80 p-5 xl:p-8">
-                <div className="mx-auto max-w-3xl rounded-[32px] border border-[#d8dce6] bg-white p-6 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-7">
+                {options.length > 0 ? (
+                  <div className="rounded-[28px] border border-[#d8dce6] bg-white/75 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-5">
+                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Choose a different draft</p>
+                        <p className="mt-1 text-sm text-[#596577]">Each card in the carousel loads instantly into the larger preview and approval workspace.</p>
+                      </div>
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => scrollCarousel('previous')}
+                          disabled={options.length <= 1}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfd6e1] bg-white text-[#374151] transition hover:border-[#0a66c2] hover:text-[#0a66c2] disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label="Scroll to previous variants"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollCarousel('next')}
+                          disabled={options.length <= 1}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfd6e1] bg-white text-[#374151] transition hover:border-[#0a66c2] hover:text-[#0a66c2] disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label="Scroll to next variants"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div
+                      ref={carouselRef}
+                      className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    >
+                      {options.map((option, index) => (
+                        <div
+                          key={`option-${index}`}
+                          className="min-w-[min(84vw,320px)] snap-start sm:min-w-[320px] xl:min-w-[300px]"
+                        >
+                          <LinkedInPostPreview
+                            optionNumber={index + 1}
+                            text={option.text}
+                            imageUrl={option.imageUrl}
+                            selected={selectedOptionIndex === index}
+                            expanded={expandedOptions.includes(index)}
+                            onSelect={() => selectOption(index)}
+                            onToggleExpanded={() => toggleExpanded(index)}
+                            mode="carousel"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <aside className="bg-white/80 p-5 xl:p-8">
+              <div className="mx-auto max-w-3xl rounded-[32px] border border-[#d8dce6] bg-white p-6 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-7">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Approval panel</p>
                 <h3 className="mt-2 text-[clamp(1.5rem,2vw,2rem)] font-semibold text-[#1a2433]">Shape the final post</h3>
                 <p className="mt-2 text-sm leading-6 text-[#596577]">
-                  Approval stores the selected copy, matching image, and optional post time in the sheet.
+                  Approval stores the active carousel draft, matching image, and optional post time in the sheet.
                 </p>
 
                 <div className="mt-6 rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] p-4">
                   <p className="text-sm font-semibold text-[#1f2937]">Selected option</p>
                   <p className="mt-2 text-sm text-[#596577]">
                     {selectedOptionIndex === null
-                      ? 'Choose one of the four previews to continue.'
-                      : `Draft option ${selectedOptionIndex + 1} is loaded into this focused approval workspace.`}
+                      ? 'Choose a draft from the carousel to continue.'
+                      : `Draft option ${selectedOptionIndex + 1} is loaded into this approval workspace.`}
                   </p>
                 </div>
 
@@ -372,13 +426,6 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <button
-                    onClick={() => setScreen('gallery')}
-                    disabled={submitting || refining}
-                    className="inline-flex items-center justify-center rounded-xl border border-[#cfd6e1] bg-[#f8fafc] px-4 py-3 text-sm font-semibold text-[#374151] transition hover:bg-white disabled:opacity-50"
-                  >
-                    Back to all drafts
-                  </button>
-                  <button
                     onClick={handleSubmit}
                     disabled={submitting || selectedOptionIndex === null}
                     className="inline-flex items-center justify-center rounded-xl bg-[#0a66c2] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#084d92] disabled:cursor-not-allowed disabled:opacity-50"
@@ -394,9 +441,8 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                   </button>
                 </div>
               </div>
-              </aside>
-            </div>
-          )}
+            </aside>
+          </div>
         </div>
       </div>
     </div>
