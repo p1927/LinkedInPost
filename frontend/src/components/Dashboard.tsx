@@ -357,13 +357,6 @@ export function Dashboard({
   const instagramConfigured = Boolean(session.config.instagramUserId && session.config.hasInstagramAccessToken);
   const linkedinConfigured = Boolean(session.config.linkedinPersonUrn && session.config.hasLinkedInAccessToken);
   const telegramConfigured = Boolean(session.config.hasTelegramBotToken);
-  const selectedChannelConfigured = selectedChannel === 'instagram'
-    ? instagramConfigured
-    : selectedChannel === 'linkedin'
-      ? linkedinConfigured
-      : selectedChannel === 'telegram'
-        ? telegramConfigured
-        : whatsappConfigured;
 
   const loadData = async (quiet = false) => {
     if (!session.config.spreadsheetId) return;
@@ -719,6 +712,10 @@ export function Dashboard({
   };
 
   const publishRowToSelectedChannel = async (row: SheetRow) => {
+    if (actionLoading !== null) {
+      return;
+    }
+
     if (selectedChannel === 'telegram' && !telegramConfigured) {
       if (session.isAdmin) {
         alert('Complete the Telegram delivery settings first.');
@@ -817,6 +814,18 @@ export function Dashboard({
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const republishRowToSelectedChannel = async (row: SheetRow) => {
+    const confirmed = window.confirm(
+      `Publish "${row.topic}" again to ${getChannelLabel(selectedChannel)}? This will send the currently approved text and selected media one more time.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await publishRowToSelectedChannel(row);
   };
 
   const handleDeleteTopic = async (row: SheetRow) => {
@@ -1535,13 +1544,7 @@ export function Dashboard({
                         <>
                           <button
                             onClick={() => void publishRowToSelectedChannel(row)}
-                            disabled={
-                              actionLoading !== null
-                              || !selectedChannelConfigured
-                              || (selectedChannelOption.requiresRecipient && !resolvedRecipientId)
-                              || (selectedChannel === 'instagram' && !row.selectedImageId.trim())
-                            }
-                            className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 font-medium"
+                            className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 font-medium"
                           >
                             {actionLoading === buildRowActionKey('publish', row) ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1549,6 +1552,21 @@ export function Dashboard({
                               <Send className="w-4 h-4" />
                             )}
                             Publish
+                          </button>
+                        </>
+                      )}
+                      {getNormalizedRowStatus(row.status) === 'published' && (
+                        <>
+                          <button
+                            onClick={() => void republishRowToSelectedChannel(row)}
+                            className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                          >
+                            {actionLoading === buildRowActionKey('publish', row) ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                            Publish Again
                           </button>
                         </>
                       )}
