@@ -22,6 +22,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -508,10 +509,18 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: Go
     if not credentials_json:
         raise RuntimeError('GOOGLE_CREDENTIALS_JSON is required to deploy the Worker.')
 
-    put_wrangler_secret('GOOGLE_SERVICE_ACCOUNT_JSON', credentials_json)
-    put_wrangler_secret('GITHUB_TOKEN_ENCRYPTION_KEY', worker_bootstrap.encryption_key)
+    with build_wrangler_secrets_file(
+        {
+            'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
+            'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
+        }
+    ) as secrets_file:
+        result = run_command(
+            ['npx', 'wrangler', 'deploy', '--secrets-file', secrets_file],
+            cwd=WORKER_DIR,
+            capture_output=True,
+        )
 
-    result = run_command(['npx', 'wrangler', 'deploy'], cwd=WORKER_DIR, capture_output=True)
     worker_bootstrap.worker_url = extract_worker_url(result.stdout)
     if worker_bootstrap.worker_url:
         verify_worker_endpoint(worker_bootstrap.worker_url, worker_bootstrap.cors_allowed_origins)
@@ -520,16 +529,34 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: Go
         warn('Worker deploy output', 'completed, but setup.py could not parse the deployment URL')
 
 
-def put_wrangler_secret(name: str, value: str) -> None:
-    if not value:
-        raise RuntimeError(f'{name} is required before deployment.')
-    run_command(
-        ['npx', 'wrangler', 'secret', 'put', name],
-        cwd=WORKER_DIR,
-        input_text=value,
-        capture_output=True,
-    )
-    ok('Worker secret synced', name)
+def build_wrangler_secrets_file(secret_values: dict[str, str]):
+    missing = [name for name, value in secret_values.items() if not value]
+    if missing:
+        missing_list = ', '.join(missing)
+        raise RuntimeError(f'Missing required Worker secrets before deployment: {missing_list}')
+
+    handle = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False)
+    try:
+        json.dump(secret_values, handle)
+        handle.flush()
+        handle.close()
+        ok('Worker secrets prepared', 'temporary deploy secrets file created')
+        return TemporaryPath(handle.name)
+    except Exception:
+        handle.close()
+        Path(handle.name).unlink(missing_ok=True)
+        raise
+
+
+class TemporaryPath:
+    def __init__(self, path: str) -> None:
+        self.path = path
+
+    def __enter__(self) -> str:
+        return self.path
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        Path(self.path).unlink(missing_ok=True)
 
 
 def extract_worker_url(output: str) -> str:
@@ -538,29 +565,40 @@ def extract_worker_url(output: str) -> str:
 
 
 def verify_worker_endpoint(worker_url: str, cors_allowed_origins: str) -> None:
-    response = requests.get(worker_url, timeout=30)
-    content_type = response.headers.get('content-type', '').lower()
+    try:
+        response = requests.get(worker_url, timeout=30)
+        status_code = response.status_code
+        content_type = response.headers.get('content-type', '').lower()
+        body_text = response.text
+        try:
+            payload = response.json()
+        except json.JSONDecodeError as error:
+            raise RuntimeError(
+                f'Worker verification failed for {worker_url}: response body was not valid JSON.'
+            ) from error
+    except requests.exceptions.SSLError:
+        status_code, headers, body_text = curl_http_request(worker_url)
+        content_type = headers.get('content-type', '').lower()
+        try:
+            payload = json.loads(body_text)
+        except json.JSONDecodeError as error:
+            raise RuntimeError(
+                f'Worker verification failed for {worker_url}: response body was not valid JSON.'
+            ) from error
 
-    if not response.ok:
+    if status_code < 200 or status_code >= 300:
         raise RuntimeError(
-            f'Worker verification failed for {worker_url}: GET returned status {response.status_code}.'
+            f'Worker verification failed for {worker_url}: GET returned status {status_code}.'
         )
 
     if 'application/json' not in content_type:
-        snippet = response.text[:160].replace('\n', ' ').strip()
+        snippet = body_text[:160].replace('\n', ' ').strip()
         raise RuntimeError(
             'Worker verification failed: '
             f'{worker_url} returned {content_type or "an unknown content type"} instead of JSON. '
             'This usually means the workers.dev hostname is serving a static site instead of the API Worker. '
             f'Response preview: {snippet}'
         )
-
-    try:
-        payload = response.json()
-    except json.JSONDecodeError as error:
-        raise RuntimeError(
-            f'Worker verification failed for {worker_url}: response body was not valid JSON.'
-        ) from error
 
     backend = payload.get('data', {}).get('backend') if isinstance(payload, dict) else None
     if backend != 'cloudflare-worker':
@@ -573,23 +611,81 @@ def verify_worker_endpoint(worker_url: str, cors_allowed_origins: str) -> None:
     if not origin:
         return
 
-    preflight = requests.options(
-        worker_url,
-        headers={
-            'Origin': origin,
-            'Access-Control-Request-Method': 'POST',
-            'Access-Control-Request-Headers': 'Content-Type',
-        },
-        timeout=30,
-    )
+    try:
+        preflight = requests.options(
+            worker_url,
+            headers={
+                'Origin': origin,
+                'Access-Control-Request-Method': 'POST',
+                'Access-Control-Request-Headers': 'Content-Type',
+            },
+            timeout=30,
+        )
+        preflight_status = preflight.status_code
+        allow_origin = preflight.headers.get('Access-Control-Allow-Origin', '')
+    except requests.exceptions.SSLError:
+        preflight_status, preflight_headers, _body_text = curl_http_request(
+            worker_url,
+            method='OPTIONS',
+            headers={
+                'Origin': origin,
+                'Access-Control-Request-Method': 'POST',
+                'Access-Control-Request-Headers': 'Content-Type',
+            },
+        )
+        allow_origin = preflight_headers.get('access-control-allow-origin', '')
 
-    allow_origin = preflight.headers.get('Access-Control-Allow-Origin', '')
-    if preflight.status_code != 204 or allow_origin not in {'*', origin}:
+    if preflight_status != 204 or allow_origin not in {'*', origin}:
         raise RuntimeError(
             'Worker verification failed: '
-            f'preflight for origin {origin} returned status {preflight.status_code} '
+            f'preflight for origin {origin} returned status {preflight_status} '
             f'and Access-Control-Allow-Origin={allow_origin!r}.'
         )
+
+
+def curl_http_request(url: str, method: str = 'GET', headers: dict[str, str] | None = None) -> tuple[int, dict[str, str], str]:
+    ensure_command('curl', 'curl is required when Python cannot verify the Worker TLS certificate chain.')
+
+    with tempfile.NamedTemporaryFile('w+', delete=False) as headers_file:
+        headers_path = headers_file.name
+    with tempfile.NamedTemporaryFile('w+', delete=False) as body_file:
+        body_path = body_file.name
+
+    command = ['curl', '--silent', '--show-error', '--location', '--request', method, '--dump-header', headers_path, '--output', body_path, url]
+    for header_name, header_value in (headers or {}).items():
+        command.extend(['--header', f'{header_name}: {header_value}'])
+
+    try:
+        result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
+        response_headers = parse_curl_headers(Path(headers_path).read_text())
+        status_code = int(response_headers.get(':status') or response_headers.get('status') or '0')
+        body_text = Path(body_path).read_text()
+        return status_code, response_headers, body_text
+    except subprocess.CalledProcessError as error:
+        stderr = error.stderr.strip() if error.stderr else ''
+        raise RuntimeError(f'curl verification failed for {url}: {stderr}') from error
+    finally:
+        Path(headers_path).unlink(missing_ok=True)
+        Path(body_path).unlink(missing_ok=True)
+
+
+def parse_curl_headers(raw_headers: str) -> dict[str, str]:
+    header_blocks = re.split(r'\r?\n\r?\n', raw_headers.strip())
+    last_block = header_blocks[-1] if header_blocks else ''
+    parsed: dict[str, str] = {}
+    for index, line in enumerate(last_block.splitlines()):
+        if index == 0:
+            status_match = re.search(r'\s(\d{3})(?:\s|$)', line)
+            if status_match:
+                parsed['status'] = status_match.group(1)
+            continue
+
+        if ':' not in line:
+            continue
+
+        name, value = line.split(':', 1)
+        parsed[name.strip().lower()] = value.strip()
+    return parsed
 
 
 def pick_verification_origin(cors_allowed_origins: str) -> str:

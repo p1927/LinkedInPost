@@ -73,8 +73,8 @@ That flow can:
 * Reuse or create the `CONFIG_KV` namespaces
 * Update [worker/wrangler.jsonc](worker/wrangler.jsonc) with KV IDs and Worker vars
 * Write [worker/.dev.vars](worker/.dev.vars) for local Worker development
-* Push Worker secrets with Wrangler
-* Deploy the Worker
+* Build a temporary JSON secrets file for Wrangler
+* Deploy the Worker with those secrets in one step
 * Verify that the deployed URL returns the API JSON envelope and a valid CORS preflight response before syncing it elsewhere
 * Sync GitHub Actions secrets with `gh secret set`
 
@@ -104,7 +104,7 @@ At minimum, configure these Worker values:
 * `GITHUB_TOKEN_ENCRYPTION_KEY`
 * `CORS_ALLOWED_ORIGINS`
 
-The setup script writes the non-secret Worker vars into [worker/wrangler.jsonc](worker/wrangler.jsonc) and pushes the secret values with Wrangler during deployment.
+The setup script writes the non-secret Worker vars into [worker/wrangler.jsonc](worker/wrangler.jsonc) and passes the secret values to Wrangler during deployment with a temporary JSON `--secrets-file`.
 
 Deploy the Worker and copy the generated URL.
 

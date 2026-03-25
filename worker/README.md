@@ -78,22 +78,28 @@ npm run dev
 
 ## Deploy
 
-Set the production secrets first:
+Prepare a JSON secrets file for deployment:
 
 ```bash
 cd worker
-npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_JSON
-npx wrangler secret put GITHUB_TOKEN_ENCRYPTION_KEY
+cat > .deploy-secrets.json <<'EOF'
+{
+	"GOOGLE_SERVICE_ACCOUNT_JSON": "{\"type\":\"service_account\",...}",
+	"GITHUB_TOKEN_ENCRYPTION_KEY": "base64-encoded-key"
+}
+EOF
 ```
 
-The setup script performs these `wrangler secret put` calls for you during `python setup.py --deploy-worker` or `python setup.py --all`.
+The setup script builds an equivalent temporary JSON secrets file for you during `python setup.py --deploy-worker` or `python setup.py --all`.
 
 Then deploy the Worker:
 
 ```bash
 cd worker
-npm run deploy
+npx wrangler deploy --secrets-file .deploy-secrets.json
 ```
+
+Remove the temporary file after deployment.
 
 After deployment, copy the Worker URL into the frontend as `VITE_WORKER_URL`.
 
