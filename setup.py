@@ -382,7 +382,7 @@ def bootstrap_worker_config(args: argparse.Namespace) -> WorkerBootstrap:
     allowed_emails = normalize_space_delimited(args.allowed_emails or args.share_email)
     admin_emails = normalize_space_delimited(args.admin_emails or args.share_email)
     google_client_id = args.google_client_id
-    encryption_key = os.environ.get('GITHUB_TOKEN_ENCRYPTION_KEY', '').strip() or generate_encryption_key()
+    encryption_key = load_worker_encryption_key()
 
     if not allowed_emails:
         warn('ALLOWED_EMAILS', 'not provided. Worker access control must be set before deployment.')
@@ -399,6 +399,32 @@ def bootstrap_worker_config(args: argparse.Namespace) -> WorkerBootstrap:
         encryption_key=encryption_key,
         github_repo=github_repo,
     )
+
+
+def load_worker_encryption_key() -> str:
+    env_key = os.environ.get('GITHUB_TOKEN_ENCRYPTION_KEY', '').strip()
+    if env_key:
+        return env_key
+
+    persisted_key = read_worker_dev_var('GITHUB_TOKEN_ENCRYPTION_KEY')
+    if persisted_key:
+        return persisted_key
+
+    return generate_encryption_key()
+
+
+def read_worker_dev_var(name: str) -> str:
+    if not WORKER_DEV_VARS.exists():
+        return ''
+
+    prefix = f'{name}='
+    for raw_line in WORKER_DEV_VARS.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or not line.startswith(prefix):
+            continue
+        return line[len(prefix):].strip()
+
+    return ''
 
 
 def create_cloudflare_kv_namespaces(worker_bootstrap: WorkerBootstrap) -> None:

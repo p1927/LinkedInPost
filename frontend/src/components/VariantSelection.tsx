@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarClock, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarClock, Sparkles } from 'lucide-react';
 import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
@@ -20,7 +20,6 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
   const [postTime, setPostTime] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [refining, setRefining] = useState(false);
-  const carouselRef = useRef<HTMLDivElement | null>(null);
 
   const options = useMemo(
     () => [
@@ -96,17 +95,6 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
 
   const selectedImageUrl = selectedImageIndex === null ? '' : imageOptions[selectedImageIndex]?.imageUrl || '';
 
-  const scrollCarousel = (direction: 'previous' | 'next') => {
-    if (!carouselRef.current) {
-      return;
-    }
-
-    carouselRef.current.scrollBy({
-      left: direction === 'next' ? 360 : -360,
-      behavior: 'smooth',
-    });
-  };
-
   const selectOption = (index: number) => {
     setSelectedOptionIndex(index);
   };
@@ -175,27 +163,27 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-1rem,1760px)] items-center justify-center">
         <div className="flex max-h-[calc(100vh-1rem)] w-full flex-col overflow-hidden rounded-[28px] border border-white/60 bg-[linear-gradient(180deg,#fcfaf6_0%,#f3f6fb_100%)] shadow-[0_28px_100px_rgba(15,23,42,0.35)]">
           <div className="sticky top-0 z-10 border-b border-[#d9dee8] bg-[rgba(252,250,246,0.92)] px-5 py-4 backdrop-blur sm:px-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[#6a7380]">Topic</p>
-                <h2 className="mt-2 max-w-5xl text-[clamp(1.25rem,2.2vw,2.2rem)] font-bold text-[#1a2433]">{row.topic}</h2>
-              </div>
+            <div className="flex items-center justify-end gap-4">
               <button onClick={onCancel} className="rounded-full border border-[#d2d8e2] bg-white px-3 py-2 text-sm font-medium text-[#4b5563] transition hover:border-[#9ca9bb] hover:text-[#111827]">
                 Close
               </button>
             </div>
           </div>
-          <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(300px,0.58fr)_minmax(0,0.92fr)_minmax(420px,0.92fr)]">
-            <section className="border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(247,249,252,0.96)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
-              <div className="space-y-4">
+          <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(300px,0.58fr)_minmax(0,0.92fr)_minmax(420px,0.92fr)]">
+            <section className="flex min-h-0 flex-col border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(247,249,252,0.96)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Variants</p>
+                  <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">Select a draft</h3>
+                </div>
+                <div className="rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] px-3 py-2 text-sm text-[#4b5563]">
+                  {options.length} total
+                </div>
+              </div>
+
+              <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
                 <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Variants</p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">Select a draft</h3>
-                  </div>
-                  <div className="rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] px-3 py-2 text-sm text-[#4b5563]">
-                    {options.length} total
-                  </div>
+                  <p className="text-sm font-medium text-[#596577]">Choose from the generated variants list.</p>
                 </div>
 
                 {selectedOptionIndex !== null ? (
@@ -206,39 +194,9 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
 
                 {options.length > 0 ? (
                   <div className="rounded-[28px] border border-[#d8dce6] bg-white/80 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-[#596577]">Use the carousel to switch the active draft.</p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => scrollCarousel('previous')}
-                          disabled={options.length <= 1}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfd6e1] bg-white text-[#374151] transition hover:border-[#0a66c2] hover:text-[#0a66c2] disabled:cursor-not-allowed disabled:opacity-50"
-                          aria-label="Scroll to previous variants"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => scrollCarousel('next')}
-                          disabled={options.length <= 1}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#cfd6e1] bg-white text-[#374151] transition hover:border-[#0a66c2] hover:text-[#0a66c2] disabled:cursor-not-allowed disabled:opacity-50"
-                          aria-label="Scroll to next variants"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div
-                      ref={carouselRef}
-                      className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] xl:flex-col xl:snap-none xl:overflow-y-auto xl:overflow-x-hidden xl:pb-0 [&::-webkit-scrollbar]:hidden"
-                    >
+                    <div className="space-y-4">
                       {options.map((option, index) => (
-                        <div
-                          key={`option-${index}`}
-                          className="min-w-[min(84vw,320px)] snap-start sm:min-w-[320px] xl:min-w-0"
-                        >
+                        <div key={`option-${index}`}>
                           <LinkedInPostPreview
                             optionNumber={index + 1}
                             text={option.text}
@@ -261,15 +219,17 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
               </div>
             </section>
 
-            <section className="border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(242,246,251,0.98)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
-              <div className="space-y-4">
+            <section className="flex min-h-0 flex-col border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(242,246,251,0.98)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
+              <div className="mb-4">
                 <div>
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Preview</p>
                   <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">
                     {selectedOptionIndex === null ? 'Choose a draft' : `Draft option ${selectedOptionIndex + 1}`}
                   </h3>
                 </div>
+              </div>
 
+              <div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {selectedOption ? (
                   <LinkedInPostPreview
                     optionNumber={(selectedOptionIndex ?? 0) + 1}
@@ -289,24 +249,25 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
               </div>
             </section>
 
-            <aside className="bg-white/80 p-4 xl:p-5">
-              <div className="h-full rounded-[32px] border border-[#d8dce6] bg-white p-5 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-6">
+            <aside className="flex min-h-0 flex-col bg-white/80 p-4 xl:p-5">
+              <div className="flex h-full min-h-0 flex-col rounded-[32px] border border-[#d8dce6] bg-white p-5 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-6">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Refine</p>
                 <h3 className="mt-2 text-[clamp(1.4rem,1.8vw,1.9rem)] font-semibold text-[#1a2433]">Edit and approve</h3>
                 <p className="mt-2 text-sm leading-6 text-[#596577]">
-                  Approval stores the active carousel draft, matching image, and optional post time in the sheet.
+                  Approval stores the active draft, matching image, and optional post time in the sheet.
                 </p>
 
                 <div className="mt-6 rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] p-4">
                   <p className="text-sm font-semibold text-[#1f2937]">Selected option</p>
                   <p className="mt-2 text-sm text-[#596577]">
                     {selectedOptionIndex === null
-                      ? 'Choose a draft from the carousel to continue.'
+                      ? 'Choose a draft from the variants list to continue.'
                       : `Draft option ${selectedOptionIndex + 1} is loaded into this approval workspace.`}
                   </p>
                 </div>
 
-                <section className="mt-6">
+                <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
+                <section>
                   <div className="mb-3 flex items-center gap-2 text-[#1f2937]">
                     <Sparkles className="h-4 w-4" />
                     <h4 className="text-sm font-semibold">Improve this draft</h4>
@@ -418,6 +379,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                   />
                   <p className="mt-2 text-xs leading-5 text-[#6b7280]">Leave this empty if the post should publish the next time the publishing workflow runs.</p>
                 </section>
+                </div>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <button

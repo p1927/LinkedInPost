@@ -114,6 +114,7 @@ interface GeminiModelsResponse {
 
 const CONFIG_KEY = 'shared-config';
 const GOOGLE_MODEL_DEFAULT = 'gemini-1.5-flash';
+const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be decrypted. This usually means GITHUB_TOKEN_ENCRYPTION_KEY changed after the token was saved. Ask an admin to open Settings and save the GitHub token again.';
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const TOPICS_SHEET = 'Topics';
 const DRAFT_SHEET = 'Draft';
@@ -355,7 +356,20 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
     throw new Error('Missing repository dispatch event type.');
   }
 
-  const githubToken = await decryptSecret(config.githubTokenCiphertext, env.GITHUB_TOKEN_ENCRYPTION_KEY);
+  let githubToken: string;
+  try {
+    githubToken = await decryptSecret(config.githubTokenCiphertext, env.GITHUB_TOKEN_ENCRYPTION_KEY);
+  } catch (error) {
+    if (error instanceof Error && error.message === GITHUB_TOKEN_REAUTH_MESSAGE) {
+      const nextConfig: StoredConfig = {
+        ...config,
+        githubTokenCiphertext: undefined,
+      };
+      await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+    }
+    throw error;
+  }
+
   const response = await fetch(`https://api.github.com/repos/${config.githubRepo}/dispatches`, {
     method: 'POST',
     headers: {
@@ -865,8 +879,17 @@ async function decryptSecret(ciphertext: string, base64Key: string): Promise<str
   const bytes = base64ToBytes(ciphertext);
   const iv = bytes.slice(0, 12);
   const payload = bytes.slice(12);
-  const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, payload);
-  return textDecoder.decode(plaintext);
+
+  if (iv.byteLength !== 12 || payload.byteLength === 0) {
+    throw new Error(GITHUB_TOKEN_REAUTH_MESSAGE);
+  }
+
+  try {
+    const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, payload);
+    return textDecoder.decode(plaintext);
+  } catch {
+    throw new Error(GITHUB_TOKEN_REAUTH_MESSAGE);
+  }
 }
 
 async function importAesKey(base64Key: string, usages: Array<'encrypt' | 'decrypt'>): Promise<CryptoKey> {
