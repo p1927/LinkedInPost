@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bot, MessageCircle, Phone, Plus, RefreshCw, Send, Settings, Trash2 } from 'lucide-react';
+import { Bot, Eye, MessageCircle, Phone, Plus, RefreshCw, Send, Settings, Trash2 } from 'lucide-react';
 import {
   BackendApi,
   isAuthErrorMessage,
@@ -20,6 +20,7 @@ import {
   type GoogleModelOption,
 } from '../services/configService';
 import { type SheetRow } from '../services/sheets';
+import { ApprovedPostPreview } from './ApprovedPostPreview';
 import { VariantSelection } from './VariantSelection';
 
 function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
@@ -143,6 +144,7 @@ export function Dashboard({
   const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
   const [showSettings, setShowSettings] = useState(hasIncompleteWorkspaceSetup(session));
   const [selectedRowForReview, setSelectedRowForReview] = useState<SheetRow | null>(null);
+  const [selectedApprovedRowPreview, setSelectedApprovedRowPreview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
@@ -1042,22 +1044,31 @@ export function Dashboard({
                         </button>
                       )}
                       {row.status?.toLowerCase() === 'approved' && (
-                        <button
-                          onClick={() => void publishRowToSelectedChannel(row)}
-                          disabled={
-                            actionLoading !== null
-                            || (selectedChannel === 'whatsapp' && (!resolvedRecipientPhoneNumber || !whatsappConfigured))
-                            || (selectedChannel === 'linkedin' && !linkedinConfigured)
-                          }
-                          className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 font-medium"
-                        >
-                          {actionLoading === buildRowActionKey('publish', row) ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
-                          )}
-                          Publish
-                        </button>
+                        <>
+                          <button
+                            onClick={() => setSelectedApprovedRowPreview(row)}
+                            className="inline-flex items-center gap-1.5 text-sky-600 hover:text-sky-800 hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Preview
+                          </button>
+                          <button
+                            onClick={() => void publishRowToSelectedChannel(row)}
+                            disabled={
+                              actionLoading !== null
+                              || (selectedChannel === 'whatsapp' && (!resolvedRecipientPhoneNumber || !whatsappConfigured))
+                              || (selectedChannel === 'linkedin' && !linkedinConfigured)
+                            }
+                            className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 font-medium"
+                          >
+                            {actionLoading === buildRowActionKey('publish', row) ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                            Publish
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={() => handleDeleteTopic(row)}
@@ -1082,6 +1093,13 @@ export function Dashboard({
           onApprove={handleApproveVariant}
           onRefine={handleRefineVariant}
           onCancel={() => setSelectedRowForReview(null)}
+        />
+      )}
+
+      {selectedApprovedRowPreview && (
+        <ApprovedPostPreview
+          row={selectedApprovedRowPreview}
+          onClose={() => setSelectedApprovedRowPreview(null)}
         />
       )}
     </div>
