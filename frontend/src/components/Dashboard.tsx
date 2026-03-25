@@ -52,8 +52,8 @@ async function openOAuthPopup(
   loadAuthUrl: () => Promise<OAuthStartResult>,
   provider: PopupProvider,
 ): Promise<OAuthPopupMessage> {
-  const { authorizationUrl } = await loadAuthUrl();
-  const expectedOrigin = new URL(authorizationUrl).origin;
+  const { authorizationUrl, callbackOrigin } = await loadAuthUrl();
+  const expectedOrigin = callbackOrigin;
   const popup = window.open(authorizationUrl, `${provider}-connect`, 'popup=yes,width=620,height=760');
   if (!popup) {
     throw new Error('The browser blocked the connection popup. Allow popups for this site and try again.');
@@ -62,8 +62,9 @@ async function openOAuthPopup(
   popup.focus();
 
   return new Promise<OAuthPopupMessage>((resolve, reject) => {
+    let settled = false;
     const popupPoll = window.setInterval(() => {
-      if (!popup.closed) {
+      if (!popup.closed || settled) {
         return;
       }
 
@@ -80,6 +81,7 @@ async function openOAuthPopup(
         return;
       }
 
+      settled = true;
       cleanup();
       popup.close();
       resolve(event.data);

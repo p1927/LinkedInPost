@@ -28,6 +28,7 @@ export interface PublishContentResult {
 
 export interface OAuthStartResult {
   authorizationUrl: string;
+  callbackOrigin: string;
 }
 
 export interface WhatsAppPhoneOption {

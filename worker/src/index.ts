@@ -539,13 +539,14 @@ async function consumeOAuthState(env: Env, state: string, provider: AuthProvider
   return record;
 }
 
-async function startLinkedInAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string }> {
+async function startLinkedInAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string; callbackOrigin: string }> {
   if (!hasLinkedInOAuthConfig(env)) {
     throw new Error('LinkedIn OAuth is not configured in the Worker environment. Add LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET first.');
   }
 
   const state = createRandomToken();
-  const redirectUri = `${buildWorkerOrigin(request)}/auth/linkedin/callback`;
+  const callbackOrigin = buildWorkerOrigin(request);
+  const redirectUri = `${callbackOrigin}/auth/linkedin/callback`;
   await storeOAuthState(env, state, {
     provider: 'linkedin',
     email: session.email,
@@ -563,16 +564,18 @@ async function startLinkedInAuth(request: Request, env: Env, session: VerifiedSe
 
   return {
     authorizationUrl: `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`,
+    callbackOrigin,
   };
 }
 
-async function startWhatsAppAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string }> {
+async function startWhatsAppAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string; callbackOrigin: string }> {
   if (!hasMetaOAuthConfig(env)) {
     throw new Error('Meta OAuth is not configured in the Worker environment. Add META_APP_ID and META_APP_SECRET first.');
   }
 
   const state = createRandomToken();
-  const redirectUri = `${buildWorkerOrigin(request)}/auth/whatsapp/callback`;
+  const callbackOrigin = buildWorkerOrigin(request);
+  const redirectUri = `${callbackOrigin}/auth/whatsapp/callback`;
   await storeOAuthState(env, state, {
     provider: 'whatsapp',
     email: session.email,
@@ -590,6 +593,7 @@ async function startWhatsAppAuth(request: Request, env: Env, session: VerifiedSe
 
   return {
     authorizationUrl: `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth?${params.toString()}`,
+    callbackOrigin,
   };
 }
 
