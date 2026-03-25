@@ -1,5 +1,6 @@
-import { Globe2, MessageCircle, MoreHorizontal, Repeat2, Send, ThumbsUp } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Globe2, ImageOff, MessageCircle, MoreHorizontal, Repeat2, Send, ThumbsUp } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { normalizePreviewImageUrl } from '../services/imageUrls';
 
 interface LinkedInPostPreviewProps {
   optionNumber: number;
@@ -63,6 +64,12 @@ export function LinkedInPostPreview({
 }: LinkedInPostPreviewProps) {
   const proof = SOCIAL_PROOF[(optionNumber - 1) % SOCIAL_PROOF.length];
   const shouldClamp = text.length > 280 || text.split('\n').length > 5;
+  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+
+  useEffect(() => {
+    setImageLoadFailed(false);
+  }, [resolvedImageUrl]);
 
   return (
     <button
@@ -131,10 +138,37 @@ export function LinkedInPostPreview({
             </div>
           </div>
 
-          {imageUrl ? (
+          {resolvedImageUrl && !imageLoadFailed ? (
             <div className="border-y border-[#e8e8e8] bg-[#f3f2ef]">
               <div className="aspect-[4/5] bg-[#f3f2ef] sm:aspect-[1.2/1]">
-                <img src={imageUrl} alt={`Preview media for option ${optionNumber}`} className="h-full w-full object-contain" />
+                <img
+                  src={resolvedImageUrl}
+                  alt={`Preview media for option ${optionNumber}`}
+                  className="h-full w-full object-contain"
+                  onLoad={() => {
+                    console.info('Preview image loaded', {
+                      optionNumber,
+                      originalUrl: imageUrl,
+                      resolvedImageUrl,
+                    });
+                  }}
+                  onError={() => {
+                    console.warn('Preview image failed to load', {
+                      optionNumber,
+                      originalUrl: imageUrl,
+                      resolvedImageUrl,
+                    });
+                    setImageLoadFailed(true);
+                  }}
+                />
+              </div>
+            </div>
+          ) : imageUrl ? (
+            <div className="border-y border-[#e8e8e8] bg-[#f7f5f2] px-5 py-8 text-center text-[#5b6674]">
+              <div className="mx-auto flex max-w-[260px] flex-col items-center gap-2 rounded-2xl border border-dashed border-[#cfd6e1] bg-white px-4 py-5">
+                <ImageOff className="h-5 w-5 text-[#7d8794]" />
+                <p className="text-sm font-medium text-[#1f2937]">Image preview unavailable</p>
+                <p className="text-xs leading-5 text-[#6b7280]">Open the browser console to inspect the logged source URL and normalized preview URL.</p>
               </div>
             </div>
           ) : null}

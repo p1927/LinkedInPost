@@ -95,6 +95,68 @@ export function Dashboard({
     }
   };
 
+  const dispatchGithubAction = async (
+    action: 'draft' | 'publish' | 'refine',
+    eventType: 'trigger-draft' | 'trigger-publish',
+    payload: Record<string, unknown>,
+    successMessage: string,
+  ) => {
+    if (!githubToken || !githubRepo) {
+      alert('Please configure GitHub Settings first.');
+      setShowSettings(true);
+      return;
+    }
+
+    setActionLoading(action);
+    try {
+      const response = await axios.post(
+        `https://api.github.com/repos/${githubRepo}/dispatches`,
+        {
+          event_type: eventType,
+          client_payload: {
+            google_model: googleModel,
+            ...payload,
+          },
+        },
+        {
+          headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `token ${githubToken}`
+          }
+        }
+      );
+
+      if (response.status === 204) {
+        alert(successMessage);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Failed to trigger GitHub Action. Make sure your token has repo scope and repository name is correct (owner/repo).');
+      throw error;
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRefineVariant = async (baseText: string, instructions: string) => {
+    if (!selectedRowForReview) return;
+
+    await dispatchGithubAction(
+      'refine',
+      'trigger-draft',
+      {
+        draft_mode: 'refine',
+        refine_topic: selectedRowForReview.topic,
+        refine_date: selectedRowForReview.date,
+        refine_base_text: baseText,
+        refine_instructions: instructions,
+      },
+      `Requested 4 refined variants for "${selectedRowForReview.topic}" using ${googleModel}. Refresh the dashboard in a minute to review the updated drafts.`
+    );
+
+    setSelectedRowForReview(null);
+  };
+
   const saveSettings = async () => {
     setSavingConfig(true);
     try {
@@ -112,41 +174,13 @@ export function Dashboard({
   };
 
   const triggerGithubAction = async (action: 'draft' | 'publish') => {
-    if (!githubToken || !githubRepo) {
-      alert('Please configure GitHub Settings first.');
-      setShowSettings(true);
-      return;
-    }
-
-    setActionLoading(action);
-    try {
-      // Expecting repo format: "owner/repo"
-      const response = await axios.post(
-        `https://api.github.com/repos/${githubRepo}/dispatches`,
-        {
-          event_type: action === 'draft' ? 'trigger-draft' : 'trigger-publish',
-          client_payload: {
-            google_model: googleModel,
-          },
-        },
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `token ${githubToken}`
-          }
-        }
-      );
-      
-      if (response.status === 204) {
-        const modelSuffix = action === 'draft' ? ` using ${googleModel}` : '';
-        alert(`Successfully triggered the ${action} action${modelSuffix}. It may take a few minutes to complete.`);
-      }
-    } catch (error) {
-      console.error(error);
-      alert(`Failed to trigger GitHub Action. Make sure your token has repo scope and repository name is correct (owner/repo).`);
-    } finally {
-      setActionLoading(null);
-    }
+    const modelSuffix = action === 'draft' ? ` using ${googleModel}` : '';
+    await dispatchGithubAction(
+      action,
+      action === 'draft' ? 'trigger-draft' : 'trigger-publish',
+      {},
+      `Successfully triggered the ${action} action${modelSuffix}. It may take a few minutes to complete.`
+    );
   };
 
   const handleDeleteTopic = async (row: SheetRow) => {
@@ -405,6 +439,7 @@ export function Dashboard({
         <VariantSelection 
           row={selectedRowForReview} 
           onApprove={handleApproveVariant}
+          onRefine={handleRefineVariant}
           onCancel={() => setSelectedRowForReview(null)}
         />
       )}

@@ -30,6 +30,11 @@ if GEMINI_API_KEY:
 # Search API (using Google Custom Search here as an example for images and web research)
 GOOGLE_SEARCH_API_KEY = os.environ.get('GOOGLE_SEARCH_API_KEY')
 GOOGLE_SEARCH_CX = os.environ.get('GOOGLE_SEARCH_CX')
+DRAFT_MODE = os.environ.get('DRAFT_MODE', '').strip().lower()
+REFINE_TOPIC = os.environ.get('REFINE_TOPIC', '').strip()
+REFINE_DATE = os.environ.get('REFINE_DATE', '').strip()
+REFINE_BASE_TEXT = os.environ.get('REFINE_BASE_TEXT', '').strip()
+REFINE_INSTRUCTIONS = os.environ.get('REFINE_INSTRUCTIONS', '').strip()
 
 # LinkedIn API
 LINKEDIN_ACCESS_TOKEN = os.environ.get('LINKEDIN_ACCESS_TOKEN')
@@ -173,6 +178,10 @@ def build_existing_row_map(rows, expected_width):
         }
     return existing
 
+
+def build_drive_preview_url(file_id):
+    return f"https://drive.google.com/thumbnail?id={file_id}&sz=w1600"
+
 # ==========================================
 # 1. RESEARCH & GENERATE (GEMINI)
 # ==========================================
@@ -190,17 +199,20 @@ def fetch_web_research(topic, num_results=3):
     
     research_text = ""
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=20)
+        response.raise_for_status()
         results = response.json()
         if 'items' in results:
             for item in results['items']:
                 research_text += f"- {item.get('title')}: {item.get('snippet')}\n"
+        else:
+            print(f"No research items returned for topic '{topic}'. Response keys: {list(results.keys())}")
     except Exception as e:
         print(f"Error fetching web research: {e}")
         
     return research_text
 
-def research_and_generate(topic):
+def research_and_generate(topic, base_text='', refinement_instructions=''):
     """Uses LLM to write 4 variants of a LinkedIn post based on the topic."""
     print(f"Generating variants with model: {GOOGLE_MODEL}")
     # Read the recipe
@@ -214,6 +226,13 @@ def research_and_generate(topic):
     # Fetch web research
     web_research = fetch_web_research(topic)
 
+    refinement_context = ""
+    if base_text:
+        refinement_context += f'\nUse this draft as the starting point and preserve its strongest ideas:\n"""{base_text}"""\n'
+
+    if refinement_instructions:
+        refinement_context += f'\nApply these improvement notes while generating the new variants:\n{refinement_instructions}\n'
+
     prompt = f"""
     Act as an expert LinkedIn ghostwriter. Write 4 distinct, engaging variants for a LinkedIn post about the topic: "{topic}".
     
@@ -223,7 +242,10 @@ def research_and_generate(topic):
     Follow this recipe/guideline for writing the post:
     {recipe_content}
 
+    {refinement_context}
+
     Make each variant distinct in tone (e.g., 1. Storytelling, 2. Analytical/Data-driven, 3. Short & Punchy, 4. Question/Engagement focused).
+    If a draft and refinement notes are provided, treat them as instructions to improve the post instead of starting from scratch.
     Do NOT include hashtags in the text block itself, but keep them at the end.
     
     Output JSON format ONLY:
@@ -259,38 +281,75 @@ def fetch_images(topic, num_images=4):
         'num': num_images,
         'safe': 'active'
     }
-    response = requests.get(url, params=params)
-    results = response.json()
+    try:
+        response = requests.get(url, params=params, timeout=20)
+        print(f"Image search status for '{topic}': {response.status_code}")
+        response.raise_for_status()
+        results = response.json()
+    except Exception as e:
+        print(f"Image search request failed for '{topic}': {e}")
+        return []
     
     image_urls = []
     if 'items' in results:
-        for item in results['items']:
-            image_urls.append(item['link'])
+        for index, item in enumerate(results['items'], start=1):
+            image_url = item.get('link', '')
+            image_urls.append(image_url)
+            print(f"Image search result {index} for '{topic}': {image_url}")
+    else:
+        print(f"No image items returned for '{topic}'. Raw response: {json.dumps(results)[:1000]}")
+
     return image_urls
 
 def upload_image_to_drive(drive_service, image_url, topic, index):
     """Downloads an image from the web and uploads it to Google Drive."""
     try:
-        response = requests.get(image_url, stream=True)
+        print(f"Downloading image {index} for '{topic}': {image_url}")
+        response = requests.get(image_url, stream=True, timeout=30)
         response.raise_for_status()
+        mime_type = response.headers.get('Content-Type', 'image/jpeg').split(';')[0] or 'image/jpeg'
         
         file_metadata = {
             'name': f"{topic.replace(' ', '_')}_{index}.jpg",
             'parents': [DRIVE_FOLDER_ID]
         }
-        media = MediaIoBaseUpload(io.BytesIO(response.content), mimetype='image/jpeg', resumable=True)
-        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink').execute()
+        media = MediaIoBaseUpload(io.BytesIO(response.content), mimetype=mime_type, resumable=True)
+        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink, webContentLink').execute()
         
         # Make the file readable by anyone with the link
         drive_service.permissions().create(
             fileId=file.get('id'),
             body={'type': 'anyone', 'role': 'reader'}
         ).execute()
+
+        file_id = file.get('id')
+        preview_url = build_drive_preview_url(file_id)
+        print(
+            f"Uploaded image {index} for '{topic}'. "
+            f"file_id={file_id}, preview_url={preview_url}, webViewLink={file.get('webViewLink')}"
+        )
         
-        return file.get('webViewLink'), file.get('id')
+        return preview_url, file_id
     except Exception as e:
         print(f"Error uploading image {index}: {e}")
         return "", ""
+
+
+def fetch_and_upload_images(drive_service, topic, num_images=4):
+    image_urls = fetch_images(topic, num_images=num_images)
+    if not image_urls:
+        print(f"No image URLs found for '{topic}'.")
+        return [''] * num_images
+
+    drive_links = []
+    for idx, img_url in enumerate(image_urls, start=1):
+        drive_link, drive_id = upload_image_to_drive(drive_service, img_url, topic, idx)
+        if not drive_link:
+            print(f"Image {idx} for '{topic}' could not be uploaded. drive_id={drive_id}")
+        drive_links.append(drive_link)
+
+    drive_links += [''] * (num_images - len(drive_links))
+    return drive_links[:num_images]
 
 # ==========================================
 # 3. LINKEDIN PUBLISHING
@@ -404,14 +463,7 @@ def process_drafts(sheets_service, drive_service):
 
         print(f"Drafting for topic: {topic}")
         variants = research_and_generate(topic)
-
-        image_urls = fetch_images(topic, num_images=4)
-        drive_links = []
-        for idx, img_url in enumerate(image_urls):
-            drive_link, drive_id = upload_image_to_drive(drive_service, img_url, topic, idx + 1)
-            drive_links.append(drive_link)
-
-        drive_links += [''] * (4 - len(drive_links))
+        drive_links = fetch_and_upload_images(drive_service, topic, num_images=4)
         new_rows.append([
             topic,
             date_str,
@@ -438,6 +490,60 @@ def process_drafts(sheets_service, drive_service):
             body={'values': new_rows},
         ).execute()
         print("Saved generated drafts in the Draft sheet.")
+
+
+def process_refinement(sheets_service, drive_service):
+    ensure_required_sheets(sheets_service)
+    draft_rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
+    existing_drafts = build_existing_row_map(draft_rows, 14)
+    refine_key = build_topic_key(REFINE_TOPIC, REFINE_DATE)
+    existing_draft = existing_drafts.get(refine_key)
+
+    if not REFINE_TOPIC or not REFINE_DATE:
+        raise ValueError('REFINE_TOPIC and REFINE_DATE are required for refine mode.')
+
+    if not existing_draft:
+        raise ValueError(f"Unable to find draft row for topic '{REFINE_TOPIC}' on '{REFINE_DATE}'.")
+
+    row_index = existing_draft['row_index']
+    existing_row = existing_draft['row']
+    topic = existing_row[0]
+    date_str = existing_row[1]
+    print(f"Refining draft row {row_index} for topic '{topic}' dated '{date_str}'.")
+
+    variants = research_and_generate(topic, base_text=REFINE_BASE_TEXT, refinement_instructions=REFINE_INSTRUCTIONS)
+    image_links = existing_row[7:11]
+
+    if any(link.strip() for link in image_links):
+        print(f"Reusing existing image links for '{topic}': {image_links}")
+    else:
+        print(f"No existing image links found for '{topic}'. Fetching a fresh set during refinement.")
+        image_links = fetch_and_upload_images(drive_service, topic, num_images=4)
+
+    updated_row = [
+        topic,
+        date_str,
+        'Drafted',
+        variants.get('variant1', ''),
+        variants.get('variant2', ''),
+        variants.get('variant3', ''),
+        variants.get('variant4', ''),
+        image_links[0],
+        image_links[1],
+        image_links[2],
+        image_links[3],
+        '',
+        '',
+        '',
+    ]
+
+    sheets_service.spreadsheets().values().update(
+        spreadsheetId=SHEET_ID,
+        range=f"{DRAFT_SHEET}!A{row_index}:N{row_index}",
+        valueInputOption='RAW',
+        body={'values': [updated_row]},
+    ).execute()
+    print(f"Saved refined variants for '{topic}' to row {row_index}.")
 
 def process_publishing(sheets_service, docs_service):
     """Finds 'Approved' rows whose scheduled time has passed and posts them."""
@@ -541,7 +647,10 @@ if __name__ == "__main__":
         sys.exit(1)
         
     if action == 'draft':
-        process_drafts(sheets_service, drive_service)
+        if DRAFT_MODE == 'refine':
+            process_refinement(sheets_service, drive_service)
+        else:
+            process_drafts(sheets_service, drive_service)
     elif action == 'publish':
         process_publishing(sheets_service, docs_service)
     else:
