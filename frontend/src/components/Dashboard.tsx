@@ -26,6 +26,17 @@ function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
   return `${action}:${row.topic.trim()}::${row.date.trim()}`;
 }
 
+function hasIncompleteWorkspaceSetup(session: AppSession): boolean {
+  return Boolean(
+    session.isAdmin
+      && (
+        !session.config.spreadsheetId
+        || !session.config.githubRepo
+        || !session.config.hasGitHubToken
+      )
+  );
+}
+
 type PopupProvider = 'linkedin' | 'whatsapp';
 
 interface OAuthPopupMessage {
@@ -130,18 +141,7 @@ export function Dashboard({
   const [pendingWhatsAppOptions, setPendingWhatsAppOptions] = useState<WhatsAppPhoneOption[]>([]);
   const [selectedWhatsAppPhoneId, setSelectedWhatsAppPhoneId] = useState('');
   const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
-  const [showSettings, setShowSettings] = useState(
-    session.isAdmin
-      && (
-        !session.config.spreadsheetId
-        || !session.config.githubRepo
-        || !session.config.hasGitHubToken
-        || !session.config.linkedinPersonUrn
-        || !session.config.hasLinkedInAccessToken
-        || !session.config.whatsappPhoneNumberId
-        || !session.config.hasWhatsAppAccessToken
-      )
-  );
+  const [showSettings, setShowSettings] = useState(hasIncompleteWorkspaceSetup(session));
   const [selectedRowForReview, setSelectedRowForReview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
@@ -161,25 +161,12 @@ export function Dashboard({
     setRecipientMode(session.config.whatsappRecipients.length > 0 ? 'saved' : 'manual');
     setSelectedRecipientPhone(session.config.whatsappRecipients[0]?.phoneNumber || '');
     setWhatsappRecipientsInput(formatRecipientsInput(session.config.whatsappRecipients));
-    setShowSettings(
-      session.isAdmin
-        && (
-          !session.config.spreadsheetId
-          || !session.config.githubRepo
-          || !session.config.hasGitHubToken
-          || !session.config.linkedinPersonUrn
-          || !session.config.hasLinkedInAccessToken
-          || !session.config.whatsappPhoneNumberId
-          || !session.config.hasWhatsAppAccessToken
-        )
-    );
+    setShowSettings(hasIncompleteWorkspaceSetup(session));
   }, [
     session.config.defaultChannel,
     session.config.githubRepo,
     session.config.googleModel,
     session.config.hasGitHubToken,
-    session.config.hasLinkedInAccessToken,
-    session.config.hasWhatsAppAccessToken,
     session.config.spreadsheetId,
     session.config.whatsappRecipients,
     session.isAdmin,
