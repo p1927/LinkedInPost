@@ -171,81 +171,44 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(17,24,39,0.66)] px-4 py-6 backdrop-blur-sm sm:px-6">
-      <div className="mx-auto flex min-h-full w-full max-w-7xl items-center justify-center">
-        <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[32px] border border-white/60 bg-[linear-gradient(180deg,#fcfaf6_0%,#f3f6fb_100%)] shadow-[0_28px_100px_rgba(15,23,42,0.35)]">
-          <div className="sticky top-0 z-10 border-b border-[#d9dee8] bg-[rgba(252,250,246,0.92)] px-6 py-5 backdrop-blur">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(17,24,39,0.66)] px-2 py-2 backdrop-blur-sm sm:px-3 sm:py-3">
+      <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-1rem,1760px)] items-center justify-center">
+        <div className="flex max-h-[calc(100vh-1rem)] w-full flex-col overflow-hidden rounded-[28px] border border-white/60 bg-[linear-gradient(180deg,#fcfaf6_0%,#f3f6fb_100%)] shadow-[0_28px_100px_rgba(15,23,42,0.35)]">
+          <div className="sticky top-0 z-10 border-b border-[#d9dee8] bg-[rgba(252,250,246,0.92)] px-5 py-4 backdrop-blur sm:px-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[#6a7380]">Research-based preview</p>
-                <h2 className="mt-2 text-2xl font-bold text-[#1a2433]">Review draft posts as feed-ready previews</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#55606f]">
-                  Each option pairs the generated copy with its matching image so you can approve the post the way it will read in a LinkedIn-style feed card.
-                </p>
-                <p className="mt-2 text-sm font-medium text-[#1f2937]">Topic: {row.topic}</p>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[#6a7380]">Topic</p>
+                <h2 className="mt-2 max-w-5xl text-[clamp(1.25rem,2.2vw,2.2rem)] font-bold text-[#1a2433]">{row.topic}</h2>
               </div>
               <button onClick={onCancel} className="rounded-full border border-[#d2d8e2] bg-white px-3 py-2 text-sm font-medium text-[#4b5563] transition hover:border-[#9ca9bb] hover:text-[#111827]">
                 Close
               </button>
             </div>
           </div>
-          <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
-            <section className="border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(244,247,252,0.96)_100%)] p-5 xl:border-b-0 xl:border-r xl:p-8">
-              <div className="mx-auto max-w-[760px] space-y-6">
-                <div className="rounded-[28px] border border-[#d8dce6] bg-white/80 p-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div className="max-w-3xl">
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Variant carousel</p>
-                      <h3 className="mt-2 text-2xl font-semibold text-[#1a2433]">Keep one draft in focus while you compare the rest</h3>
-                      <p className="mt-2 text-sm leading-6 text-[#596577]">
-                        Swipe the carousel or use the controls to move through the variants. The active draft stays enlarged above so you can review edits without losing context.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] px-4 py-3 text-sm text-[#4b5563]">
-                      {options.length} draft option{options.length === 1 ? '' : 's'} ready
-                    </div>
+          <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(300px,0.58fr)_minmax(0,0.92fr)_minmax(420px,0.92fr)]">
+            <section className="border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(247,249,252,0.96)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
+              <div className="space-y-4">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Variants</p>
+                    <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">Select a draft</h3>
+                  </div>
+                  <div className="rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] px-3 py-2 text-sm text-[#4b5563]">
+                    {options.length} total
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Featured draft</p>
-                      <h3 className="mt-2 text-2xl font-semibold text-[#1a2433]">
-                        {selectedOptionIndex === null ? 'Choose a draft' : `Draft option ${selectedOptionIndex + 1}`}
-                      </h3>
-                      <p className="mt-2 text-sm leading-6 text-[#596577]">
-                        This larger view mirrors the draft currently loaded into the approval panel.
-                      </p>
-                    </div>
+                {selectedOptionIndex !== null ? (
+                  <div className="rounded-2xl border border-[#dbe1ea] bg-white px-4 py-3 text-sm text-[#4b5563]">
+                    Active: Draft option {selectedOptionIndex + 1}
                   </div>
-
-                  {selectedOption ? (
-                    <LinkedInPostPreview
-                      optionNumber={(selectedOptionIndex ?? 0) + 1}
-                      text={selectedOption.text}
-                      imageUrl={selectedOption.imageUrl}
-                      selected={true}
-                      expanded={expandedOptions.includes(selectedOptionIndex ?? -1)}
-                      onSelect={() => undefined}
-                      onToggleExpanded={() => selectedOptionIndex !== null && toggleExpanded(selectedOptionIndex)}
-                      mode="hero"
-                    />
-                  ) : (
-                    <div className="rounded-[28px] border border-dashed border-[#cfd6e1] bg-white/70 px-6 py-12 text-center text-sm text-[#596577]">
-                      No draft variants are available for this topic yet.
-                    </div>
-                  )}
-                </div>
+                ) : null}
 
                 {options.length > 0 ? (
-                  <div className="rounded-[28px] border border-[#d8dce6] bg-white/75 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-5">
-                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Choose a different draft</p>
-                        <p className="mt-1 text-sm text-[#596577]">Each card in the carousel loads instantly into the larger preview and approval workspace.</p>
-                      </div>
-                      <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="rounded-[28px] border border-[#d8dce6] bg-white/80 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-[#596577]">Use the carousel to switch the active draft.</p>
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => scrollCarousel('previous')}
@@ -269,12 +232,12 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
 
                     <div
                       ref={carouselRef}
-                      className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] xl:flex-col xl:snap-none xl:overflow-y-auto xl:overflow-x-hidden xl:pb-0 [&::-webkit-scrollbar]:hidden"
                     >
                       {options.map((option, index) => (
                         <div
                           key={`option-${index}`}
-                          className="min-w-[min(84vw,320px)] snap-start sm:min-w-[320px] xl:min-w-[300px]"
+                          className="min-w-[min(84vw,320px)] snap-start sm:min-w-[320px] xl:min-w-0"
                         >
                           <LinkedInPostPreview
                             optionNumber={index + 1}
@@ -290,14 +253,46 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                       ))}
                     </div>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="rounded-[28px] border border-dashed border-[#cfd6e1] bg-white/70 px-6 py-12 text-center text-sm text-[#596577]">
+                    No draft variants are available for this topic yet.
+                  </div>
+                )}
               </div>
             </section>
 
-            <aside className="bg-white/80 p-5 xl:p-8">
-              <div className="mx-auto max-w-3xl rounded-[32px] border border-[#d8dce6] bg-white p-6 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-7">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Approval panel</p>
-                <h3 className="mt-2 text-[clamp(1.5rem,2vw,2rem)] font-semibold text-[#1a2433]">Shape the final post</h3>
+            <section className="border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(242,246,251,0.98)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Preview</p>
+                  <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">
+                    {selectedOptionIndex === null ? 'Choose a draft' : `Draft option ${selectedOptionIndex + 1}`}
+                  </h3>
+                </div>
+
+                {selectedOption ? (
+                  <LinkedInPostPreview
+                    optionNumber={(selectedOptionIndex ?? 0) + 1}
+                    text={selectedOption.text}
+                    imageUrl={selectedOption.imageUrl}
+                    selected={true}
+                    expanded={expandedOptions.includes(selectedOptionIndex ?? -1)}
+                    onSelect={() => undefined}
+                    onToggleExpanded={() => selectedOptionIndex !== null && toggleExpanded(selectedOptionIndex)}
+                    mode="hero"
+                  />
+                ) : (
+                  <div className="rounded-[28px] border border-dashed border-[#cfd6e1] bg-white/70 px-6 py-12 text-center text-sm text-[#596577]">
+                    Pick a variant to see the larger preview.
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <aside className="bg-white/80 p-4 xl:p-5">
+              <div className="h-full rounded-[32px] border border-[#d8dce6] bg-white p-5 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-6">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Refine</p>
+                <h3 className="mt-2 text-[clamp(1.4rem,1.8vw,1.9rem)] font-semibold text-[#1a2433]">Edit and approve</h3>
                 <p className="mt-2 text-sm leading-6 text-[#596577]">
                   Approval stores the active carousel draft, matching image, and optional post time in the sheet.
                 </p>

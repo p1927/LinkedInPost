@@ -2,6 +2,10 @@
 """
 Bootstrap script for LinkedIn Bot.
 
+The script is the source of truth for the repository bootstrap flow.
+Keep Cloudflare deployment notes in worker/README.md and SETUP.md in sync with
+this file. If you update either side, update the other in the same change.
+
 The script can provision Google resources and, when requested, prepare most of
 the Cloudflare Worker and GitHub configuration needed by the shared dashboard.
 

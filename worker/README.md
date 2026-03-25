@@ -10,6 +10,10 @@ ms.topic: how-to
 This Worker replaces the earlier Apps Script backend.
 It verifies Google sign-ins, stores shared dashboard config in Cloudflare KV, uses a Google service account for Sheets access, and proxies GitHub repository dispatch requests.
 
+`setup.py` is the source of truth for the Cloudflare bootstrap flow in this repository. If Cloudflare is connected directly to GitHub and deploys on push, keep that deployment configuration aligned with `setup.py` so both paths produce the same Worker setup.
+
+If you update this guide or `setup.py`, update the other file in the same change.
+
 If you want one script to handle most of this flow, run `python setup.py --all` from the repository root. The manual steps below remain useful when you want tighter control over the deployment sequence.
 
 If you only want the local Worker toolchain installed first, run `python setup.py --install-worker-deps` from the repository root.

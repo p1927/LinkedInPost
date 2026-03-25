@@ -60,6 +60,10 @@ Copy the client ID. You will use it both in the frontend and in the Worker confi
 
 The setup script can now handle most of the Worker setup work for you.
 
+`setup.py` is the source of truth for this Cloudflare bootstrap flow. If Cloudflare is wired to GitHub and deploys automatically on push, keep that deployment configuration aligned with `setup.py` so the automated and manual paths stay identical.
+
+If you update this checklist or `setup.py`, update the other file in the same change.
+
 Any Worker-related setup flag now starts by installing the local Worker dependencies from [worker/package.json](worker/package.json). That includes `wrangler`.
 
 Use this command for the full path:
