@@ -66,6 +66,12 @@ export class SheetsService {
     return padded;
   }
 
+  private buildValuesUrl(range: string, action?: 'append'): string {
+    const encodedRange = encodeURIComponent(range);
+    const actionSuffix = action ? `:${action}` : '';
+    return `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${encodedRange}${actionSuffix}`;
+  }
+
   private async getSpreadsheetMetadata() {
     const response = await axios.get(
       `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}`,
@@ -101,13 +107,13 @@ export class SheetsService {
     }
 
     const headerResponse = await axios.get(
-      `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(`${sheetTitle}!A1`)}`,
+      this.buildValuesUrl(`${sheetTitle}!A1`),
       { headers: this.headers }
     );
 
     if (!(headerResponse.data.values || []).length) {
       await axios.put(
-        `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(`${sheetTitle}!A1`)}?valueInputOption=RAW`,
+        `${this.buildValuesUrl(`${sheetTitle}!A1`)}?valueInputOption=RAW`,
         {
           values: [headers],
         },
@@ -124,7 +130,7 @@ export class SheetsService {
 
   private async getValues(range: string): Promise<string[][]> {
     const response = await axios.get(
-      `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(range)}`,
+      this.buildValuesUrl(range),
       { headers: this.headers }
     );
 
@@ -265,7 +271,7 @@ export class SheetsService {
     try {
       await this.ensureRequiredSheets();
       await axios.post(
-        `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(`${TOPICS_SHEET}!A:B:append`)}?valueInputOption=USER_ENTERED`,
+        `${this.buildValuesUrl(`${TOPICS_SHEET}!A:B`, 'append')}?valueInputOption=USER_ENTERED`,
         {
           values: [[topic, today]]
         },
@@ -288,7 +294,7 @@ export class SheetsService {
 
       // First update the status (column C)
       await axios.put(
-        `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(`${DRAFT_SHEET}!C${draftRowIndex}`)}?valueInputOption=USER_ENTERED`,
+        `${this.buildValuesUrl(`${DRAFT_SHEET}!C${draftRowIndex}`)}?valueInputOption=USER_ENTERED`,
         {
           values: [[status]]
         },
@@ -298,7 +304,7 @@ export class SheetsService {
       // If we're approving, also update L, M, N
       if (status === 'Approved' && (selectedText || selectedImageId || postTime)) {
         await axios.put(
-          `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}/values/${encodeURIComponent(`${DRAFT_SHEET}!L${draftRowIndex}:N${draftRowIndex}`)}?valueInputOption=USER_ENTERED`,
+          `${this.buildValuesUrl(`${DRAFT_SHEET}!L${draftRowIndex}:N${draftRowIndex}`)}?valueInputOption=USER_ENTERED`,
           {
             values: [[selectedText, selectedImageId, postTime]]
           },
