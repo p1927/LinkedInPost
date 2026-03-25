@@ -37,6 +37,8 @@ jobs:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN || vars.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_URN: ${{ vars.LINKEDIN_PERSON_URN || secrets.LINKEDIN_PERSON_URN }}
           DRAFT_MODE: ${{ github.event.client_payload.draft_mode || '' }}
+          TARGET_TOPIC: ${{ github.event.client_payload.target_topic || '' }}
+          TARGET_DATE: ${{ github.event.client_payload.target_date || '' }}
           REFINE_TOPIC: ${{ github.event.client_payload.refine_topic || '' }}
           REFINE_DATE: ${{ github.event.client_payload.refine_date || '' }}
           REFINE_BASE_TEXT: ${{ github.event.client_payload.refine_base_text || '' }}
@@ -71,4 +73,6 @@ jobs:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN || vars.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_URN: ${{ vars.LINKEDIN_PERSON_URN || secrets.LINKEDIN_PERSON_URN }}
           GOOGLE_DOC_ID: ${{ vars.GOOGLE_DOC_ID || secrets.GOOGLE_DOC_ID }}
+          TARGET_TOPIC: ${{ github.event.client_payload.target_topic || '' }}
+          TARGET_DATE: ${{ github.event.client_payload.target_date || '' }}
         run: python linkedin_bot.py publish

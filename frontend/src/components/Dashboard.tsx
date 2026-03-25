@@ -13,6 +13,10 @@ import {
 import { type SheetRow } from '../services/sheets';
 import { VariantSelection } from './VariantSelection';
 
+function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
+  return `${action}:${row.topic.trim()}::${row.date.trim()}`;
+}
+
 export function Dashboard({
   idToken,
   session,
@@ -173,6 +177,7 @@ export function Dashboard({
     eventType: 'trigger-draft' | 'trigger-publish',
     payload: Record<string, unknown>,
     successMessage: string,
+    loadingKey: string = action,
   ) => {
     if (!session.config.githubRepo || !session.config.hasGitHubToken) {
       if (session.isAdmin) {
@@ -184,7 +189,7 @@ export function Dashboard({
       return;
     }
 
-    setActionLoading(action);
+    setActionLoading(loadingKey);
     try {
       await api.triggerGithubAction(idToken, action, eventType, {
         google_model: googleModel,
@@ -241,13 +246,19 @@ export function Dashboard({
     }
   };
 
-  const triggerGithubAction = async (action: 'draft' | 'publish') => {
-    const modelSuffix = action === 'draft' ? ` using ${googleModel}` : '';
+  const triggerRowGithubAction = async (row: SheetRow, action: 'draft' | 'publish') => {
+    const actionKey = buildRowActionKey(action, row);
     await dispatchGithubAction(
       action,
       action === 'draft' ? 'trigger-draft' : 'trigger-publish',
-      {},
-      `Successfully triggered the ${action} action${modelSuffix}. It may take a few minutes to complete.`
+      {
+        target_topic: row.topic,
+        target_date: row.date,
+      },
+      action === 'draft'
+        ? `Requested post generation for "${row.topic}" using ${googleModel}. Refresh the dashboard in a minute to review the new draft.`
+        : `Requested publishing for "${row.topic}". Refresh the dashboard in a minute to confirm the updated status.`,
+      actionKey,
     );
   };
 
@@ -398,30 +409,6 @@ export function Dashboard({
               ))}
             </select>
           </label>
-          <button 
-            onClick={() => triggerGithubAction('draft')}
-            disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-            className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 font-medium"
-          >
-            {actionLoading === 'draft' ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            )}
-            Generate Posts
-          </button>
-          <button 
-            onClick={() => triggerGithubAction('publish')}
-            disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-            className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-md hover:bg-green-100 font-medium"
-          >
-            {actionLoading === 'publish' ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            Publish Approved
-          </button>
           {session.isAdmin && (
             <>
               <div className="w-px bg-gray-300 mx-1"></div>
@@ -495,13 +482,41 @@ export function Dashboard({
                     {row.date}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                      {row.status?.toLowerCase() === 'pending' && (
+                        <button
+                          onClick={() => void triggerRowGithubAction(row, 'draft')}
+                          disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                        >
+                          {actionLoading === buildRowActionKey('draft', row) ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                          )}
+                          Generate Post
+                        </button>
+                      )}
                       {row.status?.toLowerCase() === 'drafted' && (
                         <button 
                           onClick={() => setSelectedRowForReview(row)}
                           className="text-blue-600 hover:text-blue-900 font-medium"
                         >
                           Review Variants
+                        </button>
+                      )}
+                      {row.status?.toLowerCase() === 'approved' && (
+                        <button
+                          onClick={() => void triggerRowGithubAction(row, 'publish')}
+                          disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
+                          className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 disabled:opacity-50"
+                        >
+                          {actionLoading === buildRowActionKey('publish', row) ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )}
+                          Publish Approved
                         </button>
                       )}
                       <button

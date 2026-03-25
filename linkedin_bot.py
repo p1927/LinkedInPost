@@ -31,6 +31,8 @@ if GEMINI_API_KEY:
 GOOGLE_SEARCH_API_KEY = os.environ.get('GOOGLE_SEARCH_API_KEY')
 GOOGLE_SEARCH_CX = os.environ.get('GOOGLE_SEARCH_CX')
 DRAFT_MODE = os.environ.get('DRAFT_MODE', '').strip().lower()
+TARGET_TOPIC = os.environ.get('TARGET_TOPIC', '').strip()
+TARGET_DATE = os.environ.get('TARGET_DATE', '').strip()
 REFINE_TOPIC = os.environ.get('REFINE_TOPIC', '').strip()
 REFINE_DATE = os.environ.get('REFINE_DATE', '').strip()
 REFINE_BASE_TEXT = os.environ.get('REFINE_BASE_TEXT', '').strip()
@@ -88,6 +90,16 @@ def validate_environment(action):
     print('The frontend Save Configuration button stores settings in your personal Google Drive app data.')
     print('It does not update GitHub Actions secrets used by linkedin_bot.py.')
     sys.exit(1)
+
+    
+def should_process_target(topic, date_str):
+    if not TARGET_TOPIC and not TARGET_DATE:
+        return True
+
+    if not TARGET_TOPIC or not TARGET_DATE:
+        raise ValueError('TARGET_TOPIC and TARGET_DATE must be provided together.')
+
+    return build_topic_key(topic, date_str) == build_topic_key(TARGET_TOPIC, TARGET_DATE)
 
 # ==========================================
 # GOOGLE APIS INIT
@@ -528,14 +540,21 @@ def process_drafts(sheets_service, drive_service):
     existing_posts = build_existing_row_map(post_rows, 14)
 
     new_rows = []
+    target_found = False
     for row in topic_rows:
         padded = pad_row(row, 2)
         topic, date_str = padded[0].strip(), padded[1].strip()
         if not topic:
             continue
 
+        if not should_process_target(topic, date_str):
+            continue
+
+        target_found = True
+
         key = build_topic_key(topic, date_str)
         if key in existing_drafts or key in existing_posts:
+            print(f"Skipping topic '{topic}' on '{date_str}' because it already has a draft or published row.")
             continue
 
         print(f"Drafting for topic: {topic}")
@@ -557,6 +576,9 @@ def process_drafts(sheets_service, drive_service):
             '',
             '',
         ])
+
+    if (TARGET_TOPIC or TARGET_DATE) and not target_found:
+        raise ValueError(f"Unable to find topic '{TARGET_TOPIC}' on '{TARGET_DATE}'.")
 
     if new_rows:
         sheets_service.spreadsheets().values().append(
@@ -633,10 +655,18 @@ def process_publishing(sheets_service, docs_service):
     draft_updates = []
     post_appends = []
     post_updates = []
+    target_found = False
     
     for i, row in enumerate(rows):
         row = pad_row(row, 14)
         topic, date_str, status = row[0], row[1], row[2]
+        if not topic:
+            continue
+
+        if not should_process_target(topic, date_str):
+            continue
+
+        target_found = True
         selected_text = row[11] # Col L
         selected_image_id = row[12] # Col M
         post_time_str = row[13] # Col N - expect format "YYYY-MM-DD HH:MM"
@@ -683,6 +713,9 @@ def process_publishing(sheets_service, docs_service):
                             post_appends.append(published_row)
             except ValueError:
                 print(f"Invalid date format in row {i+2}: {post_time_str}")
+
+    if (TARGET_TOPIC or TARGET_DATE) and not target_found:
+        raise ValueError(f"Unable to find draft row for topic '{TARGET_TOPIC}' on '{TARGET_DATE}'.")
 
     if draft_updates:
         for update in draft_updates:
