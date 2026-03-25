@@ -3,7 +3,14 @@ import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { LogOut, LogIn } from 'lucide-react';
 
 export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => void }) {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('google_access_token'));
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('google_access_token');
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -21,6 +28,9 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
     onError: (error) => console.log('Login Failed:', error),
     // Request scopes for Google Sheets, Docs, and the hidden app-data folder (stores config securely)
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/drive.appdata',
+    // Force Google to show the consent screen (useful for granting new scopes or re-authorizing)
+    prompt: 'consent',
+    include_granted_scopes: false,
   });
 
   const handleLogout = () => {

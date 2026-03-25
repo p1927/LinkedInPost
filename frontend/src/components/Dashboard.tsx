@@ -9,10 +9,12 @@ export function Dashboard({
   token,
   config,
   onSaveConfig,
+  configSource = 'none',
 }: {
   token: string,
   config: BotConfig,
   onSaveConfig: (config: BotConfig) => Promise<void>,
+  configSource?: 'env' | 'drive' | 'none',
 }) {
   const [rows, setRows] = useState<SheetRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,7 +22,10 @@ export function Dashboard({
   const [sheetIdInput, setSheetIdInput] = useState(config.spreadsheetId);
   const [githubToken, setGithubToken] = useState<string>(config.githubToken);
   const [githubRepo, setGithubRepo] = useState<string>(config.githubRepo);
-  const [showSettings, setShowSettings] = useState(!config.spreadsheetId || !config.githubToken || !config.githubRepo);
+  // Show settings only if config is incomplete and not from environment variables
+  const [showSettings, setShowSettings] = useState(
+    configSource !== 'env' && (!config.spreadsheetId || !config.githubToken || !config.githubRepo)
+  );
   const [selectedRowForReview, setSelectedRowForReview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
@@ -86,8 +91,9 @@ export function Dashboard({
       if (sheetIdInput) {
         setTimeout(loadData, 100);
       }
-    } catch {
-      alert('Failed to save configuration to Google Drive. Please try again.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save configuration to Google Drive. Please try again.';
+      alert(message);
     } finally {
       setSavingConfig(false);
     }
@@ -188,7 +194,10 @@ export function Dashboard({
 
           <p className="text-xs text-gray-400 mt-4 flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Settings are encrypted in your private Google Drive app data — never stored in this browser or your code.
+            {configSource === 'env' 
+              ? 'Configuration loaded from environment variables.'
+              : 'Settings are encrypted in your private Google Drive app data — never stored in this browser or your code.'
+            }
           </p>
           <button
             onClick={saveSettings}

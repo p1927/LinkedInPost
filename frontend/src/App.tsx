@@ -1,21 +1,31 @@
 import { useState, useEffect } from 'react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/Dashboard'
-import { ConfigService, type BotConfig } from './services/configService'
+import { ConfigService, type BotConfig, loadConfigFromEnv } from './services/configService'
 
 const EMPTY_CONFIG: BotConfig = { spreadsheetId: '', githubRepo: '', githubToken: '' }
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('google_access_token'))
-  const [config, setConfig] = useState<BotConfig>(EMPTY_CONFIG)
+  const [config, setConfig] = useState<BotConfig>(() => loadConfigFromEnv() || EMPTY_CONFIG)
   const [configLoading, setConfigLoading] = useState(false)
+  const [configSource, setConfigSource] = useState<'env' | 'drive' | 'none'>(loadConfigFromEnv() ? 'env' : 'none')
 
-  // Load config from Drive whenever the user logs in
+  // Load config from Drive whenever the user logs in (unless already loaded from env)
   useEffect(() => {
     if (!token) {
-      setConfig(EMPTY_CONFIG)
+      const envConfig = loadConfigFromEnv()
+      setConfig(envConfig || EMPTY_CONFIG)
+      setConfigSource(envConfig ? 'env' : 'none')
       return
     }
+
+    // If config is already from environment variables, don't override it from Drive
+    if (configSource === 'env') {
+      setConfigLoading(false)
+      return
+    }
+
     setConfigLoading(true)
     const service = new ConfigService(token)
     service
@@ -23,6 +33,7 @@ function App() {
       .then(loaded => {
         if (loaded) {
           setConfig(loaded)
+          setConfigSource('drive')
         } else {
           // One-time migration: pre-fill spreadsheetId from old localStorage key
           const legacyId = localStorage.getItem('spreadsheet_id') || ''
@@ -52,7 +63,14 @@ function App() {
   const handleSaveConfig = async (newConfig: BotConfig) => {
     if (!token) return
     const service = new ConfigService(token)
-    await service.saveConfig(newConfig)
+    try {
+      await service.saveConfig(newConfig)
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(error.message)
+      }
+      throw error
+    }
     setConfig(newConfig)
     // Clean up any legacy localStorage key after first Drive save
     localStorage.removeItem('spreadsheet_id')
@@ -87,6 +105,7 @@ function App() {
             token={token}
             config={config}
             onSaveConfig={handleSaveConfig}
+            configSource={configSource}
           />
         )}
       </main>

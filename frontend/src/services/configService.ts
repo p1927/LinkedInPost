@@ -1,5 +1,26 @@
 import axios from 'axios';
 
+/** Returns true if the token includes the drive.appdata scope. */
+export async function hasAppDataScope(token: string): Promise<boolean> {
+  try {
+    const res = await axios.get(
+      `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${encodeURIComponent(token)}`
+    );
+    const scopes: string = res.data.scope ?? '';
+    return scopes.includes('drive.appdata');
+  } catch {
+    return false;
+  }
+}
+
+export async function getGrantedScopes(token: string): Promise<string[]> {
+  const res = await axios.get(
+    `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${encodeURIComponent(token)}`
+  );
+  const scopes: string = res.data.scope ?? '';
+  return scopes.split(/\s+/).filter(Boolean);
+}
+
 export interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
@@ -7,6 +28,27 @@ export interface BotConfig {
 }
 
 const CONFIG_FILENAME = 'linkedin-bot-config.json';
+
+/**
+ * Load config from environment variables.
+ * This allows bypassing the Settings step by providing:
+ * - VITE_GOOGLE_SHEET_ID
+ * - VITE_GITHUB_REPO
+ * - VITE_GITHUB_TOKEN
+ * Useful for automated deployments or pre-configured environments.
+ */
+export function loadConfigFromEnv(): BotConfig | null {
+  const spreadsheetId = import.meta.env.VITE_GOOGLE_SHEET_ID || '';
+  const githubRepo = import.meta.env.VITE_GITHUB_REPO || '';
+  const githubToken = import.meta.env.VITE_GITHUB_TOKEN || '';
+
+  // Only return config if all three are provided
+  if (spreadsheetId && githubRepo && githubToken) {
+    return { spreadsheetId, githubRepo, githubToken };
+  }
+
+  return null;
+}
 
 export class ConfigService {
   private token: string;
@@ -19,10 +61,18 @@ export class ConfigService {
     return { Authorization: `Bearer ${this.token}` };
   }
 
+  private async assertAppDataScope(): Promise<void> {
+    const scopes = await getGrantedScopes(this.token);
+    if (!scopes.some(scope => scope.includes('drive.appdata'))) {
+      throw new Error('Missing required Google Drive appData scope. Please sign in again and grant Drive app data access.');
+    }
+  }
+
   private async findConfigFileId(): Promise<string | null> {
+    await this.assertAppDataScope();
     const response = await axios.get('https://www.googleapis.com/drive/v3/files', {
       params: {
-        q: `name='${CONFIG_FILENAME}'`,
+        q: `name='${CONFIG_FILENAME}' and 'appDataFolder' in parents and trashed=false`,
         spaces: 'appDataFolder',
         fields: 'files(id)',
       },
@@ -44,36 +94,49 @@ export class ConfigService {
   }
 
   async saveConfig(config: BotConfig): Promise<void> {
+    await this.assertAppDataScope();
+
     const content = JSON.stringify(config);
     const fileId = await this.findConfigFileId();
 
-    const form = new FormData();
-    form.append('file', new Blob([content], { type: 'application/json' }));
-
     if (fileId) {
-      // Update existing file (no parent needed for update)
-      form.append(
-        'metadata',
-        new Blob([JSON.stringify({ name: CONFIG_FILENAME })], { type: 'application/json' })
-      );
       await axios.patch(
-        `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`,
-        form,
-        { headers: this.headers }
+        `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+        content,
+        {
+          headers: {
+            ...this.headers,
+            'Content-Type': 'application/json',
+          },
+        }
       );
     } else {
-      // Create new file in the hidden appDataFolder (only this app + your account can access it)
-      form.append(
-        'metadata',
-        new Blob(
-          [JSON.stringify({ name: CONFIG_FILENAME })],
-          { type: 'application/json' }
-        )
+      const createResponse = await axios.post(
+        'https://www.googleapis.com/drive/v3/files',
+        {
+          name: CONFIG_FILENAME,
+          mimeType: 'application/json',
+          parents: ['appDataFolder'],
+        },
+        {
+          params: { fields: 'id' },
+          headers: {
+            ...this.headers,
+            'Content-Type': 'application/json',
+          },
+        }
       );
-      await axios.post(
-        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&spaces=appDataFolder',
-        form,
-        { headers: this.headers }
+
+      const createdFileId = createResponse.data.id as string;
+      await axios.patch(
+        `https://www.googleapis.com/upload/drive/v3/files/${createdFileId}?uploadType=media`,
+        content,
+        {
+          headers: {
+            ...this.headers,
+            'Content-Type': 'application/json',
+          },
+        }
       );
     }
   }
