@@ -62,20 +62,32 @@ export class ConfigService {
   }
 
   private async createConfigFile(content: string): Promise<void> {
-    const form = new FormData();
-    form.append(
-      'metadata',
-      new Blob(
-        [JSON.stringify({ name: CONFIG_FILENAME, parents: ['appDataFolder'] })],
-        { type: 'application/json' }
-      )
+    const createResponse = await axios.post(
+      'https://www.googleapis.com/drive/v3/files',
+      {
+        name: CONFIG_FILENAME,
+        mimeType: 'application/json',
+        parents: ['appDataFolder'],
+      },
+      {
+        params: { fields: 'id' },
+        headers: {
+          ...this.headers,
+          'Content-Type': 'application/json',
+        },
+      }
     );
-    form.append('file', new Blob([content], { type: 'application/json' }));
 
-    await axios.post(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-      form,
-      { headers: this.headers }
+    const createdFileId = createResponse.data.id as string;
+    await axios.patch(
+      `https://www.googleapis.com/upload/drive/v3/files/${createdFileId}?uploadType=media`,
+      content,
+      {
+        headers: {
+          ...this.headers,
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 
