@@ -66,7 +66,7 @@ function App() {
   return (
     <div className="min-h-screen flex w-full flex-col bg-gradient-to-br from-[#F5F3FF] to-indigo-50 text-slate-900 font-sans">
       <header className="fixed top-4 inset-x-4 max-w-6xl mx-auto rounded-xl bg-white/70 backdrop-blur-md border border-white/40 shadow-sm z-50">
-        <div className="flex w-full items-center justify-between px-6 py-4">
+        <div className="flex w-full items-center justify-between px-6 py-2.5">
           <div className="flex items-center gap-2">
             <h1 className="m-0 text-xl font-bold text-deep-indigo font-heading">Channel Bot</h1>
           </div>
@@ -74,7 +74,7 @@ function App() {
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col pt-28 pb-8">
+      <main className="flex flex-1 flex-col pt-20 pb-8">
         {!api.isConfigured() ? (
           <div className="mx-auto flex max-w-2xl flex-1 flex-col justify-center px-4 text-center">
             <h2 className="mb-4 text-2xl font-bold text-deep-indigo font-heading">Backend URL required</h2>

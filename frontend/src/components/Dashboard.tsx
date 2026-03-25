@@ -584,12 +584,12 @@ export function Dashboard({
 
   if (showSettings && session.isAdmin) {
     return (
-      <div className="bg-white/80 backdrop-blur-md border border-white/50 p-6 rounded-2xl shadow-xl text-left max-w-5xl mx-auto mt-8">
+      <div className="bg-white/80 backdrop-blur-md border border-white/50 p-4 rounded-2xl shadow-xl text-left max-w-5xl mx-auto mt-8">
         <h2 className="text-2xl font-bold text-deep-indigo font-heading mb-6 flex items-center gap-2">
           <Settings className="w-6 h-6 text-primary" /> Settings
         </h2>
-        <div className="grid gap-5 xl:grid-cols-2">
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
+        <div className="grid gap-4 xl:grid-cols-2">
+          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">General</p>
             <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">Workspace core</h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -643,7 +643,7 @@ export function Dashboard({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Draft Workflow</p>
             <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">GitHub Actions</h3>
             <p className="mt-2 text-xs leading-5 text-slate-500">These values are only used for draft generation and refinement jobs.</p>
@@ -692,7 +692,7 @@ export function Dashboard({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
             <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">LinkedIn Publishing</h3>
             <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
@@ -728,7 +728,7 @@ export function Dashboard({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
+          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
             <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">WhatsApp Delivery</h3>
             <p className="mt-2 text-xs leading-5 text-slate-500">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
@@ -820,7 +820,7 @@ export function Dashboard({
 
   return (
     <div className="max-w-6xl mx-auto w-full p-4 space-y-8">
-      <div className="flex flex-wrap justify-between items-center gap-4 bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl p-6">
+      <div className="flex flex-wrap justify-between items-center gap-4 bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl p-4">
         <div>
           <h2 className="text-3xl font-bold text-deep-indigo font-heading tracking-tight">Content Pipeline</h2>
           <p className="mt-1 text-sm text-slate-500">Workspace managed by <span className="font-medium text-slate-700">{session.email}</span></p>
@@ -864,7 +864,7 @@ export function Dashboard({
         </div>
       </div>
 
-      <div className="grid gap-4 rounded-2xl border border-white/50 bg-white/80 p-5 shadow-xl lg:grid-cols-[240px_minmax(0,1fr)] mb-8">
+      <div className="grid gap-4 rounded-2xl border border-white/50 bg-white/80 p-4 shadow-xl lg:grid-cols-[240px_minmax(0,1fr)] mb-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Delivery</p>
           <h3 className="mt-2 text-xl font-bold text-deep-indigo font-heading">Choose channel</h3>
@@ -978,13 +978,13 @@ export function Dashboard({
           value={newTopic}
           onChange={(e) => setNewTopic(e.target.value)}
           placeholder="Add a new topic for research..."
-          className="flex-1 border border-white/40 shadow-sm rounded-xl px-5 py-4 text-slate-900 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 text-lg"
+          className="flex-1 border border-white/40 shadow-sm rounded-xl px-5 py-2.5 text-slate-900 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 text-base"
           disabled={loading}
         />
         <button 
           type="submit"
           disabled={loading || !newTopic.trim()}
-          className="flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-xl hover:-translate-y-0.5 hover:shadow-md hover:bg-indigo-600 disabled:opacity-50 disabled:hover:translate-y-0 transition-all duration-200 font-semibold text-lg"
+          className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl hover:-translate-y-0.5 hover:shadow-md hover:bg-indigo-600 disabled:opacity-50 disabled:hover:translate-y-0 transition-all duration-200 font-semibold text-base"
         >
           <Plus className="w-6 h-6" /> Add Topic
         </button>
@@ -994,10 +994,10 @@ export function Dashboard({
         <table className="min-w-full divide-y divide-slate-100 text-left">
           <thead className="bg-slate-50/50">
             <tr>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Topic</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Status</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Date</th>
-              <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Actions</th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Topic</th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Status</th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Date</th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -1016,18 +1016,18 @@ export function Dashboard({
             ) : (
               rows.map((row) => (
                 <tr key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="hover:bg-white/60 transition-colors duration-150 group">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm font-semibold text-slate-800">
                     {row.topic}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm">
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full shadow-sm ${getStatusColor(row.status)}`}>
                       {row.status || 'Pending'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-500">
                     {row.date}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium">
                     <div className="flex flex-wrap items-center gap-4 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
                       {row.status?.toLowerCase() === 'pending' && (
                         <button

@@ -162,8 +162,8 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
         <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-[32px] border border-white/40 bg-gradient-to-b from-white/95 to-slate-50/95 shadow-2xl backdrop-blur-xl">
-          <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(300px,0.58fr)_minmax(0,0.92fr)_minmax(420px,0.92fr)]">
-            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-white/50 p-5 xl:border-b-0 xl:border-r xl:p-6">
+          <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(280px,0.5fr)_minmax(0,1fr)_minmax(360px,0.8fr)]">
+            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-white/50 p-3 xl:border-b-0 xl:border-r xl:p-4">
               <div className="min-h-0 overflow-y-auto pr-2 custom-scrollbar">
                 {options.length > 0 ? (
                   <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-lg backdrop-blur-sm sm:p-6">
@@ -192,7 +192,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
               </div>
             </section>
 
-            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-slate-50/50 p-5 xl:border-b-0 xl:border-r xl:p-6">
+            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-slate-50/50 p-3 xl:border-b-0 xl:border-r xl:p-4">
               <div className="min-h-0 overflow-y-auto custom-scrollbar">
                 {selectedOption ? (
                   <LinkedInPostPreview
@@ -213,7 +213,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
               </div>
             </section>
 
-            <aside className="flex min-h-0 flex-col bg-white/60 p-5 xl:p-6 backdrop-blur-sm">
+            <aside className="flex min-h-0 flex-col bg-white/60 p-3 xl:p-4 backdrop-blur-sm">
               <div className="flex h-full min-h-0 flex-col rounded-[32px] border border-white/60 bg-white/90 p-6 shadow-xl sm:p-8 backdrop-blur-md">
                 <div className="min-h-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <section>
@@ -229,7 +229,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     value={editableText}
                     onChange={(event) => setEditableText(event.target.value)}
                     placeholder="Edit the selected draft here before approval or refinement."
-                    className="mt-2 min-h-[260px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
+                    className="mt-2 min-h-[160px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
                   />
                   <label className="mt-4 block text-sm font-medium text-[#374151]" htmlFor="refinement-notes">
                     Tell Gemini what to improve
@@ -239,7 +239,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     value={refinementPrompt}
                     onChange={(event) => setRefinementPrompt(event.target.value)}
                     placeholder="Examples: make it more founder-like, remove jargon, add a stronger hook, keep it under 180 words."
-                    className="mt-2 min-h-[128px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
+                    className="mt-2 min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
                   />
                   <p className="mt-2 text-xs leading-5 text-[#6b7280]">
                     Approval uses the edited copy above immediately. Refinement sends the edited draft plus these notes to Gemini and replaces the four sheet variants with a fresh set.
@@ -288,7 +288,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                                 }}
                               />
                             </div>
-                            <div className="px-4 py-3">
+                            <div className="px-3 py-2">
                               <p className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-slate-700'}`}>Image {imageOption.originalIndex + 1}</p>
                               <p className="mt-1 text-xs leading-5 text-slate-500">
                                 {isSelected ? 'Selected for this post' : 'Click to select'}

@@ -80,7 +80,7 @@ export function LinkedInPostPreview({
       onClick={onSelect}
       aria-pressed={selected}
       className={`group relative w-full text-left transition-all duration-300 outline-none ${
-        isCarousel ? 'h-full rounded-3xl p-3' : 'rounded-[32px] p-4 sm:p-5'
+        isCarousel ? 'h-full rounded-3xl p-3' : 'rounded-[32px] p-3 sm:p-4'
       } ${
         selected
           ? 'bg-white/80 border-2 border-primary shadow-xl ring-4 ring-primary/10'
@@ -103,9 +103,9 @@ export function LinkedInPostPreview({
         </div>
       </div>
 
-      <div className={`overflow-hidden bg-slate-50/50 backdrop-blur-sm border border-slate-200 ${isCarousel ? 'rounded-2xl p-2.5 sm:p-3' : 'rounded-[28px] p-3 sm:p-5'}`}>
+      <div className={`overflow-hidden bg-slate-50/50 backdrop-blur-sm border border-slate-200 ${isCarousel ? 'rounded-2xl p-2.5 sm:p-3' : 'rounded-[28px] p-2.5 sm:p-4'}`}>
         <div className={`mx-auto overflow-hidden bg-white shadow-sm border border-slate-100 ${isCarousel ? 'max-w-none rounded-[16px]' : 'max-w-[430px] rounded-2xl'}`}>
-          <div className={isCarousel ? 'px-4 pb-3.5 pt-4' : 'px-5 pb-4 pt-5'}>
+          <div className={isCarousel ? 'px-4 pb-3.5 pt-4' : 'px-4 pb-3 pt-4'}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 gap-3 items-center">
                 <div className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 font-bold text-white shadow-inner ${isCarousel ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base'}`}>
@@ -124,7 +124,7 @@ export function LinkedInPostPreview({
               <MoreHorizontal className={`mt-1 shrink-0 text-slate-400 hover:text-slate-600 transition-colors ${isCarousel ? 'h-4 w-4' : 'h-5 w-5'}`} />
             </div>
 
-            <div className={`text-slate-800 ${isCarousel ? 'mt-4 text-[0.85rem] leading-snug' : 'mt-5 text-[0.95rem] leading-relaxed'}`}>
+            <div className={`text-slate-800 ${isCarousel ? 'mt-4 text-[0.85rem] leading-snug' : 'mt-4 text-[0.95rem] leading-relaxed'}`}>
               <div
                 className={!expanded && shouldClamp ? 'overflow-hidden' : undefined}
                 style={!expanded && shouldClamp ? { display: '-webkit-box', WebkitLineClamp: isCarousel ? 4 : 5, WebkitBoxOrient: 'vertical' } : undefined}
@@ -172,8 +172,8 @@ export function LinkedInPostPreview({
               </div>
             </div>
           ) : imageUrl ? (
-            <div className="border-y border-slate-100 bg-slate-50 px-5 py-8 text-center text-slate-500">
-              <div className="mx-auto flex max-w-[260px] flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 shadow-sm">
+            <div className="border-y border-slate-100 bg-slate-50 px-4 py-6 text-center text-slate-500">
+              <div className="mx-auto flex max-w-[260px] flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 shadow-sm">
                 <div className="p-3 bg-slate-50 rounded-full">
                   <ImageOff className="h-6 w-6 text-slate-400" />
                 </div>
@@ -183,7 +183,7 @@ export function LinkedInPostPreview({
             </div>
           ) : null}
 
-          <div className={`text-slate-500 ${isCarousel ? 'px-4 py-2.5 text-[0.75rem]' : 'px-5 py-3 text-[0.8rem]'}`}>
+          <div className={`text-slate-500 ${isCarousel ? 'px-4 py-2.5 text-[0.75rem]' : 'px-4 py-2.5 text-[0.8rem]'}`}>
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-1.5">
@@ -201,9 +201,9 @@ export function LinkedInPostPreview({
             </div>
           </div>
 
-          <div className={`grid grid-cols-4 ${isCarousel ? 'px-1.5 pb-2 pt-0.5' : 'px-2 pb-2.5 pt-1'}`}>
+          <div className={`grid grid-cols-4 ${isCarousel ? 'px-1.5 pb-2 pt-0.5' : 'px-2 pb-2 pt-0.5'}`}>
             {ACTIONS.map(({ label, icon: Icon }) => (
-              <div key={label} className={`flex items-center justify-center gap-1.5 rounded-xl font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer ${isCarousel ? 'px-2 py-2.5 text-[0.7rem]' : 'px-3 py-3 text-[0.8rem]'}`}>
+              <div key={label} className={`flex items-center justify-center gap-1.5 rounded-xl font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer ${isCarousel ? 'px-2 py-2.5 text-[0.7rem]' : 'px-2 py-2.5 text-[0.8rem]'}`}>
                 <Icon className={isCarousel ? 'h-4 w-4' : 'h-4.5 w-4.5'} />
                 <span className="hidden sm:inline">{label}</span>
               </div>
