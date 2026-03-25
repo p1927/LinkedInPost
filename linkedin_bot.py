@@ -23,7 +23,7 @@ GOOGLE_DOC_ID = os.environ.get('GOOGLE_DOC_ID') # ID of the 'Posted' Google Doc
 
 # Gemini for Research and Post Generation
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GOOGLE_MODEL = os.environ.get('GOOGLE_MODEL', 'gemini-1.5-flash')
+GOOGLE_MODEL = os.environ.get('GOOGLE_MODEL', 'gemini-2.5-flash')
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 

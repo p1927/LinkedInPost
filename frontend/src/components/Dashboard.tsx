@@ -70,6 +70,12 @@ export function Dashboard({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
+  const [lastDeliverySummary, setLastDeliverySummary] = useState<{
+    topic: string;
+    channel: ChannelId;
+    mediaMode: 'image' | 'text';
+    recipientLabel: string;
+  } | null>(null);
 
   useEffect(() => {
     setSheetIdInput(session.config.spreadsheetId);
@@ -375,9 +381,19 @@ export function Dashboard({
       });
 
       if (result.deliveryMode === 'sent') {
+        setLastDeliverySummary({
+          topic: row.topic,
+          channel: selectedChannel,
+          mediaMode: result.mediaMode,
+          recipientLabel: selectedChannel === 'whatsapp'
+            ? (selectedRecipientLabel || resolvedRecipientPhoneNumber)
+            : 'LinkedIn audience',
+        });
         await loadData(true);
         alert(
-          `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientPhoneNumber} on ${getChannelLabel(selectedChannel)}.`
+          selectedChannel === 'whatsapp'
+            ? `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientPhoneNumber} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`
+            : `Published "${row.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`
         );
       } else {
         alert(
@@ -443,6 +459,26 @@ export function Dashboard({
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Google Spreadsheet ID</label>
+
+            {lastDeliverySummary ? (
+              <div className="rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <h3 className="text-lg font-bold text-slate-900 font-heading">{lastDeliverySummary.topic}</h3>
+                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+                    {getChannelLabel(lastDeliverySummary.channel)}
+                  </span>
+                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+                    {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {lastDeliverySummary.channel === 'whatsapp'
+                    ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
+                    : 'Delivered to LinkedIn using the currently approved text and selected media.'}
+                </p>
+              </div>
+            ) : null}
                 <input
                   type="text"
                   value={sheetIdInput}

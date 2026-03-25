@@ -23,6 +23,7 @@ export interface PublishContentResult {
   recipientPhoneNumber: string | null;
   messageId: string | null;
   deliveryMode: 'queued' | 'sent';
+  mediaMode: 'image' | 'text';
 }
 
 interface ApiEnvelope<T> {

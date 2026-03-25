@@ -80,6 +80,8 @@ class WorkerBootstrap:
     cors_allowed_origins: str
     encryption_key: str
     github_repo: str
+    linkedin_person_urn: str
+    whatsapp_phone_number_id: str
     kv_namespace_id: str = ''
     kv_preview_id: str = ''
     worker_url: str = ''
@@ -146,6 +148,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--google-client-id', default=os.environ.get('VITE_GOOGLE_CLIENT_ID', '').strip() or os.environ.get('GOOGLE_CLIENT_ID', '').strip(), help='Google web client ID for frontend and Worker validation.')
     parser.add_argument('--github-pages-origin', default=os.environ.get('GITHUB_PAGES_ORIGIN', '').strip(), help='Origin allowed to call the Worker, for example https://user.github.io.')
     parser.add_argument('--github-repo', default=os.environ.get('GITHUB_REPO', '').strip(), help='GitHub repository in owner/repo format.')
+    parser.add_argument('--linkedin-person-urn', default=os.environ.get('LINKEDIN_PERSON_URN', '').strip(), help='LinkedIn member URN used by the Worker for direct publishing.')
+    parser.add_argument('--whatsapp-phone-number-id', default=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip(), help='Meta WhatsApp phone number ID used by the Worker for direct sending.')
     parser.add_argument('--all', action='store_true', help='Run Google setup, Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
     return parser.parse_args()
 
@@ -175,7 +179,7 @@ def main() -> None:
 
     worker_bootstrap = None
     if args.cloudflare or args.deploy_worker or args.sync_github_secrets:
-        worker_bootstrap = bootstrap_worker_config(args)
+        worker_bootstrap = bootstrap_worker_config(args, google_resources)
 
     if args.cloudflare:
         create_cloudflare_kv_namespaces(worker_bootstrap)
@@ -376,7 +380,7 @@ def fetch_linkedin_person_urn() -> str:
     return urn
 
 
-def bootstrap_worker_config(args: argparse.Namespace) -> WorkerBootstrap:
+def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleResources | None) -> WorkerBootstrap:
     github_repo = args.github_repo or infer_github_repo()
     github_pages_origin = normalize_origin(args.github_pages_origin) or infer_github_pages_origin(github_repo)
     allowed_emails = normalize_space_delimited(args.allowed_emails or args.share_email)
@@ -398,6 +402,8 @@ def bootstrap_worker_config(args: argparse.Namespace) -> WorkerBootstrap:
         ),
         encryption_key=encryption_key,
         github_repo=github_repo,
+        linkedin_person_urn=args.linkedin_person_urn or (google_resources.linkedin_person_urn if google_resources else ''),
+        whatsapp_phone_number_id=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip() or args.whatsapp_phone_number_id,
     )
 
 
@@ -496,6 +502,8 @@ def update_wrangler_config(worker_bootstrap: WorkerBootstrap) -> None:
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
         'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
+        'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
+        'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
     }
     WORKER_WRANGLER_CONFIG.write_text(json.dumps(config, indent=2) + '\n')
     ok('wrangler.jsonc updated', str(WORKER_WRANGLER_CONFIG))
@@ -527,6 +535,10 @@ def write_worker_dev_vars(worker_bootstrap: WorkerBootstrap, google_resources: G
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
+        'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
+        'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
+        'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
+        'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
     }
     lines = [f'{key}={value}' for key, value in values.items() if value]
     WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
@@ -545,6 +557,8 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: Go
             'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
             'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
             'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
+            'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
+            'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
         }
     ) as secrets_file:
         result = run_command(
@@ -748,6 +762,8 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: Goo
         'GOOGLE_SEARCH_CX': os.environ.get('GOOGLE_SEARCH_CX', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'LINKEDIN_PERSON_URN': google_resources.linkedin_person_urn if google_resources else os.environ.get('LINKEDIN_PERSON_URN', '').strip(),
+        'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
+        'WHATSAPP_PHONE_NUMBER_ID': os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip(),
     }
 
     for name, value in secrets_to_sync.items():
@@ -769,12 +785,15 @@ def print_summary(args: argparse.Namespace, google_resources: GoogleResources | 
         print(f'GOOGLE_DOC_ID           = {google_resources.doc_id}')
         print('GOOGLE_CREDENTIALS_JSON = <service account JSON already loaded from env>')
         print(f'LINKEDIN_PERSON_URN     = {google_resources.linkedin_person_urn or "urn:li:person:<your_id>"}')
+        print(f'WHATSAPP_PHONE_NUMBER_ID = {os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "").strip() or "<set this value>"}')
 
     if worker_bootstrap:
         print(f'VITE_GOOGLE_CLIENT_ID   = {worker_bootstrap.google_client_id or "<set this value>"}')
         print(f'ALLOWED_EMAILS          = {worker_bootstrap.allowed_emails or "<set this value>"}')
         print(f'ADMIN_EMAILS            = {worker_bootstrap.admin_emails or "<set this value>"}')
         print(f'CORS_ALLOWED_ORIGINS    = {worker_bootstrap.cors_allowed_origins or "<set this value>"}')
+        print(f'LINKEDIN_PERSON_URN     = {worker_bootstrap.linkedin_person_urn or "<set this value>"}')
+        print(f'WHATSAPP_PHONE_NUMBER_ID = {worker_bootstrap.whatsapp_phone_number_id or "<set this value>"}')
         print(f'GITHUB_TOKEN_ENCRYPTION_KEY = {worker_bootstrap.encryption_key}')
         if worker_bootstrap.kv_namespace_id:
             print(f'CONFIG_KV production    = {worker_bootstrap.kv_namespace_id}')

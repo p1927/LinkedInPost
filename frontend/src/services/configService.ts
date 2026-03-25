@@ -6,9 +6,10 @@ export interface GoogleModelOption {
   label: string;
 }
 
-export const DEFAULT_GOOGLE_MODEL = 'gemini-1.5-flash';
+export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
 
 export const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
   { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },

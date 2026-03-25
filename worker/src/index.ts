@@ -14,6 +14,10 @@ interface Env {
   GEMINI_API_KEY?: string;
   GITHUB_TOKEN_ENCRYPTION_KEY?: string;
   CORS_ALLOWED_ORIGINS?: string;
+  LINKEDIN_PERSON_URN?: string;
+  LINKEDIN_ACCESS_TOKEN?: string;
+  WHATSAPP_PHONE_NUMBER_ID?: string;
+  WHATSAPP_ACCESS_TOKEN?: string;
 }
 
 interface BotConfig {
@@ -37,8 +41,10 @@ interface StoredConfig {
   defaultChannel: ChannelId;
   linkedinPersonUrn: string;
   linkedinAccessTokenCiphertext?: string;
+  linkedinAccessToken?: string;
   whatsappPhoneNumberId: string;
   whatsappAccessTokenCiphertext?: string;
+  whatsappAccessToken?: string;
   whatsappRecipients: WhatsAppRecipient[];
 }
 
@@ -141,7 +147,7 @@ interface GeminiModelsResponse {
 }
 
 const CONFIG_KEY = 'shared-config';
-const GOOGLE_MODEL_DEFAULT = 'gemini-1.5-flash';
+const GOOGLE_MODEL_DEFAULT = 'gemini-2.5-flash';
 const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be decrypted. This usually means GITHUB_TOKEN_ENCRYPTION_KEY changed after the token was saved. Ask an admin to open Settings and save the GitHub token again.';
 const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const WHATSAPP_TOKEN_REAUTH_MESSAGE = 'The stored WhatsApp access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
@@ -167,6 +173,7 @@ const PIPELINE_HEADERS = [
   'Post Time',
 ];
 const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
   { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
@@ -345,10 +352,12 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
     githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
     defaultChannel: config?.defaultChannel === 'whatsapp' ? 'whatsapp' : 'linkedin',
-    linkedinPersonUrn: config?.linkedinPersonUrn || '',
+    linkedinPersonUrn: config?.linkedinPersonUrn || String(env.LINKEDIN_PERSON_URN || '').trim(),
     linkedinAccessTokenCiphertext: config?.linkedinAccessTokenCiphertext || undefined,
-    whatsappPhoneNumberId: config?.whatsappPhoneNumberId || '',
+    linkedinAccessToken: String(env.LINKEDIN_ACCESS_TOKEN || '').trim() || undefined,
+    whatsappPhoneNumberId: config?.whatsappPhoneNumberId || String(env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
     whatsappAccessTokenCiphertext: config?.whatsappAccessTokenCiphertext || undefined,
+    whatsappAccessToken: String(env.WHATSAPP_ACCESS_TOKEN || '').trim() || undefined,
     whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
   };
 }
@@ -361,9 +370,9 @@ function toPublicConfig(config: StoredConfig): BotConfig {
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
     defaultChannel: config.defaultChannel,
     linkedinPersonUrn: config.linkedinPersonUrn,
-    hasLinkedInAccessToken: Boolean(config.linkedinAccessTokenCiphertext),
+    hasLinkedInAccessToken: Boolean(config.linkedinAccessTokenCiphertext || config.linkedinAccessToken),
     whatsappPhoneNumberId: config.whatsappPhoneNumberId,
-    hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext),
+    hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext || config.whatsappAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
   };
 }
@@ -456,7 +465,7 @@ async function publishContent(
   config: StoredConfig,
   payload: Record<string, unknown>,
   sheets: SheetsGateway,
-): Promise<{ success: true; channel: ChannelId; recipientPhoneNumber: string | null; messageId: string | null; deliveryMode: 'queued' | 'sent' }> {
+): Promise<{ success: true; channel: ChannelId; recipientPhoneNumber: string | null; messageId: string | null; deliveryMode: 'queued' | 'sent'; mediaMode: 'image' | 'text' }> {
   const row = coerceSheetRow(payload.row);
   const channel = coerceChannelId(payload.channel);
   const recipientPhoneNumber = normalizePhoneNumber(String(payload.recipientPhoneNumber || ''));
@@ -468,26 +477,30 @@ async function publishContent(
   }
 
   if (channel === 'linkedin') {
-    if (!config.linkedinPersonUrn || !config.linkedinAccessTokenCiphertext) {
+    if (!config.linkedinPersonUrn || (!config.linkedinAccessTokenCiphertext && !config.linkedinAccessToken)) {
       throw new Error('LinkedIn publishing is not configured. Ask an admin to complete the LinkedIn settings.');
     }
 
     let linkedinAccessToken: string;
-    try {
-      linkedinAccessToken = await decryptSecret(
-        config.linkedinAccessTokenCiphertext,
-        requireSecretEncryptionKey(env),
-        LINKEDIN_TOKEN_REAUTH_MESSAGE,
-      );
-    } catch (error) {
-      if (error instanceof Error && error.message === LINKEDIN_TOKEN_REAUTH_MESSAGE) {
-        const nextConfig: StoredConfig = {
-          ...config,
-          linkedinAccessTokenCiphertext: undefined,
-        };
-        await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+    if (config.linkedinAccessTokenCiphertext) {
+      try {
+        linkedinAccessToken = await decryptSecret(
+          config.linkedinAccessTokenCiphertext,
+          requireSecretEncryptionKey(env),
+          LINKEDIN_TOKEN_REAUTH_MESSAGE,
+        );
+      } catch (error) {
+        if (error instanceof Error && error.message === LINKEDIN_TOKEN_REAUTH_MESSAGE) {
+          const nextConfig: StoredConfig = {
+            ...config,
+            linkedinAccessTokenCiphertext: undefined,
+          };
+          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+        }
+        throw error;
       }
-      throw error;
+    } else {
+      linkedinAccessToken = String(config.linkedinAccessToken || '').trim();
     }
 
     const publishResult = await publishLinkedInPost({
@@ -511,6 +524,7 @@ async function publishContent(
       recipientPhoneNumber: null,
       messageId: publishResult.postId,
       deliveryMode: 'sent',
+      mediaMode: imageUrl ? 'image' : 'text',
     };
   }
 
@@ -518,26 +532,30 @@ async function publishContent(
     throw new Error('A valid WhatsApp recipient phone number is required.');
   }
 
-  if (!config.whatsappPhoneNumberId || !config.whatsappAccessTokenCiphertext) {
+  if (!config.whatsappPhoneNumberId || (!config.whatsappAccessTokenCiphertext && !config.whatsappAccessToken)) {
     throw new Error('WhatsApp delivery is not configured. Ask an admin to add the phone number ID and access token.');
   }
 
   let accessToken: string;
-  try {
-    accessToken = await decryptSecret(
-      config.whatsappAccessTokenCiphertext,
-      requireSecretEncryptionKey(env),
-      WHATSAPP_TOKEN_REAUTH_MESSAGE,
-    );
-  } catch (error) {
-    if (error instanceof Error && error.message === WHATSAPP_TOKEN_REAUTH_MESSAGE) {
-      const nextConfig: StoredConfig = {
-        ...config,
-        whatsappAccessTokenCiphertext: undefined,
-      };
-      await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  if (config.whatsappAccessTokenCiphertext) {
+    try {
+      accessToken = await decryptSecret(
+        config.whatsappAccessTokenCiphertext,
+        requireSecretEncryptionKey(env),
+        WHATSAPP_TOKEN_REAUTH_MESSAGE,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === WHATSAPP_TOKEN_REAUTH_MESSAGE) {
+        const nextConfig: StoredConfig = {
+          ...config,
+          whatsappAccessTokenCiphertext: undefined,
+        };
+        await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+      }
+      throw error;
     }
-    throw error;
+  } else {
+    accessToken = String(config.whatsappAccessToken || '').trim();
   }
 
   const sendResult = await sendWhatsAppMessage({
@@ -563,6 +581,7 @@ async function publishContent(
     recipientPhoneNumber,
     messageId: sendResult.messageId,
     deliveryMode: 'sent',
+    mediaMode: imageUrl ? 'image' : 'text',
   };
 }
 

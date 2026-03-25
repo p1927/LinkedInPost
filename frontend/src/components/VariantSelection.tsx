@@ -159,15 +159,15 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(17,24,39,0.66)] px-2 py-2 backdrop-blur-sm sm:px-3 sm:py-3">
-      <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-1rem,1760px)] items-center justify-center">
-        <div className="flex max-h-[calc(100vh-1rem)] w-full flex-col overflow-hidden rounded-[28px] border border-white/60 bg-[linear-gradient(180deg,#fcfaf6_0%,#f3f6fb_100%)] shadow-[0_28px_100px_rgba(15,23,42,0.35)]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
+      <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
+        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-[32px] border border-white/40 bg-gradient-to-b from-white/95 to-slate-50/95 shadow-2xl backdrop-blur-xl">
           <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(300px,0.58fr)_minmax(0,0.92fr)_minmax(420px,0.92fr)]">
-            <section className="flex min-h-0 flex-col border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(247,249,252,0.96)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
-              <div className="min-h-0 overflow-y-auto pr-1">
+            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-white/50 p-5 xl:border-b-0 xl:border-r xl:p-6">
+              <div className="min-h-0 overflow-y-auto pr-2 custom-scrollbar">
                 {options.length > 0 ? (
-                  <div className="rounded-[28px] border border-[#d8dce6] bg-white/80 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-5">
-                    <div className="space-y-4">
+                  <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-lg backdrop-blur-sm sm:p-6">
+                    <div className="space-y-5">
                       {options.map((option, index) => (
                         <div key={`option-${index}`}>
                           <LinkedInPostPreview
@@ -185,15 +185,15 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-[28px] border border-dashed border-[#cfd6e1] bg-white/70 px-6 py-12 text-center text-sm text-[#596577]">
+                  <div className="rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 px-6 py-16 text-center text-slate-500 shadow-sm">
                     No draft variants are available for this topic yet.
                   </div>
                 )}
               </div>
             </section>
 
-            <section className="flex min-h-0 flex-col border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(242,246,251,0.98)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
-              <div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <section className="flex min-h-0 flex-col border-b border-slate-200/60 bg-slate-50/50 p-5 xl:border-b-0 xl:border-r xl:p-6">
+              <div className="min-h-0 overflow-y-auto custom-scrollbar">
                 {selectedOption ? (
                   <LinkedInPostPreview
                     optionNumber={(selectedOptionIndex ?? 0) + 1}
@@ -206,16 +206,16 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     mode="hero"
                   />
                 ) : (
-                  <div className="rounded-[28px] border border-dashed border-[#cfd6e1] bg-white/70 px-6 py-12 text-center text-sm text-[#596577]">
+                  <div className="rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 px-6 py-16 text-center text-slate-500 shadow-sm">
                     Pick a variant to see the larger preview.
                   </div>
                 )}
               </div>
             </section>
 
-            <aside className="flex min-h-0 flex-col bg-white/80 p-4 xl:p-5">
-              <div className="flex h-full min-h-0 flex-col rounded-[32px] border border-[#d8dce6] bg-white p-5 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-6">
-                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+            <aside className="flex min-h-0 flex-col bg-white/60 p-5 xl:p-6 backdrop-blur-sm">
+              <div className="flex h-full min-h-0 flex-col rounded-[32px] border border-white/60 bg-white/90 p-6 shadow-xl sm:p-8 backdrop-blur-md">
+                <div className="min-h-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 <section>
                   <div className="mb-3 flex items-center gap-2 text-[#1f2937]">
                     <Sparkles className="h-4 w-4" />
