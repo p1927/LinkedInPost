@@ -46,6 +46,43 @@ SHEET_HEADERS = [
     'Image Link 1', 'Image Link 2', 'Image Link 3', 'Image Link 4',
     'Selected Text', 'Selected Image ID', 'Post Time',
 ]
+TOPICS_HEADERS = ['Topic', 'Date']
+
+
+def ensure_sheet_tab(sheets, spreadsheet_id: str, title: str, headers: list[str]) -> None:
+    metadata = sheets.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+    existing = {
+        sheet.get('properties', {}).get('title')
+        for sheet in metadata.get('sheets', [])
+    }
+
+    if title not in existing:
+        sheets.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={
+                'requests': [
+                    {
+                        'addSheet': {
+                            'properties': {
+                                'title': title,
+                            }
+                        }
+                    }
+                ]
+            },
+        ).execute()
+
+    header_response = sheets.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id,
+        range=f'{title}!A1',
+    ).execute()
+    if not header_response.get('values'):
+        sheets.spreadsheets().values().update(
+            spreadsheetId=spreadsheet_id,
+            range=f'{title}!A1',
+            valueInputOption='RAW',
+            body={'values': [headers]},
+        ).execute()
 
 
 def ok(label: str, value: str) -> None:
@@ -133,16 +170,21 @@ def main() -> None:
         # Write headers using the Sheets API now that the file exists
         try:
             sheets = build('sheets', 'v4', credentials=creds)
-            sheets.spreadsheets().values().update(
-                spreadsheetId=sheet_id,
-                range='Sheet1!A1',
-                valueInputOption='RAW',
-                body={'values': [SHEET_HEADERS]},
-            ).execute()
+            ensure_sheet_tab(sheets, sheet_id, 'Topics', TOPICS_HEADERS)
+            ensure_sheet_tab(sheets, sheet_id, 'Draft', SHEET_HEADERS)
+            ensure_sheet_tab(sheets, sheet_id, 'Post', SHEET_HEADERS)
             ok('Google Sheet ID (new, with headers)', sheet_id)
         except Exception as e:
             ok('Google Sheet ID (new, headers failed — add manually)', sheet_id)
-            print(f"    Headers to add manually: {', '.join(SHEET_HEADERS)}")
+            print(f"    Topics headers: {', '.join(TOPICS_HEADERS)}")
+            print(f"    Draft/Post headers: {', '.join(SHEET_HEADERS)}")
+
+    try:
+        ensure_sheet_tab(sheets, sheet_id, 'Topics', TOPICS_HEADERS)
+        ensure_sheet_tab(sheets, sheet_id, 'Draft', SHEET_HEADERS)
+        ensure_sheet_tab(sheets, sheet_id, 'Post', SHEET_HEADERS)
+    except Exception:
+        print("  Warning: could not fully verify Topics/Draft/Post tabs. You can create them manually if needed.")
 
     # ── 2. Images subfolder inside LINKEDIN ───────────────────────────────────
     print("\n[2/4] Checking for existing 'Images' subfolder...")

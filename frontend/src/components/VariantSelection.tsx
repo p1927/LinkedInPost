@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { CalendarClock } from 'lucide-react';
 import type { SheetRow } from '../services/sheets';
+import { LinkedInPostPreview } from './LinkedInPostPreview';
 
 interface Props {
   row: SheetRow;
@@ -8,24 +10,35 @@ interface Props {
 }
 
 export function VariantSelection({ row, onApprove, onCancel }: Props) {
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number | null>(null);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
+  const [expandedOptions, setExpandedOptions] = useState<number[]>([]);
   const [postTime, setPostTime] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
-  const variants = [row.variant1, row.variant2, row.variant3, row.variant4].filter(Boolean);
-  const images = [row.imageLink1, row.imageLink2, row.imageLink3, row.imageLink4].filter(Boolean);
+  const options = [
+    { text: row.variant1, imageUrl: row.imageLink1 },
+    { text: row.variant2, imageUrl: row.imageLink2 },
+    { text: row.variant3, imageUrl: row.imageLink3 },
+    { text: row.variant4, imageUrl: row.imageLink4 },
+  ].filter((option) => option.text);
+
+  const toggleExpanded = (index: number) => {
+    setExpandedOptions((current) =>
+      current.includes(index) ? current.filter((value) => value !== index) : [...current, index]
+    );
+  };
 
   const handleSubmit = async () => {
-    if (selectedVariantIndex === null) {
-      alert('Please select a text variant.');
+    if (selectedOptionIndex === null) {
+      alert('Please select one of the draft post previews.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const selectedText = variants[selectedVariantIndex];
-      const selectedImageId = selectedImageIndex !== null ? images[selectedImageIndex] : '';
+      const selectedOption = options[selectedOptionIndex];
+      const selectedText = selectedOption.text;
+      const selectedImageId = selectedOption.imageUrl || '';
       
       // Convert local datetime-local to format expected by backend (YYYY-MM-DD HH:MM)
       let formattedTime = '';
@@ -49,119 +62,97 @@ export function VariantSelection({ row, onApprove, onCancel }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Review Variants</h2>
-            <p className="text-sm text-gray-500">Topic: {row.topic}</p>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(17,24,39,0.66)] px-4 py-6 backdrop-blur-sm sm:px-6">
+      <div className="mx-auto flex min-h-full w-full max-w-7xl items-center justify-center">
+        <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-[32px] border border-white/60 bg-[linear-gradient(180deg,#fcfaf6_0%,#f3f6fb_100%)] shadow-[0_28px_100px_rgba(15,23,42,0.35)]">
+          <div className="sticky top-0 z-10 border-b border-[#d9dee8] bg-[rgba(252,250,246,0.92)] px-6 py-5 backdrop-blur">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[#6a7380]">Research-based preview</p>
+                <h2 className="mt-2 text-2xl font-bold text-[#1a2433]">Review draft posts as feed-ready previews</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#55606f]">
+                  Each option pairs the generated copy with its matching image so you can approve the post the way it will read in a LinkedIn-style feed card.
+                </p>
+                <p className="mt-2 text-sm font-medium text-[#1f2937]">Topic: {row.topic}</p>
+              </div>
+              <button onClick={onCancel} className="rounded-full border border-[#d2d8e2] bg-white px-3 py-2 text-sm font-medium text-[#4b5563] transition hover:border-[#9ca9bb] hover:text-[#111827]">
+                Close
+              </button>
+            </div>
           </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
-            ✕
-          </button>
-        </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
-          <div className="space-y-8">
-            <section>
-              <h3 className="text-lg font-semibold mb-4">1. Select Text Variant</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {variants.map((variant, index) => (
-                  <div 
-                    key={`variant-${index}`}
-                    onClick={() => setSelectedVariantIndex(index)}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedVariantIndex === index 
-                        ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50/30' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-gray-700">Variant {index + 1}</span>
-                      <input 
-                        type="radio" 
-                        checked={selectedVariantIndex === index} 
-                        readOnly 
-                        className="text-blue-600"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{variant}</p>
-                  </div>
+          <div className="grid flex-1 gap-0 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="p-5 sm:p-6">
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                {options.map((option, index) => (
+                  <LinkedInPostPreview
+                    key={`option-${index}`}
+                    optionNumber={index + 1}
+                    text={option.text}
+                    imageUrl={option.imageUrl}
+                    selected={selectedOptionIndex === index}
+                    expanded={expandedOptions.includes(index)}
+                    onSelect={() => setSelectedOptionIndex(index)}
+                    onToggleExpanded={() => toggleExpanded(index)}
+                  />
                 ))}
               </div>
-            </section>
+            </div>
 
-            {images.length > 0 && (
-              <section>
-                <h3 className="text-lg font-semibold mb-4">2. Select Image (Optional)</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {images.map((img, index) => (
-                    <div 
-                      key={`img-${index}`}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`relative aspect-square border rounded-lg cursor-pointer overflow-hidden group ${
-                        selectedImageIndex === index 
-                          ? 'border-blue-500 ring-2 ring-blue-200' 
-                          : 'border-gray-200'
-                      }`}
-                    >
-                      <img src={img} alt={`Generated option ${index + 1}`} className="w-full h-full object-cover" />
-                      <div className={`absolute inset-0 flex items-center justify-center ${selectedImageIndex === index ? 'bg-blue-500/20' : 'bg-black/0 group-hover:bg-black/10'}`}>
-                        {selectedImageIndex === index && (
-                          <div className="bg-blue-500 text-white rounded-full p-1">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  <div 
-                    onClick={() => setSelectedImageIndex(null)}
-                    className={`flex items-center justify-center aspect-square border rounded-lg cursor-pointer ${
-                      selectedImageIndex === null 
-                        ? 'border-blue-500 ring-2 ring-blue-200 bg-blue-50' 
-                        : 'border-gray-200 border-dashed hover:border-gray-300'
-                    }`}
-                  >
-                    <span className="text-sm font-medium text-gray-500">No Image</span>
-                  </div>
+            <aside className="border-t border-[#d9dee8] bg-white/80 p-5 lg:border-l lg:border-t-0 lg:p-6">
+              <div className="rounded-[28px] border border-[#d8dce6] bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.08)]">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Approval panel</p>
+                <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">Select a post and schedule it</h3>
+                <p className="mt-2 text-sm leading-6 text-[#596577]">
+                  Approval stores the selected copy, matching image, and optional post time in the sheet.
+                </p>
+
+                <div className="mt-6 rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] p-4">
+                  <p className="text-sm font-semibold text-[#1f2937]">Selected option</p>
+                  <p className="mt-2 text-sm text-[#596577]">
+                    {selectedOptionIndex === null
+                      ? 'Choose one of the four previews to continue.'
+                      : `Draft option ${selectedOptionIndex + 1} is ready for approval.`}
+                  </p>
                 </div>
-              </section>
-            )}
 
-            <section>
-              <h3 className="text-lg font-semibold mb-4">3. Schedule (Optional)</h3>
-              <div className="max-w-xs">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Post Time</label>
-                <input 
-                  type="datetime-local" 
-                  value={postTime}
-                  onChange={(e) => setPostTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-                <p className="text-xs text-gray-500 mt-1">Leave empty to post immediately on next action run</p>
+                <section className="mt-6">
+                  <div className="mb-3 flex items-center gap-2 text-[#1f2937]">
+                    <CalendarClock className="h-4 w-4" />
+                    <h4 className="text-sm font-semibold">Schedule</h4>
+                  </div>
+                  <label className="block text-sm font-medium text-[#374151]" htmlFor="post-time-input">
+                    Post time
+                  </label>
+                  <input
+                    id="post-time-input"
+                    type="datetime-local"
+                    value={postTime}
+                    onChange={(e) => setPostTime(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-[#cfd6e1] bg-white px-3 py-2.5 text-[#111827] outline-none transition focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
+                  />
+                  <p className="mt-2 text-xs leading-5 text-[#6b7280]">Leave this empty if the post should publish the next time the publishing workflow runs.</p>
+                </section>
+
+                <div className="mt-8 flex flex-col gap-3">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitting || selectedOptionIndex === null}
+                    className="inline-flex items-center justify-center rounded-xl bg-[#0a66c2] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#084d92] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submitting ? 'Approving...' : 'Approve selected post'}
+                  </button>
+                  <button
+                    onClick={onCancel}
+                    disabled={submitting}
+                    className="inline-flex items-center justify-center rounded-xl border border-[#cfd6e1] bg-white px-4 py-3 text-sm font-semibold text-[#374151] transition hover:bg-[#f8fafc] disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </section>
+            </aside>
           </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-lg">
-          <button 
-            onClick={onCancel}
-            disabled={submitting}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleSubmit}
-            disabled={submitting || selectedVariantIndex === null}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-          >
-            {submitting ? 'Approving...' : 'Approve Post'}
-          </button>
         </div>
       </div>
     </div>

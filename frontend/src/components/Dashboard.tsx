@@ -81,7 +81,7 @@ export function Dashboard({
     
     try {
       await sheetsService.updateRowStatus(
-        selectedRowForReview.rowIndex, 
+        selectedRowForReview,
         'Approved', 
         selectedText, 
         selectedImageId, 
@@ -155,7 +155,7 @@ export function Dashboard({
 
     setDeletingRowIndex(row.rowIndex);
     try {
-      await sheetsService.deleteRow(row.rowIndex);
+      await sheetsService.deleteRow(row);
       if (selectedRowForReview?.rowIndex === row.rowIndex) {
         setSelectedRowForReview(null);
       }

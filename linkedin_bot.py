@@ -35,6 +35,17 @@ GOOGLE_SEARCH_CX = os.environ.get('GOOGLE_SEARCH_CX')
 LINKEDIN_ACCESS_TOKEN = os.environ.get('LINKEDIN_ACCESS_TOKEN')
 LINKEDIN_PERSON_URN = os.environ.get('LINKEDIN_PERSON_URN') # e.g., urn:li:person:123456
 
+TOPICS_SHEET = 'Topics'
+DRAFT_SHEET = 'Draft'
+POST_SHEET = 'Post'
+TOPICS_HEADERS = ['Topic', 'Date']
+PIPELINE_HEADERS = [
+    'Topic', 'Date', 'Status',
+    'Variant 1', 'Variant 2', 'Variant 3', 'Variant 4',
+    'Image Link 1', 'Image Link 2', 'Image Link 3', 'Image Link 4',
+    'Selected Text', 'Selected Image ID', 'Post Time',
+]
+
 
 def validate_environment(action):
     """Fail fast with actionable guidance when required environment variables are missing."""
@@ -86,6 +97,81 @@ def get_google_services():
     drive_service = build('drive', 'v3', credentials=creds)
     docs_service = build('docs', 'v1', credentials=creds)
     return sheets_service, drive_service, docs_service
+
+
+def build_topic_key(topic, date_str):
+    return f"{topic.strip()}::{date_str.strip()}"
+
+
+def pad_row(row, width):
+    return row + [''] * (width - len(row))
+
+
+def ensure_sheet_exists(sheets_service, title, headers):
+    metadata = sheets_service.spreadsheets().get(spreadsheetId=SHEET_ID).execute()
+    sheets = metadata.get('sheets', [])
+    existing_titles = {sheet.get('properties', {}).get('title') for sheet in sheets}
+
+    if title not in existing_titles:
+        sheets_service.spreadsheets().batchUpdate(
+            spreadsheetId=SHEET_ID,
+            body={
+                'requests': [
+                    {
+                        'addSheet': {
+                            'properties': {
+                                'title': title,
+                            }
+                        }
+                    }
+                ]
+            }
+        ).execute()
+
+    header_range = f"{title}!A1"
+    response = sheets_service.spreadsheets().values().get(
+        spreadsheetId=SHEET_ID,
+        range=header_range,
+    ).execute()
+    header_values = response.get('values', [])
+
+    if not header_values:
+        sheets_service.spreadsheets().values().update(
+            spreadsheetId=SHEET_ID,
+            range=header_range,
+            valueInputOption='RAW',
+            body={'values': [headers]},
+        ).execute()
+
+
+def ensure_required_sheets(sheets_service):
+    ensure_sheet_exists(sheets_service, TOPICS_SHEET, TOPICS_HEADERS)
+    ensure_sheet_exists(sheets_service, DRAFT_SHEET, PIPELINE_HEADERS)
+    ensure_sheet_exists(sheets_service, POST_SHEET, PIPELINE_HEADERS)
+
+
+def get_sheet_rows(sheets_service, sheet_name, expected_width):
+    sheet_range = f"{sheet_name}!A2:{chr(ord('A') + expected_width - 1)}1000"
+    result = sheets_service.spreadsheets().values().get(
+        spreadsheetId=SHEET_ID,
+        range=sheet_range,
+    ).execute()
+    return result.get('values', [])
+
+
+def build_existing_row_map(rows, expected_width):
+    existing = {}
+    for index, row in enumerate(rows, start=2):
+        padded = pad_row(row, expected_width)
+        topic = padded[0].strip()
+        if not topic:
+            continue
+        key = build_topic_key(topic, padded[1])
+        existing[key] = {
+            'row_index': index,
+            'row': padded,
+        }
+    return existing
 
 # ==========================================
 # 1. RESEARCH & GENERATE (GEMINI)
@@ -297,74 +383,90 @@ def log_to_google_doc(docs_service, topic, text):
 # ==========================================
 def process_drafts(sheets_service, drive_service):
     """Reads pending topics, generates content & images, saves drafts to Sheet."""
-    # Assuming columns: A: Topic, B: Date, C: Status, D-G: Variants 1-4, H-K: Images 1-4
-    # L: Selected Text, M: Selected Image ID, N: Post Time
-    sheet_range = "Sheet1!A2:N100" 
-    result = sheets_service.spreadsheets().values().get(spreadsheetId=SHEET_ID, range=sheet_range).execute()
-    rows = result.get('values', [])
-    
-    updates = []
-    for i, row in enumerate(rows):
-        # Pad row to ensure we don't hit index errors
-        row += [''] * (14 - len(row))
-        topic, date_str, status = row[0], row[1], row[2]
-        
-        if status.lower() == 'pending':
-            print(f"Drafting for topic: {topic}")
-            # 1. Generate Variants
-            variants = research_and_generate(topic)
-            
-            # 2. Fetch Images
-            image_urls = fetch_images(topic, num_images=4)
-            drive_links = []
-            for idx, img_url in enumerate(image_urls):
-                drive_link, drive_id = upload_image_to_drive(drive_service, img_url, topic, idx+1)
-                drive_links.append(drive_link)
-                
-            # Pad drive links if less than 4 found
-            drive_links += [''] * (4 - len(drive_links))
-            
-            # 3. Prepare Update for this row
-            row_index = i + 2 # +2 because 0-indexed and A2 start
-            range_to_update = f"Sheet1!C{row_index}:K{row_index}"
-            
-            values = [
-                ["Drafted", 
-                 variants.get('variant1', ''), variants.get('variant2', ''), 
-                 variants.get('variant3', ''), variants.get('variant4', ''),
-                 drive_links[0], drive_links[1], drive_links[2], drive_links[3]]
-            ]
-            updates.append({
-                'range': range_to_update,
-                'values': values
-            })
-            
-    # Batch update sheet
-    if updates:
-        for update in updates:
-            sheets_service.spreadsheets().values().update(
-                spreadsheetId=SHEET_ID,
-                range=update['range'],
-                valueInputOption="RAW",
-                body={'values': update['values']}
-            ).execute()
-        print("Updated drafts in Google Sheet.")
+    ensure_required_sheets(sheets_service)
+    topic_rows = get_sheet_rows(sheets_service, TOPICS_SHEET, 2)
+    draft_rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
+    post_rows = get_sheet_rows(sheets_service, POST_SHEET, 14)
+
+    existing_drafts = build_existing_row_map(draft_rows, 14)
+    existing_posts = build_existing_row_map(post_rows, 14)
+
+    new_rows = []
+    for row in topic_rows:
+        padded = pad_row(row, 2)
+        topic, date_str = padded[0].strip(), padded[1].strip()
+        if not topic:
+            continue
+
+        key = build_topic_key(topic, date_str)
+        if key in existing_drafts or key in existing_posts:
+            continue
+
+        print(f"Drafting for topic: {topic}")
+        variants = research_and_generate(topic)
+
+        image_urls = fetch_images(topic, num_images=4)
+        drive_links = []
+        for idx, img_url in enumerate(image_urls):
+            drive_link, drive_id = upload_image_to_drive(drive_service, img_url, topic, idx + 1)
+            drive_links.append(drive_link)
+
+        drive_links += [''] * (4 - len(drive_links))
+        new_rows.append([
+            topic,
+            date_str,
+            'Drafted',
+            variants.get('variant1', ''),
+            variants.get('variant2', ''),
+            variants.get('variant3', ''),
+            variants.get('variant4', ''),
+            drive_links[0],
+            drive_links[1],
+            drive_links[2],
+            drive_links[3],
+            '',
+            '',
+            '',
+        ])
+
+    if new_rows:
+        sheets_service.spreadsheets().values().append(
+            spreadsheetId=SHEET_ID,
+            range=f"{DRAFT_SHEET}!A:N",
+            valueInputOption='RAW',
+            insertDataOption='INSERT_ROWS',
+            body={'values': new_rows},
+        ).execute()
+        print("Saved generated drafts in the Draft sheet.")
 
 def process_publishing(sheets_service, docs_service):
     """Finds 'Approved' rows whose scheduled time has passed and posts them."""
-    sheet_range = "Sheet1!A2:N100" 
-    result = sheets_service.spreadsheets().values().get(spreadsheetId=SHEET_ID, range=sheet_range).execute()
-    rows = result.get('values', [])
-    
+    ensure_required_sheets(sheets_service)
+    rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
+    post_rows = get_sheet_rows(sheets_service, POST_SHEET, 14)
+    existing_posts = build_existing_row_map(post_rows, 14)
+
     now = datetime.datetime.now()
-    updates = []
+    draft_updates = []
+    post_appends = []
+    post_updates = []
     
     for i, row in enumerate(rows):
-        row += [''] * (14 - len(row))
+        row = pad_row(row, 14)
         topic, date_str, status = row[0], row[1], row[2]
         selected_text = row[11] # Col L
         selected_image_id = row[12] # Col M
         post_time_str = row[13] # Col N - expect format "YYYY-MM-DD HH:MM"
+        key = build_topic_key(topic, date_str)
+        existing_post = existing_posts.get(key)
+        existing_post_status = existing_post['row'][2].lower() if existing_post else ''
+
+        if existing_post_status == 'published':
+            draft_updates.append({
+                'range': f"{DRAFT_SHEET}!C{i + 2}",
+                'values': [['Published']]
+            })
+            continue
         
         if status.lower() == 'approved' and selected_text:
             try:
@@ -378,26 +480,56 @@ def process_publishing(sheets_service, docs_service):
                     success = post_to_linkedin(selected_text, selected_image_id)
                     
                     if success:
-                        # Log to Google Docs
                         log_to_google_doc(docs_service, topic, selected_text)
-                        
+
                         row_index = i + 2
-                        updates.append({
-                            'range': f"Sheet1!C{row_index}",
-                            'values': [["Published"]]
+                        published_row = row[:]
+                        published_row[2] = 'Published'
+                        draft_updates.append({
+                            'range': f"{DRAFT_SHEET}!C{row_index}",
+                            'values': [['Published']]
                         })
+
+                        if key in existing_posts:
+                            post_row_index = existing_posts[key]['row_index']
+                            post_updates.append({
+                                'range': f"{POST_SHEET}!A{post_row_index}:N{post_row_index}",
+                                'values': [published_row]
+                            })
+                        else:
+                            post_appends.append(published_row)
             except ValueError:
                 print(f"Invalid date format in row {i+2}: {post_time_str}")
 
-    if updates:
-        for update in updates:
+    if draft_updates:
+        for update in draft_updates:
             sheets_service.spreadsheets().values().update(
                 spreadsheetId=SHEET_ID,
                 range=update['range'],
                 valueInputOption="RAW",
                 body={'values': update['values']}
             ).execute()
-        print("Updated published statuses in Google Sheet.")
+
+    if post_updates:
+        for update in post_updates:
+            sheets_service.spreadsheets().values().update(
+                spreadsheetId=SHEET_ID,
+                range=update['range'],
+                valueInputOption='RAW',
+                body={'values': update['values']}
+            ).execute()
+
+    if post_appends:
+        sheets_service.spreadsheets().values().append(
+            spreadsheetId=SHEET_ID,
+            range=f"{POST_SHEET}!A:N",
+            valueInputOption='RAW',
+            insertDataOption='INSERT_ROWS',
+            body={'values': post_appends},
+        ).execute()
+
+    if draft_updates or post_updates or post_appends:
+        print("Updated published posts in the Draft and Post sheets.")
 
 
 if __name__ == "__main__":
