@@ -108,12 +108,16 @@ At minimum, configure these Worker values:
 * `GITHUB_TOKEN_ENCRYPTION_KEY`
 * `CORS_ALLOWED_ORIGINS`
 
-To enable the new admin connect buttons for shared LinkedIn and WhatsApp setup, also configure these Worker values:
+To enable the new admin connect buttons for shared Instagram, LinkedIn, and WhatsApp setup, also configure these Worker values:
 
+* `INSTAGRAM_APP_ID`
+* `INSTAGRAM_APP_SECRET`
 * `LINKEDIN_CLIENT_ID`
 * `LINKEDIN_CLIENT_SECRET`
 * `META_APP_ID`
 * `META_APP_SECRET`
+
+Telegram delivery does not need an OAuth app. After the Worker is deployed, an admin can open the dashboard settings, paste a Telegram bot token, and save the destination chat IDs there.
 
 The setup script writes the non-secret Worker vars into [worker/wrangler.jsonc](worker/wrangler.jsonc) and passes the secret values to Wrangler during deployment with a temporary JSON `--secrets-file`.
 
@@ -121,6 +125,9 @@ Register these callback URLs in the provider dashboards so the Worker can comple
 
 * LinkedIn redirect URI: `https://<your-worker-domain>/auth/linkedin/callback`
 * Meta redirect URI: `https://<your-worker-domain>/auth/whatsapp/callback`
+* Instagram redirect URI: `https://<your-worker-domain>/auth/instagram/callback`
+
+Instagram publishing currently supports approved image posts only. The Worker uses the approved text as the caption and rejects text-only rows for this channel.
 
 Deploy the Worker and copy the generated URL.
 
@@ -154,7 +161,9 @@ Keep these configured in GitHub Actions:
 * `LINKEDIN_ACCESS_TOKEN`
 * `LINKEDIN_PERSON_URN`
 
-If you only publish through the dashboard's direct Worker delivery path, the Worker can manage the LinkedIn and WhatsApp access tokens itself after an admin connects the channels. The GitHub Actions secrets above are still relevant for the older Python publish workflow.
+If you only publish through the dashboard's direct Worker delivery path, the Worker can manage the Instagram, LinkedIn, and WhatsApp access tokens itself after an admin connects the channels. The GitHub Actions secrets above are still relevant for the older Python publish workflow.
+
+Telegram delivery is Worker-only. It does not require any additional GitHub Actions secrets.
 
 When `python setup.py --sync-github-secrets` runs with the corresponding environment variables present, it will sync any of these values that it can resolve.
 
@@ -200,6 +209,8 @@ export VITE_GOOGLE_CLIENT_ID='your-client-id.apps.googleusercontent.com'
 export ALLOWED_EMAILS='you@gmail.com teammate@gmail.com'
 export ADMIN_EMAILS='you@gmail.com'
 export GITHUB_PAGES_ORIGIN='https://your-username.github.io'
+export INSTAGRAM_APP_ID='your-instagram-app-id'
+export INSTAGRAM_APP_SECRET='your-instagram-app-secret'
 export LINKEDIN_CLIENT_ID='your-linkedin-client-id'
 export LINKEDIN_CLIENT_SECRET='your-linkedin-client-secret'
 export META_APP_ID='your-meta-app-id'

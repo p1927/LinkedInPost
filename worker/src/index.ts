@@ -1,10 +1,12 @@
+import { publishInstagramPost } from './integrations/instagram';
 import { publishLinkedInPost } from './integrations/linkedin';
+import { sendTelegramMessage } from './integrations/telegram';
 import { sendWhatsAppMessage } from './integrations/whatsapp';
 
 type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
 
-type ChannelId = 'linkedin' | 'whatsapp';
-type AuthProvider = 'linkedin' | 'whatsapp';
+type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp';
+type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp';
 
 interface Env {
   CONFIG_KV: KVNamespace;
@@ -15,10 +17,16 @@ interface Env {
   GEMINI_API_KEY?: string;
   GITHUB_TOKEN_ENCRYPTION_KEY?: string;
   CORS_ALLOWED_ORIGINS?: string;
+  INSTAGRAM_APP_ID?: string;
+  INSTAGRAM_APP_SECRET?: string;
+  INSTAGRAM_USER_ID?: string;
+  INSTAGRAM_USERNAME?: string;
+  INSTAGRAM_ACCESS_TOKEN?: string;
   LINKEDIN_CLIENT_ID?: string;
   LINKEDIN_CLIENT_SECRET?: string;
   LINKEDIN_PERSON_URN?: string;
   LINKEDIN_ACCESS_TOKEN?: string;
+  TELEGRAM_BOT_TOKEN?: string;
   META_APP_ID?: string;
   META_APP_SECRET?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
@@ -31,9 +39,15 @@ interface BotConfig {
   googleModel: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
+  instagramAuthAvailable: boolean;
+  instagramUserId: string;
+  instagramUsername: string;
+  hasInstagramAccessToken: boolean;
   linkedinAuthAvailable: boolean;
   linkedinPersonUrn: string;
   hasLinkedInAccessToken: boolean;
+  hasTelegramBotToken: boolean;
+  telegramRecipients: TelegramRecipient[];
   whatsappAuthAvailable: boolean;
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
@@ -46,9 +60,16 @@ interface StoredConfig {
   googleModel: string;
   githubTokenCiphertext?: string;
   defaultChannel: ChannelId;
+  instagramUserId: string;
+  instagramUsername: string;
+  instagramAccessTokenCiphertext?: string;
+  instagramAccessToken?: string;
   linkedinPersonUrn: string;
   linkedinAccessTokenCiphertext?: string;
   linkedinAccessToken?: string;
+  telegramBotTokenCiphertext?: string;
+  telegramBotToken?: string;
+  telegramRecipients: TelegramRecipient[];
   whatsappPhoneNumberId: string;
   whatsappAccessTokenCiphertext?: string;
   whatsappAccessToken?: string;
@@ -61,11 +82,21 @@ interface BotConfigUpdate {
   googleModel?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
+  instagramUserId?: string;
+  instagramUsername?: string;
+  instagramAccessToken?: string;
   linkedinPersonUrn?: string;
   linkedinAccessToken?: string;
+  telegramBotToken?: string;
+  telegramRecipients?: TelegramRecipient[];
   whatsappPhoneNumberId?: string;
   whatsappAccessToken?: string;
   whatsappRecipients?: WhatsAppRecipient[];
+}
+
+interface TelegramRecipient {
+  label: string;
+  chatId: string;
 }
 
 interface WhatsAppRecipient {
@@ -159,6 +190,23 @@ interface MetaTokenResponse {
   };
 }
 
+interface InstagramOAuthTokenResponse {
+  access_token?: string;
+  user_id?: string | number;
+  permissions?: string[] | string;
+  error_type?: string;
+  error_message?: string;
+}
+
+interface InstagramMeResponse {
+  user_id?: string | number;
+  username?: string;
+  data?: Array<{
+    user_id?: string | number;
+    username?: string;
+  }>;
+}
+
 interface LinkedInMeResponse {
   id?: string;
 }
@@ -234,13 +282,19 @@ interface GeminiModelsResponse {
 const CONFIG_KEY = 'shared-config';
 const GOOGLE_MODEL_DEFAULT = 'gemini-2.5-flash';
 const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be decrypted. This usually means GITHUB_TOKEN_ENCRYPTION_KEY changed after the token was saved. Ask an admin to open Settings and save the GitHub token again.';
+const INSTAGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Instagram access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
+const TELEGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Telegram bot token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const WHATSAPP_TOKEN_REAUTH_MESSAGE = 'The stored WhatsApp access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const OAUTH_STATE_PREFIX = 'oauth-state:';
 const WHATSAPP_PENDING_PREFIX = 'whatsapp-pending:';
 const OAUTH_STATE_TTL_SECONDS = 60 * 10;
 const WHATSAPP_PENDING_TTL_SECONDS = 60 * 10;
+const INSTAGRAM_OAUTH_SCOPE = [
+  'instagram_business_basic',
+  'instagram_business_content_publish',
+].join(',');
 const LINKEDIN_OAUTH_SCOPE = [
   'openid',
   'profile',
@@ -296,6 +350,10 @@ export default {
 
       if (url.pathname === '/auth/linkedin/callback') {
         return handleLinkedInCallback(request, env);
+      }
+
+      if (url.pathname === '/auth/instagram/callback') {
+        return handleInstagramCallback(request, env);
       }
 
       if (url.pathname === '/auth/whatsapp/callback') {
@@ -370,6 +428,9 @@ async function dispatchAction(
     case 'startLinkedInAuth':
       ensureAdmin(session);
       return startLinkedInAuth(request, env, session);
+    case 'startInstagramAuth':
+      ensureAdmin(session);
+      return startInstagramAuth(request, env, session);
     case 'startWhatsAppAuth':
       ensureAdmin(session);
       return startWhatsAppAuth(request, env, session);
@@ -469,15 +530,30 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
 
 async function loadStoredConfig(env: Env): Promise<StoredConfig> {
   const config = await env.CONFIG_KV.get<StoredConfig>(CONFIG_KEY, 'json');
+  const defaultChannel = config?.defaultChannel === 'whatsapp'
+    ? 'whatsapp'
+    : config?.defaultChannel === 'telegram'
+      ? 'telegram'
+    : config?.defaultChannel === 'instagram'
+      ? 'instagram'
+      : 'linkedin';
+
   return {
     spreadsheetId: config?.spreadsheetId || '',
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
     githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
-    defaultChannel: config?.defaultChannel === 'whatsapp' ? 'whatsapp' : 'linkedin',
+    defaultChannel,
+    instagramUserId: config?.instagramUserId || String(env.INSTAGRAM_USER_ID || '').trim(),
+    instagramUsername: config?.instagramUsername || String(env.INSTAGRAM_USERNAME || '').trim(),
+    instagramAccessTokenCiphertext: config?.instagramAccessTokenCiphertext || undefined,
+    instagramAccessToken: String(env.INSTAGRAM_ACCESS_TOKEN || '').trim() || undefined,
     linkedinPersonUrn: config?.linkedinPersonUrn || String(env.LINKEDIN_PERSON_URN || '').trim(),
     linkedinAccessTokenCiphertext: config?.linkedinAccessTokenCiphertext || undefined,
     linkedinAccessToken: String(env.LINKEDIN_ACCESS_TOKEN || '').trim() || undefined,
+    telegramBotTokenCiphertext: config?.telegramBotTokenCiphertext || undefined,
+    telegramBotToken: String(env.TELEGRAM_BOT_TOKEN || '').trim() || undefined,
+    telegramRecipients: normalizeTelegramRecipients(config?.telegramRecipients),
     whatsappPhoneNumberId: config?.whatsappPhoneNumberId || String(env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
     whatsappAccessTokenCiphertext: config?.whatsappAccessTokenCiphertext || undefined,
     whatsappAccessToken: String(env.WHATSAPP_ACCESS_TOKEN || '').trim() || undefined,
@@ -492,14 +568,24 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     googleModel: config.googleModel || GOOGLE_MODEL_DEFAULT,
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
     defaultChannel: config.defaultChannel,
+    instagramAuthAvailable: hasInstagramOAuthConfig(env),
+    instagramUserId: config.instagramUserId,
+    instagramUsername: config.instagramUsername,
+    hasInstagramAccessToken: Boolean(config.instagramAccessTokenCiphertext || config.instagramAccessToken),
     linkedinAuthAvailable: hasLinkedInOAuthConfig(env),
     linkedinPersonUrn: config.linkedinPersonUrn,
     hasLinkedInAccessToken: Boolean(config.linkedinAccessTokenCiphertext || config.linkedinAccessToken),
+    hasTelegramBotToken: Boolean(config.telegramBotTokenCiphertext || config.telegramBotToken),
+    telegramRecipients: normalizeTelegramRecipients(config.telegramRecipients),
     whatsappAuthAvailable: hasMetaOAuthConfig(env),
     whatsappPhoneNumberId: config.whatsappPhoneNumberId,
     hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext || config.whatsappAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
   };
+}
+
+function hasInstagramOAuthConfig(env: Env): boolean {
+  return Boolean(String(env.INSTAGRAM_APP_ID || '').trim() && String(env.INSTAGRAM_APP_SECRET || '').trim());
 }
 
 function hasLinkedInOAuthConfig(env: Env): boolean {
@@ -572,6 +658,35 @@ async function startLinkedInAuth(request: Request, env: Env, session: VerifiedSe
 
   return {
     authorizationUrl: `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`,
+    callbackOrigin,
+  };
+}
+
+async function startInstagramAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string; callbackOrigin: string }> {
+  if (!hasInstagramOAuthConfig(env)) {
+    throw new Error('Instagram OAuth is not configured in the Worker environment. Add INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET first.');
+  }
+
+  const state = createRandomToken();
+  const callbackOrigin = buildWorkerOrigin(request);
+  const redirectUri = `${callbackOrigin}/auth/instagram/callback`;
+  await storeOAuthState(env, state, {
+    provider: 'instagram',
+    email: session.email,
+    origin: requireFrontendOrigin(request),
+    redirectUri,
+  });
+
+  const params = new URLSearchParams({
+    client_id: String(env.INSTAGRAM_APP_ID || '').trim(),
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: INSTAGRAM_OAUTH_SCOPE,
+    state,
+  });
+
+  return {
+    authorizationUrl: `https://www.instagram.com/oauth/authorize?${params.toString()}`,
     callbackOrigin,
   };
 }
@@ -705,6 +820,69 @@ async function handleLinkedInCallback(request: Request, env: Env): Promise<Respo
   }
 }
 
+async function handleInstagramCallback(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const state = String(url.searchParams.get('state') || '').trim();
+  if (!state) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'instagram',
+      ok: false,
+      error: 'Missing Instagram OAuth state.',
+    });
+  }
+
+  let oauthState: OAuthStateRecord;
+  try {
+    oauthState = await consumeOAuthState(env, state, 'instagram');
+  } catch (error) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'instagram',
+      ok: false,
+      error: error instanceof Error ? error.message : 'The Instagram OAuth session expired.',
+    });
+  }
+
+  const errorMessage = String(url.searchParams.get('error_description') || url.searchParams.get('error') || '').trim();
+  if (errorMessage) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'instagram',
+      ok: false,
+      error: decodeURIComponent(errorMessage),
+    });
+  }
+
+  const code = String(url.searchParams.get('code') || '').replace(/#_$/, '').trim();
+  if (!code) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'instagram',
+      ok: false,
+      error: 'Instagram did not return an authorization code.',
+    });
+  }
+
+  try {
+    const accessToken = await exchangeInstagramCodeForLongLivedToken(code, oauthState.redirectUri, env);
+    const instagramAccount = await fetchInstagramAccount(accessToken);
+    await persistInstagramConnection(env, accessToken, instagramAccount.userId, instagramAccount.username);
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'instagram',
+      ok: true,
+    });
+  } catch (error) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'instagram',
+      ok: false,
+      error: error instanceof Error ? error.message : 'Instagram connection failed.',
+    });
+  }
+}
+
 async function handleWhatsAppCallback(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const state = String(url.searchParams.get('state') || '').trim();
@@ -820,6 +998,52 @@ async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, e
   }
 
   return accessToken;
+}
+
+async function exchangeInstagramCodeForLongLivedToken(code: string, redirectUri: string, env: Env): Promise<string> {
+  const shortResponse = await fetch('https://api.instagram.com/oauth/access_token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      client_id: String(env.INSTAGRAM_APP_ID || '').trim(),
+      client_secret: String(env.INSTAGRAM_APP_SECRET || '').trim(),
+      grant_type: 'authorization_code',
+      redirect_uri: redirectUri,
+      code,
+    }),
+  });
+
+  const shortPayload = (await shortResponse.json().catch(() => null)) as InstagramOAuthTokenResponse | null;
+  const shortToken = String(shortPayload?.access_token || '').trim();
+  if (!shortResponse.ok || !shortToken) {
+    throw new Error(shortPayload?.error_message || shortPayload?.error_type || `Instagram token exchange failed with status ${shortResponse.status}.`);
+  }
+
+  const longResponse = await fetch(
+    `https://graph.instagram.com/access_token?${new URLSearchParams({
+      grant_type: 'ig_exchange_token',
+      client_secret: String(env.INSTAGRAM_APP_SECRET || '').trim(),
+      access_token: shortToken,
+    }).toString()}`,
+  );
+  const longPayload = (await longResponse.json().catch(() => null)) as MetaTokenResponse | null;
+  const longToken = String(longPayload?.access_token || '').trim();
+  return longResponse.ok && longToken ? longToken : shortToken;
+}
+
+async function fetchInstagramAccount(accessToken: string): Promise<{ userId: string; username: string }> {
+  const response = await fetch(
+    `https://graph.instagram.com/${META_GRAPH_VERSION}/me?fields=user_id,username&access_token=${encodeURIComponent(accessToken)}`,
+  );
+  const payload = (await response.json().catch(() => null)) as InstagramMeResponse | null;
+  const firstRecord = payload?.data?.[0];
+  const userId = String(firstRecord?.user_id ?? payload?.user_id ?? '').trim();
+  const username = String(firstRecord?.username ?? payload?.username ?? '').trim();
+
+  if (!response.ok || !userId) {
+    throw new Error(`Instagram profile lookup failed with status ${response.status}.`);
+  }
+
+  return { userId, username };
 }
 
 async function fetchLinkedInPersonUrn(accessToken: string): Promise<string> {
@@ -949,6 +1173,19 @@ async function persistLinkedInConnection(env: Env, accessToken: string, personUr
   return toPublicConfig(nextConfig, env);
 }
 
+async function persistInstagramConnection(env: Env, accessToken: string, instagramUserId: string, instagramUsername: string): Promise<BotConfig> {
+  const current = await loadStoredConfig(env);
+  const nextConfig: StoredConfig = {
+    ...current,
+    instagramUserId,
+    instagramUsername,
+    instagramAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
+    instagramAccessToken: undefined,
+  };
+  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  return toPublicConfig(nextConfig, env);
+}
+
 async function persistWhatsAppConnection(env: Env, accessToken: string, phoneNumberId: string): Promise<BotConfig> {
   const current = await loadStoredConfig(env);
   const nextConfig: StoredConfig = {
@@ -956,6 +1193,17 @@ async function persistWhatsAppConnection(env: Env, accessToken: string, phoneNum
     whatsappPhoneNumberId: phoneNumberId,
     whatsappAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
     whatsappAccessToken: undefined,
+  };
+  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  return toPublicConfig(nextConfig, env);
+}
+
+async function persistTelegramToken(env: Env, botToken: string): Promise<BotConfig> {
+  const current = await loadStoredConfig(env);
+  const nextConfig: StoredConfig = {
+    ...current,
+    telegramBotTokenCiphertext: await encryptSecret(botToken, requireSecretEncryptionKey(env)),
+    telegramBotToken: undefined,
   };
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
   return toPublicConfig(nextConfig, env);
@@ -1020,11 +1268,22 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     githubTokenCiphertext: current.githubTokenCiphertext,
     defaultChannel: update.defaultChannel === 'whatsapp'
       ? 'whatsapp'
+      : update.defaultChannel === 'telegram'
+        ? 'telegram'
+      : update.defaultChannel === 'instagram'
+        ? 'instagram'
       : update.defaultChannel === 'linkedin'
         ? 'linkedin'
         : current.defaultChannel,
+    instagramUserId: typeof update.instagramUserId === 'string' ? update.instagramUserId.trim() : current.instagramUserId,
+    instagramUsername: typeof update.instagramUsername === 'string' ? update.instagramUsername.trim() : current.instagramUsername,
+    instagramAccessTokenCiphertext: current.instagramAccessTokenCiphertext,
     linkedinPersonUrn: typeof update.linkedinPersonUrn === 'string' ? update.linkedinPersonUrn.trim() : current.linkedinPersonUrn,
     linkedinAccessTokenCiphertext: current.linkedinAccessTokenCiphertext,
+    telegramBotTokenCiphertext: current.telegramBotTokenCiphertext,
+    telegramRecipients: Array.isArray(update.telegramRecipients)
+      ? normalizeTelegramRecipients(update.telegramRecipients)
+      : current.telegramRecipients,
     whatsappPhoneNumberId: typeof update.whatsappPhoneNumberId === 'string' ? update.whatsappPhoneNumberId.trim() : current.whatsappPhoneNumberId,
     whatsappAccessTokenCiphertext: current.whatsappAccessTokenCiphertext,
     whatsappRecipients: Array.isArray(update.whatsappRecipients)
@@ -1036,8 +1295,16 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     nextConfig.githubTokenCiphertext = await encryptSecret(update.githubToken.trim(), requireSecretEncryptionKey(env));
   }
 
+  if (update.instagramAccessToken) {
+    nextConfig.instagramAccessTokenCiphertext = await encryptSecret(update.instagramAccessToken.trim(), requireSecretEncryptionKey(env));
+  }
+
   if (update.linkedinAccessToken) {
     nextConfig.linkedinAccessTokenCiphertext = await encryptSecret(update.linkedinAccessToken.trim(), requireSecretEncryptionKey(env));
+  }
+
+  if (update.telegramBotToken) {
+    nextConfig.telegramBotTokenCiphertext = await encryptSecret(update.telegramBotToken.trim(), requireSecretEncryptionKey(env));
   }
 
   if (update.whatsappAccessToken) {
@@ -1100,15 +1367,76 @@ async function publishContent(
   config: StoredConfig,
   payload: Record<string, unknown>,
   sheets: SheetsGateway,
-): Promise<{ success: true; channel: ChannelId; recipientPhoneNumber: string | null; messageId: string | null; deliveryMode: 'queued' | 'sent'; mediaMode: 'image' | 'text' }> {
+): Promise<{ success: true; channel: ChannelId; recipientId: string | null; messageId: string | null; deliveryMode: 'queued' | 'sent'; mediaMode: 'image' | 'text' }> {
   const row = coerceSheetRow(payload.row);
   const channel = coerceChannelId(payload.channel);
-  const recipientPhoneNumber = normalizePhoneNumber(String(payload.recipientPhoneNumber || ''));
+  const rawRecipientId = String(payload.recipientId || payload.recipientPhoneNumber || '').trim();
+  const recipientId = channel === 'telegram'
+    ? normalizeTelegramChatId(rawRecipientId)
+    : normalizePhoneNumber(rawRecipientId);
   const message = String(payload.message || row.selectedText || '').trim();
   const imageUrl = String(payload.imageUrl || row.selectedImageId || '').trim();
 
   if (!message) {
     throw new Error('Approved content text is empty. Approve or edit the draft before sending it.');
+  }
+
+  if (channel === 'instagram') {
+    if (!imageUrl) {
+      throw new Error('Instagram publishing requires a selected image.');
+    }
+
+    if (!config.instagramUserId || (!config.instagramAccessTokenCiphertext && !config.instagramAccessToken)) {
+      throw new Error('Instagram publishing is not configured. Ask an admin to complete the Instagram settings.');
+    }
+
+    let instagramAccessToken: string;
+    if (config.instagramAccessTokenCiphertext) {
+      try {
+        instagramAccessToken = await decryptSecret(
+          config.instagramAccessTokenCiphertext,
+          requireSecretEncryptionKey(env),
+          INSTAGRAM_TOKEN_REAUTH_MESSAGE,
+        );
+      } catch (error) {
+        if (error instanceof Error && error.message === INSTAGRAM_TOKEN_REAUTH_MESSAGE) {
+          const nextConfig: StoredConfig = {
+            ...config,
+            instagramAccessTokenCiphertext: undefined,
+          };
+          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+        }
+        throw error;
+      }
+    } else {
+      instagramAccessToken = String(config.instagramAccessToken || '').trim();
+    }
+
+    const publishResult = await publishInstagramPost({
+      accessToken: instagramAccessToken,
+      instagramUserId: config.instagramUserId,
+      caption: message,
+      imageUrl,
+      altText: row.topic,
+    });
+
+    const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    await sheets.markRowPublished(config.spreadsheetId, {
+      ...row,
+      status: 'Published',
+      selectedText: message,
+      selectedImageId: imageUrl,
+      postTime: publishedAt,
+    });
+
+    return {
+      success: true,
+      channel,
+      recipientId: null,
+      messageId: publishResult.postId,
+      deliveryMode: 'sent',
+      mediaMode: 'image',
+    };
   }
 
   if (channel === 'linkedin') {
@@ -1142,6 +1470,7 @@ async function publishContent(
       accessToken: linkedinAccessToken,
       personUrn: config.linkedinPersonUrn,
       text: message,
+      imageUrl: imageUrl || undefined,
     });
 
     const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
@@ -1156,14 +1485,71 @@ async function publishContent(
     return {
       success: true,
       channel,
-      recipientPhoneNumber: null,
+      recipientId: null,
       messageId: publishResult.postId,
       deliveryMode: 'sent',
       mediaMode: imageUrl ? 'image' : 'text',
     };
   }
 
-  if (!recipientPhoneNumber) {
+  if (channel === 'telegram') {
+    if (!recipientId) {
+      throw new Error('A valid Telegram chat ID is required.');
+    }
+
+    if (!config.telegramBotTokenCiphertext && !config.telegramBotToken) {
+      throw new Error('Telegram delivery is not configured. Ask an admin to add the bot token.');
+    }
+
+    let botToken: string;
+    if (config.telegramBotTokenCiphertext) {
+      try {
+        botToken = await decryptSecret(
+          config.telegramBotTokenCiphertext,
+          requireSecretEncryptionKey(env),
+          TELEGRAM_TOKEN_REAUTH_MESSAGE,
+        );
+      } catch (error) {
+        if (error instanceof Error && error.message === TELEGRAM_TOKEN_REAUTH_MESSAGE) {
+          const nextConfig: StoredConfig = {
+            ...config,
+            telegramBotTokenCiphertext: undefined,
+          };
+          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+        }
+        throw error;
+      }
+    } else {
+      botToken = String(config.telegramBotToken || '').trim();
+    }
+
+    const sendResult = await sendTelegramMessage({
+      botToken,
+      chatId: recipientId,
+      text: message,
+      imageUrl: imageUrl || undefined,
+    });
+
+    const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    await sheets.markRowPublished(config.spreadsheetId, {
+      ...row,
+      status: 'Published',
+      selectedText: message,
+      selectedImageId: imageUrl,
+      postTime: publishedAt,
+    });
+
+    return {
+      success: true,
+      channel,
+      recipientId,
+      messageId: sendResult.messageId,
+      deliveryMode: 'sent',
+      mediaMode: imageUrl ? 'image' : 'text',
+    };
+  }
+
+  if (!recipientId) {
     throw new Error('A valid WhatsApp recipient phone number is required.');
   }
 
@@ -1196,7 +1582,7 @@ async function publishContent(
   const sendResult = await sendWhatsAppMessage({
     accessToken,
     phoneNumberId: config.whatsappPhoneNumberId,
-    to: recipientPhoneNumber,
+    to: recipientId,
     text: message,
     imageUrl: imageUrl || undefined,
   });
@@ -1213,7 +1599,7 @@ async function publishContent(
   return {
     success: true,
     channel,
-    recipientPhoneNumber,
+    recipientId,
     messageId: sendResult.messageId,
     deliveryMode: 'sent',
     mediaMode: imageUrl ? 'image' : 'text',
@@ -1221,11 +1607,25 @@ async function publishContent(
 }
 
 function coerceChannelId(value: unknown): ChannelId {
-  if (value !== 'whatsapp' && value !== 'linkedin') {
+  if (value !== 'instagram' && value !== 'linkedin' && value !== 'telegram' && value !== 'whatsapp') {
     throw new Error('Unsupported delivery channel.');
   }
 
   return value;
+}
+
+function normalizeTelegramRecipients(value: unknown): TelegramRecipient[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((entry) => Boolean(entry) && typeof entry === 'object')
+    .map((entry) => ({
+      label: String((entry as TelegramRecipient).label || '').trim(),
+      chatId: normalizeTelegramChatId(String((entry as TelegramRecipient).chatId || '')),
+    }))
+    .filter((entry) => entry.label && entry.chatId);
 }
 
 function normalizeWhatsAppRecipients(value: unknown): WhatsAppRecipient[] {
@@ -1240,6 +1640,20 @@ function normalizeWhatsAppRecipients(value: unknown): WhatsAppRecipient[] {
       phoneNumber: normalizePhoneNumber(String((entry as WhatsAppRecipient).phoneNumber || '')),
     }))
     .filter((entry) => entry.label && entry.phoneNumber);
+}
+
+function normalizeTelegramChatId(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  if (trimmed.startsWith('@')) {
+    return /^@[A-Za-z0-9_]{4,}$/.test(trimmed) ? trimmed : '';
+  }
+
+  const compact = trimmed.replace(/\s+/g, '');
+  return /^-?\d+$/.test(compact) ? compact : '';
 }
 
 function normalizePhoneNumber(value: string): string {

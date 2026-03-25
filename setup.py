@@ -146,9 +146,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--google-client-id', default=os.environ.get('VITE_GOOGLE_CLIENT_ID', '').strip() or os.environ.get('GOOGLE_CLIENT_ID', '').strip(), help='Google web client ID for frontend and Worker validation.')
     parser.add_argument('--github-pages-origin', default=os.environ.get('GITHUB_PAGES_ORIGIN', '').strip(), help='Origin allowed to call the Worker, for example https://user.github.io.')
     parser.add_argument('--github-repo', default=os.environ.get('GITHUB_REPO', '').strip(), help='GitHub repository in owner/repo format.')
+    parser.add_argument('--instagram-app-id', default=os.environ.get('INSTAGRAM_APP_ID', '').strip(), help='Instagram app ID used for the admin connect flow.')
+    parser.add_argument('--instagram-app-secret', default=os.environ.get('INSTAGRAM_APP_SECRET', '').strip(), help='Instagram app secret stored as a Worker secret.')
     parser.add_argument('--linkedin-client-id', default=os.environ.get('LINKEDIN_CLIENT_ID', '').strip(), help='LinkedIn OAuth client ID used for the admin connect flow.')
     parser.add_argument('--linkedin-client-secret', default=os.environ.get('LINKEDIN_CLIENT_SECRET', '').strip(), help='LinkedIn OAuth client secret stored as a Worker secret.')
     parser.add_argument('--linkedin-person-urn', default=os.environ.get('LINKEDIN_PERSON_URN', '').strip(), help='LinkedIn member URN used by the Worker for direct publishing.')
+    parser.add_argument('--telegram-bot-token', default=os.environ.get('TELEGRAM_BOT_TOKEN', '').strip(), help='Telegram bot token stored as a Worker secret for direct delivery.')
     parser.add_argument('--meta-app-id', default=os.environ.get('META_APP_ID', '').strip(), help='Meta app ID used for the WhatsApp Business connect flow.')
     parser.add_argument('--meta-app-secret', default=os.environ.get('META_APP_SECRET', '').strip(), help='Meta app secret stored as a Worker secret.')
     parser.add_argument('--whatsapp-phone-number-id', default=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip(), help='Meta WhatsApp phone number ID used by the Worker for direct sending.')
@@ -404,9 +407,12 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
         ),
         encryption_key=encryption_key,
         github_repo=github_repo,
+        instagram_app_id=args.instagram_app_id,
+        instagram_app_secret=args.instagram_app_secret,
         linkedin_client_id=args.linkedin_client_id,
         linkedin_client_secret=args.linkedin_client_secret,
         linkedin_person_urn=args.linkedin_person_urn or (google_resources.linkedin_person_urn if google_resources else ''),
+        telegram_bot_token=args.telegram_bot_token,
         meta_app_id=args.meta_app_id,
         meta_app_secret=args.meta_app_secret,
         whatsapp_phone_number_id=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip() or args.whatsapp_phone_number_id,

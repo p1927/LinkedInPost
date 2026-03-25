@@ -25,7 +25,9 @@ If you only want the local Worker toolchain installed first, run `python setup.p
 * A Google OAuth client ID for the frontend
 * A Google service account JSON key with access to the shared sheet
 * A GitHub personal access token with repository dispatch access
+* An Instagram app with Instagram Login if you want admins to connect Instagram from the dashboard
 * A LinkedIn OAuth app if you want admins to connect LinkedIn from the dashboard
+* A Telegram bot token if you want the Worker to deliver approved content to Telegram chats
 * A Meta app if you want admins to connect WhatsApp Business from the dashboard
 
 ## Install dependencies
@@ -79,6 +81,8 @@ To enable popup-based channel connection from the dashboard, add these too:
 
 | Variable | Purpose |
 |---|---|
+| `INSTAGRAM_APP_ID` | Instagram app ID exposed as a Worker var |
+| `INSTAGRAM_APP_SECRET` | Instagram app secret stored as a Worker secret |
 | `LINKEDIN_CLIENT_ID` | LinkedIn OAuth client ID exposed as a Worker var |
 | `LINKEDIN_CLIENT_SECRET` | LinkedIn OAuth client secret stored as a Worker secret |
 | `META_APP_ID` | Meta app ID exposed as a Worker var |
@@ -86,8 +90,13 @@ To enable popup-based channel connection from the dashboard, add these too:
 
 Register these redirect URLs in the provider dashboards:
 
+* `https://<your-worker-domain>/auth/instagram/callback`
 * `https://<your-worker-domain>/auth/linkedin/callback`
 * `https://<your-worker-domain>/auth/whatsapp/callback`
+
+Instagram publishing currently supports approved image posts only. The Worker uses the approved text as the caption and rejects text-only rows for this channel.
+
+Telegram delivery does not require an OAuth app. After the Worker is deployed, an admin can open the dashboard settings, store a Telegram bot token, and add saved chat IDs such as `@channelusername` or `-1001234567890`.
 
 ## Run locally
 
@@ -130,5 +139,6 @@ The production URL must return JSON from `GET /`. If it returns HTML, that hostn
 * The Worker verifies the Google ID token on every request.
 * Shared dashboard config is stored in KV under one key.
 * The GitHub token entered by an admin is encrypted before it is stored.
-* LinkedIn and WhatsApp popup auth codes are exchanged by the Worker and the resulting channel tokens are stored encrypted.
+* Instagram, LinkedIn, and WhatsApp popup auth codes are exchanged by the Worker and the resulting channel tokens are stored encrypted.
+* Telegram bot tokens entered in the dashboard are encrypted before the Worker stores them.
 * The browser never talks to Google Sheets or GitHub directly.

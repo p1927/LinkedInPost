@@ -17,9 +17,12 @@ class WorkerBootstrap:
     cors_allowed_origins: str
     encryption_key: str
     github_repo: str
+    instagram_app_id: str
+    instagram_app_secret: str
     linkedin_client_id: str
     linkedin_client_secret: str
     linkedin_person_urn: str
+    telegram_bot_token: str
     meta_app_id: str
     meta_app_secret: str
     whatsapp_phone_number_id: str
@@ -100,6 +103,7 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
         'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
+        'INSTAGRAM_APP_ID': worker_bootstrap.instagram_app_id,
         'LINKEDIN_CLIENT_ID': worker_bootstrap.linkedin_client_id,
         'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
         'META_APP_ID': worker_bootstrap.meta_app_id,
@@ -117,12 +121,17 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
+        'INSTAGRAM_APP_ID': worker_bootstrap.instagram_app_id,
+        'INSTAGRAM_APP_SECRET': worker_bootstrap.instagram_app_secret,
         'LINKEDIN_CLIENT_ID': worker_bootstrap.linkedin_client_id,
         'LINKEDIN_CLIENT_SECRET': worker_bootstrap.linkedin_client_secret,
         'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
+        'TELEGRAM_BOT_TOKEN': worker_bootstrap.telegram_bot_token,
         'META_APP_ID': worker_bootstrap.meta_app_id,
         'META_APP_SECRET': worker_bootstrap.meta_app_secret,
         'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
+        'INSTAGRAM_ACCESS_TOKEN': os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip(),
+        'INSTAGRAM_USER_ID': os.environ.get('INSTAGRAM_USER_ID', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
     }
@@ -135,9 +144,12 @@ def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_js
     }
 
     optional_secret_values = {
+        'INSTAGRAM_APP_SECRET': worker_bootstrap.instagram_app_secret,
+        'TELEGRAM_BOT_TOKEN': worker_bootstrap.telegram_bot_token,
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
         'LINKEDIN_CLIENT_SECRET': worker_bootstrap.linkedin_client_secret,
         'META_APP_SECRET': worker_bootstrap.meta_app_secret,
+        'INSTAGRAM_ACCESS_TOKEN': os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
     }
@@ -188,21 +200,26 @@ def resolve_worker_public_url(worker_bootstrap: WorkerBootstrap | None) -> str:
 
 def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str]:
     worker_url = resolve_worker_public_url(worker_bootstrap)
+    instagram_callback = f'{worker_url}/auth/instagram/callback' if worker_url else 'https://<your-worker-domain>/auth/instagram/callback'
     linkedin_callback = f'{worker_url}/auth/linkedin/callback' if worker_url else 'https://<your-worker-domain>/auth/linkedin/callback'
     whatsapp_callback = f'{worker_url}/auth/whatsapp/callback' if worker_url else 'https://<your-worker-domain>/auth/whatsapp/callback'
     vite_worker_url = worker_url or '<set VITE_WORKER_URL after Worker deploy>'
 
     todos = [
+        f'Register the Instagram redirect URI: {instagram_callback}',
         f'Register the LinkedIn redirect URI: {linkedin_callback}',
         f'Register the Meta redirect URI: {whatsapp_callback}',
         f'Set VITE_WORKER_URL in the frontend build to: {vite_worker_url}',
-        'Open the dashboard as an admin and use Connect LinkedIn and Connect WhatsApp Business to store channel access in the Worker.',
+        'Open the dashboard as an admin and use Connect Instagram, Connect LinkedIn, and Connect WhatsApp Business to store channel access in the Worker.',
+        'For Telegram, set TELEGRAM_BOT_TOKEN once and save the target chat IDs in dashboard settings.',
     ]
 
+    if worker_bootstrap and not worker_bootstrap.instagram_app_id:
+        todos.insert(0, 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET before testing Instagram popup auth.')
     if worker_bootstrap and not worker_bootstrap.linkedin_client_id:
-        todos.insert(0, 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET before testing LinkedIn popup auth.')
+        todos.insert(1 if todos else 0, 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET before testing LinkedIn popup auth.')
     if worker_bootstrap and not worker_bootstrap.meta_app_id:
-        todos.insert(1 if todos else 0, 'Set META_APP_ID and META_APP_SECRET before testing WhatsApp popup auth.')
+        todos.insert(2 if todos else 0, 'Set META_APP_ID and META_APP_SECRET before testing WhatsApp popup auth.')
 
     return todos
 
@@ -233,8 +250,10 @@ def print_bootstrap_summary(
         print(f'ALLOWED_EMAILS          = {worker_bootstrap.allowed_emails or "<set this value>"}')
         print(f'ADMIN_EMAILS            = {worker_bootstrap.admin_emails or "<set this value>"}')
         print(f'CORS_ALLOWED_ORIGINS    = {worker_bootstrap.cors_allowed_origins or "<set this value>"}')
+        print(f'INSTAGRAM_APP_ID        = {worker_bootstrap.instagram_app_id or "<optional: set this for popup auth>"}')
         print(f'LINKEDIN_CLIENT_ID      = {worker_bootstrap.linkedin_client_id or "<optional: set this for popup auth>"}')
         print(f'LINKEDIN_PERSON_URN     = {worker_bootstrap.linkedin_person_urn or "<set this value>"}')
+        print(f'TELEGRAM_BOT_TOKEN      = {"<configured>" if worker_bootstrap.telegram_bot_token else "<optional: set this for Telegram delivery>"}')
         print(f'META_APP_ID             = {worker_bootstrap.meta_app_id or "<optional: set this for popup auth>"}')
         print(f'WHATSAPP_PHONE_NUMBER_ID = {worker_bootstrap.whatsapp_phone_number_id or "<set this value>"}')
         print(f'GITHUB_TOKEN_ENCRYPTION_KEY = {worker_bootstrap.encryption_key}')

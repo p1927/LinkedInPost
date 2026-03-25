@@ -8,7 +8,13 @@ import {
   type WhatsAppPhoneOption,
 } from '../services/backendApi';
 import { CHANNEL_OPTIONS, getChannelLabel, getChannelOption, type ChannelId } from '../integrations/channels';
+import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../integrations/instagram';
 import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../integrations/linkedin';
+import {
+  formatTelegramRecipientsInput,
+  normalizeTelegramChatId,
+  parseTelegramRecipientsInput,
+} from '../integrations/telegram';
 import { formatRecipientsInput, normalizePhoneNumber, parseRecipientsInput } from '../integrations/whatsapp';
 import {
   AVAILABLE_GOOGLE_MODELS,
@@ -38,7 +44,38 @@ function hasIncompleteWorkspaceSetup(session: AppSession): boolean {
   );
 }
 
-type PopupProvider = 'linkedin' | 'whatsapp';
+interface RecipientOption {
+  label: string;
+  value: string;
+}
+
+function getRecipientOptions(channel: ChannelId, config: BotConfig): RecipientOption[] {
+  if (channel === 'telegram') {
+    return config.telegramRecipients.map((recipient) => ({
+      label: recipient.label,
+      value: recipient.chatId,
+    }));
+  }
+
+  if (channel === 'whatsapp') {
+    return config.whatsappRecipients.map((recipient) => ({
+      label: recipient.label,
+      value: recipient.phoneNumber,
+    }));
+  }
+
+  return [];
+}
+
+function getDefaultRecipientMode(channel: ChannelId, config: BotConfig): 'saved' | 'manual' {
+  return getRecipientOptions(channel, config).length > 0 ? 'saved' : 'manual';
+}
+
+function getDefaultRecipientValue(channel: ChannelId, config: BotConfig): string {
+  return getRecipientOptions(channel, config)[0]?.value || '';
+}
+
+type PopupProvider = 'instagram' | 'linkedin' | 'whatsapp';
 
 interface OAuthPopupMessage {
   source: 'channel-bot-oauth';
@@ -56,7 +93,9 @@ function isOAuthPopupMessage(value: unknown): value is OAuthPopupMessage {
     value
       && typeof value === 'object'
       && (value as OAuthPopupMessage).source === 'channel-bot-oauth'
-      && ((value as OAuthPopupMessage).provider === 'linkedin' || (value as OAuthPopupMessage).provider === 'whatsapp')
+      && ((value as OAuthPopupMessage).provider === 'instagram'
+        || (value as OAuthPopupMessage).provider === 'linkedin'
+        || (value as OAuthPopupMessage).provider === 'whatsapp')
   );
 }
 
@@ -129,11 +168,13 @@ export function Dashboard({
   const [githubTokenInput, setGithubTokenInput] = useState('');
   const [googleModel, setGoogleModel] = useState(session.config.googleModel);
   const [selectedChannel, setSelectedChannel] = useState<ChannelId>(session.config.defaultChannel);
-  const [recipientMode, setRecipientMode] = useState<'saved' | 'manual'>(
-    session.config.whatsappRecipients.length > 0 ? 'saved' : 'manual'
+  const [recipientMode, setRecipientMode] = useState<'saved' | 'manual'>(getDefaultRecipientMode(session.config.defaultChannel, session.config));
+  const [selectedRecipientId, setSelectedRecipientId] = useState(getDefaultRecipientValue(session.config.defaultChannel, session.config));
+  const [manualRecipientId, setManualRecipientId] = useState('');
+  const [telegramBotTokenInput, setTelegramBotTokenInput] = useState('');
+  const [telegramRecipientsInput, setTelegramRecipientsInput] = useState(
+    formatTelegramRecipientsInput(session.config.telegramRecipients)
   );
-  const [selectedRecipientPhone, setSelectedRecipientPhone] = useState(session.config.whatsappRecipients[0]?.phoneNumber || '');
-  const [manualPhoneNumber, setManualPhoneNumber] = useState('');
   const [whatsappRecipientsInput, setWhatsappRecipientsInput] = useState(
     formatRecipientsInput(session.config.whatsappRecipients)
   );
@@ -160,8 +201,10 @@ export function Dashboard({
     setGithubRepo(session.config.githubRepo);
     setGoogleModel(session.config.googleModel);
     setSelectedChannel(session.config.defaultChannel);
-    setRecipientMode(session.config.whatsappRecipients.length > 0 ? 'saved' : 'manual');
-    setSelectedRecipientPhone(session.config.whatsappRecipients[0]?.phoneNumber || '');
+    setRecipientMode(getDefaultRecipientMode(session.config.defaultChannel, session.config));
+    setSelectedRecipientId(getDefaultRecipientValue(session.config.defaultChannel, session.config));
+    setManualRecipientId('');
+    setTelegramRecipientsInput(formatTelegramRecipientsInput(session.config.telegramRecipients));
     setWhatsappRecipientsInput(formatRecipientsInput(session.config.whatsappRecipients));
     setShowSettings(hasIncompleteWorkspaceSetup(session));
   }, [
@@ -170,8 +213,41 @@ export function Dashboard({
     session.config.googleModel,
     session.config.hasGitHubToken,
     session.config.spreadsheetId,
+    session.config.telegramRecipients,
     session.config.whatsappRecipients,
     session.isAdmin,
+  ]);
+
+  useEffect(() => {
+    if (!getChannelOption(selectedChannel).requiresRecipient) {
+      return;
+    }
+
+    const options = getRecipientOptions(selectedChannel, session.config);
+    if (recipientMode === 'saved') {
+      if (options.length === 0) {
+        setRecipientMode('manual');
+        if (selectedRecipientId) {
+          setSelectedRecipientId('');
+        }
+        return;
+      }
+
+      if (!options.some((recipient) => recipient.value === selectedRecipientId)) {
+        setSelectedRecipientId(options[0]?.value || '');
+      }
+      return;
+    }
+
+    if (!selectedRecipientId && options.length > 0) {
+      setSelectedRecipientId(options[0].value);
+    }
+  }, [
+    recipientMode,
+    selectedChannel,
+    selectedRecipientId,
+    session.config.telegramRecipients,
+    session.config.whatsappRecipients,
   ]);
 
   useEffect(() => {
@@ -238,14 +314,25 @@ export function Dashboard({
     alert(message || fallbackMessage);
   };
 
-  const savedRecipients = session.config.whatsappRecipients;
   const selectedChannelOption = getChannelOption(selectedChannel);
-  const resolvedRecipientPhoneNumber = recipientMode === 'saved'
-    ? selectedRecipientPhone
-    : normalizePhoneNumber(manualPhoneNumber);
-  const selectedRecipientLabel = savedRecipients.find((recipient) => recipient.phoneNumber === selectedRecipientPhone)?.label || '';
+  const activeRecipientOptions = getRecipientOptions(selectedChannel, session.config);
+  const resolvedRecipientId = recipientMode === 'saved'
+    ? selectedRecipientId
+    : selectedChannel === 'telegram'
+      ? normalizeTelegramChatId(manualRecipientId)
+      : normalizePhoneNumber(manualRecipientId);
+  const selectedRecipientLabel = activeRecipientOptions.find((recipient) => recipient.value === selectedRecipientId)?.label || '';
   const whatsappConfigured = Boolean(session.config.whatsappPhoneNumberId && session.config.hasWhatsAppAccessToken);
+  const instagramConfigured = Boolean(session.config.instagramUserId && session.config.hasInstagramAccessToken);
   const linkedinConfigured = Boolean(session.config.linkedinPersonUrn && session.config.hasLinkedInAccessToken);
+  const telegramConfigured = Boolean(session.config.hasTelegramBotToken);
+  const selectedChannelConfigured = selectedChannel === 'instagram'
+    ? instagramConfigured
+    : selectedChannel === 'linkedin'
+      ? linkedinConfigured
+      : selectedChannel === 'telegram'
+        ? telegramConfigured
+        : whatsappConfigured;
 
   const loadData = async (quiet = false) => {
     if (!session.config.spreadsheetId) return;
@@ -362,9 +449,12 @@ export function Dashboard({
         googleModel,
         githubToken: githubTokenInput.trim() || undefined,
         defaultChannel: selectedChannel,
+        telegramBotToken: telegramBotTokenInput.trim() || undefined,
+        telegramRecipients: parseTelegramRecipientsInput(telegramRecipientsInput),
         whatsappRecipients: parseRecipientsInput(whatsappRecipientsInput),
       });
       setGithubTokenInput('');
+      setTelegramBotTokenInput('');
       setShowSettings(false);
       if (sheetIdInput.trim()) {
         await loadData(true);
@@ -392,6 +482,27 @@ export function Dashboard({
       alert('LinkedIn publishing is now connected through the Worker.');
     } catch (error) {
       handleFailure(error, 'Failed to connect LinkedIn.');
+    } finally {
+      setConnectingChannel(null);
+    }
+  };
+
+  const handleInstagramConnection = async () => {
+    if (!session.isAdmin) {
+      return;
+    }
+
+    setConnectingChannel('instagram');
+    try {
+      const message = await openOAuthPopup(() => api.startInstagramAuth(idToken), 'instagram');
+      if (!message.ok) {
+        throw new Error(message.error || 'Instagram connection failed.');
+      }
+
+      await onSaveConfig({});
+      alert('Instagram publishing is now connected through the Worker.');
+    } catch (error) {
+      handleFailure(error, 'Failed to connect Instagram.');
     } finally {
       setConnectingChannel(null);
     }
@@ -465,12 +576,32 @@ export function Dashboard({
   };
 
   const publishRowToSelectedChannel = async (row: SheetRow) => {
+    if (selectedChannel === 'telegram' && !telegramConfigured) {
+      if (session.isAdmin) {
+        alert('Complete the Telegram delivery settings first.');
+        setShowSettings(true);
+      } else {
+        alert('A workspace admin still needs to configure Telegram delivery settings.');
+      }
+      return;
+    }
+
     if (selectedChannel === 'whatsapp' && !whatsappConfigured) {
       if (session.isAdmin) {
         alert('Complete the WhatsApp settings first.');
         setShowSettings(true);
       } else {
         alert('A workspace admin still needs to configure WhatsApp delivery settings.');
+      }
+      return;
+    }
+
+    if (selectedChannel === 'instagram' && !instagramConfigured) {
+      if (session.isAdmin) {
+        alert('Complete the Instagram publishing settings first.');
+        setShowSettings(true);
+      } else {
+        alert('A workspace admin still needs to configure Instagram publishing settings.');
       }
       return;
     }
@@ -485,8 +616,12 @@ export function Dashboard({
       return;
     }
 
-    if (selectedChannelOption.requiresRecipient && !resolvedRecipientPhoneNumber) {
-      alert('Select a saved WhatsApp recipient or enter a valid phone number in international format.');
+    if (selectedChannelOption.requiresRecipient && !resolvedRecipientId) {
+      alert(
+        selectedChannel === 'telegram'
+          ? 'Select a saved Telegram chat or enter a valid chat ID.'
+          : 'Select a saved WhatsApp recipient or enter a valid phone number in international format.'
+      );
       return;
     }
 
@@ -496,13 +631,18 @@ export function Dashboard({
       return;
     }
 
+    if (selectedChannel === 'instagram' && !row.selectedImageId.trim()) {
+      alert('Instagram requires a selected image. Approve the row with an image before publishing.');
+      return;
+    }
+
     const actionKey = buildRowActionKey('publish', row);
     setActionLoading(actionKey);
     try {
       const result = await api.publishContent(idToken, {
         row,
         channel: selectedChannel,
-        recipientPhoneNumber: selectedChannel === 'whatsapp' ? resolvedRecipientPhoneNumber : undefined,
+        recipientId: selectedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
         message,
         imageUrl: row.selectedImageId.trim() || undefined,
       });
@@ -512,14 +652,16 @@ export function Dashboard({
           topic: row.topic,
           channel: selectedChannel,
           mediaMode: result.mediaMode,
-          recipientLabel: selectedChannel === 'whatsapp'
-            ? (selectedRecipientLabel || resolvedRecipientPhoneNumber)
-            : 'LinkedIn audience',
+          recipientLabel: selectedChannelOption.requiresRecipient
+            ? (selectedRecipientLabel || resolvedRecipientId)
+            : selectedChannel === 'instagram'
+              ? (session.config.instagramUsername || 'connected account')
+              : 'LinkedIn audience',
         });
         await loadData(true);
         alert(
-          selectedChannel === 'whatsapp'
-            ? `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientPhoneNumber} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`
+          selectedChannelOption.requiresRecipient
+            ? `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`
             : `Published "${row.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`
         );
       } else {
@@ -567,7 +709,7 @@ export function Dashboard({
       <div className="bg-white/80 backdrop-blur-md border border-white/50 text-left max-w-xl mx-auto mt-8 p-8 rounded-2xl shadow-xl">
         <h2 className="text-xl font-bold text-deep-indigo font-heading">Workspace setup pending</h2>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          You are signed in as <strong>{session.email}</strong>, but an admin still needs to finish the shared spreadsheet, draft workflow, LinkedIn publishing, and WhatsApp delivery settings in the backend.
+          You are signed in as <strong>{session.email}</strong>, but an admin still needs to finish the shared spreadsheet, draft workflow, Instagram publishing, LinkedIn publishing, plus Telegram and WhatsApp delivery settings in the backend.
         </p>
       </div>
     );
@@ -600,9 +742,13 @@ export function Dashboard({
                   </span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {lastDeliverySummary.channel === 'whatsapp'
+                  {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
                     ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
-                    : 'Delivered to LinkedIn using the currently approved text and selected media.'}
+                    : lastDeliverySummary.channel === 'instagram'
+                      ? lastDeliverySummary.recipientLabel === 'connected account'
+                        ? 'Published to Instagram using the connected professional account.'
+                        : `Published to Instagram as @${lastDeliverySummary.recipientLabel}.`
+                      : 'Delivered to LinkedIn using the currently approved text and selected media.'}
                 </p>
               </div>
             ) : null}
@@ -685,6 +831,42 @@ export function Dashboard({
 
           <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
+            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">Instagram Publishing</h3>
+            <p className="mt-2 text-xs leading-5 text-slate-500">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
+            <div className="mt-4 space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {session.config.hasInstagramAccessToken && session.config.instagramUserId
+                    ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
+                    : session.config.instagramAuthAvailable
+                      ? 'No Instagram professional account connected yet.'
+                      : 'Instagram app credentials are still missing from the Worker environment.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleInstagramConnection()}
+                disabled={connectingChannel !== null || !session.config.instagramAuthAvailable}
+                className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {connectingChannel === 'instagram'
+                  ? 'Opening Instagram approval...'
+                  : session.config.hasInstagramAccessToken
+                    ? 'Reconnect Instagram'
+                    : 'Connect Instagram'}
+              </button>
+              <p className="text-xs text-slate-500">
+                {session.config.instagramAuthAvailable
+                  ? 'The Worker opens Instagram approval in a popup, exchanges the code server-side, and stores the long-lived token securely.'
+                  : 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in the Worker before this button can be used.'}
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
             <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">LinkedIn Publishing</h3>
             <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
             <div className="mt-4 space-y-4">
@@ -716,6 +898,51 @@ export function Dashboard({
                   ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
                   : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
               </p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
+            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">Telegram Delivery</h3>
+            <p className="mt-2 text-xs leading-5 text-slate-500">This path sends approved content directly through the Telegram Bot API.</p>
+            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {session.config.hasTelegramBotToken
+                      ? 'Telegram bot token is stored in the Worker.'
+                      : 'No Telegram bot token stored yet.'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Replace Telegram Bot Token</label>
+                  <input
+                    type="password"
+                    value={telegramBotTokenInput}
+                    onChange={(e) => setTelegramBotTokenInput(e.target.value)}
+                    placeholder={session.config.hasTelegramBotToken ? 'Leave blank to keep the current bot token' : '123456789:AA...'}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
+                  />
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    {session.config.hasTelegramBotToken
+                      ? 'A bot token is already stored. Enter a new one only when you want to rotate it.'
+                      : 'Create a bot with BotFather, then paste the token here once so the Worker can deliver messages.'}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Saved Chats</label>
+                <textarea
+                  value={telegramRecipientsInput}
+                  onChange={(e) => setTelegramRecipientsInput(e.target.value)}
+                  placeholder={['Channel | @my_channel', 'Founders group | -1001234567890'].join('\n')}
+                  className="min-h-[176px] w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
+                />
+                <p className="text-xs text-slate-500 mt-1.5">One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
+              </div>
             </div>
           </section>
 
@@ -795,7 +1022,7 @@ export function Dashboard({
 
           <p className="text-xs text-slate-400 mt-5 flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Secrets stay in the backend. The browser no longer talks to Google Sheets, LinkedIn, or Meta directly.
+            Secrets stay in the backend. The browser no longer talks to Google Sheets, Instagram, LinkedIn, Telegram, or Meta directly.
           </p>
           <button
             onClick={saveSettings}
@@ -880,7 +1107,7 @@ export function Dashboard({
           </label>
 
           <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
-            {selectedChannel === 'whatsapp' ? (
+            {selectedChannelOption.requiresRecipient ? (
               <>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
@@ -892,7 +1119,7 @@ export function Dashboard({
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Saved recipient
+                    {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
                   </button>
                   <button
                     type="button"
@@ -903,27 +1130,27 @@ export function Dashboard({
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Manual number
+                    {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
                   </button>
                 </div>
 
                 {recipientMode === 'saved' ? (
                   <label className="mt-3 block">
                     <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      <MessageCircle className="h-4 w-4" /> Recipient
+                      <MessageCircle className="h-4 w-4" /> {selectedChannel === 'telegram' ? 'Chat' : 'Recipient'}
                     </span>
                     <select
-                      value={selectedRecipientPhone}
-                      onChange={(e) => setSelectedRecipientPhone(e.target.value)}
+                      value={selectedRecipientId}
+                      onChange={(e) => setSelectedRecipientId(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                      disabled={savedRecipients.length === 0}
+                      disabled={activeRecipientOptions.length === 0}
                     >
-                      {savedRecipients.length === 0 ? (
-                        <option value="">No saved recipients configured yet</option>
+                      {activeRecipientOptions.length === 0 ? (
+                        <option value="">No saved {selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet</option>
                       ) : (
-                        savedRecipients.map((recipient) => (
-                          <option key={`${recipient.label}-${recipient.phoneNumber}`} value={recipient.phoneNumber}>
-                            {recipient.label} ({recipient.phoneNumber})
+                        activeRecipientOptions.map((recipient) => (
+                          <option key={`${recipient.label}-${recipient.value}`} value={recipient.value}>
+                            {recipient.label} ({recipient.value})
                           </option>
                         ))
                       )}
@@ -932,22 +1159,34 @@ export function Dashboard({
                 ) : (
                   <label className="mt-3 block">
                     <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      <Phone className="h-4 w-4" /> Phone number
+                      {selectedChannel === 'telegram' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />} {selectedChannel === 'telegram' ? 'Chat ID' : 'Phone number'}
                     </span>
                     <input
                       type="text"
-                      value={manualPhoneNumber}
-                      onChange={(e) => setManualPhoneNumber(e.target.value)}
-                      placeholder="+14155550101"
+                      value={manualRecipientId}
+                      onChange={(e) => setManualRecipientId(e.target.value)}
+                      placeholder={selectedChannel === 'telegram' ? '@my_channel or -1001234567890' : '+14155550101'}
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
                     />
                   </label>
                 )}
 
                 <p className="mt-3 text-xs leading-5 text-slate-500">
-                  Sending uses Meta&apos;s WhatsApp Cloud API directly from the Worker. Free-form text usually requires an active customer conversation window.
+                  {selectedChannel === 'telegram'
+                    ? 'Sending uses the Telegram Bot API directly from the Worker. Make sure the bot is already a member of the destination chat or channel before publishing.'
+                    : 'Sending uses Meta\'s WhatsApp Cloud API directly from the Worker. Free-form text usually requires an active customer conversation window.'}
                 </p>
               </>
+            ) : selectedChannel === 'instagram' ? (
+              <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Instagram flow</span>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {getInstagramDeliveryDescription()}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {getInstagramDeliveryHint()}
+                </p>
+              </div>
             ) : (
               <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">LinkedIn flow</span>
@@ -1056,8 +1295,9 @@ export function Dashboard({
                             onClick={() => void publishRowToSelectedChannel(row)}
                             disabled={
                               actionLoading !== null
-                              || (selectedChannel === 'whatsapp' && (!resolvedRecipientPhoneNumber || !whatsappConfigured))
-                              || (selectedChannel === 'linkedin' && !linkedinConfigured)
+                              || !selectedChannelConfigured
+                              || (selectedChannelOption.requiresRecipient && !resolvedRecipientId)
+                              || (selectedChannel === 'instagram' && !row.selectedImageId.trim())
                             }
                             className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 font-medium"
                           >

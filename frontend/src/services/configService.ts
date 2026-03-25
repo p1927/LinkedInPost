@@ -1,4 +1,5 @@
 import type { ChannelId } from '../integrations/channels';
+import { normalizeTelegramRecipients, type TelegramRecipient } from '../integrations/telegram';
 import { normalizeWhatsAppRecipients, type WhatsAppRecipient } from '../integrations/whatsapp';
 
 export interface GoogleModelOption {
@@ -90,9 +91,15 @@ export interface BotConfig {
   googleModel: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
+  instagramAuthAvailable: boolean;
+  instagramUserId: string;
+  instagramUsername: string;
+  hasInstagramAccessToken: boolean;
   linkedinAuthAvailable: boolean;
   linkedinPersonUrn: string;
   hasLinkedInAccessToken: boolean;
+  hasTelegramBotToken: boolean;
+  telegramRecipients: TelegramRecipient[];
   whatsappAuthAvailable: boolean;
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
@@ -100,15 +107,29 @@ export interface BotConfig {
 }
 
 export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined): BotConfig {
+  const defaultChannel = config?.defaultChannel === 'whatsapp'
+    ? 'whatsapp'
+    : config?.defaultChannel === 'telegram'
+      ? 'telegram'
+    : config?.defaultChannel === 'instagram'
+      ? 'instagram'
+      : 'linkedin';
+
   return {
     spreadsheetId: config?.spreadsheetId || '',
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || DEFAULT_GOOGLE_MODEL,
     hasGitHubToken: Boolean(config?.hasGitHubToken),
-    defaultChannel: config?.defaultChannel === 'whatsapp' ? 'whatsapp' : 'linkedin',
+    defaultChannel,
+    instagramAuthAvailable: Boolean(config?.instagramAuthAvailable),
+    instagramUserId: config?.instagramUserId || '',
+    instagramUsername: config?.instagramUsername || '',
+    hasInstagramAccessToken: Boolean(config?.hasInstagramAccessToken),
     linkedinAuthAvailable: Boolean(config?.linkedinAuthAvailable),
     linkedinPersonUrn: config?.linkedinPersonUrn || '',
     hasLinkedInAccessToken: Boolean(config?.hasLinkedInAccessToken),
+    hasTelegramBotToken: Boolean(config?.hasTelegramBotToken),
+    telegramRecipients: normalizeTelegramRecipients(config?.telegramRecipients),
     whatsappAuthAvailable: Boolean(config?.whatsappAuthAvailable),
     whatsappPhoneNumberId: config?.whatsappPhoneNumberId || '',
     hasWhatsAppAccessToken: Boolean(config?.hasWhatsAppAccessToken),
@@ -122,8 +143,13 @@ export interface BotConfigUpdate {
   googleModel?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
+  instagramUserId?: string;
+  instagramUsername?: string;
+  instagramAccessToken?: string;
   linkedinPersonUrn?: string;
   linkedinAccessToken?: string;
+  telegramBotToken?: string;
+  telegramRecipients?: TelegramRecipient[];
   whatsappPhoneNumberId?: string;
   whatsappAccessToken?: string;
   whatsappRecipients?: WhatsAppRecipient[];

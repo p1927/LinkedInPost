@@ -12,7 +12,7 @@ export interface AppSession {
 export interface PublishContentRequest {
   row: SheetRow;
   channel: ChannelId;
-  recipientPhoneNumber?: string;
+  recipientId?: string;
   message: string;
   imageUrl?: string;
 }
@@ -20,7 +20,7 @@ export interface PublishContentRequest {
 export interface PublishContentResult {
   success: true;
   channel: ChannelId;
-  recipientPhoneNumber: string | null;
+  recipientId: string | null;
   messageId: string | null;
   deliveryMode: 'queued' | 'sent';
   mediaMode: 'image' | 'text';
@@ -156,6 +156,10 @@ export class BackendApi {
   async saveConfig(idToken: string, config: BotConfigUpdate): Promise<BotConfig> {
     const saved = await this.post<BotConfig>('saveConfig', idToken, { ...config });
     return normalizeBotConfig(saved);
+  }
+
+  async startInstagramAuth(idToken: string): Promise<OAuthStartResult> {
+    return this.post<OAuthStartResult>('startInstagramAuth', idToken);
   }
 
   async startLinkedInAuth(idToken: string): Promise<OAuthStartResult> {

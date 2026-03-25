@@ -1,4 +1,4 @@
-export type ChannelId = 'linkedin' | 'whatsapp';
+export type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp';
 
 export interface ChannelOption {
   value: ChannelId;
@@ -10,11 +10,25 @@ export interface ChannelOption {
 
 export const CHANNEL_OPTIONS: ChannelOption[] = [
   {
+    value: 'instagram',
+    label: 'Instagram',
+    description: 'Publish approved image posts directly through the Worker using Instagram Login',
+    requiresRecipient: false,
+    publishVerb: 'Publish to Instagram',
+  },
+  {
     value: 'linkedin',
     label: 'LinkedIn',
     description: 'Publish approved content directly through the Worker',
     requiresRecipient: false,
     publishVerb: 'Publish to LinkedIn',
+  },
+  {
+    value: 'telegram',
+    label: 'Telegram',
+    description: 'Send approved posts directly to a Telegram chat through the Worker',
+    requiresRecipient: true,
+    publishVerb: 'Send via Telegram',
   },
   {
     value: 'whatsapp',
