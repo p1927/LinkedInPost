@@ -34,6 +34,44 @@ GOOGLE_SEARCH_CX = os.environ.get('GOOGLE_SEARCH_CX')
 LINKEDIN_ACCESS_TOKEN = os.environ.get('LINKEDIN_ACCESS_TOKEN')
 LINKEDIN_PERSON_URN = os.environ.get('LINKEDIN_PERSON_URN') # e.g., urn:li:person:123456
 
+
+def validate_environment(action):
+    """Fail fast with actionable guidance when required environment variables are missing."""
+    required = {
+        'draft': [
+            'GOOGLE_SHEET_ID',
+            'GOOGLE_DRIVE_FOLDER_ID',
+            'GOOGLE_CREDENTIALS_JSON',
+            'GEMINI_API_KEY',
+            'GOOGLE_SEARCH_API_KEY',
+            'GOOGLE_SEARCH_CX',
+        ],
+        'publish': [
+            'GOOGLE_SHEET_ID',
+            'GOOGLE_CREDENTIALS_JSON',
+            'LINKEDIN_ACCESS_TOKEN',
+            'LINKEDIN_PERSON_URN',
+        ],
+    }
+
+    missing = [name for name in required.get(action, []) if not os.environ.get(name)]
+    if not missing:
+        return
+
+    print('Missing required environment variables for action:', action)
+    for name in missing:
+        print(f'- {name}')
+
+    if 'GOOGLE_SHEET_ID' in missing:
+        print(
+            'GOOGLE_SHEET_ID is empty. In GitHub Actions this usually means the repository secret '
+            'GOOGLE_SHEET_ID has not been added under Settings -> Secrets and variables -> Actions.'
+        )
+
+    print('The frontend Save Configuration button stores settings in your personal Google Drive app data.')
+    print('It does not update GitHub Actions secrets used by linkedin_bot.py.')
+    sys.exit(1)
+
 # ==========================================
 # GOOGLE APIS INIT
 # ==========================================
@@ -362,6 +400,7 @@ def process_publishing(sheets_service, docs_service):
 
 if __name__ == "__main__":
     action = sys.argv[1] if len(sys.argv) > 1 else 'draft'
+    validate_environment(action)
     
     sheets_service, drive_service, docs_service = get_google_services()
     if not sheets_service:
