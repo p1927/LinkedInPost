@@ -5,6 +5,7 @@ import {
   isAuthErrorMessage,
   type AppSession,
   type OAuthStartResult,
+  type TelegramChatVerificationResult,
   type WhatsAppPhoneOption,
 } from '../services/backendApi';
 import { CHANNEL_OPTIONS, getChannelLabel, getChannelOption, type ChannelId } from '../integrations/channels';
@@ -14,6 +15,7 @@ import {
   formatTelegramRecipientsInput,
   normalizeTelegramChatId,
   parseTelegramRecipientsInput,
+  type TelegramRecipient,
 } from '../integrations/telegram';
 import { formatRecipientsInput, normalizePhoneNumber, parseRecipientsInput } from '../integrations/whatsapp';
 import {
@@ -31,6 +33,15 @@ import { VariantSelection } from './VariantSelection';
 
 function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
   return `${action}:${row.topic.trim()}::${row.date.trim()}`;
+}
+
+function getNormalizedRowStatus(status?: string): string {
+  return status?.trim().toLowerCase() || 'pending';
+}
+
+function canPreviewPublishedContent(row: SheetRow): boolean {
+  const status = getNormalizedRowStatus(row.status);
+  return status === 'approved' || status === 'published';
 }
 
 function hasIncompleteWorkspaceSetup(session: AppSession): boolean {
@@ -73,6 +84,14 @@ function getDefaultRecipientMode(channel: ChannelId, config: BotConfig): 'saved'
 
 function getDefaultRecipientValue(channel: ChannelId, config: BotConfig): string {
   return getRecipientOptions(channel, config)[0]?.value || '';
+}
+
+function tryParseTelegramRecipients(input: string): TelegramRecipient[] {
+  try {
+    return parseTelegramRecipientsInput(input);
+  } catch {
+    return [];
+  }
 }
 
 type PopupProvider = 'instagram' | 'linkedin' | 'whatsapp';
@@ -175,6 +194,14 @@ export function Dashboard({
   const [telegramRecipientsInput, setTelegramRecipientsInput] = useState(
     formatTelegramRecipientsInput(session.config.telegramRecipients)
   );
+  const [telegramDraftLabel, setTelegramDraftLabel] = useState('');
+  const [telegramDraftChatId, setTelegramDraftChatId] = useState('');
+  const [verifyingTelegramChat, setVerifyingTelegramChat] = useState(false);
+  const [telegramVerification, setTelegramVerification] = useState<{
+    kind: 'success' | 'error';
+    message: string;
+    result?: TelegramChatVerificationResult;
+  } | null>(null);
   const [whatsappRecipientsInput, setWhatsappRecipientsInput] = useState(
     formatRecipientsInput(session.config.whatsappRecipients)
   );
@@ -205,6 +232,9 @@ export function Dashboard({
     setSelectedRecipientId(getDefaultRecipientValue(session.config.defaultChannel, session.config));
     setManualRecipientId('');
     setTelegramRecipientsInput(formatTelegramRecipientsInput(session.config.telegramRecipients));
+    setTelegramDraftLabel('');
+    setTelegramDraftChatId('');
+    setTelegramVerification(null);
     setWhatsappRecipientsInput(formatRecipientsInput(session.config.whatsappRecipients));
     setShowSettings(hasIncompleteWorkspaceSetup(session));
   }, [
@@ -316,6 +346,7 @@ export function Dashboard({
 
   const selectedChannelOption = getChannelOption(selectedChannel);
   const activeRecipientOptions = getRecipientOptions(selectedChannel, session.config);
+  const parsedTelegramRecipients = tryParseTelegramRecipients(telegramRecipientsInput);
   const resolvedRecipientId = recipientMode === 'saved'
     ? selectedRecipientId
     : selectedChannel === 'telegram'
@@ -463,6 +494,118 @@ export function Dashboard({
       handleFailure(error, 'Failed to save shared configuration.');
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleAddTelegramRecipient = () => {
+    const label = telegramDraftLabel.trim();
+    const chatId = normalizeTelegramChatId(telegramDraftChatId);
+
+    if (!label || !chatId) {
+      alert('Enter a label and a valid Telegram chat ID or @channel username.');
+      return;
+    }
+
+    let existingRecipients: TelegramRecipient[];
+    try {
+      existingRecipients = parseTelegramRecipientsInput(telegramRecipientsInput);
+    } catch (error) {
+      handleFailure(error, 'Fix the saved Telegram chats list before adding another chat.');
+      return;
+    }
+
+    if (existingRecipients.some((recipient) => recipient.chatId === chatId)) {
+      alert('That Telegram chat is already saved.');
+      return;
+    }
+
+    const nextRecipients = [...existingRecipients, { label, chatId }];
+    setTelegramRecipientsInput(formatTelegramRecipientsInput(nextRecipients));
+    setTelegramDraftLabel('');
+    setTelegramDraftChatId('');
+    setTelegramVerification(null);
+
+    if (selectedChannel === 'telegram') {
+      setRecipientMode('saved');
+      setSelectedRecipientId(chatId);
+    }
+  };
+
+  const handleRemoveTelegramRecipient = (chatId: string) => {
+    let existingRecipients: TelegramRecipient[];
+    try {
+      existingRecipients = parseTelegramRecipientsInput(telegramRecipientsInput);
+    } catch (error) {
+      handleFailure(error, 'Fix the saved Telegram chats list before removing a chat.');
+      return;
+    }
+
+    const nextRecipients = existingRecipients.filter((recipient) => recipient.chatId !== chatId);
+    setTelegramRecipientsInput(formatTelegramRecipientsInput(nextRecipients));
+
+    if (selectedChannel === 'telegram' && selectedRecipientId === chatId) {
+      setSelectedRecipientId(nextRecipients[0]?.chatId || '');
+      if (nextRecipients.length === 0) {
+        setRecipientMode('manual');
+      }
+    }
+  };
+
+  const handleUseManualTelegramChat = () => {
+    const chatId = normalizeTelegramChatId(manualRecipientId);
+    if (!chatId) {
+      alert('Enter a valid Telegram chat ID or @channel username first.');
+      return;
+    }
+
+    setTelegramDraftChatId(chatId);
+    if (!telegramDraftLabel.trim()) {
+      setTelegramDraftLabel('New Telegram chat');
+    }
+
+    setTelegramVerification(null);
+  };
+
+  const handleVerifyTelegramChat = async () => {
+    const chatId = normalizeTelegramChatId(telegramDraftChatId);
+    if (!chatId) {
+      setTelegramVerification({
+        kind: 'error',
+        message: 'Enter a valid Telegram chat ID or @channel username before verifying.',
+      });
+      return;
+    }
+
+    setVerifyingTelegramChat(true);
+    setTelegramVerification(null);
+    try {
+      const result = await api.verifyTelegramChat(idToken, chatId, telegramBotTokenInput.trim() || undefined);
+      setTelegramDraftChatId(result.chatId);
+      if (!telegramDraftLabel.trim()) {
+        setTelegramDraftLabel(result.title || (result.username ? `@${result.username}` : 'Verified Telegram chat'));
+      }
+      setTelegramVerification({
+        kind: 'success',
+        message: result.title
+          ? `Verified ${result.title}${result.type ? ` (${result.type})` : ''}.`
+          : result.username
+            ? `Verified @${result.username}${result.type ? ` (${result.type})` : ''}.`
+            : 'Telegram chat verified successfully.',
+        result,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to verify the Telegram chat.';
+      if (isAuthErrorMessage(message)) {
+        onAuthExpired();
+        return;
+      }
+
+      setTelegramVerification({
+        kind: 'error',
+        message,
+      });
+    } finally {
+      setVerifyingTelegramChat(false);
     }
   };
 
@@ -695,7 +838,7 @@ export function Dashboard({
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (getNormalizedRowStatus(status)) {
       case 'pending': return 'bg-amber-100 text-amber-800 border border-amber-200';
       case 'drafted': return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
       case 'approved': return 'bg-purple-100 text-purple-800 border border-purple-200';
@@ -935,13 +1078,108 @@ export function Dashboard({
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Saved Chats</label>
+                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Quick add</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
+                    <input
+                      type="text"
+                      value={telegramDraftLabel}
+                      onChange={(e) => {
+                        setTelegramDraftLabel(e.target.value);
+                        setTelegramVerification(null);
+                      }}
+                      placeholder="Team channel"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                    />
+                    <input
+                      type="text"
+                      value={telegramDraftChatId}
+                      onChange={(e) => {
+                        setTelegramDraftChatId(e.target.value);
+                        setTelegramVerification(null);
+                      }}
+                      placeholder="@my_channel or -1001234567890"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-primary/50"
+                    />
+                    <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
+                      <button
+                        type="button"
+                        onClick={() => void handleVerifyTelegramChat()}
+                        disabled={verifyingTelegramChat}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
+                        {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddTelegramRecipient}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800"
+                      >
+                        <Plus className="h-4 w-4" /> Add chat
+                      </button>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">Use @channelusername for public channels or a numeric chat ID for private chats, groups, and private channels.</p>
+                  {telegramVerification ? (
+                    <div
+                      className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success'
+                        ? 'border-emerald-200 bg-emerald-50/80 text-emerald-800'
+                        : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}
+                    >
+                      <p className="font-semibold">{telegramVerification.message}</p>
+                      {telegramVerification.kind === 'success' && telegramVerification.result ? (
+                        <p className="mt-1 text-xs opacity-80">
+                          Saved target will use {telegramVerification.result.chatId}
+                          {telegramVerification.result.username ? ` as @${telegramVerification.result.username}` : ''}.
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {selectedChannel === 'telegram' && recipientMode === 'manual' ? (
+                    <button
+                      type="button"
+                      onClick={handleUseManualTelegramChat}
+                      className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-indigo-600"
+                    >
+                      <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
+                    </button>
+                  ) : null}
+                </div>
+
+                {parsedTelegramRecipients.length > 0 ? (
+                  <div className="mt-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Saved now</p>
+                    <div className="mt-3 space-y-2">
+                      {parsedTelegramRecipients.map((recipient) => (
+                        <div
+                          key={`${recipient.label}-${recipient.chatId}`}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">{recipient.label}</p>
+                            <p className="text-xs text-slate-500">{recipient.chatId}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600"
+                          >
+                            <Trash2 className="h-4 w-4" /> Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 <textarea
+                  className="mt-3 min-h-[176px] w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
                   value={telegramRecipientsInput}
                   onChange={(e) => setTelegramRecipientsInput(e.target.value)}
                   placeholder={['Channel | @my_channel', 'Founders group | -1001234567890'].join('\n')}
-                  className="min-h-[176px] w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
                 />
-                <p className="text-xs text-slate-500 mt-1.5">One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
+                <p className="text-xs text-slate-500 mt-1.5">Bulk editor. One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
               </div>
             </div>
           </section>
@@ -1259,7 +1497,7 @@ export function Dashboard({
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium">
                     <div className="flex flex-wrap items-center gap-4 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
-                      {row.status?.toLowerCase() === 'pending' && (
+                      {getNormalizedRowStatus(row.status) === 'pending' && (
                         <button
                           onClick={() => void triggerRowGithubAction(row, 'draft')}
                           disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
@@ -1273,7 +1511,7 @@ export function Dashboard({
                           Draft
                         </button>
                       )}
-                      {row.status?.toLowerCase() === 'drafted' && (
+                      {getNormalizedRowStatus(row.status) === 'drafted' && (
                         <button 
                           onClick={() => setSelectedRowForReview(row)}
                           className="text-primary hover:text-indigo-800 hover:-translate-y-0.5 transition-all duration-200 font-semibold inline-flex items-center gap-1.5"
@@ -1282,7 +1520,7 @@ export function Dashboard({
                           Review
                         </button>
                       )}
-                      {row.status?.toLowerCase() === 'approved' && (
+                      {canPreviewPublishedContent(row) && (
                         <>
                           <button
                             onClick={() => setSelectedApprovedRowPreview(row)}
@@ -1291,6 +1529,10 @@ export function Dashboard({
                             <Eye className="w-4 h-4" />
                             Preview
                           </button>
+                        </>
+                      )}
+                      {getNormalizedRowStatus(row.status) === 'approved' && (
+                        <>
                           <button
                             onClick={() => void publishRowToSelectedChannel(row)}
                             disabled={

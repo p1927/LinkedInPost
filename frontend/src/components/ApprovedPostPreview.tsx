@@ -8,6 +8,20 @@ interface ApprovedPostPreviewProps {
 }
 
 export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) {
+  const normalizedStatus = row.status?.trim().toLowerCase() || 'approved';
+  const isPublished = normalizedStatus === 'published';
+  const previewLabel = isPublished ? 'Published Preview' : 'Approved Preview';
+  const previewDescription = isPublished
+    ? 'This view shows the final post that was published from this topic, including the approved copy and selected image at publish time.'
+    : 'This is the exact post currently queued for publishing. Review the final copy, image, and scheduled time before you send it.';
+  const statusLabel = isPublished ? 'Published' : 'Approved and ready';
+  const imageLabel = isPublished
+    ? 'The image shown here is the one that was attached when this post was published.'
+    : 'The chosen image is attached to this post preview.';
+  const emptyImageLabel = isPublished
+    ? 'This published post did not include a selected image.'
+    : 'No image was selected for this approved post.';
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1240px)] items-center justify-center">
@@ -15,11 +29,11 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
           <div className="flex items-start justify-between gap-4 border-b border-slate-200/70 px-6 py-5 sm:px-8">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                <Eye className="h-3.5 w-3.5" /> Approved Preview
+                <Eye className="h-3.5 w-3.5" /> {previewLabel}
               </div>
               <h2 className="mt-3 text-2xl font-semibold text-slate-900">{row.topic}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                This is the exact post currently queued for publishing. Review the final copy, image, and scheduled time before you send it.
+                {previewDescription}
               </p>
             </div>
             <button
@@ -53,7 +67,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                 <div className="mt-5 grid gap-4">
                   <div className="rounded-2xl bg-slate-50 px-4 py-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
-                    <p className="mt-2 text-sm font-semibold text-emerald-700">Approved and ready</p>
+                    <p className="mt-2 text-sm font-semibold text-emerald-700">{statusLabel}</p>
                   </div>
 
                   <div className="rounded-2xl bg-slate-50 px-4 py-4">
@@ -72,8 +86,8 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Selected image</p>
                     <p className="mt-2 text-sm leading-6 text-slate-700">
                       {row.selectedImageId?.trim()
-                        ? 'The chosen image is attached to this post preview.'
-                        : 'No image was selected for this approved post.'}
+                        ? imageLabel
+                        : emptyImageLabel}
                     </p>
                   </div>
                 </div>

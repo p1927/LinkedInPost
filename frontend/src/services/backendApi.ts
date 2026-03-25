@@ -39,6 +39,13 @@ export interface WhatsAppPhoneOption {
   verifiedName: string;
 }
 
+export interface TelegramChatVerificationResult {
+  chatId: string;
+  title: string;
+  username: string;
+  type: string;
+}
+
 interface ApiEnvelope<T> {
   ok: boolean;
   data?: T;
@@ -176,6 +183,13 @@ export class BackendApi {
       phoneNumberId,
     });
     return normalizeBotConfig(saved);
+  }
+
+  async verifyTelegramChat(idToken: string, chatId: string, botToken?: string): Promise<TelegramChatVerificationResult> {
+    return this.post<TelegramChatVerificationResult>('verifyTelegramChat', idToken, {
+      chatId,
+      botToken,
+    });
   }
 
   async triggerGithubAction(

@@ -1,6 +1,6 @@
 import { publishInstagramPost } from './integrations/instagram';
 import { publishLinkedInPost } from './integrations/linkedin';
-import { sendTelegramMessage } from './integrations/telegram';
+import { sendTelegramMessage, verifyTelegramChat as verifyTelegramChatRequest } from './integrations/telegram';
 import { sendWhatsAppMessage } from './integrations/whatsapp';
 
 type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
@@ -169,6 +169,13 @@ interface PendingWhatsAppConnectionRecord {
   origin: string;
   accessTokenCiphertext: string;
   options: WhatsAppPhoneOption[];
+}
+
+interface TelegramChatVerificationResult {
+  chatId: string;
+  title: string;
+  username: string;
+  type: string;
 }
 
 interface LinkedInTokenResponse {
@@ -437,6 +444,9 @@ async function dispatchAction(
     case 'completeWhatsAppConnection':
       ensureAdmin(session);
       return completeWhatsAppConnection(env, session, payload);
+    case 'verifyTelegramChat':
+      ensureAdmin(session);
+      return verifyTelegramChat(env, storedConfig, payload);
     case 'triggerGithubAction':
       return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
@@ -1209,6 +1219,48 @@ async function persistTelegramToken(env: Env, botToken: string): Promise<BotConf
   return toPublicConfig(nextConfig, env);
 }
 
+async function resolveTelegramBotToken(env: Env, config: StoredConfig): Promise<string> {
+  if (!config.telegramBotTokenCiphertext && !config.telegramBotToken) {
+    throw new Error('Telegram delivery is not configured. Ask an admin to add the bot token.');
+  }
+
+  if (config.telegramBotTokenCiphertext) {
+    try {
+      return await decryptSecret(
+        config.telegramBotTokenCiphertext,
+        requireSecretEncryptionKey(env),
+        TELEGRAM_TOKEN_REAUTH_MESSAGE,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === TELEGRAM_TOKEN_REAUTH_MESSAGE) {
+        const nextConfig: StoredConfig = {
+          ...config,
+          telegramBotTokenCiphertext: undefined,
+        };
+        await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+      }
+      throw error;
+    }
+  }
+
+  return String(config.telegramBotToken || '').trim();
+}
+
+async function verifyTelegramChat(
+  env: Env,
+  config: StoredConfig,
+  payload: Record<string, unknown>,
+): Promise<TelegramChatVerificationResult> {
+  const chatId = normalizeTelegramChatId(String(payload.chatId || ''));
+  if (!chatId) {
+    throw new Error('Enter a valid Telegram chat ID or @channel username.');
+  }
+
+  const providedToken = String(payload.botToken || '').trim();
+  const botToken = providedToken || await resolveTelegramBotToken(env, config);
+  return verifyTelegramChatRequest({ botToken, chatId });
+}
+
 function oauthPopupResponse(origin: string | null, message: Record<string, unknown>): Response {
   const messageJson = JSON.stringify(message).replace(/</g, '\\u003c');
   const originJson = origin ? JSON.stringify(origin) : 'null';
@@ -1497,31 +1549,7 @@ async function publishContent(
       throw new Error('A valid Telegram chat ID is required.');
     }
 
-    if (!config.telegramBotTokenCiphertext && !config.telegramBotToken) {
-      throw new Error('Telegram delivery is not configured. Ask an admin to add the bot token.');
-    }
-
-    let botToken: string;
-    if (config.telegramBotTokenCiphertext) {
-      try {
-        botToken = await decryptSecret(
-          config.telegramBotTokenCiphertext,
-          requireSecretEncryptionKey(env),
-          TELEGRAM_TOKEN_REAUTH_MESSAGE,
-        );
-      } catch (error) {
-        if (error instanceof Error && error.message === TELEGRAM_TOKEN_REAUTH_MESSAGE) {
-          const nextConfig: StoredConfig = {
-            ...config,
-            telegramBotTokenCiphertext: undefined,
-          };
-          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-        }
-        throw error;
-      }
-    } else {
-      botToken = String(config.telegramBotToken || '').trim();
-    }
+    const botToken = await resolveTelegramBotToken(env, config);
 
     const sendResult = await sendTelegramMessage({
       botToken,
