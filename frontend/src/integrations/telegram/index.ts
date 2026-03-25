@@ -41,7 +41,7 @@ export function parseTelegramRecipientsInput(input: string): TelegramRecipient[]
       const chatId = normalizeTelegramChatId(rawChatId || '');
 
       if (!rawLabel || !chatId) {
-        throw new Error('Saved Telegram chats must use the format "Label | @channelusername" or "Label | -1001234567890".');
+        throw new Error('Saved Telegram chats must use the format "Label | @channelusername" for public channels or "Label | 123456789 / -1001234567890" for private chats, groups, and channels.');
       }
 
       return {
@@ -62,5 +62,5 @@ export function getTelegramDeliveryDescription(): string {
 }
 
 export function getTelegramDeliveryHint(): string {
-  return 'Use a numeric chat ID for private groups or @channelusername for public channels that your bot can access.';
+  return 'Use @channelusername only for public channels or public supergroups. Use a numeric chat ID for people, private groups, and private channels after the bot has access.';
 }

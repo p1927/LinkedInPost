@@ -502,7 +502,7 @@ export function Dashboard({
     const chatId = normalizeTelegramChatId(telegramDraftChatId);
 
     if (!label || !chatId) {
-      alert('Enter a label and a valid Telegram chat ID or @channel username.');
+      alert('Enter a label and a valid Telegram target. Use @channelusername only for public channels or a numeric chat ID for people, private groups, and private channels.');
       return;
     }
 
@@ -554,7 +554,7 @@ export function Dashboard({
   const handleUseManualTelegramChat = () => {
     const chatId = normalizeTelegramChatId(manualRecipientId);
     if (!chatId) {
-      alert('Enter a valid Telegram chat ID or @channel username first.');
+      alert('Enter a valid Telegram target first. Use @channelusername only for public channels or a numeric chat ID for people, private groups, and private channels.');
       return;
     }
 
@@ -571,7 +571,7 @@ export function Dashboard({
     if (!chatId) {
       setTelegramVerification({
         kind: 'error',
-        message: 'Enter a valid Telegram chat ID or @channel username before verifying.',
+        message: 'Enter a valid Telegram target before verifying. Use @channelusername only for public channels or a numeric chat ID for people, private groups, and private channels.',
       });
       return;
     }
@@ -1098,7 +1098,7 @@ export function Dashboard({
                         setTelegramDraftChatId(e.target.value);
                         setTelegramVerification(null);
                       }}
-                      placeholder="@my_channel or -1001234567890"
+                      placeholder="@my_channel or 123456789 / -1001234567890"
                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-primary/50"
                     />
                     <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
@@ -1120,7 +1120,7 @@ export function Dashboard({
                       </button>
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">Use @channelusername for public channels or a numeric chat ID for private chats, groups, and private channels.</p>
+                  <p className="mt-2 text-xs text-slate-500">Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.</p>
                   {telegramVerification ? (
                     <div
                       className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success'

@@ -42,6 +42,19 @@ interface TelegramGetChatResponse {
   result?: TelegramGetChatResult;
 }
 
+function formatTelegramApiError(description: string | undefined, chatId: string, fallbackStatus: number, action: string): string {
+  const message = String(description || '').trim();
+  if (/chat not found/i.test(message)) {
+    if (chatId.startsWith('@')) {
+      return 'Telegram could not find that chat. Use @channelusername only for public channels or supergroups. Personal usernames and bot usernames are not valid delivery targets. For a person or private chat, start the bot first and use the numeric chat ID.';
+    }
+
+    return 'Telegram could not find that chat. Make sure the bot has been started by the user or added to the target group/channel, then use that numeric chat ID.';
+  }
+
+  return message || `Telegram ${action} failed with status ${fallbackStatus}.`;
+}
+
 export async function sendTelegramMessage(request: TelegramSendRequest): Promise<{ messageId: string | null }> {
   const normalizedImageUrl = request.imageUrl ? normalizeDeliveryImageUrl(request.imageUrl) : undefined;
   const endpoint = normalizedImageUrl ? 'sendPhoto' : 'sendMessage';
@@ -68,7 +81,7 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
 
   const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.description || `Telegram delivery failed with status ${response.status}.`);
+    throw new Error(formatTelegramApiError(payload?.description, request.chatId, response.status, 'delivery'));
   }
 
   return {
@@ -82,15 +95,16 @@ export async function verifyTelegramChat(request: TelegramChatVerificationReques
 
   const payload = (await response.json().catch(() => null)) as TelegramGetChatResponse | null;
   if (!response.ok || !payload?.ok || !payload.result) {
-    throw new Error(payload?.description || `Telegram chat verification failed with status ${response.status}.`);
+    throw new Error(formatTelegramApiError(payload?.description, request.chatId, response.status, 'chat verification'));
   }
 
   const chat = payload.result;
   const title = String(chat.title || `${chat.first_name || ''} ${chat.last_name || ''}`.trim() || '').trim();
   const username = String(chat.username || '').trim();
+  const chatId = String(chat.id ?? request.chatId).trim() || request.chatId;
 
   return {
-    chatId: request.chatId,
+    chatId,
     title,
     username,
     type: String(chat.type || '').trim(),
