@@ -514,6 +514,7 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: Go
     result = run_command(['npx', 'wrangler', 'deploy'], cwd=WORKER_DIR, capture_output=True)
     worker_bootstrap.worker_url = extract_worker_url(result.stdout)
     if worker_bootstrap.worker_url:
+        verify_worker_endpoint(worker_bootstrap.worker_url, worker_bootstrap.cors_allowed_origins)
         ok('Worker deployed', worker_bootstrap.worker_url)
     else:
         warn('Worker deploy output', 'completed, but setup.py could not parse the deployment URL')
@@ -536,12 +537,80 @@ def extract_worker_url(output: str) -> str:
     return match.group(0) if match else ''
 
 
+def verify_worker_endpoint(worker_url: str, cors_allowed_origins: str) -> None:
+    response = requests.get(worker_url, timeout=30)
+    content_type = response.headers.get('content-type', '').lower()
+
+    if not response.ok:
+        raise RuntimeError(
+            f'Worker verification failed for {worker_url}: GET returned status {response.status_code}.'
+        )
+
+    if 'application/json' not in content_type:
+        snippet = response.text[:160].replace('\n', ' ').strip()
+        raise RuntimeError(
+            'Worker verification failed: '
+            f'{worker_url} returned {content_type or "an unknown content type"} instead of JSON. '
+            'This usually means the workers.dev hostname is serving a static site instead of the API Worker. '
+            f'Response preview: {snippet}'
+        )
+
+    try:
+        payload = response.json()
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f'Worker verification failed for {worker_url}: response body was not valid JSON.'
+        ) from error
+
+    backend = payload.get('data', {}).get('backend') if isinstance(payload, dict) else None
+    if backend != 'cloudflare-worker':
+        raise RuntimeError(
+            'Worker verification failed: '
+            f'{worker_url} did not return the expected backend marker. Found: {backend!r}'
+        )
+
+    origin = pick_verification_origin(cors_allowed_origins)
+    if not origin:
+        return
+
+    preflight = requests.options(
+        worker_url,
+        headers={
+            'Origin': origin,
+            'Access-Control-Request-Method': 'POST',
+            'Access-Control-Request-Headers': 'Content-Type',
+        },
+        timeout=30,
+    )
+
+    allow_origin = preflight.headers.get('Access-Control-Allow-Origin', '')
+    if preflight.status_code != 204 or allow_origin not in {'*', origin}:
+        raise RuntimeError(
+            'Worker verification failed: '
+            f'preflight for origin {origin} returned status {preflight.status_code} '
+            f'and Access-Control-Allow-Origin={allow_origin!r}.'
+        )
+
+
+def pick_verification_origin(cors_allowed_origins: str) -> str:
+    normalized = normalize_space_delimited(cors_allowed_origins)
+    for origin in normalized.split(' '):
+        candidate = normalize_origin(origin)
+        if candidate:
+            return candidate
+    return ''
+
+
 def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: GoogleResources | None) -> None:
     ensure_command('gh', 'Install GitHub CLI to sync repository secrets automatically.')
 
+    worker_url = worker_bootstrap.worker_url or os.environ.get('VITE_WORKER_URL', '').strip()
+    if worker_url:
+        verify_worker_endpoint(worker_url, worker_bootstrap.cors_allowed_origins)
+
     secrets_to_sync: dict[str, str] = {
         'VITE_GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
-        'VITE_WORKER_URL': worker_bootstrap.worker_url or os.environ.get('VITE_WORKER_URL', '').strip(),
+        'VITE_WORKER_URL': worker_url,
         'GOOGLE_CREDENTIALS_JSON': google_resources.credentials_json if google_resources else os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip(),
         'GOOGLE_SHEET_ID': google_resources.sheet_id if google_resources else os.environ.get('GOOGLE_SHEET_ID', '').strip(),
         'GOOGLE_DRIVE_FOLDER_ID': google_resources.images_folder_id if google_resources else os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '').strip(),

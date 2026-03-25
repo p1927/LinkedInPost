@@ -97,6 +97,8 @@ npm run deploy
 
 After deployment, copy the Worker URL into the frontend as `VITE_WORKER_URL`.
 
+The production URL must return JSON from `GET /`. If it returns HTML, that hostname is serving a static deployment and should not be used as the frontend backend URL.
+
 ## Backend behavior
 
 * The Worker verifies the Google ID token on every request.

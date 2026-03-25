@@ -16,6 +16,8 @@ The deployed shape is:
 * A Google service account gives the Worker access to the shared sheet
 * GitHub Actions continues to run the Python bot for draft and publish workflows
 
+Only the API Worker is deployed to Cloudflare. The repository does not keep a second root Cloudflare deployment config for the frontend.
+
 ## Prerequisites
 
 Install the Python dependencies locally:
@@ -73,6 +75,7 @@ That flow can:
 * Write [worker/.dev.vars](worker/.dev.vars) for local Worker development
 * Push Worker secrets with Wrangler
 * Deploy the Worker
+* Verify that the deployed URL returns the API JSON envelope and a valid CORS preflight response before syncing it elsewhere
 * Sync GitHub Actions secrets with `gh secret set`
 
 The script needs the following tools for the full automation path:
@@ -104,6 +107,8 @@ At minimum, configure these Worker values:
 The setup script writes the non-secret Worker vars into [worker/wrangler.jsonc](worker/wrangler.jsonc) and pushes the secret values with Wrangler during deployment.
 
 Deploy the Worker and copy the generated URL.
+
+If a `workers.dev` URL returns HTML, especially a page containing `src/main.tsx`, that hostname is serving a static frontend deployment and not the API Worker. Do not use that URL for `VITE_WORKER_URL`.
 
 ## Step 4: Configure the frontend build
 
@@ -151,6 +156,7 @@ Set the `VITE_GOOGLE_CLIENT_ID` and `VITE_WORKER_URL` repository secrets used by
 ## Verification checklist
 
 * The Worker deployment responds at its production URL
+* The Worker production URL returns JSON from `GET /`, not HTML
 * `ALLOWED_EMAILS` contains every approved Gmail user
 * The frontend build includes `VITE_GOOGLE_CLIENT_ID`
 * The frontend build includes `VITE_WORKER_URL`

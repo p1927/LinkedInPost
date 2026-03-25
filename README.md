@@ -34,8 +34,10 @@ Use [SETUP.md](SETUP.md) for the full deployment checklist.
 The short version is:
 
 1. Run `python setup.py` to create the shared Google resources.
-2. Run `python setup.py --all` to bootstrap the Worker config, deploy the Worker, and sync GitHub secrets when `wrangler` and `gh` are available.
+2. Run `python setup.py --all` to bootstrap the Worker config, deploy the Worker, verify the production URL, and sync GitHub secrets when `wrangler` and `gh` are available.
 3. Keep the GitHub Actions secrets used by the Python automation for any values you do not provide to the setup script.
+
+Only one Cloudflare deployment target is kept in this repository: the API Worker defined in [worker/wrangler.jsonc](worker/wrangler.jsonc). The frontend stays on GitHub Pages.
 
 ## Local automation
 

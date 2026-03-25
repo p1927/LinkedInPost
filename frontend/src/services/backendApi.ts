@@ -69,7 +69,9 @@ export class BackendApi {
     try {
       parsed = (await response.json()) as ApiEnvelope<T>;
     } catch {
-      throw new Error('The backend returned a non-JSON response. Verify the Worker deployment URL.');
+      throw new Error(
+        'The backend returned HTML or another non-JSON response. The configured URL is likely serving a static site instead of the Cloudflare Worker API.',
+      );
     }
 
     if (!response.ok || !parsed.ok || parsed.data === undefined) {
