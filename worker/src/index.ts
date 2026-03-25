@@ -163,6 +163,10 @@ interface LinkedInMeResponse {
   id?: string;
 }
 
+interface LinkedInUserInfoResponse {
+  sub?: string;
+}
+
 interface GraphDataResponse<T> {
   data?: T[];
   error?: {
@@ -237,7 +241,11 @@ const OAUTH_STATE_PREFIX = 'oauth-state:';
 const WHATSAPP_PENDING_PREFIX = 'whatsapp-pending:';
 const OAUTH_STATE_TTL_SECONDS = 60 * 10;
 const WHATSAPP_PENDING_TTL_SECONDS = 60 * 10;
-const LINKEDIN_OAUTH_SCOPE = 'w_member_social';
+const LINKEDIN_OAUTH_SCOPE = [
+  'openid',
+  'profile',
+  'w_member_social',
+].join(' ');
 const META_GRAPH_VERSION = 'v25.0';
 const META_OAUTH_SCOPES = [
   'business_management',
@@ -815,6 +823,18 @@ async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, e
 }
 
 async function fetchLinkedInPersonUrn(accessToken: string): Promise<string> {
+  const userInfoResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const userInfoPayload = (await userInfoResponse.json().catch(() => null)) as LinkedInUserInfoResponse | null;
+  const subjectId = String(userInfoPayload?.sub || '').trim();
+  if (userInfoResponse.ok && subjectId) {
+    return `urn:li:person:${subjectId}`;
+  }
+
   const response = await fetch('https://api.linkedin.com/v2/me', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -824,6 +844,14 @@ async function fetchLinkedInPersonUrn(accessToken: string): Promise<string> {
   const payload = (await response.json().catch(() => null)) as LinkedInMeResponse | null;
   const id = String(payload?.id || '').trim();
   if (!response.ok || !id) {
+    if (response.status === 403) {
+      if (userInfoResponse.status === 403) {
+        throw new Error('LinkedIn profile lookup failed with status 403. The app is not returning member identity from either the OpenID userinfo endpoint or the legacy profile endpoint. Ensure the LinkedIn app has OpenID Connect profile access, then reconnect the channel.');
+      }
+
+      throw new Error('LinkedIn profile lookup failed with status 403. The OAuth token is missing legacy profile-read permission. The Worker now prefers OpenID identity lookup, so reconnect the channel and ensure the app keeps the openid and profile scopes enabled.');
+    }
+
     throw new Error(`LinkedIn profile lookup failed with status ${response.status}.`);
   }
 
