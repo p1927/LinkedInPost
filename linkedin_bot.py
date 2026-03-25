@@ -182,6 +182,79 @@ def build_existing_row_map(rows, expected_width):
 def build_drive_preview_url(file_id):
     return f"https://drive.google.com/thumbnail?id={file_id}&sz=w1600"
 
+
+def extract_google_api_error(response):
+    try:
+        payload = response.json()
+    except ValueError:
+        return {
+            'message': response.text[:1000],
+            'status': response.status_code,
+            'reasons': [],
+        }
+
+    error = payload.get('error', {})
+    errors = error.get('errors', [])
+    reasons = [entry.get('reason', '') for entry in errors if entry.get('reason')]
+
+    return {
+        'message': error.get('message', response.text[:1000]),
+        'status': error.get('code', response.status_code),
+        'reasons': reasons,
+    }
+
+
+def get_custom_search_fix_hints(reasons, status_code):
+    normalized = set(reasons)
+    hints = []
+
+    if status_code == 403 and not normalized:
+        hints.append('The request reached Google but was forbidden. This is usually a Custom Search API enablement, billing, API-key restriction, or CX configuration problem.')
+
+    if 'accessNotConfigured' in normalized or 'SERVICE_DISABLED' in normalized:
+        hints.append('Enable the Custom Search API in the same Google Cloud project that owns GOOGLE_SEARCH_API_KEY.')
+
+    if 'forbidden' in normalized or 'ipRefererBlocked' in normalized:
+        hints.append('Check API-key application restrictions. If the key is HTTP-referrer or IP restricted, GitHub Actions and local runs will be blocked.')
+
+    if 'keyInvalid' in normalized or 'badRequest' in normalized:
+        hints.append('Verify GOOGLE_SEARCH_API_KEY is the correct key for this project and was copied fully into your environment or GitHub Secrets.')
+
+    if 'dailyLimitExceeded' in normalized or 'quotaExceeded' in normalized or 'rateLimitExceeded' in normalized:
+        hints.append('The Custom Search quota is exhausted. Check quota and billing in Google Cloud Console.')
+
+    if 'billingNotActive' in normalized:
+        hints.append('Enable billing for the Google Cloud project tied to GOOGLE_SEARCH_API_KEY. Custom Search can reject requests without active billing.')
+
+    if 'invalid' in normalized or 'keyExpired' in normalized:
+        hints.append('Recreate the API key and update GOOGLE_SEARCH_API_KEY if the current key is stale or malformed.')
+
+    if not hints:
+        hints.append('Verify GOOGLE_SEARCH_CX belongs to a Programmable Search Engine configured for the entire web and that Image Search is enabled on that engine.')
+
+    return hints
+
+
+def log_custom_search_failure(feature_name, topic, response):
+    details = extract_google_api_error(response)
+    reasons = details['reasons']
+    print(f"Custom Search {feature_name} request failed for topic '{topic}'.")
+    print(f"- HTTP status: {details['status']}")
+    print(f"- Google message: {details['message']}")
+    if reasons:
+        print(f"- Google reasons: {', '.join(reasons)}")
+
+    print('- Likely fixes:')
+    for hint in get_custom_search_fix_hints(reasons, response.status_code):
+        print(f"  * {hint}")
+
+    print('- Quick checks:')
+    print('  * Confirm GOOGLE_SEARCH_API_KEY comes from the same Google Cloud project where the Custom Search API is enabled.')
+    print('  * Confirm GOOGLE_SEARCH_CX is the Search Engine ID, not the project ID.')
+    print('  * Confirm the engine is set to search the entire web.')
+    print('  * Confirm Image Search is enabled if image fetching is failing.')
+    print('  * If running in GitHub Actions, verify the secrets are set on the repository/environment actually used by the workflow.')
+
 # ==========================================
 # 1. RESEARCH & GENERATE (GEMINI)
 # ==========================================
@@ -200,7 +273,9 @@ def fetch_web_research(topic, num_results=3):
     research_text = ""
     try:
         response = requests.get(url, params=params, timeout=20)
-        response.raise_for_status()
+        if not response.ok:
+            log_custom_search_failure('research', topic, response)
+            response.raise_for_status()
         results = response.json()
         if 'items' in results:
             for item in results['items']:
@@ -284,7 +359,9 @@ def fetch_images(topic, num_images=4):
     try:
         response = requests.get(url, params=params, timeout=20)
         print(f"Image search status for '{topic}': {response.status_code}")
-        response.raise_for_status()
+        if not response.ok:
+            log_custom_search_failure('image', topic, response)
+            response.raise_for_status()
         results = response.json()
     except Exception as e:
         print(f"Image search request failed for '{topic}': {e}")
