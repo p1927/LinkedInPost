@@ -1,38 +1,38 @@
 #!/usr/bin/env python3
 """
-One-time setup script for LinkedIn Bot.
+Bootstrap script for LinkedIn Bot.
 
-This script creates all required Google resources inside a single 'LINKEDIN'
-folder in Google Drive:
+The script can provision Google resources and, when requested, prepare most of
+the Cloudflare Worker and GitHub configuration needed by the shared dashboard.
 
-    LINKEDIN/
-    ├── Content Calendar          (Google Sheet)
-    ├── Images/                   (Drive folder — bot uploads images here)
-    └── Published Posts           (Google Doc)
-
-It uses your service account, shares the parent folder with your personal
-Gmail, optionally fetches your LinkedIn Person URN, and prints the exact
-values needed as GitHub Secrets.
-
-Usage:
+Examples:
     python setup.py
-
-Prerequisites:
-    GOOGLE_CREDENTIALS_JSON  - your service account key JSON (as a string)
-    LINKEDIN_ACCESS_TOKEN    - optional, to auto-fetch your Person URN
-
-These can be set in a .env file or exported as shell variables.
+    python setup.py --cloudflare
+    python setup.py --all
 """
-import os
-import sys
+
+from __future__ import annotations
+
+import argparse
+import base64
 import json
+import os
+import re
+import secrets
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
 import requests
 from dotenv import load_dotenv
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 
 load_dotenv()
 
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -47,9 +47,39 @@ SHEET_HEADERS = [
     'Selected Text', 'Selected Image ID', 'Post Time',
 ]
 TOPICS_HEADERS = ['Topic', 'Date']
+ROOT = Path(__file__).resolve().parent
+WORKER_DIR = ROOT / 'worker'
+WORKER_WRANGLER_CONFIG = WORKER_DIR / 'wrangler.jsonc'
+WORKER_DEV_VARS = WORKER_DIR / '.dev.vars'
 
 
-def ensure_sheet_tab(sheets, spreadsheet_id: str, title: str, headers: list[str]) -> None:
+@dataclass
+class GoogleResources:
+    service_account_email: str
+    shared_email: str
+    linkedin_folder_id: str
+    linkedin_folder_url: str
+    sheet_id: str
+    images_folder_id: str
+    doc_id: str
+    linkedin_person_urn: str
+    credentials_json: str
+
+
+@dataclass
+class WorkerBootstrap:
+    allowed_emails: str
+    admin_emails: str
+    google_client_id: str
+    cors_allowed_origins: str
+    encryption_key: str
+    github_repo: str
+    kv_namespace_id: str = ''
+    kv_preview_id: str = ''
+    worker_url: str = ''
+
+
+def ensure_sheet_tab(sheets: Any, spreadsheet_id: str, title: str, headers: list[str]) -> None:
     metadata = sheets.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
     existing = {
         sheet.get('properties', {}).get('title')
@@ -86,77 +116,146 @@ def ensure_sheet_tab(sheets, spreadsheet_id: str, title: str, headers: list[str]
 
 
 def ok(label: str, value: str) -> None:
-    print(f"  \u2713 {label}: {value}")
+    print(f'  [ok] {label}: {value}')
+
+
+def warn(label: str, value: str) -> None:
+    print(f'  [warn] {label}: {value}')
 
 
 def fail(label: str, reason: str) -> None:
-    print(f"  \u2717 {label}: {reason}")
+    print(f'  [fail] {label}: {reason}')
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Bootstrap LinkedIn Bot resources and deployment config.')
+    parser.add_argument('--install-worker-deps', action='store_true', help='Install Worker dependencies, including Wrangler, before any Worker-related steps.')
+    parser.add_argument('--cloudflare', action='store_true', help='Create Worker config, KV namespaces, and .dev.vars when possible.')
+    parser.add_argument('--deploy-worker', action='store_true', help='Deploy the Worker after Cloudflare bootstrap.')
+    parser.add_argument('--sync-github-secrets', action='store_true', help='Sync available GitHub Actions secrets using gh CLI.')
+    parser.add_argument('--skip-google', action='store_true', help='Skip Google resource creation and use existing env values instead.')
+    parser.add_argument('--share-email', default=os.environ.get('GOOGLE_SHARE_EMAIL', '').strip(), help='Email to share the LINKEDIN folder with.')
+    parser.add_argument('--allowed-emails', default=os.environ.get('ALLOWED_EMAILS', '').strip(), help='Worker allowlist emails separated by spaces or commas.')
+    parser.add_argument('--admin-emails', default=os.environ.get('ADMIN_EMAILS', '').strip(), help='Worker admin emails separated by spaces or commas.')
+    parser.add_argument('--google-client-id', default=os.environ.get('VITE_GOOGLE_CLIENT_ID', '').strip() or os.environ.get('GOOGLE_CLIENT_ID', '').strip(), help='Google web client ID for frontend and Worker validation.')
+    parser.add_argument('--github-pages-origin', default=os.environ.get('GITHUB_PAGES_ORIGIN', '').strip(), help='Origin allowed to call the Worker, for example https://user.github.io.')
+    parser.add_argument('--github-repo', default=os.environ.get('GITHUB_REPO', '').strip(), help='GitHub repository in owner/repo format.')
+    parser.add_argument('--all', action='store_true', help='Run Google setup, Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
+    return parser.parse_args()
 
 
 def main() -> None:
-    creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+    args = parse_args()
+    if args.all:
+        args.install_worker_deps = True
+        args.cloudflare = True
+        args.deploy_worker = True
+        args.sync_github_secrets = True
+    if args.deploy_worker:
+        args.cloudflare = True
+
+    if args.cloudflare or args.deploy_worker or args.sync_github_secrets:
+        args.install_worker_deps = True
+
+    if args.cloudflare or args.deploy_worker:
+        ensure_cloudflare_auth()
+
+    if args.install_worker_deps:
+        install_worker_dependencies()
+
+    google_resources = None if args.skip_google else create_google_resources(args.share_email)
+    if args.skip_google:
+        warn('Google resource creation', 'skipped by flag')
+
+    worker_bootstrap = None
+    if args.cloudflare or args.deploy_worker or args.sync_github_secrets:
+        worker_bootstrap = bootstrap_worker_config(args)
+
+    if args.cloudflare:
+        create_cloudflare_kv_namespaces(worker_bootstrap)
+        update_wrangler_config(worker_bootstrap)
+        write_worker_dev_vars(worker_bootstrap, google_resources)
+
+    if args.deploy_worker:
+        ensure_worker_deploy(worker_bootstrap, google_resources)
+
+    if args.sync_github_secrets:
+        sync_github_secrets(worker_bootstrap, google_resources)
+
+    print_summary(args, google_resources, worker_bootstrap)
+
+
+def create_google_resources(shared_email: str) -> GoogleResources:
+    creds_json = os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip()
     if not creds_json:
-        fail('GOOGLE_CREDENTIALS_JSON', 'not set — add it to .env and retry')
+        fail('GOOGLE_CREDENTIALS_JSON', 'not set. Add it to .env or your shell and rerun setup.py.')
         sys.exit(1)
 
-    creds_dict = json.loads(creds_json)
-    service_account_email = creds_dict.get('client_email', 'unknown')
+    try:
+        creds_dict = json.loads(creds_json)
+    except json.JSONDecodeError as error:
+        fail('GOOGLE_CREDENTIALS_JSON', f'invalid JSON: {error}')
+        sys.exit(1)
 
+    service_account_email = creds_dict.get('client_email', 'unknown')
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     sheets = build('sheets', 'v4', credentials=creds)
-    drive  = build('drive',  'v3', credentials=creds)
+    drive = build('drive', 'v3', credentials=creds)
 
-    print(f"\nService account: {service_account_email}")
-    user_email = "99pratyush@gmail.com"
-    print(f"Sharing resources with: {user_email}")
+    print(f'\nService account: {service_account_email}')
+    if shared_email:
+        print(f'Sharing resources with: {shared_email}')
+    else:
+        print('No GOOGLE_SHARE_EMAIL provided. Resource sharing will be skipped.')
 
-    # ── 0. Parent 'LINKEDIN' folder ───────────────────────────────────────────
     print("\n[0/4] Checking for existing 'LINKEDIN' folder in Google Drive...")
-    
-    # Check if LINKEDIN folder already exists
     existing = drive.files().list(
         q="name='LINKEDIN' and mimeType='application/vnd.google-apps.folder' and trashed=false",
         spaces='drive',
         fields='files(id, webViewLink)',
-        pageSize=1
+        pageSize=1,
     ).execute()
-    
+
     if existing.get('files'):
         linkedin_folder_id = existing['files'][0]['id']
+        linkedin_folder_url = existing['files'][0].get('webViewLink', '')
         ok('LINKEDIN folder ID (existing)', linkedin_folder_id)
-        ok('LINKEDIN folder URL', existing['files'][0].get('webViewLink', ''))
     else:
-        print("  Creating new LINKEDIN folder...")
+        print('  Creating new LINKEDIN folder...')
         linkedin_folder = drive.files().create(
             body={'name': 'LINKEDIN', 'mimeType': 'application/vnd.google-apps.folder'},
             fields='id, webViewLink',
         ).execute()
         linkedin_folder_id = linkedin_folder['id']
+        linkedin_folder_url = linkedin_folder.get('webViewLink', '')
         ok('LINKEDIN folder ID (new)', linkedin_folder_id)
-        ok('LINKEDIN folder URL', linkedin_folder.get('webViewLink', ''))
 
-    if user_email:
-        drive.permissions().create(
-            fileId=linkedin_folder_id,
-            body={'type': 'user', 'role': 'writer', 'emailAddress': user_email}
-        ).execute()
-        ok('LINKEDIN folder shared with', user_email)
+    if shared_email:
+        try:
+            drive.permissions().create(
+                fileId=linkedin_folder_id,
+                body={'type': 'user', 'role': 'writer', 'emailAddress': shared_email},
+            ).execute()
+            ok('LINKEDIN folder shared with', shared_email)
+        except Exception as error:
+            warn('LINKEDIN folder share', str(error))
 
-    # ── 1. Google Sheet (create via Drive API using MIME type) ─────────────────
     print("\n[1/4] Checking for existing 'Content Calendar' sheet...")
-
     existing_sheet = drive.files().list(
-        q=f"name='Content Calendar' and mimeType='application/vnd.google-apps.spreadsheet' and '{linkedin_folder_id}' in parents and trashed=false",
+        q=(
+            "name='Content Calendar' and mimeType='application/vnd.google-apps.spreadsheet' "
+            f"and '{linkedin_folder_id}' in parents and trashed=false"
+        ),
         spaces='drive',
         fields='files(id)',
-        pageSize=1
+        pageSize=1,
     ).execute()
 
     if existing_sheet.get('files'):
         sheet_id = existing_sheet['files'][0]['id']
         ok('Google Sheet ID (existing)', sheet_id)
     else:
-        print("  Creating new Content Calendar sheet via Drive API...")
+        print('  Creating new Content Calendar sheet via Drive API...')
         sheet_file = drive.files().create(
             body={
                 'name': 'Content Calendar',
@@ -166,42 +265,32 @@ def main() -> None:
             fields='id',
         ).execute()
         sheet_id = sheet_file['id']
-
-        # Write headers using the Sheets API now that the file exists
-        try:
-            sheets = build('sheets', 'v4', credentials=creds)
-            ensure_sheet_tab(sheets, sheet_id, 'Topics', TOPICS_HEADERS)
-            ensure_sheet_tab(sheets, sheet_id, 'Draft', SHEET_HEADERS)
-            ensure_sheet_tab(sheets, sheet_id, 'Post', SHEET_HEADERS)
-            ok('Google Sheet ID (new, with headers)', sheet_id)
-        except Exception as e:
-            ok('Google Sheet ID (new, headers failed — add manually)', sheet_id)
-            print(f"    Topics headers: {', '.join(TOPICS_HEADERS)}")
-            print(f"    Draft/Post headers: {', '.join(SHEET_HEADERS)}")
+        ok('Google Sheet ID (new)', sheet_id)
 
     try:
         ensure_sheet_tab(sheets, sheet_id, 'Topics', TOPICS_HEADERS)
         ensure_sheet_tab(sheets, sheet_id, 'Draft', SHEET_HEADERS)
         ensure_sheet_tab(sheets, sheet_id, 'Post', SHEET_HEADERS)
-    except Exception:
-        print("  Warning: could not fully verify Topics/Draft/Post tabs. You can create them manually if needed.")
+        ok('Google Sheet tabs', 'Topics, Draft, Post')
+    except Exception as error:
+        warn('Google Sheet tabs', str(error))
 
-    # ── 2. Images subfolder inside LINKEDIN ───────────────────────────────────
     print("\n[2/4] Checking for existing 'Images' subfolder...")
-    
-    # Check if Images folder already exists inside LINKEDIN
     existing_images = drive.files().list(
-        q=f"name='Images' and mimeType='application/vnd.google-apps.folder' and '{linkedin_folder_id}' in parents and trashed=false",
+        q=(
+            "name='Images' and mimeType='application/vnd.google-apps.folder' "
+            f"and '{linkedin_folder_id}' in parents and trashed=false"
+        ),
         spaces='drive',
         fields='files(id)',
-        pageSize=1
+        pageSize=1,
     ).execute()
-    
+
     if existing_images.get('files'):
-        folder_id = existing_images['files'][0]['id']
-        ok('Google Drive Images Folder ID (existing)', folder_id)
+        images_folder_id = existing_images['files'][0]['id']
+        ok('Google Drive Images Folder ID (existing)', images_folder_id)
     else:
-        print("  Creating new Images folder...")
+        print('  Creating new Images folder...')
         images_folder = drive.files().create(
             body={
                 'name': 'Images',
@@ -210,24 +299,25 @@ def main() -> None:
             },
             fields='id',
         ).execute()
-        folder_id = images_folder['id']
-        ok('Google Drive Images Folder ID (new)', folder_id)
+        images_folder_id = images_folder['id']
+        ok('Google Drive Images Folder ID (new)', images_folder_id)
 
-    # ── 3. Google Doc (create via Drive API using MIME type) ───────────────────
     print("\n[3/4] Checking for existing 'Published Posts' doc...")
-
     existing_doc = drive.files().list(
-        q=f"name='Published Posts' and mimeType='application/vnd.google-apps.document' and '{linkedin_folder_id}' in parents and trashed=false",
+        q=(
+            "name='Published Posts' and mimeType='application/vnd.google-apps.document' "
+            f"and '{linkedin_folder_id}' in parents and trashed=false"
+        ),
         spaces='drive',
         fields='files(id)',
-        pageSize=1
+        pageSize=1,
     ).execute()
 
     if existing_doc.get('files'):
         doc_id = existing_doc['files'][0]['id']
         ok('Google Doc ID (existing)', doc_id)
     else:
-        print("  Creating new Published Posts doc via Drive API...")
+        print('  Creating new Published Posts doc via Drive API...')
         doc_file = drive.files().create(
             body={
                 'name': 'Published Posts',
@@ -239,46 +329,378 @@ def main() -> None:
         doc_id = doc_file['id']
         ok('Google Doc ID (new)', doc_id)
 
-    # ── Optional: LinkedIn Person URN ─────────────────────────────────────────
-    li_urn = ''
-    li_token = os.environ.get('LINKEDIN_ACCESS_TOKEN', '')
-    if li_token:
-        print("\n[4/4] Fetching LinkedIn Person URN...")
-        resp = requests.get(
-            'https://api.linkedin.com/v2/me',
-            headers={'Authorization': f'Bearer {li_token}'},
-        )
-        if resp.ok:
-            li_urn = f"urn:li:person:{resp.json()['id']}"
-            ok('LinkedIn Person URN', li_urn)
-        else:
-            fail('LinkedIn Person URN', f"status {resp.status_code} — set LINKEDIN_PERSON_URN manually")
+    linkedin_person_urn = fetch_linkedin_person_urn()
 
-    # ── Print GitHub Secrets ──────────────────────────────────────────────────
-    print("\n" + "=" * 64)
-    print("  All resources created inside your Google Drive 'LINKEDIN' folder.")
-    print("  ADD THESE TO: GitHub Repo → Settings → Secrets → Actions")
-    print("=" * 64)
-    print(f"GOOGLE_SHEET_ID         = {sheet_id}")
-    print(f"GOOGLE_DRIVE_FOLDER_ID  = {folder_id}")
-    print(f"GOOGLE_DOC_ID           = {doc_id}")
-    print(f"GOOGLE_CREDENTIALS_JSON = <paste full service account JSON>")
-    print(f"GEMINI_API_KEY          = <your Gemini API key from aistudio.google.com>")
-    print(f"GOOGLE_SEARCH_API_KEY   = <your Custom Search API key>")
-    print(f"GOOGLE_SEARCH_CX        = <your Programmable Search Engine ID>")
-    print(f"LINKEDIN_ACCESS_TOKEN   = <your LinkedIn OAuth 2.0 token>")
-    if li_urn:
-        print(f"LINKEDIN_PERSON_URN     = {li_urn}")
+    return GoogleResources(
+        service_account_email=service_account_email,
+        shared_email=shared_email,
+        linkedin_folder_id=linkedin_folder_id,
+        linkedin_folder_url=linkedin_folder_url,
+        sheet_id=sheet_id,
+        images_folder_id=images_folder_id,
+        doc_id=doc_id,
+        linkedin_person_urn=linkedin_person_urn,
+        credentials_json=creds_json,
+    )
+
+
+def fetch_linkedin_person_urn() -> str:
+    explicit = os.environ.get('LINKEDIN_PERSON_URN', '').strip()
+    if explicit:
+        ok('LinkedIn Person URN', explicit)
+        return explicit
+
+    access_token = os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip()
+    if not access_token:
+        warn('LinkedIn Person URN', 'LINKEDIN_ACCESS_TOKEN not set. You will need to set LINKEDIN_PERSON_URN manually.')
+        return ''
+
+    print("\n[4/4] Fetching LinkedIn Person URN...")
+    response = requests.get(
+        'https://api.linkedin.com/v2/me',
+        headers={'Authorization': f'Bearer {access_token}'},
+        timeout=30,
+    )
+    if not response.ok:
+        warn('LinkedIn Person URN', f'status {response.status_code}. Set LINKEDIN_PERSON_URN manually.')
+        return ''
+
+    urn = f"urn:li:person:{response.json()['id']}"
+    ok('LinkedIn Person URN', urn)
+    return urn
+
+
+def bootstrap_worker_config(args: argparse.Namespace) -> WorkerBootstrap:
+    github_repo = args.github_repo or infer_github_repo()
+    github_pages_origin = args.github_pages_origin or infer_github_pages_origin(github_repo)
+    allowed_emails = normalize_space_delimited(args.allowed_emails or args.share_email)
+    admin_emails = normalize_space_delimited(args.admin_emails or args.share_email)
+    google_client_id = args.google_client_id
+    encryption_key = os.environ.get('GITHUB_TOKEN_ENCRYPTION_KEY', '').strip() or generate_encryption_key()
+
+    if not allowed_emails:
+        warn('ALLOWED_EMAILS', 'not provided. Worker access control must be set before deployment.')
+    if not google_client_id:
+        warn('VITE_GOOGLE_CLIENT_ID', 'not provided. Frontend login and Worker audience checks will remain unconfigured.')
+
+    return WorkerBootstrap(
+        allowed_emails=allowed_emails,
+        admin_emails=admin_emails,
+        google_client_id=google_client_id,
+        cors_allowed_origins=normalize_space_delimited(
+            f'http://localhost:5173 {github_pages_origin}'.strip()
+        ),
+        encryption_key=encryption_key,
+        github_repo=github_repo,
+    )
+
+
+def create_cloudflare_kv_namespaces(worker_bootstrap: WorkerBootstrap) -> None:
+    existing_ids = read_existing_kv_ids()
+    if existing_ids[0] and existing_ids[1]:
+        worker_bootstrap.kv_namespace_id = existing_ids[0]
+        worker_bootstrap.kv_preview_id = existing_ids[1]
+        ok('Cloudflare KV namespace', worker_bootstrap.kv_namespace_id)
+        ok('Cloudflare KV preview namespace', worker_bootstrap.kv_preview_id)
+        return
+
+    ensure_command('npx', 'Install Node.js so setup.py can call Wrangler.')
+
+    worker_bootstrap.kv_namespace_id = create_kv_namespace(preview=False)
+    worker_bootstrap.kv_preview_id = create_kv_namespace(preview=True)
+    ok('Cloudflare KV namespace', worker_bootstrap.kv_namespace_id)
+    ok('Cloudflare KV preview namespace', worker_bootstrap.kv_preview_id)
+
+
+def create_kv_namespace(preview: bool) -> str:
+    command = ['npx', 'wrangler', 'kv', 'namespace', 'create', 'CONFIG_KV']
+    if preview:
+        command.append('--preview')
+
+    try:
+        result = run_command([*command, '--json'], cwd=WORKER_DIR, capture_output=True)
+    except RuntimeError as error:
+        if 'Unknown argument: json' not in str(error):
+            raise
+        result = run_command(command, cwd=WORKER_DIR, capture_output=True)
+
+    namespace_id = extract_namespace_id(result.stdout)
+    if not namespace_id:
+        raise RuntimeError(f'Unable to parse KV namespace ID from Wrangler output: {result.stdout}')
+    return namespace_id
+
+
+def extract_namespace_id(output: str) -> str:
+    output = output.strip()
+    if not output:
+        return ''
+
+    try:
+        parsed = json.loads(output)
+        if isinstance(parsed, dict):
+            return str(parsed.get('id', '')).strip()
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r'"id"\s*:\s*"([^"]+)"', output)
+    if match:
+        return match.group(1)
+
+    match = re.search(r'([a-f0-9]{32})', output, re.IGNORECASE)
+    return match.group(1) if match else ''
+
+
+def update_wrangler_config(worker_bootstrap: WorkerBootstrap) -> None:
+    config = json.loads(WORKER_WRANGLER_CONFIG.read_text())
+    config['kv_namespaces'] = [
+        {
+            'binding': 'CONFIG_KV',
+            'id': worker_bootstrap.kv_namespace_id or 'REPLACE_WITH_KV_NAMESPACE_ID',
+            'preview_id': worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID',
+        }
+    ]
+    config['vars'] = {
+        'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
+        'ADMIN_EMAILS': worker_bootstrap.admin_emails,
+        'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
+        'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
+    }
+    WORKER_WRANGLER_CONFIG.write_text(json.dumps(config, indent=2) + '\n')
+    ok('wrangler.jsonc updated', str(WORKER_WRANGLER_CONFIG))
+
+
+def read_existing_kv_ids() -> tuple[str, str]:
+    config = json.loads(WORKER_WRANGLER_CONFIG.read_text())
+    namespaces = config.get('kv_namespaces', [])
+    if not namespaces:
+        return '', ''
+
+    namespace = namespaces[0]
+    namespace_id = str(namespace.get('id', '')).strip()
+    preview_id = str(namespace.get('preview_id', '')).strip()
+    if namespace_id.startswith('REPLACE_WITH_'):
+        namespace_id = ''
+    if preview_id.startswith('REPLACE_WITH_'):
+        preview_id = ''
+    return namespace_id, preview_id
+
+
+def write_worker_dev_vars(worker_bootstrap: WorkerBootstrap, google_resources: GoogleResources | None) -> None:
+    credentials_json = google_resources.credentials_json if google_resources else os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip()
+    values = {
+        'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
+        'ADMIN_EMAILS': worker_bootstrap.admin_emails,
+        'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
+        'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
+        'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
+        'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
+    }
+    lines = [f'{key}={value}' for key, value in values.items() if value]
+    WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
+    ok('Worker local env file', str(WORKER_DEV_VARS))
+
+
+def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: GoogleResources | None) -> None:
+    ensure_command('npx', 'Install Node.js so setup.py can call Wrangler.')
+    credentials_json = google_resources.credentials_json if google_resources else os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip()
+
+    if not credentials_json:
+        raise RuntimeError('GOOGLE_CREDENTIALS_JSON is required to deploy the Worker.')
+
+    put_wrangler_secret('GOOGLE_SERVICE_ACCOUNT_JSON', credentials_json)
+    put_wrangler_secret('GITHUB_TOKEN_ENCRYPTION_KEY', worker_bootstrap.encryption_key)
+
+    result = run_command(['npx', 'wrangler', 'deploy'], cwd=WORKER_DIR, capture_output=True)
+    worker_bootstrap.worker_url = extract_worker_url(result.stdout)
+    if worker_bootstrap.worker_url:
+        ok('Worker deployed', worker_bootstrap.worker_url)
     else:
-        print(f"LINKEDIN_PERSON_URN     = urn:li:person:<your_id>")
-    print(f"VITE_GOOGLE_CLIENT_ID   = <your Google OAuth Web Client ID>")
-    print("=" * 64)
-    print(f"\nYour Google Drive folder: LINKEDIN/")
-    print(f"  ├── Content Calendar          (Sheet  — ID: {sheet_id})")
-    print(f"  ├── Images/                   (Folder — ID: {folder_id})")
-    print(f"  └── Published Posts           (Doc    — ID: {doc_id})")
-    print("\nSetup complete. See SETUP.md for full instructions.\n")
+        warn('Worker deploy output', 'completed, but setup.py could not parse the deployment URL')
+
+
+def put_wrangler_secret(name: str, value: str) -> None:
+    if not value:
+        raise RuntimeError(f'{name} is required before deployment.')
+    run_command(
+        ['npx', 'wrangler', 'secret', 'put', name],
+        cwd=WORKER_DIR,
+        input_text=value,
+        capture_output=True,
+    )
+    ok('Worker secret synced', name)
+
+
+def extract_worker_url(output: str) -> str:
+    match = re.search(r'https://[a-z0-9\-.]+\.workers\.dev', output, re.IGNORECASE)
+    return match.group(0) if match else ''
+
+
+def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: GoogleResources | None) -> None:
+    ensure_command('gh', 'Install GitHub CLI to sync repository secrets automatically.')
+
+    secrets_to_sync: dict[str, str] = {
+        'VITE_GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
+        'VITE_WORKER_URL': worker_bootstrap.worker_url or os.environ.get('VITE_WORKER_URL', '').strip(),
+        'GOOGLE_CREDENTIALS_JSON': google_resources.credentials_json if google_resources else os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip(),
+        'GOOGLE_SHEET_ID': google_resources.sheet_id if google_resources else os.environ.get('GOOGLE_SHEET_ID', '').strip(),
+        'GOOGLE_DRIVE_FOLDER_ID': google_resources.images_folder_id if google_resources else os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '').strip(),
+        'GOOGLE_DOC_ID': google_resources.doc_id if google_resources else os.environ.get('GOOGLE_DOC_ID', '').strip(),
+        'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
+        'GOOGLE_SEARCH_API_KEY': os.environ.get('GOOGLE_SEARCH_API_KEY', '').strip(),
+        'GOOGLE_SEARCH_CX': os.environ.get('GOOGLE_SEARCH_CX', '').strip(),
+        'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
+        'LINKEDIN_PERSON_URN': google_resources.linkedin_person_urn if google_resources else os.environ.get('LINKEDIN_PERSON_URN', '').strip(),
+    }
+
+    for name, value in secrets_to_sync.items():
+        if not value:
+            warn('GitHub secret skipped', f'{name} has no value')
+            continue
+        run_command(['gh', 'secret', 'set', name, '--body', value], cwd=ROOT, capture_output=True)
+        ok('GitHub secret synced', name)
+
+
+def print_summary(args: argparse.Namespace, google_resources: GoogleResources | None, worker_bootstrap: WorkerBootstrap | None) -> None:
+    print('\n' + '=' * 72)
+    print('Bootstrap summary')
+    print('=' * 72)
+
+    if google_resources:
+        print(f'GOOGLE_SHEET_ID         = {google_resources.sheet_id}')
+        print(f'GOOGLE_DRIVE_FOLDER_ID  = {google_resources.images_folder_id}')
+        print(f'GOOGLE_DOC_ID           = {google_resources.doc_id}')
+        print('GOOGLE_CREDENTIALS_JSON = <service account JSON already loaded from env>')
+        print(f'LINKEDIN_PERSON_URN     = {google_resources.linkedin_person_urn or "urn:li:person:<your_id>"}')
+
+    if worker_bootstrap:
+        print(f'VITE_GOOGLE_CLIENT_ID   = {worker_bootstrap.google_client_id or "<set this value>"}')
+        print(f'ALLOWED_EMAILS          = {worker_bootstrap.allowed_emails or "<set this value>"}')
+        print(f'ADMIN_EMAILS            = {worker_bootstrap.admin_emails or "<set this value>"}')
+        print(f'CORS_ALLOWED_ORIGINS    = {worker_bootstrap.cors_allowed_origins or "<set this value>"}')
+        print(f'GITHUB_TOKEN_ENCRYPTION_KEY = {worker_bootstrap.encryption_key}')
+        if worker_bootstrap.kv_namespace_id:
+            print(f'CONFIG_KV production    = {worker_bootstrap.kv_namespace_id}')
+        if worker_bootstrap.kv_preview_id:
+            print(f'CONFIG_KV preview       = {worker_bootstrap.kv_preview_id}')
+        if worker_bootstrap.worker_url:
+            print(f'VITE_WORKER_URL         = {worker_bootstrap.worker_url}')
+
+    print('\nOutputs')
+    if google_resources:
+        print('  LINKEDIN/')
+        print(f'    Content Calendar    (Sheet  ID: {google_resources.sheet_id})')
+        print(f'    Images/             (Folder ID: {google_resources.images_folder_id})')
+        print(f'    Published Posts     (Doc    ID: {google_resources.doc_id})')
+    if worker_bootstrap:
+        print(f'  Worker dev vars       ({WORKER_DEV_VARS})')
+        print(f'  Wrangler config       ({WORKER_WRANGLER_CONFIG})')
+
+    if not args.cloudflare and not args.deploy_worker and not args.sync_github_secrets:
+        print('\nRun `python setup.py --all` to continue through Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
+    print('')
+
+
+def normalize_space_delimited(value: str) -> str:
+    return ' '.join(part for part in re.split(r'[\s,]+', value.strip()) if part)
+
+
+def infer_github_repo() -> str:
+    remote = get_git_remote_url()
+    if not remote:
+        return ''
+
+    match = re.search(r'[:/]([^/]+)/([^/]+?)(?:\.git)?$', remote)
+    if not match:
+        return ''
+    return f'{match.group(1)}/{match.group(2)}'
+
+
+def infer_github_pages_origin(github_repo: str) -> str:
+    if not github_repo or '/' not in github_repo:
+        return ''
+    owner, _repo = github_repo.split('/', 1)
+    return f'https://{owner}.github.io'
+
+
+def get_git_remote_url() -> str:
+    try:
+        result = subprocess.run(
+            ['git', 'config', '--get', 'remote.origin.url'],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return ''
+
+
+def generate_encryption_key() -> str:
+    return base64.b64encode(secrets.token_bytes(32)).decode('ascii')
+
+
+def install_worker_dependencies() -> None:
+    ensure_command('npm', 'Install Node.js and npm so setup.py can install Worker dependencies.')
+
+    package_lock = WORKER_DIR / 'package-lock.json'
+    node_modules = WORKER_DIR / 'node_modules'
+    local_wrangler = node_modules / '.bin' / 'wrangler'
+
+    should_install = not node_modules.exists() or not local_wrangler.exists()
+    npm_command = ['npm', 'ci'] if package_lock.exists() else ['npm', 'install']
+
+    if should_install:
+        run_command(npm_command, cwd=WORKER_DIR, capture_output=True)
+        ok('Worker dependencies', f'installed with {" ".join(npm_command)}')
+        return
+
+    ok('Worker dependencies', 'already installed')
+
+
+def ensure_cloudflare_auth() -> None:
+    api_token = os.environ.get('CLOUDFLARE_API_TOKEN', '').strip()
+    if api_token:
+        return
+
+    raise RuntimeError(
+        'CLOUDFLARE_API_TOKEN is required for Cloudflare setup in non-interactive runs. '
+        'Create a Cloudflare API token with Workers and KV permissions, export it as '
+        'CLOUDFLARE_API_TOKEN, then rerun setup.py.'
+    )
+
+
+def ensure_command(command: str, help_text: str) -> None:
+    if shutil.which(command):
+        return
+    raise RuntimeError(f'{command} is not available. {help_text}')
+
+
+def run_command(
+    command: list[str],
+    cwd: Path,
+    capture_output: bool,
+    input_text: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            check=True,
+            capture_output=capture_output,
+            text=True,
+            input=input_text,
+        )
+    except subprocess.CalledProcessError as error:
+        stdout = error.stdout.strip() if error.stdout else ''
+        stderr = error.stderr.strip() if error.stderr else ''
+        details = '\n'.join(part for part in [stdout, stderr] if part)
+        raise RuntimeError(f'Command failed: {" ".join(command)}\n{details}') from error
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except RuntimeError as error:
+        fail('setup.py', str(error))
+        sys.exit(1)

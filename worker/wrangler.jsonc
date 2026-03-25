@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "linkedin-bot-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-25",
+  "kv_namespaces": [
+    {
+      "binding": "CONFIG_KV",
+      "id": "3d0846f350e448e5b9fc9d5ff7721fba",
+      "preview_id": "66555d70f03b45d9aadae69aa1d08c67"
+    }
+  ],
+  "vars": {
+    "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
+    "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
+    "GOOGLE_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+    "CORS_ALLOWED_ORIGINS": "http://localhost:5173 https://p1927.github.io/LinkedInPost"
+  }
+}

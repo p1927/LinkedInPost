@@ -1,59 +1,97 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Bot, Plus, RefreshCw, Send, Settings, Trash2 } from 'lucide-react';
-import { type SheetRow, SheetsService } from '../services/sheets';
-import { AVAILABLE_GOOGLE_MODELS, loadAvailableGoogleModels, type BotConfig, type GoogleModelOption } from '../services/configService';
+import { BackendApi, isAuthErrorMessage, type AppSession } from '../services/backendApi';
+import {
+  AVAILABLE_GOOGLE_MODELS,
+  loadAvailableGoogleModels,
+  type BotConfig,
+  type BotConfigUpdate,
+  type GoogleModelOption,
+} from '../services/configService';
+import { type SheetRow } from '../services/sheets';
 import { VariantSelection } from './VariantSelection';
 
 export function Dashboard({
-  token,
-  config,
+  idToken,
+  session,
+  api,
   onSaveConfig,
-  configSource = 'none',
+  onAuthExpired,
 }: {
-  token: string,
-  config: BotConfig,
-  onSaveConfig: (config: BotConfig) => Promise<void>,
-  configSource?: 'env' | 'drive' | 'none',
+  idToken: string;
+  session: AppSession;
+  api: BackendApi;
+  onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
+  onAuthExpired: () => void;
 }) {
   const [rows, setRows] = useState<SheetRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [newTopic, setNewTopic] = useState('');
-  const [sheetIdInput, setSheetIdInput] = useState(config.spreadsheetId);
-  const [githubToken, setGithubToken] = useState<string>(config.githubToken);
-  const [githubRepo, setGithubRepo] = useState<string>(config.githubRepo);
-  const [googleModel, setGoogleModel] = useState<string>(config.googleModel);
+  const [sheetIdInput, setSheetIdInput] = useState(session.config.spreadsheetId);
+  const [githubRepo, setGithubRepo] = useState(session.config.githubRepo);
+  const [githubTokenInput, setGithubTokenInput] = useState('');
+  const [googleModel, setGoogleModel] = useState(session.config.googleModel);
   const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
-  // Show settings only if config is incomplete and not from environment variables
   const [showSettings, setShowSettings] = useState(
-    configSource !== 'env' && (!config.spreadsheetId || !config.githubToken || !config.githubRepo)
+    session.isAdmin && (!session.config.spreadsheetId || !session.config.githubRepo || !session.config.hasGitHubToken)
   );
   const [selectedRowForReview, setSelectedRowForReview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
 
-  const sheetsService = new SheetsService(token, config.spreadsheetId);
+  useEffect(() => {
+    setSheetIdInput(session.config.spreadsheetId);
+    setGithubRepo(session.config.githubRepo);
+    setGoogleModel(session.config.googleModel);
+    setShowSettings(
+      session.isAdmin && (!session.config.spreadsheetId || !session.config.githubRepo || !session.config.hasGitHubToken)
+    );
+  }, [session.config.githubRepo, session.config.googleModel, session.config.hasGitHubToken, session.config.spreadsheetId, session.isAdmin]);
 
   useEffect(() => {
-    loadAvailableGoogleModels().then(models => {
+    loadAvailableGoogleModels().then((models) => {
       setAvailableModels(models);
-      if (!models.some(model => model.value === googleModel)) {
-        setGoogleModel(models[0]?.value || config.googleModel);
+      if (!models.some((model) => model.value === googleModel)) {
+        setGoogleModel(models[0]?.value || session.config.googleModel);
       }
     });
-  }, [config.googleModel]);
+  }, [googleModel, session.config.googleModel]);
 
-  const loadData = async () => {
-    if (!config.spreadsheetId) return;
+  useEffect(() => {
+    if (!session.config.spreadsheetId) {
+      setRows([]);
+      return;
+    }
+
+    void loadData(true);
+  }, [idToken, session.config.spreadsheetId]);
+
+  const handleFailure = (error: unknown, fallbackMessage: string) => {
+    const message = error instanceof Error ? error.message : fallbackMessage;
+    console.error(error);
+
+    if (isAuthErrorMessage(message)) {
+      onAuthExpired();
+      return;
+    }
+
+    alert(message || fallbackMessage);
+  };
+
+  const loadData = async (quiet = false) => {
+    if (!session.config.spreadsheetId) return;
+
     setLoading(true);
     try {
-      const data = await sheetsService.getRows();
-      // Reverse array so newest is at the top
+      const data = await api.getRows(idToken);
       setRows(data.reverse());
     } catch (error) {
-      console.error(error);
-      alert('Failed to load data. Please check your Spreadsheet ID and permissions.');
+      if (!quiet) {
+        handleFailure(error, 'Failed to load data. Verify the backend deployment and spreadsheet configuration.');
+      } else if (error instanceof Error && isAuthErrorMessage(error.message)) {
+        onAuthExpired();
+      }
     } finally {
       setLoading(false);
     }
@@ -61,16 +99,15 @@ export function Dashboard({
 
   const handleAddTopic = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTopic.trim() || !config.spreadsheetId) return;
+    if (!newTopic.trim() || !session.config.spreadsheetId) return;
     
     setLoading(true);
     try {
-      await sheetsService.addTopic(newTopic);
+      await api.addTopic(idToken, newTopic.trim());
       setNewTopic('');
-      await loadData();
+      await loadData(true);
     } catch (error) {
-      console.error(error);
-      alert('Failed to add topic.');
+      handleFailure(error, 'Failed to add topic.');
     } finally {
       setLoading(false);
     }
@@ -80,7 +117,8 @@ export function Dashboard({
     if (!selectedRowForReview) return;
     
     try {
-      await sheetsService.updateRowStatus(
+      await api.updateRowStatus(
+        idToken,
         selectedRowForReview,
         'Approved', 
         selectedText, 
@@ -88,10 +126,9 @@ export function Dashboard({
         postTime
       );
       setSelectedRowForReview(null);
-      await loadData();
+      await loadData(true);
     } catch (error) {
-      console.error(error);
-      alert('Failed to approve variant.');
+      handleFailure(error, 'Failed to approve variant.');
     }
   };
 
@@ -101,37 +138,25 @@ export function Dashboard({
     payload: Record<string, unknown>,
     successMessage: string,
   ) => {
-    if (!githubToken || !githubRepo) {
-      alert('Please configure GitHub Settings first.');
-      setShowSettings(true);
+    if (!session.config.githubRepo || !session.config.hasGitHubToken) {
+      if (session.isAdmin) {
+        alert('Complete the GitHub settings first.');
+        setShowSettings(true);
+      } else {
+        alert('A workspace admin still needs to configure GitHub dispatch settings.');
+      }
       return;
     }
 
     setActionLoading(action);
     try {
-      const response = await axios.post(
-        `https://api.github.com/repos/${githubRepo}/dispatches`,
-        {
-          event_type: eventType,
-          client_payload: {
-            google_model: googleModel,
-            ...payload,
-          },
-        },
-        {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `token ${githubToken}`
-          }
-        }
-      );
-
-      if (response.status === 204) {
-        alert(successMessage);
-      }
+      await api.triggerGithubAction(idToken, action, eventType, {
+        google_model: googleModel,
+        ...payload,
+      });
+      alert(successMessage);
     } catch (error) {
-      console.error(error);
-      alert('Failed to trigger GitHub Action. Make sure your token has repo scope and repository name is correct (owner/repo).');
+      handleFailure(error, 'Failed to trigger the GitHub Action.');
       throw error;
     } finally {
       setActionLoading(null);
@@ -158,16 +183,23 @@ export function Dashboard({
   };
 
   const saveSettings = async () => {
+    if (!session.isAdmin) return;
+
     setSavingConfig(true);
     try {
-      await onSaveConfig({ spreadsheetId: sheetIdInput, githubToken, githubRepo, googleModel });
+      await onSaveConfig({
+        spreadsheetId: sheetIdInput.trim(),
+        githubRepo: githubRepo.trim(),
+        googleModel,
+        githubToken: githubTokenInput.trim() || undefined,
+      });
+      setGithubTokenInput('');
       setShowSettings(false);
-      if (sheetIdInput) {
-        setTimeout(loadData, 100);
+      if (sheetIdInput.trim()) {
+        await loadData(true);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save configuration to Google Drive. Please try again.';
-      alert(message);
+      handleFailure(error, 'Failed to save shared configuration.');
     } finally {
       setSavingConfig(false);
     }
@@ -189,14 +221,13 @@ export function Dashboard({
 
     setDeletingRowIndex(row.rowIndex);
     try {
-      await sheetsService.deleteRow(row);
+      await api.deleteRow(idToken, row);
       if (selectedRowForReview?.rowIndex === row.rowIndex) {
         setSelectedRowForReview(null);
       }
-      await loadData();
+      await loadData(true);
     } catch (error) {
-      console.error(error);
-      alert('Failed to delete topic entry. Please try again.');
+      handleFailure(error, 'Failed to delete topic entry. Please try again.');
     } finally {
       setDeletingRowIndex(null);
     }
@@ -212,7 +243,18 @@ export function Dashboard({
     }
   };
 
-  if (showSettings) {
+  if (!session.config.spreadsheetId && !session.isAdmin) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 text-left max-w-xl mx-auto mt-8 p-6 rounded-lg shadow-sm">
+        <h2 className="text-xl font-semibold text-amber-900">Workspace setup pending</h2>
+        <p className="mt-3 text-sm leading-6 text-amber-800">
+          You are signed in as <strong>{session.email}</strong>, but an admin still needs to add the shared spreadsheet and GitHub dispatch settings in the backend.
+        </p>
+      </div>
+    );
+  }
+
+  if (showSettings && session.isAdmin) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left max-w-xl mx-auto mt-8">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -233,7 +275,7 @@ export function Dashboard({
 
           <div className="border-t border-gray-200 pt-4 mt-4">
             <h3 className="font-medium text-gray-900 mb-3">GitHub Actions Configuration</h3>
-            <p className="text-xs text-gray-500 mb-3">Required to manually trigger generation and publishing scripts</p>
+            <p className="text-xs text-gray-500 mb-3">These values live in the backend config store and are shared across all approved users.</p>
             
             <div className="space-y-3">
               <div>
@@ -264,32 +306,33 @@ export function Dashboard({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub Personal Access Token (PAT)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Replace GitHub Personal Access Token</label>
                 <input 
                   type="password" 
-                  value={githubToken}
-                  onChange={(e) => setGithubToken(e.target.value)}
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                  value={githubTokenInput}
+                  onChange={(e) => setGithubTokenInput(e.target.value)}
+                  placeholder={session.config.hasGitHubToken ? 'Leave blank to keep the current token' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">Stored locally in your browser. Needs 'repo' scope.</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {session.config.hasGitHubToken
+                    ? 'A token is already stored. Enter a new one only when you want to rotate it.'
+                    : 'Required once so the backend can dispatch the GitHub workflows.'}
+                </p>
               </div>
             </div>
           </div>
 
           <p className="text-xs text-gray-400 mt-4 flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            {configSource === 'env' 
-              ? 'Configuration loaded from environment variables.'
-              : 'Settings are encrypted in your private Google Drive app data — never stored in this browser or your code.'
-            }
+            Secrets stay in the backend. The browser no longer talks to Google Sheets or GitHub directly.
           </p>
           <button
             onClick={saveSettings}
             disabled={savingConfig}
             className="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 w-full mt-3 disabled:opacity-50"
           >
-            {savingConfig ? 'Saving to Drive...' : 'Save Configuration'}
+            {savingConfig ? 'Saving shared configuration...' : 'Save Settings'}
           </button>
         </div>
       </div>
@@ -299,7 +342,10 @@ export function Dashboard({
   return (
     <div className="max-w-6xl mx-auto w-full p-4 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-3">
-        <h2 className="text-2xl font-bold text-gray-900">Content Pipeline</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Content Pipeline</h2>
+          <p className="mt-1 text-sm text-gray-500">Signed in as {session.email}</p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm">
             <Bot className="w-4 h-4 text-gray-500" />
@@ -318,7 +364,7 @@ export function Dashboard({
           </label>
           <button 
             onClick={() => triggerGithubAction('draft')}
-            disabled={actionLoading !== null}
+            disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
             className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 font-medium"
           >
             {actionLoading === 'draft' ? (
@@ -330,7 +376,7 @@ export function Dashboard({
           </button>
           <button 
             onClick={() => triggerGithubAction('publish')}
-            disabled={actionLoading !== null}
+            disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
             className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-md hover:bg-green-100 font-medium"
           >
             {actionLoading === 'publish' ? (
@@ -340,16 +386,20 @@ export function Dashboard({
             )}
             Publish Approved
           </button>
-          <div className="w-px bg-gray-300 mx-1"></div>
+          {session.isAdmin && (
+            <>
+              <div className="w-px bg-gray-300 mx-1"></div>
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-md"
+                title="Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </>
+          )}
           <button 
-            onClick={() => setShowSettings(true)}
-            className="p-2 text-gray-500 hover:bg-gray-100 rounded-md"
-            title="Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={loadData}
+            onClick={() => void loadData(false)}
             disabled={loading}
             className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
           >
@@ -391,12 +441,12 @@ export function Dashboard({
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                  No topics found. Add one to get started!
+                  No topics found. Add one to get started.
                 </td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.rowIndex} className="hover:bg-gray-50">
+                <tr key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {row.topic}
                   </td>

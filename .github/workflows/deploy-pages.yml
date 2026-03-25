@@ -45,7 +45,7 @@ jobs:
           # Assuming you deploy to https://<username>.github.io/<repo>/
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VITE_WORKER_URL: ${{ secrets.VITE_WORKER_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -1,204 +1,188 @@
 ---
-title: "LinkedIn Bot — Setup Checklist"
-description: "Step-by-step guide to configure all required API keys, Google resources, and GitHub Secrets before deploying the LinkedIn Bot."
-ms.date: 2026-03-24
+title: LinkedIn Bot Setup Checklist
+description: Step-by-step guide to configure the free GitHub Pages plus Cloudflare Workers deployment for LinkedIn Bot.
+ms.date: 2026-03-25
 ms.topic: how-to
 ---
 
 ## Overview
 
-This document walks you through every credential and resource the LinkedIn Bot needs.
-Run the auto-setup script where noted — it creates the Google Sheet, Drive folder,
-and Doc for you, and prints the exact values to paste into GitHub Secrets.
+This setup keeps the project free while allowing approved Gmail users to work against one shared Google Sheet, Drive folder, and Docs log.
 
-**Architecture reminder**
+The deployed shape is:
 
-- **GitHub Actions** runs the Python bot (drafts + publishes)
-- **GitHub Pages** hosts the React dashboard
-- **Google Sheets** is the content calendar / database
-- **Google Drive** stores generated images
-- **Google Docs** logs every published post
-- **Your private Google Drive app data** stores the GitHub PAT securely — it is never written to `localStorage` or code
-
----
+* GitHub Pages hosts the React dashboard
+* Cloudflare Workers acts as the shared backend
+* A Google service account gives the Worker access to the shared sheet
+* GitHub Actions continues to run the Python bot for draft and publish workflows
 
 ## Prerequisites
 
-Before starting, install the Python dependencies:
+Install the Python dependencies locally:
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
+## Step 1: Create the Google resources
 
-## Step 1: Google Cloud project and service account
+Create a Google Cloud project, enable the APIs below, and create a service account:
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a new project.
-2. Enable these APIs in **APIs & Services → Library**:
-   - Google Sheets API
-   - Google Drive API
-   - Google Docs API
-   - Custom Search API
-3. Go to **APIs & Services → Credentials → Create Credentials → Service Account**.
-   - Give it any name (e.g., `linkedin-bot`).
-   - Download the JSON key file — keep it secret.
-4. Copy the entire contents of that JSON file. You will paste it as `GOOGLE_CREDENTIALS_JSON` in GitHub Secrets.
+* Google Sheets API
+* Google Drive API
+* Google Docs API
+* Custom Search API
 
-> The service account email looks like `linkedin-bot@your-project.iam.gserviceaccount.com`.
-> The setup script uses it to create and share the Sheet and Doc automatically.
-
----
-
-## Step 2: Auto-create Google resources
-
-With `GOOGLE_CREDENTIALS_JSON` set (in `.env` or your shell), run:
+Then run the local bootstrap script:
 
 ```bash
 python setup.py
 ```
 
-The script will:
+The script creates the shared `LINKEDIN` folder, content calendar sheet, images folder, and published-posts doc.
 
-- Create a parent **LINKEDIN** folder in your Google Drive
-- Create the Google Sheet (`LINKEDIN/Content Calendar`) with the correct column headers
-- Create the images subfolder (`LINKEDIN/Images`)
-- Create the Google Doc (`LINKEDIN/Published Posts`)
-- Share the LINKEDIN folder with your personal Gmail (Editor access — covers all contents)
-- Optionally fetch your LinkedIn Person URN if `LINKEDIN_ACCESS_TOKEN` is set
-- Print all the values you need for GitHub Secrets, plus a tree view of the folder layout
+Set `GOOGLE_SHARE_EMAIL` first if you want the script to share the parent Drive folder with your Gmail account automatically.
 
-After the script completes, open your Google Drive — you will see:
+## Step 2: Create the Google sign-in client
 
+In Google Cloud Console, create an OAuth client for the frontend.
+
+Add these authorized JavaScript origins:
+
+* `http://localhost:5173`
+* `https://<your-github-username>.github.io`
+
+Copy the client ID. You will use it both in the frontend and in the Worker configuration.
+
+## Step 3: Bootstrap the Cloudflare Worker backend
+
+The setup script can now handle most of the Worker setup work for you.
+
+Any Worker-related setup flag now starts by installing the local Worker dependencies from [worker/package.json](worker/package.json). That includes `wrangler`.
+
+Use this command for the full path:
+
+```bash
+python setup.py --all
 ```
-LINKEDIN/
-├── Content Calendar      ← Google Sheet (your content calendar)
-├── Images/               ← Drive folder (bot uploads images here)
-└── Published Posts       ← Google Doc (log of every published post)
+
+That flow can:
+
+* Reuse or create the `CONFIG_KV` namespaces
+* Update [worker/wrangler.jsonc](worker/wrangler.jsonc) with KV IDs and Worker vars
+* Write [worker/.dev.vars](worker/.dev.vars) for local Worker development
+* Push Worker secrets with Wrangler
+* Deploy the Worker
+* Sync GitHub Actions secrets with `gh secret set`
+
+The script needs the following tools for the full automation path:
+
+* Node.js, `npm`, and `npx`
+* Wrangler authentication
+* GitHub CLI authentication if you want repository secrets synced automatically
+
+You can also run the stages separately:
+
+```bash
+python setup.py --install-worker-deps
+python setup.py --cloudflare
+python setup.py --deploy-worker
+python setup.py --sync-github-secrets
 ```
 
-Copy the output — you will use it in Step 6.
+If you prefer the manual path, follow the guide in [worker/README.md](worker/README.md).
 
----
+At minimum, configure these Worker values:
 
-## Step 3: Gemini API
+* `ALLOWED_EMAILS`
+* `ADMIN_EMAILS`
+* `GOOGLE_CLIENT_ID`
+* `GOOGLE_SERVICE_ACCOUNT_JSON`
+* `GITHUB_TOKEN_ENCRYPTION_KEY`
+* `CORS_ALLOWED_ORIGINS`
 
-1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in.
-2. Click **Get API key → Create API key**.
-3. Copy the key — this becomes `GEMINI_API_KEY` in GitHub Secrets.
+The setup script writes the non-secret Worker vars into [worker/wrangler.jsonc](worker/wrangler.jsonc) and pushes the secret values with Wrangler during deployment.
 
----
+Deploy the Worker and copy the generated URL.
 
-## Step 4: Google Custom Search (images and research)
+## Step 4: Configure the frontend build
 
-1. In your Google Cloud project, enable the **Custom Search API** (already done in Step 1).
-2. Create an API key at **Credentials → Create Credentials → API Key**.
-   This becomes `GOOGLE_SEARCH_API_KEY`.
-3. Go to [Programmable Search Engine](https://programmablesearchengine.google.com/) and create a new engine.
-   - Set it to search the entire web.
-   - Enable **Image Search**.
-   - Copy the **Search Engine ID (CX)**. This becomes `GOOGLE_SEARCH_CX`.
+Set these frontend variables for your GitHub Pages build:
 
----
-
-## Step 5: LinkedIn API
-
-1. Go to the [LinkedIn Developer Portal](https://developer.linkedin.com/) and create an app.
-2. Request access to **Share on LinkedIn** and **Sign In with LinkedIn** products.
-3. Generate an OAuth 2.0 Access Token with scopes `w_member_social` and `r_liteprofile`.
-   This becomes `LINKEDIN_ACCESS_TOKEN`.
-4. Your **Person URN** looks like `urn:li:person:123456789`.
-   - If you set `LINKEDIN_ACCESS_TOKEN` before running `setup.py`, the script fetches it automatically.
-   - Otherwise, query `GET https://api.linkedin.com/v2/me` with your token and take the `id` field.
-   This becomes `LINKEDIN_PERSON_URN`.
-
-> **Token lifetime**: LinkedIn access tokens expire. You will need to refresh `LINKEDIN_ACCESS_TOKEN`
-> in GitHub Secrets periodically (typically every 60 days).
-
----
-
-## Step 6: Google OAuth client (Web UI login)
-
-The React dashboard uses Google OAuth to authenticate you before accessing your Sheet.
-
-1. In Google Cloud Console, go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**.
-2. Choose **Web application**.
-3. Under **Authorized JavaScript origins**, add:
-   - `http://localhost:5173` (for local dev)
-   - `https://<your-github-username>.github.io` (for production)
-4. Copy the **Client ID** — this becomes `VITE_GOOGLE_CLIENT_ID` in GitHub Secrets.
-5. Under **OAuth consent screen**, add yourself as a test user if the app is in testing mode.
-   Add `https://www.googleapis.com/auth/drive.appdata` to the scopes list.
-
----
-
-## Step 7: GitHub Secrets
-
-Go to your repository → **Settings → Secrets and variables → Actions → New repository secret**.
-Add each of the following:
-
-| Secret name | Where to get it |
+| Variable | Purpose |
 |---|---|
-| `GOOGLE_SHEET_ID` | Printed by `setup.py` — `LINKEDIN/Content Calendar` |
-| `GOOGLE_DRIVE_FOLDER_ID` | Printed by `setup.py` — `LINKEDIN/Images` subfolder |
-| `GOOGLE_DOC_ID` | Printed by `setup.py` — `LINKEDIN/Published Posts` |
-| `GOOGLE_CREDENTIALS_JSON` | Full contents of your service account JSON file |
-| `GEMINI_API_KEY` | Google AI Studio (Step 3) |
-| `GOOGLE_SEARCH_API_KEY` | Google Cloud Console (Step 4) |
-| `GOOGLE_SEARCH_CX` | Programmable Search Engine (Step 4) |
-| `LINKEDIN_ACCESS_TOKEN` | LinkedIn Developer Portal (Step 5) |
-| `LINKEDIN_PERSON_URN` | Printed by `setup.py` or queried manually (Step 5) |
-| `VITE_GOOGLE_CLIENT_ID` | Google Cloud Console (Step 6) |
+| `VITE_GOOGLE_CLIENT_ID` | Google sign-in client ID |
+| `VITE_WORKER_URL` | Cloudflare Worker URL |
 
----
+Do not expose GitHub tokens, service-account JSON, or owner-only configuration in the frontend.
 
-## Step 8: GitHub Pages
+If you run `python setup.py --all` and `gh` is authenticated, the script will try to write these repository secrets automatically.
 
-1. Go to **Settings → Pages**.
-2. Under **Build and deployment**, select **GitHub Actions** as the source.
-3. Push any change to `main` (or trigger the workflow manually) — the dashboard deploys automatically.
+## Step 5: Configure GitHub Actions secrets
 
----
+The scheduled Python jobs still need their existing secrets.
+Keep these configured in GitHub Actions:
 
-## Step 9: First run
+* `GOOGLE_SHEET_ID`
+* `GOOGLE_DRIVE_FOLDER_ID`
+* `GOOGLE_DOC_ID`
+* `GOOGLE_CREDENTIALS_JSON`
+* `GEMINI_API_KEY`
+* `GOOGLE_SEARCH_API_KEY`
+* `GOOGLE_SEARCH_CX`
+* `LINKEDIN_ACCESS_TOKEN`
+* `LINKEDIN_PERSON_URN`
 
-1. Visit your GitHub Pages URL.
-2. Click **Sign in with Google**. On the first login, Google will ask for permission to access
-   Sheets, Docs, and Drive app data. Approve all three.
-3. Open **Settings** and enter:
-   - Your **Google Spreadsheet ID** (from the URL of the sheet created by `setup.py`)
-   - Your **GitHub repository** (format: `owner/repo`)
-   - A **GitHub Personal Access Token (PAT)** with `repo` scope
-     (create one at `github.com/settings/tokens`)
-4. Click **Save Configuration** — these settings are stored in your private Google Drive app data,
-   not in this browser or any code.
-5. Add a topic, then click **Generate Posts** to trigger the first draft run.
+When `python setup.py --sync-github-secrets` runs with the corresponding environment variables present, it will sync any of these values that it can resolve.
 
----
+## Step 6: Deploy the frontend
+
+Enable GitHub Pages with GitHub Actions as the source.
+Set the `VITE_GOOGLE_CLIENT_ID` and `VITE_WORKER_URL` repository secrets used by [deploy-pages.yml](.github/workflows/deploy-pages.yml).
+
+## User flow after migration
+
+1. An allowed user opens the GitHub Pages site.
+2. The user signs in with Google.
+3. The frontend sends the Google ID token to the Worker.
+4. The Worker verifies the token, checks the allowlist, and uses the service account for sheet access.
+5. The user works with the shared content pipeline without needing their own Google API setup.
 
 ## Verification checklist
 
-- [ ] `python setup.py` completed without errors
-- [ ] A `LINKEDIN/` folder is visible in your Google Drive
-- [ ] `LINKEDIN/Content Calendar` sheet has 14 columns (A through N) with correct headers
-- [ ] `LINKEDIN/Images/` subfolder exists and is accessible to the service account
-- [ ] `LINKEDIN/Published Posts` doc exists and is shared with your Gmail
-- [ ] All 10 GitHub Secrets are set (verify at `Settings → Secrets → Actions`)
-- [ ] `VITE_GOOGLE_CLIENT_ID` Google OAuth origin includes your Pages URL
-- [ ] GitHub Pages is enabled (Settings → Pages → Source: GitHub Actions)
-- [ ] First push to `main` triggered the deploy-pages workflow successfully
-- [ ] Signing in to the dashboard prompts for Sheets + Docs + Drive app data scopes
-- [ ] Saving settings shows "Saving to Drive..." and succeeds
-- [ ] Triggering **Generate Posts** shows the action running in the GitHub Actions tab
+* The Worker deployment responds at its production URL
+* `ALLOWED_EMAILS` contains every approved Gmail user
+* The frontend build includes `VITE_GOOGLE_CLIENT_ID`
+* The frontend build includes `VITE_WORKER_URL`
+* An allowed user can sign in and load the shared sheet rows
+* A non-allowed user is rejected by the Worker
+* Draft and publish dispatches succeed without exposing GitHub secrets in the browser
 
----
+## Important changes from the old flow
 
-## Security notes
+* The browser no longer calls Google Sheets, Drive, or GitHub directly
+* The browser no longer stores the GitHub PAT
+* Config lives in Cloudflare KV, not in a user-specific Drive app-data file
+* Shared access is controlled by `ALLOWED_EMAILS` in the Worker
 
-- The GitHub PAT you enter in the dashboard is **never written to `localStorage` or any browser storage**.
-  It is encrypted by TLS in transit and stored in your private `appDataFolder` on Google Drive —
-  accessible only to your Google account via this specific OAuth client ID.
-- The Google OAuth access token is stored in `localStorage` with a 1-hour expiry (standard SPA practice).
-  When it expires, you are prompted to log in again.
-- No secrets of any kind are embedded in the deployed frontend code.
-- All Python bot secrets live exclusively in GitHub Encrypted Secrets — never in the repository files.
+## Suggested environment variables for setup.py
+
+Set these before running the broader bootstrap flow:
+
+```bash
+export GOOGLE_CREDENTIALS_JSON='...'
+export GOOGLE_SHARE_EMAIL='you@gmail.com'
+export VITE_GOOGLE_CLIENT_ID='your-client-id.apps.googleusercontent.com'
+export ALLOWED_EMAILS='you@gmail.com teammate@gmail.com'
+export ADMIN_EMAILS='you@gmail.com'
+export GITHUB_PAGES_ORIGIN='https://your-username.github.io'
+```
+
+Add these too if you want `setup.py --sync-github-secrets` to populate the automation secrets in one pass:
+
+```bash
+export GEMINI_API_KEY='...'
+export GOOGLE_SEARCH_API_KEY='...'
+export GOOGLE_SEARCH_CX='...'
+export LINKEDIN_ACCESS_TOKEN='...'
+```

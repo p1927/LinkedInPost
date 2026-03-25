@@ -1,0 +1,6 @@
+ALLOWED_EMAILS=you@gmail.com teammate@gmail.com
+ADMIN_EMAILS=you@gmail.com
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"linkedin-bot@your-project.iam.gserviceaccount.com","client_id":"...","token_uri":"https://oauth2.googleapis.com/token"}
+GITHUB_TOKEN_ENCRYPTION_KEY=REPLACE_WITH_BASE64_32_BYTE_KEY
+CORS_ALLOWED_ORIGINS=http://localhost:5173 https://your-username.github.io

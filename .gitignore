@@ -2,3 +2,7 @@
 health*.json
 __pycache__/
 *.py[cod]
+frontend/dist/
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars

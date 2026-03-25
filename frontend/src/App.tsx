@@ -1,117 +1,108 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/Dashboard'
-import { ConfigService, DEFAULT_GOOGLE_MODEL, normalizeBotConfig, type BotConfig, loadConfigFromEnv } from './services/configService'
+import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
 
-const EMPTY_CONFIG: BotConfig = {
-  spreadsheetId: '',
-  githubRepo: '',
-  githubToken: '',
-  googleModel: DEFAULT_GOOGLE_MODEL,
-}
+const STORED_ID_TOKEN_KEY = 'google_id_token'
 
 function App() {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('google_access_token'))
-  const [config, setConfig] = useState<BotConfig>(() => loadConfigFromEnv() || EMPTY_CONFIG)
-  const [configLoading, setConfigLoading] = useState(false)
-  const [configSource, setConfigSource] = useState<'env' | 'drive' | 'none'>(loadConfigFromEnv() ? 'env' : 'none')
+  const api = useMemo(() => new BackendApi(), [])
+  const [idToken, setIdToken] = useState<string | null>(localStorage.getItem(STORED_ID_TOKEN_KEY))
+  const [session, setSession] = useState<AppSession | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
-  // Load config from Drive whenever the user logs in (unless already loaded from env)
   useEffect(() => {
-    if (!token) {
-      const envConfig = loadConfigFromEnv()
-      setConfig(envConfig || EMPTY_CONFIG)
-      setConfigSource(envConfig ? 'env' : 'none')
+    if (!idToken) {
+      setSession(null)
+      setLoading(false)
       return
     }
 
-    // If config is already from environment variables, don't override it from Drive
-    if (configSource === 'env') {
-      setConfigLoading(false)
-      return
-    }
+    setLoading(true)
+    setErrorMessage('')
 
-    setConfigLoading(true)
-    const service = new ConfigService(token)
-    service
-      .loadConfig()
-      .then(loaded => {
-        if (loaded) {
-          setConfig(normalizeBotConfig(loaded))
-          setConfigSource('drive')
-        } else {
-          // One-time migration: pre-fill spreadsheetId from old localStorage key
-          const legacyId = localStorage.getItem('spreadsheet_id') || ''
-          if (legacyId) setConfig(c => ({ ...c, spreadsheetId: legacyId }))
-        }
+    api
+      .bootstrap(idToken)
+      .then((nextSession) => {
+        setSession(nextSession)
       })
-      .catch(err => {
-        // Expired token — force re-login
-        if (err?.response?.status === 401) {
-          localStorage.removeItem('google_access_token')
-          setToken(null)
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : 'Failed to start the session.'
+        console.error('Failed to bootstrap backend session:', error)
+        setErrorMessage(message)
+
+        if (isAuthErrorMessage(message)) {
+          localStorage.removeItem(STORED_ID_TOKEN_KEY)
+          setIdToken(null)
+          setSession(null)
         }
-        console.error('Failed to load config from Drive:', err)
       })
       .finally(() => {
-        setConfigLoading(false)
-        // Remove any legacy sensitive keys that may have been stored previously
-        localStorage.removeItem('github_token')
-        localStorage.removeItem('github_repo')
+        setLoading(false)
       })
-  }, [token])
+  }, [api, idToken])
 
   const handleLogin = (newToken: string) => {
-    setToken(newToken || null)
+    setErrorMessage('')
+    setIdToken(newToken || null)
   }
 
-  const handleSaveConfig = async (newConfig: BotConfig) => {
-    if (!token) return
-    const service = new ConfigService(token)
-    try {
-      await service.saveConfig(newConfig)
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(error.message)
-      }
-      throw error
-    }
-    setConfig(newConfig)
-    // Clean up any legacy localStorage key after first Drive save
-    localStorage.removeItem('spreadsheet_id')
+  const handleAuthExpired = () => {
+    localStorage.removeItem(STORED_ID_TOKEN_KEY)
+    setIdToken(null)
+    setSession(null)
+    setErrorMessage('Your Google session expired. Sign in again to continue.')
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col w-full text-gray-900">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center w-full">
+    <div className="min-h-screen flex w-full flex-col bg-gray-50 text-gray-900">
+      <header className="border-b border-gray-200 bg-white shadow-sm">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-900 m-0">LinkedIn Bot</h1>
+            <h1 className="m-0 text-xl font-bold text-gray-900">LinkedIn Bot</h1>
           </div>
           <GoogleLoginButton onLogin={handleLogin} />
         </div>
       </header>
 
-      <main className="flex-1 w-full flex flex-col pt-8">
-        {!token ? (
-          <div className="flex flex-col items-center justify-center flex-1 max-w-md mx-auto text-center px-4">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">Welcome to your LinkedIn Bot</h2>
-            <p className="text-gray-600 mb-8">
-              Sign in with your Google account to access your content calendar,
-              generate AI posts, and manage your publishing queue.
+      <main className="flex flex-1 flex-col pt-8">
+        {!api.isConfigured() ? (
+          <div className="mx-auto flex max-w-2xl flex-1 flex-col justify-center px-4 text-center">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">Backend URL required</h2>
+            <p className="text-gray-600">
+              Set <code>VITE_WORKER_URL</code> to the deployed Cloudflare Worker URL, then rebuild the frontend.
             </p>
           </div>
-        ) : configLoading ? (
-          <div className="flex justify-center items-center flex-1">
-            <p className="text-gray-500">Loading configuration...</p>
+        ) : !idToken ? (
+          <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center px-4 text-center">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">Welcome to your LinkedIn Bot</h2>
+            <p className="mb-4 text-gray-600">
+              Sign in with an approved Google account to access the shared content calendar and run the bot against the owner-managed Google resources.
+            </p>
+            {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
           </div>
-        ) : (
+        ) : loading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-gray-500">Loading shared workspace...</p>
+          </div>
+        ) : session ? (
           <Dashboard
-            token={token}
-            config={config}
-            onSaveConfig={handleSaveConfig}
-            configSource={configSource}
+            idToken={idToken}
+            session={session}
+            api={api}
+            onSaveConfig={async (config) => {
+              const updatedConfig = await api.saveConfig(idToken, config)
+              setSession((current) => (current ? { ...current, config: updatedConfig } : current))
+              return updatedConfig
+            }}
+            onAuthExpired={handleAuthExpired}
           />
+        ) : (
+          <div className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center px-4 text-center">
+            <h2 className="mb-4 text-2xl font-bold text-gray-900">Unable to start the session</h2>
+            <p className="text-gray-600">{errorMessage || 'Verify the Cloudflare Worker deployment and try again.'}</p>
+          </div>
         )}
       </main>
     </div>
