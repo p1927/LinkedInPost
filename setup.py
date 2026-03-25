@@ -25,6 +25,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import requests
 from dotenv import load_dotenv
@@ -372,7 +373,7 @@ def fetch_linkedin_person_urn() -> str:
 
 def bootstrap_worker_config(args: argparse.Namespace) -> WorkerBootstrap:
     github_repo = args.github_repo or infer_github_repo()
-    github_pages_origin = args.github_pages_origin or infer_github_pages_origin(github_repo)
+    github_pages_origin = normalize_origin(args.github_pages_origin) or infer_github_pages_origin(github_repo)
     allowed_emails = normalize_space_delimited(args.allowed_emails or args.share_email)
     admin_emails = normalize_space_delimited(args.admin_emails or args.share_email)
     google_client_id = args.google_client_id
@@ -602,6 +603,18 @@ def print_summary(args: argparse.Namespace, google_resources: GoogleResources | 
 
 def normalize_space_delimited(value: str) -> str:
     return ' '.join(part for part in re.split(r'[\s,]+', value.strip()) if part)
+
+
+def normalize_origin(value: str) -> str:
+    trimmed = value.strip()
+    if not trimmed:
+        return ''
+
+    parsed = urlsplit(trimmed)
+    if not parsed.scheme or not parsed.netloc:
+        return trimmed.rstrip('/')
+
+    return f'{parsed.scheme}://{parsed.netloc}'.rstrip('/')
 
 
 def infer_github_repo() -> str:

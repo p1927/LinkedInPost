@@ -747,15 +747,20 @@ function buildCorsHeaders(request: Request, env: Env): Headers {
     ? '*'
     : origin && allowedOrigins.includes(origin.toLowerCase())
       ? origin
-      : allowedOrigins[0] || '*';
+      : '';
 
-  return new Headers({
-    'Access-Control-Allow-Origin': allowOrigin,
+  const headers = new Headers({
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   });
+
+  if (allowOrigin) {
+    headers.set('Access-Control-Allow-Origin', allowOrigin);
+  }
+
+  return headers;
 }
 
 function jsonResponse<T>(payload: ApiEnvelope<T>, status: number, corsHeaders: Headers): Response {

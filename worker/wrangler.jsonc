@@ -14,6 +14,6 @@
     "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
     "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
     "GOOGLE_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
-    "CORS_ALLOWED_ORIGINS": "http://localhost:5173 https://p1927.github.io/LinkedInPost"
+    "CORS_ALLOWED_ORIGINS": "http://localhost:5173 https://p1927.github.io"
   }
 }
