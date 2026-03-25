@@ -23,6 +23,7 @@ GOOGLE_DOC_ID = os.environ.get('GOOGLE_DOC_ID') # ID of the 'Posted' Google Doc
 
 # Gemini for Research and Post Generation
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+GOOGLE_MODEL = os.environ.get('GOOGLE_MODEL', 'gemini-1.5-flash')
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -115,6 +116,7 @@ def fetch_web_research(topic, num_results=3):
 
 def research_and_generate(topic):
     """Uses LLM to write 4 variants of a LinkedIn post based on the topic."""
+    print(f"Generating variants with model: {GOOGLE_MODEL}")
     # Read the recipe
     recipe_content = ""
     try:
@@ -147,7 +149,7 @@ def research_and_generate(topic):
     }}
     """
     
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel(GOOGLE_MODEL)
     response = model.generate_content(
         prompt,
         generation_config={"response_mime_type": "application/json"}

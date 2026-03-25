@@ -1,5 +1,10 @@
 import axios from 'axios';
 
+export interface GoogleModelOption {
+  value: string;
+  label: string;
+}
+
 /** Returns true if the token includes the drive.appdata scope. */
 export async function hasAppDataScope(token: string): Promise<boolean> {
   try {
@@ -21,10 +26,47 @@ export async function getGrantedScopes(token: string): Promise<string[]> {
   return scopes.split(/\s+/).filter(Boolean);
 }
 
+export const DEFAULT_GOOGLE_MODEL = 'gemini-1.5-flash';
+
+export const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+];
+
+export async function loadAvailableGoogleModels(): Promise<GoogleModelOption[]> {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}google-models.json`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch model manifest: ${response.status}`);
+    }
+
+    const payload = await response.json() as { models?: GoogleModelOption[] };
+    const models = payload.models?.filter(model => model?.value && model?.label) ?? [];
+    return models.length > 0 ? models : AVAILABLE_GOOGLE_MODELS;
+  } catch {
+    return AVAILABLE_GOOGLE_MODELS;
+  }
+}
+
 export interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
   githubToken: string;
+  googleModel: string;
+}
+
+export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined): BotConfig {
+  return {
+    spreadsheetId: config?.spreadsheetId || '',
+    githubRepo: config?.githubRepo || '',
+    githubToken: config?.githubToken || '',
+    googleModel: config?.googleModel || DEFAULT_GOOGLE_MODEL,
+  };
 }
 
 const CONFIG_FILENAME = 'linkedin-bot-config.json';
@@ -41,10 +83,11 @@ export function loadConfigFromEnv(): BotConfig | null {
   const spreadsheetId = import.meta.env.VITE_GOOGLE_SHEET_ID || '';
   const githubRepo = import.meta.env.VITE_GITHUB_REPO || '';
   const githubToken = import.meta.env.VITE_GITHUB_TOKEN || '';
+  const googleModel = import.meta.env.VITE_GOOGLE_MODEL || DEFAULT_GOOGLE_MODEL;
 
   // Only return config if all three are provided
   if (spreadsheetId && githubRepo && githubToken) {
-    return { spreadsheetId, githubRepo, githubToken };
+    return normalizeBotConfig({ spreadsheetId, githubRepo, githubToken, googleModel });
   }
 
   return null;
@@ -121,13 +164,13 @@ export class ConfigService {
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
       { headers: this.headers }
     );
-    return response.data as BotConfig;
+    return normalizeBotConfig(response.data as Partial<BotConfig>);
   }
 
   async saveConfig(config: BotConfig): Promise<void> {
     await this.assertAppDataScope();
 
-    const content = JSON.stringify(config);
+    const content = JSON.stringify(normalizeBotConfig(config));
     await this.createConfigFile(content);
   }
 }

@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/Dashboard'
-import { ConfigService, type BotConfig, loadConfigFromEnv } from './services/configService'
+import { ConfigService, DEFAULT_GOOGLE_MODEL, normalizeBotConfig, type BotConfig, loadConfigFromEnv } from './services/configService'
 
-const EMPTY_CONFIG: BotConfig = { spreadsheetId: '', githubRepo: '', githubToken: '' }
+const EMPTY_CONFIG: BotConfig = {
+  spreadsheetId: '',
+  githubRepo: '',
+  githubToken: '',
+  googleModel: DEFAULT_GOOGLE_MODEL,
+}
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('google_access_token'))
@@ -32,7 +37,7 @@ function App() {
       .loadConfig()
       .then(loaded => {
         if (loaded) {
-          setConfig(loaded)
+          setConfig(normalizeBotConfig(loaded))
           setConfigSource('drive')
         } else {
           // One-time migration: pre-fill spreadsheetId from old localStorage key

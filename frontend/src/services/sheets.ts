@@ -34,6 +34,26 @@ export class SheetsService {
     };
   }
 
+  private async getSheetNumericId(sheetTitle: string = 'Sheet1'): Promise<number> {
+    const response = await axios.get(
+      `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}`,
+      {
+        params: { fields: 'sheets.properties(sheetId,title)' },
+        headers: this.headers,
+      }
+    );
+
+    const sheets = response.data.sheets as Array<{ properties?: { sheetId?: number; title?: string } }>;
+    const matchingSheet = sheets.find(sheet => sheet.properties?.title === sheetTitle) ?? sheets[0];
+    const sheetId = matchingSheet?.properties?.sheetId;
+
+    if (sheetId === undefined) {
+      throw new Error('Unable to resolve Google Sheet tab ID.');
+    }
+
+    return sheetId;
+  }
+
   async getRows(): Promise<SheetRow[]> {
     try {
       const response = await axios.get(
@@ -112,6 +132,34 @@ export class SheetsService {
       }
     } catch (error) {
       console.error('Error updating row status:', error);
+      throw error;
+    }
+  }
+
+  async deleteRow(rowIndex: number): Promise<void> {
+    try {
+      const sheetId = await this.getSheetNumericId();
+
+      await axios.post(
+        `https://sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}:batchUpdate`,
+        {
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId,
+                  dimension: 'ROWS',
+                  startIndex: rowIndex - 1,
+                  endIndex: rowIndex,
+                },
+              },
+            },
+          ],
+        },
+        { headers: this.headers }
+      );
+    } catch (error) {
+      console.error('Error deleting row:', error);
       throw error;
     }
   }

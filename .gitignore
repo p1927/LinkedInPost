@@ -1,2 +1,4 @@
 .env
 health*.json
+__pycache__/
+*.py[cod]

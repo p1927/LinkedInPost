@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Settings, Plus, RefreshCw, Send } from 'lucide-react';
+import { Bot, Plus, RefreshCw, Send, Settings, Trash2 } from 'lucide-react';
 import { type SheetRow, SheetsService } from '../services/sheets';
-import { type BotConfig } from '../services/configService';
+import { AVAILABLE_GOOGLE_MODELS, loadAvailableGoogleModels, type BotConfig, type GoogleModelOption } from '../services/configService';
 import { VariantSelection } from './VariantSelection';
 
 export function Dashboard({
@@ -22,6 +22,8 @@ export function Dashboard({
   const [sheetIdInput, setSheetIdInput] = useState(config.spreadsheetId);
   const [githubToken, setGithubToken] = useState<string>(config.githubToken);
   const [githubRepo, setGithubRepo] = useState<string>(config.githubRepo);
+  const [googleModel, setGoogleModel] = useState<string>(config.googleModel);
+  const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
   // Show settings only if config is incomplete and not from environment variables
   const [showSettings, setShowSettings] = useState(
     configSource !== 'env' && (!config.spreadsheetId || !config.githubToken || !config.githubRepo)
@@ -29,8 +31,18 @@ export function Dashboard({
   const [selectedRowForReview, setSelectedRowForReview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
 
   const sheetsService = new SheetsService(token, config.spreadsheetId);
+
+  useEffect(() => {
+    loadAvailableGoogleModels().then(models => {
+      setAvailableModels(models);
+      if (!models.some(model => model.value === googleModel)) {
+        setGoogleModel(models[0]?.value || config.googleModel);
+      }
+    });
+  }, [config.googleModel]);
 
   const loadData = async () => {
     if (!config.spreadsheetId) return;
@@ -86,7 +98,7 @@ export function Dashboard({
   const saveSettings = async () => {
     setSavingConfig(true);
     try {
-      await onSaveConfig({ spreadsheetId: sheetIdInput, githubToken, githubRepo });
+      await onSaveConfig({ spreadsheetId: sheetIdInput, githubToken, githubRepo, googleModel });
       setShowSettings(false);
       if (sheetIdInput) {
         setTimeout(loadData, 100);
@@ -112,7 +124,10 @@ export function Dashboard({
       const response = await axios.post(
         `https://api.github.com/repos/${githubRepo}/dispatches`,
         {
-          event_type: action === 'draft' ? 'trigger-draft' : 'trigger-publish'
+          event_type: action === 'draft' ? 'trigger-draft' : 'trigger-publish',
+          client_payload: {
+            google_model: googleModel,
+          },
         },
         {
           headers: {
@@ -123,13 +138,33 @@ export function Dashboard({
       );
       
       if (response.status === 204) {
-        alert(`Successfully triggered the ${action} action! It may take a few minutes to complete.`);
+        const modelSuffix = action === 'draft' ? ` using ${googleModel}` : '';
+        alert(`Successfully triggered the ${action} action${modelSuffix}. It may take a few minutes to complete.`);
       }
     } catch (error) {
       console.error(error);
       alert(`Failed to trigger GitHub Action. Make sure your token has repo scope and repository name is correct (owner/repo).`);
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleDeleteTopic = async (row: SheetRow) => {
+    const confirmed = window.confirm(`Delete "${row.topic}" from the content calendar?`);
+    if (!confirmed) return;
+
+    setDeletingRowIndex(row.rowIndex);
+    try {
+      await sheetsService.deleteRow(row.rowIndex);
+      if (selectedRowForReview?.rowIndex === row.rowIndex) {
+        setSelectedRowForReview(null);
+      }
+      await loadData();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to delete topic entry. Please try again.');
+    } finally {
+      setDeletingRowIndex(null);
     }
   };
 
@@ -179,6 +214,22 @@ export function Dashboard({
               </div>
               
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Google Model</label>
+                <select
+                  value={googleModel}
+                  onChange={(e) => setGoogleModel(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white"
+                >
+                  {availableModels.map((model) => (
+                    <option key={model.value} value={model.value}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Used for manual draft runs triggered from this dashboard.</p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">GitHub Personal Access Token (PAT)</label>
                 <input 
                   type="password" 
@@ -213,9 +264,24 @@ export function Dashboard({
 
   return (
     <div className="max-w-6xl mx-auto w-full p-4 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-3">
         <h2 className="text-2xl font-bold text-gray-900">Content Pipeline</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm">
+            <Bot className="w-4 h-4 text-gray-500" />
+            <span className="text-gray-500">Model</span>
+            <select
+              value={googleModel}
+              onChange={(e) => setGoogleModel(e.target.value)}
+              className="bg-transparent font-medium text-gray-900 outline-none"
+            >
+              {availableModels.map((model) => (
+                <option key={model.value} value={model.value}>
+                  {model.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <button 
             onClick={() => triggerGithubAction('draft')}
             disabled={actionLoading !== null}
@@ -309,14 +375,24 @@ export function Dashboard({
                     {row.date}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {row.status?.toLowerCase() === 'drafted' && (
-                      <button 
-                        onClick={() => setSelectedRowForReview(row)}
-                        className="text-blue-600 hover:text-blue-900 font-medium"
+                    <div className="flex items-center gap-4">
+                      {row.status?.toLowerCase() === 'drafted' && (
+                        <button 
+                          onClick={() => setSelectedRowForReview(row)}
+                          className="text-blue-600 hover:text-blue-900 font-medium"
+                        >
+                          Review Variants
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteTopic(row)}
+                        disabled={deletingRowIndex === row.rowIndex}
+                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 disabled:opacity-50"
                       >
-                        Review Variants
+                        <Trash2 className="w-4 h-4" />
+                        {deletingRowIndex === row.rowIndex ? 'Deleting...' : 'Delete'}
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))

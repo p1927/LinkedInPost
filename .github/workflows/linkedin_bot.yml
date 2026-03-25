@@ -30,7 +30,8 @@ jobs:
           GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID || secrets.GOOGLE_SHEET_ID }}
           GOOGLE_DRIVE_FOLDER_ID: ${{ vars.GOOGLE_DRIVE_FOLDER_ID || secrets.GOOGLE_DRIVE_FOLDER_ID }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON || vars.GOOGLE_CREDENTIALS_JSON }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || vars.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_MODEL: ${{ github.event.client_payload.google_model || vars.GOOGLE_MODEL || secrets.GOOGLE_MODEL || 'gemini-1.5-flash' }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY || vars.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_SEARCH_CX: ${{ vars.GOOGLE_SEARCH_CX || secrets.GOOGLE_SEARCH_CX }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN || vars.LINKEDIN_ACCESS_TOKEN }}
@@ -58,7 +59,8 @@ jobs:
           GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID || secrets.GOOGLE_SHEET_ID }}
           GOOGLE_DRIVE_FOLDER_ID: ${{ vars.GOOGLE_DRIVE_FOLDER_ID || secrets.GOOGLE_DRIVE_FOLDER_ID }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON || vars.GOOGLE_CREDENTIALS_JSON }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || vars.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_MODEL: ${{ github.event.client_payload.google_model || vars.GOOGLE_MODEL || secrets.GOOGLE_MODEL || 'gemini-1.5-flash' }}
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY || vars.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_SEARCH_CX: ${{ vars.GOOGLE_SEARCH_CX || secrets.GOOGLE_SEARCH_CX }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN || vars.LINKEDIN_ACCESS_TOKEN }}
