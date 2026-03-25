@@ -162,36 +162,9 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(17,24,39,0.66)] px-2 py-2 backdrop-blur-sm sm:px-3 sm:py-3">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-1rem,1760px)] items-center justify-center">
         <div className="flex max-h-[calc(100vh-1rem)] w-full flex-col overflow-hidden rounded-[28px] border border-white/60 bg-[linear-gradient(180deg,#fcfaf6_0%,#f3f6fb_100%)] shadow-[0_28px_100px_rgba(15,23,42,0.35)]">
-          <div className="sticky top-0 z-10 border-b border-[#d9dee8] bg-[rgba(252,250,246,0.92)] px-5 py-4 backdrop-blur sm:px-6">
-            <div className="flex items-center justify-end gap-4">
-              <button onClick={onCancel} className="rounded-full border border-[#d2d8e2] bg-white px-3 py-2 text-sm font-medium text-[#4b5563] transition hover:border-[#9ca9bb] hover:text-[#111827]">
-                Close
-              </button>
-            </div>
-          </div>
           <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(300px,0.58fr)_minmax(0,0.92fr)_minmax(420px,0.92fr)]">
             <section className="flex min-h-0 flex-col border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(247,249,252,0.96)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
-              <div className="mb-4 flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Variants</p>
-                  <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">Select a draft</h3>
-                </div>
-                <div className="rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] px-3 py-2 text-sm text-[#4b5563]">
-                  {options.length} total
-                </div>
-              </div>
-
-              <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
-                <div className="flex items-end justify-between gap-4">
-                  <p className="text-sm font-medium text-[#596577]">Choose from the generated variants list.</p>
-                </div>
-
-                {selectedOptionIndex !== null ? (
-                  <div className="rounded-2xl border border-[#dbe1ea] bg-white px-4 py-3 text-sm text-[#4b5563]">
-                    Active: Draft option {selectedOptionIndex + 1}
-                  </div>
-                ) : null}
-
+              <div className="min-h-0 overflow-y-auto pr-1">
                 {options.length > 0 ? (
                   <div className="rounded-[28px] border border-[#d8dce6] bg-white/80 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] sm:p-5">
                     <div className="space-y-4">
@@ -220,15 +193,6 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
             </section>
 
             <section className="flex min-h-0 flex-col border-b border-[#d9dee8] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(242,246,251,0.98)_100%)] p-4 xl:border-b-0 xl:border-r xl:p-5">
-              <div className="mb-4">
-                <div>
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Preview</p>
-                  <h3 className="mt-2 text-xl font-semibold text-[#1a2433]">
-                    {selectedOptionIndex === null ? 'Choose a draft' : `Draft option ${selectedOptionIndex + 1}`}
-                  </h3>
-                </div>
-              </div>
-
               <div className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {selectedOption ? (
                   <LinkedInPostPreview
@@ -251,22 +215,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
 
             <aside className="flex min-h-0 flex-col bg-white/80 p-4 xl:p-5">
               <div className="flex h-full min-h-0 flex-col rounded-[32px] border border-[#d8dce6] bg-white p-5 shadow-[0_20px_48px_rgba(15,23,42,0.10)] sm:p-6">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[#6a7380]">Refine</p>
-                <h3 className="mt-2 text-[clamp(1.4rem,1.8vw,1.9rem)] font-semibold text-[#1a2433]">Edit and approve</h3>
-                <p className="mt-2 text-sm leading-6 text-[#596577]">
-                  Approval stores the active draft, matching image, and optional post time in the sheet.
-                </p>
-
-                <div className="mt-6 rounded-2xl border border-[#dbe1ea] bg-[#f8fafc] p-4">
-                  <p className="text-sm font-semibold text-[#1f2937]">Selected option</p>
-                  <p className="mt-2 text-sm text-[#596577]">
-                    {selectedOptionIndex === null
-                      ? 'Choose a draft from the variants list to continue.'
-                      : `Draft option ${selectedOptionIndex + 1} is loaded into this approval workspace.`}
-                  </p>
-                </div>
-
-                <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                 <section>
                   <div className="mb-3 flex items-center gap-2 text-[#1f2937]">
                     <Sparkles className="h-4 w-4" />
