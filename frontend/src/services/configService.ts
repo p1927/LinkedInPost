@@ -61,6 +61,24 @@ export class ConfigService {
     return { Authorization: `Bearer ${this.token}` };
   }
 
+  private async createConfigFile(content: string): Promise<void> {
+    const form = new FormData();
+    form.append(
+      'metadata',
+      new Blob(
+        [JSON.stringify({ name: CONFIG_FILENAME, parents: ['appDataFolder'] })],
+        { type: 'application/json' }
+      )
+    );
+    form.append('file', new Blob([content], { type: 'application/json' }));
+
+    await axios.post(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+      form,
+      { headers: this.headers }
+    );
+  }
+
   private async assertAppDataScope(): Promise<void> {
     const scopes = await getGrantedScopes(this.token);
     if (!scopes.some(scope => scope.includes('drive.appdata'))) {
@@ -74,11 +92,12 @@ export class ConfigService {
       params: {
         q: `name='${CONFIG_FILENAME}' and 'appDataFolder' in parents and trashed=false`,
         spaces: 'appDataFolder',
-        fields: 'files(id)',
+        fields: 'files(id,modifiedTime)',
+        orderBy: 'modifiedTime desc',
       },
       headers: this.headers,
     });
-    const files = response.data.files as Array<{ id: string }>;
+    const files = response.data.files as Array<{ id: string; modifiedTime?: string }>;
     return files.length > 0 ? files[0].id : null;
   }
 
@@ -97,47 +116,6 @@ export class ConfigService {
     await this.assertAppDataScope();
 
     const content = JSON.stringify(config);
-    const fileId = await this.findConfigFileId();
-
-    if (fileId) {
-      await axios.patch(
-        `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
-        content,
-        {
-          headers: {
-            ...this.headers,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    } else {
-      const createResponse = await axios.post(
-        'https://www.googleapis.com/drive/v3/files',
-        {
-          name: CONFIG_FILENAME,
-          mimeType: 'application/json',
-          parents: ['appDataFolder'],
-        },
-        {
-          params: { fields: 'id' },
-          headers: {
-            ...this.headers,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const createdFileId = createResponse.data.id as string;
-      await axios.patch(
-        `https://www.googleapis.com/upload/drive/v3/files/${createdFileId}?uploadType=media`,
-        content,
-        {
-          headers: {
-            ...this.headers,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    }
+    await this.createConfigFile(content);
   }
 }
