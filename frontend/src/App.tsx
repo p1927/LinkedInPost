@@ -5,6 +5,14 @@ import { BackendApi, isAuthErrorMessage, type AppSession } from './services/back
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
 
+function getBackendHostLabel(endpointUrl: string): string {
+  try {
+    return new URL(endpointUrl).host
+  } catch {
+    return endpointUrl || 'the configured backend URL'
+  }
+}
+
 function App() {
   const api = useMemo(() => new BackendApi(), [])
   const [idToken, setIdToken] = useState<string | null>(localStorage.getItem(STORED_ID_TOKEN_KEY))
@@ -102,6 +110,9 @@ function App() {
           <div className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center px-4 text-center">
             <h2 className="mb-4 text-2xl font-bold text-gray-900">Unable to start the session</h2>
             <p className="text-gray-600">{errorMessage || 'Verify the Cloudflare Worker deployment and try again.'}</p>
+            <p className="mt-3 text-sm text-gray-500">
+              Current backend: {getBackendHostLabel(import.meta.env.VITE_WORKER_URL || '')}
+            </p>
           </div>
         )}
       </main>

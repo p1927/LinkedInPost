@@ -16,6 +16,18 @@ interface ApiEnvelope<T> {
 
 const AUTH_ERROR_PATTERN = /unauthorized|invalid token|expired|sign in again|not allowed/i;
 
+function formatBackendConnectionError(endpointUrl: string): string {
+  let host = endpointUrl || 'the configured backend URL';
+  if (endpointUrl) {
+    try {
+      host = new URL(endpointUrl).host;
+    } catch {
+      host = endpointUrl;
+    }
+  }
+  return `Failed to reach the backend at ${host}. The URL may point to a static site instead of the Cloudflare Worker, or the Worker CORS allowlist may not include this site.`;
+}
+
 export function isAuthErrorMessage(message: string): boolean {
   return AUTH_ERROR_PATTERN.test(message);
 }
@@ -50,7 +62,7 @@ export class BackendApi {
         }),
       });
     } catch {
-      throw new Error('Failed to reach the backend. Verify the Cloudflare Worker URL and CORS settings.');
+      throw new Error(formatBackendConnectionError(this.endpointUrl));
     }
 
     let parsed: ApiEnvelope<T>;
