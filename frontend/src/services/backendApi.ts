@@ -1,11 +1,28 @@
 import type { BotConfig, BotConfigUpdate, GoogleModelOption } from './configService';
 import { normalizeBotConfig } from './configService';
+import type { ChannelId } from '../integrations/channels';
 import type { SheetRow } from './sheets';
 
 export interface AppSession {
   email: string;
   isAdmin: boolean;
   config: BotConfig;
+}
+
+export interface PublishContentRequest {
+  row: SheetRow;
+  channel: ChannelId;
+  recipientPhoneNumber?: string;
+  message: string;
+  imageUrl?: string;
+}
+
+export interface PublishContentResult {
+  success: true;
+  channel: ChannelId;
+  recipientPhoneNumber: string | null;
+  messageId: string | null;
+  deliveryMode: 'queued' | 'sent';
 }
 
 interface ApiEnvelope<T> {
@@ -138,5 +155,9 @@ export class BackendApi {
       eventType,
       payload,
     });
+  }
+
+  async publishContent(idToken: string, request: PublishContentRequest): Promise<PublishContentResult> {
+    return this.post<PublishContentResult>('publishContent', idToken, { ...request });
   }
 }

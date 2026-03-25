@@ -1,4 +1,9 @@
+import { publishLinkedInPost } from './integrations/linkedin';
+import { sendWhatsAppMessage } from './integrations/whatsapp';
+
 type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
+
+type ChannelId = 'linkedin' | 'whatsapp';
 
 interface Env {
   CONFIG_KV: KVNamespace;
@@ -16,6 +21,12 @@ interface BotConfig {
   githubRepo: string;
   googleModel: string;
   hasGitHubToken: boolean;
+  defaultChannel: ChannelId;
+  linkedinPersonUrn: string;
+  hasLinkedInAccessToken: boolean;
+  whatsappPhoneNumberId: string;
+  hasWhatsAppAccessToken: boolean;
+  whatsappRecipients: WhatsAppRecipient[];
 }
 
 interface StoredConfig {
@@ -23,6 +34,12 @@ interface StoredConfig {
   githubRepo: string;
   googleModel: string;
   githubTokenCiphertext?: string;
+  defaultChannel: ChannelId;
+  linkedinPersonUrn: string;
+  linkedinAccessTokenCiphertext?: string;
+  whatsappPhoneNumberId: string;
+  whatsappAccessTokenCiphertext?: string;
+  whatsappRecipients: WhatsAppRecipient[];
 }
 
 interface BotConfigUpdate {
@@ -30,6 +47,17 @@ interface BotConfigUpdate {
   githubRepo?: string;
   googleModel?: string;
   githubToken?: string;
+  defaultChannel?: ChannelId;
+  linkedinPersonUrn?: string;
+  linkedinAccessToken?: string;
+  whatsappPhoneNumberId?: string;
+  whatsappAccessToken?: string;
+  whatsappRecipients?: WhatsAppRecipient[];
+}
+
+interface WhatsAppRecipient {
+  label: string;
+  phoneNumber: string;
 }
 
 interface AppSession {
@@ -115,6 +143,8 @@ interface GeminiModelsResponse {
 const CONFIG_KEY = 'shared-config';
 const GOOGLE_MODEL_DEFAULT = 'gemini-1.5-flash';
 const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be decrypted. This usually means GITHUB_TOKEN_ENCRYPTION_KEY changed after the token was saved. Ask an admin to open Settings and save the GitHub token again.';
+const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
+const WHATSAPP_TOKEN_REAUTH_MESSAGE = 'The stored WhatsApp access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const TOPICS_SHEET = 'Topics';
 const DRAFT_SHEET = 'Draft';
@@ -218,6 +248,9 @@ async function dispatchAction(
       return saveConfig(env, storedConfig, payload as BotConfigUpdate);
     case 'triggerGithubAction':
       return triggerGithubAction(env, storedConfig, payload);
+    case 'publishContent':
+      ensureSpreadsheetConfigured(storedConfig);
+      return publishContent(env, storedConfig, payload, sheets);
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -311,6 +344,12 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
     githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
+    defaultChannel: config?.defaultChannel === 'whatsapp' ? 'whatsapp' : 'linkedin',
+    linkedinPersonUrn: config?.linkedinPersonUrn || '',
+    linkedinAccessTokenCiphertext: config?.linkedinAccessTokenCiphertext || undefined,
+    whatsappPhoneNumberId: config?.whatsappPhoneNumberId || '',
+    whatsappAccessTokenCiphertext: config?.whatsappAccessTokenCiphertext || undefined,
+    whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
   };
 }
 
@@ -320,6 +359,12 @@ function toPublicConfig(config: StoredConfig): BotConfig {
     githubRepo: config.githubRepo,
     googleModel: config.googleModel || GOOGLE_MODEL_DEFAULT,
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
+    defaultChannel: config.defaultChannel,
+    linkedinPersonUrn: config.linkedinPersonUrn,
+    hasLinkedInAccessToken: Boolean(config.linkedinAccessTokenCiphertext),
+    whatsappPhoneNumberId: config.whatsappPhoneNumberId,
+    hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext),
+    whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
   };
 }
 
@@ -329,13 +374,30 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     githubRepo: typeof update.githubRepo === 'string' ? update.githubRepo.trim() : current.githubRepo,
     googleModel: typeof update.googleModel === 'string' && update.googleModel.trim() ? update.googleModel.trim() : current.googleModel,
     githubTokenCiphertext: current.githubTokenCiphertext,
+    defaultChannel: update.defaultChannel === 'whatsapp'
+      ? 'whatsapp'
+      : update.defaultChannel === 'linkedin'
+        ? 'linkedin'
+        : current.defaultChannel,
+    linkedinPersonUrn: typeof update.linkedinPersonUrn === 'string' ? update.linkedinPersonUrn.trim() : current.linkedinPersonUrn,
+    linkedinAccessTokenCiphertext: current.linkedinAccessTokenCiphertext,
+    whatsappPhoneNumberId: typeof update.whatsappPhoneNumberId === 'string' ? update.whatsappPhoneNumberId.trim() : current.whatsappPhoneNumberId,
+    whatsappAccessTokenCiphertext: current.whatsappAccessTokenCiphertext,
+    whatsappRecipients: Array.isArray(update.whatsappRecipients)
+      ? normalizeWhatsAppRecipients(update.whatsappRecipients)
+      : current.whatsappRecipients,
   };
 
   if (update.githubToken) {
-    if (!env.GITHUB_TOKEN_ENCRYPTION_KEY) {
-      throw new Error('Missing GITHUB_TOKEN_ENCRYPTION_KEY in the Worker environment.');
-    }
-    nextConfig.githubTokenCiphertext = await encryptSecret(update.githubToken.trim(), env.GITHUB_TOKEN_ENCRYPTION_KEY);
+    nextConfig.githubTokenCiphertext = await encryptSecret(update.githubToken.trim(), requireSecretEncryptionKey(env));
+  }
+
+  if (update.linkedinAccessToken) {
+    nextConfig.linkedinAccessTokenCiphertext = await encryptSecret(update.linkedinAccessToken.trim(), requireSecretEncryptionKey(env));
+  }
+
+  if (update.whatsappAccessToken) {
+    nextConfig.whatsappAccessTokenCiphertext = await encryptSecret(update.whatsappAccessToken.trim(), requireSecretEncryptionKey(env));
   }
 
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
@@ -347,10 +409,6 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
     throw new Error('GitHub dispatch is not configured. Ask an admin to complete the shared settings.');
   }
 
-  if (!env.GITHUB_TOKEN_ENCRYPTION_KEY) {
-    throw new Error('Missing GITHUB_TOKEN_ENCRYPTION_KEY in the Worker environment.');
-  }
-
   const eventType = String(payload.eventType || '');
   if (!eventType) {
     throw new Error('Missing repository dispatch event type.');
@@ -358,7 +416,7 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
 
   let githubToken: string;
   try {
-    githubToken = await decryptSecret(config.githubTokenCiphertext, env.GITHUB_TOKEN_ENCRYPTION_KEY);
+    githubToken = await decryptSecret(config.githubTokenCiphertext, requireSecretEncryptionKey(env), GITHUB_TOKEN_REAUTH_MESSAGE);
   } catch (error) {
     if (error instanceof Error && error.message === GITHUB_TOKEN_REAUTH_MESSAGE) {
       const nextConfig: StoredConfig = {
@@ -391,6 +449,162 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
   }
 
   return { success: true };
+}
+
+async function publishContent(
+  env: Env,
+  config: StoredConfig,
+  payload: Record<string, unknown>,
+  sheets: SheetsGateway,
+): Promise<{ success: true; channel: ChannelId; recipientPhoneNumber: string | null; messageId: string | null; deliveryMode: 'queued' | 'sent' }> {
+  const row = coerceSheetRow(payload.row);
+  const channel = coerceChannelId(payload.channel);
+  const recipientPhoneNumber = normalizePhoneNumber(String(payload.recipientPhoneNumber || ''));
+  const message = String(payload.message || row.selectedText || '').trim();
+  const imageUrl = String(payload.imageUrl || row.selectedImageId || '').trim();
+
+  if (!message) {
+    throw new Error('Approved content text is empty. Approve or edit the draft before sending it.');
+  }
+
+  if (channel === 'linkedin') {
+    if (!config.linkedinPersonUrn || !config.linkedinAccessTokenCiphertext) {
+      throw new Error('LinkedIn publishing is not configured. Ask an admin to complete the LinkedIn settings.');
+    }
+
+    let linkedinAccessToken: string;
+    try {
+      linkedinAccessToken = await decryptSecret(
+        config.linkedinAccessTokenCiphertext,
+        requireSecretEncryptionKey(env),
+        LINKEDIN_TOKEN_REAUTH_MESSAGE,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === LINKEDIN_TOKEN_REAUTH_MESSAGE) {
+        const nextConfig: StoredConfig = {
+          ...config,
+          linkedinAccessTokenCiphertext: undefined,
+        };
+        await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+      }
+      throw error;
+    }
+
+    const publishResult = await publishLinkedInPost({
+      accessToken: linkedinAccessToken,
+      personUrn: config.linkedinPersonUrn,
+      text: message,
+    });
+
+    const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    await sheets.markRowPublished(config.spreadsheetId, {
+      ...row,
+      status: 'Published',
+      selectedText: message,
+      selectedImageId: imageUrl,
+      postTime: publishedAt,
+    });
+
+    return {
+      success: true,
+      channel,
+      recipientPhoneNumber: null,
+      messageId: publishResult.postId,
+      deliveryMode: 'sent',
+    };
+  }
+
+  if (!recipientPhoneNumber) {
+    throw new Error('A valid WhatsApp recipient phone number is required.');
+  }
+
+  if (!config.whatsappPhoneNumberId || !config.whatsappAccessTokenCiphertext) {
+    throw new Error('WhatsApp delivery is not configured. Ask an admin to add the phone number ID and access token.');
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await decryptSecret(
+      config.whatsappAccessTokenCiphertext,
+      requireSecretEncryptionKey(env),
+      WHATSAPP_TOKEN_REAUTH_MESSAGE,
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message === WHATSAPP_TOKEN_REAUTH_MESSAGE) {
+      const nextConfig: StoredConfig = {
+        ...config,
+        whatsappAccessTokenCiphertext: undefined,
+      };
+      await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+    }
+    throw error;
+  }
+
+  const sendResult = await sendWhatsAppMessage({
+    accessToken,
+    phoneNumberId: config.whatsappPhoneNumberId,
+    to: recipientPhoneNumber,
+    text: message,
+    imageUrl: imageUrl || undefined,
+  });
+
+  const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  await sheets.markRowPublished(config.spreadsheetId, {
+    ...row,
+    status: 'Published',
+    selectedText: message,
+    selectedImageId: imageUrl,
+    postTime: publishedAt,
+  });
+
+  return {
+    success: true,
+    channel,
+    recipientPhoneNumber,
+    messageId: sendResult.messageId,
+    deliveryMode: 'sent',
+  };
+}
+
+function coerceChannelId(value: unknown): ChannelId {
+  if (value !== 'whatsapp' && value !== 'linkedin') {
+    throw new Error('Unsupported delivery channel.');
+  }
+
+  return value;
+}
+
+function normalizeWhatsAppRecipients(value: unknown): WhatsAppRecipient[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((entry) => Boolean(entry) && typeof entry === 'object')
+    .map((entry) => ({
+      label: String((entry as WhatsAppRecipient).label || '').trim(),
+      phoneNumber: normalizePhoneNumber(String((entry as WhatsAppRecipient).phoneNumber || '')),
+    }))
+    .filter((entry) => entry.label && entry.phoneNumber);
+}
+
+function normalizePhoneNumber(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const hasPlusPrefix = trimmed.startsWith('+');
+  const digits = trimmed.replace(/\D/g, '');
+  return digits ? `${hasPlusPrefix ? '+' : ''}${digits}` : '';
+}
+
+function requireSecretEncryptionKey(env: Env): string {
+  if (!env.GITHUB_TOKEN_ENCRYPTION_KEY) {
+    throw new Error('Missing GITHUB_TOKEN_ENCRYPTION_KEY in the Worker environment.');
+  }
+
+  return env.GITHUB_TOKEN_ENCRYPTION_KEY;
 }
 
 async function listGoogleModels(env: Env): Promise<GoogleModelOption[]> {
@@ -515,6 +729,45 @@ class SheetsGateway {
     await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!C${draftRowIndex}`, [[status || 'Pending']]);
     if (status === 'Approved') {
       await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!L${draftRowIndex}:N${draftRowIndex}`, [[selectedText, selectedImageId, postTime]]);
+    }
+
+    return { success: true };
+  }
+
+  async markRowPublished(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {
+    await this.ensureRequiredSheets(spreadsheetId);
+
+    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
+    if (draftRowIndex) {
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!C${draftRowIndex}`, [[row.status || 'Published']]);
+      await this.updateValues(
+        spreadsheetId,
+        `${DRAFT_SHEET}!L${draftRowIndex}:N${draftRowIndex}`,
+        [[row.selectedText, row.selectedImageId, row.postTime]],
+      );
+    }
+
+    const postValues = [[
+      row.topic,
+      row.date,
+      row.status || 'Published',
+      row.variant1,
+      row.variant2,
+      row.variant3,
+      row.variant4,
+      row.imageLink1,
+      row.imageLink2,
+      row.imageLink3,
+      row.imageLink4,
+      row.selectedText,
+      row.selectedImageId,
+      row.postTime,
+    ]];
+
+    if (row.postRowIndex) {
+      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:N${row.postRowIndex}`, postValues);
+    } else {
+      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:N`, postValues);
     }
 
     return { success: true };
@@ -874,21 +1127,21 @@ async function encryptSecret(plaintext: string, base64Key: string): Promise<stri
   return bytesToBase64(payload);
 }
 
-async function decryptSecret(ciphertext: string, base64Key: string): Promise<string> {
+async function decryptSecret(ciphertext: string, base64Key: string, reauthMessage: string): Promise<string> {
   const key = await importAesKey(base64Key, ['decrypt']);
   const bytes = base64ToBytes(ciphertext);
   const iv = bytes.slice(0, 12);
   const payload = bytes.slice(12);
 
   if (iv.byteLength !== 12 || payload.byteLength === 0) {
-    throw new Error(GITHUB_TOKEN_REAUTH_MESSAGE);
+    throw new Error(reauthMessage);
   }
 
   try {
     const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, payload);
     return textDecoder.decode(plaintext);
   } catch {
-    throw new Error(GITHUB_TOKEN_REAUTH_MESSAGE);
+    throw new Error(reauthMessage);
   }
 }
 

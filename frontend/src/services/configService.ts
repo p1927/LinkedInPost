@@ -1,3 +1,6 @@
+import type { ChannelId } from '../integrations/channels';
+import { normalizeWhatsAppRecipients, type WhatsAppRecipient } from '../integrations/whatsapp';
+
 export interface GoogleModelOption {
   value: string;
   label: string;
@@ -85,6 +88,12 @@ export interface BotConfig {
   githubRepo: string;
   googleModel: string;
   hasGitHubToken: boolean;
+  defaultChannel: ChannelId;
+  linkedinPersonUrn: string;
+  hasLinkedInAccessToken: boolean;
+  whatsappPhoneNumberId: string;
+  hasWhatsAppAccessToken: boolean;
+  whatsappRecipients: WhatsAppRecipient[];
 }
 
 export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined): BotConfig {
@@ -93,6 +102,12 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || DEFAULT_GOOGLE_MODEL,
     hasGitHubToken: Boolean(config?.hasGitHubToken),
+    defaultChannel: config?.defaultChannel === 'whatsapp' ? 'whatsapp' : 'linkedin',
+    linkedinPersonUrn: config?.linkedinPersonUrn || '',
+    hasLinkedInAccessToken: Boolean(config?.hasLinkedInAccessToken),
+    whatsappPhoneNumberId: config?.whatsappPhoneNumberId || '',
+    hasWhatsAppAccessToken: Boolean(config?.hasWhatsAppAccessToken),
+    whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
   };
 }
 
@@ -101,4 +116,10 @@ export interface BotConfigUpdate {
   githubRepo: string;
   googleModel: string;
   githubToken?: string;
+  defaultChannel?: ChannelId;
+  linkedinPersonUrn?: string;
+  linkedinAccessToken?: string;
+  whatsappPhoneNumberId?: string;
+  whatsappAccessToken?: string;
+  whatsappRecipients?: WhatsAppRecipient[];
 }

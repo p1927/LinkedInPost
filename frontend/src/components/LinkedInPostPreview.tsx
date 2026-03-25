@@ -21,10 +21,10 @@ const SOCIAL_PROOF = [
 ];
 
 const ACTIONS = [
-  { label: 'Like', icon: ThumbsUp },
-  { label: 'Comment', icon: MessageCircle },
-  { label: 'Repost', icon: Repeat2 },
-  { label: 'Send', icon: Send },
+  { label: 'React', icon: ThumbsUp },
+  { label: 'Reply', icon: MessageCircle },
+  { label: 'Forward', icon: Repeat2 },
+  { label: 'Share', icon: Send },
 ];
 
 function renderLinkedText(text: string): ReactNode[] {
@@ -91,7 +91,7 @@ export function LinkedInPostPreview({
         <div>
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[#6d7886]">Draft option {optionNumber}</p>
           <p className={`mt-1 text-[#394553] ${isCarousel ? 'text-[0.82rem]' : 'text-sm'}`}>
-            {isCarousel ? 'Tap to load this draft into the main view' : 'Feed preview with text and image pairing'}
+            {isCarousel ? 'Tap to load this draft into the main view' : 'Message preview with text and image pairing'}
           </p>
         </div>
         <div
@@ -110,12 +110,12 @@ export function LinkedInPostPreview({
           <div className={isCarousel ? 'px-3.5 pb-3.5 pt-3.5' : 'px-4 pb-4 pt-4 sm:px-5'}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 gap-3">
-                <div className={`flex shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0a66c2,#4c90d9)] font-bold text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] ${isCarousel ? 'h-10 w-10 text-[0.82rem]' : 'h-12 w-12 text-sm'}`}>
-                  LB
+                <div className={`flex shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#15803d,#22c55e)] font-bold text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] ${isCarousel ? 'h-10 w-10 text-[0.82rem]' : 'h-12 w-12 text-sm'}`}>
+                  CB
                 </div>
                 <div className="min-w-0">
-                  <p className={`truncate font-semibold text-[#191919] ${isCarousel ? 'text-[0.88rem]' : 'text-[0.95rem]'}`}>LinkedIn Bot Preview</p>
-                  <p className={`truncate text-[#666666] ${isCarousel ? 'text-[0.72rem]' : 'text-[0.8rem]'}`}>AI-assisted draft preview</p>
+                  <p className={`truncate font-semibold text-[#191919] ${isCarousel ? 'text-[0.88rem]' : 'text-[0.95rem]'}`}>Channel Bot Preview</p>
+                  <p className={`truncate text-[#666666] ${isCarousel ? 'text-[0.72rem]' : 'text-[0.8rem]'}`}>AI-assisted message preview</p>
                   <div className={`mt-0.5 flex items-center gap-1 text-[#666666] ${isCarousel ? 'text-[0.68rem]' : 'text-[0.75rem]'}`}>
                     <span>Now</span>
                     <span aria-hidden="true">•</span>
@@ -187,8 +187,8 @@ export function LinkedInPostPreview({
             <div className="flex items-center justify-between gap-2 border-b border-[#e8e8e8] pb-2.5">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-1">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0a66c2] text-[0.6rem] text-white">👍</span>
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#057642] text-[0.6rem] text-white">👏</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#15803d] text-[0.6rem] text-white">👍</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0f766e] text-[0.6rem] text-white">👏</span>
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#b24020] text-[0.6rem] text-white">❤</span>
                 </div>
                 <span>{proof.reactions}</span>
@@ -196,7 +196,7 @@ export function LinkedInPostPreview({
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span>{proof.comments} comments</span>
                 <span aria-hidden="true">•</span>
-                <span>{proof.reposts} reposts</span>
+                <span>{proof.reposts} shares</span>
               </div>
             </div>
           </div>

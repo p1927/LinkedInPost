@@ -229,7 +229,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     value={editableText}
                     onChange={(event) => setEditableText(event.target.value)}
                     placeholder="Edit the selected draft here before approval or refinement."
-                    className="mt-2 min-h-[260px] w-full rounded-2xl border border-[#cfd6e1] bg-white px-4 py-4 text-sm leading-6 text-[#111827] outline-none transition focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
+                    className="mt-2 min-h-[260px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
                   />
                   <label className="mt-4 block text-sm font-medium text-[#374151]" htmlFor="refinement-notes">
                     Tell Gemini what to improve
@@ -239,7 +239,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     value={refinementPrompt}
                     onChange={(event) => setRefinementPrompt(event.target.value)}
                     placeholder="Examples: make it more founder-like, remove jargon, add a stronger hook, keep it under 180 words."
-                    className="mt-2 min-h-[128px] w-full rounded-2xl border border-[#cfd6e1] bg-white px-4 py-4 text-sm leading-6 text-[#111827] outline-none transition focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
+                    className="mt-2 min-h-[128px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
                   />
                   <p className="mt-2 text-xs leading-5 text-[#6b7280]">
                     Approval uses the edited copy above immediately. Refinement sends the edited draft plus these notes to Gemini and replaces the four sheet variants with a fresh set.
@@ -248,16 +248,16 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                     onClick={handleRefine}
                     type="button"
                     disabled={refining || submitting || selectedOptionIndex === null}
-                    className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-[#b5c8df] bg-[#eef6ff] px-4 py-3 text-sm font-semibold text-[#0a66c2] transition hover:bg-[#dfedff] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-primary transition-all duration-200 hover:bg-indigo-100 hover:-translate-y-0.5 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     {refining ? 'Requesting 4 refined variants...' : 'Generate 4 improved variants'}
                   </button>
                 </section>
 
-                <section className="mt-6">
-                  <h4 className="text-sm font-semibold text-[#1f2937]">Choose the image</h4>
+                <section className="mt-8 pt-6 border-t border-slate-200">
+                  <h4 className="text-sm font-semibold text-[#1f2937] mb-4">Choose the image</h4>
                   {imageOptions.length === 0 ? (
-                    <p className="mt-2 text-sm leading-6 text-[#6b7280]">No image links were found for this draft. The console now logs the raw and normalized image URLs to help debug why.</p>
+                    <p className="mt-2 text-sm leading-6 text-[#6b7280]">No image links were found for this draft.</p>
                   ) : (
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {imageOptions.map((imageOption, index) => {
@@ -269,39 +269,29 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                             key={`image-option-${imageOption.originalIndex}`}
                             type="button"
                             onClick={() => setSelectedImageIndex(index)}
-                            className={`overflow-hidden rounded-2xl border text-left transition ${
+                            className={`overflow-hidden rounded-2xl border text-left transition-all duration-200 group ${
                               isSelected
-                                ? 'border-[#0a66c2] bg-[#eef6ff] shadow-[0_10px_24px_rgba(10,102,194,0.14)]'
-                                : 'border-[#d8dce6] bg-white hover:border-[#9ebfe2]'
+                                ? 'border-primary bg-indigo-50 shadow-md ring-2 ring-primary/20'
+                                : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm'
                             }`}
                           >
-                            <div className="aspect-[4/3] bg-[#f3f4f6]">
+                            <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
                               <img
                                 src={resolvedImageUrl}
                                 alt={`Selectable image ${imageOption.originalIndex + 1}`}
-                                className="h-full w-full object-cover"
+                                className={`h-full w-full object-cover transition-transform duration-500 ${isSelected ? 'scale-105' : 'group-hover:scale-105'}`}
                                 onLoad={() => {
                                   console.info('Approval image option loaded', {
                                     topic: row.topic,
                                     imageIndex: imageOption.originalIndex + 1,
-                                    originalUrl: imageOption.imageUrl,
-                                    resolvedImageUrl,
-                                  });
-                                }}
-                                onError={() => {
-                                  console.warn('Approval image option failed to load', {
-                                    topic: row.topic,
-                                    imageIndex: imageOption.originalIndex + 1,
-                                    originalUrl: imageOption.imageUrl,
-                                    resolvedImageUrl,
                                   });
                                 }}
                               />
                             </div>
-                            <div className="px-3 py-2">
-                              <p className="text-sm font-semibold text-[#1f2937]">Image {imageOption.originalIndex + 1}</p>
-                              <p className="mt-1 text-xs leading-5 text-[#6b7280]">
-                                {isSelected ? 'Will be saved with the approved post.' : 'Click to use this image.'}
+                            <div className="px-4 py-3">
+                              <p className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-slate-700'}`}>Image {imageOption.originalIndex + 1}</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-500">
+                                {isSelected ? 'Selected for this post' : 'Click to select'}
                               </p>
                             </div>
                           </button>
@@ -311,22 +301,22 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                   )}
                 </section>
 
-                <section className="mt-6">
+                <section className="mt-8 pt-6 border-t border-slate-200">
                   <div className="mb-3 flex items-center gap-2 text-[#1f2937]">
-                    <CalendarClock className="h-4 w-4" />
-                    <h4 className="text-sm font-semibold">Schedule</h4>
+                    <CalendarClock className="h-5 w-5 text-primary" />
+                    <h4 className="text-sm font-semibold">Schedule Delivery</h4>
                   </div>
                   <label className="block text-sm font-medium text-[#374151]" htmlFor="post-time-input">
-                    Post time
+                    Post time (optional)
                   </label>
                   <input
                     id="post-time-input"
                     type="datetime-local"
                     value={postTime}
                     onChange={(e) => setPostTime(e.target.value)}
-                    className="mt-2 w-full rounded-xl border border-[#cfd6e1] bg-white px-3 py-2.5 text-[#111827] outline-none transition focus:border-[#0a66c2] focus:ring-4 focus:ring-[#0a66c2]/10"
+                    className="mt-2 w-full max-w-sm rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50 cursor-pointer"
                   />
-                  <p className="mt-2 text-xs leading-5 text-[#6b7280]">Leave this empty if the post should publish the next time the publishing workflow runs.</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">Leave this empty if the post should publish the next time the publishing workflow runs.</p>
                 </section>
                 </div>
 
@@ -334,14 +324,14 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                   <button
                     onClick={handleSubmit}
                     disabled={submitting || selectedOptionIndex === null}
-                    className="inline-flex items-center justify-center rounded-xl bg-[#0a66c2] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#084d92] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-600 hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     {submitting ? 'Approving...' : 'Approve selected post'}
                   </button>
                   <button
                     onClick={onCancel}
                     disabled={submitting}
-                    className="inline-flex items-center justify-center rounded-xl border border-[#cfd6e1] bg-white px-4 py-3 text-sm font-semibold text-[#374151] transition hover:bg-[#f8fafc] disabled:opacity-50"
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/50 px-6 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     Cancel
                   </button>
