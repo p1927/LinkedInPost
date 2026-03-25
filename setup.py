@@ -30,12 +30,25 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
 
 import requests
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from setup_worker import (
+    WorkerBootstrap,
+    build_worker_dev_values,
+    build_worker_secret_values,
+    extract_namespace_id,
+    extract_worker_url,
+    load_worker_encryption_key,
+    normalize_origin,
+    normalize_space_delimited,
+    pick_verification_origin,
+    print_bootstrap_summary,
+    read_existing_kv_ids,
+    update_wrangler_config,
+)
 
 load_dotenv()
 
@@ -70,21 +83,6 @@ class GoogleResources:
     doc_id: str
     linkedin_person_urn: str
     credentials_json: str
-
-
-@dataclass
-class WorkerBootstrap:
-    allowed_emails: str
-    admin_emails: str
-    google_client_id: str
-    cors_allowed_origins: str
-    encryption_key: str
-    github_repo: str
-    linkedin_person_urn: str
-    whatsapp_phone_number_id: str
-    kv_namespace_id: str = ''
-    kv_preview_id: str = ''
-    worker_url: str = ''
 
 
 def ensure_sheet_tab(sheets: Any, spreadsheet_id: str, title: str, headers: list[str]) -> None:
@@ -148,7 +146,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--google-client-id', default=os.environ.get('VITE_GOOGLE_CLIENT_ID', '').strip() or os.environ.get('GOOGLE_CLIENT_ID', '').strip(), help='Google web client ID for frontend and Worker validation.')
     parser.add_argument('--github-pages-origin', default=os.environ.get('GITHUB_PAGES_ORIGIN', '').strip(), help='Origin allowed to call the Worker, for example https://user.github.io.')
     parser.add_argument('--github-repo', default=os.environ.get('GITHUB_REPO', '').strip(), help='GitHub repository in owner/repo format.')
+    parser.add_argument('--linkedin-client-id', default=os.environ.get('LINKEDIN_CLIENT_ID', '').strip(), help='LinkedIn OAuth client ID used for the admin connect flow.')
+    parser.add_argument('--linkedin-client-secret', default=os.environ.get('LINKEDIN_CLIENT_SECRET', '').strip(), help='LinkedIn OAuth client secret stored as a Worker secret.')
     parser.add_argument('--linkedin-person-urn', default=os.environ.get('LINKEDIN_PERSON_URN', '').strip(), help='LinkedIn member URN used by the Worker for direct publishing.')
+    parser.add_argument('--meta-app-id', default=os.environ.get('META_APP_ID', '').strip(), help='Meta app ID used for the WhatsApp Business connect flow.')
+    parser.add_argument('--meta-app-secret', default=os.environ.get('META_APP_SECRET', '').strip(), help='Meta app secret stored as a Worker secret.')
     parser.add_argument('--whatsapp-phone-number-id', default=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip(), help='Meta WhatsApp phone number ID used by the Worker for direct sending.')
     parser.add_argument('--all', action='store_true', help='Run Google setup, Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
     return parser.parse_args()
@@ -183,7 +185,7 @@ def main() -> None:
 
     if args.cloudflare:
         create_cloudflare_kv_namespaces(worker_bootstrap)
-        update_wrangler_config(worker_bootstrap)
+        update_worker_wrangler_config(worker_bootstrap)
         write_worker_dev_vars(worker_bootstrap, google_resources)
 
     if args.deploy_worker:
@@ -192,7 +194,7 @@ def main() -> None:
     if args.sync_github_secrets:
         sync_github_secrets(worker_bootstrap, google_resources)
 
-    print_summary(args, google_resources, worker_bootstrap)
+    print_bootstrap_summary(args, google_resources, worker_bootstrap, WORKER_DEV_VARS, WORKER_WRANGLER_CONFIG)
 
 
 def create_google_resources(shared_email: str) -> GoogleResources:
@@ -386,7 +388,7 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
     allowed_emails = normalize_space_delimited(args.allowed_emails or args.share_email)
     admin_emails = normalize_space_delimited(args.admin_emails or args.share_email)
     google_client_id = args.google_client_id
-    encryption_key = load_worker_encryption_key()
+    encryption_key = load_worker_encryption_key(WORKER_DEV_VARS, generate_encryption_key)
 
     if not allowed_emails:
         warn('ALLOWED_EMAILS', 'not provided. Worker access control must be set before deployment.')
@@ -402,39 +404,17 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
         ),
         encryption_key=encryption_key,
         github_repo=github_repo,
+        linkedin_client_id=args.linkedin_client_id,
+        linkedin_client_secret=args.linkedin_client_secret,
         linkedin_person_urn=args.linkedin_person_urn or (google_resources.linkedin_person_urn if google_resources else ''),
+        meta_app_id=args.meta_app_id,
+        meta_app_secret=args.meta_app_secret,
         whatsapp_phone_number_id=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip() or args.whatsapp_phone_number_id,
     )
 
 
-def load_worker_encryption_key() -> str:
-    env_key = os.environ.get('GITHUB_TOKEN_ENCRYPTION_KEY', '').strip()
-    if env_key:
-        return env_key
-
-    persisted_key = read_worker_dev_var('GITHUB_TOKEN_ENCRYPTION_KEY')
-    if persisted_key:
-        return persisted_key
-
-    return generate_encryption_key()
-
-
-def read_worker_dev_var(name: str) -> str:
-    if not WORKER_DEV_VARS.exists():
-        return ''
-
-    prefix = f'{name}='
-    for raw_line in WORKER_DEV_VARS.read_text().splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith('#') or not line.startswith(prefix):
-            continue
-        return line[len(prefix):].strip()
-
-    return ''
-
-
 def create_cloudflare_kv_namespaces(worker_bootstrap: WorkerBootstrap) -> None:
-    existing_ids = read_existing_kv_ids()
+    existing_ids = read_existing_kv_ids(WORKER_WRANGLER_CONFIG)
     if existing_ids[0] and existing_ids[1]:
         worker_bootstrap.kv_namespace_id = existing_ids[0]
         worker_bootstrap.kv_preview_id = existing_ids[1]
@@ -468,78 +448,14 @@ def create_kv_namespace(preview: bool) -> str:
     return namespace_id
 
 
-def extract_namespace_id(output: str) -> str:
-    output = output.strip()
-    if not output:
-        return ''
-
-    try:
-        parsed = json.loads(output)
-        if isinstance(parsed, dict):
-            return str(parsed.get('id', '')).strip()
-    except json.JSONDecodeError:
-        pass
-
-    match = re.search(r'"id"\s*:\s*"([^"]+)"', output)
-    if match:
-        return match.group(1)
-
-    match = re.search(r'([a-f0-9]{32})', output, re.IGNORECASE)
-    return match.group(1) if match else ''
-
-
-def update_wrangler_config(worker_bootstrap: WorkerBootstrap) -> None:
-    config = json.loads(WORKER_WRANGLER_CONFIG.read_text())
-    config['kv_namespaces'] = [
-        {
-            'binding': 'CONFIG_KV',
-            'id': worker_bootstrap.kv_namespace_id or 'REPLACE_WITH_KV_NAMESPACE_ID',
-            'preview_id': worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID',
-        }
-    ]
-    config['vars'] = {
-        'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
-        'ADMIN_EMAILS': worker_bootstrap.admin_emails,
-        'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
-        'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
-        'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
-        'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
-    }
-    WORKER_WRANGLER_CONFIG.write_text(json.dumps(config, indent=2) + '\n')
+def update_worker_wrangler_config(worker_bootstrap: WorkerBootstrap) -> None:
+    update_wrangler_config(WORKER_WRANGLER_CONFIG, worker_bootstrap)
     ok('wrangler.jsonc updated', str(WORKER_WRANGLER_CONFIG))
-
-
-def read_existing_kv_ids() -> tuple[str, str]:
-    config = json.loads(WORKER_WRANGLER_CONFIG.read_text())
-    namespaces = config.get('kv_namespaces', [])
-    if not namespaces:
-        return '', ''
-
-    namespace = namespaces[0]
-    namespace_id = str(namespace.get('id', '')).strip()
-    preview_id = str(namespace.get('preview_id', '')).strip()
-    if namespace_id.startswith('REPLACE_WITH_'):
-        namespace_id = ''
-    if preview_id.startswith('REPLACE_WITH_'):
-        preview_id = ''
-    return namespace_id, preview_id
 
 
 def write_worker_dev_vars(worker_bootstrap: WorkerBootstrap, google_resources: GoogleResources | None) -> None:
     credentials_json = google_resources.credentials_json if google_resources else os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip()
-    values = {
-        'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
-        'ADMIN_EMAILS': worker_bootstrap.admin_emails,
-        'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
-        'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
-        'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
-        'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
-        'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
-        'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
-        'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
-        'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
-        'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
-    }
+    values = build_worker_dev_values(worker_bootstrap, credentials_json)
     lines = [f'{key}={value}' for key, value in values.items() if value]
     WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
     ok('Worker local env file', str(WORKER_DEV_VARS))
@@ -552,15 +468,9 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: Go
     if not credentials_json:
         raise RuntimeError('GOOGLE_CREDENTIALS_JSON is required to deploy the Worker.')
 
-    with build_wrangler_secrets_file(
-        {
-            'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
-            'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
-            'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
-            'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
-            'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
-        }
-    ) as secrets_file:
+    secret_values = build_worker_secret_values(worker_bootstrap, credentials_json)
+
+    with build_wrangler_secrets_file(secret_values) as secrets_file:
         result = run_command(
             ['npx', 'wrangler', 'deploy', '--secrets-file', secrets_file],
             cwd=WORKER_DIR,
@@ -603,11 +513,6 @@ class TemporaryPath:
 
     def __exit__(self, exc_type, exc, traceback) -> None:
         Path(self.path).unlink(missing_ok=True)
-
-
-def extract_worker_url(output: str) -> str:
-    match = re.search(r'https://[a-z0-9\-.]+\.workers\.dev', output, re.IGNORECASE)
-    return match.group(0) if match else ''
 
 
 def verify_worker_endpoint(worker_url: str, cors_allowed_origins: str) -> None:
@@ -734,15 +639,6 @@ def parse_curl_headers(raw_headers: str) -> dict[str, str]:
     return parsed
 
 
-def pick_verification_origin(cors_allowed_origins: str) -> str:
-    normalized = normalize_space_delimited(cors_allowed_origins)
-    for origin in normalized.split(' '):
-        candidate = normalize_origin(origin)
-        if candidate:
-            return candidate
-    return ''
-
-
 def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: GoogleResources | None) -> None:
     ensure_command('gh', 'Install GitHub CLI to sync repository secrets automatically.')
 
@@ -774,63 +670,6 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: Goo
         ok('GitHub secret synced', name)
 
 
-def print_summary(args: argparse.Namespace, google_resources: GoogleResources | None, worker_bootstrap: WorkerBootstrap | None) -> None:
-    print('\n' + '=' * 72)
-    print('Bootstrap summary')
-    print('=' * 72)
-
-    if google_resources:
-        print(f'GOOGLE_SHEET_ID         = {google_resources.sheet_id}')
-        print(f'GOOGLE_DRIVE_FOLDER_ID  = {google_resources.images_folder_id}')
-        print(f'GOOGLE_DOC_ID           = {google_resources.doc_id}')
-        print('GOOGLE_CREDENTIALS_JSON = <service account JSON already loaded from env>')
-        print(f'LINKEDIN_PERSON_URN     = {google_resources.linkedin_person_urn or "urn:li:person:<your_id>"}')
-        print(f'WHATSAPP_PHONE_NUMBER_ID = {os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "").strip() or "<set this value>"}')
-
-    if worker_bootstrap:
-        print(f'VITE_GOOGLE_CLIENT_ID   = {worker_bootstrap.google_client_id or "<set this value>"}')
-        print(f'ALLOWED_EMAILS          = {worker_bootstrap.allowed_emails or "<set this value>"}')
-        print(f'ADMIN_EMAILS            = {worker_bootstrap.admin_emails or "<set this value>"}')
-        print(f'CORS_ALLOWED_ORIGINS    = {worker_bootstrap.cors_allowed_origins or "<set this value>"}')
-        print(f'LINKEDIN_PERSON_URN     = {worker_bootstrap.linkedin_person_urn or "<set this value>"}')
-        print(f'WHATSAPP_PHONE_NUMBER_ID = {worker_bootstrap.whatsapp_phone_number_id or "<set this value>"}')
-        print(f'GITHUB_TOKEN_ENCRYPTION_KEY = {worker_bootstrap.encryption_key}')
-        if worker_bootstrap.kv_namespace_id:
-            print(f'CONFIG_KV production    = {worker_bootstrap.kv_namespace_id}')
-        if worker_bootstrap.kv_preview_id:
-            print(f'CONFIG_KV preview       = {worker_bootstrap.kv_preview_id}')
-        if worker_bootstrap.worker_url:
-            print(f'VITE_WORKER_URL         = {worker_bootstrap.worker_url}')
-
-    print('\nOutputs')
-    if google_resources:
-        print('  LINKEDIN/')
-        print(f'    Content Calendar    (Sheet  ID: {google_resources.sheet_id})')
-        print(f'    Images/             (Folder ID: {google_resources.images_folder_id})')
-        print(f'    Published Posts     (Doc    ID: {google_resources.doc_id})')
-    if worker_bootstrap:
-        print(f'  Worker dev vars       ({WORKER_DEV_VARS})')
-        print(f'  Wrangler config       ({WORKER_WRANGLER_CONFIG})')
-
-    if not args.cloudflare and not args.deploy_worker and not args.sync_github_secrets:
-        print('\nRun `python setup.py --all` to continue through Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
-    print('')
-
-
-def normalize_space_delimited(value: str) -> str:
-    return ' '.join(part for part in re.split(r'[\s,]+', value.strip()) if part)
-
-
-def normalize_origin(value: str) -> str:
-    trimmed = value.strip()
-    if not trimmed:
-        return ''
-
-    parsed = urlsplit(trimmed)
-    if not parsed.scheme or not parsed.netloc:
-        return trimmed.rstrip('/')
-
-    return f'{parsed.scheme}://{parsed.netloc}'.rstrip('/')
 
 
 def infer_github_repo() -> str:

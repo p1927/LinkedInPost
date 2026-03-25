@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Bot, MessageCircle, Phone, Plus, RefreshCw, Send, Settings, Trash2 } from 'lucide-react';
-import { BackendApi, isAuthErrorMessage, type AppSession } from '../services/backendApi';
+import {
+  BackendApi,
+  isAuthErrorMessage,
+  type AppSession,
+  type OAuthStartResult,
+  type WhatsAppPhoneOption,
+} from '../services/backendApi';
 import { CHANNEL_OPTIONS, getChannelLabel, getChannelOption, type ChannelId } from '../integrations/channels';
 import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../integrations/linkedin';
 import { formatRecipientsInput, normalizePhoneNumber, parseRecipientsInput } from '../integrations/whatsapp';
@@ -18,6 +24,74 @@ import { VariantSelection } from './VariantSelection';
 
 function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
   return `${action}:${row.topic.trim()}::${row.date.trim()}`;
+}
+
+type PopupProvider = 'linkedin' | 'whatsapp';
+
+interface OAuthPopupMessage {
+  source: 'channel-bot-oauth';
+  provider: PopupProvider;
+  ok: boolean;
+  error?: string;
+  payload?: {
+    connectionId?: string;
+    options?: WhatsAppPhoneOption[];
+  };
+}
+
+function isOAuthPopupMessage(value: unknown): value is OAuthPopupMessage {
+  return Boolean(
+    value
+      && typeof value === 'object'
+      && (value as OAuthPopupMessage).source === 'channel-bot-oauth'
+      && ((value as OAuthPopupMessage).provider === 'linkedin' || (value as OAuthPopupMessage).provider === 'whatsapp')
+  );
+}
+
+async function openOAuthPopup(
+  loadAuthUrl: () => Promise<OAuthStartResult>,
+  provider: PopupProvider,
+): Promise<OAuthPopupMessage> {
+  const { authorizationUrl } = await loadAuthUrl();
+  const expectedOrigin = new URL(authorizationUrl).origin;
+  const popup = window.open(authorizationUrl, `${provider}-connect`, 'popup=yes,width=620,height=760');
+  if (!popup) {
+    throw new Error('The browser blocked the connection popup. Allow popups for this site and try again.');
+  }
+
+  popup.focus();
+
+  return new Promise<OAuthPopupMessage>((resolve, reject) => {
+    const popupPoll = window.setInterval(() => {
+      if (!popup.closed) {
+        return;
+      }
+
+      cleanup();
+      reject(new Error('The connection popup was closed before the channel finished connecting.'));
+    }, 300);
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== expectedOrigin || !isOAuthPopupMessage(event.data)) {
+        return;
+      }
+
+      if (event.data.provider !== provider) {
+        return;
+      }
+
+      cleanup();
+      popup.close();
+      resolve(event.data);
+    };
+
+    const cleanup = () => {
+      window.clearInterval(popupPoll);
+      window.removeEventListener('message', handleMessage);
+    };
+
+    window.addEventListener('message', handleMessage);
+  });
 }
 
 export function Dashboard({
@@ -41,18 +115,18 @@ export function Dashboard({
   const [githubTokenInput, setGithubTokenInput] = useState('');
   const [googleModel, setGoogleModel] = useState(session.config.googleModel);
   const [selectedChannel, setSelectedChannel] = useState<ChannelId>(session.config.defaultChannel);
-  const [linkedinPersonUrnInput, setLinkedinPersonUrnInput] = useState(session.config.linkedinPersonUrn);
-  const [linkedinAccessTokenInput, setLinkedinAccessTokenInput] = useState('');
   const [recipientMode, setRecipientMode] = useState<'saved' | 'manual'>(
     session.config.whatsappRecipients.length > 0 ? 'saved' : 'manual'
   );
   const [selectedRecipientPhone, setSelectedRecipientPhone] = useState(session.config.whatsappRecipients[0]?.phoneNumber || '');
   const [manualPhoneNumber, setManualPhoneNumber] = useState('');
-  const [whatsappPhoneNumberIdInput, setWhatsappPhoneNumberIdInput] = useState(session.config.whatsappPhoneNumberId);
-  const [whatsappAccessTokenInput, setWhatsappAccessTokenInput] = useState('');
   const [whatsappRecipientsInput, setWhatsappRecipientsInput] = useState(
     formatRecipientsInput(session.config.whatsappRecipients)
   );
+  const [connectingChannel, setConnectingChannel] = useState<PopupProvider | null>(null);
+  const [pendingWhatsAppConnectionId, setPendingWhatsAppConnectionId] = useState('');
+  const [pendingWhatsAppOptions, setPendingWhatsAppOptions] = useState<WhatsAppPhoneOption[]>([]);
+  const [selectedWhatsAppPhoneId, setSelectedWhatsAppPhoneId] = useState('');
   const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
   const [showSettings, setShowSettings] = useState(
     session.isAdmin
@@ -82,10 +156,8 @@ export function Dashboard({
     setGithubRepo(session.config.githubRepo);
     setGoogleModel(session.config.googleModel);
     setSelectedChannel(session.config.defaultChannel);
-    setLinkedinPersonUrnInput(session.config.linkedinPersonUrn);
     setRecipientMode(session.config.whatsappRecipients.length > 0 ? 'saved' : 'manual');
     setSelectedRecipientPhone(session.config.whatsappRecipients[0]?.phoneNumber || '');
-    setWhatsappPhoneNumberIdInput(session.config.whatsappPhoneNumberId);
     setWhatsappRecipientsInput(formatRecipientsInput(session.config.whatsappRecipients));
     setShowSettings(
       session.isAdmin
@@ -106,9 +178,7 @@ export function Dashboard({
     session.config.hasGitHubToken,
     session.config.hasLinkedInAccessToken,
     session.config.hasWhatsAppAccessToken,
-    session.config.linkedinPersonUrn,
     session.config.spreadsheetId,
-    session.config.whatsappPhoneNumberId,
     session.config.whatsappRecipients,
     session.isAdmin,
   ]);
@@ -301,15 +371,9 @@ export function Dashboard({
         googleModel,
         githubToken: githubTokenInput.trim() || undefined,
         defaultChannel: selectedChannel,
-        linkedinPersonUrn: linkedinPersonUrnInput.trim(),
-        linkedinAccessToken: linkedinAccessTokenInput.trim() || undefined,
-        whatsappPhoneNumberId: whatsappPhoneNumberIdInput.trim(),
-        whatsappAccessToken: whatsappAccessTokenInput.trim() || undefined,
         whatsappRecipients: parseRecipientsInput(whatsappRecipientsInput),
       });
       setGithubTokenInput('');
-      setLinkedinAccessTokenInput('');
-      setWhatsappAccessTokenInput('');
       setShowSettings(false);
       if (sheetIdInput.trim()) {
         await loadData(true);
@@ -318,6 +382,78 @@ export function Dashboard({
       handleFailure(error, 'Failed to save shared configuration.');
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleLinkedInConnection = async () => {
+    if (!session.isAdmin) {
+      return;
+    }
+
+    setConnectingChannel('linkedin');
+    try {
+      const message = await openOAuthPopup(() => api.startLinkedInAuth(idToken), 'linkedin');
+      if (!message.ok) {
+        throw new Error(message.error || 'LinkedIn connection failed.');
+      }
+
+      await onSaveConfig({});
+      alert('LinkedIn publishing is now connected through the Worker.');
+    } catch (error) {
+      handleFailure(error, 'Failed to connect LinkedIn.');
+    } finally {
+      setConnectingChannel(null);
+    }
+  };
+
+  const handleWhatsAppConnection = async () => {
+    if (!session.isAdmin) {
+      return;
+    }
+
+    setConnectingChannel('whatsapp');
+    try {
+      const message = await openOAuthPopup(() => api.startWhatsAppAuth(idToken), 'whatsapp');
+      if (!message.ok) {
+        throw new Error(message.error || 'WhatsApp connection failed.');
+      }
+
+      const nextOptions = message.payload?.options ?? [];
+      const connectionId = message.payload?.connectionId || '';
+      if (connectionId && nextOptions.length > 0) {
+        setPendingWhatsAppConnectionId(connectionId);
+        setPendingWhatsAppOptions(nextOptions);
+        setSelectedWhatsAppPhoneId(nextOptions[0]?.phoneNumberId || '');
+        return;
+      }
+
+      await onSaveConfig({});
+      alert('WhatsApp delivery is now connected through Meta and the Worker.');
+    } catch (error) {
+      handleFailure(error, 'Failed to connect WhatsApp.');
+    } finally {
+      setConnectingChannel(null);
+    }
+  };
+
+  const completeWhatsAppPhoneSelection = async () => {
+    if (!pendingWhatsAppConnectionId || !selectedWhatsAppPhoneId) {
+      alert('Choose a WhatsApp phone number before saving this connection.');
+      return;
+    }
+
+    setConnectingChannel('whatsapp');
+    try {
+      await api.completeWhatsAppConnection(idToken, pendingWhatsAppConnectionId, selectedWhatsAppPhoneId);
+      setPendingWhatsAppConnectionId('');
+      setPendingWhatsAppOptions([]);
+      setSelectedWhatsAppPhoneId('');
+      await onSaveConfig({});
+      alert('WhatsApp delivery is now connected through Meta and the Worker.');
+    } catch (error) {
+      handleFailure(error, 'Failed to finish the WhatsApp connection.');
+    } finally {
+      setConnectingChannel(null);
     }
   };
 
@@ -561,32 +697,34 @@ export function Dashboard({
             <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">LinkedIn Publishing</h3>
             <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
             <div className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">LinkedIn Person URN</label>
-                <input
-                  type="text"
-                  value={linkedinPersonUrnInput}
-                  onChange={(e) => setLinkedinPersonUrnInput(e.target.value)}
-                  placeholder="urn:li:person:123456"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Replace LinkedIn Access Token</label>
-                <input
-                  type="password"
-                  value={linkedinAccessTokenInput}
-                  onChange={(e) => setLinkedinAccessTokenInput(e.target.value)}
-                  placeholder={session.config.hasLinkedInAccessToken ? 'Leave blank to keep the current token' : 'AQX...'}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                />
-                <p className="text-xs text-slate-500 mt-1.5">
+              <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
                   {session.config.hasLinkedInAccessToken
-                    ? 'A LinkedIn token is already stored. Enter a new one only when you want to rotate it.'
-                    : 'Required once so the Worker can publish approved posts directly to LinkedIn.'}
+                    ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
+                    : session.config.linkedinAuthAvailable
+                      ? 'No LinkedIn account connected yet.'
+                      : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
                 </p>
               </div>
+
+              <button
+                type="button"
+                onClick={() => void handleLinkedInConnection()}
+                disabled={connectingChannel !== null || !session.config.linkedinAuthAvailable}
+                className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {connectingChannel === 'linkedin'
+                  ? 'Opening LinkedIn approval...'
+                  : session.config.hasLinkedInAccessToken
+                    ? 'Reconnect LinkedIn'
+                    : 'Connect LinkedIn'}
+              </button>
+              <p className="text-xs text-slate-500">
+                {session.config.linkedinAuthAvailable
+                  ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
+                  : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
+              </p>
             </div>
           </section>
 
@@ -596,32 +734,59 @@ export function Dashboard({
             <p className="mt-2 text-xs leading-5 text-slate-500">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
             <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">WhatsApp Phone Number ID</label>
-                  <input
-                    type="text"
-                    value={whatsappPhoneNumberIdInput}
-                    onChange={(e) => setWhatsappPhoneNumberIdInput(e.target.value)}
-                    placeholder="e.g. 123456789012345"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Replace WhatsApp Access Token</label>
-                  <input
-                    type="password"
-                    value={whatsappAccessTokenInput}
-                    onChange={(e) => setWhatsappAccessTokenInput(e.target.value)}
-                    placeholder={session.config.hasWhatsAppAccessToken ? 'Leave blank to keep the current token' : 'EAA...'}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                  />
-                  <p className="text-xs text-slate-500 mt-1.5">
-                    {session.config.hasWhatsAppAccessToken
-                      ? 'A WhatsApp access token is already stored. Enter a new one only when you want to rotate it.'
-                      : 'Required once so the Worker can call Meta WhatsApp Cloud API.'}
+                <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
+                      ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
+                      : session.config.whatsappAuthAvailable
+                        ? 'No WhatsApp Business phone connected yet.'
+                        : 'Meta OAuth app credentials are still missing from the Worker environment.'}
                   </p>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleWhatsAppConnection()}
+                  disabled={connectingChannel !== null || !session.config.whatsappAuthAvailable}
+                  className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {connectingChannel === 'whatsapp'
+                    ? 'Opening Meta approval...'
+                    : session.config.hasWhatsAppAccessToken
+                      ? 'Reconnect WhatsApp'
+                      : 'Connect WhatsApp Business'}
+                </button>
+                <p className="text-xs text-slate-500">
+                  {session.config.whatsappAuthAvailable
+                    ? 'The Worker opens Meta approval in a popup, exchanges the code server-side, and discovers your available WhatsApp Business phone numbers.'
+                    : 'Set META_APP_ID and META_APP_SECRET in the Worker before this button can be used.'}
+                </p>
+
+                {pendingWhatsAppOptions.length > 0 ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700/80">Choose a phone</p>
+                    <select
+                      value={selectedWhatsAppPhoneId}
+                      onChange={(e) => setSelectedWhatsAppPhoneId(e.target.value)}
+                      className="mt-3 w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-400/50"
+                    >
+                      {pendingWhatsAppOptions.map((option) => (
+                        <option key={option.phoneNumberId} value={option.phoneNumberId}>
+                          {option.displayPhoneNumber || option.phoneNumberId} - {option.verifiedName || option.businessAccountName}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => void completeWhatsAppPhoneSelection()}
+                      disabled={connectingChannel !== null || !selectedWhatsAppPhoneId}
+                      className="mt-3 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Save selected phone
+                    </button>
+                  </div>
+                ) : null}
               </div>
 
               <div>

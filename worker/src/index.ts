@@ -4,6 +4,7 @@ import { sendWhatsAppMessage } from './integrations/whatsapp';
 type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
 
 type ChannelId = 'linkedin' | 'whatsapp';
+type AuthProvider = 'linkedin' | 'whatsapp';
 
 interface Env {
   CONFIG_KV: KVNamespace;
@@ -14,8 +15,12 @@ interface Env {
   GEMINI_API_KEY?: string;
   GITHUB_TOKEN_ENCRYPTION_KEY?: string;
   CORS_ALLOWED_ORIGINS?: string;
+  LINKEDIN_CLIENT_ID?: string;
+  LINKEDIN_CLIENT_SECRET?: string;
   LINKEDIN_PERSON_URN?: string;
   LINKEDIN_ACCESS_TOKEN?: string;
+  META_APP_ID?: string;
+  META_APP_SECRET?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WHATSAPP_ACCESS_TOKEN?: string;
 }
@@ -26,8 +31,10 @@ interface BotConfig {
   googleModel: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
+  linkedinAuthAvailable: boolean;
   linkedinPersonUrn: string;
   hasLinkedInAccessToken: boolean;
+  whatsappAuthAvailable: boolean;
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
   whatsappRecipients: WhatsAppRecipient[];
@@ -111,6 +118,80 @@ interface VerifiedSession {
   isAdmin: boolean;
 }
 
+interface OAuthStateRecord {
+  provider: AuthProvider;
+  email: string;
+  origin: string;
+  redirectUri: string;
+}
+
+interface WhatsAppPhoneOption {
+  businessAccountId: string;
+  businessAccountName: string;
+  phoneNumberId: string;
+  displayPhoneNumber: string;
+  verifiedName: string;
+}
+
+interface PendingWhatsAppConnectionRecord {
+  email: string;
+  origin: string;
+  accessTokenCiphertext: string;
+  options: WhatsAppPhoneOption[];
+}
+
+interface LinkedInTokenResponse {
+  access_token?: string;
+  expires_in?: number;
+  refresh_token?: string;
+  refresh_token_expires_in?: number;
+  scope?: string;
+  error?: string;
+  error_description?: string;
+}
+
+interface MetaTokenResponse {
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  error?: {
+    message?: string;
+  };
+}
+
+interface LinkedInMeResponse {
+  id?: string;
+}
+
+interface GraphDataResponse<T> {
+  data?: T[];
+  error?: {
+    message?: string;
+  };
+}
+
+interface MetaPhoneNumberNode {
+  id?: string;
+  display_phone_number?: string;
+  verified_name?: string;
+}
+
+interface MetaPhoneNumberEdge {
+  data?: MetaPhoneNumberNode[];
+}
+
+interface MetaWhatsAppBusinessAccountNode {
+  id?: string;
+  name?: string;
+  phone_numbers?: MetaPhoneNumberEdge;
+}
+
+interface MetaBusinessNode {
+  owned_whatsapp_business_accounts?: {
+    data?: MetaWhatsAppBusinessAccountNode[];
+  };
+}
+
 interface ServiceAccountCredentials {
   client_email: string;
   private_key: string;
@@ -152,6 +233,17 @@ const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be de
 const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const WHATSAPP_TOKEN_REAUTH_MESSAGE = 'The stored WhatsApp access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
+const OAUTH_STATE_PREFIX = 'oauth-state:';
+const WHATSAPP_PENDING_PREFIX = 'whatsapp-pending:';
+const OAUTH_STATE_TTL_SECONDS = 60 * 10;
+const WHATSAPP_PENDING_TTL_SECONDS = 60 * 10;
+const LINKEDIN_OAUTH_SCOPE = 'w_member_social';
+const META_GRAPH_VERSION = 'v25.0';
+const META_OAUTH_SCOPES = [
+  'business_management',
+  'whatsapp_business_management',
+  'whatsapp_business_messaging',
+].join(',');
 const TOPICS_SHEET = 'Topics';
 const DRAFT_SHEET = 'Draft';
 const POST_SHEET = 'Post';
@@ -183,13 +275,26 @@ const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
 export default {
   async fetch(request, env): Promise<Response> {
     const corsHeaders = buildCorsHeaders(request, env);
+    const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
     if (request.method === 'GET') {
-      return jsonResponse({ ok: true, data: { status: 'ok', backend: 'cloudflare-worker' } }, 200, corsHeaders);
+      if (url.pathname === '/') {
+        return jsonResponse({ ok: true, data: { status: 'ok', backend: 'cloudflare-worker' } }, 200, corsHeaders);
+      }
+
+      if (url.pathname === '/auth/linkedin/callback') {
+        return handleLinkedInCallback(request, env);
+      }
+
+      if (url.pathname === '/auth/whatsapp/callback') {
+        return handleWhatsAppCallback(request, env);
+      }
+
+      return jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
     }
 
     if (request.method !== 'POST') {
@@ -205,7 +310,7 @@ export default {
       const session = await verifySession(idToken, env);
       const storedConfig = await loadStoredConfig(env);
       const sheets = new SheetsGateway(env);
-      const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets);
+      const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, request);
       return jsonResponse({ ok: true, data }, 200, corsHeaders);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unexpected backend error.';
@@ -221,13 +326,14 @@ async function dispatchAction(
   storedConfig: StoredConfig,
   env: Env,
   sheets: SheetsGateway,
+  request: Request,
 ): Promise<unknown> {
   switch (action) {
     case 'bootstrap':
       return {
         email: session.email,
         isAdmin: session.isAdmin,
-        config: toPublicConfig(storedConfig),
+        config: toPublicConfig(storedConfig, env),
       } satisfies AppSession;
     case 'getGoogleModels':
       return listGoogleModels(env);
@@ -253,6 +359,15 @@ async function dispatchAction(
     case 'saveConfig':
       ensureAdmin(session);
       return saveConfig(env, storedConfig, payload as BotConfigUpdate);
+    case 'startLinkedInAuth':
+      ensureAdmin(session);
+      return startLinkedInAuth(request, env, session);
+    case 'startWhatsAppAuth':
+      ensureAdmin(session);
+      return startWhatsAppAuth(request, env, session);
+    case 'completeWhatsAppConnection':
+      ensureAdmin(session);
+      return completeWhatsAppConnection(env, session, payload);
     case 'triggerGithubAction':
       return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
@@ -362,19 +477,507 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
   };
 }
 
-function toPublicConfig(config: StoredConfig): BotConfig {
+function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
   return {
     spreadsheetId: config.spreadsheetId,
     githubRepo: config.githubRepo,
     googleModel: config.googleModel || GOOGLE_MODEL_DEFAULT,
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
     defaultChannel: config.defaultChannel,
+    linkedinAuthAvailable: hasLinkedInOAuthConfig(env),
     linkedinPersonUrn: config.linkedinPersonUrn,
     hasLinkedInAccessToken: Boolean(config.linkedinAccessTokenCiphertext || config.linkedinAccessToken),
+    whatsappAuthAvailable: hasMetaOAuthConfig(env),
     whatsappPhoneNumberId: config.whatsappPhoneNumberId,
     hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext || config.whatsappAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
   };
+}
+
+function hasLinkedInOAuthConfig(env: Env): boolean {
+  return Boolean(String(env.LINKEDIN_CLIENT_ID || '').trim() && String(env.LINKEDIN_CLIENT_SECRET || '').trim());
+}
+
+function hasMetaOAuthConfig(env: Env): boolean {
+  return Boolean(String(env.META_APP_ID || '').trim() && String(env.META_APP_SECRET || '').trim());
+}
+
+function buildWorkerOrigin(request: Request): string {
+  return new URL(request.url).origin;
+}
+
+function requireFrontendOrigin(request: Request): string {
+  const origin = String(request.headers.get('origin') || '').trim();
+  if (!origin) {
+    throw new Error('Missing frontend origin. Open the dashboard in a browser and try again.');
+  }
+
+  return origin;
+}
+
+function createRandomToken(byteLength = 24): string {
+  const bytes = new Uint8Array(byteLength);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+}
+
+async function storeOAuthState(env: Env, state: string, record: OAuthStateRecord): Promise<void> {
+  await env.CONFIG_KV.put(`${OAUTH_STATE_PREFIX}${state}`, JSON.stringify(record), {
+    expirationTtl: OAUTH_STATE_TTL_SECONDS,
+  });
+}
+
+async function consumeOAuthState(env: Env, state: string, provider: AuthProvider): Promise<OAuthStateRecord> {
+  const key = `${OAUTH_STATE_PREFIX}${state}`;
+  const record = await env.CONFIG_KV.get<OAuthStateRecord>(key, 'json');
+  await env.CONFIG_KV.delete(key);
+
+  if (!record || record.provider !== provider) {
+    throw new Error('The OAuth session is missing or expired. Start the connection again.');
+  }
+
+  return record;
+}
+
+async function startLinkedInAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string }> {
+  if (!hasLinkedInOAuthConfig(env)) {
+    throw new Error('LinkedIn OAuth is not configured in the Worker environment. Add LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET first.');
+  }
+
+  const state = createRandomToken();
+  const redirectUri = `${buildWorkerOrigin(request)}/auth/linkedin/callback`;
+  await storeOAuthState(env, state, {
+    provider: 'linkedin',
+    email: session.email,
+    origin: requireFrontendOrigin(request),
+    redirectUri,
+  });
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: String(env.LINKEDIN_CLIENT_ID || '').trim(),
+    redirect_uri: redirectUri,
+    state,
+    scope: LINKEDIN_OAUTH_SCOPE,
+  });
+
+  return {
+    authorizationUrl: `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`,
+  };
+}
+
+async function startWhatsAppAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string }> {
+  if (!hasMetaOAuthConfig(env)) {
+    throw new Error('Meta OAuth is not configured in the Worker environment. Add META_APP_ID and META_APP_SECRET first.');
+  }
+
+  const state = createRandomToken();
+  const redirectUri = `${buildWorkerOrigin(request)}/auth/whatsapp/callback`;
+  await storeOAuthState(env, state, {
+    provider: 'whatsapp',
+    email: session.email,
+    origin: requireFrontendOrigin(request),
+    redirectUri,
+  });
+
+  const params = new URLSearchParams({
+    client_id: String(env.META_APP_ID || '').trim(),
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    state,
+    scope: META_OAUTH_SCOPES,
+  });
+
+  return {
+    authorizationUrl: `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth?${params.toString()}`,
+  };
+}
+
+async function completeWhatsAppConnection(
+  env: Env,
+  session: VerifiedSession,
+  payload: Record<string, unknown>,
+): Promise<BotConfig> {
+  const connectionId = String(payload.connectionId || '').trim();
+  const phoneNumberId = String(payload.phoneNumberId || '').trim();
+
+  if (!connectionId || !phoneNumberId) {
+    throw new Error('Missing WhatsApp phone selection.');
+  }
+
+  const key = `${WHATSAPP_PENDING_PREFIX}${connectionId}`;
+  const pending = await env.CONFIG_KV.get<PendingWhatsAppConnectionRecord>(key, 'json');
+  if (!pending) {
+    throw new Error('The WhatsApp connection session expired. Start the connection again.');
+  }
+
+  if (pending.email !== session.email) {
+    throw new Error('This WhatsApp connection belongs to a different admin session. Start the connection again.');
+  }
+
+  const selectedOption = pending.options.find((option) => option.phoneNumberId === phoneNumberId);
+  if (!selectedOption) {
+    throw new Error('The selected WhatsApp phone number is no longer available. Start the connection again.');
+  }
+
+  const accessToken = await decryptSecret(
+    pending.accessTokenCiphertext,
+    requireSecretEncryptionKey(env),
+    WHATSAPP_TOKEN_REAUTH_MESSAGE,
+  );
+
+  await env.CONFIG_KV.delete(key);
+  return persistWhatsAppConnection(env, accessToken, selectedOption.phoneNumberId);
+}
+
+async function handleLinkedInCallback(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const state = String(url.searchParams.get('state') || '').trim();
+  if (!state) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'linkedin',
+      ok: false,
+      error: 'Missing LinkedIn OAuth state.',
+    });
+  }
+
+  let oauthState: OAuthStateRecord;
+  try {
+    oauthState = await consumeOAuthState(env, state, 'linkedin');
+  } catch (error) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'linkedin',
+      ok: false,
+      error: error instanceof Error ? error.message : 'The LinkedIn OAuth session expired.',
+    });
+  }
+
+  const errorMessage = String(url.searchParams.get('error_description') || url.searchParams.get('error') || '').trim();
+  if (errorMessage) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'linkedin',
+      ok: false,
+      error: decodeURIComponent(errorMessage),
+    });
+  }
+
+  const code = String(url.searchParams.get('code') || '').trim();
+  if (!code) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'linkedin',
+      ok: false,
+      error: 'LinkedIn did not return an authorization code.',
+    });
+  }
+
+  try {
+    const accessToken = await exchangeLinkedInCodeForToken(code, oauthState.redirectUri, env);
+    const personUrn = await fetchLinkedInPersonUrn(accessToken);
+    await persistLinkedInConnection(env, accessToken, personUrn);
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'linkedin',
+      ok: true,
+    });
+  } catch (error) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'linkedin',
+      ok: false,
+      error: error instanceof Error ? error.message : 'LinkedIn connection failed.',
+    });
+  }
+}
+
+async function handleWhatsAppCallback(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const state = String(url.searchParams.get('state') || '').trim();
+  if (!state) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'whatsapp',
+      ok: false,
+      error: 'Missing Meta OAuth state.',
+    });
+  }
+
+  let oauthState: OAuthStateRecord;
+  try {
+    oauthState = await consumeOAuthState(env, state, 'whatsapp');
+  } catch (error) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'whatsapp',
+      ok: false,
+      error: error instanceof Error ? error.message : 'The WhatsApp connection session expired.',
+    });
+  }
+
+  const errorMessage = String(url.searchParams.get('error_description') || url.searchParams.get('error') || '').trim();
+  if (errorMessage) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'whatsapp',
+      ok: false,
+      error: decodeURIComponent(errorMessage),
+    });
+  }
+
+  const code = String(url.searchParams.get('code') || '').trim();
+  if (!code) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'whatsapp',
+      ok: false,
+      error: 'Meta did not return an authorization code.',
+    });
+  }
+
+  try {
+    const accessToken = await exchangeMetaCodeForLongLivedToken(code, oauthState.redirectUri, env);
+    const options = await discoverWhatsAppPhoneOptions(accessToken);
+
+    if (options.length === 0) {
+      throw new Error('No WhatsApp Business phone numbers were found for this Meta account.');
+    }
+
+    if (options.length === 1) {
+      await persistWhatsAppConnection(env, accessToken, options[0].phoneNumberId);
+      return oauthPopupResponse(oauthState.origin, {
+        source: 'channel-bot-oauth',
+        provider: 'whatsapp',
+        ok: true,
+      });
+    }
+
+    const connectionId = createRandomToken();
+    const accessTokenCiphertext = await encryptSecret(accessToken, requireSecretEncryptionKey(env));
+    await env.CONFIG_KV.put(
+      `${WHATSAPP_PENDING_PREFIX}${connectionId}`,
+      JSON.stringify({
+        email: oauthState.email,
+        origin: oauthState.origin,
+        accessTokenCiphertext,
+        options,
+      } satisfies PendingWhatsAppConnectionRecord),
+      { expirationTtl: WHATSAPP_PENDING_TTL_SECONDS },
+    );
+
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'whatsapp',
+      ok: true,
+      payload: {
+        connectionId,
+        options,
+      },
+    });
+  } catch (error) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'whatsapp',
+      ok: false,
+      error: error instanceof Error ? error.message : 'WhatsApp connection failed.',
+    });
+  }
+}
+
+async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, env: Env): Promise<string> {
+  const response = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      client_id: String(env.LINKEDIN_CLIENT_ID || '').trim(),
+      client_secret: String(env.LINKEDIN_CLIENT_SECRET || '').trim(),
+      redirect_uri: redirectUri,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as LinkedInTokenResponse | null;
+  const accessToken = String(payload?.access_token || '').trim();
+  if (!response.ok || !accessToken) {
+    throw new Error(payload?.error_description || payload?.error || `LinkedIn token exchange failed with status ${response.status}.`);
+  }
+
+  return accessToken;
+}
+
+async function fetchLinkedInPersonUrn(accessToken: string): Promise<string> {
+  const response = await fetch('https://api.linkedin.com/v2/me', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const payload = (await response.json().catch(() => null)) as LinkedInMeResponse | null;
+  const id = String(payload?.id || '').trim();
+  if (!response.ok || !id) {
+    throw new Error(`LinkedIn profile lookup failed with status ${response.status}.`);
+  }
+
+  return `urn:li:person:${id}`;
+}
+
+async function exchangeMetaCodeForLongLivedToken(code: string, redirectUri: string, env: Env): Promise<string> {
+  const baseParams = new URLSearchParams({
+    client_id: String(env.META_APP_ID || '').trim(),
+    client_secret: String(env.META_APP_SECRET || '').trim(),
+    redirect_uri: redirectUri,
+  });
+
+  const shortResponse = await fetch(
+    `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${new URLSearchParams({
+      ...Object.fromEntries(baseParams.entries()),
+      code,
+    }).toString()}`,
+  );
+  const shortPayload = (await shortResponse.json().catch(() => null)) as MetaTokenResponse | null;
+  const shortToken = String(shortPayload?.access_token || '').trim();
+  if (!shortResponse.ok || !shortToken) {
+    throw new Error(shortPayload?.error?.message || `Meta token exchange failed with status ${shortResponse.status}.`);
+  }
+
+  const longResponse = await fetch(
+    `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${new URLSearchParams({
+      grant_type: 'fb_exchange_token',
+      client_id: String(env.META_APP_ID || '').trim(),
+      client_secret: String(env.META_APP_SECRET || '').trim(),
+      fb_exchange_token: shortToken,
+    }).toString()}`,
+  );
+  const longPayload = (await longResponse.json().catch(() => null)) as MetaTokenResponse | null;
+  const longToken = String(longPayload?.access_token || '').trim();
+  return longResponse.ok && longToken ? longToken : shortToken;
+}
+
+async function discoverWhatsAppPhoneOptions(accessToken: string): Promise<WhatsAppPhoneOption[]> {
+  const assignedAccounts = await graphApiGet<MetaWhatsAppBusinessAccountNode>(
+    '/me/assigned_whatsapp_business_accounts?fields=id,name,phone_numbers{id,display_phone_number,verified_name}',
+    accessToken,
+  );
+  const businesses = await graphApiGet<MetaBusinessNode>(
+    '/me/businesses?fields=owned_whatsapp_business_accounts{id,name,phone_numbers{id,display_phone_number,verified_name}}',
+    accessToken,
+  );
+
+  const options = [
+    ...extractWhatsAppPhoneOptions(assignedAccounts.data ?? []),
+    ...extractWhatsAppPhoneOptionsFromBusinesses(businesses.data ?? []),
+  ];
+
+  return Array.from(new Map(options.map((option) => [option.phoneNumberId, option])).values());
+}
+
+async function graphApiGet<T>(path: string, accessToken: string): Promise<GraphDataResponse<T>> {
+  const separator = path.includes('?') ? '&' : '?';
+  const response = await fetch(`https://graph.facebook.com/${META_GRAPH_VERSION}${path}${separator}access_token=${encodeURIComponent(accessToken)}`);
+  const payload = (await response.json().catch(() => null)) as GraphDataResponse<T> | null;
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || `Meta Graph request failed with status ${response.status}.`);
+  }
+
+  return payload || {};
+}
+
+function extractWhatsAppPhoneOptions(accounts: MetaWhatsAppBusinessAccountNode[]): WhatsAppPhoneOption[] {
+  return accounts.flatMap((account) =>
+    (account.phone_numbers?.data ?? [])
+      .filter((phone) => Boolean(phone?.id))
+      .map((phone) => ({
+        businessAccountId: String(account.id || '').trim(),
+        businessAccountName: String(account.name || 'WhatsApp Business Account').trim(),
+        phoneNumberId: String(phone.id || '').trim(),
+        displayPhoneNumber: String(phone.display_phone_number || '').trim(),
+        verifiedName: String(phone.verified_name || '').trim(),
+      })),
+  );
+}
+
+function extractWhatsAppPhoneOptionsFromBusinesses(businesses: MetaBusinessNode[]): WhatsAppPhoneOption[] {
+  return businesses.flatMap((business) => extractWhatsAppPhoneOptions(business.owned_whatsapp_business_accounts?.data ?? []));
+}
+
+async function persistLinkedInConnection(env: Env, accessToken: string, personUrn: string): Promise<BotConfig> {
+  const current = await loadStoredConfig(env);
+  const nextConfig: StoredConfig = {
+    ...current,
+    linkedinPersonUrn: personUrn,
+    linkedinAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
+    linkedinAccessToken: undefined,
+  };
+  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  return toPublicConfig(nextConfig, env);
+}
+
+async function persistWhatsAppConnection(env: Env, accessToken: string, phoneNumberId: string): Promise<BotConfig> {
+  const current = await loadStoredConfig(env);
+  const nextConfig: StoredConfig = {
+    ...current,
+    whatsappPhoneNumberId: phoneNumberId,
+    whatsappAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
+    whatsappAccessToken: undefined,
+  };
+  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  return toPublicConfig(nextConfig, env);
+}
+
+function oauthPopupResponse(origin: string | null, message: Record<string, unknown>): Response {
+  const messageJson = JSON.stringify(message).replace(/</g, '\\u003c');
+  const originJson = origin ? JSON.stringify(origin) : 'null';
+  const statusText = JSON.stringify(
+    message.ok
+      ? 'Connection finished. You can close this window.'
+      : String(message.error || 'Connection failed.'),
+  );
+
+  return new Response(
+    `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Channel Connection</title>
+  <style>
+    :root { color-scheme: light; }
+    body { margin: 0; font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, sans-serif; background: #f7f9fc; color: #0f172a; }
+    main { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .panel { width: min(440px, 100%); background: white; border-radius: 20px; padding: 24px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12); }
+    h1 { margin: 0 0 8px; font-size: 1.1rem; }
+    p { margin: 0; line-height: 1.6; color: #475569; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <h1>Returning to Channel Bot</h1>
+      <p id="status">Finishing the connection...</p>
+    </section>
+  </main>
+  <script>
+    const message = ${messageJson};
+    const targetOrigin = ${originJson};
+    if (targetOrigin && window.opener && !window.opener.closed) {
+      window.opener.postMessage(message, targetOrigin);
+      window.setTimeout(() => window.close(), 120);
+    }
+    document.getElementById('status').textContent = ${statusText};
+  </script>
+</body>
+</html>`,
+    {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+    },
+  );
 }
 
 async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpdate): Promise<BotConfig> {
@@ -410,7 +1013,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
   }
 
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-  return toPublicConfig(nextConfig);
+  return toPublicConfig(nextConfig, env);
 }
 
 async function triggerGithubAction(env: Env, config: StoredConfig, payload: Record<string, unknown>): Promise<{ success: true }> {

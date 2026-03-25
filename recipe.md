@@ -3,7 +3,7 @@
 ## Section 1: Hook
 - The first line must grab attention.
 - Use a bold statement, a surprising statistic, or a contrarian viewpoint.
-- Keep it under 150 characters.
+- Keep it under 50 characters.
 
 ## Section 2: The Story / Core Message
 - Break down the main topic into digestible points.

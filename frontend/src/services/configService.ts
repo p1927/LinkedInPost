@@ -90,8 +90,10 @@ export interface BotConfig {
   googleModel: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
+  linkedinAuthAvailable: boolean;
   linkedinPersonUrn: string;
   hasLinkedInAccessToken: boolean;
+  whatsappAuthAvailable: boolean;
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
   whatsappRecipients: WhatsAppRecipient[];
@@ -104,8 +106,10 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     googleModel: config?.googleModel || DEFAULT_GOOGLE_MODEL,
     hasGitHubToken: Boolean(config?.hasGitHubToken),
     defaultChannel: config?.defaultChannel === 'whatsapp' ? 'whatsapp' : 'linkedin',
+    linkedinAuthAvailable: Boolean(config?.linkedinAuthAvailable),
     linkedinPersonUrn: config?.linkedinPersonUrn || '',
     hasLinkedInAccessToken: Boolean(config?.hasLinkedInAccessToken),
+    whatsappAuthAvailable: Boolean(config?.whatsappAuthAvailable),
     whatsappPhoneNumberId: config?.whatsappPhoneNumberId || '',
     hasWhatsAppAccessToken: Boolean(config?.hasWhatsAppAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
@@ -113,9 +117,9 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
 }
 
 export interface BotConfigUpdate {
-  spreadsheetId: string;
-  githubRepo: string;
-  googleModel: string;
+  spreadsheetId?: string;
+  githubRepo?: string;
+  googleModel?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
   linkedinPersonUrn?: string;

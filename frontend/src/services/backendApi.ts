@@ -26,6 +26,18 @@ export interface PublishContentResult {
   mediaMode: 'image' | 'text';
 }
 
+export interface OAuthStartResult {
+  authorizationUrl: string;
+}
+
+export interface WhatsAppPhoneOption {
+  businessAccountId: string;
+  businessAccountName: string;
+  phoneNumberId: string;
+  displayPhoneNumber: string;
+  verifiedName: string;
+}
+
 interface ApiEnvelope<T> {
   ok: boolean;
   data?: T;
@@ -142,6 +154,22 @@ export class BackendApi {
 
   async saveConfig(idToken: string, config: BotConfigUpdate): Promise<BotConfig> {
     const saved = await this.post<BotConfig>('saveConfig', idToken, { ...config });
+    return normalizeBotConfig(saved);
+  }
+
+  async startLinkedInAuth(idToken: string): Promise<OAuthStartResult> {
+    return this.post<OAuthStartResult>('startLinkedInAuth', idToken);
+  }
+
+  async startWhatsAppAuth(idToken: string): Promise<OAuthStartResult> {
+    return this.post<OAuthStartResult>('startWhatsAppAuth', idToken);
+  }
+
+  async completeWhatsAppConnection(idToken: string, connectionId: string, phoneNumberId: string): Promise<BotConfig> {
+    const saved = await this.post<BotConfig>('completeWhatsAppConnection', idToken, {
+      connectionId,
+      phoneNumberId,
+    });
     return normalizeBotConfig(saved);
   }
 

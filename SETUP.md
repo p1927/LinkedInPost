@@ -108,7 +108,19 @@ At minimum, configure these Worker values:
 * `GITHUB_TOKEN_ENCRYPTION_KEY`
 * `CORS_ALLOWED_ORIGINS`
 
+To enable the new admin connect buttons for shared LinkedIn and WhatsApp setup, also configure these Worker values:
+
+* `LINKEDIN_CLIENT_ID`
+* `LINKEDIN_CLIENT_SECRET`
+* `META_APP_ID`
+* `META_APP_SECRET`
+
 The setup script writes the non-secret Worker vars into [worker/wrangler.jsonc](worker/wrangler.jsonc) and passes the secret values to Wrangler during deployment with a temporary JSON `--secrets-file`.
+
+Register these callback URLs in the provider dashboards so the Worker can complete the popup flow:
+
+* LinkedIn redirect URI: `https://<your-worker-domain>/auth/linkedin/callback`
+* Meta redirect URI: `https://<your-worker-domain>/auth/whatsapp/callback`
 
 Deploy the Worker and copy the generated URL.
 
@@ -141,6 +153,8 @@ Keep these configured in GitHub Actions:
 * `GOOGLE_SEARCH_CX`
 * `LINKEDIN_ACCESS_TOKEN`
 * `LINKEDIN_PERSON_URN`
+
+If you only publish through the dashboard's direct Worker delivery path, the Worker can manage the LinkedIn and WhatsApp access tokens itself after an admin connects the channels. The GitHub Actions secrets above are still relevant for the older Python publish workflow.
 
 When `python setup.py --sync-github-secrets` runs with the corresponding environment variables present, it will sync any of these values that it can resolve.
 
@@ -186,6 +200,10 @@ export VITE_GOOGLE_CLIENT_ID='your-client-id.apps.googleusercontent.com'
 export ALLOWED_EMAILS='you@gmail.com teammate@gmail.com'
 export ADMIN_EMAILS='you@gmail.com'
 export GITHUB_PAGES_ORIGIN='https://your-username.github.io'
+export LINKEDIN_CLIENT_ID='your-linkedin-client-id'
+export LINKEDIN_CLIENT_SECRET='your-linkedin-client-secret'
+export META_APP_ID='your-meta-app-id'
+export META_APP_SECRET='your-meta-app-secret'
 ```
 
 Add these too if you want `setup.py --sync-github-secrets` to populate the automation secrets in one pass:

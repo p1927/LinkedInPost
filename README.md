@@ -9,6 +9,7 @@ ms.topic: overview
 
 This repository runs a shared LinkedIn content pipeline.
 Approved users sign in from a GitHub Pages dashboard, manage topics in one shared Google Sheet, review generated drafts, and trigger the existing GitHub Actions workflows without handling Google API credentials or GitHub tokens in the browser.
+Admins can now also connect the shared LinkedIn and WhatsApp channels from the dashboard through popup OAuth flows handled by the Cloudflare Worker, so channel tokens no longer need to be pasted into the UI manually.
 
 ## Architecture
 
@@ -16,6 +17,7 @@ The current deployment model is:
 
 * GitHub Pages hosts the React dashboard
 * Cloudflare Workers verifies Google ID tokens, enforces the allowlist, stores shared config in KV, and proxies GitHub dispatch calls
+* Cloudflare Workers also owns the LinkedIn and Meta OAuth callback flow, exchanges auth codes server-side, and stores channel tokens encrypted in KV
 * A Google service account gives the Worker access to the shared Google Sheet
 * GitHub Actions runs the Python draft and publish jobs
 * Google Drive and Google Docs continue to store media and published-post logs for the automation workflow
