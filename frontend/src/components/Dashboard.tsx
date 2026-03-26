@@ -4,8 +4,12 @@ import {
   BackendApi,
   isAuthErrorMessage,
   type AppSession,
+  type GenerationRequest,
+  type OAuthProvider,
   type OAuthStartResult,
+  type QuickChangePreviewResult,
   type TelegramChatVerificationResult,
+  type VariantsPreviewResponse,
   type WhatsAppPhoneOption,
 } from '../services/backendApi';
 import { CHANNEL_OPTIONS, getChannelLabel, getChannelOption, type ChannelId } from '../integrations/channels';
@@ -28,8 +32,8 @@ import {
   type GoogleModelOption,
 } from '../services/configService';
 import { type SheetRow } from '../services/sheets';
+import { ReviewWorkspace } from '../features/review/ReviewWorkspace';
 import { ApprovedPostPreview } from './ApprovedPostPreview';
-import { VariantSelection } from './VariantSelection';
 
 function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
   return `${action}:${row.topic.trim()}::${row.date.trim()}`;
@@ -42,6 +46,10 @@ function getNormalizedRowStatus(status?: string): string {
 function canPreviewPublishedContent(row: SheetRow): boolean {
   const status = getNormalizedRowStatus(row.status);
   return status === 'approved' || status === 'published';
+}
+
+function isSameTopicDate(left: SheetRow, right: SheetRow): boolean {
+  return left.topic.trim() === right.topic.trim() && left.date.trim() === right.date.trim();
 }
 
 interface RecipientOption {
@@ -175,6 +183,7 @@ export function Dashboard({
   const [githubRepo, setGithubRepo] = useState(session.config.githubRepo);
   const [githubTokenInput, setGithubTokenInput] = useState('');
   const [googleModel, setGoogleModel] = useState(session.config.googleModel);
+  const [generationRules, setGenerationRules] = useState(session.config.generationRules);
   const [selectedChannel, setSelectedChannel] = useState<ChannelId>(session.config.defaultChannel);
   const [recipientMode, setRecipientMode] = useState<'saved' | 'manual'>(getDefaultRecipientMode(session.config.defaultChannel, session.config));
   const [selectedRecipientId, setSelectedRecipientId] = useState(getDefaultRecipientValue(session.config.defaultChannel, session.config));
@@ -195,6 +204,7 @@ export function Dashboard({
     formatRecipientsInput(session.config.whatsappRecipients)
   );
   const [connectingChannel, setConnectingChannel] = useState<PopupProvider | null>(null);
+  const [disconnectingChannel, setDisconnectingChannel] = useState<PopupProvider | null>(null);
   const [pendingWhatsAppConnectionId, setPendingWhatsAppConnectionId] = useState('');
   const [pendingWhatsAppOptions, setPendingWhatsAppOptions] = useState<WhatsAppPhoneOption[]>([]);
   const [selectedWhatsAppPhoneId, setSelectedWhatsAppPhoneId] = useState('');
@@ -215,6 +225,7 @@ export function Dashboard({
     setSheetIdInput(session.config.spreadsheetId);
     setGithubRepo(session.config.githubRepo);
     setGoogleModel(session.config.googleModel);
+    setGenerationRules(session.config.generationRules);
     setSelectedChannel(session.config.defaultChannel);
     setRecipientMode(getDefaultRecipientMode(session.config.defaultChannel, session.config));
     setSelectedRecipientId(getDefaultRecipientValue(session.config.defaultChannel, session.config));
@@ -226,6 +237,7 @@ export function Dashboard({
     setWhatsappRecipientsInput(formatRecipientsInput(session.config.whatsappRecipients));
   }, [
     session.config.defaultChannel,
+    session.config.generationRules,
     session.config.githubRepo,
     session.config.googleModel,
     session.config.hasGitHubToken,
@@ -343,6 +355,7 @@ export function Dashboard({
   const whatsappConfigured = Boolean(session.config.whatsappPhoneNumberId && session.config.hasWhatsAppAccessToken);
   const instagramConfigured = Boolean(session.config.instagramUserId && session.config.hasInstagramAccessToken);
   const linkedinConfigured = Boolean(session.config.linkedinPersonUrn && session.config.hasLinkedInAccessToken);
+  const channelActionBusy = connectingChannel !== null || disconnectingChannel !== null;
   const telegramConfigured = Boolean(session.config.hasTelegramBotToken);
 
   const loadData = async (quiet = false) => {
@@ -429,23 +442,34 @@ export function Dashboard({
     }
   };
 
-  const handleRefineVariant = async (baseText: string, instructions: string) => {
-    if (!selectedRowForReview) return;
+  const handleGenerateQuickChange = async (request: GenerationRequest): Promise<QuickChangePreviewResult> => {
+    try {
+      return await api.generateQuickChange(idToken, request);
+    } catch (error) {
+      handleFailure(error, 'Failed to generate the quick-change preview.');
+      throw error;
+    }
+  };
 
-    await dispatchGithubAction(
-      'refine',
-      'trigger-draft',
-      {
-        draft_mode: 'refine',
-        refine_topic: selectedRowForReview.topic,
-        refine_date: selectedRowForReview.date,
-        refine_base_text: baseText,
-        refine_instructions: instructions,
-      },
-      `Requested 4 refined variants for "${selectedRowForReview.topic}" using ${googleModel}. Refresh the dashboard in a minute to review the updated drafts.`
-    );
+  const handleGenerateVariantsPreview = async (request: GenerationRequest): Promise<VariantsPreviewResponse> => {
+    try {
+      return await api.generateVariantsPreview(idToken, request);
+    } catch (error) {
+      handleFailure(error, 'Failed to generate preview variants.');
+      throw error;
+    }
+  };
 
-    setSelectedRowForReview(null);
+  const handleSaveDraftVariants = async (row: SheetRow, variants: string[]): Promise<SheetRow> => {
+    try {
+      const updatedRow = await api.saveDraftVariants(idToken, row, variants);
+      setRows((current) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
+      setSelectedRowForReview((current) => (current && isSameTopicDate(current, updatedRow) ? updatedRow : current));
+      return updatedRow;
+    } catch (error) {
+      handleFailure(error, 'Failed to save preview variants to Sheets.');
+      throw error;
+    }
   };
 
   const handleFetchReviewImages = async () => {
@@ -487,6 +511,7 @@ export function Dashboard({
         spreadsheetId: sheetIdInput.trim(),
         githubRepo: githubRepo.trim(),
         googleModel,
+        generationRules: generationRules.trim(),
         githubToken: githubTokenInput.trim() || undefined,
         defaultChannel: selectedChannel,
         telegramBotToken: telegramBotTokenInput.trim() || undefined,
@@ -689,6 +714,41 @@ export function Dashboard({
     }
   };
 
+  const handleDisconnectChannel = async (provider: OAuthProvider) => {
+    if (!session.isAdmin) {
+      return;
+    }
+
+    const channelLabel = provider === 'linkedin'
+      ? 'LinkedIn'
+      : provider === 'instagram'
+        ? 'Instagram'
+        : 'WhatsApp';
+
+    const confirmed = window.confirm(
+      `Disconnect ${channelLabel}? This clears the stored connection in the Worker and requires OAuth approval the next time you connect it.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDisconnectingChannel(provider);
+    try {
+      await api.disconnectChannelAuth(idToken, provider);
+      if (provider === 'whatsapp') {
+        setPendingWhatsAppConnectionId('');
+        setPendingWhatsAppOptions([]);
+        setSelectedWhatsAppPhoneId('');
+      }
+      await onSaveConfig({});
+      alert(`${channelLabel} was disconnected. OAuth approval is required before it can be used again.`);
+    } catch (error) {
+      handleFailure(error, `Failed to disconnect ${channelLabel}.`);
+    } finally {
+      setDisconnectingChannel(null);
+    }
+  };
+
   const completeWhatsAppPhoneSelection = async () => {
     if (!pendingWhatsAppConnectionId || !selectedWhatsAppPhoneId) {
       alert('Choose a WhatsApp phone number before saving this connection.');
@@ -879,25 +939,27 @@ export function Dashboard({
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto w-full p-4 flex flex-col lg:flex-row gap-6 items-start">
+    <div className="max-w-[1600px] mx-auto w-full p-4 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
       {/* Left Sidebar */}
-      <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 flex flex-col gap-6">
+      <div className="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col gap-6 sticky top-[90px] max-h-[calc(100vh-100px)] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
         
         {/* Content Pipeline Card */}
-        <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl p-4">
+        <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-3xl p-5">
           
         <div>
-          <h2 className="text-3xl font-bold text-deep-indigo font-heading tracking-tight">Content Pipeline</h2>
-          <p className="mt-1 text-sm text-slate-500">Workspace managed by <span className="font-medium text-slate-700">{session.email}</span></p>
+          <h2 className="text-2xl font-bold text-deep-indigo font-heading tracking-tight">Content Pipeline</h2>
+          <p className="mt-1 text-sm text-slate-500">Workspace: <span className="font-medium text-slate-700">{session.email}</span></p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
-            <Bot className="w-4 h-4 text-primary" />
-            <span className="text-slate-500">Model</span>
+          <label className="flex flex-1 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
+            <div className="flex items-center gap-2">
+              <Bot className="w-4 h-4 text-primary" />
+              <span className="text-slate-500">Model</span>
+            </div>
             <select
               value={googleModel}
               onChange={(e) => setGoogleModel(e.target.value)}
-              className="bg-transparent font-medium text-deep-indigo outline-none cursor-pointer"
+              className="bg-transparent font-medium text-deep-indigo outline-none cursor-pointer text-right max-w-[120px] truncate"
             >
               {availableModels.map((model) => (
                 <option key={model.value} value={model.value}>
@@ -910,17 +972,17 @@ export function Dashboard({
           <button 
             onClick={() => void loadData(false)}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:text-deep-indigo transition-all duration-200 shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:text-deep-indigo transition-all duration-200 shadow-sm disabled:opacity-50"
+            title="Refresh data"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
           </button>
         </div>
       
         </div>
 
         {/* Delivery Card */}
-        <div className="flex flex-col gap-4 rounded-2xl border border-white/50 bg-white/80 p-4 shadow-xl">
+        <div className="flex flex-col gap-4 rounded-3xl border border-white/50 bg-white/80 p-5 shadow-xl">
           
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Delivery</p>
@@ -1129,7 +1191,7 @@ export function Dashboard({
               
             
             
-            <p className="mt-2 text-xs leading-5 text-slate-500">These values are only used for draft generation and refinement jobs.</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.</p>
             <div className="mt-4 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">GitHub Repository</label>
@@ -1155,6 +1217,17 @@ export function Dashboard({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Shared Generation Rules</label>
+                <textarea
+                  value={generationRules}
+                  onChange={(e) => setGenerationRules(e.target.value)}
+                  placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
+                  className="min-h-[120px] w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
+                />
+                <p className="mt-1.5 text-xs text-slate-500">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
               </div>
 
               <div>
@@ -1190,29 +1263,44 @@ export function Dashboard({
             
             <p className="mt-2 text-xs leading-5 text-slate-500">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {session.config.hasInstagramAccessToken && session.config.instagramUserId
-                    ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
-                    : session.config.instagramAuthAvailable
-                      ? 'No Instagram professional account connected yet.'
-                      : 'Instagram app credentials are still missing from the Worker environment.'}
-                </p>
+              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-slate-300'}`}></div>
+                  <p className="text-sm font-medium text-slate-700">
+                    {session.config.hasInstagramAccessToken && session.config.instagramUserId
+                      ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
+                      : session.config.instagramAuthAvailable
+                        ? 'No Instagram professional account connected yet.'
+                        : 'Instagram app credentials are still missing from the Worker environment.'}
+                  </p>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void handleInstagramConnection()}
-                disabled={connectingChannel !== null || !session.config.instagramAuthAvailable}
-                className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {connectingChannel === 'instagram'
-                  ? 'Opening Instagram approval...'
-                  : session.config.hasInstagramAccessToken
-                    ? 'Reconnect Instagram'
-                    : 'Connect Instagram'}
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleInstagramConnection()}
+                  disabled={channelActionBusy || !session.config.instagramAuthAvailable}
+                  className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm active:scale-[0.98]"
+                >
+                  {connectingChannel === 'instagram'
+                    ? 'Opening Instagram approval...'
+                    : session.config.hasInstagramAccessToken
+                      ? 'Reconnect Instagram'
+                      : 'Connect Instagram'}
+                </button>
+                {session.config.hasInstagramAccessToken ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleDisconnectChannel('instagram')}
+                    disabled={channelActionBusy}
+                    className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {disconnectingChannel === 'instagram' ? 'Disconnecting Instagram...' : 'Disconnect Instagram'}
+                  </button>
+                ) : null}
+              </div>
               <p className="text-xs text-slate-500">
                 {session.config.instagramAuthAvailable
                   ? 'The Worker opens Instagram approval in a popup, exchanges the code server-side, and stores the long-lived token securely.'
@@ -1236,29 +1324,44 @@ export function Dashboard({
             
             <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {session.config.hasLinkedInAccessToken
-                    ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
-                    : session.config.linkedinAuthAvailable
-                      ? 'No LinkedIn account connected yet.'
-                      : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
-                </p>
+              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-slate-300'}`}></div>
+                  <p className="text-sm font-medium text-slate-700">
+                    {session.config.hasLinkedInAccessToken
+                      ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
+                      : session.config.linkedinAuthAvailable
+                        ? 'No LinkedIn account connected yet.'
+                        : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
+                  </p>
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void handleLinkedInConnection()}
-                disabled={connectingChannel !== null || !session.config.linkedinAuthAvailable}
-                className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {connectingChannel === 'linkedin'
-                  ? 'Opening LinkedIn approval...'
-                  : session.config.hasLinkedInAccessToken
-                    ? 'Reconnect LinkedIn'
-                    : 'Connect LinkedIn'}
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleLinkedInConnection()}
+                  disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
+                  className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50 shadow-sm active:scale-[0.98]"
+                >
+                  {connectingChannel === 'linkedin'
+                    ? 'Opening LinkedIn approval...'
+                    : session.config.hasLinkedInAccessToken
+                      ? 'Reconnect LinkedIn'
+                      : 'Connect LinkedIn'}
+                </button>
+                {session.config.hasLinkedInAccessToken ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleDisconnectChannel('linkedin')}
+                    disabled={channelActionBusy}
+                    className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {disconnectingChannel === 'linkedin' ? 'Disconnecting LinkedIn...' : 'Disconnect LinkedIn'}
+                  </button>
+                ) : null}
+              </div>
               <p className="text-xs text-slate-500">
                 {session.config.linkedinAuthAvailable
                   ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
@@ -1283,14 +1386,17 @@ export function Dashboard({
             <p className="mt-2 text-xs leading-5 text-slate-500">This path sends approved content directly through the Telegram Bot API.</p>
             <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
+              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-slate-300'}`}></div>
+                  <p className="text-sm font-medium text-slate-700">
                     {session.config.hasTelegramBotToken
                       ? 'Telegram bot token is stored in the Worker.'
                       : 'No Telegram bot token stored yet.'}
                   </p>
                 </div>
+              </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Replace Telegram Bot Token</label>
@@ -1433,9 +1539,11 @@ export function Dashboard({
             <p className="mt-2 text-xs leading-5 text-slate-500">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
             <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
+              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-slate-300'}`}></div>
+                  <p className="text-sm font-medium text-slate-700">
                     {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
                       ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
                       : session.config.whatsappAuthAvailable
@@ -1443,12 +1551,14 @@ export function Dashboard({
                         : 'Meta OAuth app credentials are still missing from the Worker environment.'}
                   </p>
                 </div>
+              </div>
 
+              <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={() => void handleWhatsAppConnection()}
-                  disabled={connectingChannel !== null || !session.config.whatsappAuthAvailable}
-                  className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
+                  className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50 shadow-sm active:scale-[0.98]"
                 >
                   {connectingChannel === 'whatsapp'
                     ? 'Opening Meta approval...'
@@ -1456,6 +1566,17 @@ export function Dashboard({
                       ? 'Reconnect WhatsApp'
                       : 'Connect WhatsApp Business'}
                 </button>
+                {session.config.hasWhatsAppAccessToken ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleDisconnectChannel('whatsapp')}
+                    disabled={channelActionBusy}
+                    className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
+                  </button>
+                ) : null}
+              </div>
                 <p className="text-xs text-slate-500">
                   {session.config.whatsappAuthAvailable
                     ? 'The Worker opens Meta approval in a popup, exchanges the code server-side, and discovers your available WhatsApp Business phone numbers.'
@@ -1479,7 +1600,7 @@ export function Dashboard({
                     <button
                       type="button"
                       onClick={() => void completeWhatsAppPhoneSelection()}
-                      disabled={connectingChannel !== null || !selectedWhatsAppPhoneId}
+                      disabled={channelActionBusy || !selectedWhatsAppPhoneId}
                       className="mt-3 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Save selected phone
@@ -1523,104 +1644,105 @@ export function Dashboard({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 w-full flex flex-col gap-6 min-w-0">
-        <form onSubmit={handleAddTopic} className="flex gap-3">
+      <div className="flex-1 w-full flex flex-col gap-6 min-w-0 pb-16">
+        <form onSubmit={handleAddTopic} className="flex flex-col sm:flex-row gap-3 items-stretch w-full max-w-3xl">
         <input 
           type="text" 
           value={newTopic}
           onChange={(e) => setNewTopic(e.target.value)}
           placeholder="Add a new topic for research..."
-          className="flex-1 border border-white/40 shadow-sm rounded-xl px-5 py-2.5 text-slate-900 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 text-base"
+          className="flex-1 border border-slate-200/60 shadow-sm rounded-2xl px-6 py-4 text-slate-900 bg-white/90 backdrop-blur-md focus:ring-2 focus:ring-primary/50 focus:border-primary/30 outline-none transition-all duration-300 text-lg placeholder:text-slate-400"
           disabled={loading}
         />
         <button 
           type="submit"
           disabled={loading || !newTopic.trim()}
-          className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl hover:-translate-y-0.5 hover:shadow-md hover:bg-indigo-600 disabled:opacity-50 disabled:hover:translate-y-0 transition-all duration-200 font-semibold text-base"
+          className="flex items-center justify-center gap-2 bg-primary text-white px-8 py-4 rounded-2xl hover:bg-indigo-600 disabled:opacity-50 disabled:hover:scale-100 transition-all duration-300 font-bold text-lg shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap"
         >
-          <Plus className="w-6 h-6" /> Add Topic
+          <Plus className="w-6 h-6" /> <span className="hidden sm:inline">Add Topic</span><span className="sm:hidden">Add</span>
         </button>
       </form>
         
-        <div className="bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl overflow-hidden flex-1 flex flex-col">
+        <div className="bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-3xl overflow-hidden flex-1 flex flex-col mt-2">
           
-        <table className="min-w-full divide-y divide-slate-100 text-left">
-          <thead className="bg-slate-50/50">
-            <tr>
-              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Topic</th>
-              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Status</th>
-              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Date</th>
-              <th className="px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider font-heading">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.length === 0 ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-100 text-left">
+            <thead className="bg-slate-50/80">
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-slate-500 bg-white/30">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-2">
-                      <Bot className="w-6 h-6 text-slate-400" />
-                    </div>
-                    <p className="font-medium text-slate-700">No topics found</p>
-                    <p className="text-sm">Add one above to get started with research.</p>
-                  </div>
-                </td>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Topic</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Status</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Date</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Actions</th>
               </tr>
-            ) : (
-              rows.map((row) => (
-                <tr key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="hover:bg-white/60 transition-colors duration-150 group">
-                  <td className="px-4 py-2.5 whitespace-nowrap text-sm font-semibold text-slate-800">
-                    {row.topic}
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white/40">
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-16 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="w-16 h-16 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mb-2">
+                        <Bot className="w-8 h-8 text-indigo-300" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-700 text-lg">No topics found</p>
+                        <p className="text-sm text-slate-500 mt-1">Add one above to get started with research.</p>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-sm">
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full shadow-sm ${getStatusColor(row.status)}`}>
-                      {row.status || 'Pending'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-500">
-                    {row.date}
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium">
-                    <div className="flex flex-wrap items-center gap-4 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
-                      {getNormalizedRowStatus(row.status) === 'pending' && (
-                        <button
-                          onClick={() => void triggerRowGithubAction(row, 'draft')}
-                          disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-                          className="inline-flex items-center gap-1.5 text-primary hover:text-indigo-800 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 font-medium"
-                        >
-                          {actionLoading === buildRowActionKey('draft', row) ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                          )}
-                          Draft
-                        </button>
-                      )}
-                      {getNormalizedRowStatus(row.status) === 'drafted' && (
-                        <button 
-                          onClick={() => setSelectedRowForReview(row)}
-                          className="text-primary hover:text-indigo-800 hover:-translate-y-0.5 transition-all duration-200 font-semibold inline-flex items-center gap-1.5"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                          Review
-                        </button>
-                      )}
-                      {canPreviewPublishedContent(row) && (
-                        <>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="hover:bg-white/80 transition-colors duration-150 group">
+                    <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">
+                      {row.topic}
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full shadow-sm ${getStatusColor(row.status)}`}>
+                        {row.status || 'Pending'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-500">
+                      {row.date}
+                    </td>
+                    <td className="px-5 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex flex-wrap items-center gap-3 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+                        {getNormalizedRowStatus(row.status) === 'pending' && (
+                          <button
+                            onClick={() => void triggerRowGithubAction(row, 'draft')}
+                            disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary bg-primary/5 hover:bg-primary/10 hover:text-indigo-800 transition-all duration-200 disabled:opacity-50 font-semibold"
+                          >
+                            {actionLoading === buildRowActionKey('draft', row) ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            )}
+                            Draft
+                          </button>
+                        )}
+                        {getNormalizedRowStatus(row.status) === 'drafted' && (
+                          <button 
+                            onClick={() => setSelectedRowForReview(row)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all duration-200 font-bold"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                            Review
+                          </button>
+                        )}
+                        {canPreviewPublishedContent(row) && (
                           <button
                             onClick={() => setSelectedApprovedRowPreview(row)}
-                            className="inline-flex items-center gap-1.5 text-sky-600 hover:text-sky-800 hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all duration-200 font-bold"
                           >
                             <Eye className="w-4 h-4" />
                             Preview
                           </button>
-                        </>
-                      )}
-                      {getNormalizedRowStatus(row.status) === 'approved' && (
-                        <>
+                        )}
+                        {getNormalizedRowStatus(row.status) === 'approved' && (
                           <button
                             onClick={() => void publishRowToSelectedChannel(row)}
-                            className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                            disabled={actionLoading !== null}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50"
                           >
                             {actionLoading === buildRowActionKey('publish', row) ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1629,13 +1751,12 @@ export function Dashboard({
                             )}
                             Publish
                           </button>
-                        </>
-                      )}
-                      {getNormalizedRowStatus(row.status) === 'published' && (
-                        <>
+                        )}
+                        {getNormalizedRowStatus(row.status) === 'published' && (
                           <button
                             onClick={() => void republishRowToSelectedChannel(row)}
-                            className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-800 hover:-translate-y-0.5 transition-all duration-200 font-medium"
+                            disabled={actionLoading !== null}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50"
                           >
                             {actionLoading === buildRowActionKey('publish', row) ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1644,30 +1765,34 @@ export function Dashboard({
                             )}
                             Publish Again
                           </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => handleDeleteTopic(row)}
-                        disabled={deletingRowIndex === row.rowIndex}
-                        className="inline-flex items-center gap-1.5 text-slate-400 hover:text-red-600 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 ml-auto"
-                        title="Delete topic"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                        )}
+                        <button
+                          onClick={() => handleDeleteTopic(row)}
+                          disabled={deletingRowIndex === row.rowIndex}
+                          className="inline-flex items-center gap-1.5 p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all duration-200 disabled:opacity-50 ml-auto"
+                          title="Delete topic"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {selectedRowForReview && (
-        <VariantSelection 
+        <ReviewWorkspace
           row={selectedRowForReview} 
+          sharedRules={session.config.generationRules}
+          googleModel={googleModel}
           onApprove={handleApproveVariant}
-          onRefine={handleRefineVariant}
+          onGenerateQuickChange={handleGenerateQuickChange}
+          onGenerateVariants={handleGenerateVariantsPreview}
+          onSaveVariants={handleSaveDraftVariants}
           onFetchMoreImages={handleFetchReviewImages}
           onUploadImage={handleUploadReviewImage}
           onDownloadImage={handleDownloadReviewImage}

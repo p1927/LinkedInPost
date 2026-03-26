@@ -31,6 +31,8 @@ export interface OAuthStartResult {
   callbackOrigin: string;
 }
 
+export type OAuthProvider = 'instagram' | 'linkedin' | 'whatsapp';
+
 export interface WhatsAppPhoneOption {
   businessAccountId: string;
   businessAccountName: string;
@@ -52,6 +54,45 @@ export interface DraftImageListResult {
 
 export interface DraftImageUploadResult {
   imageUrl: string;
+}
+
+export type GenerationScope = 'selection' | 'whole-post';
+
+export interface TextSelectionRange {
+  start: number;
+  end: number;
+  text: string;
+}
+
+export interface GenerationRequest {
+  row: SheetRow;
+  editorText: string;
+  scope: GenerationScope;
+  selection: TextSelectionRange | null;
+  instruction?: string;
+  googleModel?: string;
+}
+
+export interface QuickChangePreviewResult {
+  scope: GenerationScope;
+  model: string;
+  selection: TextSelectionRange | null;
+  replacementText: string;
+  fullText: string;
+}
+
+export interface VariantPreviewResult {
+  id: string;
+  label: string;
+  replacementText: string;
+  fullText: string;
+}
+
+export interface VariantsPreviewResponse {
+  scope: GenerationScope;
+  model: string;
+  selection: TextSelectionRange | null;
+  variants: VariantPreviewResult[];
 }
 
 interface ApiEnvelope<T> {
@@ -174,6 +215,21 @@ export class BackendApi {
     return this.post<SheetRow[]>('getRows', idToken);
   }
 
+  async generateQuickChange(idToken: string, request: GenerationRequest): Promise<QuickChangePreviewResult> {
+    return this.post<QuickChangePreviewResult>('generateQuickChange', idToken, { ...request });
+  }
+
+  async generateVariantsPreview(idToken: string, request: GenerationRequest): Promise<VariantsPreviewResponse> {
+    return this.post<VariantsPreviewResponse>('generateVariantsPreview', idToken, { ...request });
+  }
+
+  async saveDraftVariants(idToken: string, row: SheetRow, variants: string[]): Promise<SheetRow> {
+    return this.post<SheetRow>('saveDraftVariants', idToken, {
+      row,
+      variants,
+    });
+  }
+
   async getGoogleModels(idToken: string): Promise<GoogleModelOption[]> {
     return this.post<GoogleModelOption[]>('getGoogleModels', idToken);
   }
@@ -218,6 +274,11 @@ export class BackendApi {
 
   async startWhatsAppAuth(idToken: string): Promise<OAuthStartResult> {
     return this.post<OAuthStartResult>('startWhatsAppAuth', idToken);
+  }
+
+  async disconnectChannelAuth(idToken: string, provider: OAuthProvider): Promise<BotConfig> {
+    const saved = await this.post<BotConfig>('disconnectChannelAuth', idToken, { provider });
+    return normalizeBotConfig(saved);
   }
 
   async completeWhatsAppConnection(idToken: string, connectionId: string, phoneNumberId: string): Promise<BotConfig> {

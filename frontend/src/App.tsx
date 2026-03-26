@@ -64,17 +64,19 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex w-full flex-col bg-gradient-to-br from-[#F5F3FF] to-indigo-50 text-slate-900 font-sans">
-      <header className="fixed top-4 inset-x-4 max-w-6xl mx-auto rounded-xl bg-white/70 backdrop-blur-md border border-white/40 shadow-sm z-50">
-        <div className="flex w-full items-center justify-between px-4 sm:px-6 py-2.5">
-          <div className="flex items-center gap-2">
-            <h1 className="m-0 text-xl font-bold text-deep-indigo font-heading">Channel Bot</h1>
+    <div className="min-h-screen flex w-full flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+      <header className="sticky top-0 inset-x-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm z-50 px-4 sm:px-6 py-3 lg:py-4">
+        <div className="max-w-[1600px] mx-auto flex w-full items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 p-2 rounded-xl">
+              <h1 className="m-0 text-xl font-bold text-primary font-heading tracking-tight">Channel Bot</h1>
+            </div>
           </div>
           <GoogleLoginButton onLogin={handleLogin} />
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col pt-20 pb-8">
+      <main className="flex flex-1 flex-col pt-6 pb-12 w-full max-w-[1600px] mx-auto">
         {!api.isConfigured() ? (
           <div className="mx-auto flex max-w-2xl flex-1 flex-col justify-center px-4 text-center">
             <h2 className="mb-4 text-2xl font-bold text-deep-indigo font-heading">Backend URL required</h2>

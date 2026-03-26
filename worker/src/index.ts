@@ -47,6 +47,7 @@ interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
+  generationRules: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
@@ -68,6 +69,8 @@ interface StoredConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
+  generationRules: string;
+  disconnectedAuthProviders?: AuthProvider[];
   githubTokenCiphertext?: string;
   defaultChannel: ChannelId;
   instagramUserId: string;
@@ -90,6 +93,7 @@ interface BotConfigUpdate {
   spreadsheetId?: string;
   githubRepo?: string;
   googleModel?: string;
+  generationRules?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
   instagramUserId?: string;
@@ -102,6 +106,24 @@ interface BotConfigUpdate {
   whatsappPhoneNumberId?: string;
   whatsappAccessToken?: string;
   whatsappRecipients?: WhatsAppRecipient[];
+}
+
+function normalizeDisconnectedAuthProviders(value: unknown): AuthProvider[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(new Set(
+    value.filter((provider): provider is AuthProvider => provider === 'instagram' || provider === 'linkedin' || provider === 'whatsapp'),
+  ));
+}
+
+function withoutDisconnectedAuthProvider(providers: AuthProvider[], provider: AuthProvider): AuthProvider[] {
+  return providers.filter((entry) => entry !== provider);
+}
+
+function withDisconnectedAuthProvider(providers: AuthProvider[], provider: AuthProvider): AuthProvider[] {
+  return providers.includes(provider) ? providers : [...providers, provider];
 }
 
 interface TelegramRecipient {
@@ -152,6 +174,45 @@ interface SheetRow {
   selectedText: string;
   selectedImageId: string;
   postTime: string;
+}
+
+type GenerationScope = 'selection' | 'whole-post';
+
+interface TextSelectionRange {
+  start: number;
+  end: number;
+  text: string;
+}
+
+interface GenerationRequestPayload {
+  row: SheetRow;
+  editorText: string;
+  scope?: GenerationScope;
+  selection?: TextSelectionRange | null;
+  instruction?: string;
+  googleModel?: string;
+}
+
+interface QuickChangePreviewResult {
+  scope: GenerationScope;
+  model: string;
+  selection: TextSelectionRange | null;
+  replacementText: string;
+  fullText: string;
+}
+
+interface VariantPreviewResult {
+  id: string;
+  label: string;
+  replacementText: string;
+  fullText: string;
+}
+
+interface VariantsPreviewResponse {
+  scope: GenerationScope;
+  model: string;
+  selection: TextSelectionRange | null;
+  variants: VariantPreviewResult[];
 }
 
 interface VerifiedSession {
@@ -313,6 +374,19 @@ interface GeminiModelsResponse {
     name?: string;
     supportedGenerationMethods?: string[];
   }>;
+}
+
+interface GeminiGenerateResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+  promptFeedback?: {
+    blockReason?: string;
+  };
 }
 
 const CONFIG_KEY = 'shared-config';
@@ -495,6 +569,19 @@ async function dispatchAction(
     case 'getRows':
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.getRows(storedConfig.spreadsheetId);
+    case 'generateQuickChange':
+      ensureSpreadsheetConfigured(storedConfig);
+      return generateQuickChangePreview(env, storedConfig, payload);
+    case 'generateVariantsPreview':
+      ensureSpreadsheetConfigured(storedConfig);
+      return generateVariantsPreview(env, storedConfig, payload);
+    case 'saveDraftVariants':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.saveDraftVariants(
+        storedConfig.spreadsheetId,
+        coerceSheetRow(payload.row),
+        coerceVariantList(payload.variants),
+      );
     case 'addTopic':
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.addTopic(storedConfig.spreadsheetId, String(payload.topic || '').trim());
@@ -523,6 +610,9 @@ async function dispatchAction(
     case 'startWhatsAppAuth':
       ensureAdmin(session);
       return startWhatsAppAuth(request, env, session);
+    case 'disconnectChannelAuth':
+      ensureAdmin(session);
+      return disconnectChannelAuth(env, storedConfig, String(payload.provider || '').trim());
     case 'completeWhatsAppConnection':
       ensureAdmin(session);
       return completeWhatsAppConnection(env, session, payload);
@@ -633,26 +723,32 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     : config?.defaultChannel === 'instagram'
       ? 'instagram'
       : 'linkedin';
+  const disconnectedAuthProviders = normalizeDisconnectedAuthProviders(config?.disconnectedAuthProviders);
+  const instagramDisconnected = disconnectedAuthProviders.includes('instagram');
+  const linkedinDisconnected = disconnectedAuthProviders.includes('linkedin');
+  const whatsappDisconnected = disconnectedAuthProviders.includes('whatsapp');
 
   return {
     spreadsheetId: config?.spreadsheetId || '',
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
+    generationRules: config?.generationRules || '',
+    disconnectedAuthProviders,
     githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
     defaultChannel,
-    instagramUserId: config?.instagramUserId || String(env.INSTAGRAM_USER_ID || '').trim(),
-    instagramUsername: config?.instagramUsername || String(env.INSTAGRAM_USERNAME || '').trim(),
-    instagramAccessTokenCiphertext: config?.instagramAccessTokenCiphertext || undefined,
-    instagramAccessToken: String(env.INSTAGRAM_ACCESS_TOKEN || '').trim() || undefined,
-    linkedinPersonUrn: config?.linkedinPersonUrn || String(env.LINKEDIN_PERSON_URN || '').trim(),
-    linkedinAccessTokenCiphertext: config?.linkedinAccessTokenCiphertext || undefined,
-    linkedinAccessToken: String(env.LINKEDIN_ACCESS_TOKEN || '').trim() || undefined,
+    instagramUserId: instagramDisconnected ? '' : (config?.instagramUserId || String(env.INSTAGRAM_USER_ID || '').trim()),
+    instagramUsername: instagramDisconnected ? '' : (config?.instagramUsername || String(env.INSTAGRAM_USERNAME || '').trim()),
+    instagramAccessTokenCiphertext: instagramDisconnected ? undefined : (config?.instagramAccessTokenCiphertext || undefined),
+    instagramAccessToken: instagramDisconnected ? undefined : (String(env.INSTAGRAM_ACCESS_TOKEN || '').trim() || undefined),
+    linkedinPersonUrn: linkedinDisconnected ? '' : (config?.linkedinPersonUrn || String(env.LINKEDIN_PERSON_URN || '').trim()),
+    linkedinAccessTokenCiphertext: linkedinDisconnected ? undefined : (config?.linkedinAccessTokenCiphertext || undefined),
+    linkedinAccessToken: linkedinDisconnected ? undefined : (String(env.LINKEDIN_ACCESS_TOKEN || '').trim() || undefined),
     telegramBotTokenCiphertext: config?.telegramBotTokenCiphertext || undefined,
     telegramBotToken: String(env.TELEGRAM_BOT_TOKEN || '').trim() || undefined,
     telegramRecipients: normalizeTelegramRecipients(config?.telegramRecipients),
-    whatsappPhoneNumberId: config?.whatsappPhoneNumberId || String(env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
-    whatsappAccessTokenCiphertext: config?.whatsappAccessTokenCiphertext || undefined,
-    whatsappAccessToken: String(env.WHATSAPP_ACCESS_TOKEN || '').trim() || undefined,
+    whatsappPhoneNumberId: whatsappDisconnected ? '' : (config?.whatsappPhoneNumberId || String(env.WHATSAPP_PHONE_NUMBER_ID || '').trim()),
+    whatsappAccessTokenCiphertext: whatsappDisconnected ? undefined : (config?.whatsappAccessTokenCiphertext || undefined),
+    whatsappAccessToken: whatsappDisconnected ? undefined : (String(env.WHATSAPP_ACCESS_TOKEN || '').trim() || undefined),
     whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
   };
 }
@@ -662,6 +758,7 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     spreadsheetId: config.spreadsheetId,
     githubRepo: config.githubRepo,
     googleModel: config.googleModel || GOOGLE_MODEL_DEFAULT,
+    generationRules: config.generationRules || '',
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
     defaultChannel: config.defaultChannel,
     instagramAuthAvailable: hasInstagramOAuthConfig(env),
@@ -1261,6 +1358,7 @@ async function persistLinkedInConnection(env: Env, accessToken: string, personUr
   const current = await loadStoredConfig(env);
   const nextConfig: StoredConfig = {
     ...current,
+    disconnectedAuthProviders: withoutDisconnectedAuthProvider(current.disconnectedAuthProviders || [], 'linkedin'),
     linkedinPersonUrn: personUrn,
     linkedinAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
     linkedinAccessToken: undefined,
@@ -1273,6 +1371,7 @@ async function persistInstagramConnection(env: Env, accessToken: string, instagr
   const current = await loadStoredConfig(env);
   const nextConfig: StoredConfig = {
     ...current,
+    disconnectedAuthProviders: withoutDisconnectedAuthProvider(current.disconnectedAuthProviders || [], 'instagram'),
     instagramUserId,
     instagramUsername,
     instagramAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
@@ -1286,10 +1385,44 @@ async function persistWhatsAppConnection(env: Env, accessToken: string, phoneNum
   const current = await loadStoredConfig(env);
   const nextConfig: StoredConfig = {
     ...current,
+    disconnectedAuthProviders: withoutDisconnectedAuthProvider(current.disconnectedAuthProviders || [], 'whatsapp'),
     whatsappPhoneNumberId: phoneNumberId,
     whatsappAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
     whatsappAccessToken: undefined,
   };
+  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  return toPublicConfig(nextConfig, env);
+}
+
+async function disconnectChannelAuth(env: Env, current: StoredConfig, provider: string): Promise<BotConfig> {
+  if (provider !== 'instagram' && provider !== 'linkedin' && provider !== 'whatsapp') {
+    throw new Error('Choose a valid OAuth channel to disconnect.');
+  }
+
+  const nextConfig: StoredConfig = {
+    ...current,
+    disconnectedAuthProviders: withDisconnectedAuthProvider(current.disconnectedAuthProviders || [], provider),
+  };
+
+  if (provider === 'instagram') {
+    nextConfig.instagramUserId = '';
+    nextConfig.instagramUsername = '';
+    nextConfig.instagramAccessTokenCiphertext = undefined;
+    nextConfig.instagramAccessToken = undefined;
+  }
+
+  if (provider === 'linkedin') {
+    nextConfig.linkedinPersonUrn = '';
+    nextConfig.linkedinAccessTokenCiphertext = undefined;
+    nextConfig.linkedinAccessToken = undefined;
+  }
+
+  if (provider === 'whatsapp') {
+    nextConfig.whatsappPhoneNumberId = '';
+    nextConfig.whatsappAccessTokenCiphertext = undefined;
+    nextConfig.whatsappAccessToken = undefined;
+  }
+
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
   return toPublicConfig(nextConfig, env);
 }
@@ -1403,6 +1536,8 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     spreadsheetId: typeof update.spreadsheetId === 'string' ? update.spreadsheetId.trim() : current.spreadsheetId,
     githubRepo: typeof update.githubRepo === 'string' ? update.githubRepo.trim() : current.githubRepo,
     googleModel: typeof update.googleModel === 'string' && update.googleModel.trim() ? update.googleModel.trim() : current.googleModel,
+    generationRules: typeof update.generationRules === 'string' ? update.generationRules.trim() : current.generationRules,
+    disconnectedAuthProviders: current.disconnectedAuthProviders || [],
     githubTokenCiphertext: current.githubTokenCiphertext,
     defaultChannel: update.defaultChannel === 'whatsapp'
       ? 'whatsapp'
@@ -1435,10 +1570,12 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
 
   if (update.instagramAccessToken) {
     nextConfig.instagramAccessTokenCiphertext = await encryptSecret(update.instagramAccessToken.trim(), requireSecretEncryptionKey(env));
+    nextConfig.disconnectedAuthProviders = withoutDisconnectedAuthProvider(nextConfig.disconnectedAuthProviders || [], 'instagram');
   }
 
   if (update.linkedinAccessToken) {
     nextConfig.linkedinAccessTokenCiphertext = await encryptSecret(update.linkedinAccessToken.trim(), requireSecretEncryptionKey(env));
+    nextConfig.disconnectedAuthProviders = withoutDisconnectedAuthProvider(nextConfig.disconnectedAuthProviders || [], 'linkedin');
   }
 
   if (update.telegramBotToken) {
@@ -1447,6 +1584,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
 
   if (update.whatsappAccessToken) {
     nextConfig.whatsappAccessTokenCiphertext = await encryptSecret(update.whatsappAccessToken.trim(), requireSecretEncryptionKey(env));
+    nextConfig.disconnectedAuthProviders = withoutDisconnectedAuthProvider(nextConfig.disconnectedAuthProviders || [], 'whatsapp');
   }
 
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
@@ -1918,6 +2056,394 @@ function requireSecretEncryptionKey(env: Env): string {
   return env.GITHUB_TOKEN_ENCRYPTION_KEY;
 }
 
+function requireGeminiApiKey(env: Env): string {
+  const apiKey = String(env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) {
+    throw new Error('Missing GEMINI_API_KEY in the Worker environment. Add it before using preview generation.');
+  }
+
+  return apiKey;
+}
+
+function coerceVariantList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    throw new Error('Missing preview variants payload.');
+  }
+
+  const variants = value
+    .map((entry) => normalizePlainTextValue(entry))
+    .filter((entry) => entry.trim())
+    .slice(0, 4);
+
+  if (variants.length !== 4) {
+    throw new Error('Exactly four variants are required before saving them to Sheets.');
+  }
+
+  return variants;
+}
+
+function coerceSelectionRange(value: unknown): TextSelectionRange | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const start = Number((value as TextSelectionRange).start);
+  const end = Number((value as TextSelectionRange).end);
+
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start) {
+    return null;
+  }
+
+  return {
+    start,
+    end,
+    text: String((value as TextSelectionRange).text || ''),
+  };
+}
+
+function resolveGenerationTarget(editorText: string, requestedScope?: GenerationScope, rawSelection?: TextSelectionRange | null): {
+  scope: GenerationScope;
+  selection: TextSelectionRange | null;
+} {
+  const selection = rawSelection
+    && rawSelection.end <= editorText.length
+    && rawSelection.start >= 0
+    && rawSelection.end > rawSelection.start
+      ? {
+        start: rawSelection.start,
+        end: rawSelection.end,
+        text: editorText.slice(rawSelection.start, rawSelection.end),
+      }
+      : null;
+
+  if (requestedScope === 'selection' && selection && selection.text.trim()) {
+    return {
+      scope: 'selection',
+      selection,
+    };
+  }
+
+  return {
+    scope: 'whole-post',
+    selection: null,
+  };
+}
+
+function applyReplacement(editorText: string, scope: GenerationScope, selection: TextSelectionRange | null, replacementText: string): string {
+  if (scope === 'selection' && selection) {
+    return `${editorText.slice(0, selection.start)}${replacementText}${editorText.slice(selection.end)}`;
+  }
+
+  return replacementText;
+}
+
+function buildRulesPrefix(sharedRules: string, instruction: string): string {
+  const rules = [sharedRules.trim(), instruction.trim()].filter(Boolean);
+  if (rules.length === 0) {
+    return '';
+  }
+
+  return [
+    'Follow these generation rules exactly unless they conflict with safety constraints:',
+    ...rules.map((rule, index) => `${index + 1}. ${rule}`),
+    '',
+  ].join('\n');
+}
+
+function buildQuickChangePrompt(
+  row: SheetRow,
+  editorText: string,
+  scope: GenerationScope,
+  selection: TextSelectionRange | null,
+  instruction: string,
+  sharedRules: string,
+): string {
+  const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
+  if (scope === 'selection' && selection) {
+    return [
+      'You are editing a LinkedIn draft.',
+      rulesPrefix,
+      'Return strict JSON with the shape {"result":"..."}.',
+      'Rewrite only the selected segment. Return only the replacement text for that segment, not the entire post.',
+      'Keep the surrounding context coherent, plain-text safe, and ready for downstream posting.',
+      `Topic: ${row.topic}`,
+      `Date: ${row.date}`,
+      '',
+      'Full draft:',
+      editorText,
+      '',
+      'Selected segment:',
+      selection.text,
+    ].join('\n');
+  }
+
+  return [
+    'You are editing a LinkedIn draft.',
+    rulesPrefix,
+    'Return strict JSON with the shape {"result":"..."}.',
+    'Rewrite the full draft. Return the full revised post text only.',
+    'Keep the result plain-text safe and ready for downstream posting.',
+    `Topic: ${row.topic}`,
+    `Date: ${row.date}`,
+    '',
+    'Draft:',
+    editorText,
+  ].join('\n');
+}
+
+function buildVariantsPrompt(
+  row: SheetRow,
+  editorText: string,
+  scope: GenerationScope,
+  selection: TextSelectionRange | null,
+  instruction: string,
+  sharedRules: string,
+): string {
+  const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
+  const promptLines = [
+    'You are generating four distinct LinkedIn draft options.',
+    rulesPrefix,
+    'Return strict JSON with the shape {"variants":["...","...","...","..."]}.',
+    'Return exactly four non-empty plain-text options.',
+    'Each option should take a clearly different angle while staying on-topic and ready for downstream posting.',
+    `Topic: ${row.topic}`,
+    `Date: ${row.date}`,
+    '',
+  ];
+
+  if (scope === 'selection' && selection) {
+    return [
+      ...promptLines,
+      'Rewrite only the selected segment. Each variant must contain only the replacement text for that selected segment, not the entire post.',
+      'Full draft:',
+      editorText,
+      '',
+      'Selected segment:',
+      selection.text,
+    ].join('\n');
+  }
+
+  return [
+    ...promptLines,
+    'Rewrite the full draft. Each variant must contain the full revised post text.',
+    'Draft:',
+    editorText,
+  ].join('\n');
+}
+
+async function callGeminiText(env: Env, model: string, prompt: string): Promise<string> {
+  const apiKey = requireGeminiApiKey(env);
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [{ text: prompt }],
+        }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Gemini generation failed with status ${response.status}. ${message.slice(0, 280)}`.trim());
+  }
+
+  const payload = (await response.json()) as GeminiGenerateResponse;
+  if (payload.promptFeedback?.blockReason) {
+    throw new Error(`Gemini blocked the generation request: ${payload.promptFeedback.blockReason}.`);
+  }
+
+  const text = payload.candidates?.[0]?.content?.parts?.map((part) => String(part.text || '')).join('\n').trim() || '';
+  if (!text) {
+    throw new Error('Gemini returned an empty generation response.');
+  }
+
+  return text;
+}
+
+function extractJsonCandidate(text: string): string {
+  const trimmed = text.trim();
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fencedMatch?.[1]) {
+    return fencedMatch[1].trim();
+  }
+
+  const objectStart = trimmed.indexOf('{');
+  const objectEnd = trimmed.lastIndexOf('}');
+  if (objectStart > -1 && objectEnd > objectStart) {
+    return trimmed.slice(objectStart, objectEnd + 1);
+  }
+
+  const arrayStart = trimmed.indexOf('[');
+  const arrayEnd = trimmed.lastIndexOf(']');
+  if (arrayStart > -1 && arrayEnd > arrayStart) {
+    return trimmed.slice(arrayStart, arrayEnd + 1);
+  }
+
+  return trimmed;
+}
+
+function tryParseJson(text: string): unknown {
+  const candidate = extractJsonCandidate(text);
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return candidate;
+  }
+}
+
+function normalizePlainTextValue(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizePlainTextValue(entry)).filter(Boolean).join('\n').trim();
+  }
+
+  if (value && typeof value === 'object') {
+    for (const key of ['result', 'text', 'post', 'content', 'caption', 'value']) {
+      const candidate = normalizePlainTextValue((value as Record<string, unknown>)[key]);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return Object.values(value as Record<string, unknown>)
+      .map((entry) => normalizePlainTextValue(entry))
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+  }
+
+  return '';
+}
+
+function normalizeVariantList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizePlainTextValue(entry)).filter(Boolean).slice(0, 4);
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.variants)) {
+      return normalizeVariantList(record.variants);
+    }
+
+    const keyedVariants = ['variant1', 'variant2', 'variant3', 'variant4']
+      .map((key) => normalizePlainTextValue(record[key]))
+      .filter(Boolean);
+    if (keyedVariants.length > 0) {
+      return keyedVariants.slice(0, 4);
+    }
+  }
+
+  const text = normalizePlainTextValue(value);
+  if (!text) {
+    return [];
+  }
+
+  const splitVariants = text
+    .split(/(?:^|\n)\s*(?:variant\s*\d+[:.-]|\d+[.)])\s*/i)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (splitVariants.length >= 4) {
+    return splitVariants.slice(0, 4);
+  }
+
+  return [text];
+}
+
+async function generateQuickChangePreview(
+  env: Env,
+  storedConfig: StoredConfig,
+  payload: Record<string, unknown>,
+): Promise<QuickChangePreviewResult> {
+  const request = payload as unknown as GenerationRequestPayload;
+  const row = coerceSheetRow(request.row);
+  const editorText = String(request.editorText || '');
+  if (!editorText.trim()) {
+    throw new Error('Draft text is required before running Quick Change.');
+  }
+
+  const instruction = String(request.instruction || '').trim();
+  if (!instruction) {
+    throw new Error('Quick Change needs a per-run instruction.');
+  }
+
+  const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
+  const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
+  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, storedConfig.generationRules || '');
+  const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
+
+  if (!replacementText) {
+    throw new Error('Quick Change returned empty preview text.');
+  }
+
+  return {
+    scope,
+    model,
+    selection,
+    replacementText,
+    fullText: applyReplacement(editorText, scope, selection, replacementText),
+  };
+}
+
+async function generateVariantsPreview(
+  env: Env,
+  storedConfig: StoredConfig,
+  payload: Record<string, unknown>,
+): Promise<VariantsPreviewResponse> {
+  const request = payload as unknown as GenerationRequestPayload;
+  const row = coerceSheetRow(request.row);
+  const editorText = String(request.editorText || '');
+  if (!editorText.trim()) {
+    throw new Error('Draft text is required before generating preview variants.');
+  }
+
+  const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
+  const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
+  const prompt = buildVariantsPrompt(
+    row,
+    editorText,
+    scope,
+    selection,
+    String(request.instruction || '').trim(),
+    storedConfig.generationRules || '',
+  );
+  const variants = normalizeVariantList(tryParseJson(await callGeminiText(env, model, prompt)));
+
+  if (variants.length !== 4) {
+    throw new Error('Gemini did not return four valid preview variants.');
+  }
+
+  return {
+    scope,
+    model,
+    selection,
+    variants: variants.map((replacementText, index) => ({
+      id: `preview-${index + 1}`,
+      label: `Preview ${index + 1}`,
+      replacementText,
+      fullText: applyReplacement(editorText, scope, selection, replacementText),
+    })),
+  };
+}
+
 async function listGoogleModels(env: Env): Promise<GoogleModelOption[]> {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
   if (!apiKey) {
@@ -2376,6 +2902,29 @@ class SheetsGateway {
     }
 
     return { success: true };
+  }
+
+  async saveDraftVariants(spreadsheetId: string, row: SheetRow, variants: string[]): Promise<SheetRow> {
+    await this.ensureRequiredSheets(spreadsheetId);
+
+    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
+    if (!draftRowIndex) {
+      throw new Error('Draft row not found for this topic.');
+    }
+
+    await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!D${draftRowIndex}:G${draftRowIndex}`, [[
+      variants[0],
+      variants[1],
+      variants[2],
+      variants[3],
+    ]]);
+
+    const updatedRow = await this.getRowByTopicDate(spreadsheetId, row.topic, row.date);
+    if (!updatedRow) {
+      throw new Error('Draft variants were saved, but the updated row could not be reloaded.');
+    }
+
+    return updatedRow;
   }
 
   async markRowPublished(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {

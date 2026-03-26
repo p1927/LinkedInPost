@@ -89,6 +89,7 @@ export interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
+  generationRules: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
@@ -119,6 +120,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     spreadsheetId: config?.spreadsheetId || '',
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || DEFAULT_GOOGLE_MODEL,
+    generationRules: config?.generationRules || '',
     hasGitHubToken: Boolean(config?.hasGitHubToken),
     defaultChannel,
     instagramAuthAvailable: Boolean(config?.instagramAuthAvailable),
@@ -141,6 +143,7 @@ export interface BotConfigUpdate {
   spreadsheetId?: string;
   githubRepo?: string;
   googleModel?: string;
+  generationRules?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
   instagramUserId?: string;
