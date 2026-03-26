@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '../../services/configService';
 import { getNormalizedRowStatus } from './utils';
@@ -10,8 +10,9 @@ import { DashboardSettingsDrawer } from './components/DashboardSettingsDrawer';
 import { DashboardToolbar } from './components/DashboardToolbar';
 import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
-import { ArrowLeft } from 'lucide-react';
 import { getChannelOption } from '../../integrations/channels';
+import { useRegisterWorkspaceChrome } from '../workspace/WorkspaceChromeContext';
+import { type WorkspaceNavPage } from '../workspace/AppSidebar';
 import { normalizeTelegramChatId } from '../../integrations/telegram';
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { ReviewWorkspace } from '../../features/review/ReviewWorkspace';
@@ -24,15 +25,13 @@ export function Dashboard({
   onSaveConfig,
   onAuthExpired,
   workspacePage,
-  onWorkspacePageChange,
 }: {
   idToken: string;
   session: AppSession;
   api: BackendApi;
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
-  workspacePage: 'dashboard' | 'settings';
-  onWorkspacePageChange: (page: 'dashboard' | 'settings') => void;
+  workspacePage: WorkspaceNavPage;
 }) {
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
@@ -115,11 +114,6 @@ export function Dashboard({
     setLastDeliverySummary,
   });
 
-  const loadData = async () => {
-    if (!session.config.spreadsheetId) return;
-    queueHook.loadData();
-  };
-
   const queueCounts = queueHook.rows.reduce<Record<QueueFilter, number>>((acc, row) => {
     const status = getNormalizedRowStatus(row.status) as Exclude<QueueFilter, 'all'>;
     acc.all += 1;
@@ -138,6 +132,27 @@ export function Dashboard({
   const handleScrollTargetHandled = useCallback(() => {
     setQueueScrollTargetId(null);
   }, []);
+
+  const refreshQueue = useCallback(() => {
+    if (!session.config.spreadsheetId) return;
+    void queueHook.loadData();
+  }, [session.config.spreadsheetId, queueHook.loadData]);
+
+  const publishingHealth = useMemo(
+    () => ({
+      linkedin: linkedinConfigured,
+      instagram: instagramConfigured,
+      telegram: telegramConfigured,
+      whatsapp: whatsappConfigured,
+    }),
+    [linkedinConfigured, instagramConfigured, telegramConfigured, whatsappConfigured],
+  );
+
+  useRegisterWorkspaceChrome({
+    onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,
+    queueLoading: queueHook.loading,
+    health: publishingHealth,
+  });
 
   if (!session.config.spreadsheetId && !session.isAdmin) {
     return (
@@ -252,18 +267,7 @@ export function Dashboard({
   if (workspacePage === 'settings' && session.isAdmin) {
     return (
       <div className="w-full pb-12">
-        <div className="mb-8">
-          <button
-            type="button"
-            onClick={() => onWorkspacePageChange('dashboard')}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Back to dashboard
-          </button>
-          <h2 className="mt-4 font-heading text-2xl font-semibold text-ink">Workspace settings</h2>
-          <p className="mt-1 text-sm text-muted">Google Sheet, GitHub Actions, and channel connections.</p>
-        </div>
+        <p className="mb-5 text-sm text-muted">Google Sheet, GitHub Actions, and channel connections.</p>
         <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
           {settingsContent}
         </div>
@@ -297,24 +301,21 @@ export function Dashboard({
 
   return (
     <div className="w-full pb-12">
-      <DashboardToolbar
-        googleModel={settingsHook.googleModel}
-        setGoogleModel={settingsHook.setGoogleModel}
-        availableModels={settingsHook.availableModels}
-        onRefreshQueue={() => void loadData()}
-        queueLoading={queueHook.loading}
-      />
-
-      <div className="relative mt-5 flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
-        <aside className="custom-scrollbar sticky top-20 flex max-h-[calc(100vh-5rem)] w-full shrink-0 flex-col gap-6 overflow-y-auto pb-4 pr-1 lg:w-[320px] xl:w-[360px]">
-          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card">
-            <h2 className="font-heading text-lg font-semibold text-ink">Delivery</h2>
+      {workspacePage === 'home' ? (
+        <div className="mx-auto flex max-w-2xl flex-col gap-5">
+          <DashboardToolbar
+            googleModel={settingsHook.googleModel}
+            setGoogleModel={settingsHook.setGoogleModel}
+            availableModels={settingsHook.availableModels}
+          />
+          <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
+            <h2 className="mb-4 font-heading text-lg font-semibold text-ink">Delivery</h2>
             {deliveryContent}
           </div>
-        </aside>
-
-        <div className="flex min-w-0 flex-1 flex-col">{queueContent}</div>
-      </div>
+        </div>
+      ) : (
+        <div className="mx-auto w-full max-w-4xl">{queueContent}</div>
+      )}
 
       {queueHook.selectedRowForReview && (
         <ReviewWorkspace

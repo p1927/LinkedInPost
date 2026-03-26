@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import clsx from 'clsx'
 import { Share2, Sparkles, TableProperties } from 'lucide-react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/dashboard'
 import { AlertProvider } from './components/AlertProvider'
+import { WorkspaceShell } from './components/workspace/WorkspaceShell'
+import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
@@ -22,7 +23,7 @@ function App() {
   const [session, setSession] = useState<AppSession | null>(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [workspacePage, setWorkspacePage] = useState<'dashboard' | 'settings'>('dashboard')
+  const [workspacePage, setWorkspacePage] = useState<WorkspaceNavPage>('topics')
 
   useEffect(() => {
     if (!idToken) {
@@ -58,7 +59,7 @@ function App() {
 
   useEffect(() => {
     if (session && !session.isAdmin && workspacePage === 'settings') {
-      setWorkspacePage('dashboard')
+      setWorkspacePage('topics')
     }
   }, [session, workspacePage])
 
@@ -74,57 +75,51 @@ function App() {
     setErrorMessage('Your Google session expired. Sign in again to continue.')
   }
 
+  const showMarketingHeader = !idToken || !session
+
   return (
     <AlertProvider>
       <div className="flex min-h-screen w-full flex-col bg-canvas font-sans text-ink">
-        <header className="w-full border-b border-border bg-surface px-4 py-3.5 sm:px-6">
-          <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 sm:gap-4">
+        {showMarketingHeader ? (
+          <header className="w-full border-b border-border bg-surface px-4 py-3.5 sm:px-6">
+            <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg">
                   CB
                 </div>
                 <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
               </div>
-              {idToken && session ? (
-                <nav
-                  className="flex items-center gap-0.5 rounded-xl border border-border bg-canvas p-0.5"
-                  aria-label="Workspace"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setWorkspacePage('dashboard')}
-                    className={clsx(
-                      'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
-                      workspacePage === 'dashboard'
-                        ? 'bg-surface text-ink shadow-sm'
-                        : 'text-muted hover:text-ink',
-                    )}
-                  >
-                    Dashboard
-                  </button>
-                  {session.isAdmin ? (
-                    <button
-                      type="button"
-                      onClick={() => setWorkspacePage('settings')}
-                      className={clsx(
-                        'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
-                        workspacePage === 'settings'
-                          ? 'bg-surface text-ink shadow-sm'
-                          : 'text-muted hover:text-ink',
-                      )}
-                    >
-                      Settings
-                    </button>
-                  ) : null}
-                </nav>
-              ) : null}
+              {idToken ? <GoogleLoginButton onLogin={handleLogin} /> : null}
             </div>
-            {idToken ? <GoogleLoginButton onLogin={handleLogin} /> : null}
-          </div>
-        </header>
+          </header>
+        ) : null}
 
-        <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pb-12 pt-6 sm:px-6">
+        {idToken && session ? (
+          <WorkspaceShell
+            session={session}
+            workspacePage={workspacePage}
+            onWorkspacePageChange={setWorkspacePage}
+            onLogoutComplete={() => {
+              setIdToken(null)
+              setSession(null)
+              setErrorMessage('')
+            }}
+          >
+            <Dashboard
+              idToken={idToken}
+              session={session}
+              api={api}
+              workspacePage={workspacePage}
+              onSaveConfig={async (config) => {
+                const updatedConfig = await api.saveConfig(idToken, config)
+                setSession((current) => (current ? { ...current, config: updatedConfig } : current))
+                return updatedConfig
+              }}
+              onAuthExpired={handleAuthExpired}
+            />
+          </WorkspaceShell>
+        ) : (
+          <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pb-12 pt-6 sm:px-6">
           {!api.isConfigured() ? (
             <div className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-2 text-center">
               <h2 className="mb-3 font-heading text-2xl font-semibold text-ink">Backend URL required</h2>
@@ -196,20 +191,6 @@ function App() {
                 <p className="text-sm text-muted">Loading shared workspace…</p>
               </div>
             </div>
-          ) : session ? (
-            <Dashboard
-              idToken={idToken}
-              session={session}
-              api={api}
-              workspacePage={workspacePage}
-              onWorkspacePageChange={setWorkspacePage}
-              onSaveConfig={async (config) => {
-                const updatedConfig = await api.saveConfig(idToken, config)
-                setSession((current) => (current ? { ...current, config: updatedConfig } : current))
-                return updatedConfig
-              }}
-              onAuthExpired={handleAuthExpired}
-            />
           ) : (
             <div className="mx-auto flex max-w-lg flex-1 flex-col items-center justify-center px-2 text-center">
               <h2 className="mb-3 font-heading text-2xl font-semibold text-ink">Unable to start the session</h2>
@@ -219,7 +200,8 @@ function App() {
               </p>
             </div>
           )}
-        </main>
+          </main>
+        )}
       </div>
     </AlertProvider>
   )

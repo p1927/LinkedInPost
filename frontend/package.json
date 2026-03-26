@@ -11,6 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/open-sans": "^5.2.7",
+    "@fontsource/poppins": "^5.2.7",
     "@react-oauth/google": "^0.13.4",
     "clsx": "^2.1.1",
     "lucide-react": "^1.6.0",
