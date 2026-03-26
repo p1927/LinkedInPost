@@ -1,4 +1,4 @@
-import { CalendarClock, CheckCircle2, ChevronRight, FileText, ImageIcon, Layers3, Sparkles } from 'lucide-react';
+import { CalendarClock, CheckCircle2, ChevronRight, FileText, ImageIcon, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
@@ -378,15 +378,14 @@ export function ReviewWorkspace({
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Sheet variants: {sheetVariants.length}</span>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${editorDirty ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                  Draft: {editorDirty ? 'edited locally' : 'clean'}
+                  {editorDirty ? 'Edited locally' : 'Draft clean'}
                 </span>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${previewReadyCount ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700'}`}>
-                  Previews: {previewReadyCount ? `${previewReadyCount} ready` : 'none'}
+                  {previewReadyCount ? `${previewReadyCount} preview${previewReadyCount > 1 ? 's' : ''} ready` : 'No previews'}
                 </span>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-                  Model: {googleModel}
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                  {sheetVariants.length} sheet variant{sheetVariants.length !== 1 ? 's' : ''}
                 </span>
               </div>
             </div>
@@ -402,7 +401,7 @@ export function ReviewWorkspace({
                     key={step.id}
                     type="button"
                     onClick={() => setReviewStep(step.id)}
-                    className={`rounded-[24px] border px-4 py-4 text-left transition-all ${selected ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : completed ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                    className={`rounded-[24px] border px-4 py-4 text-left transition-all ${selected ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : completed ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${selected ? 'bg-white/12 text-white' : completed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
@@ -434,18 +433,17 @@ export function ReviewWorkspace({
                 onScopeChange={setScope}
                 onFormatting={handleFormatting}
               />
+            </section>
 
-              <section className="rounded-[30px] border border-slate-200 bg-white/90 p-6 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Current draft</p>
-                    <h3 className="mt-2 text-xl font-semibold text-slate-900">Live preview of the working copy</h3>
-                  </div>
-                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                    Image: {selectedImageUrl ? 'attached' : 'not selected'}
-                  </div>
+            <aside className="min-h-0 overflow-y-auto px-6 py-6">
+              <section className="rounded-[30px] border border-slate-200 bg-white/90 p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live preview</p>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    {selectedImageUrl ? 'Image attached' : 'No image'}
+                  </span>
                 </div>
-                <div className="mt-5">
+                <div className="mt-4">
                   <LinkedInPostPreview
                     optionNumber={1}
                     text={editorText}
@@ -457,19 +455,13 @@ export function ReviewWorkspace({
                   />
                 </div>
               </section>
-            </section>
-
-            <aside className="min-h-0 overflow-y-auto px-6 py-6">
-              <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Layers3 className="h-4 w-4" />
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Step workspace</p>
-                </div>
-                <h3 className="mt-3 text-xl font-semibold text-slate-900">{selectedStepMeta.label}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{selectedStepMeta.description}</p>
-              </section>
 
               <div className="mt-5 space-y-5">
+                <div className="border-b border-slate-200/60 pb-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{selectedStepMeta.label}</p>
+                  <p className="mt-1 text-sm text-slate-600">{selectedStepMeta.description}</p>
+                </div>
+
                 {reviewStep === 'draft' ? (
                   <>
                     <section className="rounded-[28px] border border-slate-200 bg-white/90 p-5 shadow-sm">
@@ -602,6 +594,20 @@ export function ReviewWorkspace({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <button
                   type="button"
+                  onClick={() => {
+                    if (hasUnsavedReviewState) {
+                      setPendingClose(true);
+                      return;
+                    }
+                    onCancel();
+                  }}
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <span className="hidden sm:block flex-1" />
+                <button
+                  type="button"
                   onClick={() => setReviewStep(reviewSteps[Math.max(0, activeReviewStepIndex - 1)]?.id || 'draft')}
                   disabled={activeReviewStepIndex === 0}
                   className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -626,19 +632,6 @@ export function ReviewWorkspace({
                     {submitting ? 'Approving...' : 'Approve draft'}
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hasUnsavedReviewState) {
-                      setPendingClose(true);
-                      return;
-                    }
-                    onCancel();
-                  }}
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
               </div>
             </div>
           </div>

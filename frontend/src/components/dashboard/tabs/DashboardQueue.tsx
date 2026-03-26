@@ -48,31 +48,26 @@ export function DashboardQueue({
 }) {
   return (
     <>
-      <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Add to queue</p>
-            <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Capture the next topic</h3>
-          </div>
-          <form onSubmit={handleAddTopic} className="flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-stretch">
-            <input
-              type="text"
-              value={newTopic}
-              onChange={(e) => setNewTopic(e.target.value)}
-              placeholder="Add a new topic for research..."
-              className="flex-1 rounded-2xl border border-slate-200/60 bg-white/90 px-6 py-4 text-lg text-slate-900 shadow-sm outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-2 focus:ring-primary/50"
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              disabled={loading || !newTopic.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-sm transition-all duration-300 hover:bg-indigo-600 hover:shadow-md disabled:opacity-50"
-            >
-              <Plus className="h-6 w-6" /> <span className="hidden sm:inline">Add topic</span><span className="sm:hidden">Add</span>
-            </button>
-          </form>
-        </div>
-      </section>
+      <div className="rounded-2xl border border-white/50 bg-white/85 px-4 py-3 shadow-md backdrop-blur-md">
+        <form onSubmit={handleAddTopic} className="flex gap-3">
+          <input
+            type="text"
+            value={newTopic}
+            onChange={(e) => setNewTopic(e.target.value)}
+            placeholder="Add a new topic for research..."
+            className="flex-1 rounded-xl border border-slate-200/60 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary/30 focus:ring-2 focus:ring-primary/50"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            disabled={loading || !newTopic.trim()}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add topic</span>
+          </button>
+        </form>
+      </div>
 
       <section className="rounded-[32px] border border-white/50 bg-white/85 shadow-xl backdrop-blur-md overflow-hidden">
         <div className="border-b border-slate-200/80 px-6 py-5">
@@ -188,10 +183,10 @@ export function DashboardQueue({
                       <button
                         onClick={() => handleDeleteTopic(row)}
                         disabled={deletingRowIndex === row.rowIndex}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-rose-200 hover:text-rose-600 disabled:opacity-50"
+                        title="Delete topic"
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-100 bg-white p-2.5 text-slate-300 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4" />
-                        Delete
                       </button>
                     </div>
                   </div>

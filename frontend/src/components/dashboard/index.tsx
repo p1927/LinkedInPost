@@ -164,14 +164,7 @@ export function Dashboard({
       <section className="rounded-[28px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-5 py-4 shadow-xl backdrop-blur-md">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              <span>Workspace</span>
-              <ChevronRight className="h-4 w-4" />
-              <span>Dashboard</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-slate-700">{activeDashboardTabMeta.label}</span>
-            </div>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-deep-indigo font-heading">{activeDashboardTabMeta.label}</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-deep-indigo font-heading">{activeDashboardTabMeta.label}</h2>
             <p className="mt-1 text-sm text-slate-600">{activeDashboardTabMeta.description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -208,14 +201,12 @@ export function Dashboard({
 
       <div className="mt-6 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
         <aside className="hidden lg:block">
-          <div className="sticky top-4 overflow-hidden rounded-[28px] border border-white/50 bg-white/90 shadow-xl backdrop-blur-md">
+          <div className="sticky top-[80px] overflow-hidden rounded-[28px] border border-white/50 bg-white/90 shadow-xl backdrop-blur-md">
             <DashboardNavigation
               activeDashboardTab={activeDashboardTab}
               setActiveDashboardTab={setActiveDashboardTab}
               setNavigationOpen={setNavigationOpen}
               navigationCounts={navigationCounts}
-              setStatusFilter={setStatusFilter}
-              queueCounts={queueCounts}
               session={session}
               setSettingsOpen={setSettingsOpen}
             />
@@ -384,8 +375,6 @@ export function Dashboard({
               setActiveDashboardTab={setActiveDashboardTab}
               setNavigationOpen={setNavigationOpen}
               navigationCounts={navigationCounts}
-              setStatusFilter={setStatusFilter}
-              queueCounts={queueCounts}
               session={session}
               setSettingsOpen={setSettingsOpen}
             />

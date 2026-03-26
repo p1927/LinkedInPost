@@ -45,14 +45,14 @@ export function DashboardOverview({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Queue snapshot</p>
-              <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">See what needs attention first</h3>
+              <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Status at a glance</h3>
             </div>
             <button
               type="button"
               onClick={() => setActiveDashboardTab('queue')}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
             >
-              Open queue tab
+              Go to Queue →
             </button>
           </div>
 
@@ -78,11 +78,11 @@ export function DashboardOverview({
           <div className="border-b border-slate-200/80 px-6 py-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Focused rows</p>
-                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Current working set</h3>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Up next</p>
+                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Items needing attention</h3>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                Filter: {filterOptions.find((option) => option.value === statusFilter)?.label}
+                {filterOptions.find((option) => option.value === statusFilter)?.label}
               </span>
             </div>
           </div>
@@ -94,30 +94,24 @@ export function DashboardOverview({
               </div>
             ) : (
               queueSpotlightRows.map((row) => (
-                <div key={`spotlight-${row.sourceSheet}-${row.rowIndex}`} className="border-t border-slate-100 first:border-t-0 px-6 py-5">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h4 className="text-lg font-semibold text-slate-900">{row.topic}</h4>
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold shadow-sm ${getStatusColor(row.status)}`}>
-                          {row.status || 'Pending'}
-                        </span>
-                        <span className="text-sm text-slate-500">{row.date}</span>
-                      </div>
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{(row.selectedText || row.variant1 || 'No draft content yet.').trim()}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveDashboardTab('queue');
-                        setStatusFilter(getNormalizedRowStatus(row.status) as QueueFilter);
-                      }}
-                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                    >
-                      Open in queue
-                    </button>
+                <button
+                  key={`spotlight-${row.sourceSheet}-${row.rowIndex}`}
+                  type="button"
+                  onClick={() => {
+                    setActiveDashboardTab('queue');
+                    setStatusFilter(getNormalizedRowStatus(row.status) as QueueFilter);
+                  }}
+                  className="w-full border-t border-slate-100 first:border-t-0 px-6 py-5 text-left transition-colors hover:bg-slate-50/60"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h4 className="text-base font-semibold text-slate-900">{row.topic}</h4>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold shadow-sm ${getStatusColor(row.status)}`}>
+                      {row.status || 'Pending'}
+                    </span>
+                    <span className="text-sm text-slate-500">{row.date}</span>
                   </div>
-                </div>
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{(row.selectedText || row.variant1 || 'No draft content yet.').trim()}</p>
+                </button>
               ))
             )}
           </div>

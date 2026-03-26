@@ -1,15 +1,13 @@
 import { Settings } from 'lucide-react';
-import { type DashboardTab, type QueueFilter } from '../types';
+import { type DashboardTab } from '../types';
 import { type AppSession } from '../../../services/backendApi';
-import { dashboardTabs, filterOptions } from '../constants';
+import { dashboardTabs } from '../constants';
 
 export function DashboardNavigation({
   activeDashboardTab,
   setActiveDashboardTab,
   setNavigationOpen,
   navigationCounts,
-  setStatusFilter,
-  queueCounts,
   session,
   setSettingsOpen,
 }: {
@@ -17,16 +15,14 @@ export function DashboardNavigation({
   setActiveDashboardTab: (tab: DashboardTab) => void;
   setNavigationOpen: (open: boolean) => void;
   navigationCounts: Record<DashboardTab, number>;
-  setStatusFilter: (filter: QueueFilter) => void;
-  queueCounts: Record<QueueFilter, number>;
   session: AppSession;
   setSettingsOpen: (open: boolean) => void;
 }) {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-slate-200/80 px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace navigation</p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">Keep the shell compact. Open one workspace at a time.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
+        <p className="mt-1 truncate text-sm font-medium text-slate-700">{session.email}</p>
       </div>
 
       <nav className="flex-1 px-3 py-4">
@@ -59,34 +55,12 @@ export function DashboardNavigation({
             );
           })}
         </div>
-
-        <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Quick status</p>
-          <div className="mt-3 space-y-2">
-            {filterOptions.slice(1).map((option) => (
-              <button
-                key={`nav-filter-${option.value}`}
-                type="button"
-                onClick={() => {
-                  setStatusFilter(option.value);
-                  setActiveDashboardTab('queue');
-                  setNavigationOpen(false);
-                }}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-white"
-              >
-                <span>{option.label}</span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">{queueCounts[option.value]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
       </nav>
 
-      <div className="border-t border-slate-200/80 px-4 py-4">
-        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin surface</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">Configuration and channel setup stay outside the main dashboard canvas.</p>
-          {session.isAdmin ? (
+      {session.isAdmin ? (
+        <div className="border-t border-slate-200/80 px-4 py-4">
+          <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin</p>
             <button
               type="button"
               onClick={() => {
@@ -98,9 +72,9 @@ export function DashboardNavigation({
               <Settings className="h-4 w-4" />
               Open settings drawer
             </button>
-          ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
