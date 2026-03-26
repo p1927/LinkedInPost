@@ -1,12 +1,10 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
-import { googleLogout } from '@react-oauth/google';
 import {
   Check,
   ChevronLeft,
   ChevronRight,
   ListOrdered,
-  LogOut,
   Minus,
   Settings,
 } from 'lucide-react';
@@ -14,8 +12,6 @@ import { type AppSession } from '../../services/backendApi';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { Button } from '@/components/ui/button';
-
-const STORED_ID_TOKEN_KEY = 'google_id_token';
 
 export type WorkspaceNavPage = 'topics' | 'settings';
 
@@ -120,7 +116,6 @@ export function AppSidebar({
   onNavigate,
   session,
   googleProfile,
-  onLogoutComplete,
   mobileOpen,
   onMobileOpenChange,
 }: {
@@ -130,7 +125,6 @@ export function AppSidebar({
   onNavigate: (page: WorkspaceNavPage) => void;
   session: AppSession;
   googleProfile?: GoogleIdTokenProfile | null;
-  onLogoutComplete: () => void;
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
 }) {
@@ -138,13 +132,6 @@ export function AppSidebar({
   const closeMobile = () => onMobileOpenChange(false);
   const displayName = googleProfile?.name?.trim() || null;
   const pictureUrl = googleProfile?.picture?.trim() || null;
-
-  const handleLogout = () => {
-    googleLogout();
-    localStorage.removeItem(STORED_ID_TOKEN_KEY);
-    onLogoutComplete();
-    closeMobile();
-  };
 
   const publishingRows =
     workspacePage === 'settings' && session.isAdmin && health
@@ -343,7 +330,7 @@ export function AppSidebar({
           <div
             className={clsx(
               'rounded-xl border border-white/40 bg-white/35 shadow-sm backdrop-blur-sm',
-              collapsed ? 'flex flex-col items-center gap-2.5 px-2 py-3' : 'flex flex-row items-center gap-2.5 p-2.5',
+              collapsed ? 'flex flex-col items-center px-2 py-3' : 'flex flex-row items-center gap-2.5 p-2.5',
             )}
           >
             <SidebarUserAvatar
@@ -365,38 +352,8 @@ export function AppSidebar({
                 >
                   {session.email}
                 </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className={clsx(
-                    'mt-1 -ml-1 inline-flex h-auto min-h-0 cursor-pointer gap-1 rounded-md px-1 py-0.5 text-xs font-semibold text-muted transition-colors duration-200 hover:bg-white/50 hover:text-ink',
-                    focusRing,
-                  )}
-                >
-                  <LogOut className="h-3 w-3 shrink-0" aria-hidden />
-                  Log out
-                </Button>
               </div>
-            ) : (
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon-sm"
-                onClick={handleLogout}
-                aria-label="Log out"
-                title="Log out"
-                className={clsx(
-                  'flex cursor-pointer items-center justify-center border-white/45 bg-white/30 text-muted transition-colors duration-200 hover:border-white/55 hover:bg-white/55 hover:text-ink',
-                  RAIL_TILE,
-                  RAIL_RADIUS,
-                  focusRing,
-                )}
-              >
-                <LogOut className="h-4 w-4" aria-hidden />
-              </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </aside>

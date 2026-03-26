@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Menu, RefreshCw } from 'lucide-react';
+import { LogOut, Menu, RefreshCw } from 'lucide-react';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { type WorkspaceNavPage } from './AppSidebar';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,11 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
 export function WorkspaceHeader({
   workspacePage,
   onOpenMobileSidebar,
+  onLogout,
 }: {
   workspacePage: WorkspaceNavPage;
   onOpenMobileSidebar: () => void;
+  onLogout: () => void;
 }) {
   const { onRefreshQueue, queueLoading } = useWorkspaceChrome();
 
@@ -53,6 +55,16 @@ export function WorkspaceHeader({
         >
           <RefreshCw className={clsx('h-3.5 w-3.5 shrink-0', queueLoading && 'animate-spin')} aria-hidden />
           <span>Refresh</span>
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onLogout}
+          className="glass-inset h-9 min-h-9 cursor-pointer gap-2 rounded-xl px-3 text-xs font-semibold text-ink hover:bg-white/75 sm:px-4"
+        >
+          <LogOut className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span>Log out</span>
         </Button>
       </div>
     </header>

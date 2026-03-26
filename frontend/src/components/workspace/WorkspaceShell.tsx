@@ -1,9 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
+import { googleLogout } from '@react-oauth/google';
 import { WorkspaceChromeProvider } from './WorkspaceChromeContext';
 import { AppSidebar, readSidebarCollapsed, writeSidebarCollapsed, type WorkspaceNavPage } from './AppSidebar';
 import { WorkspaceHeader } from './WorkspaceHeader';
 import { type AppSession } from '../../services/backendApi';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
+
+const STORED_ID_TOKEN_KEY = 'google_id_token';
 
 export function WorkspaceShell({
   session,
@@ -31,6 +34,16 @@ export function WorkspaceShell({
     });
   };
 
+  const handleLogout = useCallback(() => {
+    googleLogout();
+    try {
+      localStorage.removeItem(STORED_ID_TOKEN_KEY);
+    } catch {
+      /* ignore */
+    }
+    onLogoutComplete();
+  }, [onLogoutComplete]);
+
   return (
     <WorkspaceChromeProvider>
       <a
@@ -47,7 +60,6 @@ export function WorkspaceShell({
           onNavigate={onWorkspacePageChange}
           session={session}
           googleProfile={googleProfile ?? null}
-          onLogoutComplete={onLogoutComplete}
           mobileOpen={mobileSidebarOpen}
           onMobileOpenChange={setMobileSidebarOpen}
         />
@@ -56,6 +68,7 @@ export function WorkspaceShell({
           <WorkspaceHeader
             workspacePage={workspacePage}
             onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+            onLogout={handleLogout}
           />
           <main
             id="workspace-main"
