@@ -1,7 +1,7 @@
 ---
 title: LinkedIn Bot Cloudflare Worker
 description: Setup and deployment guide for the Cloudflare Worker backend used by the shared LinkedIn Bot dashboard.
-ms.date: 2026-03-25
+ms.date: 2026-03-26
 ms.topic: how-to
 ---
 
@@ -73,6 +73,8 @@ The setup script writes [worker/.dev.vars](.dev.vars) automatically when you run
 | `ALLOWED_EMAILS` | Space-separated or comma-separated Gmail addresses allowed to use the dashboard |
 | `ADMIN_EMAILS` | Optional list of users who can edit shared settings |
 | `GOOGLE_CLIENT_ID` | OAuth client ID used by the frontend Google sign-in button |
+| `GOOGLE_CLOUD_STORAGE_BUCKET` | Bucket used for generated draft images and post-publish cleanup |
+| `DELETE_UNUSED_GENERATED_IMAGES` | Enables deletion of non-selected generated images after successful publish |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Full service-account JSON used to call Google Sheets |
 | `GITHUB_TOKEN_ENCRYPTION_KEY` | Base64-encoded 32-byte AES key used to encrypt the stored GitHub token |
 | `CORS_ALLOWED_ORIGINS` | Allowed frontend origins for cross-origin requests |
@@ -97,6 +99,10 @@ Register these redirect URLs in the provider dashboards:
 Instagram publishing currently supports approved image posts only. The Worker uses the approved text as the caption and rejects text-only rows for this channel.
 
 Telegram delivery does not require an OAuth app. After the Worker is deployed, an admin can open the dashboard settings, store a Telegram bot token, and add saved chat IDs such as `@channelusername` or `-1001234567890`.
+
+For generated images, the repository now assumes a Google Cloud Storage bucket instead of a Google Drive folder. Grant the service account `roles/storage.objectAdmin` on that bucket. The Worker keeps the selected image and deletes the non-selected generated images after successful delivery across LinkedIn, Instagram, Telegram, and WhatsApp.
+
+If you plan to use browser-side `fetch()` requests against the bucket from custom tooling, add a bucket CORS policy that covers your dashboard origins. Standard image tags and channel-side URL fetches do not require bucket CORS.
 
 ## Run locally
 

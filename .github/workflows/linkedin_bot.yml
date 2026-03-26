@@ -28,7 +28,9 @@ jobs:
       - name: Run Draft Script
         env:
           GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID || secrets.GOOGLE_SHEET_ID }}
-          GOOGLE_DRIVE_FOLDER_ID: ${{ vars.GOOGLE_DRIVE_FOLDER_ID || secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_CLOUD_STORAGE_BUCKET: ${{ vars.GOOGLE_CLOUD_STORAGE_BUCKET || secrets.GOOGLE_CLOUD_STORAGE_BUCKET }}
+          GOOGLE_CLOUD_STORAGE_PREFIX: ${{ vars.GOOGLE_CLOUD_STORAGE_PREFIX || secrets.GOOGLE_CLOUD_STORAGE_PREFIX || 'linkedin-images' }}
+          DELETE_UNUSED_GENERATED_IMAGES: ${{ vars.DELETE_UNUSED_GENERATED_IMAGES || secrets.DELETE_UNUSED_GENERATED_IMAGES || 'true' }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON || vars.GOOGLE_CREDENTIALS_JSON }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_MODEL: ${{ github.event.client_payload.google_model || vars.GOOGLE_MODEL || secrets.GOOGLE_MODEL || 'gemini-1.5-flash' }}
@@ -63,7 +65,9 @@ jobs:
       - name: Run Publish Script
         env:
           GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID || secrets.GOOGLE_SHEET_ID }}
-          GOOGLE_DRIVE_FOLDER_ID: ${{ vars.GOOGLE_DRIVE_FOLDER_ID || secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_CLOUD_STORAGE_BUCKET: ${{ vars.GOOGLE_CLOUD_STORAGE_BUCKET || secrets.GOOGLE_CLOUD_STORAGE_BUCKET }}
+          GOOGLE_CLOUD_STORAGE_PREFIX: ${{ vars.GOOGLE_CLOUD_STORAGE_PREFIX || secrets.GOOGLE_CLOUD_STORAGE_PREFIX || 'linkedin-images' }}
+          DELETE_UNUSED_GENERATED_IMAGES: ${{ vars.DELETE_UNUSED_GENERATED_IMAGES || secrets.DELETE_UNUSED_GENERATED_IMAGES || 'true' }}
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON || vars.GOOGLE_CREDENTIALS_JSON }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_MODEL: ${{ github.event.client_payload.google_model || vars.GOOGLE_MODEL || secrets.GOOGLE_MODEL || 'gemini-1.5-flash' }}

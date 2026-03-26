@@ -1,13 +1,13 @@
 ---
 title: LinkedIn Bot Setup Checklist
 description: Step-by-step guide to configure the free GitHub Pages plus Cloudflare Workers deployment for LinkedIn Bot.
-ms.date: 2026-03-25
+ms.date: 2026-03-26
 ms.topic: how-to
 ---
 
 ## Overview
 
-This setup keeps the project free while allowing approved Gmail users to work against one shared Google Sheet, Drive folder, and Docs log.
+This setup keeps the project free while allowing approved Gmail users to work against one shared Google Sheet, one Google Cloud Storage bucket for generated images, and one Google Docs log.
 
 The deployed shape is:
 
@@ -33,6 +33,7 @@ Create a Google Cloud project, enable the APIs below, and create a service accou
 * Google Sheets API
 * Google Drive API
 * Google Docs API
+* Cloud Storage API
 
 Then run the local bootstrap script:
 
@@ -40,9 +41,15 @@ Then run the local bootstrap script:
 python setup.py
 ```
 
-The script creates the shared `LINKEDIN` folder, content calendar sheet, images folder, and published-posts doc.
+The script creates the shared `LINKEDIN` folder, content calendar sheet, and published-posts doc. Generated draft images are stored in Google Cloud Storage, not in Google Drive.
 
 Set `GOOGLE_SHARE_EMAIL` first if you want the script to share the parent Drive folder with your Gmail account automatically.
+
+Before you run `python setup.py`, create a bucket for generated images and set `GOOGLE_CLOUD_STORAGE_BUCKET` in your environment.
+
+Grant the service account `roles/storage.objectAdmin` on that bucket so the automation can upload the four generated images and delete the non-selected ones after a successful publish.
+
+If you want direct browser `fetch()` calls against the bucket from custom tooling, add a bucket CORS policy for your frontend origins. Plain `<img>` previews and channel-side fetches do not require bucket CORS.
 
 ## Step 2: Create the Google sign-in client
 
@@ -103,6 +110,8 @@ At minimum, configure these Worker values:
 * `ALLOWED_EMAILS`
 * `ADMIN_EMAILS`
 * `GOOGLE_CLIENT_ID`
+* `GOOGLE_CLOUD_STORAGE_BUCKET`
+* `DELETE_UNUSED_GENERATED_IMAGES`
 * `GOOGLE_SERVICE_ACCOUNT_JSON`
 * `GITHUB_TOKEN_ENCRYPTION_KEY`
 * `CORS_ALLOWED_ORIGINS`
@@ -161,9 +170,11 @@ The scheduled Python jobs still need their existing secrets.
 Keep these configured in GitHub Actions:
 
 * `GOOGLE_SHEET_ID`
-* `GOOGLE_DRIVE_FOLDER_ID`
+* `GOOGLE_CLOUD_STORAGE_BUCKET`
+* `GOOGLE_CLOUD_STORAGE_PREFIX`
 * `GOOGLE_DOC_ID`
 * `GOOGLE_CREDENTIALS_JSON`
+* `DELETE_UNUSED_GENERATED_IMAGES`
 * `GEMINI_API_KEY`
 * `SERPAPI_API_KEY`
 * `LINKEDIN_ACCESS_TOKEN`
@@ -205,6 +216,7 @@ Set the `VITE_GOOGLE_CLIENT_ID` and `VITE_WORKER_URL` repository secrets used by
 * The browser no longer stores the GitHub PAT
 * Config lives in Cloudflare KV, not in a user-specific Drive app-data file
 * Shared access is controlled by `ALLOWED_EMAILS` in the Worker
+* Generated draft images now live in Google Cloud Storage, and unused variants are deleted automatically after publish
 
 ## Suggested environment variables for setup.py
 
@@ -213,6 +225,7 @@ Set these before running the broader bootstrap flow:
 ```bash
 export GOOGLE_CREDENTIALS_JSON='...'
 export GOOGLE_SHARE_EMAIL='you@gmail.com'
+export GOOGLE_CLOUD_STORAGE_BUCKET='your-generated-images-bucket'
 export VITE_GOOGLE_CLIENT_ID='your-client-id.apps.googleusercontent.com'
 export ALLOWED_EMAILS='you@gmail.com teammate@gmail.com'
 export ADMIN_EMAILS='you@gmail.com'
@@ -230,5 +243,7 @@ Add these too if you want `setup.py --sync-github-secrets` to populate the autom
 ```bash
 export GEMINI_API_KEY='...'
 export SERPAPI_API_KEY='your-serpapi-api-key'
+export GOOGLE_CLOUD_STORAGE_PREFIX='linkedin-images'
+export DELETE_UNUSED_GENERATED_IMAGES='true'
 export LINKEDIN_ACCESS_TOKEN='...'
 ```

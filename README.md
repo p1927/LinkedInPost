@@ -1,7 +1,7 @@
 ---
 title: LinkedIn Automation Bot
 description: Shared LinkedIn content workflow using GitHub Pages, Cloudflare Workers, GitHub Actions, and Google Workspace resources.
-ms.date: 2026-03-25
+ms.date: 2026-03-26
 ms.topic: overview
 ---
 
@@ -21,7 +21,7 @@ The current deployment model is:
 * A Google service account gives the Worker access to the shared Google Sheet
 * SerpApi provides web research snippets and image search results for the Python draft workflow
 * GitHub Actions runs the Python draft and publish jobs
-* Google Drive and Google Docs continue to store media and published-post logs for the automation workflow
+* Google Cloud Storage stores generated draft images, while Google Docs keeps the published-post log
 
 ## Workflow
 

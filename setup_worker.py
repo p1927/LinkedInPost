@@ -243,9 +243,8 @@ def print_bootstrap_summary(
 
     if google_resources:
         print(f'GOOGLE_SHEET_ID         = {google_resources.sheet_id}')
-        print(f'GOOGLE_DRIVE_FOLDER_ID  = {google_resources.images_folder_id}')
         print(f'GOOGLE_DOC_ID           = {google_resources.doc_id}')
-        print(f'GOOGLE_CLOUD_STORAGE_BUCKET = {os.environ.get("GOOGLE_CLOUD_STORAGE_BUCKET", "").strip() or "<optional: set this value>"}')
+        print(f'GOOGLE_CLOUD_STORAGE_BUCKET = {google_resources.gcs_bucket_name or os.environ.get("GOOGLE_CLOUD_STORAGE_BUCKET", "").strip() or "<set this value>"}')
         print('GOOGLE_CREDENTIALS_JSON = <service account JSON already loaded from env>')
         print(f'LINKEDIN_PERSON_URN     = {google_resources.linkedin_person_urn or "urn:li:person:<your_id>"}')
         print(f'WHATSAPP_PHONE_NUMBER_ID = {os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "").strip() or "<set this value>"}')
@@ -277,7 +276,7 @@ def print_bootstrap_summary(
     if google_resources:
         print('  LINKEDIN/')
         print(f'    Content Calendar    (Sheet  ID: {google_resources.sheet_id})')
-        print(f'    Images/             (Folder ID: {google_resources.images_folder_id})')
+        print(f'    Generated images    (GCS   bucket: {google_resources.gcs_bucket_name})')
         print(f'    Published Posts     (Doc    ID: {google_resources.doc_id})')
     if worker_bootstrap:
         print(f'  Worker dev vars       ({worker_dev_vars_path})')
