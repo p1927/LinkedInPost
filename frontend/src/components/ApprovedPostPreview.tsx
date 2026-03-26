@@ -79,7 +79,13 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                       <CalendarClock className="mt-0.5 h-4 w-4 text-primary" />
                       <p className="text-sm leading-6">
                         {row.postTime?.trim()
-                          ? row.postTime
+                          ? new Date(`${row.postTime.trim().replace(' ', 'T')}:00Z`).toLocaleString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })
                           : 'No scheduled time is set. Publishing will use the next available workflow run.'}
                       </p>
                     </div>
