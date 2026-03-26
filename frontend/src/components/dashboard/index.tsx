@@ -340,17 +340,26 @@ export function Dashboard({
 
   return (
     <div className="w-full pb-12">
-      {session.config.spreadsheetId ? (
-        <header className="mx-auto mb-6 flex max-w-[1400px] justify-end">
-          <div
-            className="shrink-0 rounded-2xl border border-violet-200/70 bg-white/70 px-3 py-2 text-xs font-medium text-ink shadow-sm ring-1 ring-white/60 backdrop-blur-md transition-shadow duration-200 hover:shadow-card"
-            title="Topics sync from your connected Google Sheet"
-          >
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-ink/60">Data source</span>
-            <span className="mt-0.5 block truncate font-semibold text-ink">Sheet connected</span>
+      <header className="mx-auto mb-6 max-w-[1400px]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight text-ink sm:text-[1.65rem]">
+                Topic queue
+              </h1>
+              {session.config.spreadsheetId && (
+                <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 ring-1 ring-emerald-200/70">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+                  <span className="text-xs font-semibold text-emerald-700">Sheet connected</span>
+                </div>
+              )}
+            </div>
+            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted">
+              Add topics, run drafts, then review and approve before publishing to your connected channel.
+            </p>
           </div>
-        </header>
-      ) : null}
+        </div>
+      </header>
       <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="min-w-0">{queueContent}</div>
         <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">

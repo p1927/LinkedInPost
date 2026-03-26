@@ -16,13 +16,13 @@ function queueRowDomId(row: SheetRow) {
 }
 
 const rowActionClass =
-  'h-9 min-h-9 shrink-0 gap-1.5 rounded-full px-3 text-xs font-semibold active:translate-y-0 disabled:opacity-40';
+  'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-40';
 
 const iconBtn =
-  'size-9 shrink-0 cursor-pointer rounded-xl text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-40';
+  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-40 transition-colors duration-200';
 
 const iconBtnMuted =
-  'size-9 shrink-0 cursor-pointer rounded-xl text-muted hover:bg-white/80 hover:text-ink disabled:opacity-40';
+  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-white/60 hover:text-ink disabled:opacity-40 transition-colors duration-200';
 
 export function DashboardQueue({
   handleAddTopic,
@@ -90,11 +90,11 @@ export function DashboardQueue({
     <div className="flex flex-col gap-5">
       <section
         aria-label="Add topic"
-        className={cn('glass-panel rounded-xl', hasTopics ? 'p-2.5' : 'p-4')}
+        className={cn('glass-panel rounded-2xl border border-violet-200/50', hasTopics ? 'p-3' : 'p-5')}
       >
         <form
           onSubmit={handleAddTopic}
-          className={cn('flex flex-col gap-2 sm:flex-row sm:items-stretch', hasTopics && 'sm:items-center')}
+          className={cn('flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3', hasTopics && 'sm:items-center')}
         >
           <Input
             type="text"
@@ -102,8 +102,8 @@ export function DashboardQueue({
             onChange={(e) => setNewTopic(e.target.value)}
             placeholder="Add a topic for research…"
             className={cn(
-              'glass-inset flex-1 rounded-lg px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary/20',
-              hasTopics ? 'min-h-10' : 'min-h-[44px] px-3.5',
+              'flex-1 rounded-xl border border-violet-200/55 bg-white/70 px-3.5 py-2 text-sm text-ink outline-none transition-[colors,border-color,background-color,box-shadow] duration-200 placeholder:text-muted hover:border-violet-200/70 hover:bg-white/85 focus:border-primary focus:ring-2 focus:ring-primary/25',
+              hasTopics ? 'min-h-10' : 'min-h-[44px]',
             )}
             disabled={loading}
           />
@@ -113,26 +113,26 @@ export function DashboardQueue({
             size={hasTopics ? 'sm' : 'md'}
             disabled={loading || !newTopic.trim()}
             className={cn(
-              'w-full shrink-0 cursor-pointer rounded-lg sm:w-auto',
-              hasTopics ? 'min-h-10' : 'min-h-[44px]',
+              'w-full shrink-0 cursor-pointer rounded-xl sm:w-auto',
+              hasTopics ? 'min-h-10 gap-1.5 px-3 text-xs' : 'min-h-[44px] gap-2',
             )}
           >
             <Plus className={hasTopics ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden />
-            Add topic
+            <span>Add topic</span>
           </Button>
         </form>
       </section>
 
-      <div className="flex flex-col">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <div className="flex w-full flex-col gap-0.5 sm:w-auto sm:flex-1 sm:min-w-[12rem]">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Status</p>
-            <p id="queue-filter-hint" className="text-[11px] leading-snug text-muted">
+      <div className="flex flex-col gap-4">
+        <div className="space-y-2.5">
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink/70">Status Filter</p>
+            <p id="queue-filter-hint" className="text-xs leading-snug text-muted">
               Filter by status; counts follow the sheet.
             </p>
           </div>
           <div
-            className="flex flex-wrap gap-1.5"
+            className="flex flex-wrap gap-2"
             role="group"
             aria-label="Filter topics by status"
             aria-describedby="queue-filter-hint"
@@ -152,41 +152,41 @@ export function DashboardQueue({
 
         <div>
           {filteredRows.length === 0 ? (
-            <div className="glass-panel rounded-xl border border-dashed border-violet-200/50 px-4 py-12 text-center">
-              <div className="glass-inset mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full text-muted">
-                <Bot className="h-5 w-5" strokeWidth={1.5} />
+            <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-6 py-16 text-center">
+              <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
+                <Bot className="h-6 w-6" strokeWidth={1.5} />
               </div>
-              <p className="text-sm font-medium text-ink">
+              <p className="text-base font-semibold text-ink">
                 {rows.length === 0 ? 'No topics yet' : `No ${statusFilter === 'all' ? '' : statusFilter} rows`}
               </p>
-              {rows.length === 0 ? <p className="mt-1 text-xs text-muted">Add a topic above to start.</p> : null}
+              {rows.length === 0 ? <p className="mt-2 text-sm text-muted">Add a topic above to start.</p> : null}
             </div>
           ) : (
             <div
-              className="glass-inset custom-scrollbar scroll-mt-24 overflow-x-auto rounded-xl border border-violet-200/50 shadow-sm"
+              className="glass-inset custom-scrollbar scroll-mt-24 overflow-x-auto rounded-2xl border border-violet-200/50 shadow-sm"
               role="table"
               aria-label="Topics: title, status, date, and actions per row"
             >
-              <div className="min-w-[520px]">
+              <div className="min-w-[540px]">
                 <div role="rowgroup">
                   <div
                     role="row"
-                    className="flex items-center gap-3 border-b border-violet-200/80 bg-white/85 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink/55 backdrop-blur-md"
+                    className="flex items-center gap-4 border-b border-violet-200/60 bg-white/90 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-ink/60 backdrop-blur-md"
                   >
                     <div role="columnheader" className="min-w-0 flex-1 text-left">
                       Topic
                     </div>
                     <div
                       role="columnheader"
-                      className="flex shrink-0 items-center justify-end gap-3 text-ink/55"
+                      className="flex shrink-0 items-center justify-end gap-3 text-ink/60"
                     >
-                      <span className="w-[92px] text-right">Status</span>
-                      <span className="w-[108px] text-right">Date</span>
-                      <span className="min-w-[108px] text-right">Action</span>
-                      <div className="flex w-[76px] shrink-0 items-center justify-end gap-0.5">
+                      <span className="w-[100px] text-right">Status</span>
+                      <span className="w-[110px] text-right">Date</span>
+                      <span className="min-w-[110px] text-right">Action</span>
+                      <div className="flex w-[80px] shrink-0 items-center justify-end gap-1">
                         <span className="sr-only">Preview and delete</span>
-                        <Eye className="h-3.5 w-3.5 text-ink/45" aria-hidden />
-                        <Trash2 className="h-3.5 w-3.5 text-ink/45" aria-hidden />
+                        <Eye className="h-4 w-4 text-ink/45" aria-hidden />
+                        <Trash2 className="h-4 w-4 text-ink/45" aria-hidden />
                       </div>
                     </div>
                   </div>
@@ -203,8 +203,8 @@ export function DashboardQueue({
                         role="row"
                         data-queue-row-id={queueRowDomId(row)}
                         className={cn(
-                          'flex items-center gap-3 border-b border-violet-100/50 px-4 py-2.5 transition-colors duration-200 last:border-b-0 hover:bg-white/65',
-                          rowIndex % 2 === 1 && 'bg-violet-50/30',
+                          'flex items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0 hover:bg-white/70',
+                          rowIndex % 2 === 1 && 'bg-violet-50/40',
                         )}
                       >
                         <div role="cell" className="min-w-0 flex-1">
@@ -216,18 +216,18 @@ export function DashboardQueue({
                           </p>
                         </div>
                         <div role="cell" className="flex shrink-0 items-center justify-end gap-3">
-                          <div className="flex w-[92px] shrink-0 justify-end">
-                            <Badge variant={getQueueStatusVariant(row.status)} size="xs">
+                          <div className="flex w-[100px] shrink-0 justify-end">
+                            <Badge variant={getQueueStatusVariant(row.status)} size="sm">
                               {row.status || 'Pending'}
                             </Badge>
                           </div>
                           <div
-                            className="w-[108px] shrink-0 truncate text-right text-xs tabular-nums text-muted"
+                            className="w-[110px] shrink-0 truncate text-right text-xs tabular-nums text-muted"
                             title={dateRaw || undefined}
                           >
                             {dateLabel}
                           </div>
-                          <div className="flex min-w-[108px] shrink-0 justify-end gap-1.5">
+                          <div className="flex min-w-[110px] shrink-0 justify-end gap-2">
                             {normalizedStatus === 'pending' ? (
                               <Button
                                 type="button"
@@ -298,7 +298,7 @@ export function DashboardQueue({
                               </Button>
                             ) : null}
                           </div>
-                          <div className="flex w-[76px] shrink-0 items-center justify-end gap-0.5">
+                          <div className="flex w-[80px] shrink-0 items-center justify-end gap-1">
                             {showPreview ? (
                               <Button
                                 type="button"
@@ -308,10 +308,10 @@ export function DashboardQueue({
                                 aria-label="Preview post"
                                 className={iconBtnMuted}
                               >
-                                <Eye className="h-3.5 w-3.5" />
+                                <Eye className="h-4 w-4" />
                               </Button>
                             ) : (
-                              <span className="inline-block h-9 w-9 shrink-0" aria-hidden />
+                              <span className="inline-block h-8 w-8 shrink-0" aria-hidden />
                             )}
                             <Button
                               type="button"
@@ -322,7 +322,7 @@ export function DashboardQueue({
                               aria-label="Delete topic"
                               className={iconBtn}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
