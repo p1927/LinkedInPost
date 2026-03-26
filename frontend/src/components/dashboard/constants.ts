@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, Target, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, ListTodo, type LucideIcon } from 'lucide-react';
 import { type DashboardTab, type QueueFilter } from './types';
 
 export const dashboardTabs: Array<{ value: DashboardTab; label: string; description: string; icon: LucideIcon }> = [
