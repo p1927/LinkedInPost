@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import datetime
+import re
 import requests
 from dotenv import load_dotenv
 load_dotenv()
@@ -351,6 +352,98 @@ def first_non_empty(*values):
     return ''
 
 
+def normalize_search_text(value):
+    return re.sub(r'\s+', ' ', value or '').strip()
+
+
+def derive_search_subject(topic):
+    subject = normalize_search_text(topic)
+    if not subject:
+        return ''
+
+    subject = re.sub(
+        r'\b\d+\s*(?:word|words|sentence|sentences|sentexteces|sentextece|line|lines|caption|captions)\b',
+        ' ',
+        subject,
+        flags=re.IGNORECASE,
+    )
+    subject = re.sub(r'\b(?:in|within|under)\s+\d+\s*words?\b', ' ', subject, flags=re.IGNORECASE)
+    subject = re.sub(r'\bwith\s+[^.?!,;]{0,120}?\bimages?\b.*$', ' ', subject, flags=re.IGNORECASE)
+    subject = re.sub(r'\bwith\s+[^.?!,;]{0,120}?\bpictures?\b.*$', ' ', subject, flags=re.IGNORECASE)
+    subject = normalize_search_text(subject)
+
+    lowered = subject.lower()
+    for separator in (' about ', ' on '):
+        index = lowered.find(separator)
+        if index > -1 and len(subject[:index].split()) <= 6:
+            subject = subject[index + len(separator):]
+            lowered = subject.lower()
+
+    subject = re.sub(
+        r'^(?:write|draft|create|generate|make|give|prepare|find|show)\s+',
+        '',
+        subject,
+        flags=re.IGNORECASE,
+    )
+    subject = re.sub(r'^(?:a|an|the)\s+', '', subject, flags=re.IGNORECASE)
+    subject = re.sub(r'^(?:topic|caption|captions|post|posts|sentence|sentences)\s+', '', subject, flags=re.IGNORECASE)
+    subject = re.sub(r'^(?:about|on)\s+', '', subject, flags=re.IGNORECASE)
+    subject = re.sub(r'\bfor\s+linkedin\b', ' ', subject, flags=re.IGNORECASE)
+    subject = normalize_search_text(subject.strip(' -:,.'))
+
+    return subject or normalize_search_text(topic)
+
+
+def build_vertex_search_queries(topic, image_search=False):
+    subject = derive_search_subject(topic)
+    candidates = []
+
+    def add_candidate(value):
+        normalized = normalize_search_text(value)
+        lowered = normalized.lower()
+        if normalized and lowered not in seen:
+            seen.add(lowered)
+            candidates.append(normalized)
+
+    seen = set()
+    add_candidate(subject)
+
+    if image_search:
+        add_candidate(f'{subject} image')
+        add_candidate(f'{subject} cartoon image')
+        add_candidate(f'{subject} characters')
+    else:
+        add_candidate(f'{subject} cartoon')
+        add_candidate(f'{subject} characters')
+        add_candidate(f'{subject} background')
+
+    add_candidate(topic)
+    return candidates
+
+
+def extract_vertex_summary_text(results):
+    summary = results.get('summary', {}) if isinstance(results, dict) else {}
+    if isinstance(summary, str):
+        return summary.strip()
+    if not isinstance(summary, dict):
+        return ''
+
+    candidates = [
+        summary.get('summaryText', ''),
+        summary.get('text', ''),
+        summary.get('summary', ''),
+    ]
+    summary_skipped = summary.get('summarySkippedReasons', [])
+    if isinstance(summary_skipped, list) and summary_skipped:
+        print(f'Vertex AI Search summary skipped reasons: {summary_skipped}')
+
+    for value in candidates:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+
+    return ''
+
+
 def extract_vertex_snippet(result):
     for candidate in extract_vertex_candidate_maps(result):
         snippet = first_non_empty(candidate.get('snippet', ''), candidate.get('htmlSnippet', ''))
@@ -428,23 +521,32 @@ def run_vertex_search(topic, page_size, image_search=False):
 # 1. RESEARCH & GENERATE (GEMINI)
 # ==========================================
 def fetch_web_research(topic, num_results=3):
-    research_text = ""
     print(f"Fetching web research for: {topic}")
 
-    try:
-        results = run_vertex_search(topic, num_results, image_search=False)
-        for item in results.get('results', []):
-            title, _link = extract_vertex_title_and_link(item)
-            snippet = extract_vertex_snippet(item)
-            if title or snippet:
-                research_text += f"- {title or 'Result'}: {snippet}\n"
+    for query in build_vertex_search_queries(topic, image_search=False):
+        try:
+            print(f"Trying Vertex AI Search research query: {query}")
+            results = run_vertex_search(query, num_results, image_search=False)
+            research_lines = []
+            for item in results.get('results', []):
+                title, _link = extract_vertex_title_and_link(item)
+                snippet = extract_vertex_snippet(item)
+                if title or snippet:
+                    research_lines.append(f"- {title or 'Result'}: {snippet}")
 
-        if not research_text:
-            print(f"No Vertex AI Search research items returned for topic '{topic}'. Response keys: {list(results.keys())}")
-    except Exception as e:
-        print(f"Error fetching Vertex AI Search web research: {e}")
-        
-    return research_text
+            if research_lines:
+                return '\n'.join(research_lines) + '\n'
+
+            summary_text = extract_vertex_summary_text(results)
+            if summary_text:
+                print(f"Using Vertex AI Search summary for '{query}' because no result items were returned.")
+                return f"- Summary: {summary_text}\n"
+
+            print(f"No Vertex AI Search research items returned for query '{query}'. Response keys: {list(results.keys())}")
+        except Exception as e:
+            print(f"Error fetching Vertex AI Search web research for query '{query}': {e}")
+
+    return ""
 
 def research_and_generate(topic, base_text='', refinement_instructions=''):
     """Uses LLM to write 4 variants of a LinkedIn post based on the topic."""
@@ -506,22 +608,28 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
 def fetch_images(topic, num_images=4):
     print(f"Searching for images on: {topic}")
 
-    try:
-        results = run_vertex_search(topic, num_images, image_search=True)
-    except Exception as e:
-        print(f"Vertex AI Search image request failed for '{topic}': {e}")
-        return []
-    
-    image_urls = []
-    if 'results' in results:
-        for index, item in enumerate(results['results'], start=1):
-            _title, image_url = extract_vertex_title_and_link(item)
-            image_urls.append(image_url)
-            print(f"Vertex AI Search image result {index} for '{topic}': {image_url}")
-    else:
-        print(f"No Vertex AI Search image items returned for '{topic}'. Raw response: {json.dumps(results)[:1000]}")
+    for query in build_vertex_search_queries(topic, image_search=True):
+        try:
+            print(f"Trying Vertex AI Search image query: {query}")
+            results = run_vertex_search(query, num_images, image_search=True)
+        except Exception as e:
+            print(f"Vertex AI Search image request failed for '{query}': {e}")
+            continue
 
-    return image_urls
+        image_urls = []
+        for item in results.get('results', []):
+            _title, image_url = extract_vertex_title_and_link(item)
+            if image_url:
+                image_urls.append(image_url)
+
+        if image_urls:
+            for index, image_url in enumerate(image_urls, start=1):
+                print(f"Vertex AI Search image result {index} for '{query}': {image_url}")
+            return image_urls[:num_images]
+
+        print(f"No Vertex AI Search image items returned for query '{query}'. Raw response: {json.dumps(results)[:1000]}")
+
+    return []
 
 def upload_image_to_drive(drive_service, image_url, topic, index):
     """Downloads an image from the web and uploads it to Google Drive."""
