@@ -7,7 +7,6 @@ import requests
 from dotenv import load_dotenv
 load_dotenv()
 import google.generativeai as genai
-from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -30,13 +29,8 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 # Search configuration
-VERTEX_AI_SEARCH_PROJECT_ID = os.environ.get('VERTEX_AI_SEARCH_PROJECT_ID', '').strip()
-VERTEX_AI_SEARCH_LOCATION = os.environ.get('VERTEX_AI_SEARCH_LOCATION', 'global').strip() or 'global'
-VERTEX_AI_SEARCH_ENGINE_ID = (
-    os.environ.get('VERTEX_AI_SEARCH_ENGINE_ID', '').strip()
-    or os.environ.get('VERTEX_AI_SEARCH_APP_ID', '').strip()
-)
-VERTEX_AI_SEARCH_SERVING_CONFIG = os.environ.get('VERTEX_AI_SEARCH_SERVING_CONFIG', '').strip()
+SERPAPI_API_KEY = os.environ.get('SERPAPI_API_KEY', '').strip()
+SERPAPI_BASE_URL = 'https://serpapi.com/search.json'
 DRAFT_MODE = os.environ.get('DRAFT_MODE', '').strip().lower()
 TARGET_TOPIC = os.environ.get('TARGET_TOPIC', '').strip()
 TARGET_DATE = os.environ.get('TARGET_DATE', '').strip()
@@ -59,7 +53,6 @@ PIPELINE_HEADERS = [
     'Image Link 1', 'Image Link 2', 'Image Link 3', 'Image Link 4',
     'Selected Text', 'Selected Image ID', 'Post Time',
 ]
-DISCOVERY_ENGINE_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
 
 
 def load_service_account_info():
@@ -70,33 +63,6 @@ def load_service_account_info():
     if isinstance(private_key, str) and '\\n' in private_key:
         service_account_info['private_key'] = private_key.replace('\\n', '\n')
     return service_account_info
-
-
-def get_vertex_ai_search_project_id():
-    if VERTEX_AI_SEARCH_PROJECT_ID:
-        return VERTEX_AI_SEARCH_PROJECT_ID
-    try:
-        return load_service_account_info().get('project_id', '').strip()
-    except Exception:
-        return ''
-
-
-def has_vertex_ai_search_config():
-    return bool(VERTEX_AI_SEARCH_SERVING_CONFIG or VERTEX_AI_SEARCH_ENGINE_ID)
-
-
-def get_vertex_serving_config():
-    if VERTEX_AI_SEARCH_SERVING_CONFIG:
-        return VERTEX_AI_SEARCH_SERVING_CONFIG
-
-    project_id = get_vertex_ai_search_project_id()
-    if not project_id or not VERTEX_AI_SEARCH_ENGINE_ID:
-        return ''
-
-    return (
-        f'projects/{project_id}/locations/{VERTEX_AI_SEARCH_LOCATION}/collections/default_collection/'
-        f'engines/{VERTEX_AI_SEARCH_ENGINE_ID}/servingConfigs/default_search'
-    )
 
 
 def validate_environment(action):
@@ -115,11 +81,8 @@ def validate_environment(action):
             name for name in ['GOOGLE_SHEET_ID', 'GOOGLE_DRIVE_FOLDER_ID', 'GOOGLE_CREDENTIALS_JSON', 'GEMINI_API_KEY']
             if not os.environ.get(name)
         ]
-
-        if not get_vertex_serving_config():
-            missing.append('VERTEX_AI_SEARCH_ENGINE_ID or VERTEX_AI_SEARCH_SERVING_CONFIG')
-        if not get_vertex_ai_search_project_id():
-            missing.append('VERTEX_AI_SEARCH_PROJECT_ID')
+        if not SERPAPI_API_KEY:
+            missing.append('SERPAPI_API_KEY')
     else:
         missing = [name for name in required.get(action, []) if not os.environ.get(name)]
 
@@ -244,105 +207,86 @@ def build_drive_preview_url(file_id):
     return f"https://drive.google.com/thumbnail?id={file_id}&sz=w1600"
 
 
-def extract_google_api_error(response):
+def extract_api_error(response):
     try:
         payload = response.json()
     except ValueError:
         return {
             'message': response.text[:1000],
             'status': response.status_code,
-            'reasons': [],
-            'api_status': '',
         }
 
-    error = payload.get('error', {})
-    errors = error.get('errors', [])
-    reasons = [entry.get('reason', '') for entry in errors if entry.get('reason')]
+    error = payload.get('error')
+    if isinstance(error, dict):
+        message = error.get('message', response.text[:1000])
+    elif isinstance(error, str):
+        message = error
+    else:
+        message = payload.get('message', response.text[:1000])
 
     return {
-        'message': error.get('message', response.text[:1000]),
-        'status': error.get('code', response.status_code),
-        'reasons': reasons,
-        'api_status': error.get('status', ''),
+        'message': message,
+        'status': response.status_code,
     }
 
 
-def get_vertex_search_fix_hints(status_code, message='', api_status=''):
+def get_serpapi_fix_hints(status_code, message=''):
     normalized_message = (message or '').lower()
-    normalized_status = (api_status or '').upper()
     hints = []
 
-    if status_code == 404:
-        hints.append('Verify VERTEX_AI_SEARCH_ENGINE_ID and VERTEX_AI_SEARCH_SERVING_CONFIG point to an existing Vertex AI Search app and serving config.')
+    if status_code in {401, 403} or 'api key' in normalized_message:
+        hints.append('Verify SERPAPI_API_KEY is valid and available to the runtime environment.')
 
-    if status_code == 403 or normalized_status in {'PERMISSION_DENIED', 'UNAUTHENTICATED'}:
-        hints.append('Ensure the Discovery Engine API is enabled and the service account from GOOGLE_CREDENTIALS_JSON can call Vertex AI Search.')
-        hints.append('Grant the service account a role that includes discoveryengine.servingConfigs.search on the Vertex AI Search app.')
+    if status_code == 429 or 'rate limit' in normalized_message:
+        hints.append('Check the SerpApi account quota and retry after the current rate-limit window resets.')
 
-    if 'failed_precondition' in normalized_status.lower() or 'public website search' in normalized_message:
-        hints.append('Vertex AI Search searchLite only supports public website search. For service-account auth, make sure the app is a website search app and the serving config is valid.')
-
-    if 'enterprise edition' in normalized_message:
-        hints.append('Enable Enterprise edition features for the Vertex AI Search website app before using text or image search results.')
-
-    if 'advanced website indexing' in normalized_message:
-        hints.append('Enable Advanced website indexing for the Vertex AI Search website app before using image search.')
+    if status_code >= 500:
+        hints.append('SerpApi returned a server-side error. Retry the request or inspect SerpApi status if the failure persists.')
 
     if not hints:
-        hints.append('Verify the Vertex AI Search app is a website search engine, the serving config path is correct, and the service account has Discovery Engine search permission.')
+        hints.append('Verify the query is valid, the SerpApi key is active, and the account still has search credits available.')
 
     return hints
 
 
-def log_vertex_search_failure(feature_name, topic, response):
-    details = extract_google_api_error(response)
+def log_serpapi_failure(feature_name, topic, response):
+    details = extract_api_error(response)
     message = details['message']
-    api_status = details.get('api_status', '')
-    print(f"Vertex AI Search {feature_name} request failed for topic '{topic}'.")
+    print(f"SerpApi {feature_name} request failed for topic '{topic}'.")
     print(f"- HTTP status: {details['status']}")
-    print(f"- Google message: {message}")
-    if api_status:
-        print(f"- Google status: {api_status}")
+    print(f"- API message: {message}")
 
     print('- Likely fixes:')
-    for hint in get_vertex_search_fix_hints(response.status_code, message=message, api_status=api_status):
+    for hint in get_serpapi_fix_hints(response.status_code, message=message):
         print(f"  * {hint}")
 
 
-def build_vertex_search_headers():
-    creds = Credentials.from_service_account_info(
-        load_service_account_info(),
-        scopes=[DISCOVERY_ENGINE_SCOPE],
-    )
-    creds.refresh(GoogleAuthRequest())
-    headers = {
-        'Authorization': f'Bearer {creds.token}',
-        'Content-Type': 'application/json',
+def run_serpapi_search(topic, num_results, image_search=False):
+    params = {
+        'api_key': SERPAPI_API_KEY,
+        'q': topic,
+        'num': max(1, num_results),
+        'safe': 'active',
+        'hl': 'en',
+        'no_cache': 'true',
     }
 
-    project_id = get_vertex_ai_search_project_id()
-    if project_id:
-        headers['X-Goog-User-Project'] = project_id
+    if image_search:
+        params['engine'] = 'google_images'
+    else:
+        params['engine'] = 'google'
 
-    return headers
+    response = requests.get(SERPAPI_BASE_URL, params=params, timeout=30)
+    if not response.ok:
+        log_serpapi_failure('image' if image_search else 'research', topic, response)
+        response.raise_for_status()
 
+    payload = response.json()
+    if payload.get('error'):
+        message = payload.get('error')
+        raise RuntimeError(f"SerpApi {'image' if image_search else 'research'} request failed for '{topic}': {message}")
 
-def build_vertex_search_url():
-    serving_config = get_vertex_serving_config()
-    if not serving_config:
-        raise ValueError('Missing Vertex AI Search serving config. Set VERTEX_AI_SEARCH_ENGINE_ID or VERTEX_AI_SEARCH_SERVING_CONFIG.')
-    return f'https://discoveryengine.googleapis.com/v1/{serving_config}:search', serving_config
-
-
-def extract_vertex_candidate_maps(result):
-    document = result.get('document', {}) if isinstance(result, dict) else {}
-    return [
-        result if isinstance(result, dict) else {},
-        document if isinstance(document, dict) else {},
-        document.get('derivedStructData', {}) if isinstance(document, dict) else {},
-        document.get('structData', {}) if isinstance(document, dict) else {},
-        document.get('jsonData', {}) if isinstance(document, dict) else {},
-    ]
+    return payload
 
 
 def first_non_empty(*values):
@@ -394,7 +338,7 @@ def derive_search_subject(topic):
     return subject or normalize_search_text(topic)
 
 
-def build_vertex_search_queries(topic, image_search=False):
+def build_search_queries(topic, image_search=False):
     subject = derive_search_subject(topic)
     candidates = []
 
@@ -419,29 +363,6 @@ def build_vertex_search_queries(topic, image_search=False):
 
     add_candidate(topic)
     return candidates
-
-
-def extract_vertex_summary_text(results):
-    summary = results.get('summary', {}) if isinstance(results, dict) else {}
-    if isinstance(summary, str):
-        return summary.strip()
-    if not isinstance(summary, dict):
-        return ''
-
-    candidates = [
-        summary.get('summaryText', ''),
-        summary.get('text', ''),
-        summary.get('summary', ''),
-    ]
-    summary_skipped = summary.get('summarySkippedReasons', [])
-    if isinstance(summary_skipped, list) and summary_skipped:
-        print(f'Vertex AI Search summary skipped reasons: {summary_skipped}')
-
-    for value in candidates:
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-
-    return ''
 
 
 def extract_requested_word_limit(*texts):
@@ -471,76 +392,65 @@ def extract_requested_word_limit(*texts):
     return None
 
 
-def extract_vertex_snippet(result):
-    for candidate in extract_vertex_candidate_maps(result):
-        snippet = first_non_empty(candidate.get('snippet', ''), candidate.get('htmlSnippet', ''))
-        if snippet:
-            return snippet
+def stringify_generated_variant(value):
+    if value is None:
+        return ''
 
-        snippets = candidate.get('snippets', [])
-        if isinstance(snippets, list):
-            for entry in snippets:
-                if isinstance(entry, dict):
-                    snippet = first_non_empty(entry.get('snippet', ''), entry.get('htmlSnippet', ''))
-                    if snippet:
-                        return snippet
+    if isinstance(value, str):
+        return value.strip()
 
-        extractive_answers = candidate.get('extractiveAnswers', [])
-        if isinstance(extractive_answers, list):
-            for entry in extractive_answers:
-                if isinstance(entry, dict):
-                    snippet = first_non_empty(entry.get('content', ''), entry.get('snippet', ''))
-                    if snippet:
-                        return snippet
+    if isinstance(value, list):
+        parts = [stringify_generated_variant(item) for item in value]
+        return '\n'.join(part for part in parts if part).strip()
 
-    return ''
+    if isinstance(value, dict):
+        post_text = stringify_generated_variant(
+            value.get('post')
+            or value.get('text')
+            or value.get('caption')
+            or value.get('body')
+            or value.get('content')
+        )
+        hashtags_value = value.get('hashtags') or value.get('tags') or []
+
+        if isinstance(hashtags_value, str):
+            hashtags = hashtags_value.strip()
+        elif isinstance(hashtags_value, list):
+            hashtags = ' '.join(
+                stringify_generated_variant(item)
+                for item in hashtags_value
+                if stringify_generated_variant(item)
+            ).strip()
+        else:
+            hashtags = ''
+
+        if post_text and hashtags:
+            return f'{post_text}\n\n{hashtags}'.strip()
+        if post_text:
+            return post_text
+        if hashtags:
+            return hashtags
+
+        parts = []
+        for key, item in value.items():
+            rendered = stringify_generated_variant(item)
+            if rendered:
+                parts.append(rendered)
+        return '\n'.join(parts).strip()
+
+    return str(value).strip()
 
 
-def extract_vertex_title_and_link(result):
-    title = ''
-    link = ''
-    for candidate in extract_vertex_candidate_maps(result):
-        if not title:
-            title = first_non_empty(candidate.get('title', ''), candidate.get('htmlTitle', ''))
-        if not link:
-            image = candidate.get('image', {})
-            link = first_non_empty(
-                candidate.get('link', ''),
-                candidate.get('uri', ''),
-                image.get('link', '') if isinstance(image, dict) else '',
-                image.get('contextLink', '') if isinstance(image, dict) else '',
-            )
-        if title and link:
-            break
-    return title, link
+def normalize_generated_variants(content):
+    if not isinstance(content, dict):
+        raise ValueError(f'Expected Gemini JSON object, received {type(content).__name__}.')
 
+    normalized = {}
+    for index in range(1, 5):
+        key = f'variant{index}'
+        normalized[key] = stringify_generated_variant(content.get(key, ''))
 
-def run_vertex_search(topic, page_size, image_search=False):
-    url, serving_config = build_vertex_search_url()
-    payload = {
-        'servingConfig': serving_config,
-        'query': topic,
-        'pageSize': page_size,
-        'safeSearch': True,
-        'userPseudoId': 'linkedin-bot',
-    }
-
-    if image_search:
-        payload['params'] = {
-            'search_type': 1,
-        }
-    else:
-        payload['contentSearchSpec'] = {
-            'snippetSpec': {
-                'returnSnippet': True,
-            }
-        }
-
-    response = requests.post(url, headers=build_vertex_search_headers(), json=payload, timeout=30)
-    if not response.ok:
-        log_vertex_search_failure('image' if image_search else 'research', topic, response)
-        response.raise_for_status()
-    return response.json()
+    return normalized
 
 
 # ==========================================
@@ -549,28 +459,33 @@ def run_vertex_search(topic, page_size, image_search=False):
 def fetch_web_research(topic, num_results=3):
     print(f"Fetching web research for: {topic}")
 
-    for query in build_vertex_search_queries(topic, image_search=False):
+    for query in build_search_queries(topic, image_search=False):
         try:
-            print(f"Trying Vertex AI Search research query: {query}")
-            results = run_vertex_search(query, num_results, image_search=False)
+            print(f"Trying SerpApi research query: {query}")
+            results = run_serpapi_search(query, num_results, image_search=False)
             research_lines = []
-            for item in results.get('results', []):
-                title, _link = extract_vertex_title_and_link(item)
-                snippet = extract_vertex_snippet(item)
-                if title or snippet:
-                    research_lines.append(f"- {title or 'Result'}: {snippet}")
+            for item in results.get('organic_results', []):
+                title = first_non_empty(item.get('title', ''))
+                snippet = first_non_empty(item.get('snippet', ''))
+                link = first_non_empty(item.get('link', ''))
+                if title or snippet or link:
+                    research_lines.append(f"- {title or link or 'Result'}: {snippet or link}")
 
             if research_lines:
                 return '\n'.join(research_lines) + '\n'
 
-            summary_text = extract_vertex_summary_text(results)
-            if summary_text:
-                print(f"Using Vertex AI Search summary for '{query}' because no result items were returned.")
-                return f"- Summary: {summary_text}\n"
+            answer_box = results.get('answer_box', {}) if isinstance(results, dict) else {}
+            answer_summary = first_non_empty(
+                answer_box.get('snippet', '') if isinstance(answer_box, dict) else '',
+                answer_box.get('answer', '') if isinstance(answer_box, dict) else '',
+            )
+            if answer_summary:
+                print(f"Using SerpApi answer box summary for '{query}' because no organic results were returned.")
+                return f"- Summary: {answer_summary}\n"
 
-            print(f"No Vertex AI Search research items returned for query '{query}'. Response keys: {list(results.keys())}")
+            print(f"No SerpApi research items returned for query '{query}'. Response keys: {list(results.keys())}")
         except Exception as e:
-            print(f"Error fetching Vertex AI Search web research for query '{query}': {e}")
+            print(f"Error fetching SerpApi web research for query '{query}': {e}")
 
     return ""
 
@@ -615,6 +530,7 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
     If a draft and refinement notes are provided, treat them as instructions to improve the post instead of starting from scratch.
     {word_limit_instruction}
     Do NOT include hashtags in the text block itself, but keep them at the end.
+    Every variant value must be a plain JSON string. Do not return nested JSON objects, arrays, or metadata for any variant.
     
     Output JSON format ONLY:
     {{
@@ -632,7 +548,7 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
     )
     
     content = json.loads(response.text)
-    return content
+    return normalize_generated_variants(content)
 
 # ==========================================
 # 2. IMAGE SEARCH & UPLOAD
@@ -640,26 +556,31 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
 def fetch_images(topic, num_images=4):
     print(f"Searching for images on: {topic}")
 
-    for query in build_vertex_search_queries(topic, image_search=True):
+    for query in build_search_queries(topic, image_search=True):
         try:
-            print(f"Trying Vertex AI Search image query: {query}")
-            results = run_vertex_search(query, num_images, image_search=True)
+            print(f"Trying SerpApi image query: {query}")
+            results = run_serpapi_search(query, num_images, image_search=True)
         except Exception as e:
-            print(f"Vertex AI Search image request failed for '{query}': {e}")
+            print(f"SerpApi image request failed for '{query}': {e}")
             continue
 
         image_urls = []
-        for item in results.get('results', []):
-            _title, image_url = extract_vertex_title_and_link(item)
+        seen_urls = set()
+        for item in results.get('images_results', []):
+            image_url = first_non_empty(item.get('original', ''), item.get('thumbnail', ''), item.get('link', ''))
             if image_url:
+                normalized = image_url.strip()
+                if normalized in seen_urls:
+                    continue
+                seen_urls.add(normalized)
                 image_urls.append(image_url)
 
         if image_urls:
             for index, image_url in enumerate(image_urls, start=1):
-                print(f"Vertex AI Search image result {index} for '{query}': {image_url}")
+                print(f"SerpApi image result {index} for '{query}': {image_url}")
             return image_urls[:num_images]
 
-        print(f"No Vertex AI Search image items returned for query '{query}'. Raw response: {json.dumps(results)[:1000]}")
+        print(f"No SerpApi image items returned for query '{query}'. Raw response: {json.dumps(results)[:1000]}")
 
     return []
 
