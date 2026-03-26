@@ -32,7 +32,11 @@ export function DashboardToolbar({
         <span className="text-[11px] leading-relaxed text-muted">
           Powers Quick Change and variant generation during review.
         </span>
-        <Select value={googleModel} onValueChange={(val) => setGoogleModel(val as string)}>
+        <Select
+          value={googleModel}
+          onValueChange={(val) => setGoogleModel(val as string)}
+          itemToStringLabel={(v) => availableModels.find((m) => m.value === v)?.label ?? String(v ?? '')}
+        >
           <SelectTrigger className="mt-1">
             <SelectValue placeholder="Select a model" />
           </SelectTrigger>

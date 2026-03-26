@@ -3,12 +3,10 @@ import { Badge } from '@/components/ui/badge';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel } from '../../../integrations/channels';
+import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel, type ChannelOption } from '../../../integrations/channels';
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';
 import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../../../integrations/linkedin';
-
-import { type ChannelOption } from '../../../integrations/channels';
 import { type DeliverySummary } from '../types';
 import { Button } from '@/components/ui/button';
 export function DashboardDelivery({
@@ -82,7 +80,11 @@ export function DashboardDelivery({
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70">Target</p>
-            <Select value={selectedChannel} onValueChange={(val) => setSelectedChannel(val as ChannelId)}>
+            <Select
+              value={selectedChannel}
+              onValueChange={(val) => setSelectedChannel(val as ChannelId)}
+              itemToStringLabel={(v) => getChannelLabel(v as ChannelId)}
+            >
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>
@@ -131,6 +133,10 @@ export function DashboardDelivery({
                     value={selectedRecipientId}
                     onValueChange={(val) => setSelectedRecipientId(val as string)}
                     disabled={activeRecipientOptions.length === 0}
+                    itemToStringLabel={(v) => {
+                      const r = activeRecipientOptions.find((opt) => opt.value === v);
+                      return r ? `${r.label} (${r.value})` : String(v ?? '');
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={`No saved ${selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet`} />

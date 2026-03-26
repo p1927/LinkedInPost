@@ -579,7 +579,17 @@ export function DashboardSettingsDrawer({
               {pendingWhatsAppOptions.length > 0 ? (
                 <div className="rounded-2xl border border-success-border bg-success-surface/80 p-4 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-success-ink/85">Choose a phone</p>
-                  <Select value={selectedWhatsAppPhoneId} onValueChange={(val) => setSelectedWhatsAppPhoneId(val as string)}>
+                  <Select
+                    value={selectedWhatsAppPhoneId}
+                    onValueChange={(val) => setSelectedWhatsAppPhoneId(val as string)}
+                    itemToStringLabel={(v) => {
+                      const o = pendingWhatsAppOptions.find((opt) => opt.phoneNumberId === v);
+                      if (!o) return String(v ?? '');
+                      const line = o.displayPhoneNumber || o.phoneNumberId;
+                      const name = o.verifiedName || o.businessAccountName;
+                      return name ? `${line} - ${name}` : line;
+                    }}
+                  >
                     <SelectTrigger className="mt-3 min-h-[44px] w-full rounded-xl border border-success-border bg-success-surface/90 px-3.5 py-3 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] focus:border-cta focus:ring-2 focus:ring-cta/30">
                       <SelectValue placeholder="Select a phone number" />
                     </SelectTrigger>
