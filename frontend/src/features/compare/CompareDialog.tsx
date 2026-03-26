@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useEffect } from 'react';
 import type { GenerationScope } from '../../services/backendApi';
 
 interface CompareDialogProps {
@@ -99,6 +100,17 @@ export function CompareDialog({
   onConfirm,
   onCancel,
 }: CompareDialogProps) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onCancel]);
+
   if (!open) {
     return null;
   }
@@ -107,11 +119,16 @@ export function CompareDialog({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-6xl rounded-[30px] border border-white/40 bg-white/95 shadow-2xl">
+      <div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="compare-dialog-title"
+        className="w-full max-w-6xl rounded-[30px] border border-white/40 bg-white/95 shadow-2xl"
+      >
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Compare before apply</p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">{title}</h3>
+            <h3 id="compare-dialog-title" className="mt-2 text-2xl font-semibold text-slate-900">{title}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {scope === 'selection'
                 ? 'Only the selected passage will change if you apply this preview.'

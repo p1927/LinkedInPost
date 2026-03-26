@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
-import { Dashboard } from './components/Dashboard'
+import { Dashboard } from './components/dashboard'
+import { AlertProvider } from './components/AlertProvider'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
@@ -22,6 +23,7 @@ function App() {
 
   useEffect(() => {
     if (!idToken) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSession(null)
       setLoading(false)
       return
@@ -64,7 +66,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex w-full flex-col bg-[#F8FAFC] text-slate-900 font-sans">
+    <AlertProvider>
+      <div className="min-h-screen flex w-full flex-col bg-[#F8FAFC] text-slate-900 font-sans">
       <header className="sticky top-0 inset-x-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-sm z-50 px-4 sm:px-6 py-3 lg:py-4">
         <div className="max-w-[1600px] mx-auto flex w-full items-center justify-between">
           <div className="flex items-center gap-3">
@@ -122,6 +125,7 @@ function App() {
         )}
       </main>
     </div>
+    </AlertProvider>
   )
 }
 

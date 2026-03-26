@@ -5,6 +5,7 @@ import { LinkedInPostPreview } from './LinkedInPostPreview';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { Dialog } from './Dialog';
 import { ImageAssetManager, type ImageAssetOption } from './ImageAssetManager';
+import { useAlert } from './AlertProvider';
 
 interface Props {
   row: SheetRow;
@@ -29,6 +30,7 @@ export function VariantSelection({
   onDownloadImage,
   onCancel,
 }: Props) {
+  const { showAlert } = useAlert();
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [expandedOptions, setExpandedOptions] = useState<number[]>([]);
   const [selectedImageUrl, setSelectedImageUrl] = useState('');
@@ -265,12 +267,12 @@ export function VariantSelection({
 
   const handleRefine = async () => {
     if (selectedOptionIndex === null) {
-      alert('Select a draft first, then refine it.');
+      void showAlert({ title: 'Notice', description: 'Select a draft first, then refine it.' });
       return;
     }
 
     if (!editableText.trim()) {
-      alert('Add or keep some draft text before asking Gemini to refine it.');
+      void showAlert({ title: 'Notice', description: 'Add or keep some draft text before asking Gemini to refine it.' });
       return;
     }
 
@@ -279,7 +281,7 @@ export function VariantSelection({
       await onRefine(editableText.trim(), refinementPrompt.trim());
     } catch (error) {
       console.error(error);
-      alert('Failed to request refined variants.');
+      void showAlert({ title: 'Error', description: 'Failed to request refined variants.' });
     } finally {
       setRefining(false);
     }
@@ -287,12 +289,12 @@ export function VariantSelection({
 
   const handleSubmit = async () => {
     if (selectedOptionIndex === null) {
-      alert('Please select one of the draft post previews.');
+      void showAlert({ title: 'Notice', description: 'Please select one of the draft post previews.' });
       return;
     }
 
     if (!editableText.trim()) {
-      alert('Post text cannot be empty.');
+      void showAlert({ title: 'Notice', description: 'Post text cannot be empty.' });
       return;
     }
 
@@ -316,7 +318,7 @@ export function VariantSelection({
       await onApprove(selectedText, selectedImageId, formattedTime);
     } catch (error) {
       console.error(error);
-      alert('Failed to approve variant.');
+      void showAlert({ title: 'Error', description: 'Failed to approve variant.' });
     } finally {
       setSubmitting(false);
     }

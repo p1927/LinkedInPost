@@ -2,6 +2,7 @@ import { CalendarClock, CheckCircle2, ChevronRight, FileText, ImageIcon, Layers3
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
+import { useAlert } from '../../components/AlertProvider';
 import { LinkedInPostPreview } from '../../components/LinkedInPostPreview';
 import { type SheetRow } from '../../services/sheets';
 import {
@@ -94,6 +95,7 @@ export function ReviewWorkspace({
   onDownloadImage,
   onCancel,
 }: ReviewWorkspaceProps) {
+  const { showAlert } = useAlert();
   const [sheetRow, setSheetRow] = useState(row);
   const [editorText, setEditorText] = useState(getInitialEditorText(row));
   const [editorBaselineText, setEditorBaselineText] = useState(getInitialEditorText(row));
@@ -194,12 +196,12 @@ export function ReviewWorkspace({
 
   const handleGenerateQuickChange = async () => {
     if (!editorText.trim()) {
-      alert('Add or keep some draft text before generating a quick change.');
+      void showAlert({ title: 'Notice', description: 'Add or keep some draft text before generating a quick change.' });
       return;
     }
 
     if (!instruction.trim()) {
-      alert('Add a per-run instruction before using Quick Change.');
+      void showAlert({ title: 'Notice', description: 'Add a per-run instruction before using Quick Change.' });
       return;
     }
 
@@ -214,7 +216,7 @@ export function ReviewWorkspace({
 
   const handleGenerateVariants = async () => {
     if (!editorText.trim()) {
-      alert('Add or keep some draft text before generating variants.');
+      void showAlert({ title: 'Notice', description: 'Add or keep some draft text before generating variants.' });
       return;
     }
 
@@ -313,7 +315,7 @@ export function ReviewWorkspace({
 
   const handleApprove = async () => {
     if (!editorText.trim()) {
-      alert('Post text cannot be empty.');
+      void showAlert({ title: 'Notice', description: 'Post text cannot be empty.' });
       return;
     }
 
@@ -577,7 +579,7 @@ export function ReviewWorkspace({
                         type="datetime-local"
                         value={postTime}
                         onChange={(event) => setPostTime(event.target.value)}
-                        className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                        className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/20"
                       />
                       <p className="mt-3 text-sm leading-6 text-slate-600">
                         Approval saves the current draft, selected image, and optional schedule. Preview variants stay separate until you save them.

@@ -10,6 +10,7 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
   useEffect(() => {
     const storedToken = localStorage.getItem(STORED_ID_TOKEN_KEY);
     if (storedToken) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIdToken(storedToken);
       onLogin(storedToken);
     }

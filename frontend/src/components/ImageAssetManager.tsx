@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Download, ImagePlus, LoaderCircle, RefreshCw, Upload } from 'lucide-react';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
+import { useAlert } from './AlertProvider';
 
 export interface ImageAssetOption {
   id: string;
@@ -52,6 +53,7 @@ export function ImageAssetManager({
   onUploadImage,
   onDownloadImage,
 }: Props) {
+  const { showAlert } = useAlert();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [fetching, setFetching] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -63,7 +65,7 @@ export function ImageAssetManager({
       await onFetchMoreImages();
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'Failed to fetch alternate images.');
+      void showAlert({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to fetch alternate images.' });
     } finally {
       setFetching(false);
     }
@@ -78,7 +80,7 @@ export function ImageAssetManager({
     }
 
     if (!file.type.toLowerCase().startsWith('image/')) {
-      alert('Choose an image file to upload.');
+      void showAlert({ title: 'Notice', description: 'Choose an image file to upload.' });
       return;
     }
 
@@ -87,7 +89,7 @@ export function ImageAssetManager({
       await onUploadImage(file);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'Failed to upload the image.');
+      void showAlert({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to upload the image.' });
     } finally {
       setUploading(false);
     }
@@ -99,7 +101,7 @@ export function ImageAssetManager({
       await onDownloadImage(option.imageUrl, buildDownloadName(topic, option));
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'Failed to download the image.');
+      void showAlert({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to download the image.' });
     } finally {
       setDownloadingId('');
     }

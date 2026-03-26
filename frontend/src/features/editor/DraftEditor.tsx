@@ -87,10 +87,10 @@ export function DraftEditor({
           {effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}
         </div>
         <details className="group relative">
-          <summary className="list-none cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">
+          <summary className="list-none cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20">
             Formatting actions
           </summary>
-          <div className="absolute right-0 z-10 mt-2 grid min-w-[220px] gap-2 rounded-[20px] border border-slate-200 bg-white p-3 shadow-xl">
+          <div className="absolute right-0 z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-[20px] border border-slate-200 bg-white p-3 shadow-xl sm:right-auto sm:left-0">
             {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -114,7 +114,7 @@ export function DraftEditor({
         onKeyUp={syncSelection}
         onMouseUp={syncSelection}
         spellCheck={false}
-        className="mt-5 min-h-[280px] w-full rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 text-base leading-7 text-slate-900 outline-none transition-colors focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-200"
+        className="mt-5 min-h-[280px] w-full rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 text-base leading-7 text-slate-900 outline-none transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/20"
         placeholder="Edit the draft here. Select a sentence to target only that part with Quick Change or 4 Variants."
       />
     </section>

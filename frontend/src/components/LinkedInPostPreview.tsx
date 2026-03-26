@@ -71,20 +71,28 @@ export function LinkedInPostPreview({
   const isCarousel = mode === 'carousel';
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadFailed(false);
   }, [resolvedImageUrl]);
 
   return (
-    <button
-      type="button"
+    <div
       onClick={onSelect}
-      aria-pressed={selected}
-      className={`group relative w-full text-left transition-all duration-300 outline-none ${
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      tabIndex={0}
+      role="region"
+      aria-label={`Preview draft ${optionNumber}`}
+      className={`group relative w-full text-left transition-all duration-300 outline-none cursor-pointer ${
         isCarousel ? 'h-full rounded-3xl p-3' : 'rounded-[32px] p-3 sm:p-4'
       } ${
         selected
           ? 'bg-white/80 border-2 border-primary shadow-xl ring-4 ring-primary/10'
-          : 'bg-white/40 border-2 border-white hover:bg-white/60 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1'
+          : 'bg-white/40 border-2 border-white hover:bg-white/60 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1 focus-visible:ring-4 focus-visible:ring-primary/20'
       }`}
     >
       <div className={`flex items-center justify-between gap-3 px-1 ${isCarousel ? 'mb-3' : 'mb-4'}`}>
@@ -211,6 +219,6 @@ export function LinkedInPostPreview({
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
