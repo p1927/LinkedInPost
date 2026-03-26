@@ -674,6 +674,14 @@ def upload_image_to_gcs(storage_bucket, image_url, topic, index):
         object_name = build_gcs_object_name(topic, index, mime_type)
         blob = storage_bucket.blob(object_name)
         blob.upload_from_string(response.content, content_type=mime_type)
+        try:
+            blob.make_public()
+        except Exception as error:
+            print(
+                'Uploaded image to GCS, but the object could not be made public automatically. '
+                'Frontend previews and channel delivery will fail until the bucket or object is publicly readable. '
+                f'Bucket={storage_bucket.name}, object={object_name}, error={error}'
+            )
         public_url = build_gcs_public_url(storage_bucket.name, object_name)
         print(
             f"Uploaded image {index} for '{topic}' to GCS. "

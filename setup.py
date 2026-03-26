@@ -244,6 +244,12 @@ def create_google_resources(shared_email: str) -> GoogleResources:
             sys.exit(1)
         bucket.reload()
         ok('Google Cloud Storage bucket', gcs_bucket_name)
+        public_access_prevention = str(getattr(bucket.iam_configuration, 'public_access_prevention', '') or '').strip().lower()
+        if public_access_prevention == 'enforced':
+            warn(
+                'Google Cloud Storage public access prevention',
+                'is enforced for this bucket. Frontend previews and direct channel fetches from storage.googleapis.com will fail unless you use a proxy or different bucket policy.',
+            )
         if not bucket.cors:
             warn(
                 'Google Cloud Storage bucket CORS',
