@@ -7,6 +7,7 @@ import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
 import { useDashboardQueue } from './hooks/useDashboardQueue';
 import { DashboardSettingsDrawer } from './components/DashboardSettingsDrawer';
+import { SettingsConnectionsCard } from './components/SettingsConnectionsCard';
 import { DashboardToolbar } from './components/DashboardToolbar';
 import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
@@ -301,9 +302,12 @@ export function Dashboard({
   if (workspacePage === 'settings' && session.isAdmin) {
     return (
       <div className="w-full pb-12">
-        <p className="mb-5 text-sm text-muted">Google Sheet, GitHub Actions, and channel connections.</p>
-        <div className="glass-panel mx-auto max-w-6xl rounded-2xl p-5 shadow-card sm:p-6">
-          {settingsContent}
+        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
+          <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
+          <SettingsConnectionsCard
+            health={publishingHealth}
+            className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md lg:sticky lg:top-4"
+          />
         </div>
 
         {queueHook.selectedRowForReview && (
