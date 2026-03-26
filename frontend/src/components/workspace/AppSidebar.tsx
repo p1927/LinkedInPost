@@ -171,7 +171,7 @@ export function AppSidebar({
                       <span
                         className={clsx(
                           'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                          ok ? 'bg-emerald-100 text-emerald-800' : 'bg-surface-muted text-muted',
+                          ok ? 'border border-success-border bg-success-surface text-success-ink' : 'bg-surface-muted text-muted',
                         )}
                       >
                         {ok ? 'Connected' : 'Not connected'}
@@ -195,7 +195,7 @@ export function AppSidebar({
                     title={`${label}: ${ok ? 'Connected' : 'Not connected'}`}
                     className={clsx(
                       'h-2.5 w-2.5 rounded-full border border-border',
-                      ok ? 'bg-emerald-500' : 'bg-border-strong',
+                      ok ? 'bg-cta' : 'bg-border-strong',
                     )}
                   />
                 ))}

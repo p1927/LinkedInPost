@@ -230,7 +230,7 @@ export function LinkedInPostPreview({
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[0.6rem] text-primary-fg ring-2 ring-surface z-20 shadow-sm">👍</span>
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[0.6rem] text-primary-fg ring-2 ring-surface z-10 shadow-sm">👏</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cta text-[0.6rem] text-success-fg ring-2 ring-surface z-10 shadow-sm">👏</span>
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[0.6rem] text-primary-fg ring-2 ring-surface z-0 shadow-sm">❤</span>
                 </div>
                 <span className="font-medium">{proof.reactions}</span>

@@ -369,10 +369,14 @@ export function ReviewWorkspace({
               <span className="rounded-full border border-border bg-canvas px-3 py-1 text-xs font-semibold text-muted">
                 Sheet variants: {sheetVariants.length}
               </span>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${editorDirty ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${editorDirty ? 'bg-amber-100 text-amber-900' : 'border border-success-border bg-success-surface text-success-ink'}`}
+              >
                 Draft: {editorDirty ? 'edited locally' : 'clean'}
               </span>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${previewReadyCount ? 'bg-orange-50 text-orange-900 ring-1 ring-orange-200' : 'border border-border bg-canvas text-muted'}`}>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${previewReadyCount ? 'border border-ai-border bg-ai-surface text-ai-ink ring-1 ring-ai-border' : 'border border-border bg-canvas text-muted'}`}
+              >
                 Previews: {previewReadyCount ? `${previewReadyCount} ready` : 'none'}
               </span>
             </div>

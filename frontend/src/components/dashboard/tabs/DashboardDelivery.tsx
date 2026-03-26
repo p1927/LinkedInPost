@@ -128,13 +128,13 @@ export function DashboardDelivery({
       </div>
 
       {lastDeliverySummary ? (
-        <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 p-4">
+        <div className="rounded-2xl border border-success-border/90 bg-success-surface/95 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Last delivery</p>
-            <span className="rounded-full border border-emerald-200 bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-success-ink">Last delivery</p>
+            <span className="rounded-full border border-success-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
               {getChannelLabel(lastDeliverySummary.channel)}
             </span>
-            <span className="rounded-full border border-emerald-200 bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
+            <span className="rounded-full border border-success-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
               {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
             </span>
           </div>

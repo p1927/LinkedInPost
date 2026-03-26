@@ -14,7 +14,7 @@ export function VariantPersistencePanel({
   onSave,
 }: VariantPersistencePanelProps) {
   const badgeClassName = saveState === 'saved'
-    ? 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/80'
+    ? 'border border-success-border bg-success-surface text-success-ink ring-1 ring-success-border/80'
     : saveState === 'error'
       ? 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80'
       : hasPreview

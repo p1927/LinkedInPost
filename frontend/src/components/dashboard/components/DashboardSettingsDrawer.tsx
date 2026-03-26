@@ -357,7 +357,7 @@ export function DashboardSettingsDrawer({
                             type="button"
                             onClick={() => void handleVerifyTelegramChat()}
                             disabled={verifyingTelegramChat}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
                             {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
@@ -373,7 +373,7 @@ export function DashboardSettingsDrawer({
                       </div>
                       <p className="mt-2 text-xs text-muted">Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.</p>
                       {telegramVerification ? (
-                        <div className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success' ? 'border-emerald-200 bg-emerald-50/80 text-emerald-800' : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}>
+                        <div className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success' ? 'border-success-border bg-success-surface/90 text-success-ink' : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}>
                           <p className="font-semibold">{telegramVerification.message}</p>
                           {telegramVerification.kind === 'success' && telegramVerification.result ? (
                             <p className="mt-1 text-xs opacity-80">
@@ -475,7 +475,7 @@ export function DashboardSettingsDrawer({
                           type="button"
                           onClick={() => void handleDisconnectChannel('whatsapp')}
                           disabled={channelActionBusy}
-                          className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
                         </button>
@@ -488,12 +488,12 @@ export function DashboardSettingsDrawer({
                     </p>
 
                     {pendingWhatsAppOptions.length > 0 ? (
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700/80">Choose a phone</p>
+                      <div className="rounded-2xl border border-success-border bg-success-surface/80 p-4 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-success-ink/85">Choose a phone</p>
                         <select
                           value={selectedWhatsAppPhoneId}
                           onChange={(e) => setSelectedWhatsAppPhoneId(e.target.value)}
-                          className="mt-3 w-full cursor-pointer rounded-xl border border-emerald-200 bg-surface px-4 py-3 text-sm text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+                          className="mt-3 w-full cursor-pointer rounded-xl border border-success-border bg-surface px-4 py-3 text-sm text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cta/35"
                         >
                           {pendingWhatsAppOptions.map((option) => (
                             <option key={option.phoneNumberId} value={option.phoneNumberId}>

@@ -77,7 +77,7 @@ function buildDiff(before: string, after: string): { beforeSegments: DiffSegment
 function renderSegments(segments: DiffSegment[]) {
   return segments.map((segment, index) => {
     const className = segment.status === 'added'
-      ? 'bg-emerald-100 text-emerald-900'
+      ? 'border border-success-border bg-success-surface text-success-ink'
       : segment.status === 'removed'
         ? 'bg-rose-100 text-rose-900 line-through'
         : '';
@@ -153,8 +153,8 @@ export function CompareDialog({
             </div>
           </section>
 
-          <section className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-900">Proposed target</p>
+          <section className="rounded-2xl border border-success-border/90 bg-success-surface/95 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-success-ink">Proposed target</p>
             <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-ink">
               {renderSegments(afterSegments)}
             </div>

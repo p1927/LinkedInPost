@@ -28,7 +28,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
         <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-lift">
           <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5 sm:px-8">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800">
+              <div className="inline-flex items-center gap-2 rounded-full border border-success-border bg-success-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-success-ink">
                 <Eye className="h-3.5 w-3.5" /> {previewLabel}
               </div>
               <h2 className="mt-3 font-heading text-xl font-semibold text-ink">{row.topic}</h2>
@@ -67,7 +67,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                 <div className="mt-5 grid gap-4">
                   <div className="rounded-2xl border border-border bg-canvas px-4 py-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Status</p>
-                    <p className="mt-2 text-sm font-semibold text-emerald-800">{statusLabel}</p>
+                    <p className="mt-2 text-sm font-semibold text-success-ink">{statusLabel}</p>
                   </div>
 
                   <div className="rounded-2xl border border-border bg-canvas px-4 py-4">

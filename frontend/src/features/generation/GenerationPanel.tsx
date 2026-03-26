@@ -48,7 +48,7 @@ export function GenerationPanel({
           type="button"
           onClick={onGenerateQuickChange}
           disabled={loadingAction !== null}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-900 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-ai-border bg-ai-surface px-4 py-3 text-sm font-semibold text-ai-ink transition-colors duration-200 hover:bg-cyan-100/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <WandSparkles className="h-4 w-4" />
           {loadingAction === 'quick-change' ? 'Generating quick preview...' : 'Quick Change'}
@@ -65,10 +65,10 @@ export function GenerationPanel({
       </div>
 
       {quickChangePreview ? (
-        <div className="mt-5 rounded-xl border border-orange-200/80 bg-orange-50/80 p-4">
+        <div className="mt-5 rounded-xl border border-ai-border/90 bg-ai-surface/90 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-900">Quick Change preview</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ai-ink">Quick Change preview</p>
               <p className="mt-2 line-clamp-6 text-sm leading-6 text-ink">{quickChangePreview.replacementText}</p>
             </div>
             <button

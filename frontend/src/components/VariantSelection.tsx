@@ -444,7 +444,7 @@ export function VariantSelection({
                       <h4 className="text-sm font-semibold">Improve this draft</h4>
                     </div>
                     {selectedOptionIndex !== null ? (
-                      <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-900">
+                      <span className="rounded-full border border-ai-border bg-ai-surface px-3 py-1 text-xs font-semibold text-ai-ink">
                         Draft {selectedOptionIndex + 1}
                       </span>
                     ) : null}
@@ -476,7 +476,7 @@ export function VariantSelection({
                     onClick={handleRefine}
                     type="button"
                     disabled={refining || submitting || selectedOptionIndex === null}
-                    className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-900 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-ai-border bg-ai-surface px-4 py-3 text-sm font-semibold text-ai-ink transition-colors duration-200 hover:bg-cyan-100/80 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {refining ? 'Requesting 4 refined variants...' : 'Generate 4 improved variants'}
                   </button>
