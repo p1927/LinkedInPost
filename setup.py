@@ -47,6 +47,7 @@ from setup_worker import (
     normalize_space_delimited,
     pick_verification_origin,
     print_bootstrap_summary,
+    read_worker_dev_var,
     read_existing_kv_ids,
     update_wrangler_config,
 )
@@ -414,6 +415,7 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
     admin_emails = normalize_space_delimited(args.admin_emails or args.share_email)
     google_client_id = args.google_client_id
     encryption_key = load_worker_encryption_key(WORKER_DEV_VARS, generate_encryption_key)
+    scheduler_secret = os.environ.get('WORKER_SCHEDULER_SECRET', '').strip() or read_worker_dev_var(WORKER_DEV_VARS, 'WORKER_SCHEDULER_SECRET') or generate_encryption_key()
 
     if not allowed_emails:
         warn('ALLOWED_EMAILS', 'not provided. Worker access control must be set before deployment.')
@@ -430,6 +432,7 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
             f'http://localhost:5173 {github_pages_origin}'.strip()
         ),
         encryption_key=encryption_key,
+        scheduler_secret=scheduler_secret,
         github_repo=github_repo,
         instagram_app_id=args.instagram_app_id,
         instagram_app_secret=args.instagram_app_secret,
@@ -679,6 +682,7 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: Goo
     secrets_to_sync: dict[str, str] = {
         'VITE_GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
         'VITE_WORKER_URL': worker_url,
+        'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
         'GOOGLE_CREDENTIALS_JSON': google_resources.credentials_json if google_resources else os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip(),
         'GOOGLE_SHEET_ID': google_resources.sheet_id if google_resources else os.environ.get('GOOGLE_SHEET_ID', '').strip(),
         'GOOGLE_CLOUD_STORAGE_BUCKET': os.environ.get('GOOGLE_CLOUD_STORAGE_BUCKET', '').strip(),

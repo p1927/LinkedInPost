@@ -46,6 +46,14 @@ export interface TelegramChatVerificationResult {
   type: string;
 }
 
+export interface DraftImageListResult {
+  imageUrls: string[];
+}
+
+export interface DraftImageUploadResult {
+  imageUrl: string;
+}
+
 interface ApiEnvelope<T> {
   ok: boolean;
   data?: T;
@@ -117,6 +125,41 @@ export class BackendApi {
     }
 
     return parsed.data;
+  }
+
+  private async postForBlob(action: string, idToken: string, payload: Record<string, unknown> = {}): Promise<Blob> {
+    if (!this.endpointUrl) {
+      throw new Error('Missing VITE_WORKER_URL. Add your deployed Cloudflare Worker URL to the frontend environment.');
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(this.endpointUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          idToken,
+          payload,
+        }),
+      });
+    } catch {
+      throw new Error(formatBackendConnectionError(this.endpointUrl));
+    }
+
+    if (!response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const parsed = (await response.json()) as ApiEnvelope<never>;
+        throw new Error(parsed.error || `Request failed with status ${response.status}.`);
+      }
+
+      throw new Error((await response.text()) || `Request failed with status ${response.status}.`);
+    }
+
+    return response.blob();
   }
 
   async bootstrap(idToken: string): Promise<AppSession> {
@@ -192,6 +235,30 @@ export class BackendApi {
     });
   }
 
+  async fetchDraftImages(idToken: string, topic: string, count = 4): Promise<DraftImageListResult> {
+    return this.post<DraftImageListResult>('fetchDraftImages', idToken, {
+      topic,
+      count,
+    });
+  }
+
+  async uploadDraftImage(idToken: string, topic: string, file: File): Promise<DraftImageUploadResult> {
+    const dataUrl = await readFileAsDataUrl(file);
+    return this.post<DraftImageUploadResult>('uploadDraftImage', idToken, {
+      topic,
+      fileName: file.name,
+      contentType: file.type,
+      dataUrl,
+    });
+  }
+
+  async downloadDraftImage(idToken: string, imageUrl: string, fileName: string): Promise<Blob> {
+    return this.postForBlob('downloadDraftImage', idToken, {
+      url: imageUrl,
+      fileName,
+    });
+  }
+
   async triggerGithubAction(
     idToken: string,
     action: 'draft' | 'publish' | 'refine',
@@ -208,4 +275,20 @@ export class BackendApi {
   async publishContent(idToken: string, request: PublishContentRequest): Promise<PublishContentResult> {
     return this.post<PublishContentResult>('publishContent', idToken, { ...request });
   }
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name || 'the selected file'}.`));
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        reject(new Error(`Failed to read ${file.name || 'the selected file'}.`));
+        return;
+      }
+
+      resolve(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
 }

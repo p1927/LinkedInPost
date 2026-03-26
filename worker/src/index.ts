@@ -1,15 +1,21 @@
 import { publishInstagramPost } from './integrations/instagram';
 import { publishLinkedInPost } from './integrations/linkedin';
+import { fetchImageAsset, normalizeDeliveryImageUrl } from './integrations/media';
 import { sendTelegramMessage, verifyTelegramChat as verifyTelegramChatRequest } from './integrations/telegram';
 import { sendWhatsAppMessage } from './integrations/whatsapp';
+import { buildScheduledPublishTaskName } from './scheduler/time';
+import type { ScheduledLinkedInPublishTask } from './scheduler/types';
+
+export { ScheduledPublishAlarm } from './scheduler/ScheduledPublishAlarm';
 
 type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
 
 type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp';
 type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp';
 
-interface Env {
+export interface Env {
   CONFIG_KV: KVNamespace;
+  SCHEDULED_LINKEDIN_PUBLISH: DurableObjectNamespace;
   ALLOWED_EMAILS: string;
   ADMIN_EMAILS?: string;
   GOOGLE_CLIENT_ID?: string;
@@ -17,6 +23,7 @@ interface Env {
   GOOGLE_CLOUD_STORAGE_BUCKET?: string;
   DELETE_UNUSED_GENERATED_IMAGES?: string;
   GEMINI_API_KEY?: string;
+  SERPAPI_API_KEY?: string;
   GITHUB_TOKEN_ENCRYPTION_KEY?: string;
   CORS_ALLOWED_ORIGINS?: string;
   INSTAGRAM_APP_ID?: string;
@@ -31,6 +38,7 @@ interface Env {
   TELEGRAM_BOT_TOKEN?: string;
   META_APP_ID?: string;
   META_APP_SECRET?: string;
+  WORKER_SCHEDULER_SECRET?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WHATSAPP_ACCESS_TOKEN?: string;
 }
@@ -281,6 +289,25 @@ interface GoogleModelOption {
   label: string;
 }
 
+interface DraftImageListResult {
+  imageUrls: string[];
+}
+
+interface DraftImageUploadResult {
+  imageUrl: string;
+}
+
+interface SerpApiImageResult {
+  original?: string;
+  thumbnail?: string;
+  link?: string;
+}
+
+interface SerpApiSearchResponse {
+  images_results?: SerpApiImageResult[];
+  error?: string;
+}
+
 interface GeminiModelsResponse {
   models?: Array<{
     name?: string;
@@ -379,6 +406,10 @@ export default {
       return jsonResponse({ ok: false, error: 'Method not allowed.' }, 405, corsHeaders);
     }
 
+    if (url.pathname === '/internal/schedule-linkedin-publish') {
+      return handleScheduledLinkedInPublishRequest(request, env);
+    }
+
     try {
       const { action, idToken, payload } = await parseRequest(request);
       if (!action) {
@@ -386,6 +417,11 @@ export default {
       }
 
       const session = await verifySession(idToken, env);
+      if (action === 'downloadDraftImage') {
+        const response = await downloadDraftImage(payload ?? {});
+        return withCorsHeaders(response, corsHeaders);
+      }
+
       const storedConfig = await loadStoredConfig(env);
       const sheets = new SheetsGateway(env);
       const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, request);
@@ -396,6 +432,47 @@ export default {
     }
   },
 } satisfies ExportedHandler<Env>;
+
+async function handleScheduledLinkedInPublishRequest(request: Request, env: Env): Promise<Response> {
+  const providedSecret = String(request.headers.get('X-Scheduler-Secret') || '').trim();
+  const expectedSecret = String(env.WORKER_SCHEDULER_SECRET || '').trim();
+  if (!expectedSecret || providedSecret !== expectedSecret) {
+    return Response.json({ ok: false, error: 'Unauthorized scheduler request.' }, { status: 401 });
+  }
+
+  const config = await loadStoredConfig(env);
+  ensureSpreadsheetConfigured(config);
+  if (!config.linkedinPersonUrn || (!config.linkedinAccessTokenCiphertext && !config.linkedinAccessToken)) {
+    return Response.json({ ok: false, error: 'LinkedIn publishing is not configured in the Worker.' }, { status: 400 });
+  }
+
+  const payload = await request.json<ScheduledLinkedInPublishTask>();
+  const topic = String(payload.topic || '').trim();
+  const date = String(payload.date || '').trim();
+  const scheduledTime = String(payload.scheduledTime || '').trim();
+
+  if (!topic || !date || !scheduledTime) {
+    return Response.json({ ok: false, error: 'Missing scheduling payload.' }, { status: 400 });
+  }
+
+  const durableObjectId = env.SCHEDULED_LINKEDIN_PUBLISH.idFromName(buildScheduledPublishTaskName(topic, date));
+  const durableObjectStub = env.SCHEDULED_LINKEDIN_PUBLISH.get(durableObjectId);
+  const response = await durableObjectStub.fetch('https://scheduler/arm', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ topic, date, scheduledTime } satisfies ScheduledLinkedInPublishTask),
+  });
+
+  const body = await response.text();
+  return new Response(body, {
+    status: response.status,
+    headers: {
+      'Content-Type': response.headers.get('Content-Type') || 'application/json',
+    },
+  });
+}
 
 async function dispatchAction(
   action: string,
@@ -452,6 +529,10 @@ async function dispatchAction(
     case 'verifyTelegramChat':
       ensureAdmin(session);
       return verifyTelegramChat(env, storedConfig, payload);
+    case 'fetchDraftImages':
+      return fetchDraftImages(env, payload);
+    case 'uploadDraftImage':
+      return uploadDraftImage(env, payload);
     case 'triggerGithubAction':
       return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
@@ -1419,6 +1500,42 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
   return { success: true };
 }
 
+export async function executeScheduledLinkedInPublish(env: Env, task: ScheduledLinkedInPublishTask): Promise<void> {
+  const config = await loadStoredConfig(env);
+  ensureSpreadsheetConfigured(config);
+
+  const sheets = new SheetsGateway(env);
+  const row = await sheets.getRowByTopicDate(config.spreadsheetId, task.topic, task.date);
+  if (!row) {
+    return;
+  }
+
+  const normalizedStatus = String(row.status || '').trim().toLowerCase();
+  if (normalizedStatus === 'published' || normalizedStatus !== 'approved') {
+    return;
+  }
+
+  if (String(row.postTime || '').trim() !== task.scheduledTime.trim()) {
+    return;
+  }
+
+  if (!String(row.selectedText || '').trim()) {
+    return;
+  }
+
+  await publishContent(
+    env,
+    config,
+    {
+      row,
+      channel: 'linkedin',
+      message: row.selectedText,
+      imageUrl: row.selectedImageId,
+    },
+    sheets,
+  );
+}
+
 async function publishContent(
   env: Env,
   config: StoredConfig,
@@ -1860,6 +1977,333 @@ function formatGoogleModelLabel(modelName: string): string {
     .replace(/\bTts\b/g, 'TTS');
 }
 
+function firstNonEmpty(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return '';
+}
+
+function normalizeSearchText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function deriveSearchSubject(topic: string): string {
+  let subject = normalizeSearchText(topic);
+  if (!subject) {
+    return '';
+  }
+
+  subject = subject
+    .replace(/\b\d+\s*(?:word|words|sentence|sentences|line|lines|caption|captions)\b/gi, ' ')
+    .replace(/\b(?:in|within|under)\s+\d+\s*words?\b/gi, ' ')
+    .replace(/\bwith\s+[^.?!,;]{0,120}?\bimages?\b.*$/gi, ' ')
+    .replace(/\bwith\s+[^.?!,;]{0,120}?\bpictures?\b.*$/gi, ' ');
+  subject = normalizeSearchText(subject);
+
+  const lowered = subject.toLowerCase();
+  for (const separator of [' about ', ' on ']) {
+    const index = lowered.indexOf(separator);
+    if (index > -1 && subject.slice(0, index).trim().split(/\s+/).length <= 6) {
+      subject = subject.slice(index + separator.length);
+      break;
+    }
+  }
+
+  subject = subject
+    .replace(/^(?:write|draft|create|generate|make|give|prepare|find|show)\s+/i, '')
+    .replace(/^(?:a|an|the)\s+/i, '')
+    .replace(/^(?:topic|caption|captions|post|posts|sentence|sentences)\s+/i, '')
+    .replace(/^(?:about|on)\s+/i, '')
+    .replace(/\bfor\s+linkedin\b/gi, ' ');
+
+  return normalizeSearchText(subject.replace(/^[\s\-:,.]+|[\s\-:,.]+$/g, '')) || normalizeSearchText(topic);
+}
+
+function buildSearchQueries(topic: string, imageSearch = false): string[] {
+  const subject = deriveSearchSubject(topic);
+  const queries: string[] = [];
+  const seen = new Set<string>();
+
+  const addQuery = (value: string) => {
+    const normalized = normalizeSearchText(value);
+    const key = normalized.toLowerCase();
+    if (!normalized || seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    queries.push(normalized);
+  };
+
+  addQuery(subject);
+  if (imageSearch) {
+    addQuery(`${subject} image`);
+    addQuery(`${subject} cartoon image`);
+    addQuery(`${subject} characters`);
+  } else {
+    addQuery(`${subject} cartoon`);
+    addQuery(`${subject} characters`);
+    addQuery(`${subject} background`);
+  }
+  addQuery(topic);
+
+  return queries;
+}
+
+function requireSerpApiKey(env: Env): string {
+  const apiKey = String(env.SERPAPI_API_KEY || '').trim();
+  if (!apiKey) {
+    throw new Error('Missing SERPAPI_API_KEY in the Worker environment. Add it before requesting alternate images.');
+  }
+
+  return apiKey;
+}
+
+function requireStorageBucket(env: Env): string {
+  const bucketName = String(env.GOOGLE_CLOUD_STORAGE_BUCKET || '').trim();
+  if (!bucketName) {
+    throw new Error('Missing GOOGLE_CLOUD_STORAGE_BUCKET in the Worker environment. Add it before uploading or refreshing images.');
+  }
+
+  return bucketName;
+}
+
+async function runSerpApiSearch(env: Env, query: string, numResults: number, imageSearch = false): Promise<SerpApiSearchResponse> {
+  const apiKey = requireSerpApiKey(env);
+  const params = new URLSearchParams({
+    api_key: apiKey,
+    q: query,
+    num: String(Math.max(1, numResults)),
+    safe: 'active',
+    hl: 'en',
+    no_cache: 'true',
+    engine: imageSearch ? 'google_images' : 'google',
+  });
+
+  const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`);
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`SerpApi image search failed with status ${response.status}. Verify SERPAPI_API_KEY and available credits. ${message.slice(0, 240)}`.trim());
+  }
+
+  const payload = (await response.json()) as SerpApiSearchResponse;
+  if (payload.error) {
+    throw new Error(`SerpApi image search failed: ${payload.error}`);
+  }
+
+  return payload;
+}
+
+async function fetchCandidateImageUrls(env: Env, topic: string, count: number): Promise<string[]> {
+  for (const query of buildSearchQueries(topic, true)) {
+    const payload = await runSerpApiSearch(env, query, Math.max(count * 3, count), true);
+    const urls: string[] = [];
+    const seen = new Set<string>();
+
+    for (const item of payload.images_results || []) {
+      const candidate = firstNonEmpty(item.original, item.thumbnail, item.link);
+      if (!candidate || seen.has(candidate)) {
+        continue;
+      }
+
+      seen.add(candidate);
+      urls.push(candidate);
+    }
+
+    if (urls.length > 0) {
+      return urls;
+    }
+  }
+
+  return [];
+}
+
+function guessFileExtension(contentType: string, fileName = ''): string {
+  const normalizedType = contentType.toLowerCase();
+  if (normalizedType.includes('png')) {
+    return '.png';
+  }
+  if (normalizedType.includes('webp')) {
+    return '.webp';
+  }
+  if (normalizedType.includes('gif')) {
+    return '.gif';
+  }
+  if (normalizedType.includes('svg')) {
+    return '.svg';
+  }
+  if (normalizedType.includes('jpeg') || normalizedType.includes('jpg')) {
+    return '.jpg';
+  }
+
+  const explicitExtension = fileName.match(/\.[a-zA-Z0-9]+$/)?.[0]?.toLowerCase();
+  return explicitExtension || '.jpg';
+}
+
+function slugifyTopic(topic: string): string {
+  return topic
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'image';
+}
+
+function buildPublicGcsUrl(bucketName: string, objectName: string): string {
+  const encodedPath = objectName
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `https://storage.googleapis.com/${bucketName}/${encodedPath}`;
+}
+
+function buildDraftImageObjectName(topic: string, ordinal: number, contentType: string, fileName = ''): string {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, '');
+  const random = crypto.randomUUID().split('-')[0];
+  const extension = guessFileExtension(contentType, fileName);
+  return `${slugifyTopic(topic)}-${timestamp}-${random}-${ordinal}${extension}`;
+}
+
+async function uploadBytesToGcs(
+  env: Env,
+  topic: string,
+  ordinal: number,
+  bytes: ArrayBuffer,
+  contentType: string,
+  fileName = '',
+): Promise<string> {
+  const bucketName = requireStorageBucket(env);
+  const objectName = buildDraftImageObjectName(topic, ordinal, contentType, fileName);
+  const accessToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  const response = await fetch(
+    `https://storage.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucketName)}/o?uploadType=media&name=${encodeURIComponent(objectName)}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': contentType,
+      },
+      body: bytes,
+    },
+  );
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Google Cloud Storage upload failed: ${message || response.status}`);
+  }
+
+  return buildPublicGcsUrl(bucketName, objectName);
+}
+
+function decodeDataUrl(dataUrl: string): { bytes: ArrayBuffer; contentType: string } {
+  const match = dataUrl.match(/^data:([^;,]+);base64,(.+)$/);
+  if (!match) {
+    throw new Error('Invalid uploaded image payload.');
+  }
+
+  const contentType = match[1]?.trim() || 'image/jpeg';
+  const bytes = Uint8Array.from(atob(match[2] || ''), (character) => character.charCodeAt(0));
+  return {
+    bytes: bytes.buffer,
+    contentType,
+  };
+}
+
+async function fetchDraftImages(env: Env, payload: Record<string, unknown>): Promise<DraftImageListResult> {
+  const topic = String(payload.topic || '').trim();
+  const requestedCount = Number(payload.count || 4);
+  const count = Number.isFinite(requestedCount) ? Math.min(6, Math.max(1, Math.trunc(requestedCount))) : 4;
+
+  if (!topic) {
+    throw new Error('Topic is required to fetch alternate images.');
+  }
+
+  const candidates = await fetchCandidateImageUrls(env, topic, count);
+  if (candidates.length === 0) {
+    throw new Error(`No alternate images were found for "${topic}".`);
+  }
+
+  const uploadedUrls: string[] = [];
+  for (const candidate of candidates) {
+    if (uploadedUrls.length >= count) {
+      break;
+    }
+
+    try {
+      const asset = await fetchImageAsset(candidate);
+      const uploadedUrl = await uploadBytesToGcs(env, topic, uploadedUrls.length + 1, asset.bytes, asset.contentType);
+      uploadedUrls.push(uploadedUrl);
+    } catch (error) {
+      console.warn('Skipping alternate image candidate', {
+        topic,
+        candidate,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  if (uploadedUrls.length === 0) {
+    throw new Error(`Alternate images were found for "${topic}", but none could be prepared for preview.`);
+  }
+
+  return { imageUrls: uploadedUrls };
+}
+
+async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Promise<DraftImageUploadResult> {
+  const topic = String(payload.topic || '').trim();
+  const fileName = String(payload.fileName || '').trim();
+  const fallbackContentType = String(payload.contentType || '').trim() || 'image/jpeg';
+  const dataUrl = String(payload.dataUrl || '').trim();
+
+  if (!topic) {
+    throw new Error('Topic is required to upload an image.');
+  }
+
+  if (!dataUrl) {
+    throw new Error('Missing uploaded image payload.');
+  }
+
+  const decoded = decodeDataUrl(dataUrl);
+  const contentType = decoded.contentType || fallbackContentType;
+  if (!contentType.toLowerCase().startsWith('image/')) {
+    throw new Error('Only image uploads are supported.');
+  }
+
+  const imageUrl = await uploadBytesToGcs(env, topic, 1, decoded.bytes, contentType, fileName);
+  return { imageUrl };
+}
+
+function sanitizeDownloadFileName(fileName: string, contentType: string): string {
+  const cleaned = fileName.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+  if (cleaned) {
+    return cleaned;
+  }
+
+  return `linkedin-post-image${guessFileExtension(contentType, fileName)}`;
+}
+
+async function downloadDraftImage(payload: Record<string, unknown>): Promise<Response> {
+  const rawUrl = String(payload.url || '').trim();
+  const suggestedFileName = String(payload.fileName || '').trim();
+
+  if (!rawUrl) {
+    throw new Error('Image URL is required to download an image.');
+  }
+
+  const asset = await fetchImageAsset(normalizeDeliveryImageUrl(rawUrl));
+  const fileName = sanitizeDownloadFileName(suggestedFileName, asset.contentType);
+  return new Response(asset.bytes, {
+    status: 200,
+    headers: {
+      'Content-Type': asset.contentType,
+      'Content-Disposition': `attachment; filename="${fileName}"`,
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
 class SheetsGateway {
   private env: Env;
   private accessTokenPromise: Promise<string> | null = null;
@@ -1893,6 +2337,12 @@ class SheetsGateway {
       .filter((row) => row.topic.trim());
 
     return this.mergeRows(topics, drafts, posts);
+  }
+
+  async getRowByTopicDate(spreadsheetId: string, topic: string, date: string): Promise<SheetRow | null> {
+    const rows = await this.getRows(spreadsheetId);
+    const targetKey = buildTopicKey(topic, date);
+    return rows.find((row) => buildTopicKey(row.topic, row.date) === targetKey) || null;
   }
 
   async addTopic(spreadsheetId: string, topic: string): Promise<{ success: true }> {
@@ -2318,6 +2768,19 @@ function jsonResponse<T>(payload: ApiEnvelope<T>, status: number, corsHeaders: H
   const headers = new Headers(corsHeaders);
   headers.set('Content-Type', 'application/json');
   return new Response(JSON.stringify(payload), { status, headers });
+}
+
+function withCorsHeaders(response: Response, corsHeaders: Headers): Response {
+  const headers = new Headers(response.headers);
+  corsHeaders.forEach((value, key) => {
+    headers.set(key, value);
+  });
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 async function encryptSecret(plaintext: string, base64Key: string): Promise<string> {

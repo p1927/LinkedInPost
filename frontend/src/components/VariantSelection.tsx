@@ -4,11 +4,15 @@ import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { Dialog } from './Dialog';
+import { ImageAssetManager, type ImageAssetOption } from './ImageAssetManager';
 
 interface Props {
   row: SheetRow;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string) => Promise<void>;
   onRefine: (baseText: string, instructions: string) => Promise<void>;
+  onFetchMoreImages: () => Promise<string[]>;
+  onUploadImage: (file: File) => Promise<string>;
+  onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -16,16 +20,26 @@ type PendingAction =
   | { type: 'close' }
   | { type: 'select'; nextIndex: number };
 
-export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) {
+export function VariantSelection({
+  row,
+  onApprove,
+  onRefine,
+  onFetchMoreImages,
+  onUploadImage,
+  onDownloadImage,
+  onCancel,
+}: Props) {
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [expandedOptions, setExpandedOptions] = useState<number[]>([]);
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState('');
   const [editableText, setEditableText] = useState('');
   const [refinementPrompt, setRefinementPrompt] = useState('');
   const [postTime, setPostTime] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [refining, setRefining] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
+  const [uploadedImageOptions, setUploadedImageOptions] = useState<ImageAssetOption[]>([]);
   const lastNavigationAtRef = useRef(0);
 
   const options = useMemo(
@@ -38,12 +52,28 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
     [row.imageLink1, row.imageLink2, row.imageLink3, row.imageLink4, row.variant1, row.variant2, row.variant3, row.variant4]
   );
 
-  const imageOptions = useMemo(
+  const generatedImageOptions = useMemo<ImageAssetOption[]>(
     () => [row.imageLink1, row.imageLink2, row.imageLink3, row.imageLink4]
-      .map((imageUrl, originalIndex) => ({ imageUrl, originalIndex }))
+      .map((imageUrl, originalIndex) => ({
+        id: `generated-${originalIndex}`,
+        imageUrl,
+        originalIndex,
+        label: `Generated ${originalIndex + 1}`,
+        kind: 'generated' as const,
+      }))
       .filter((option) => option.imageUrl.trim()),
     [row.imageLink1, row.imageLink2, row.imageLink3, row.imageLink4]
   );
+
+  const imageOptions = useMemo(
+    () => [...uploadedImageOptions, ...generatedImageOptions, ...alternateImageOptions],
+    [alternateImageOptions, generatedImageOptions, uploadedImageOptions]
+  );
+
+  useEffect(() => {
+    setAlternateImageOptions([]);
+    setUploadedImageOptions([]);
+  }, [row.topic, row.date]);
 
   useEffect(() => {
     if (options.length === 0) {
@@ -71,18 +101,35 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
     setEditableText(selectedOption?.text || '');
     setRefinementPrompt('');
 
-    const matchingImageIndex = imageOptions.findIndex(
+    const matchingImage = generatedImageOptions.find(
       (imageOption) => imageOption.originalIndex === selectedOption?.originalIndex && imageOption.imageUrl
     );
 
-    if (matchingImageIndex >= 0) {
-      setSelectedImageIndex(matchingImageIndex);
+    if (matchingImage?.imageUrl) {
+      setSelectedImageUrl(matchingImage.imageUrl);
     } else if (imageOptions.length > 0) {
-      setSelectedImageIndex(0);
+      setSelectedImageUrl(imageOptions[0]?.imageUrl || '');
     } else {
-      setSelectedImageIndex(null);
+      setSelectedImageUrl('');
     }
-  }, [imageOptions, options, selectedOptionIndex]);
+  }, [generatedImageOptions, imageOptions, options, selectedOptionIndex]);
+
+  useEffect(() => {
+    if (!selectedImageUrl) {
+      if (imageOptions.length > 0) {
+        setSelectedImageUrl(imageOptions[0]?.imageUrl || '');
+      }
+      return;
+    }
+
+    if (!imageOptions.some((imageOption) => imageOption.imageUrl === selectedImageUrl)) {
+      const selectedOption = selectedOptionIndex === null ? null : options[selectedOptionIndex] || null;
+      const matchingImage = generatedImageOptions.find(
+        (imageOption) => imageOption.originalIndex === selectedOption?.originalIndex && imageOption.imageUrl
+      );
+      setSelectedImageUrl(matchingImage?.imageUrl || imageOptions[0]?.imageUrl || '');
+    }
+  }, [generatedImageOptions, imageOptions, options, selectedImageUrl, selectedOptionIndex]);
 
   useEffect(() => {
     console.info('Draft review payload', {
@@ -102,12 +149,55 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
 
   const selectedOption = selectedOptionIndex === null ? null : options[selectedOptionIndex] || null;
 
-  const selectedImageUrl = selectedImageIndex === null ? '' : imageOptions[selectedImageIndex]?.imageUrl || '';
-
   const hasUnsavedChanges = Boolean(
     selectedOption
       && (editableText !== selectedOption.text || refinementPrompt.trim().length > 0)
   );
+
+  const mergeUniqueImageOptions = (nextOptions: ImageAssetOption[]) => {
+    const seen = new Set<string>();
+    return nextOptions.filter((option) => {
+      const key = option.imageUrl.trim();
+      if (!key || seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const handleFetchMoreImageOptions = async () => {
+    const nextImageUrls = await onFetchMoreImages();
+    const nextOptions = nextImageUrls.map((imageUrl, index) => ({
+      id: `alternate-${Date.now()}-${index}`,
+      imageUrl,
+      label: `Alternative ${index + 1}`,
+      kind: 'alternate' as const,
+    }));
+
+    const dedupedAlternates = mergeUniqueImageOptions([
+      ...nextOptions,
+      ...alternateImageOptions.filter((existingOption) => existingOption.kind === 'alternate'),
+    ]).slice(0, Math.max(nextOptions.length, 4));
+    setAlternateImageOptions(dedupedAlternates);
+    if (dedupedAlternates[0]?.imageUrl) {
+      setSelectedImageUrl(dedupedAlternates[0].imageUrl);
+    }
+  };
+
+  const handleUploadImageOption = async (file: File) => {
+    const imageUrl = await onUploadImage(file);
+    const uploadedOption: ImageAssetOption = {
+      id: `upload-${Date.now()}`,
+      imageUrl,
+      label: file.name ? file.name.replace(/\.[^.]+$/, '') : 'Uploaded image',
+      kind: 'upload',
+    };
+
+    setUploadedImageOptions((current) => mergeUniqueImageOptions([uploadedOption, ...current]).slice(0, 4));
+    setSelectedImageUrl(imageUrl);
+  };
 
   const applyPendingAction = (action: PendingAction) => {
     if (action.type === 'close') {
@@ -391,50 +481,15 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
                 </section>
 
                 <section className="mt-8 pt-6 border-t border-slate-200">
-                  <h4 className="text-sm font-semibold text-[#1f2937] mb-4">Choose the image</h4>
-                  {imageOptions.length === 0 ? (
-                    <p className="mt-2 text-sm leading-6 text-[#6b7280]">No image links were found for this draft.</p>
-                  ) : (
-                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {imageOptions.map((imageOption, index) => {
-                        const resolvedImageUrl = normalizePreviewImageUrl(imageOption.imageUrl);
-                        const isSelected = selectedImageIndex === index;
-
-                        return (
-                          <button
-                            key={`image-option-${imageOption.originalIndex}`}
-                            type="button"
-                            onClick={() => setSelectedImageIndex(index)}
-                            className={`overflow-hidden rounded-2xl border text-left transition-all duration-200 group ${
-                              isSelected
-                                ? 'border-primary bg-indigo-50 shadow-md ring-2 ring-primary/20'
-                                : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm'
-                            }`}
-                          >
-                            <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden">
-                              <img
-                                src={resolvedImageUrl}
-                                alt={`Selectable image ${imageOption.originalIndex + 1}`}
-                                className={`h-full w-full object-cover transition-transform duration-500 ${isSelected ? 'scale-105' : 'group-hover:scale-105'}`}
-                                onLoad={() => {
-                                  console.info('Approval image option loaded', {
-                                    topic: row.topic,
-                                    imageIndex: imageOption.originalIndex + 1,
-                                  });
-                                }}
-                              />
-                            </div>
-                            <div className="px-3 py-2">
-                              <p className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-slate-700'}`}>Image {imageOption.originalIndex + 1}</p>
-                              <p className="mt-1 text-xs leading-5 text-slate-500">
-                                {isSelected ? 'Selected for this post' : 'Click to select'}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <ImageAssetManager
+                    topic={row.topic}
+                    images={imageOptions}
+                    selectedImageUrl={selectedImageUrl}
+                    onSelectImage={setSelectedImageUrl}
+                    onFetchMoreImages={handleFetchMoreImageOptions}
+                    onUploadImage={handleUploadImageOption}
+                    onDownloadImage={onDownloadImage}
+                  />
                 </section>
 
                 <section className="mt-8 pt-6 border-t border-slate-200">

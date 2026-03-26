@@ -75,6 +75,8 @@ jobs:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN || vars.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_URN: ${{ vars.LINKEDIN_PERSON_URN || secrets.LINKEDIN_PERSON_URN }}
           GOOGLE_DOC_ID: ${{ vars.GOOGLE_DOC_ID || secrets.GOOGLE_DOC_ID }}
+          VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || secrets.VITE_WORKER_URL }}
+          WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET || vars.WORKER_SCHEDULER_SECRET }}
           TARGET_TOPIC: ${{ github.event.client_payload.target_topic || '' }}
           TARGET_DATE: ${{ github.event.client_payload.target_date || '' }}
         run: python linkedin_bot.py publish

@@ -18,6 +18,7 @@ class WorkerBootstrap:
     delete_unused_generated_images: str
     cors_allowed_origins: str
     encryption_key: str
+    scheduler_secret: str
     github_repo: str
     instagram_app_id: str
     instagram_app_secret: str
@@ -113,6 +114,20 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'META_APP_ID': worker_bootstrap.meta_app_id,
         'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
     }
+    config['durable_objects'] = {
+        'bindings': [
+            {
+                'name': 'SCHEDULED_LINKEDIN_PUBLISH',
+                'class_name': 'ScheduledPublishAlarm',
+            }
+        ]
+    }
+    config['migrations'] = [
+        {
+            'tag': 'v1',
+            'new_sqlite_classes': ['ScheduledPublishAlarm'],
+        }
+    ]
     wrangler_config_path.write_text(json.dumps(config, indent=2) + '\n')
 
 
@@ -125,7 +140,9 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'DELETE_UNUSED_GENERATED_IMAGES': worker_bootstrap.delete_unused_generated_images,
         'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
+        'SERPAPI_API_KEY': os.environ.get('SERPAPI_API_KEY', '').strip(),
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
+        'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
         'INSTAGRAM_APP_ID': worker_bootstrap.instagram_app_id,
         'INSTAGRAM_APP_SECRET': worker_bootstrap.instagram_app_secret,
@@ -147,7 +164,12 @@ def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_js
     secret_values = {
         'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
+        'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
     }
+
+    serpapi_api_key = os.environ.get('SERPAPI_API_KEY', '').strip()
+    if serpapi_api_key:
+        secret_values['SERPAPI_API_KEY'] = serpapi_api_key
 
     optional_secret_values = {
         'INSTAGRAM_APP_SECRET': worker_bootstrap.instagram_app_secret,

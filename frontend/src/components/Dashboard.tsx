@@ -44,17 +44,6 @@ function canPreviewPublishedContent(row: SheetRow): boolean {
   return status === 'approved' || status === 'published';
 }
 
-function hasIncompleteWorkspaceSetup(session: AppSession): boolean {
-  return Boolean(
-    session.isAdmin
-      && (
-        !session.config.spreadsheetId
-        || !session.config.githubRepo
-        || !session.config.hasGitHubToken
-      )
-  );
-}
-
 interface RecipientOption {
   label: string;
   value: string;
@@ -457,6 +446,36 @@ export function Dashboard({
     );
 
     setSelectedRowForReview(null);
+  };
+
+  const handleFetchReviewImages = async () => {
+    if (!selectedRowForReview) {
+      return [];
+    }
+
+    const result = await api.fetchDraftImages(idToken, selectedRowForReview.topic, 4);
+    return result.imageUrls;
+  };
+
+  const handleUploadReviewImage = async (file: File) => {
+    if (!selectedRowForReview) {
+      throw new Error('Open a draft review before uploading an image.');
+    }
+
+    const result = await api.uploadDraftImage(idToken, selectedRowForReview.topic, file);
+    return result.imageUrl;
+  };
+
+  const handleDownloadReviewImage = async (imageUrl: string, fileName: string) => {
+    const blob = await api.downloadDraftImage(idToken, imageUrl, fileName);
+    const downloadUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = downloadUrl;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(downloadUrl);
   };
 
   const saveSettings = async () => {
@@ -1649,6 +1668,9 @@ export function Dashboard({
           row={selectedRowForReview} 
           onApprove={handleApproveVariant}
           onRefine={handleRefineVariant}
+          onFetchMoreImages={handleFetchReviewImages}
+          onUploadImage={handleUploadReviewImage}
+          onDownloadImage={handleDownloadReviewImage}
           onCancel={() => setSelectedRowForReview(null)}
         />
       )}
@@ -1659,8 +1681,7 @@ export function Dashboard({
           onClose={() => setSelectedApprovedRowPreview(null)}
         />
       )}
-    
-        </div>
+
       </div>
     </div>
   );

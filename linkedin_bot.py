@@ -13,6 +13,7 @@ import google.generativeai as genai
 from google.cloud import storage
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from scheduler.cloudflare_publish_scheduler import decide_publish_timing, schedule_linkedin_publish_with_worker
 
 # ==========================================
 # CONFIGURATION
@@ -46,6 +47,8 @@ REFINE_INSTRUCTIONS = os.environ.get('REFINE_INSTRUCTIONS', '').strip()
 # LinkedIn API
 LINKEDIN_ACCESS_TOKEN = os.environ.get('LINKEDIN_ACCESS_TOKEN')
 LINKEDIN_PERSON_URN = os.environ.get('LINKEDIN_PERSON_URN') # e.g., urn:li:person:123456
+WORKER_URL = os.environ.get('VITE_WORKER_URL', '').strip()
+WORKER_SCHEDULER_SECRET = os.environ.get('WORKER_SCHEDULER_SECRET', '').strip()
 
 TOPICS_SHEET = 'Topics'
 DRAFT_SHEET = 'Draft'
@@ -952,11 +955,19 @@ def process_publishing(sheets_service, docs_service, storage_bucket):
         
         if status.lower() == 'approved' and selected_text:
             try:
-                if post_time_str:
-                    post_time = datetime.datetime.strptime(post_time_str, "%Y-%m-%d %H:%M")
-                    should_post = now >= post_time
-                else:
-                    should_post = True  # No time set — post immediately
+                timing = decide_publish_timing(now, post_time_str)
+                if timing.should_schedule_with_worker and timing.scheduled_time is not None:
+                    schedule_linkedin_publish_with_worker(
+                        WORKER_URL,
+                        WORKER_SCHEDULER_SECRET,
+                        topic,
+                        date_str,
+                        post_time_str,
+                    )
+                    print(f"Scheduled Cloudflare minute-level publish for topic '{topic}' at {post_time_str}.")
+                    continue
+
+                should_post = timing.should_publish_now
                 if should_post:
                     print(f"Time to post topic: {topic}")
                     success = post_to_linkedin(selected_text, selected_image_id)
