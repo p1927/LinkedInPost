@@ -1,16 +1,8 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ListOrdered,
-  Minus,
-  Settings,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListOrdered, Settings } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
-import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { Button } from '@/components/ui/button';
 
 export type WorkspaceNavPage = 'topics' | 'settings';
@@ -128,20 +120,9 @@ export function AppSidebar({
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
 }) {
-  const { health } = useWorkspaceChrome();
   const closeMobile = () => onMobileOpenChange(false);
   const displayName = googleProfile?.name?.trim() || null;
   const pictureUrl = googleProfile?.picture?.trim() || null;
-
-  const publishingRows =
-    workspacePage === 'settings' && session.isAdmin && health
-      ? ([
-          { id: 'li', label: 'LinkedIn', abbrev: 'LI', ok: health.linkedin },
-          { id: 'ig', label: 'Instagram', abbrev: 'IG', ok: health.instagram },
-          { id: 'tg', label: 'Telegram', abbrev: 'TG', ok: health.telegram },
-          { id: 'wa', label: 'WhatsApp', abbrev: 'WA', ok: health.whatsapp },
-        ] as const)
-      : null;
 
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
     const active = workspacePage === page;
@@ -256,75 +237,6 @@ export function AppSidebar({
           </ul>
           <div className="mx-2 min-h-2 flex-1 border-t border-white/30" aria-hidden />
         </nav>
-
-        {publishingRows ? (
-          <div
-            className={clsx(
-              'shrink-0 border-t border-white/40',
-              collapsed ? 'px-2 py-2' : 'px-3 py-3',
-            )}
-            role="region"
-            aria-label="Publishing connections"
-          >
-            {!collapsed ? (
-              <>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">Connections</p>
-                <ul className="list-none space-y-1.5">
-                  {publishingRows.map(({ id, label, ok }) => (
-                    <li
-                      key={id}
-                      className="glass-inset flex items-center justify-between gap-2 rounded-xl border border-white/35 px-2.5 py-1.5"
-                    >
-                      <span className="text-xs font-medium text-ink">{label}</span>
-                      <span
-                        className={clsx(
-                          'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                          ok
-                            ? 'border border-success-border bg-success-surface text-success-ink'
-                            : 'border border-dashed border-border-strong bg-white/30 text-muted',
-                        )}
-                      >
-                        {ok ? (
-                          <Check className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
-                        ) : (
-                          <Minus className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
-                        )}
-                        {ok ? 'Connected' : 'Not connected'}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <ul className="flex list-none flex-col items-center gap-1.5 py-0.5" role="list">
-                {publishingRows.map(({ id, label, abbrev, ok }) => (
-                  <li key={id}>
-                    <span
-                      role="img"
-                      title={`${label}: ${ok ? 'Connected' : 'Not connected'}`}
-                      aria-label={`${label}: ${ok ? 'Connected' : 'Not connected'}`}
-                      className={clsx(
-                        'relative flex h-9 w-10 flex-col items-center justify-center gap-0.5 rounded-xl text-[9px] font-bold leading-none tracking-tight',
-                        ok
-                          ? 'border border-solid border-success-border bg-success-surface text-success-ink'
-                          : 'border border-dashed border-border-strong bg-white/30 text-muted',
-                      )}
-                    >
-                      <span aria-hidden className="select-none">
-                        {abbrev}
-                      </span>
-                      {ok ? (
-                        <Check className="h-2.5 w-2.5 shrink-0" aria-hidden strokeWidth={2.5} />
-                      ) : (
-                        <Minus className="h-2.5 w-2.5 shrink-0" aria-hidden strokeWidth={2.5} />
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ) : null}
 
         <div className="mt-auto shrink-0 border-t border-white/40 p-2">
           <div

@@ -211,8 +211,9 @@ export function DashboardSettingsDrawer({
               <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
             </div>
             <p className="rounded-xl border border-border bg-surface-muted/60 px-3 py-2.5 text-xs leading-5 text-muted">
-              Publish target and recipients are on <strong className="font-semibold text-ink">Home</strong>. AI model is there too. Refresh stays in the top bar; channel connection status appears in the sidebar when you open{' '}
-              <strong className="font-semibold text-ink">Settings</strong>.
+              Publish target and recipients are on <strong className="font-semibold text-ink">Home</strong>. AI model is there too. Refresh stays in the top bar. The{' '}
+              <strong className="font-semibold text-ink">Connections</strong> card summarizes LinkedIn, Instagram, Telegram, and WhatsApp credential status from your saved
+              config.
             </p>
           </div>
         </SettingsSectionCard>
