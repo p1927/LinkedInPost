@@ -218,6 +218,7 @@ export function Dashboard({
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>('overview');
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastDeliverySummary, setLastDeliverySummary] = useState<{
     topic: string;
@@ -391,6 +392,11 @@ export function Dashboard({
   ];
   const activeDashboardTabMeta = dashboardTabs.find((tab) => tab.value === activeDashboardTab) || dashboardTabs[0];
   const queueSpotlightRows = filteredRows.slice(0, 3);
+  const navigationCounts: Record<DashboardTab, number> = {
+    overview: rows.length,
+    queue: filteredRows.length,
+    delivery: selectedChannelOption.requiresRecipient ? activeRecipientOptions.length : 1,
+  };
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
     : selectedChannel === 'instagram'
@@ -977,25 +983,112 @@ export function Dashboard({
     );
   }
 
+  const navigationContent = (
+    <div className="flex h-full flex-col">
+      <div className="border-b border-slate-200/80 px-4 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace navigation</p>
+        <p className="mt-2 text-sm leading-6 text-slate-600">Keep the shell compact. Open one workspace at a time.</p>
+      </div>
+
+      <nav className="flex-1 px-3 py-4">
+        <div className="space-y-2">
+          {dashboardTabs.map((tab) => {
+            const Icon = tab.icon;
+            const selected = activeDashboardTab === tab.value;
+
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => {
+                  setActiveDashboardTab(tab.value);
+                  setNavigationOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${selected ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100'}`}
+              >
+                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${selected ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold">{tab.label}</span>
+                  <span className={`block truncate text-xs ${selected ? 'text-slate-300' : 'text-slate-500'}`}>{tab.description}</span>
+                </span>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${selected ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {navigationCounts[tab.value]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Quick status</p>
+          <div className="mt-3 space-y-2">
+            {filterOptions.slice(1).map((option) => (
+              <button
+                key={`nav-filter-${option.value}`}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(option.value);
+                  setActiveDashboardTab('queue');
+                  setNavigationOpen(false);
+                }}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-white"
+              >
+                <span>{option.label}</span>
+                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">{queueCounts[option.value]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      <div className="border-t border-slate-200/80 px-4 py-4">
+        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin surface</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Configuration and channel setup stay outside the main dashboard canvas.</p>
+          {session.isAdmin ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSettingsOpen(true);
+                setNavigationOpen(false);
+              }}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+            >
+              <Settings className="h-4 w-4" />
+              Open settings drawer
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="max-w-[1600px] mx-auto w-full px-4 pb-16 space-y-6">
-      <section className="rounded-[36px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-6 shadow-xl backdrop-blur-md">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+    <div className="max-w-[1600px] mx-auto w-full px-4 pb-16">
+      <section className="rounded-[28px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-5 py-4 shadow-xl backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               <span>Workspace</span>
               <ChevronRight className="h-4 w-4" />
               <span>Dashboard</span>
               <ChevronRight className="h-4 w-4" />
               <span className="text-slate-700">{activeDashboardTabMeta.label}</span>
             </div>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-deep-indigo font-heading">Structured publishing workspace</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Use the drawer for configuration, then work inside focused tabs for queue operations and delivery control.
-            </p>
-            <p className="mt-3 text-sm text-slate-500">Workspace: <span className="font-medium text-slate-700">{session.email}</span></p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-deep-indigo font-heading">{activeDashboardTabMeta.label}</h2>
+            <p className="mt-1 text-sm text-slate-600">{activeDashboardTabMeta.description}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setNavigationOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 lg:hidden"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+              Navigation
+            </button>
             <button
               type="button"
               onClick={() => void loadData(false)}
@@ -1003,7 +1096,7 @@ export function Dashboard({
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh queue
+              Refresh
             </button>
             {session.isAdmin ? (
               <button
@@ -1011,34 +1104,22 @@ export function Dashboard({
                 onClick={() => setSettingsOpen(true)}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
               >
-                <PanelLeftOpen className="h-4 w-4" />
-                Open workspace drawer
+                <Settings className="h-4 w-4" />
+                Settings
               </button>
             ) : null}
           </div>
         </div>
-
-        <div className="mt-6 grid gap-3 lg:grid-cols-3">
-          {dashboardTabs.map((tab) => {
-            const Icon = tab.icon;
-            const selected = activeDashboardTab === tab.value;
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => setActiveDashboardTab(tab.value)}
-                className={`rounded-[24px] border px-5 py-4 text-left transition-all ${selected ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-              >
-                <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${selected ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  <Icon className="h-5 w-5" />
-                </span>
-                <p className="mt-4 text-lg font-semibold">{tab.label}</p>
-                <p className={`mt-1 text-sm leading-6 ${selected ? 'text-slate-200' : 'text-slate-500'}`}>{tab.description}</p>
-              </button>
-            );
-          })}
-        </div>
       </section>
+
+      <div className="mt-6 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-4 overflow-hidden rounded-[28px] border border-white/50 bg-white/90 shadow-xl backdrop-blur-md">
+            {navigationContent}
+          </div>
+        </aside>
+
+        <div className="space-y-6">
 
       {activeDashboardTab === 'overview' ? (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
@@ -1485,6 +1566,32 @@ export function Dashboard({
             ) : null}
           </div>
         </section>
+      ) : null}
+
+        </div>
+      </div>
+
+      {navigationOpen ? (
+        <div className="fixed inset-0 z-40 flex bg-slate-900/45 backdrop-blur-sm lg:hidden">
+          <div className="flex h-full w-full max-w-[320px] flex-col overflow-hidden border-r border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Navigation</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">Compact workspace drawer</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNavigationOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:text-slate-700"
+                aria-label="Close navigation"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {navigationContent}
+          </div>
+          <button type="button" className="flex-1" aria-label="Close navigation overlay" onClick={() => setNavigationOpen(false)} />
+        </div>
       ) : null}
 
       {session.isAdmin && settingsOpen ? (
