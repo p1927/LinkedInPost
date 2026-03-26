@@ -1,4 +1,4 @@
-import { type BadgeVariant } from '../ui/badge';
+import { type BadgeVariant } from '@/components/ui/badge';
 import { type SheetRow } from '../../services/sheets';
 import { type ChannelId } from '../../integrations/channels';
 import { type BotConfig } from '../../services/configService';

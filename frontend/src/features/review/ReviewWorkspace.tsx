@@ -14,9 +14,9 @@ import {
 } from '../../services/backendApi';
 import { DraftEditor } from '../editor/DraftEditor';
 import { applyFormattingAction, getEffectiveScope, getTargetText } from '../editor/selection';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '../../lib/cn';
 import { GenerationPanel } from '../generation/GenerationPanel';
 import { RulesPanel } from '../rules/RulesPanel';

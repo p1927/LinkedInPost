@@ -3,8 +3,8 @@ import { useEffect, useRef } from 'react';
 import type { GenerationScope, TextSelectionRange } from '../../services/backendApi';
 import { cn } from '../../lib/cn';
 import { type FormattingAction, getEffectiveScope, normalizeSelection } from './selection';
-import { Textarea } from '../../components/ui/textarea';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
 interface DraftEditorProps {

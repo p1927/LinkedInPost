@@ -1,7 +1,7 @@
 import { Sparkles, WandSparkles } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Textarea } from '../../components/ui/textarea';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { QuickChangePreviewResult, VariantsPreviewResponse } from '../../services/backendApi';
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';

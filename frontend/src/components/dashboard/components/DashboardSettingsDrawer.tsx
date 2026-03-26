@@ -6,9 +6,9 @@ import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '.
 import { type PopupProvider } from '../types';
 import { type TelegramRecipient } from '../../../integrations/telegram';
 import { cn } from '../../../lib/cn';
-import { Input } from '../../ui/input';
-import { Textarea } from '../../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 
 const SETTINGS_SECTIONS = [

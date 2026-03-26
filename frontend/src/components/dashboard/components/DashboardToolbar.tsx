@@ -1,7 +1,7 @@
 import { Bot } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type GoogleModelOption } from '../../../services/configService';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function DashboardToolbar({
   googleModel,

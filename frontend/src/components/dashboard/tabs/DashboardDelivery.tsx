@@ -1,8 +1,8 @@
 import { MessageCircle, Phone } from 'lucide-react';
-import { Badge } from '../../ui/badge';
-import { ChipToggle } from '../../ui/ChipToggle';
-import { Input } from '../../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Badge } from '@/components/ui/badge';
+import { ChipToggle } from '@/components/ui/ChipToggle';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel } from '../../../integrations/channels';
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';

@@ -6,9 +6,9 @@ import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent, formatQueueDate } from '../utils';
 import { filterOptions } from '../constants';
-import { Badge, type BadgeVariant } from '../../ui/badge';
-import { ChipToggle } from '../../ui/ChipToggle';
-import { Input } from '../../ui/input';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
+import { ChipToggle } from '@/components/ui/ChipToggle';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 function queueRowDomId(row: SheetRow) {
