@@ -46,8 +46,8 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
             </button>
           </div>
 
-          <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
-            <section className="min-h-0 overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.14),_transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.78),rgba(241,245,249,0.72))] px-4 py-5 sm:px-6 xl:px-8 xl:py-8">
+          <div className="grid flex-1 gap-0 overflow-y-auto overflow-x-hidden xl:overflow-hidden xl:grid-cols-[minmax(0,1fr)_360px]">
+            <section className="xl:min-h-0 xl:overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.14),_transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.78),rgba(241,245,249,0.72))] px-4 py-5 sm:px-6 xl:px-8 xl:py-8">
               <LinkedInPostPreview
                 optionNumber={1}
                 text={row.selectedText || row.variant1}
@@ -60,7 +60,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
               />
             </section>
 
-            <aside className="flex min-h-0 flex-col border-t border-slate-200/70 bg-white/70 px-5 py-5 xl:border-l xl:border-t-0 xl:px-6 xl:py-8">
+            <aside className="flex xl:min-h-0 flex-col border-t border-slate-200/70 bg-white/70 px-5 py-5 xl:border-l xl:border-t-0 xl:px-6 xl:py-8">
               <div className="rounded-[28px] border border-white/60 bg-white/90 p-6 shadow-lg">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Publishing summary</p>
 

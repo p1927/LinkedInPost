@@ -210,7 +210,6 @@ export function Dashboard({
   const [pendingWhatsAppOptions, setPendingWhatsAppOptions] = useState<WhatsAppPhoneOption[]>([]);
   const [selectedWhatsAppPhoneId, setSelectedWhatsAppPhoneId] = useState('');
   const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
-  const [showSettings, setShowSettings] = useState(hasIncompleteWorkspaceSetup(session));
   const [selectedRowForReview, setSelectedRowForReview] = useState<SheetRow | null>(null);
   const [selectedApprovedRowPreview, setSelectedApprovedRowPreview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -236,7 +235,6 @@ export function Dashboard({
     setTelegramDraftChatId('');
     setTelegramVerification(null);
     setWhatsappRecipientsInput(formatRecipientsInput(session.config.whatsappRecipients));
-    setShowSettings(hasIncompleteWorkspaceSetup(session));
   }, [
     session.config.defaultChannel,
     session.config.githubRepo,
@@ -420,8 +418,7 @@ export function Dashboard({
   ) => {
     if (!session.config.githubRepo || !session.config.hasGitHubToken) {
       if (session.isAdmin) {
-        alert('Complete the GitHub settings first.');
-        setShowSettings(true);
+        alert('Complete the GitHub settings in the sidebar first.');
       } else {
         alert('A workspace admin still needs to configure GitHub dispatch settings.');
       }
@@ -479,7 +476,6 @@ export function Dashboard({
       });
       setGithubTokenInput('');
       setTelegramBotTokenInput('');
-      setShowSettings(false);
       if (sheetIdInput.trim()) {
         await loadData(true);
       }
@@ -718,8 +714,7 @@ export function Dashboard({
 
     if (selectedChannel === 'telegram' && !telegramConfigured) {
       if (session.isAdmin) {
-        alert('Complete the Telegram delivery settings first.');
-        setShowSettings(true);
+        alert('Complete the Telegram delivery settings in the sidebar first.');
       } else {
         alert('A workspace admin still needs to configure Telegram delivery settings.');
       }
@@ -728,8 +723,7 @@ export function Dashboard({
 
     if (selectedChannel === 'whatsapp' && !whatsappConfigured) {
       if (session.isAdmin) {
-        alert('Complete the WhatsApp settings first.');
-        setShowSettings(true);
+        alert('Complete the WhatsApp settings in the sidebar first.');
       } else {
         alert('A workspace admin still needs to configure WhatsApp delivery settings.');
       }
@@ -738,8 +732,7 @@ export function Dashboard({
 
     if (selectedChannel === 'instagram' && !instagramConfigured) {
       if (session.isAdmin) {
-        alert('Complete the Instagram publishing settings first.');
-        setShowSettings(true);
+        alert('Complete the Instagram publishing settings in the sidebar first.');
       } else {
         alert('A workspace admin still needs to configure Instagram publishing settings.');
       }
@@ -748,8 +741,7 @@ export function Dashboard({
 
     if (selectedChannel === 'linkedin' && !linkedinConfigured) {
       if (session.isAdmin) {
-        alert('Complete the LinkedIn publishing settings first.');
-        setShowSettings(true);
+        alert('Complete the LinkedIn publishing settings in the sidebar first.');
       } else {
         alert('A workspace admin still needs to configure LinkedIn publishing settings.');
       }
@@ -867,16 +859,189 @@ export function Dashboard({
     );
   }
 
-  if (showSettings && session.isAdmin) {
-    return (
-      <div className="bg-white/80 backdrop-blur-md border border-white/50 p-4 rounded-2xl shadow-xl text-left max-w-5xl mx-auto mt-8">
-        <h2 className="text-2xl font-bold text-deep-indigo font-heading mb-6 flex items-center gap-2">
-          <Settings className="w-6 h-6 text-primary" /> Settings
-        </h2>
-        <div className="grid gap-4 xl:grid-cols-2">
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">General</p>
-            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">Workspace core</h3>
+  return (
+    <div className="max-w-[1600px] mx-auto w-full p-4 flex flex-col lg:flex-row gap-6 items-start">
+      {/* Left Sidebar */}
+      <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 flex flex-col gap-6">
+        
+        {/* Content Pipeline Card */}
+        <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl p-4">
+          
+        <div>
+          <h2 className="text-3xl font-bold text-deep-indigo font-heading tracking-tight">Content Pipeline</h2>
+          <p className="mt-1 text-sm text-slate-500">Workspace managed by <span className="font-medium text-slate-700">{session.email}</span></p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
+            <Bot className="w-4 h-4 text-primary" />
+            <span className="text-slate-500">Model</span>
+            <select
+              value={googleModel}
+              onChange={(e) => setGoogleModel(e.target.value)}
+              className="bg-transparent font-medium text-deep-indigo outline-none cursor-pointer"
+            >
+              {availableModels.map((model) => (
+                <option key={model.value} value={model.value}>
+                  {model.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          
+          <button 
+            onClick={() => void loadData(false)}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:text-deep-indigo transition-all duration-200 shadow-sm"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
+      
+        </div>
+
+        {/* Delivery Card */}
+        <div className="flex flex-col gap-4 rounded-2xl border border-white/50 bg-white/80 p-4 shadow-xl">
+          
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Delivery</p>
+          <h3 className="mt-2 text-xl font-bold text-deep-indigo font-heading">Choose channel</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Approved rows publish through the channel selected here.</p>
+        </div>
+
+        <div className="grid gap-4 flex flex-col">
+          <label className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
+            <select
+              value={selectedChannel}
+              onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
+              className="w-full bg-transparent text-base font-semibold text-deep-indigo outline-none cursor-pointer"
+            >
+              {CHANNEL_OPTIONS.map((channel) => (
+                <option key={channel.value} value={channel.value}>
+                  {channel.label}
+                </option>
+              ))}
+            </select>
+            <span className="mt-2 block text-xs leading-5 text-slate-500">{selectedChannelOption.description}</span>
+          </label>
+
+          <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
+            {selectedChannelOption.requiresRecipient ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRecipientMode('saved')}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      recipientMode === 'saved'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRecipientMode('manual')}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      recipientMode === 'manual'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
+                  </button>
+                </div>
+
+                {recipientMode === 'saved' ? (
+                  <label className="mt-3 block">
+                    <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      <MessageCircle className="h-4 w-4" /> {selectedChannel === 'telegram' ? 'Chat' : 'Recipient'}
+                    </span>
+                    <select
+                      value={selectedRecipientId}
+                      onChange={(e) => setSelectedRecipientId(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                      disabled={activeRecipientOptions.length === 0}
+                    >
+                      {activeRecipientOptions.length === 0 ? (
+                        <option value="">No saved {selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet</option>
+                      ) : (
+                        activeRecipientOptions.map((recipient) => (
+                          <option key={`${recipient.label}-${recipient.value}`} value={recipient.value}>
+                            {recipient.label} ({recipient.value})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </label>
+                ) : (
+                  <label className="mt-3 block">
+                    <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      {selectedChannel === 'telegram' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />} {selectedChannel === 'telegram' ? 'Chat ID' : 'Phone number'}
+                    </span>
+                    <input
+                      type="text"
+                      value={manualRecipientId}
+                      onChange={(e) => setManualRecipientId(e.target.value)}
+                      placeholder={selectedChannel === 'telegram' ? '@my_channel or -1001234567890' : '+14155550101'}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </label>
+                )}
+
+                <p className="mt-3 text-xs leading-5 text-slate-500">
+                  {selectedChannel === 'telegram'
+                    ? 'Sending uses the Telegram Bot API directly from the Worker. Make sure the bot is already a member of the destination chat or channel before publishing.'
+                    : 'Sending uses Meta\'s WhatsApp Cloud API directly from the Worker. Free-form text usually requires an active customer conversation window.'}
+                </p>
+              </>
+            ) : selectedChannel === 'instagram' ? (
+              <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Instagram flow</span>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {getInstagramDeliveryDescription()}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {getInstagramDeliveryHint()}
+                </p>
+              </div>
+            ) : (
+              <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">LinkedIn flow</span>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  {getLinkedInDeliveryDescription()}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  {getLinkedInDeliveryHint()}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      
+        </div>
+        
+        {session.isAdmin && (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-xl font-bold text-deep-indigo font-heading flex items-center gap-2 px-1">
+              <Settings className="w-5 h-5 text-primary" /> Workspace Settings
+            </h3>
+            
+            <div className="flex flex-col gap-3">
+              
+          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
+              Workspace core
+              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="p-4 pt-0 border-t border-slate-100">
+              
+            
+            
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Google Spreadsheet ID</label>
@@ -885,7 +1050,7 @@ export function Dashboard({
               <div className="rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <h3 className="text-lg font-bold text-slate-900 font-heading">{lastDeliverySummary.topic}</h3>
+                  
                   <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
                     {getChannelLabel(lastDeliverySummary.channel)}
                   </span>
@@ -930,11 +1095,21 @@ export function Dashboard({
                 <p className="text-xs text-slate-500 mt-1.5">Used as the default destination in the delivery panel.</p>
               </div>
             </div>
-          </section>
+          
+            </div>
+          </details>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Draft Workflow</p>
-            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">GitHub Actions</h3>
+          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
+              GitHub Actions
+              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="p-4 pt-0 border-t border-slate-100">
+              
+            
+            
             <p className="mt-2 text-xs leading-5 text-slate-500">These values are only used for draft generation and refinement jobs.</p>
             <div className="mt-4 space-y-4">
               <div>
@@ -979,11 +1154,21 @@ export function Dashboard({
                 </p>
               </div>
             </div>
-          </section>
+          
+            </div>
+          </details>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
-            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">Instagram Publishing</h3>
+          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
+              Instagram Publishing
+              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="p-4 pt-0 border-t border-slate-100">
+              
+            
+            
             <p className="mt-2 text-xs leading-5 text-slate-500">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
             <div className="mt-4 space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
@@ -1015,11 +1200,21 @@ export function Dashboard({
                   : 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in the Worker before this button can be used.'}
               </p>
             </div>
-          </section>
+          
+            </div>
+          </details>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
-            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">LinkedIn Publishing</h3>
+          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
+              LinkedIn Publishing
+              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="p-4 pt-0 border-t border-slate-100">
+              
+            
+            
             <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
             <div className="mt-4 space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
@@ -1051,11 +1246,21 @@ export function Dashboard({
                   : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
               </p>
             </div>
-          </section>
+          
+            </div>
+          </details>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
-            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">Telegram Delivery</h3>
+          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
+              Telegram Delivery
+              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="p-4 pt-0 border-t border-slate-100">
+              
+            
+            
             <p className="mt-2 text-xs leading-5 text-slate-500">This path sends approved content directly through the Telegram Bot API.</p>
             <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <div className="space-y-4">
@@ -1191,11 +1396,21 @@ export function Dashboard({
                 <p className="text-xs text-slate-500 mt-1.5">Bulk editor. One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
               </div>
             </div>
-          </section>
+          
+            </div>
+          </details>
 
-          <section className="rounded-2xl border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.95)_0%,rgba(246,248,252,0.98)_100%)] p-4 shadow-[0_12px_30px_rgba(15,23,42,0.06)] xl:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Channel</p>
-            <h3 className="mt-2 text-lg font-bold text-deep-indigo font-heading">WhatsApp Delivery</h3>
+          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
+              WhatsApp Delivery
+              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="p-4 pt-0 border-t border-slate-100">
+              
+            
+            
             <p className="mt-2 text-xs leading-5 text-slate-500">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
             <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
               <div className="space-y-4">
@@ -1265,191 +1480,32 @@ export function Dashboard({
                 <p className="text-xs text-slate-500 mt-1.5">One recipient per line using the format "Label | +15551234567".</p>
               </div>
             </div>
-          </section>
+          
+            </div>
+          </details>
 
-          <p className="text-xs text-slate-400 mt-5 flex items-center gap-1.5">
+            </div>
+            
+            <div className="mt-2">
+              <p className="text-xs text-slate-400 mt-5 flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Secrets stay in the backend. The browser no longer talks to Google Sheets, Instagram, LinkedIn, Telegram, or Meta directly.
           </p>
-          <button
+              <button
             onClick={saveSettings}
             disabled={savingConfig}
             className="bg-primary text-white font-medium px-4 py-3 rounded-xl hover:bg-indigo-600 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 w-full mt-4 disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {savingConfig ? 'Saving shared configuration...' : 'Save Settings'}
           </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-6xl mx-auto w-full p-4 space-y-8">
-      <div className="flex flex-wrap justify-between items-center gap-4 bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl p-4">
-        <div>
-          <h2 className="text-3xl font-bold text-deep-indigo font-heading tracking-tight">Content Pipeline</h2>
-          <p className="mt-1 text-sm text-slate-500">Workspace managed by <span className="font-medium text-slate-700">{session.email}</span></p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
-            <Bot className="w-4 h-4 text-primary" />
-            <span className="text-slate-500">Model</span>
-            <select
-              value={googleModel}
-              onChange={(e) => setGoogleModel(e.target.value)}
-              className="bg-transparent font-medium text-deep-indigo outline-none cursor-pointer"
-            >
-              {availableModels.map((model) => (
-                <option key={model.value} value={model.value}>
-                  {model.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {session.isAdmin && (
-            <>
-              <div className="w-px h-8 bg-slate-200 mx-1"></div>
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="p-2.5 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-xl transition-all duration-200"
-                title="Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-            </>
-          )}
-          <button 
-            onClick={() => void loadData(false)}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:text-deep-indigo transition-all duration-200 shadow-sm"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-4 rounded-2xl border border-white/50 bg-white/80 p-4 shadow-xl lg:grid-cols-[240px_minmax(0,1fr)] mb-8">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Delivery</p>
-          <h3 className="mt-2 text-xl font-bold text-deep-indigo font-heading">Choose channel</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Approved rows publish through the channel selected here.</p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-          <label className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
-            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
-            <select
-              value={selectedChannel}
-              onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-              className="w-full bg-transparent text-base font-semibold text-deep-indigo outline-none cursor-pointer"
-            >
-              {CHANNEL_OPTIONS.map((channel) => (
-                <option key={channel.value} value={channel.value}>
-                  {channel.label}
-                </option>
-              ))}
-            </select>
-            <span className="mt-2 block text-xs leading-5 text-slate-500">{selectedChannelOption.description}</span>
-          </label>
-
-          <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
-            {selectedChannelOption.requiresRecipient ? (
-              <>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRecipientMode('saved')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                      recipientMode === 'saved'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRecipientMode('manual')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                      recipientMode === 'manual'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
-                  </button>
-                </div>
-
-                {recipientMode === 'saved' ? (
-                  <label className="mt-3 block">
-                    <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      <MessageCircle className="h-4 w-4" /> {selectedChannel === 'telegram' ? 'Chat' : 'Recipient'}
-                    </span>
-                    <select
-                      value={selectedRecipientId}
-                      onChange={(e) => setSelectedRecipientId(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                      disabled={activeRecipientOptions.length === 0}
-                    >
-                      {activeRecipientOptions.length === 0 ? (
-                        <option value="">No saved {selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet</option>
-                      ) : (
-                        activeRecipientOptions.map((recipient) => (
-                          <option key={`${recipient.label}-${recipient.value}`} value={recipient.value}>
-                            {recipient.label} ({recipient.value})
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </label>
-                ) : (
-                  <label className="mt-3 block">
-                    <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      {selectedChannel === 'telegram' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />} {selectedChannel === 'telegram' ? 'Chat ID' : 'Phone number'}
-                    </span>
-                    <input
-                      type="text"
-                      value={manualRecipientId}
-                      onChange={(e) => setManualRecipientId(e.target.value)}
-                      placeholder={selectedChannel === 'telegram' ? '@my_channel or -1001234567890' : '+14155550101'}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                    />
-                  </label>
-                )}
-
-                <p className="mt-3 text-xs leading-5 text-slate-500">
-                  {selectedChannel === 'telegram'
-                    ? 'Sending uses the Telegram Bot API directly from the Worker. Make sure the bot is already a member of the destination chat or channel before publishing.'
-                    : 'Sending uses Meta\'s WhatsApp Cloud API directly from the Worker. Free-form text usually requires an active customer conversation window.'}
-                </p>
-              </>
-            ) : selectedChannel === 'instagram' ? (
-              <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Instagram flow</span>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
-                  {getInstagramDeliveryDescription()}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {getInstagramDeliveryHint()}
-                </p>
-              </div>
-            ) : (
-              <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">LinkedIn flow</span>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
-                  {getLinkedInDeliveryDescription()}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {getLinkedInDeliveryHint()}
-                </p>
-              </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <form onSubmit={handleAddTopic} className="flex gap-3">
+      {/* Main Content */}
+      <div className="flex-1 w-full flex flex-col gap-6 min-w-0">
+        <form onSubmit={handleAddTopic} className="flex gap-3">
         <input 
           type="text" 
           value={newTopic}
@@ -1466,8 +1522,9 @@ export function Dashboard({
           <Plus className="w-6 h-6" /> Add Topic
         </button>
       </form>
-
-      <div className="bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl overflow-hidden">
+        
+        <div className="bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-2xl overflow-hidden flex-1 flex flex-col">
+          
         <table className="min-w-full divide-y divide-slate-100 text-left">
           <thead className="bg-slate-50/50">
             <tr>
@@ -1602,6 +1659,10 @@ export function Dashboard({
           onClose={() => setSelectedApprovedRowPreview(null)}
         />
       )}
+    
+        </div>
+      </div>
     </div>
   );
+
 }

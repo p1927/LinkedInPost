@@ -236,7 +236,7 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
         <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-[32px] border border-white/40 bg-gradient-to-b from-white/95 to-slate-50/95 shadow-2xl backdrop-blur-xl">
-          <div className="grid flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
+          <div className="grid flex-1 gap-0 overflow-y-auto overflow-x-hidden xl:overflow-hidden xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
             <section className="relative flex min-h-[460px] flex-col border-b border-slate-200/60 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.72),rgba(241,245,249,0.68))] p-3 xl:min-h-0 xl:border-b-0 xl:border-r xl:p-4">
               {options.length > 0 ? (
                 <>
@@ -342,9 +342,9 @@ export function VariantSelection({ row, onApprove, onRefine, onCancel }: Props) 
               )}
             </section>
 
-            <aside className="flex min-h-0 flex-col bg-white/60 p-3 xl:p-4 backdrop-blur-sm">
-              <div className="flex h-full min-h-0 flex-col rounded-[32px] border border-white/60 bg-white/90 p-6 shadow-xl sm:p-8 backdrop-blur-md">
-                <div className="min-h-0 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <aside className="flex min-h-fit xl:min-h-0 flex-col bg-white/60 p-3 xl:p-4 backdrop-blur-sm">
+              <div className="flex h-full min-h-fit xl:min-h-0 flex-col rounded-[32px] border border-white/60 bg-white/90 p-6 shadow-xl sm:p-8 backdrop-blur-md">
+                <div className="min-h-fit xl:min-h-0 xl:flex-1 xl:overflow-y-auto pr-2 custom-scrollbar">
                 <section>
                   <div className="mb-3 flex items-center justify-between gap-4 text-[#1f2937]">
                     <div className="flex items-center gap-2">
