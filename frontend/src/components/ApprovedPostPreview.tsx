@@ -25,13 +25,13 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1240px)] items-center justify-center">
-        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-[32px] border border-white/40 bg-gradient-to-b from-white/95 to-slate-50/95 shadow-2xl backdrop-blur-xl">
+        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-xl border border-white/40 bg-gradient-to-b from-white/95 to-slate-50/95 shadow-2xl backdrop-blur-xl">
           <div className="flex items-start justify-between gap-4 border-b border-slate-200/70 px-6 py-5 sm:px-8">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
                 <Eye className="h-3.5 w-3.5" /> {previewLabel}
               </div>
-              <h2 className="mt-3 text-2xl font-semibold text-slate-900">{row.topic}</h2>
+              <h2 className="mt-3 text-xl font-bold text-slate-900">{row.topic}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                 {previewDescription}
               </p>
@@ -61,7 +61,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
             </section>
 
             <aside className="flex xl:min-h-0 flex-col border-t border-slate-200/70 bg-white/70 px-5 py-5 xl:border-l xl:border-t-0 xl:px-6 xl:py-8">
-              <div className="rounded-[28px] border border-white/60 bg-white/90 p-6 shadow-lg">
+              <div className="rounded-xl border border-white/60 bg-white/90 p-6 shadow-lg">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Publishing summary</p>
 
                 <div className="mt-5 grid gap-4">

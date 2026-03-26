@@ -1,18 +1,17 @@
 import { useState } from 'react';
-import { ChevronRight, PanelLeftOpen, RefreshCw, Settings } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '../../services/configService';
 import { getNormalizedRowStatus } from './utils';
-import { type QueueFilter, type DashboardTab, type DeliverySummary } from './types';
+import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
 import { useDashboardQueue } from './hooks/useDashboardQueue';
-import { DashboardNavigation } from './components/DashboardNavigation';
-import { dashboardTabs } from './constants';
 import { DashboardSettingsDrawer } from './components/DashboardSettingsDrawer';
 import { DashboardOverview } from './tabs/DashboardOverview';
 import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
+import { CollapsibleSidebar } from './components/CollapsibleSidebar';
 import { getChannelOption } from '../../integrations/channels';
 import { normalizeTelegramChatId } from '../../integrations/telegram';
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
@@ -33,10 +32,6 @@ export function Dashboard({
   onAuthExpired: () => void;
 }) {
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
-  const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>('overview');
-  const [navigationOpen, setNavigationOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [deliverySidebarOpen, setDeliverySidebarOpen] = useState(false);
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
 
   const channelsHook = useDashboardChannels({
@@ -45,7 +40,7 @@ export function Dashboard({
     session,
     onAuthExpired,
     onSaveConfig,
-    telegramBotTokenInput: '', // Temporary placeholder, actual logic is inside useDashboardSettings
+    telegramBotTokenInput: '', 
   });
 
   const settingsHook = useDashboardSettings({
@@ -54,9 +49,7 @@ export function Dashboard({
     session,
     onSaveConfig,
     onAuthExpired,
-    loadData: async () => {
-      // Temporary placeholder, logic handled below
-    },
+    loadData: async () => {},
     selectedChannel: channelsHook.selectedChannel,
     telegramRecipientsInput: channelsHook.telegramRecipientsInput,
     whatsappRecipientsInput: channelsHook.whatsappRecipientsInput,
@@ -65,7 +58,6 @@ export function Dashboard({
   const [telegramVerification, setTelegramVerification] = useState<{ kind: 'success' | 'error'; message: string; result?: TelegramChatVerificationResult; } | null>(null);
 
   const handleVerifyTelegramChat = async () => {
-    // Override the function locally or update hook to receive dynamic token
     const chatId = normalizeTelegramChatId(channelsHook.telegramDraftChatId);
     if (!chatId) {
       setTelegramVerification({ kind: 'error', message: 'Enter a valid Telegram target before verifying.' });
@@ -89,7 +81,7 @@ export function Dashboard({
   };
 
   const selectedChannelOption = getChannelOption(channelsHook.selectedChannel);
-  const activeRecipientOptions = session.config.telegramRecipients.map(r => ({ label: r.label, value: r.chatId })); // Simplify for active recipients mapping
+  const activeRecipientOptions = session.config.telegramRecipients.map(r => ({ label: r.label, value: r.chatId })); 
   const resolvedRecipientId = channelsHook.recipientMode === 'saved'
     ? channelsHook.selectedRecipientId
     : channelsHook.selectedChannel === 'telegram'
@@ -121,7 +113,6 @@ export function Dashboard({
 
   const loadData = async () => {
     if (!session.config.spreadsheetId) return;
-
     queueHook.loadData();
   };
 
@@ -135,13 +126,6 @@ export function Dashboard({
   const filteredRows = queueHook.rows.filter((row) => statusFilter === 'all' || getNormalizedRowStatus(row.status) === statusFilter);
   const queueSpotlightRows = filteredRows.slice(0, 3);
   
-  const activeDashboardTabMeta = dashboardTabs.find((tab) => tab.value === activeDashboardTab) || dashboardTabs[0];
-  
-  const navigationCounts: Record<DashboardTab, number> = {
-    overview: queueHook.rows.length,
-    queue: filteredRows.length,
-  };
-
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
     : channelsHook.selectedChannel === 'instagram'
@@ -151,7 +135,7 @@ export function Dashboard({
   if (!session.config.spreadsheetId && !session.isAdmin) {
     return (
       <div className="bg-white/80 backdrop-blur-md border border-white/50 text-left max-w-xl mx-auto mt-8 p-8 rounded-2xl shadow-xl">
-        <h2 className="text-xl font-bold text-deep-indigo font-heading">Workspace setup pending</h2>
+        <h2 className="text-xl font-bold text-deep-purple font-heading">Workspace setup pending</h2>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           You are signed in as <strong>{session.email}</strong>, but an admin still needs to finish the shared spreadsheet, draft workflow, Instagram publishing, LinkedIn publishing, plus Telegram and WhatsApp delivery settings in the backend.
         </p>
@@ -159,22 +143,106 @@ export function Dashboard({
     );
   }
 
+  const queueContent = (
+    <DashboardQueue
+      handleAddTopic={queueHook.handleAddTopic}
+      newTopic={queueHook.newTopic}
+      setNewTopic={queueHook.setNewTopic}
+      loading={queueHook.loading}
+      setStatusFilter={setStatusFilter}
+      statusFilter={statusFilter}
+      queueCounts={queueCounts}
+      filteredRows={filteredRows}
+      rows={queueHook.rows}
+      getStatusColor={queueHook.getStatusColor}
+      triggerRowGithubAction={queueHook.triggerRowGithubAction}
+      actionLoading={queueHook.actionLoading}
+      session={session}
+      setSelectedRowForReview={queueHook.setSelectedRowForReview}
+      publishRowToSelectedChannel={queueHook.publishRowToSelectedChannel}
+      republishRowToSelectedChannel={queueHook.republishRowToSelectedChannel}
+      setSelectedApprovedRowPreview={queueHook.setSelectedApprovedRowPreview}
+      handleDeleteTopic={queueHook.handleDeleteTopic}
+      deletingRowIndex={queueHook.deletingRowIndex}
+    />
+  );
+
+  const deliveryContent = (
+    <DashboardDelivery
+      selectedChannel={channelsHook.selectedChannel}
+      setSelectedChannel={channelsHook.setSelectedChannel}
+      deliveryTargetSummary={deliveryTargetSummary}
+      selectedChannelOption={selectedChannelOption}
+      recipientMode={channelsHook.recipientMode}
+      setRecipientMode={channelsHook.setRecipientMode}
+      selectedRecipientId={channelsHook.selectedRecipientId}
+      setSelectedRecipientId={channelsHook.setSelectedRecipientId}
+      activeRecipientOptions={activeRecipientOptions}
+      manualRecipientId={channelsHook.manualRecipientId}
+      setManualRecipientId={channelsHook.setManualRecipientId}
+      lastDeliverySummary={lastDeliverySummary}
+    />
+  );
+
+  const settingsContent = (
+    <DashboardSettingsDrawer
+      session={session}
+      sheetIdInput={settingsHook.sheetIdInput}
+      setSheetIdInput={settingsHook.setSheetIdInput}
+      selectedChannel={channelsHook.selectedChannel}
+      setSelectedChannel={channelsHook.setSelectedChannel}
+      githubRepo={settingsHook.githubRepo}
+      setGithubRepo={settingsHook.setGithubRepo}
+      googleModel={settingsHook.googleModel}
+      setGoogleModel={settingsHook.setGoogleModel}
+      availableModels={settingsHook.availableModels}
+      generationRules={settingsHook.generationRules}
+      setGenerationRules={settingsHook.setGenerationRules}
+      githubTokenInput={settingsHook.githubTokenInput}
+      setGithubTokenInput={settingsHook.setGithubTokenInput}
+      telegramBotTokenInput={settingsHook.telegramBotTokenInput}
+      setTelegramBotTokenInput={settingsHook.setTelegramBotTokenInput}
+      telegramDraftLabel={channelsHook.telegramDraftLabel}
+      setTelegramDraftLabel={channelsHook.setTelegramDraftLabel}
+      telegramDraftChatId={channelsHook.telegramDraftChatId}
+      setTelegramDraftChatId={channelsHook.setTelegramDraftChatId}
+      verifyingTelegramChat={channelsHook.verifyingTelegramChat}
+      handleVerifyTelegramChat={handleVerifyTelegramChat}
+      handleAddTelegramRecipient={channelsHook.handleAddTelegramRecipient}
+      telegramVerification={telegramVerification}
+      setTelegramVerification={setTelegramVerification}
+      recipientMode={channelsHook.recipientMode}
+      handleUseManualTelegramChat={channelsHook.handleUseManualTelegramChat}
+      parsedTelegramRecipients={[]} 
+      handleRemoveTelegramRecipient={channelsHook.handleRemoveTelegramRecipient}
+      telegramRecipientsInput={channelsHook.telegramRecipientsInput}
+      setTelegramRecipientsInput={channelsHook.setTelegramRecipientsInput}
+      channelActionBusy={channelsHook.connectingChannel !== null || channelsHook.disconnectingChannel !== null}
+      handleInstagramConnection={channelsHook.handleInstagramConnection}
+      connectingChannel={channelsHook.connectingChannel}
+      handleDisconnectChannel={channelsHook.handleDisconnectChannel}
+      disconnectingChannel={channelsHook.disconnectingChannel}
+      handleLinkedInConnection={channelsHook.handleLinkedInConnection}
+      handleWhatsAppConnection={channelsHook.handleWhatsAppConnection}
+      pendingWhatsAppOptions={channelsHook.pendingWhatsAppOptions}
+      selectedWhatsAppPhoneId={channelsHook.selectedWhatsAppPhoneId}
+      setSelectedWhatsAppPhoneId={channelsHook.setSelectedWhatsAppPhoneId}
+      completeWhatsAppPhoneSelection={channelsHook.completeWhatsAppPhoneSelection}
+      whatsappRecipientsInput={channelsHook.whatsappRecipientsInput}
+      setWhatsappRecipientsInput={channelsHook.setWhatsappRecipientsInput}
+      saveSettings={settingsHook.saveSettings}
+      savingConfig={settingsHook.savingConfig}
+    />
+  );
+
   return (
     <div className="max-w-[1600px] mx-auto w-full px-4 pb-12">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm mb-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">{activeDashboardTabMeta.label}</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{activeDashboardTabMeta.description}</p>
+          <h2 className="text-base font-semibold text-slate-900">Overview</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Snapshot of queue and delivery state.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setNavigationOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 lg:hidden"
-          >
-            <PanelLeftOpen className="h-3.5 w-3.5" />
-            Menu
-          </button>
+        <div className="flex items-center">
           <button
             type="button"
             onClick={() => void loadData()}
@@ -184,161 +252,34 @@ export function Dashboard({
             <RefreshCw className={`h-3.5 w-3.5 ${queueHook.loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          {session.isAdmin ? (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-            >
-              <Settings className="h-3.5 w-3.5" />
-              Settings
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setDeliverySidebarOpen(!deliverySidebarOpen)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${deliverySidebarOpen ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-          >
-            Delivery
-          </button>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col lg:flex-row items-start gap-5 relative">
-        <aside className="hidden lg:block w-[220px] shrink-0">
-          <div className="sticky top-[56px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <DashboardNavigation
-              activeDashboardTab={activeDashboardTab}
-              setActiveDashboardTab={setActiveDashboardTab}
-              setNavigationOpen={setNavigationOpen}
-              navigationCounts={navigationCounts}
-              session={session}
-              setSettingsOpen={setSettingsOpen}
-            />
-          </div>
-        </aside>
+      <div className="flex flex-col lg:flex-row items-start gap-5 relative">
+        <CollapsibleSidebar 
+          queueContent={queueContent}
+          deliveryContent={deliveryContent}
+          settingsContent={settingsContent}
+          isAdmin={session.isAdmin}
+        />
 
         <div className="flex-1 min-w-0 space-y-4">
-          {activeDashboardTab === 'overview' && (
-            <DashboardOverview
-              setActiveDashboardTab={setActiveDashboardTab}
-              setStatusFilter={setStatusFilter}
-              statusFilter={statusFilter}
-              queueCounts={queueCounts}
-              queueSpotlightRows={queueSpotlightRows}
-              getStatusColor={queueHook.getStatusColor}
-              selectedChannel={channelsHook.selectedChannel}
-              deliveryTargetSummary={deliveryTargetSummary}
-              selectedChannelOption={selectedChannelOption}
-              linkedinConfigured={linkedinConfigured}
-              instagramConfigured={instagramConfigured}
-              telegramConfigured={telegramConfigured}
-              whatsappConfigured={whatsappConfigured}
-              lastDeliverySummary={lastDeliverySummary}
-              onEditDelivery={() => setDeliverySidebarOpen(true)}
-            />
-          )}
-
-          {activeDashboardTab === 'queue' && (
-            <DashboardQueue
-              handleAddTopic={queueHook.handleAddTopic}
-              newTopic={queueHook.newTopic}
-              setNewTopic={queueHook.setNewTopic}
-              loading={queueHook.loading}
-              setStatusFilter={setStatusFilter}
-              statusFilter={statusFilter}
-              queueCounts={queueCounts}
-              filteredRows={filteredRows}
-              rows={queueHook.rows}
-              getStatusColor={queueHook.getStatusColor}
-              triggerRowGithubAction={queueHook.triggerRowGithubAction}
-              actionLoading={queueHook.actionLoading}
-              session={session}
-              setSelectedRowForReview={queueHook.setSelectedRowForReview}
-              publishRowToSelectedChannel={queueHook.publishRowToSelectedChannel}
-              republishRowToSelectedChannel={queueHook.republishRowToSelectedChannel}
-              setSelectedApprovedRowPreview={queueHook.setSelectedApprovedRowPreview}
-              handleDeleteTopic={queueHook.handleDeleteTopic}
-              deletingRowIndex={queueHook.deletingRowIndex}
-            />
-          )}
+          <DashboardOverview
+            setStatusFilter={setStatusFilter}
+            statusFilter={statusFilter}
+            queueSpotlightRows={queueSpotlightRows}
+            getStatusColor={queueHook.getStatusColor}
+            selectedChannel={channelsHook.selectedChannel}
+            deliveryTargetSummary={deliveryTargetSummary}
+            selectedChannelOption={selectedChannelOption}
+            linkedinConfigured={linkedinConfigured}
+            instagramConfigured={instagramConfigured}
+            telegramConfigured={telegramConfigured}
+            whatsappConfigured={whatsappConfigured}
+            lastDeliverySummary={lastDeliverySummary}
+          />
         </div>
-
-        {deliverySidebarOpen && (
-          <aside className="w-full lg:w-[320px] shrink-0">
-            <div className="sticky top-[56px]">
-              <DashboardDelivery
-                selectedChannel={channelsHook.selectedChannel}
-                setSelectedChannel={channelsHook.setSelectedChannel}
-                deliveryTargetSummary={deliveryTargetSummary}
-                selectedChannelOption={selectedChannelOption}
-                recipientMode={channelsHook.recipientMode}
-                setRecipientMode={channelsHook.setRecipientMode}
-                selectedRecipientId={channelsHook.selectedRecipientId}
-                setSelectedRecipientId={channelsHook.setSelectedRecipientId}
-                activeRecipientOptions={activeRecipientOptions}
-                manualRecipientId={channelsHook.manualRecipientId}
-                setManualRecipientId={channelsHook.setManualRecipientId}
-                session={session}
-                setSettingsOpen={setSettingsOpen}
-                lastDeliverySummary={lastDeliverySummary}
-              />
-            </div>
-          </aside>
-        )}
       </div>
-
-      {session.isAdmin && settingsOpen && (
-        <DashboardSettingsDrawer
-          session={session}
-          setSettingsOpen={setSettingsOpen}
-          sheetIdInput={settingsHook.sheetIdInput}
-          setSheetIdInput={settingsHook.setSheetIdInput}
-          selectedChannel={channelsHook.selectedChannel}
-          setSelectedChannel={channelsHook.setSelectedChannel}
-          githubRepo={settingsHook.githubRepo}
-          setGithubRepo={settingsHook.setGithubRepo}
-          googleModel={settingsHook.googleModel}
-          setGoogleModel={settingsHook.setGoogleModel}
-          availableModels={settingsHook.availableModels}
-          generationRules={settingsHook.generationRules}
-          setGenerationRules={settingsHook.setGenerationRules}
-          githubTokenInput={settingsHook.githubTokenInput}
-          setGithubTokenInput={settingsHook.setGithubTokenInput}
-          telegramBotTokenInput={settingsHook.telegramBotTokenInput}
-          setTelegramBotTokenInput={settingsHook.setTelegramBotTokenInput}
-          telegramDraftLabel={channelsHook.telegramDraftLabel}
-          setTelegramDraftLabel={channelsHook.setTelegramDraftLabel}
-          telegramDraftChatId={channelsHook.telegramDraftChatId}
-          setTelegramDraftChatId={channelsHook.setTelegramDraftChatId}
-          verifyingTelegramChat={channelsHook.verifyingTelegramChat}
-          handleVerifyTelegramChat={handleVerifyTelegramChat}
-          handleAddTelegramRecipient={channelsHook.handleAddTelegramRecipient}
-          telegramVerification={telegramVerification}
-          setTelegramVerification={setTelegramVerification}
-          recipientMode={channelsHook.recipientMode}
-          handleUseManualTelegramChat={channelsHook.handleUseManualTelegramChat}
-          parsedTelegramRecipients={[]} // Simplified
-          handleRemoveTelegramRecipient={channelsHook.handleRemoveTelegramRecipient}
-          telegramRecipientsInput={channelsHook.telegramRecipientsInput}
-          setTelegramRecipientsInput={channelsHook.setTelegramRecipientsInput}
-          channelActionBusy={channelsHook.connectingChannel !== null || channelsHook.disconnectingChannel !== null}
-          handleInstagramConnection={channelsHook.handleInstagramConnection}
-          connectingChannel={channelsHook.connectingChannel}
-          handleDisconnectChannel={channelsHook.handleDisconnectChannel}
-          disconnectingChannel={channelsHook.disconnectingChannel}
-          handleLinkedInConnection={channelsHook.handleLinkedInConnection}
-          handleWhatsAppConnection={channelsHook.handleWhatsAppConnection}
-          pendingWhatsAppOptions={channelsHook.pendingWhatsAppOptions}
-          selectedWhatsAppPhoneId={channelsHook.selectedWhatsAppPhoneId}
-          setSelectedWhatsAppPhoneId={channelsHook.setSelectedWhatsAppPhoneId}
-          completeWhatsAppPhoneSelection={channelsHook.completeWhatsAppPhoneSelection}
-          whatsappRecipientsInput={channelsHook.whatsappRecipientsInput}
-          setWhatsappRecipientsInput={channelsHook.setWhatsappRecipientsInput}
-          saveSettings={settingsHook.saveSettings}
-          savingConfig={settingsHook.savingConfig}
-        />
-      )}
 
       {queueHook.selectedRowForReview && (
         <ReviewWorkspace
@@ -362,33 +303,6 @@ export function Dashboard({
           onClose={() => queueHook.setSelectedApprovedRowPreview(null)}
         />
       )}
-      
-      {navigationOpen ? (
-        <div className="fixed inset-0 z-40 flex justify-start bg-slate-900/45 backdrop-blur-sm lg:hidden">
-          <div className="flex h-full w-full max-w-[260px] flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <p className="text-xs font-semibold text-slate-500">Navigation</p>
-              <button
-                type="button"
-                onClick={() => setNavigationOpen(false)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:text-slate-700"
-                aria-label="Close navigation"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-            <DashboardNavigation
-              activeDashboardTab={activeDashboardTab}
-              setActiveDashboardTab={setActiveDashboardTab}
-              setNavigationOpen={setNavigationOpen}
-              navigationCounts={navigationCounts}
-              session={session}
-              setSettingsOpen={setSettingsOpen}
-            />
-          </div>
-          <button type="button" className="flex-1" aria-label="Close navigation overlay" onClick={() => setNavigationOpen(false)} />
-        </div>
-      ) : null}
     </div>
   );
 }

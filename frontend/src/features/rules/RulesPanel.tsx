@@ -4,7 +4,7 @@ interface RulesPanelProps {
 
 export function RulesPanel({ sharedRules }: RulesPanelProps) {
   return (
-    <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
+    <section className="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Shared rules</p>
       <h4 className="mt-2 text-lg font-semibold text-slate-900">Workspace generation guardrails</h4>
       <p className="mt-2 text-sm leading-6 text-slate-600">

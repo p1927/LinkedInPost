@@ -1,5 +1,4 @@
-import { MessageCircle, Phone, Settings } from 'lucide-react';
-import { type AppSession } from '../../../services/backendApi';
+import { MessageCircle, Phone } from 'lucide-react';
 import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel } from '../../../integrations/channels';
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';
@@ -20,8 +19,6 @@ export function DashboardDelivery({
   activeRecipientOptions,
   manualRecipientId,
   setManualRecipientId,
-  session,
-  setSettingsOpen,
   lastDeliverySummary,
 }: {
   selectedChannel: ChannelId;
@@ -35,24 +32,18 @@ export function DashboardDelivery({
   activeRecipientOptions: RecipientOption[];
   manualRecipientId: string;
   setManualRecipientId: (val: string) => void;
-  session: AppSession;
-  setSettingsOpen: (open: boolean) => void;
   lastDeliverySummary: DeliverySummary | null;
 }) {
   return (
-    <section className="flex flex-col gap-6 h-[calc(100vh-140px)] overflow-y-auto pr-2 pb-16">
-      <section className="rounded-2xl border border-white/50 bg-white/85 p-5 shadow-sm backdrop-blur-md">
-        <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+        <div className="flex flex-col gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
-            <h3 className="mt-1.5 text-lg font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
-          </div>
-          <label className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm block mt-4">
-            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Target</p>
             <select
               value={selectedChannel}
               onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-              className="w-full bg-transparent text-sm font-semibold text-deep-indigo outline-none"
+              className="mt-1 w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold text-deep-purple outline-none"
             >
               {CHANNEL_OPTIONS.map((channel) => (
                 <option key={channel.value} value={channel.value}>
@@ -60,14 +51,13 @@ export function DashboardDelivery({
                 </option>
               ))}
             </select>
-          </label>
+          </div>
         </div>
 
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+        <div className="mt-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
-          <p className="mt-2 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
-          <p className="mt-2 text-xs leading-5 text-slate-500">{selectedChannelOption.description}</p>
-
+          <p className="mt-1 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
+          
           {selectedChannelOption.requiresRecipient ? (
             <>
               <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -136,40 +126,21 @@ export function DashboardDelivery({
             </>
           )}
         </div>
-      </section>
-
-      <div className="space-y-4">
-        <section className="rounded-2xl border border-white/50 bg-white/85 p-5 shadow-sm backdrop-blur-md">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Setup access</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Channel auth and shared publishing configuration stay in the workspace drawer so this tab can stay focused on the active destination.
-          </p>
-          {session.isAdmin ? (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-            >
-              <Settings className="h-4 w-4" />
-              Open workspace drawer
-            </button>
-          ) : null}
-        </section>
-
-        {lastDeliverySummary ? (
-          <section className="rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
-              <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
-                {getChannelLabel(lastDeliverySummary.channel)}
-              </span>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Last confirmed destination: {lastDeliverySummary.recipientLabel}.
-            </p>
-          </section>
-        ) : null}
       </div>
-    </section>
+
+      {lastDeliverySummary ? (
+        <div className="rounded-xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last</p>
+            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-slate-700 ring-1 ring-emerald-200">
+              {getChannelLabel(lastDeliverySummary.channel)}
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-600">
+            {lastDeliverySummary.recipientLabel}.
+          </p>
+        </div>
+      ) : null}
+    </div>
   );
 }

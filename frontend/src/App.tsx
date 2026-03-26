@@ -68,13 +68,13 @@ function App() {
   return (
     <AlertProvider>
       <div className="min-h-screen flex w-full flex-col bg-slate-50 text-slate-900 font-sans">
-      <header className="sticky top-0 inset-x-0 w-full bg-white border-b border-slate-200 z-50 px-4 sm:px-6 py-3">
+      <header className="w-full bg-white border-b border-slate-200 px-4 sm:px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex w-full items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-              <span className="text-white text-[11px] font-bold tracking-tight">CB</span>
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center shrink-0">
+              <span className="text-white text-xs font-bold tracking-tight">CB</span>
             </div>
-            <h1 className="text-sm font-semibold text-slate-800 tracking-tight">Channel Bot</h1>
+            <h1 className="text-base font-bold text-slate-800 tracking-tight">Channel Bot</h1>
           </div>
           {idToken && <GoogleLoginButton onLogin={handleLogin} />}
         </div>
@@ -83,7 +83,7 @@ function App() {
       <main className="flex flex-1 flex-col pt-5 pb-10 w-full max-w-[1600px] mx-auto">
         {!api.isConfigured() ? (
           <div className="mx-auto flex max-w-2xl flex-1 flex-col justify-center px-4 text-center">
-            <h2 className="mb-4 text-2xl font-bold text-deep-indigo font-heading">Backend URL required</h2>
+            <h2 className="mb-4 text-2xl font-bold text-deep-purple font-heading">Backend URL required</h2>
             <p className="text-slate-600">
               Set <code>VITE_WORKER_URL</code> to the deployed Cloudflare Worker URL, then rebuild the frontend.
             </p>
@@ -92,7 +92,7 @@ function App() {
           <div className="flex flex-1 flex-col lg:flex-row items-center justify-center px-6 lg:px-12 gap-12 lg:gap-24 min-h-[calc(100vh-140px)]">
             <div className="flex-1 max-w-2xl text-left space-y-8">
               <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 font-heading tracking-tight leading-tight">
-                Automate your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-500">omnichannel</span> content pipeline.
+                Automate your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">omnichannel</span> content pipeline.
               </h2>
               <ul className="space-y-6 text-lg text-slate-600">
                 <li className="flex items-start gap-4">
@@ -105,8 +105,8 @@ function App() {
                   </div>
                 </li>
                 <li className="flex items-start gap-4">
-                  <div className="bg-indigo-100 p-2.5 rounded-xl shrink-0 mt-0.5">
-                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  <div className="bg-purple-100 p-2.5 rounded-xl shrink-0 mt-0.5">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                   </div>
                   <div>
                     <strong className="block text-slate-900 font-semibold mb-1">AI-Powered Generation</strong>
@@ -135,10 +135,8 @@ function App() {
                   <p className="text-slate-500 mt-2">Sign in to access your workspace.</p>
                 </div>
                 
-                <div className="pt-4 pb-2 flex justify-center">
-                  <div className="scale-110">
-                    <GoogleLoginButton onLogin={handleLogin} />
-                  </div>
+                <div className="pt-4 pb-2 flex justify-center w-full">
+                  <GoogleLoginButton onLogin={handleLogin} />
                 </div>
                 
                 {errorMessage ? (
@@ -170,7 +168,7 @@ function App() {
           />
         ) : (
           <div className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center px-4 text-center">
-            <h2 className="mb-4 text-2xl font-bold text-deep-indigo font-heading">Unable to start the session</h2>
+            <h2 className="mb-4 text-2xl font-bold text-deep-purple font-heading">Unable to start the session</h2>
             <p className="text-slate-600">{errorMessage || 'Verify the Cloudflare Worker deployment and try again.'}</p>
             <p className="mt-3 text-sm text-slate-500">
               Current backend: {getBackendHostLabel(import.meta.env.VITE_WORKER_URL || '')}

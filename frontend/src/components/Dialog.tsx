@@ -48,7 +48,7 @@ export function Dialog({
         role="dialog"
         aria-labelledby="dialog-title"
         aria-describedby="dialog-description"
-        className="w-full max-w-md rounded-[28px] border border-white/50 bg-white/95 p-6 shadow-2xl"
+        className="w-full max-w-md rounded-2xl border border-white/50 bg-white/95 p-6 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -65,7 +65,7 @@ export function Dialog({
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-700"
             aria-label="Close dialog"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 

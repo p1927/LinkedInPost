@@ -444,7 +444,7 @@ export function VariantSelection({
                       <h4 className="text-sm font-semibold">Improve this draft</h4>
                     </div>
                     {selectedOptionIndex !== null ? (
-                      <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-primary">
+                      <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-primary">
                         Draft {selectedOptionIndex + 1}
                       </span>
                     ) : null}
@@ -476,7 +476,7 @@ export function VariantSelection({
                     onClick={handleRefine}
                     type="button"
                     disabled={refining || submitting || selectedOptionIndex === null}
-                    className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-primary transition-all duration-200 hover:bg-indigo-100 hover:-translate-y-0.5 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                    className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 text-sm font-semibold text-primary transition-all duration-200 hover:bg-purple-100 hover:-translate-y-0.5 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     {refining ? 'Requesting 4 refined variants...' : 'Generate 4 improved variants'}
                   </button>
@@ -517,7 +517,7 @@ export function VariantSelection({
                   <button
                     onClick={handleSubmit}
                     disabled={submitting || selectedOptionIndex === null}
-                    className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-indigo-600 hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                    className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-purple-600 hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     {submitting ? 'Approving...' : 'Approve selected post'}
                   </button>

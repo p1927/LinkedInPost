@@ -1,10 +1,4 @@
-import { LayoutDashboard, ListTodo, type LucideIcon } from 'lucide-react';
-import { type DashboardTab, type QueueFilter } from './types';
-
-export const dashboardTabs: Array<{ value: DashboardTab; label: string; description: string; icon: LucideIcon }> = [
-  { value: 'overview', label: 'Overview', description: 'Snapshot of queue and delivery state.', icon: LayoutDashboard },
-  { value: 'queue', label: 'Queue', description: 'Add topics and work rows by status.', icon: ListTodo },
-];
+import { type QueueFilter } from './types';
 
 export const filterOptions: Array<{ value: QueueFilter; label: string }> = [
   { value: 'all', label: 'All' },

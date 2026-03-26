@@ -11,10 +11,10 @@ export default {
         sans: ['Open Sans', 'sans-serif'],
       },
       colors: {
-        primary: '#6366F1',
-        secondary: '#818CF8',
+        primary: '#9333EA',
+        secondary: '#A855F7',
         cta: '#10B981',
-        'deep-indigo': '#1E1B4B',
+        'deep-purple': '#3B0764',
       }
     },
   },

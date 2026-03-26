@@ -88,7 +88,7 @@ export function LinkedInPostPreview({
       role="region"
       aria-label={`Preview draft ${optionNumber}`}
       className={`group relative w-full text-left transition-all duration-300 outline-none cursor-pointer ${
-        isCarousel ? 'h-full rounded-3xl p-3' : 'rounded-[32px] p-3 sm:p-4'
+        isCarousel ? 'h-full rounded-xl p-3' : 'rounded-xl p-3 sm:p-4'
       } ${
         selected
           ? 'bg-white/80 border-2 border-primary shadow-xl ring-4 ring-primary/10'
@@ -111,8 +111,8 @@ export function LinkedInPostPreview({
         </div>
       </div>
 
-      <div className={`overflow-hidden bg-slate-50/50 backdrop-blur-sm border border-slate-200 ${isCarousel ? 'rounded-2xl p-2.5 sm:p-3' : 'rounded-[28px] p-2.5 sm:p-4'}`}>
-        <div className={`mx-auto overflow-hidden bg-white shadow-sm border border-slate-100 ${isCarousel ? 'max-w-none rounded-[16px]' : 'max-w-[430px] rounded-2xl'}`}>
+      <div className={`overflow-hidden bg-slate-50/50 backdrop-blur-sm border border-slate-200 ${isCarousel ? 'rounded-lg p-2.5 sm:p-3' : 'rounded-xl p-2.5 sm:p-4'}`}>
+        <div className={`mx-auto overflow-hidden bg-white shadow-sm border border-slate-100 ${isCarousel ? 'max-w-none rounded-lg' : 'max-w-[430px] rounded-xl'}`}>
           <div className={isCarousel ? 'px-4 pb-3.5 pt-4' : 'px-4 pb-3 pt-4'}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 gap-3 items-center">
@@ -146,7 +146,7 @@ export function LinkedInPostPreview({
                     event.stopPropagation();
                     onToggleExpanded();
                   }}
-                  className={`mt-2 font-semibold text-primary hover:text-indigo-800 transition-colors ${isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
+                  className={`mt-2 font-semibold text-primary hover:text-purple-800 transition-colors ${isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
                 >
                   {expanded ? 'Show less' : '...see more'}
                 </button>

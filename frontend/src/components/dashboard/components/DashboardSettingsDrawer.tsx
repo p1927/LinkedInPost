@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, MessageCircle, Trash2, X } from 'lucide-react';
+import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
 import { type AppSession } from '../../../services/backendApi';
 import { type ChannelId, CHANNEL_OPTIONS } from '../../../integrations/channels';
 import { type GoogleModelOption } from '../../../services/configService';
@@ -8,7 +8,6 @@ import { type TelegramRecipient } from '../../../integrations/telegram';
 
 export function DashboardSettingsDrawer({
   session,
-  setSettingsOpen,
   sheetIdInput,
   setSheetIdInput,
   selectedChannel,
@@ -56,7 +55,6 @@ export function DashboardSettingsDrawer({
   savingConfig,
 }: {
   session: AppSession;
-  setSettingsOpen: (open: boolean) => void;
   sheetIdInput: string;
   setSheetIdInput: (val: string) => void;
   selectedChannel: ChannelId;
@@ -104,28 +102,10 @@ export function DashboardSettingsDrawer({
   savingConfig: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex justify-start bg-slate-900/45 backdrop-blur-sm">
-      <div className="flex h-full w-full max-w-[760px] flex-col overflow-hidden border-r border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace drawer</p>
-            <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Settings and channel setup</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Configuration lives here now so the dashboard tabs can stay focused on publishing work.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(false)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:text-slate-700"
-            aria-label="Close settings"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="flex flex-col gap-3">
-            <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden" open>
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+    <>
+      <div className="flex flex-col gap-3">
+      <details className="group rounded-xl border border-slate-200 bg-slate-50/50 shadow-sm [&_summary::-webkit-details-marker]:hidden" open>
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
                 Workspace core
                 <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -164,8 +144,8 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
                 GitHub Actions
                 <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -230,8 +210,8 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
                 Instagram Publishing
                 <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -287,8 +267,8 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
                 LinkedIn Publishing
                 <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -344,8 +324,8 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
                 Telegram Delivery
                 <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -444,7 +424,7 @@ export function DashboardSettingsDrawer({
                         <button
                           type="button"
                           onClick={handleUseManualTelegramChat}
-                          className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-indigo-600"
+                          className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-purple-600"
                         >
                           <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
                         </button>
@@ -489,8 +469,8 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
                 WhatsApp Delivery
                 <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -584,23 +564,15 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
           </div>
-        </div>
-
-        <div className="border-t border-slate-200 px-6 py-5">
-          <p className="flex items-center gap-1.5 text-xs text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Secrets stay in the backend. The browser no longer talks to Google Sheets, Instagram, LinkedIn, Telegram, or Meta directly.
-          </p>
-          <button
-            onClick={saveSettings}
-            disabled={savingConfig}
-            className="mt-4 w-full rounded-xl bg-primary px-4 py-3 font-medium text-white transition-all duration-200 hover:bg-indigo-600 disabled:opacity-50"
-          >
-            {savingConfig ? 'Saving shared configuration...' : 'Save settings'}
-          </button>
-        </div>
+      <div className="mt-4 pt-4 border-t border-slate-200">
+        <button
+          onClick={saveSettings}
+          disabled={savingConfig}
+          className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-white transition-all duration-200 hover:bg-purple-600 disabled:opacity-50"
+        >
+          {savingConfig ? 'Saving...' : 'Save settings'}
+        </button>
       </div>
-      <button type="button" className="flex-1" aria-label="Close settings overlay" onClick={() => setSettingsOpen(false)} />
-    </div>
+    </>
   );
 }

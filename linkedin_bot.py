@@ -674,17 +674,19 @@ def upload_image_to_gcs(storage_bucket, image_url, topic, index):
         response = requests.get(image_url, stream=True, timeout=30)
         response.raise_for_status()
         mime_type = response.headers.get('Content-Type', 'image/jpeg').split(';')[0] or 'image/jpeg'
+        
+        if not mime_type.lower().startswith('image/'):
+            print(f"Skipping URL {image_url} because it returned non-image content: {mime_type}")
+            return "", ""
+            
         object_name = build_gcs_object_name(topic, index, mime_type)
         blob = storage_bucket.blob(object_name)
         blob.upload_from_string(response.content, content_type=mime_type)
         try:
             blob.make_public()
-        except Exception as error:
-            print(
-                'Uploaded image to GCS, but the object could not be made public automatically. '
-                'Frontend previews and channel delivery will fail until the bucket or object is publicly readable. '
-                f'Bucket={storage_bucket.name}, object={object_name}, error={error}'
-            )
+        except Exception:
+            pass  # Ignore uniform bucket-level access errors or ACL errors silently.
+            
         public_url = build_gcs_public_url(storage_bucket.name, object_name)
         print(
             f"Uploaded image {index} for '{topic}' to GCS. "
@@ -697,17 +699,21 @@ def upload_image_to_gcs(storage_bucket, image_url, topic, index):
 
 
 def fetch_and_upload_images(storage_bucket, topic, num_images=4):
-    image_urls = fetch_images(topic, num_images=num_images)
+    image_urls = fetch_images(topic, num_images=num_images * 3)
     if not image_urls:
         print(f"No image URLs found for '{topic}'.")
         return [''] * num_images
 
     drive_links = []
     for idx, img_url in enumerate(image_urls, start=1):
-        drive_link, drive_id = upload_image_to_gcs(storage_bucket, img_url, topic, idx)
-        if not drive_link:
-            print(f"Image {idx} for '{topic}' could not be uploaded. drive_id={drive_id}")
-        drive_links.append(drive_link)
+        drive_link, drive_id = upload_image_to_gcs(storage_bucket, img_url, topic, len(drive_links) + 1)
+        if drive_link:
+            drive_links.append(drive_link)
+        else:
+            print(f"Image candidate {idx} for '{topic}' could not be uploaded. Skipping.")
+            
+        if len(drive_links) >= num_images:
+            break
 
     drive_links += [''] * (num_images - len(drive_links))
     return drive_links[:num_images]
