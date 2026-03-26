@@ -33,6 +33,7 @@ from typing import Any
 
 import requests
 from dotenv import load_dotenv
+from google.cloud import storage
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from setup_worker import (
@@ -147,6 +148,14 @@ def fail(label: str, reason: str) -> None:
     print(f'  [fail] {label}: {reason}')
 
 
+def get_drive_item(drive: Any, file_id: str, fields: str) -> dict[str, Any]:
+    return drive.files().get(
+        fileId=file_id,
+        fields=fields,
+        supportsAllDrives=True,
+    ).execute()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Bootstrap LinkedIn Bot resources and deployment config.')
     parser.add_argument('--install-worker-deps', action='store_true', help='Install Worker dependencies, including Wrangler, before any Worker-related steps.')
@@ -221,11 +230,24 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         sys.exit(1)
 
     creds_dict, normalized_creds_json = parse_service_account_json(creds_json)
+    gcs_bucket_name = os.environ.get('GOOGLE_CLOUD_STORAGE_BUCKET', '').strip()
 
     service_account_email = creds_dict.get('client_email', 'unknown')
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     sheets = build('sheets', 'v4', credentials=creds)
     drive = build('drive', 'v3', credentials=creds)
+
+    if gcs_bucket_name:
+        print("\n[GCS] Validating configured image bucket...")
+        storage_client = storage.Client.from_service_account_info(
+            creds_dict,
+            project=creds_dict.get('project_id'),
+        )
+        bucket = storage_client.bucket(gcs_bucket_name)
+        if not bucket.exists():
+            fail('GOOGLE_CLOUD_STORAGE_BUCKET', f'bucket {gcs_bucket_name!r} does not exist or is not accessible to the service account.')
+            sys.exit(1)
+        ok('Google Cloud Storage bucket', gcs_bucket_name)
 
     print(f'\nService account: {service_account_email}')
     if shared_email:
@@ -239,6 +261,8 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         spaces='drive',
         fields='files(id, webViewLink)',
         pageSize=1,
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
     ).execute()
 
     if existing.get('files'):
@@ -250,6 +274,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         linkedin_folder = drive.files().create(
             body={'name': 'LINKEDIN', 'mimeType': 'application/vnd.google-apps.folder'},
             fields='id, webViewLink',
+            supportsAllDrives=True,
         ).execute()
         linkedin_folder_id = linkedin_folder['id']
         linkedin_folder_url = linkedin_folder.get('webViewLink', '')
@@ -260,6 +285,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
             drive.permissions().create(
                 fileId=linkedin_folder_id,
                 body={'type': 'user', 'role': 'writer', 'emailAddress': shared_email},
+                supportsAllDrives=True,
             ).execute()
             ok('LINKEDIN folder shared with', shared_email)
         except Exception as error:
@@ -274,6 +300,8 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         spaces='drive',
         fields='files(id)',
         pageSize=1,
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
     ).execute()
 
     if existing_sheet.get('files'):
@@ -288,6 +316,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
                 'parents': [linkedin_folder_id],
             },
             fields='id',
+            supportsAllDrives=True,
         ).execute()
         sheet_id = sheet_file['id']
         ok('Google Sheet ID (new)', sheet_id)
@@ -301,31 +330,60 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         warn('Google Sheet tabs', str(error))
 
     print("\n[2/4] Checking for existing 'Images' subfolder...")
-    existing_images = drive.files().list(
-        q=(
-            "name='Images' and mimeType='application/vnd.google-apps.folder' "
-            f"and '{linkedin_folder_id}' in parents and trashed=false"
-        ),
-        spaces='drive',
-        fields='files(id)',
-        pageSize=1,
-    ).execute()
-
-    if existing_images.get('files'):
-        images_folder_id = existing_images['files'][0]['id']
-        ok('Google Drive Images Folder ID (existing)', images_folder_id)
+    configured_images_folder_id = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '').strip()
+    if configured_images_folder_id:
+        folder = get_drive_item(
+            drive,
+            configured_images_folder_id,
+            'id, name, mimeType, driveId, webViewLink',
+        )
+        if folder.get('mimeType') != 'application/vnd.google-apps.folder':
+            fail('GOOGLE_DRIVE_FOLDER_ID', 'must point to a Google Drive folder.')
+            sys.exit(1)
+        images_folder_id = folder['id']
+        ok('Google Drive Images Folder ID (configured)', images_folder_id)
+        if not folder.get('driveId'):
+            warn(
+                'GOOGLE_DRIVE_FOLDER_ID',
+                'points to a My Drive folder. Service-account image uploads will fail there; use a Shared Drive folder instead.',
+            )
     else:
-        print('  Creating new Images folder...')
-        images_folder = drive.files().create(
-            body={
-                'name': 'Images',
-                'mimeType': 'application/vnd.google-apps.folder',
-                'parents': [linkedin_folder_id],
-            },
-            fields='id',
+        existing_images = drive.files().list(
+            q=(
+                "name='Images' and mimeType='application/vnd.google-apps.folder' "
+                f"and '{linkedin_folder_id}' in parents and trashed=false"
+            ),
+            spaces='drive',
+            fields='files(id)',
+            pageSize=1,
+            includeItemsFromAllDrives=True,
+            supportsAllDrives=True,
         ).execute()
-        images_folder_id = images_folder['id']
-        ok('Google Drive Images Folder ID (new)', images_folder_id)
+
+        if existing_images.get('files'):
+            images_folder_id = existing_images['files'][0]['id']
+            ok('Google Drive Images Folder ID (existing)', images_folder_id)
+            warn(
+                'Google Drive Images Folder ID',
+                'auto-created service-account folders are typically not suitable for binary uploads; prefer a Shared Drive folder and set GOOGLE_DRIVE_FOLDER_ID explicitly.',
+            )
+        else:
+            print('  Creating new Images folder...')
+            images_folder = drive.files().create(
+                body={
+                    'name': 'Images',
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'parents': [linkedin_folder_id],
+                },
+                fields='id',
+                supportsAllDrives=True,
+            ).execute()
+            images_folder_id = images_folder['id']
+            ok('Google Drive Images Folder ID (new)', images_folder_id)
+            warn(
+                'Google Drive Images Folder ID',
+                'this folder is not guaranteed to work for service-account binary uploads. For image storage, create a folder in a Shared Drive and set GOOGLE_DRIVE_FOLDER_ID to that folder ID.',
+            )
 
     print("\n[3/4] Checking for existing 'Published Posts' doc...")
     existing_doc = drive.files().list(
@@ -336,6 +394,8 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         spaces='drive',
         fields='files(id)',
         pageSize=1,
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
     ).execute()
 
     if existing_doc.get('files'):
@@ -350,6 +410,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
                 'parents': [linkedin_folder_id],
             },
             fields='id',
+            supportsAllDrives=True,
         ).execute()
         doc_id = doc_file['id']
         ok('Google Doc ID (new)', doc_id)
@@ -412,6 +473,8 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
         allowed_emails=allowed_emails,
         admin_emails=admin_emails,
         google_client_id=google_client_id,
+        google_cloud_storage_bucket=os.environ.get('GOOGLE_CLOUD_STORAGE_BUCKET', '').strip(),
+        delete_unused_generated_images=os.environ.get('DELETE_UNUSED_GENERATED_IMAGES', 'true').strip() or 'true',
         cors_allowed_origins=normalize_space_delimited(
             f'http://localhost:5173 {github_pages_origin}'.strip()
         ),
@@ -667,8 +730,11 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: Goo
         'VITE_WORKER_URL': worker_url,
         'GOOGLE_CREDENTIALS_JSON': google_resources.credentials_json if google_resources else os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip(),
         'GOOGLE_SHEET_ID': google_resources.sheet_id if google_resources else os.environ.get('GOOGLE_SHEET_ID', '').strip(),
+        'GOOGLE_CLOUD_STORAGE_BUCKET': os.environ.get('GOOGLE_CLOUD_STORAGE_BUCKET', '').strip(),
+        'GOOGLE_CLOUD_STORAGE_PREFIX': os.environ.get('GOOGLE_CLOUD_STORAGE_PREFIX', '').strip(),
         'GOOGLE_DRIVE_FOLDER_ID': google_resources.images_folder_id if google_resources else os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '').strip(),
         'GOOGLE_DOC_ID': google_resources.doc_id if google_resources else os.environ.get('GOOGLE_DOC_ID', '').strip(),
+        'DELETE_UNUSED_GENERATED_IMAGES': os.environ.get('DELETE_UNUSED_GENERATED_IMAGES', 'true').strip(),
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
         'SERPAPI_API_KEY': os.environ.get('SERPAPI_API_KEY', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),

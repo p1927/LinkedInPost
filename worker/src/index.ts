@@ -14,6 +14,8 @@ interface Env {
   ADMIN_EMAILS?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_SERVICE_ACCOUNT_JSON: string;
+  GOOGLE_CLOUD_STORAGE_BUCKET?: string;
+  DELETE_UNUSED_GENERATED_IMAGES?: string;
   GEMINI_API_KEY?: string;
   GITHUB_TOKEN_ENCRYPTION_KEY?: string;
   CORS_ALLOWED_ORIGINS?: string;
@@ -293,7 +295,10 @@ const INSTAGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Instagram access token can no
 const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const TELEGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Telegram bot token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const WHATSAPP_TOKEN_REAUTH_MESSAGE = 'The stored WhatsApp access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
-const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
+const GOOGLE_API_SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/devstorage.read_write',
+].join(' ');
 const OAUTH_STATE_PREFIX = 'oauth-state:';
 const WHATSAPP_PENDING_PREFIX = 'whatsapp-pending:';
 const OAUTH_STATE_TTL_SECONDS = 60 * 10;
@@ -1428,6 +1433,18 @@ async function publishContent(
     : normalizePhoneNumber(rawRecipientId);
   const message = String(payload.message || row.selectedText || '').trim();
   const imageUrl = String(payload.imageUrl || row.selectedImageId || '').trim();
+  const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+  async function markPublishedForChannel(): Promise<void> {
+    const cleanedRow = await cleanupUnusedGeneratedImages(env, row, imageUrl);
+    await sheets.markRowPublished(config.spreadsheetId, {
+      ...cleanedRow,
+      status: 'Published',
+      selectedText: message,
+      selectedImageId: imageUrl,
+      postTime: publishedAt,
+    });
+  }
 
   if (!message) {
     throw new Error('Approved content text is empty. Approve or edit the draft before sending it.');
@@ -1472,14 +1489,7 @@ async function publishContent(
       altText: row.topic,
     });
 
-    const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
-    await sheets.markRowPublished(config.spreadsheetId, {
-      ...row,
-      status: 'Published',
-      selectedText: message,
-      selectedImageId: imageUrl,
-      postTime: publishedAt,
-    });
+    await markPublishedForChannel();
 
     return {
       success: true,
@@ -1525,14 +1535,7 @@ async function publishContent(
       imageUrl: imageUrl || undefined,
     });
 
-    const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
-    await sheets.markRowPublished(config.spreadsheetId, {
-      ...row,
-      status: 'Published',
-      selectedText: message,
-      selectedImageId: imageUrl,
-      postTime: publishedAt,
-    });
+    await markPublishedForChannel();
 
     return {
       success: true,
@@ -1558,14 +1561,7 @@ async function publishContent(
       imageUrl: imageUrl || undefined,
     });
 
-    const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
-    await sheets.markRowPublished(config.spreadsheetId, {
-      ...row,
-      status: 'Published',
-      selectedText: message,
-      selectedImageId: imageUrl,
-      postTime: publishedAt,
-    });
+    await markPublishedForChannel();
 
     return {
       success: true,
@@ -1615,14 +1611,7 @@ async function publishContent(
     imageUrl: imageUrl || undefined,
   });
 
-  const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
-  await sheets.markRowPublished(config.spreadsheetId, {
-    ...row,
-    status: 'Published',
-    selectedText: message,
-    selectedImageId: imageUrl,
-    postTime: publishedAt,
-  });
+  await markPublishedForChannel();
 
   return {
     success: true,
@@ -1631,6 +1620,115 @@ async function publishContent(
     messageId: sendResult.messageId,
     deliveryMode: 'sent',
     mediaMode: imageUrl ? 'image' : 'text',
+  };
+}
+
+function shouldDeleteUnusedGeneratedImages(env: Env): boolean {
+  const raw = String(env.DELETE_UNUSED_GENERATED_IMAGES || 'true').trim().toLowerCase();
+  return raw !== '0' && raw !== 'false' && raw !== 'no';
+}
+
+function parseGcsObjectReference(url: string): { bucketName: string; objectName: string } {
+  const value = String(url || '').trim();
+  if (!value) {
+    return { bucketName: '', objectName: '' };
+  }
+
+  if (value.startsWith('gs://')) {
+    const withoutScheme = value.slice(5);
+    const slashIndex = withoutScheme.indexOf('/');
+    if (slashIndex === -1) {
+      return { bucketName: withoutScheme, objectName: '' };
+    }
+    return {
+      bucketName: withoutScheme.slice(0, slashIndex),
+      objectName: withoutScheme.slice(slashIndex + 1),
+    };
+  }
+
+  try {
+    const parsed = new URL(value);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.replace(/^\//, '');
+
+    if (host === 'storage.googleapis.com') {
+      const slashIndex = path.indexOf('/');
+      if (slashIndex === -1) {
+        return { bucketName: path, objectName: '' };
+      }
+      return {
+        bucketName: decodeURIComponent(path.slice(0, slashIndex)),
+        objectName: decodeURIComponent(path.slice(slashIndex + 1)),
+      };
+    }
+
+    if (host.endsWith('.storage.googleapis.com')) {
+      return {
+        bucketName: host.slice(0, -'.storage.googleapis.com'.length),
+        objectName: decodeURIComponent(path),
+      };
+    }
+  } catch {
+    return { bucketName: '', objectName: '' };
+  }
+
+  return { bucketName: '', objectName: '' };
+}
+
+async function cleanupUnusedGeneratedImages(env: Env, row: SheetRow, selectedImageUrl: string): Promise<SheetRow> {
+  const configuredBucket = String(env.GOOGLE_CLOUD_STORAGE_BUCKET || '').trim();
+  if (!configuredBucket || !shouldDeleteUnusedGeneratedImages(env)) {
+    return row;
+  }
+
+  const candidateUrls = [row.imageLink1, row.imageLink2, row.imageLink3, row.imageLink4]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+  if (candidateUrls.length === 0) {
+    return row;
+  }
+
+  const selected = String(selectedImageUrl || '').trim();
+  const accessToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  const deletedUrls = new Set<string>();
+
+  for (const candidate of candidateUrls) {
+    if (candidate === selected) {
+      continue;
+    }
+
+    const { bucketName, objectName } = parseGcsObjectReference(candidate);
+    if (bucketName !== configuredBucket || !objectName) {
+      continue;
+    }
+
+    const deleteUrl = `https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(bucketName)}/o/${encodeURIComponent(objectName)}`;
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.ok || response.status === 404) {
+      deletedUrls.add(candidate);
+      continue;
+    }
+
+    const message = await response.text();
+    console.warn(`Unable to delete unused GCS image ${candidate}: ${message || response.status}`);
+  }
+
+  if (deletedUrls.size === 0) {
+    return row;
+  }
+
+  return {
+    ...row,
+    imageLink1: deletedUrls.has(row.imageLink1) ? '' : row.imageLink1,
+    imageLink2: deletedUrls.has(row.imageLink2) ? '' : row.imageLink2,
+    imageLink3: deletedUrls.has(row.imageLink3) ? '' : row.imageLink3,
+    imageLink4: deletedUrls.has(row.imageLink4) ? '' : row.imageLink4,
   };
 }
 
@@ -1835,12 +1933,22 @@ class SheetsGateway {
 
     const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
     if (draftRowIndex) {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!C${draftRowIndex}`, [[row.status || 'Published']]);
-      await this.updateValues(
-        spreadsheetId,
-        `${DRAFT_SHEET}!L${draftRowIndex}:N${draftRowIndex}`,
-        [[row.selectedText, row.selectedImageId, row.postTime]],
-      );
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:N${draftRowIndex}`, [[
+        row.topic,
+        row.date,
+        row.status || 'Published',
+        row.variant1,
+        row.variant2,
+        row.variant3,
+        row.variant4,
+        row.imageLink1,
+        row.imageLink2,
+        row.imageLink3,
+        row.imageLink4,
+        row.selectedText,
+        row.selectedImageId,
+        row.postTime,
+      ]]);
     }
 
     const postValues = [[
@@ -2114,7 +2222,7 @@ async function mintGoogleAccessToken(serviceAccountJson: string): Promise<string
     { alg: 'RS256', typ: 'JWT' },
     {
       iss: credentials.client_email,
-      scope: SHEETS_SCOPE,
+      scope: GOOGLE_API_SCOPES,
       aud: tokenUri,
       exp: issuedAt + 3600,
       iat: issuedAt,

@@ -2,13 +2,18 @@ import os
 import sys
 import json
 import datetime
+import mimetypes
 import re
+from urllib.parse import quote, urlparse
+import uuid
 import requests
 from dotenv import load_dotenv
 load_dotenv()
 import google.generativeai as genai
+from google.cloud import storage
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
 import io
 
@@ -19,8 +24,12 @@ import io
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/documents']
 SHEET_ID = os.environ.get('GOOGLE_SHEET_ID') # ID of your Google Sheet
 DRIVE_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID') # ID of a Google Drive folder to store images
+GCS_BUCKET_NAME = os.environ.get('GOOGLE_CLOUD_STORAGE_BUCKET', '').strip()
+GCS_OBJECT_PREFIX = os.environ.get('GOOGLE_CLOUD_STORAGE_PREFIX', 'linkedin-images').strip().strip('/')
 GOOGLE_CREDENTIALS_JSON = os.environ.get('GOOGLE_CREDENTIALS_JSON') # Service Account JSON
 GOOGLE_DOC_ID = os.environ.get('GOOGLE_DOC_ID') # ID of the 'Posted' Google Doc
+DRIVE_UPLOAD_TARGET_VALIDATED = False
+DELETE_UNUSED_GENERATED_IMAGES = os.environ.get('DELETE_UNUSED_GENERATED_IMAGES', 'true').strip().lower() not in {'0', 'false', 'no'}
 
 # Gemini for Research and Post Generation
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
@@ -78,9 +87,11 @@ def validate_environment(action):
 
     if action == 'draft':
         missing = [
-            name for name in ['GOOGLE_SHEET_ID', 'GOOGLE_DRIVE_FOLDER_ID', 'GOOGLE_CREDENTIALS_JSON', 'GEMINI_API_KEY']
+            name for name in ['GOOGLE_SHEET_ID', 'GOOGLE_CREDENTIALS_JSON', 'GEMINI_API_KEY']
             if not os.environ.get(name)
         ]
+        if not GCS_BUCKET_NAME and not DRIVE_FOLDER_ID:
+            missing.append('GOOGLE_CLOUD_STORAGE_BUCKET or GOOGLE_DRIVE_FOLDER_ID')
         if not SERPAPI_API_KEY:
             missing.append('SERPAPI_API_KEY')
     else:
@@ -119,13 +130,24 @@ def should_process_target(topic, date_str):
 def get_google_services():
     if not GOOGLE_CREDENTIALS_JSON:
         print("Missing GOOGLE_CREDENTIALS_JSON")
-        return None, None
+        return None, None, None, None
     creds_dict = load_service_account_info()
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     sheets_service = build('sheets', 'v4', credentials=creds)
     drive_service = build('drive', 'v3', credentials=creds)
     docs_service = build('docs', 'v1', credentials=creds)
-    return sheets_service, drive_service, docs_service
+    storage_bucket = None
+    if GCS_BUCKET_NAME:
+        storage_client = storage.Client.from_service_account_info(
+            creds_dict,
+            project=creds_dict.get('project_id'),
+        )
+        storage_bucket = storage_client.bucket(GCS_BUCKET_NAME)
+    return sheets_service, drive_service, docs_service, storage_bucket
+
+
+def get_image_storage_backend():
+    return 'gcs' if GCS_BUCKET_NAME else 'drive'
 
 
 def build_topic_key(topic, date_str):
@@ -205,6 +227,133 @@ def build_existing_row_map(rows, expected_width):
 
 def build_drive_preview_url(file_id):
     return f"https://drive.google.com/thumbnail?id={file_id}&sz=w1600"
+
+
+def build_gcs_public_url(bucket_name, object_name):
+    return f"https://storage.googleapis.com/{bucket_name}/{quote(object_name, safe='/')}"
+
+
+def build_gcs_object_name(topic, index, mime_type):
+    extension = mimetypes.guess_extension(mime_type) or '.jpg'
+    if extension == '.jpe':
+        extension = '.jpg'
+    slug = re.sub(r'[^a-z0-9]+', '-', topic.lower()).strip('-') or 'image'
+    timestamp = datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+    filename = f"{slug}-{timestamp}-{uuid.uuid4().hex[:8]}-{index}{extension}"
+    if GCS_OBJECT_PREFIX:
+        return f"{GCS_OBJECT_PREFIX}/{filename}"
+    return filename
+
+
+def get_drive_folder_metadata(drive_service):
+    if not DRIVE_FOLDER_ID:
+        raise ValueError('Missing GOOGLE_DRIVE_FOLDER_ID')
+
+    return drive_service.files().get(
+        fileId=DRIVE_FOLDER_ID,
+        fields='id, name, mimeType, driveId, webViewLink',
+        supportsAllDrives=True,
+    ).execute()
+
+
+def validate_drive_upload_target(drive_service):
+    global DRIVE_UPLOAD_TARGET_VALIDATED
+
+    if DRIVE_UPLOAD_TARGET_VALIDATED:
+        return
+
+    folder = get_drive_folder_metadata(drive_service)
+    if folder.get('mimeType') != 'application/vnd.google-apps.folder':
+        raise RuntimeError(
+            f"GOOGLE_DRIVE_FOLDER_ID ({DRIVE_FOLDER_ID}) must point to a Google Drive folder, "
+            f"but the configured item is {folder.get('mimeType', 'unknown')}."
+        )
+
+    if not folder.get('driveId'):
+        service_account_email = load_service_account_info().get('client_email', 'unknown')
+        raise RuntimeError(
+            'GOOGLE_DRIVE_FOLDER_ID points to a My Drive folder. '
+            f"Service account {service_account_email} cannot upload images there because service accounts do not have Drive storage quota. "
+            'Create or select a folder inside a Shared Drive, grant the service account Content manager access to that Shared Drive, '
+            'and update GOOGLE_DRIVE_FOLDER_ID to that shared-drive folder ID.'
+        )
+
+    print(
+        f"Using shared drive folder '{folder.get('name', DRIVE_FOLDER_ID)}' "
+        f"({folder.get('id', DRIVE_FOLDER_ID)}) for image uploads."
+    )
+    DRIVE_UPLOAD_TARGET_VALIDATED = True
+
+
+def is_service_account_quota_error(error):
+    status = getattr(getattr(error, 'resp', None), 'status', None)
+    message = str(error).lower()
+    return status == 403 and (
+        'service accounts do not have storage quota' in message
+        or 'storagequotaexceeded' in message
+    )
+
+
+def parse_gcs_object_reference(url):
+    value = (url or '').strip()
+    if not value:
+        return '', ''
+
+    if value.startswith('gs://'):
+        bucket_and_object = value[5:]
+        bucket_name, _, object_name = bucket_and_object.partition('/')
+        return bucket_name, object_name
+
+    parsed = urlparse(value)
+    host = parsed.netloc.lower()
+    path = parsed.path.lstrip('/')
+
+    if host == 'storage.googleapis.com':
+        bucket_name, _, object_name = path.partition('/')
+        return bucket_name, object_name
+
+    if host.endswith('.storage.googleapis.com'):
+        bucket_name = host[:-len('.storage.googleapis.com')]
+        return bucket_name, path
+
+    return '', ''
+
+
+def delete_unused_gcs_images(storage_bucket, image_urls, selected_image_url):
+    if not storage_bucket or not DELETE_UNUSED_GENERATED_IMAGES:
+        return set()
+
+    selected = (selected_image_url or '').strip()
+    deleted_urls = set()
+
+    for image_url in image_urls:
+        candidate = (image_url or '').strip()
+        if not candidate or candidate == selected:
+            continue
+
+        bucket_name, object_name = parse_gcs_object_reference(candidate)
+        if bucket_name != storage_bucket.name or not object_name:
+            continue
+
+        try:
+            storage_bucket.blob(object_name).delete()
+            print(f"Deleted unused GCS image: {object_name}")
+            deleted_urls.add(candidate)
+        except Exception as error:
+            print(f"Unable to delete unused GCS image '{candidate}': {error}")
+
+    return deleted_urls
+
+
+def clear_deleted_image_slots(row, deleted_urls):
+    if not deleted_urls:
+        return row[:]
+
+    updated_row = row[:]
+    for column_index in range(7, 11):
+        if updated_row[column_index].strip() in deleted_urls:
+            updated_row[column_index] = ''
+    return updated_row
 
 
 def extract_api_error(response):
@@ -587,6 +736,7 @@ def fetch_images(topic, num_images=4):
 def upload_image_to_drive(drive_service, image_url, topic, index):
     """Downloads an image from the web and uploads it to Google Drive."""
     try:
+        validate_drive_upload_target(drive_service)
         print(f"Downloading image {index} for '{topic}': {image_url}")
         response = requests.get(image_url, stream=True, timeout=30)
         response.raise_for_status()
@@ -597,12 +747,18 @@ def upload_image_to_drive(drive_service, image_url, topic, index):
             'parents': [DRIVE_FOLDER_ID]
         }
         media = MediaIoBaseUpload(io.BytesIO(response.content), mimetype=mime_type, resumable=True)
-        file = drive_service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink, webContentLink').execute()
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, webViewLink, webContentLink',
+            supportsAllDrives=True,
+        ).execute()
         
         # Make the file readable by anyone with the link
         drive_service.permissions().create(
             fileId=file.get('id'),
-            body={'type': 'anyone', 'role': 'reader'}
+            body={'type': 'anyone', 'role': 'reader'},
+            supportsAllDrives=True,
         ).execute()
 
         file_id = file.get('id')
@@ -613,20 +769,53 @@ def upload_image_to_drive(drive_service, image_url, topic, index):
         )
         
         return preview_url, file_id
+    except HttpError as error:
+        if is_service_account_quota_error(error):
+            print(
+                'Image upload failed because GOOGLE_DRIVE_FOLDER_ID is not a Shared Drive folder. '
+                'Move the target folder into a Shared Drive, grant the service account access, and update GOOGLE_DRIVE_FOLDER_ID.'
+            )
+            return "", ""
+        print(f"Error uploading image {index}: {error}")
+        return "", ""
     except Exception as e:
         print(f"Error uploading image {index}: {e}")
         return "", ""
 
 
-def fetch_and_upload_images(drive_service, topic, num_images=4):
+def upload_image_to_gcs(storage_bucket, image_url, topic, index):
+    try:
+        print(f"Downloading image {index} for '{topic}': {image_url}")
+        response = requests.get(image_url, stream=True, timeout=30)
+        response.raise_for_status()
+        mime_type = response.headers.get('Content-Type', 'image/jpeg').split(';')[0] or 'image/jpeg'
+        object_name = build_gcs_object_name(topic, index, mime_type)
+        blob = storage_bucket.blob(object_name)
+        blob.upload_from_string(response.content, content_type=mime_type)
+        public_url = build_gcs_public_url(storage_bucket.name, object_name)
+        print(
+            f"Uploaded image {index} for '{topic}' to GCS. "
+            f"bucket={storage_bucket.name}, object={object_name}, public_url={public_url}"
+        )
+        return public_url, object_name
+    except Exception as error:
+        print(f"Error uploading image {index} to GCS: {error}")
+        return "", ""
+
+
+def fetch_and_upload_images(drive_service, storage_bucket, topic, num_images=4):
     image_urls = fetch_images(topic, num_images=num_images)
     if not image_urls:
         print(f"No image URLs found for '{topic}'.")
         return [''] * num_images
 
+    backend = get_image_storage_backend()
     drive_links = []
     for idx, img_url in enumerate(image_urls, start=1):
-        drive_link, drive_id = upload_image_to_drive(drive_service, img_url, topic, idx)
+        if backend == 'gcs':
+            drive_link, drive_id = upload_image_to_gcs(storage_bucket, img_url, topic, idx)
+        else:
+            drive_link, drive_id = upload_image_to_drive(drive_service, img_url, topic, idx)
         if not drive_link:
             print(f"Image {idx} for '{topic}' could not be uploaded. drive_id={drive_id}")
         drive_links.append(drive_link)
@@ -723,7 +912,7 @@ def log_to_google_doc(docs_service, topic, text):
 # ==========================================
 # MAIN WORKFLOW (DRAFT OR PUBLISH)
 # ==========================================
-def process_drafts(sheets_service, drive_service):
+def process_drafts(sheets_service, drive_service, storage_bucket):
     """Reads pending topics, generates content & images, saves drafts to Sheet."""
     ensure_required_sheets(sheets_service)
     topic_rows = get_sheet_rows(sheets_service, TOPICS_SHEET, 2)
@@ -753,7 +942,7 @@ def process_drafts(sheets_service, drive_service):
 
         print(f"Drafting for topic: {topic}")
         variants = research_and_generate(topic)
-        drive_links = fetch_and_upload_images(drive_service, topic, num_images=4)
+        drive_links = fetch_and_upload_images(drive_service, storage_bucket, topic, num_images=4)
         new_rows.append([
             topic,
             date_str,
@@ -785,7 +974,7 @@ def process_drafts(sheets_service, drive_service):
         print("Saved generated drafts in the Draft sheet.")
 
 
-def process_refinement(sheets_service, drive_service):
+def process_refinement(sheets_service, drive_service, storage_bucket):
     ensure_required_sheets(sheets_service)
     draft_rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
     existing_drafts = build_existing_row_map(draft_rows, 14)
@@ -811,7 +1000,7 @@ def process_refinement(sheets_service, drive_service):
         print(f"Reusing existing image links for '{topic}': {image_links}")
     else:
         print(f"No existing image links found for '{topic}'. Fetching a fresh set during refinement.")
-        image_links = fetch_and_upload_images(drive_service, topic, num_images=4)
+        image_links = fetch_and_upload_images(drive_service, storage_bucket, topic, num_images=4)
 
     updated_row = [
         topic,
@@ -838,7 +1027,7 @@ def process_refinement(sheets_service, drive_service):
     ).execute()
     print(f"Saved refined variants for '{topic}' to row {row_index}.")
 
-def process_publishing(sheets_service, docs_service):
+def process_publishing(sheets_service, docs_service, storage_bucket):
     """Finds 'Approved' rows whose scheduled time has passed and posts them."""
     ensure_required_sheets(sheets_service)
     rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
@@ -889,12 +1078,14 @@ def process_publishing(sheets_service, docs_service):
                     if success:
                         log_to_google_doc(docs_service, topic, selected_text)
 
+                        deleted_urls = delete_unused_gcs_images(storage_bucket, row[7:11], selected_image_id)
+
                         row_index = i + 2
-                        published_row = row[:]
+                        published_row = clear_deleted_image_slots(row, deleted_urls)
                         published_row[2] = 'Published'
                         draft_updates.append({
-                            'range': f"{DRAFT_SHEET}!C{row_index}",
-                            'values': [['Published']]
+                            'range': f"{DRAFT_SHEET}!A{row_index}:N{row_index}",
+                            'values': [published_row]
                         })
 
                         if key in existing_posts:
@@ -946,16 +1137,16 @@ if __name__ == "__main__":
     action = sys.argv[1] if len(sys.argv) > 1 else 'draft'
     validate_environment(action)
     
-    sheets_service, drive_service, docs_service = get_google_services()
+    sheets_service, drive_service, docs_service, storage_bucket = get_google_services()
     if not sheets_service:
         sys.exit(1)
         
     if action == 'draft':
         if DRAFT_MODE == 'refine':
-            process_refinement(sheets_service, drive_service)
+            process_refinement(sheets_service, drive_service, storage_bucket)
         else:
-            process_drafts(sheets_service, drive_service)
+            process_drafts(sheets_service, drive_service, storage_bucket)
     elif action == 'publish':
-        process_publishing(sheets_service, docs_service)
+        process_publishing(sheets_service, docs_service, storage_bucket)
     else:
         print("Unknown action. Use 'draft' or 'publish'.")

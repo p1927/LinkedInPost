@@ -14,6 +14,8 @@ class WorkerBootstrap:
     allowed_emails: str
     admin_emails: str
     google_client_id: str
+    google_cloud_storage_bucket: str
+    delete_unused_generated_images: str
     cors_allowed_origins: str
     encryption_key: str
     github_repo: str
@@ -102,6 +104,8 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
         'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
+        'GOOGLE_CLOUD_STORAGE_BUCKET': worker_bootstrap.google_cloud_storage_bucket,
+        'DELETE_UNUSED_GENERATED_IMAGES': worker_bootstrap.delete_unused_generated_images,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
         'INSTAGRAM_APP_ID': worker_bootstrap.instagram_app_id,
         'LINKEDIN_CLIENT_ID': worker_bootstrap.linkedin_client_id,
@@ -117,6 +121,8 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
         'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
+        'GOOGLE_CLOUD_STORAGE_BUCKET': worker_bootstrap.google_cloud_storage_bucket,
+        'DELETE_UNUSED_GENERATED_IMAGES': worker_bootstrap.delete_unused_generated_images,
         'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
@@ -239,6 +245,7 @@ def print_bootstrap_summary(
         print(f'GOOGLE_SHEET_ID         = {google_resources.sheet_id}')
         print(f'GOOGLE_DRIVE_FOLDER_ID  = {google_resources.images_folder_id}')
         print(f'GOOGLE_DOC_ID           = {google_resources.doc_id}')
+        print(f'GOOGLE_CLOUD_STORAGE_BUCKET = {os.environ.get("GOOGLE_CLOUD_STORAGE_BUCKET", "").strip() or "<optional: set this value>"}')
         print('GOOGLE_CREDENTIALS_JSON = <service account JSON already loaded from env>')
         print(f'LINKEDIN_PERSON_URN     = {google_resources.linkedin_person_urn or "urn:li:person:<your_id>"}')
         print(f'WHATSAPP_PHONE_NUMBER_ID = {os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "").strip() or "<set this value>"}')
@@ -247,6 +254,8 @@ def print_bootstrap_summary(
 
     if worker_bootstrap:
         print(f'VITE_GOOGLE_CLIENT_ID   = {worker_bootstrap.google_client_id or "<set this value>"}')
+        print(f'GOOGLE_CLOUD_STORAGE_BUCKET = {worker_bootstrap.google_cloud_storage_bucket or "<optional: set this value>"}')
+        print(f'DELETE_UNUSED_GENERATED_IMAGES = {worker_bootstrap.delete_unused_generated_images or "true"}')
         print(f'ALLOWED_EMAILS          = {worker_bootstrap.allowed_emails or "<set this value>"}')
         print(f'ADMIN_EMAILS            = {worker_bootstrap.admin_emails or "<set this value>"}')
         print(f'CORS_ALLOWED_ORIGINS    = {worker_bootstrap.cors_allowed_origins or "<set this value>"}')

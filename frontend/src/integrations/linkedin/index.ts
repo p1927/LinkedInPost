@@ -3,5 +3,5 @@ export function getLinkedInDeliveryDescription(): string {
 }
 
 export function getLinkedInDeliveryHint(): string {
-  return 'This direct integration currently publishes the approved text payload. The selected image remains stored in the sheet record.';
+  return 'This direct integration publishes the approved text and uploads the selected image when one is attached.';
 }
