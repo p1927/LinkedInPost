@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bot, Eye, MessageCircle, Phone, Plus, RefreshCw, Send, Settings, Trash2, X } from 'lucide-react';
+import { Bot, ChevronRight, Eye, LayoutDashboard, ListTodo, MessageCircle, PanelLeftOpen, Phone, Plus, RefreshCw, Send, Settings, Target, Trash2, X } from 'lucide-react';
 import {
   BackendApi,
   isAuthErrorMessage,
@@ -93,6 +93,7 @@ function tryParseTelegramRecipients(input: string): TelegramRecipient[] {
 
 type PopupProvider = 'instagram' | 'linkedin' | 'whatsapp';
 type QueueFilter = 'all' | 'pending' | 'drafted' | 'approved' | 'published';
+type DashboardTab = 'overview' | 'queue' | 'delivery';
 
 interface OAuthPopupMessage {
   source: 'channel-bot-oauth';
@@ -216,6 +217,7 @@ export function Dashboard({
   const [savingConfig, setSavingConfig] = useState(false);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
+  const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>('overview');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastDeliverySummary, setLastDeliverySummary] = useState<{
     topic: string;
@@ -382,6 +384,13 @@ export function Dashboard({
     { value: 'approved', label: 'Approved' },
     { value: 'published', label: 'Published' },
   ];
+  const dashboardTabs: Array<{ value: DashboardTab; label: string; description: string; icon: typeof LayoutDashboard }> = [
+    { value: 'overview', label: 'Overview', description: 'Snapshot of queue and delivery state.', icon: LayoutDashboard },
+    { value: 'queue', label: 'Queue', description: 'Add topics and work rows by status.', icon: ListTodo },
+    { value: 'delivery', label: 'Delivery', description: 'Set the active publishing destination.', icon: Target },
+  ];
+  const activeDashboardTabMeta = dashboardTabs.find((tab) => tab.value === activeDashboardTab) || dashboardTabs[0];
+  const queueSpotlightRows = filteredRows.slice(0, 3);
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
     : selectedChannel === 'instagram'
@@ -450,7 +459,7 @@ export function Dashboard({
   ) => {
     if (!session.config.githubRepo || !session.config.hasGitHubToken) {
       if (session.isAdmin) {
-        alert('Complete the GitHub settings in the sidebar first.');
+        alert('Complete the GitHub settings in the workspace drawer first.');
       } else {
         alert('A workspace admin still needs to configure GitHub dispatch settings.');
       }
@@ -823,7 +832,7 @@ export function Dashboard({
 
     if (selectedChannel === 'telegram' && !telegramConfigured) {
       if (session.isAdmin) {
-        alert('Complete the Telegram delivery settings in the sidebar first.');
+        alert('Complete the Telegram delivery settings in the workspace drawer first.');
       } else {
         alert('A workspace admin still needs to configure Telegram delivery settings.');
       }
@@ -832,7 +841,7 @@ export function Dashboard({
 
     if (selectedChannel === 'whatsapp' && !whatsappConfigured) {
       if (session.isAdmin) {
-        alert('Complete the WhatsApp settings in the sidebar first.');
+        alert('Complete the WhatsApp settings in the workspace drawer first.');
       } else {
         alert('A workspace admin still needs to configure WhatsApp delivery settings.');
       }
@@ -841,7 +850,7 @@ export function Dashboard({
 
     if (selectedChannel === 'instagram' && !instagramConfigured) {
       if (session.isAdmin) {
-        alert('Complete the Instagram publishing settings in the sidebar first.');
+        alert('Complete the Instagram publishing settings in the workspace drawer first.');
       } else {
         alert('A workspace admin still needs to configure Instagram publishing settings.');
       }
@@ -850,7 +859,7 @@ export function Dashboard({
 
     if (selectedChannel === 'linkedin' && !linkedinConfigured) {
       if (session.isAdmin) {
-        alert('Complete the LinkedIn publishing settings in the sidebar first.');
+        alert('Complete the LinkedIn publishing settings in the workspace drawer first.');
       } else {
         alert('A workspace admin still needs to configure LinkedIn publishing settings.');
       }
@@ -970,339 +979,522 @@ export function Dashboard({
 
   return (
     <div className="max-w-[1600px] mx-auto w-full px-4 pb-16 space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <div className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Content pipeline</p>
-              <h2 className="mt-2 text-3xl font-bold text-deep-indigo font-heading tracking-tight">Queue first, settings second</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Review the pipeline, pick the next item, and publish through one active delivery target instead of juggling admin controls all day.
-              </p>
-              <p className="mt-3 text-sm text-slate-500">Workspace: <span className="font-medium text-slate-700">{session.email}</span></p>
+      <section className="rounded-[36px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-6 shadow-xl backdrop-blur-md">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              <span>Workspace</span>
+              <ChevronRight className="h-4 w-4" />
+              <span>Dashboard</span>
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-slate-700">{activeDashboardTabMeta.label}</span>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-deep-indigo font-heading">Structured publishing workspace</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Use the drawer for configuration, then work inside focused tabs for queue operations and delivery control.
+            </p>
+            <p className="mt-3 text-sm text-slate-500">Workspace: <span className="font-medium text-slate-700">{session.email}</span></p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void loadData(false)}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh queue
+            </button>
+            {session.isAdmin ? (
               <button
                 type="button"
-                onClick={() => void loadData(false)}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                onClick={() => setSettingsOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
               >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh queue
+                <PanelLeftOpen className="h-4 w-4" />
+                Open workspace drawer
               </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 lg:grid-cols-3">
+          {dashboardTabs.map((tab) => {
+            const Icon = tab.icon;
+            const selected = activeDashboardTab === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setActiveDashboardTab(tab.value)}
+                className={`rounded-[24px] border px-5 py-4 text-left transition-all ${selected ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+              >
+                <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${selected ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <p className="mt-4 text-lg font-semibold">{tab.label}</p>
+                <p className={`mt-1 text-sm leading-6 ${selected ? 'text-slate-200' : 'text-slate-500'}`}>{tab.description}</p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {activeDashboardTab === 'overview' ? (
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+          <div className="space-y-6">
+            <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Queue snapshot</p>
+                  <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">See what needs attention first</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveDashboardTab('queue')}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  Open queue tab
+                </button>
+              </div>
+
+              <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                {filterOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter(option.value);
+                      setActiveDashboardTab('queue');
+                    }}
+                    className={`rounded-[24px] border px-4 py-4 text-left transition-all ${statusFilter === option.value ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                  >
+                    <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${statusFilter === option.value ? 'text-slate-300' : 'text-slate-400'}`}>{option.label}</p>
+                    <p className="mt-2 text-2xl font-semibold">{queueCounts[option.value]}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[32px] border border-white/50 bg-white/85 shadow-xl backdrop-blur-md overflow-hidden">
+              <div className="border-b border-slate-200/80 px-6 py-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Focused rows</p>
+                    <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Current working set</h3>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    Filter: {filterOptions.find((option) => option.value === statusFilter)?.label}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-0">
+                {queueSpotlightRows.length === 0 ? (
+                  <div className="px-6 py-14 text-center text-slate-500">
+                    <p className="text-lg font-semibold text-slate-700">No rows match the current filter.</p>
+                    <p className="mt-1 text-sm text-slate-500">Switch filters or open the queue tab for the full list.</p>
+                  </div>
+                ) : (
+                  queueSpotlightRows.map((row) => (
+                    <div key={`spotlight-${row.sourceSheet}-${row.rowIndex}`} className="border-t border-slate-100 first:border-t-0 px-6 py-5">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h4 className="text-lg font-semibold text-slate-900">{row.topic}</h4>
+                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold shadow-sm ${getStatusColor(row.status)}`}>
+                              {row.status || 'Pending'}
+                            </span>
+                            <span className="text-sm text-slate-500">{row.date}</span>
+                          </div>
+                          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{(row.selectedText || row.variant1 || 'No draft content yet.').trim()}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveDashboardTab('queue');
+                            setStatusFilter(getNormalizedRowStatus(row.status) as QueueFilter);
+                          }}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                        >
+                          Open in queue
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-6">
+            <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
+              <div className="mt-2 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Approved posts will use this destination until you change it.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveDashboardTab('delivery')}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  Edit delivery
+                </button>
+              </div>
+              <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">{selectedChannelOption.description}</p>
+              </div>
+            </section>
+
+            <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Publishing health</p>
+              <div className="mt-4 space-y-3">
+                {[
+                  { label: 'LinkedIn', ready: linkedinConfigured },
+                  { label: 'Instagram', ready: instagramConfigured },
+                  { label: 'Telegram', ready: telegramConfigured },
+                  { label: 'WhatsApp', ready: whatsappConfigured },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-white px-4 py-3">
+                    <span className="text-sm font-semibold text-slate-800">{item.label}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.ready ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                      {item.ready ? 'Connected' : 'Needs setup'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {lastDeliverySummary ? (
+              <section className="rounded-[32px] border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
+                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+                    {getChannelLabel(lastDeliverySummary.channel)}
+                  </span>
+                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+                    {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
+                    ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
+                    : lastDeliverySummary.channel === 'instagram'
+                      ? lastDeliverySummary.recipientLabel === 'connected account'
+                        ? 'Published to Instagram using the connected professional account.'
+                        : `Published to Instagram as @${lastDeliverySummary.recipientLabel}.`
+                      : 'Delivered to LinkedIn using the currently approved text and selected media.'}
+                </p>
+              </section>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {activeDashboardTab === 'queue' ? (
+        <>
+          <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Add to queue</p>
+                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Capture the next topic</h3>
+              </div>
+              <form onSubmit={handleAddTopic} className="flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-stretch">
+                <input
+                  type="text"
+                  value={newTopic}
+                  onChange={(e) => setNewTopic(e.target.value)}
+                  placeholder="Add a new topic for research..."
+                  className="flex-1 rounded-2xl border border-slate-200/60 bg-white/90 px-6 py-4 text-lg text-slate-900 shadow-sm outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-2 focus:ring-primary/50"
+                  disabled={loading}
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !newTopic.trim()}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-sm transition-all duration-300 hover:bg-indigo-600 hover:shadow-md disabled:opacity-50"
+                >
+                  <Plus className="h-6 w-6" /> <span className="hidden sm:inline">Add topic</span><span className="sm:hidden">Add</span>
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <section className="rounded-[32px] border border-white/50 bg-white/85 shadow-xl backdrop-blur-md overflow-hidden">
+            <div className="border-b border-slate-200/80 px-6 py-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Queue</p>
+                  <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Focus on the next action, not the whole system</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Every row surfaces one primary next step based on status. Filter the queue when you want a narrower working set.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {filterOptions.map((option) => (
+                    <button
+                      key={`chip-${option.value}`}
+                      type="button"
+                      onClick={() => setStatusFilter(option.value)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${statusFilter === option.value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                    >
+                      {option.label} ({queueCounts[option.value]})
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-0">
+              {filteredRows.length === 0 ? (
+                <div className="px-6 py-16 text-center text-slate-500">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-slate-100 bg-white shadow-sm">
+                    <Bot className="h-8 w-8 text-indigo-300" />
+                  </div>
+                  <p className="text-lg font-semibold text-slate-700">
+                    {rows.length === 0 ? 'No topics found' : `No ${statusFilter === 'all' ? '' : statusFilter} items right now`}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {rows.length === 0 ? 'Add one above to get started with research.' : 'Try another filter or refresh the queue.'}
+                  </p>
+                </div>
+              ) : (
+                filteredRows.map((row) => {
+                  const normalizedStatus = getNormalizedRowStatus(row.status);
+                  const previewText = (row.selectedText || row.variant1 || 'No draft content yet.').trim();
+                  return (
+                    <div key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="border-t border-slate-100 first:border-t-0 px-6 py-5">
+                      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)] xl:items-start">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h4 className="text-lg font-semibold text-slate-900">{row.topic}</h4>
+                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold shadow-sm ${getStatusColor(row.status)}`}>
+                              {row.status || 'Pending'}
+                            </span>
+                            <span className="text-sm text-slate-500">{row.date}</span>
+                          </div>
+                          <p className="mt-3 max-w-3xl line-clamp-2 text-sm leading-6 text-slate-600">
+                            {previewText}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                          {normalizedStatus === 'pending' ? (
+                            <button
+                              onClick={() => void triggerRowGithubAction(row, 'draft')}
+                              disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
+                              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
+                            >
+                              {actionLoading === buildRowActionKey('draft', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                              Generate draft
+                            </button>
+                          ) : null}
+
+                          {normalizedStatus === 'drafted' ? (
+                            <button
+                              onClick={() => setSelectedRowForReview(row)}
+                              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+                            >
+                              Review draft
+                            </button>
+                          ) : null}
+
+                          {normalizedStatus === 'approved' ? (
+                            <button
+                              onClick={() => void publishRowToSelectedChannel(row)}
+                              disabled={actionLoading !== null}
+                              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+                            >
+                              {actionLoading === buildRowActionKey('publish', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                              Publish approved post
+                            </button>
+                          ) : null}
+
+                          {normalizedStatus === 'published' ? (
+                            <button
+                              onClick={() => void republishRowToSelectedChannel(row)}
+                              disabled={actionLoading !== null}
+                              className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                              {actionLoading === buildRowActionKey('publish', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                              Publish again
+                            </button>
+                          ) : null}
+
+                          {canPreviewPublishedContent(row) ? (
+                            <button
+                              onClick={() => setSelectedApprovedRowPreview(row)}
+                              className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Preview
+                            </button>
+                          ) : null}
+
+                          <button
+                            onClick={() => handleDeleteTopic(row)}
+                            disabled={deletingRowIndex === row.rowIndex}
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-rose-200 hover:text-rose-600 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      {activeDashboardTab === 'delivery' ? (
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
+          <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
+                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Approved posts will use this destination until you change it.</p>
+              </div>
+              <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
+                <select
+                  value={selectedChannel}
+                  onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
+                  className="w-full bg-transparent text-base font-semibold text-deep-indigo outline-none"
+                >
+                  {CHANNEL_OPTIONS.map((channel) => (
+                    <option key={channel.value} value={channel.value}>
+                      {channel.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">{selectedChannelOption.description}</p>
+
+              {selectedChannelOption.requiresRecipient ? (
+                <>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecipientMode('saved')}
+                      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'saved' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecipientMode('manual')}
+                      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'manual' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+                    >
+                      {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
+                    </button>
+                  </div>
+
+                  {recipientMode === 'saved' ? (
+                    <label className="mt-3 block">
+                      <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        <MessageCircle className="h-4 w-4" /> {selectedChannel === 'telegram' ? 'Chat' : 'Recipient'}
+                      </span>
+                      <select
+                        value={selectedRecipientId}
+                        onChange={(e) => setSelectedRecipientId(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                        disabled={activeRecipientOptions.length === 0}
+                      >
+                        {activeRecipientOptions.length === 0 ? (
+                          <option value="">No saved {selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet</option>
+                        ) : (
+                          activeRecipientOptions.map((recipient) => (
+                            <option key={`${recipient.label}-${recipient.value}`} value={recipient.value}>
+                              {recipient.label} ({recipient.value})
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </label>
+                  ) : (
+                    <label className="mt-3 block">
+                      <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        {selectedChannel === 'telegram' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />} {selectedChannel === 'telegram' ? 'Chat ID' : 'Phone number'}
+                      </span>
+                      <input
+                        type="text"
+                        value={manualRecipientId}
+                        onChange={(e) => setManualRecipientId(e.target.value)}
+                        placeholder={selectedChannel === 'telegram' ? '@my_channel or -1001234567890' : '+14155550101'}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                      />
+                    </label>
+                  )}
+                </>
+              ) : selectedChannel === 'instagram' ? (
+                <>
+                  <p className="mt-4 text-sm leading-6 text-slate-700">{getInstagramDeliveryDescription()}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">{getInstagramDeliveryHint()}</p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-4 text-sm leading-6 text-slate-700">{getLinkedInDeliveryDescription()}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">{getLinkedInDeliveryHint()}</p>
+                </>
+              )}
+            </div>
+          </section>
+
+          <div className="space-y-6">
+            <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Setup access</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Channel auth and shared publishing configuration stay in the workspace drawer so this tab can stay focused on the active destination.
+              </p>
               {session.isAdmin ? (
                 <button
                   type="button"
                   onClick={() => setSettingsOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
                 >
                   <Settings className="h-4 w-4" />
-                  Workspace settings
+                  Open workspace drawer
                 </button>
               ) : null}
-            </div>
-          </div>
+            </section>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {filterOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setStatusFilter(option.value)}
-                className={`rounded-[24px] border px-4 py-4 text-left transition-all ${statusFilter === option.value ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-              >
-                <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${statusFilter === option.value ? 'text-slate-300' : 'text-slate-400'}`}>{option.label}</p>
-                <p className="mt-2 text-2xl font-semibold">{queueCounts[option.value]}</p>
-              </button>
-            ))}
-          </div>
-
-          {lastDeliverySummary ? (
-            <div className="mt-6 rounded-[28px] border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
-                <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
-                  {getChannelLabel(lastDeliverySummary.channel)}
-                </span>
-                <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
-                  {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
-                </span>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
-                  ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
-                  : lastDeliverySummary.channel === 'instagram'
-                    ? lastDeliverySummary.recipientLabel === 'connected account'
-                      ? 'Published to Instagram using the connected professional account.'
-                      : `Published to Instagram as @${lastDeliverySummary.recipientLabel}.`
-                    : 'Delivered to LinkedIn using the currently approved text and selected media.'}
-              </p>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
-          <div className="mt-2 flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-2xl font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Approved posts will use this destination until you change it.</p>
-            </div>
-            <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
-              <select
-                value={selectedChannel}
-                onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-                className="w-full bg-transparent text-base font-semibold text-deep-indigo outline-none"
-              >
-                {CHANNEL_OPTIONS.map((channel) => (
-                  <option key={channel.value} value={channel.value}>
-                    {channel.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
-            <p className="mt-2 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">{selectedChannelOption.description}</p>
-
-            {selectedChannelOption.requiresRecipient ? (
-              <>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRecipientMode('saved')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'saved' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRecipientMode('manual')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'manual' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
-                  </button>
+            {lastDeliverySummary ? (
+              <section className="rounded-[32px] border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
+                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+                    {getChannelLabel(lastDeliverySummary.channel)}
+                  </span>
                 </div>
-
-                {recipientMode === 'saved' ? (
-                  <label className="mt-3 block">
-                    <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      <MessageCircle className="h-4 w-4" /> {selectedChannel === 'telegram' ? 'Chat' : 'Recipient'}
-                    </span>
-                    <select
-                      value={selectedRecipientId}
-                      onChange={(e) => setSelectedRecipientId(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                      disabled={activeRecipientOptions.length === 0}
-                    >
-                      {activeRecipientOptions.length === 0 ? (
-                        <option value="">No saved {selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet</option>
-                      ) : (
-                        activeRecipientOptions.map((recipient) => (
-                          <option key={`${recipient.label}-${recipient.value}`} value={recipient.value}>
-                            {recipient.label} ({recipient.value})
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </label>
-                ) : (
-                  <label className="mt-3 block">
-                    <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      {selectedChannel === 'telegram' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />} {selectedChannel === 'telegram' ? 'Chat ID' : 'Phone number'}
-                    </span>
-                    <input
-                      type="text"
-                      value={manualRecipientId}
-                      onChange={(e) => setManualRecipientId(e.target.value)}
-                      placeholder={selectedChannel === 'telegram' ? '@my_channel or -1001234567890' : '+14155550101'}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
-                    />
-                  </label>
-                )}
-              </>
-            ) : selectedChannel === 'instagram' ? (
-              <>
-                <p className="mt-4 text-sm leading-6 text-slate-700">{getInstagramDeliveryDescription()}</p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">{getInstagramDeliveryHint()}</p>
-              </>
-            ) : (
-              <>
-                <p className="mt-4 text-sm leading-6 text-slate-700">{getLinkedInDeliveryDescription()}</p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">{getLinkedInDeliveryHint()}</p>
-              </>
-            )}
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Last confirmed destination: {lastDeliverySummary.recipientLabel}.
+                </p>
+              </section>
+            ) : null}
           </div>
-        </div>
-      </section>
-
-      <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Add to queue</p>
-            <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Capture the next topic</h3>
-          </div>
-          <form onSubmit={handleAddTopic} className="flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-stretch">
-            <input
-              type="text"
-              value={newTopic}
-              onChange={(e) => setNewTopic(e.target.value)}
-              placeholder="Add a new topic for research..."
-              className="flex-1 rounded-2xl border border-slate-200/60 bg-white/90 px-6 py-4 text-lg text-slate-900 shadow-sm outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-2 focus:ring-primary/50"
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              disabled={loading || !newTopic.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-sm transition-all duration-300 hover:bg-indigo-600 hover:shadow-md disabled:opacity-50"
-            >
-              <Plus className="h-6 w-6" /> <span className="hidden sm:inline">Add topic</span><span className="sm:hidden">Add</span>
-            </button>
-          </form>
-        </div>
-      </section>
-
-      <section className="rounded-[32px] border border-white/50 bg-white/85 shadow-xl backdrop-blur-md overflow-hidden">
-        <div className="border-b border-slate-200/80 px-6 py-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Queue</p>
-              <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Focus on the next action, not the whole system</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Every row surfaces one primary next step based on status. Filter the queue when you want a narrower working set.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {filterOptions.map((option) => (
-                <button
-                  key={`chip-${option.value}`}
-                  type="button"
-                  onClick={() => setStatusFilter(option.value)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${statusFilter === option.value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-                >
-                  {option.label} ({queueCounts[option.value]})
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-0">
-          {filteredRows.length === 0 ? (
-            <div className="px-6 py-16 text-center text-slate-500">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-slate-100 bg-white shadow-sm">
-                <Bot className="h-8 w-8 text-indigo-300" />
-              </div>
-              <p className="text-lg font-semibold text-slate-700">
-                {rows.length === 0 ? 'No topics found' : `No ${statusFilter === 'all' ? '' : statusFilter} items right now`}
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                {rows.length === 0 ? 'Add one above to get started with research.' : 'Try another filter or refresh the queue.'}
-              </p>
-            </div>
-          ) : (
-            filteredRows.map((row) => {
-              const normalizedStatus = getNormalizedRowStatus(row.status);
-              const previewText = (row.selectedText || row.variant1 || 'No draft content yet.').trim();
-              return (
-                <div key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="border-t border-slate-100 first:border-t-0 px-6 py-5">
-                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)] xl:items-start">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h4 className="text-lg font-semibold text-slate-900">{row.topic}</h4>
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold shadow-sm ${getStatusColor(row.status)}`}>
-                          {row.status || 'Pending'}
-                        </span>
-                        <span className="text-sm text-slate-500">{row.date}</span>
-                      </div>
-                      <p className="mt-3 max-w-3xl line-clamp-2 text-sm leading-6 text-slate-600">
-                        {previewText}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3 xl:justify-end">
-                      {normalizedStatus === 'pending' ? (
-                        <button
-                          onClick={() => void triggerRowGithubAction(row, 'draft')}
-                          disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-                          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
-                        >
-                          {actionLoading === buildRowActionKey('draft', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                          Generate draft
-                        </button>
-                      ) : null}
-
-                      {normalizedStatus === 'drafted' ? (
-                        <button
-                          onClick={() => setSelectedRowForReview(row)}
-                          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
-                        >
-                          Review draft
-                        </button>
-                      ) : null}
-
-                      {normalizedStatus === 'approved' ? (
-                        <button
-                          onClick={() => void publishRowToSelectedChannel(row)}
-                          disabled={actionLoading !== null}
-                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
-                        >
-                          {actionLoading === buildRowActionKey('publish', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                          Publish approved post
-                        </button>
-                      ) : null}
-
-                      {normalizedStatus === 'published' ? (
-                        <button
-                          onClick={() => void republishRowToSelectedChannel(row)}
-                          disabled={actionLoading !== null}
-                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
-                        >
-                          {actionLoading === buildRowActionKey('publish', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                          Publish again
-                        </button>
-                      ) : null}
-
-                      {canPreviewPublishedContent(row) ? (
-                        <button
-                          onClick={() => setSelectedApprovedRowPreview(row)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-100"
-                        >
-                          <Eye className="h-4 w-4" />
-                          Preview
-                        </button>
-                      ) : null}
-
-                      <button
-                        onClick={() => handleDeleteTopic(row)}
-                        disabled={deletingRowIndex === row.rowIndex}
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-rose-200 hover:text-rose-600 disabled:opacity-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {session.isAdmin && settingsOpen ? (
-        <div className="fixed inset-0 z-40 flex justify-end bg-slate-900/45 backdrop-blur-sm">
+        <div className="fixed inset-0 z-40 flex justify-start bg-slate-900/45 backdrop-blur-sm">
           <div className="flex h-full w-full max-w-[760px] flex-col border-l border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Admin</p>
-                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Workspace settings</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Configuration lives here now so day-to-day queue work stays focused.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Workspace drawer</p>
+                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Settings and channel setup</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Configuration lives here now so the dashboard tabs can stay focused on publishing work.</p>
               </div>
               <button
                 type="button"
