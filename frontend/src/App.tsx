@@ -113,6 +113,7 @@ function App() {
               session={session}
               api={api}
               workspacePage={workspacePage}
+              onOpenSettings={() => setWorkspacePage('settings')}
               onSaveConfig={async (config) => {
                 const updatedConfig = await api.saveConfig(idToken, config)
                 setSession((current) => (current ? { ...current, config: updatedConfig } : current))

@@ -10,9 +10,9 @@ const variants = {
   danger: 'border border-rose-200/90 bg-rose-50 text-rose-950',
   info: 'border border-ai-border bg-ai-surface text-ai-ink',
   pending: 'border border-amber-200/90 bg-amber-100 text-amber-950',
-  drafted: 'border border-teal-200/90 bg-teal-50 text-teal-950',
+  drafted: 'border border-indigo-200/95 bg-indigo-50 text-indigo-950',
   approved: 'border border-orange-200/90 bg-orange-50 text-orange-950',
-  published: 'border border-emerald-200/90 bg-emerald-50 text-emerald-950',
+  published: 'border border-emerald-300/95 bg-emerald-100 text-emerald-950',
 } as const;
 
 const sizes = {

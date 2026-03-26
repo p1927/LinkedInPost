@@ -18,7 +18,7 @@ export function WorkspaceHeader({
   const { onRefreshQueue, queueLoading } = useWorkspaceChrome();
 
   return (
-    <header className="glass-header sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b px-3 sm:px-4">
+    <header className="glass-header sticky top-0 z-30 flex min-h-14 shrink-0 items-center justify-between gap-3 border-b px-3 py-2 sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
@@ -29,9 +29,14 @@ export function WorkspaceHeader({
         >
           <Menu className="h-5 w-5" aria-hidden />
         </button>
-        <h1 className="truncate font-heading text-base font-semibold text-ink sm:text-lg">
-          {PAGE_TITLES[workspacePage]}
-        </h1>
+        <div className="min-w-0 leading-tight">
+          <h1 className="truncate font-heading text-base font-semibold text-ink sm:text-lg">
+            {PAGE_TITLES[workspacePage]}
+          </h1>
+          {workspacePage === 'topics' ? (
+            <p className="truncate text-[11px] font-medium text-ink/60">Sheet queue and publish target</p>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">

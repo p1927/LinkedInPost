@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Plus, RefreshCw, Send, Eye, Trash2, Bot, PenLine } from 'lucide-react';
+import { Plus, RefreshCw, RotateCw, Send, Eye, Trash2, Bot, PenLine, FileEdit } from 'lucide-react';
+import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
@@ -13,9 +14,13 @@ function queueRowDomId(row: SheetRow) {
   return `${row.sourceSheet}-${row.rowIndex}`;
 }
 
-/** Distill: one height, light borders, primary only for main actions — see design-system/content-queue-theme.md */
-const btn =
-  'inline-flex h-9 min-h-[36px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
+/** Primary row CTAs: start pipeline or first publish */
+const btnPrimary =
+  'inline-flex h-9 min-h-[36px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
+
+/** Secondary row CTAs: review draft or republish — same shape as primary, outline style */
+const btnSecondary =
+  'inline-flex h-9 min-h-[36px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-primary/25 bg-white/90 px-3 text-xs font-semibold text-ink shadow-sm transition-[color,background-color,border-color,box-shadow] duration-200 outline-none hover:border-primary/40 hover:bg-white focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
 
 const iconBtn =
   'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted transition-colors duration-200 outline-none hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
@@ -83,31 +88,44 @@ export function DashboardQueue({
     return () => cancelAnimationFrame(frame);
   }, [scrollTargetId, filteredRows, onScrollTargetHandled]);
 
+  const hasTopics = rows.length > 0;
+
   return (
     <div className="flex flex-col gap-5">
-      <div className="glass-panel rounded-xl p-4">
-        <form onSubmit={handleAddTopic} className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+      <section aria-label="Add topic" className={cn('glass-panel rounded-xl', hasTopics ? 'p-2.5' : 'p-4')}>
+        <form
+          onSubmit={handleAddTopic}
+          className={cn('flex flex-col gap-2 sm:flex-row sm:items-stretch', hasTopics && 'sm:items-center')}
+        >
           <input
             type="text"
             value={newTopic}
             onChange={(e) => setNewTopic(e.target.value)}
             placeholder="Add a topic for research…"
-            className="glass-inset min-h-[44px] flex-1 rounded-lg px-3.5 py-2 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary/20"
+            className={cn(
+              'glass-inset flex-1 rounded-lg px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary/20',
+              hasTopics ? 'min-h-10' : 'min-h-[44px] px-3.5',
+            )}
             disabled={loading}
           />
           <button
             type="submit"
             disabled={loading || !newTopic.trim()}
-            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-card transition-[color,background-color,box-shadow] duration-200 hover:border-primary-hover hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40"
+            className={cn(
+              'inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-primary/20 bg-primary font-semibold text-primary-fg transition-[color,background-color,box-shadow] duration-200 hover:border-primary-hover hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40',
+              hasTopics ? 'min-h-10 px-3 text-xs' : 'min-h-[44px] gap-2 px-4 py-2 text-sm shadow-card',
+            )}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className={hasTopics ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden />
             Add topic
           </button>
         </form>
-      </div>
+      </section>
 
       <div className="flex flex-col">
-        <div className="mb-3 flex flex-wrap gap-1.5">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <p className="w-full text-[10px] font-semibold uppercase tracking-wider text-ink/70">Queue</p>
+          <div className="flex flex-wrap gap-1.5">
           {filterOptions.map((option) => (
             <ChipToggle
               key={`chip-${option.value}`}
@@ -119,6 +137,7 @@ export function DashboardQueue({
               {option.label} ({queueCounts[option.value]})
             </ChipToggle>
           ))}
+          </div>
         </div>
 
         <div>
@@ -133,8 +152,8 @@ export function DashboardQueue({
               {rows.length === 0 ? <p className="mt-1 text-xs text-muted">Add a topic above to start.</p> : null}
             </div>
           ) : (
-            <div className="glass-inset scroll-mt-24 overflow-x-auto rounded-xl border-violet-200/40">
-              <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
+            <div className="glass-inset scroll-mt-24 overflow-x-auto rounded-xl border-violet-200/40 shadow-sm">
+              <table className="w-full min-w-[600px] border-separate border-spacing-0 text-sm">
                 <caption className="sr-only">Topic queue: title, status, date, and actions per row</caption>
                 <colgroup>
                   <col className="min-w-[8rem]" />
@@ -145,26 +164,26 @@ export function DashboardQueue({
                   <col className="w-10" />
                 </colgroup>
                 <thead>
-                  <tr className="border-b border-violet-200/60 bg-white/60 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted backdrop-blur-md">
-                    <th scope="col" className="px-4 py-2.5 pl-4">
+                  <tr className="border-b border-violet-200/80 bg-white/85 text-left text-xs font-semibold uppercase tracking-wide text-ink/80 backdrop-blur-md">
+                    <th scope="col" className="px-4 py-3 pl-4">
                       Topic
                     </th>
-                    <th scope="col" className="whitespace-nowrap px-3 py-2.5">
+                    <th scope="col" className="whitespace-nowrap px-3 py-3">
                       Status
                     </th>
-                    <th scope="col" className="whitespace-nowrap px-3 py-2.5">
+                    <th scope="col" className="whitespace-nowrap px-3 py-3">
                       Date
                     </th>
-                    <th scope="col" className="whitespace-nowrap px-3 py-2.5 text-right">
+                    <th scope="col" className="whitespace-nowrap px-3 py-3 text-right">
                       Action
                     </th>
-                    <th scope="col" className="px-1 py-2.5 text-center">
+                    <th scope="col" className="px-1 py-3 text-center">
                       <span className="sr-only">Preview</span>
-                      <Eye className="mx-auto h-3.5 w-3.5 opacity-40" aria-hidden />
+                      <Eye className="mx-auto h-4 w-4 text-ink/55" aria-hidden />
                     </th>
-                    <th scope="col" className="px-1 py-2.5 text-center">
+                    <th scope="col" className="px-1 py-3 text-center">
                       <span className="sr-only">Delete</span>
-                      <Trash2 className="mx-auto h-3.5 w-3.5 opacity-40" aria-hidden />
+                      <Trash2 className="mx-auto h-4 w-4 text-ink/55" aria-hidden />
                     </th>
                   </tr>
                 </thead>
@@ -179,7 +198,10 @@ export function DashboardQueue({
                         className="border-b border-violet-100/50 transition-colors last:border-b-0 hover:bg-white/65"
                       >
                         <td className="max-w-0 px-4 py-2.5 align-middle">
-                          <p className="truncate font-medium text-ink" title={row.topic}>
+                          <p
+                            className="line-clamp-2 font-medium leading-snug text-ink"
+                            title={row.topic.length > 80 ? row.topic : undefined}
+                          >
                             {row.topic}
                           </p>
                         </td>
@@ -201,12 +223,12 @@ export function DashboardQueue({
                                   actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
                                 }
                                 title="Generate draft"
-                                className={`${btn} bg-primary text-primary-fg hover:bg-primary-hover`}
+                                className={`${btnPrimary} bg-primary text-primary-fg hover:bg-primary-hover`}
                               >
                                 {actionLoading === buildRowActionKey('draft', row) ? (
-                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                  <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                                 ) : (
-                                  <PenLine className="h-3.5 w-3.5" />
+                                  <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 )}
                                 <span className="hidden sm:inline">Draft</span>
                               </button>
@@ -217,8 +239,9 @@ export function DashboardQueue({
                                 type="button"
                                 onClick={() => setSelectedRowForReview(row)}
                                 title="Review draft"
-                                className={`${btn} border border-white/50 bg-white/35 text-ink backdrop-blur-sm hover:bg-white/65`}
+                                className={btnSecondary}
                               >
+                                <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 <span className="sm:hidden">Edit</span>
                                 <span className="hidden sm:inline">Review</span>
                               </button>
@@ -230,12 +253,12 @@ export function DashboardQueue({
                                 onClick={() => void publishRowToSelectedChannel(row)}
                                 disabled={actionLoading !== null}
                                 title="Publish"
-                                className={`${btn} bg-primary text-primary-fg hover:bg-primary-hover`}
+                                className={`${btnPrimary} bg-primary text-primary-fg hover:bg-primary-hover`}
                               >
                                 {actionLoading === buildRowActionKey('publish', row) ? (
-                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                  <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                                 ) : (
-                                  <Send className="h-3.5 w-3.5" />
+                                  <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 )}
                                 <span className="hidden sm:inline">Publish</span>
                               </button>
@@ -246,13 +269,13 @@ export function DashboardQueue({
                                 type="button"
                                 onClick={() => void republishRowToSelectedChannel(row)}
                                 disabled={actionLoading !== null}
-                                title="Republish"
-                                className={`${btn} border border-white/50 bg-white/35 text-ink backdrop-blur-sm hover:bg-white/65`}
+                                title="Republish to channel"
+                                className={btnSecondary}
                               >
                                 {actionLoading === buildRowActionKey('publish', row) ? (
-                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                  <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                                 ) : (
-                                  <Send className="h-3.5 w-3.5" />
+                                  <RotateCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 )}
                                 <span className="hidden sm:inline">Republish</span>
                               </button>

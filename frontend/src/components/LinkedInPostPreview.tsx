@@ -1,4 +1,14 @@
-import { Globe2, ImageOff, MessageCircle, MoreHorizontal, Repeat2, Send, ThumbsUp } from 'lucide-react';
+import {
+  Globe2,
+  Heart,
+  ImageOff,
+  MessageCircle,
+  MoreHorizontal,
+  PartyPopper,
+  Repeat2,
+  Send,
+  ThumbsUp,
+} from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { type ChannelId } from '../integrations/channels';
@@ -22,6 +32,8 @@ interface LinkedInPostPreviewProps {
   className?: string;
   /** Always show full post body; hides see more / show less (e.g. variant picker tiles). */
   forceExpanded?: boolean;
+  /** Sheet-variant picker: clamp body, shorter chrome, “Open” CTA styling. */
+  pickMode?: boolean;
 }
 
 const SOCIAL_PROOF = [
@@ -100,13 +112,18 @@ export function LinkedInPostPreview({
   layout = 'default',
   className,
   forceExpanded = false,
+  pickMode = false,
 }: LinkedInPostPreviewProps) {
   const proof = SOCIAL_PROOF[(optionNumber - 1) % SOCIAL_PROOF.length];
-  const shouldClamp = !forceExpanded && (text.length > 280 || text.split('\n').length > 5);
+  const isCarousel = mode === 'carousel';
+  const isPickCarousel = pickMode && isCarousel;
+  const shouldClamp =
+    !forceExpanded &&
+    (isPickCarousel || text.length > 280 || text.split('\n').length > 5);
   const bodyExpanded = forceExpanded || expanded;
   const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
-  const isCarousel = mode === 'carousel';
+  const [imageRetryKey, setImageRetryKey] = useState(0);
   const isSidebar = layout === 'sidebar';
   const compact = isCarousel || isSidebar;
 

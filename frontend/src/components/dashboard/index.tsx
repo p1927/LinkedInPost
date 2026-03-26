@@ -25,6 +25,7 @@ export function Dashboard({
   onSaveConfig,
   onAuthExpired,
   workspacePage,
+  onOpenSettings,
 }: {
   idToken: string;
   session: AppSession;
@@ -32,6 +33,7 @@ export function Dashboard({
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
   workspacePage: WorkspaceNavPage;
+  onOpenSettings?: () => void;
 }) {
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
@@ -97,6 +99,15 @@ export function Dashboard({
   const instagramConfigured = Boolean(session.config.instagramUserId && session.config.hasInstagramAccessToken);
   const linkedinConfigured = Boolean(session.config.linkedinPersonUrn && session.config.hasLinkedInAccessToken);
   const telegramConfigured = Boolean(session.config.hasTelegramBotToken);
+
+  const selectedChannelCredentialsConfigured =
+    channelsHook.selectedChannel === 'linkedin'
+      ? linkedinConfigured
+      : channelsHook.selectedChannel === 'instagram'
+        ? instagramConfigured
+        : channelsHook.selectedChannel === 'telegram'
+          ? telegramConfigured
+          : whatsappConfigured;
 
   const queueHook = useDashboardQueue({
     idToken,
@@ -218,6 +229,10 @@ export function Dashboard({
       manualRecipientId={channelsHook.manualRecipientId}
       setManualRecipientId={channelsHook.setManualRecipientId}
       lastDeliverySummary={lastDeliverySummary}
+      embedded
+      channelCredentialsConfigured={selectedChannelCredentialsConfigured}
+      isAdmin={session.isAdmin}
+      onOpenSettings={onOpenSettings}
     />
   );
 
@@ -305,20 +320,28 @@ export function Dashboard({
 
   return (
     <div className="w-full pb-12">
-      <div className="mx-auto grid w-full max-w-[1600px] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)] xl:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,440px)]">
+      <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="min-w-0">{queueContent}</div>
-        <aside className="flex min-w-0 flex-col gap-4 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-          <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">Agent</p>
-            <DashboardToolbar
-              googleModel={settingsHook.googleModel}
-              setGoogleModel={settingsHook.setGoogleModel}
-              availableModels={settingsHook.availableModels}
-            />
-          </div>
+        <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto">
           <div className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
-            <h2 className="mb-3 font-heading text-base font-semibold text-ink">Channel delivery</h2>
-            {deliveryContent}
+            <section aria-labelledby="topics-rail-ai-model" className="space-y-2">
+              <h2 id="topics-rail-ai-model" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+                AI model
+              </h2>
+              <DashboardToolbar
+                embedded
+                googleModel={settingsHook.googleModel}
+                setGoogleModel={settingsHook.setGoogleModel}
+                availableModels={settingsHook.availableModels}
+              />
+            </section>
+            <div className="my-5 border-t border-violet-200/45" aria-hidden />
+            <section aria-labelledby="topics-rail-delivery" className="space-y-3">
+              <h2 id="topics-rail-delivery" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+                Channel delivery
+              </h2>
+              {deliveryContent}
+            </section>
           </div>
         </aside>
       </div>
