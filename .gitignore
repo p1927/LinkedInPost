@@ -13,4 +13,5 @@ worker/.dev.vars
 !.dev.vars.example
 !.env.example
 .cursor
+.claude
 .github/prompts/ui-ux**
