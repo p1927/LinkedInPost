@@ -40,20 +40,19 @@ export function DashboardDelivery({
   lastDeliverySummary: DeliverySummary | null;
 }) {
   return (
-    <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
-      <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-        <div className="flex items-start justify-between gap-4">
+    <section className="flex flex-col gap-6 h-[calc(100vh-140px)] overflow-y-auto pr-2 pb-16">
+      <section className="rounded-2xl border border-white/50 bg-white/85 p-5 shadow-sm backdrop-blur-md">
+        <div className="flex flex-col gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
-            <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Approved posts will use this destination until you change it.</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
+            <h3 className="mt-1.5 text-lg font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
           </div>
-          <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
+          <label className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm block mt-4">
+            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
             <select
               value={selectedChannel}
               onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-              className="w-full bg-transparent text-base font-semibold text-deep-indigo outline-none"
+              className="w-full bg-transparent text-sm font-semibold text-deep-indigo outline-none"
             >
               {CHANNEL_OPTIONS.map((channel) => (
                 <option key={channel.value} value={channel.value}>
@@ -64,7 +63,7 @@ export function DashboardDelivery({
           </label>
         </div>
 
-        <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
           <p className="mt-2 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
           <p className="mt-2 text-xs leading-5 text-slate-500">{selectedChannelOption.description}</p>
@@ -139,8 +138,8 @@ export function DashboardDelivery({
         </div>
       </section>
 
-      <div className="space-y-6">
-        <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+      <div className="space-y-4">
+        <section className="rounded-2xl border border-white/50 bg-white/85 p-5 shadow-sm backdrop-blur-md">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Setup access</p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             Channel auth and shared publishing configuration stay in the workspace drawer so this tab can stay focused on the active destination.
@@ -158,7 +157,7 @@ export function DashboardDelivery({
         </section>
 
         {lastDeliverySummary ? (
-          <section className="rounded-[32px] border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
+          <section className="rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
               <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">

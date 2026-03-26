@@ -36,6 +36,7 @@ export function Dashboard({
   const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTab>('overview');
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [deliverySidebarOpen, setDeliverySidebarOpen] = useState(false);
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
 
   const channelsHook = useDashboardChannels({
@@ -139,7 +140,6 @@ export function Dashboard({
   const navigationCounts: Record<DashboardTab, number> = {
     overview: queueHook.rows.length,
     queue: filteredRows.length,
-    delivery: selectedChannelOption.requiresRecipient ? activeRecipientOptions.length : 1,
   };
 
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
@@ -160,48 +160,53 @@ export function Dashboard({
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto w-full px-4 pb-16">
-      <section className="rounded-[28px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-5 py-4 shadow-xl backdrop-blur-md">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-deep-indigo font-heading">{activeDashboardTabMeta.label}</h2>
-            <p className="mt-1 text-sm text-slate-600">{activeDashboardTabMeta.description}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setNavigationOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 lg:hidden"
-            >
-              <PanelLeftOpen className="h-4 w-4" />
-              Navigation
-            </button>
-            <button
-              type="button"
-              onClick={() => void loadData()}
-              disabled={queueHook.loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${queueHook.loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-            {session.isAdmin ? (
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </button>
-            ) : null}
-          </div>
+    <div className="max-w-[1600px] mx-auto w-full px-4 pb-12">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">{activeDashboardTabMeta.label}</h2>
+          <p className="text-xs text-slate-500 mt-0.5">{activeDashboardTabMeta.description}</p>
         </div>
-      </section>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setNavigationOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 lg:hidden"
+          >
+            <PanelLeftOpen className="h-3.5 w-3.5" />
+            Menu
+          </button>
+          <button
+            type="button"
+            onClick={() => void loadData()}
+            disabled={queueHook.loading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${queueHook.loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          {session.isAdmin ? (
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800"
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Settings
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setDeliverySidebarOpen(!deliverySidebarOpen)}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${deliverySidebarOpen ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+          >
+            Delivery
+          </button>
+        </div>
+      </div>
 
-      <div className="mt-6 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
-        <aside className="hidden lg:block">
-          <div className="sticky top-[80px] overflow-hidden rounded-[28px] border border-white/50 bg-white/90 shadow-xl backdrop-blur-md">
+      <div className="mt-4 flex flex-col lg:flex-row items-start gap-5 relative">
+        <aside className="hidden lg:block w-[220px] shrink-0">
+          <div className="sticky top-[56px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <DashboardNavigation
               activeDashboardTab={activeDashboardTab}
               setActiveDashboardTab={setActiveDashboardTab}
@@ -213,7 +218,7 @@ export function Dashboard({
           </div>
         </aside>
 
-        <div className="space-y-6">
+        <div className="flex-1 min-w-0 space-y-4">
           {activeDashboardTab === 'overview' && (
             <DashboardOverview
               setActiveDashboardTab={setActiveDashboardTab}
@@ -230,6 +235,7 @@ export function Dashboard({
               telegramConfigured={telegramConfigured}
               whatsappConfigured={whatsappConfigured}
               lastDeliverySummary={lastDeliverySummary}
+              onEditDelivery={() => setDeliverySidebarOpen(true)}
             />
           )}
 
@@ -256,26 +262,30 @@ export function Dashboard({
               deletingRowIndex={queueHook.deletingRowIndex}
             />
           )}
-
-          {activeDashboardTab === 'delivery' && (
-            <DashboardDelivery
-              selectedChannel={channelsHook.selectedChannel}
-              setSelectedChannel={channelsHook.setSelectedChannel}
-              deliveryTargetSummary={deliveryTargetSummary}
-              selectedChannelOption={selectedChannelOption}
-              recipientMode={channelsHook.recipientMode}
-              setRecipientMode={channelsHook.setRecipientMode}
-              selectedRecipientId={channelsHook.selectedRecipientId}
-              setSelectedRecipientId={channelsHook.setSelectedRecipientId}
-              activeRecipientOptions={activeRecipientOptions}
-              manualRecipientId={channelsHook.manualRecipientId}
-              setManualRecipientId={channelsHook.setManualRecipientId}
-              session={session}
-              setSettingsOpen={setSettingsOpen}
-              lastDeliverySummary={lastDeliverySummary}
-            />
-          )}
         </div>
+
+        {deliverySidebarOpen && (
+          <aside className="w-full lg:w-[320px] shrink-0">
+            <div className="sticky top-[56px]">
+              <DashboardDelivery
+                selectedChannel={channelsHook.selectedChannel}
+                setSelectedChannel={channelsHook.setSelectedChannel}
+                deliveryTargetSummary={deliveryTargetSummary}
+                selectedChannelOption={selectedChannelOption}
+                recipientMode={channelsHook.recipientMode}
+                setRecipientMode={channelsHook.setRecipientMode}
+                selectedRecipientId={channelsHook.selectedRecipientId}
+                setSelectedRecipientId={channelsHook.setSelectedRecipientId}
+                activeRecipientOptions={activeRecipientOptions}
+                manualRecipientId={channelsHook.manualRecipientId}
+                setManualRecipientId={channelsHook.setManualRecipientId}
+                session={session}
+                setSettingsOpen={setSettingsOpen}
+                lastDeliverySummary={lastDeliverySummary}
+              />
+            </div>
+          </aside>
+        )}
       </div>
 
       {session.isAdmin && settingsOpen && (
@@ -355,12 +365,9 @@ export function Dashboard({
       
       {navigationOpen ? (
         <div className="fixed inset-0 z-40 flex justify-start bg-slate-900/45 backdrop-blur-sm lg:hidden">
-          <div className="flex h-full w-full max-w-[320px] flex-col overflow-hidden border-r border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Navigation</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">Compact workspace drawer</p>
-              </div>
+          <div className="flex h-full w-full max-w-[260px] flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <p className="text-xs font-semibold text-slate-500">Navigation</p>
               <button
                 type="button"
                 onClick={() => setNavigationOpen(false)}

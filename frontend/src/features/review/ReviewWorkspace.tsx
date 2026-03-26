@@ -1,4 +1,4 @@
-import { CalendarClock, CheckCircle2, ChevronRight, FileText, ImageIcon, Sparkles } from 'lucide-react';
+import { CalendarClock, ChevronRight, Layers3 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
@@ -41,8 +41,6 @@ interface CompareState {
   resultingText: string;
   onConfirm: () => void;
 }
-
-type ReviewStep = 'draft' | 'refine' | 'approve';
 
 function getInitialEditorText(row: SheetRow): string {
   return [row.selectedText, row.variant1, row.variant2, row.variant3, row.variant4].find((value) => value.trim()) || '';
@@ -115,7 +113,6 @@ export function ReviewWorkspace({
   const [pendingClose, setPendingClose] = useState(false);
   const [compareState, setCompareState] = useState<CompareState | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [reviewStep, setReviewStep] = useState<ReviewStep>('draft');
 
   useEffect(() => {
     const initialText = getInitialEditorText(row);
@@ -137,7 +134,6 @@ export function ReviewWorkspace({
     setPendingVariantIndex(null);
     setPendingClose(false);
     setCompareState(null);
-    setReviewStep('draft');
   }, [row]);
 
   const sheetVariants = useMemo(() => buildSheetVariants(sheetRow), [sheetRow]);
@@ -151,13 +147,6 @@ export function ReviewWorkspace({
   const editorDirty = editorText !== editorBaselineText;
   const hasUnsavedReviewState = editorDirty || instruction.trim().length > 0 || Boolean(quickChangePreview) || Boolean(variantsPreview?.variants.length);
   const previewReadyCount = variantsPreview?.variants.length || (quickChangePreview ? 1 : 0);
-  const reviewSteps: Array<{ id: ReviewStep; label: string; description: string; icon: typeof FileText }> = [
-    { id: 'draft', label: 'Draft', description: 'Choose a base and edit the copy.', icon: FileText },
-    { id: 'refine', label: 'Refine', description: 'Generate previews, media, and rules context.', icon: Sparkles },
-    { id: 'approve', label: 'Approve', description: 'Schedule and lock the final draft.', icon: CheckCircle2 },
-  ];
-  const activeReviewStepIndex = reviewSteps.findIndex((step) => step.id === reviewStep);
-  const selectedStepMeta = reviewSteps[activeReviewStepIndex] || reviewSteps[0];
 
   useEffect(() => {
     if (!selectedImageUrl && imageOptions[0]?.imageUrl) {
@@ -368,13 +357,11 @@ export function ReviewWorkspace({
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                   <span>Dashboard</span>
                   <ChevronRight className="h-4 w-4" />
-                  <span>Review</span>
-                  <ChevronRight className="h-4 w-4" />
-                  <span className="text-slate-700">{selectedStepMeta.label}</span>
+                  <span>Review Workspace</span>
                 </div>
                 <h2 className="mt-3 text-3xl font-semibold text-slate-900">{sheetRow.topic}</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  Move through the draft in order: set the base, refine what needs help, then approve the final package.
+                  Refine the draft locally, select media, and lock the final package.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -389,39 +376,9 @@ export function ReviewWorkspace({
                 </span>
               </div>
             </div>
-
-            <div className="mt-5 grid gap-3 lg:grid-cols-3">
-              {reviewSteps.map((step, index) => {
-                const Icon = step.icon;
-                const selected = reviewStep === step.id;
-                const completed = activeReviewStepIndex > index;
-
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => setReviewStep(step.id)}
-                    className={`rounded-[24px] border px-4 py-4 text-left transition-all ${selected ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : completed ? 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${selected ? 'bg-white/12 text-white' : completed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className={`text-xs font-semibold uppercase tracking-[0.18em] ${selected ? 'text-slate-300' : completed ? 'text-emerald-700/70' : 'text-slate-400'}`}>
-                        Step {index + 1}
-                      </span>
-                    </div>
-                    <p className="mt-4 text-lg font-semibold">{step.label}</p>
-                    <p className={`mt-1 text-sm leading-6 ${selected ? 'text-slate-200' : completed ? 'text-emerald-800/85' : 'text-slate-500'}`}>
-                      {step.description}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
-          <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.2fr)_minmax(380px,0.8fr)]">
+          <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.8fr)_minmax(360px,1fr)]">
             <section className="min-h-0 space-y-5 overflow-y-auto border-b border-slate-200/80 px-6 py-6 xl:border-b-0 xl:border-r">
               <DraftEditor
                 value={editorText}
@@ -433,17 +390,15 @@ export function ReviewWorkspace({
                 onScopeChange={setScope}
                 onFormatting={handleFormatting}
               />
-            </section>
-
-            <aside className="min-h-0 overflow-y-auto px-6 py-6">
-              <section className="rounded-[30px] border border-slate-200 bg-white/90 p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live preview</p>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                    {selectedImageUrl ? 'Image attached' : 'No image'}
-                  </span>
+              <section className="rounded-[30px] border border-slate-200 bg-white/90 p-6 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live preview</p>
+                    <h3 className="mt-2 text-xl font-semibold text-slate-900">What approval will use right now</h3>
+                  </div>
+                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Model: {googleModel}</div>
                 </div>
-                <div className="mt-4">
+                <div className="mt-5">
                   <LinkedInPostPreview
                     optionNumber={1}
                     text={editorText}
@@ -455,185 +410,115 @@ export function ReviewWorkspace({
                   />
                 </div>
               </section>
+            </section>
 
-              <div className="mt-5 space-y-5">
-                <div className="border-b border-slate-200/60 pb-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{selectedStepMeta.label}</p>
-                  <p className="mt-1 text-sm text-slate-600">{selectedStepMeta.description}</p>
-                </div>
-
-                {reviewStep === 'draft' ? (
-                  <>
-                    <section className="rounded-[28px] border border-slate-200 bg-white/90 p-5 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Choose base draft</p>
-                      <h4 className="mt-2 text-lg font-semibold text-slate-900">Start from an existing sheet variant</h4>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Loading a saved variant resets the local working copy, selection, and preview state.
-                      </p>
-                      <div className="mt-4 space-y-3">
-                        {sheetVariants.length === 0 ? (
-                          <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                            No saved variants yet. Keep editing the current draft or generate previews in Step 2.
+            <aside className="min-h-0 space-y-5 overflow-y-auto px-6 py-6 bg-slate-50/50 relative">
+              <details className="group rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer items-center justify-between text-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Layers3 className="h-4 w-4" />
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Base Draft Selection</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90 text-slate-400" />
+                </summary>
+                <div className="mt-4 space-y-3 pt-4 border-t border-slate-100">
+                  {sheetVariants.length === 0 ? (
+                    <p className="text-sm text-slate-500">No saved variants found in the sheet.</p>
+                  ) : (
+                    sheetVariants.map((variant, index) => (
+                      <button
+                        key={`sheet-variant-${index}`}
+                        type="button"
+                        onClick={() => handleLoadSheetVariant(index)}
+                        className="w-full rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-slate-300 hover:bg-white"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Variant {index + 1}</p>
+                            <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-700">{variant.text}</p>
                           </div>
-                        ) : sheetVariants.map((variant, index) => (
-                          <button
-                            key={`sheet-variant-${index}`}
-                            type="button"
-                            onClick={() => handleLoadSheetVariant(index)}
-                            className="w-full rounded-[22px] border border-slate-200 bg-white px-4 py-4 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Variant {index + 1}</p>
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Use as base</span>
-                            </div>
-                            <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-700">{variant.text}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </section>
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm shrink-0">Use base</span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </details>
 
-                    <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">What to do here</p>
-                      <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                        <p>Shape the copy in the editor until the structure is right.</p>
-                        <p>Select a sentence only when you want Step 2 to target a narrow section.</p>
-                        <p>Move to Refine once the core argument is strong and you need alternate phrasing or new media.</p>
-                      </div>
-                    </section>
-                  </>
-                ) : null}
+              <RulesPanel sharedRules={sharedRules} />
 
-                {reviewStep === 'refine' ? (
-                  <>
-                    <GenerationPanel
-                      instruction={instruction}
-                      loadingAction={generationLoading}
-                      quickChangePreview={quickChangePreview}
-                      variantsPreview={variantsPreview}
-                      onInstructionChange={setInstruction}
-                      onGenerateQuickChange={() => void handleGenerateQuickChange()}
-                      onGenerateVariants={() => void handleGenerateVariants()}
-                      onApplyQuickChange={handleApplyQuickChange}
-                      onApplyVariant={handleApplyVariant}
-                    />
+              <GenerationPanel
+                instruction={instruction}
+                loadingAction={generationLoading}
+                quickChangePreview={quickChangePreview}
+                variantsPreview={variantsPreview}
+                onInstructionChange={setInstruction}
+                onGenerateQuickChange={() => void handleGenerateQuickChange()}
+                onGenerateVariants={() => void handleGenerateVariants()}
+                onApplyQuickChange={handleApplyQuickChange}
+                onApplyVariant={handleApplyVariant}
+              />
 
-                    <VariantPersistencePanel
-                      hasPreview={Boolean(variantsPreview?.variants.length)}
-                      variantCount={variantsPreview?.variants.length || 0}
-                      saveState={saveState}
-                      errorMessage={saveError}
-                      onSave={() => void handleSavePreviewVariants()}
-                    />
+              <VariantPersistencePanel
+                hasPreview={Boolean(variantsPreview?.variants.length)}
+                variantCount={variantsPreview?.variants.length || 0}
+                saveState={saveState}
+                errorMessage={saveError}
+                onSave={() => void handleSavePreviewVariants()}
+              />
 
-                    <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
-                      <div className="flex items-center gap-2 text-slate-700">
-                        <ImageIcon className="h-4 w-4" />
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Media</p>
-                      </div>
-                      <div className="mt-4">
-                        <ImageAssetManager
-                          topic={sheetRow.topic}
-                          images={imageOptions}
-                          selectedImageUrl={selectedImageUrl}
-                          onSelectImage={setSelectedImageUrl}
-                          onFetchMoreImages={handleFetchMoreImageOptions}
-                          onUploadImage={handleUploadImageOption}
-                          onDownloadImage={onDownloadImage}
-                        />
-                      </div>
-                    </section>
+              <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
+                <ImageAssetManager
+                  topic={sheetRow.topic}
+                  images={imageOptions}
+                  selectedImageUrl={selectedImageUrl}
+                  onSelectImage={setSelectedImageUrl}
+                  onFetchMoreImages={handleFetchMoreImageOptions}
+                  onUploadImage={handleUploadImageOption}
+                  onDownloadImage={onDownloadImage}
+                />
+              </section>
 
-                    <RulesPanel sharedRules={sharedRules} />
-                  </>
-                ) : null}
-
-                {reviewStep === 'approve' ? (
-                  <>
-                    <section className="rounded-[28px] border border-slate-200 bg-white/90 p-5 shadow-sm">
-                      <div className="flex items-center gap-2 text-slate-700">
-                        <CalendarClock className="h-4 w-4" />
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Approval ready</p>
-                      </div>
-                      <h4 className="mt-3 text-lg font-semibold text-slate-900">Final checks before approval</h4>
-                      <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-                        <p>Approved text will be saved from the live editor, not from preview cards.</p>
-                        <p>Selected image: <span className="font-semibold text-slate-900">{selectedImageUrl ? 'attached' : 'none selected'}</span></p>
-                        <p>Variant persistence: <span className="font-semibold text-slate-900">{saveState === 'saved' ? 'saved to Sheets' : hasUnsavedReviewState ? 'local review state present' : 'no unsaved preview state'}</span></p>
-                      </div>
-                    </section>
-
-                    <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
-                      <label className="block text-sm font-semibold text-slate-700" htmlFor="review-post-time-input">
-                        Post time (optional)
-                      </label>
-                      <input
-                        id="review-post-time-input"
-                        type="datetime-local"
-                        value={postTime}
-                        onChange={(event) => setPostTime(event.target.value)}
-                        className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/20"
-                      />
-                      <p className="mt-3 text-sm leading-6 text-slate-600">
-                        Approval saves the current draft, selected image, and optional schedule. Preview variants stay separate until you save them.
-                      </p>
-                    </section>
-                  </>
-                ) : null}
-              </div>
-            </aside>
-          </div>
-
-          <div className="border-t border-slate-200/80 bg-white/95 px-6 py-5 backdrop-blur-sm">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Step {activeReviewStepIndex + 1} of {reviewSteps.length}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {reviewStep === 'draft' ? 'Set the base copy and selection target.' : reviewStep === 'refine' ? 'Generate previews, compare, save variants, and lock the image.' : 'Review the final package and approve when ready.'}
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hasUnsavedReviewState) {
-                      setPendingClose(true);
-                      return;
-                    }
-                    onCancel();
-                  }}
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <span className="hidden sm:block flex-1" />
-                <button
-                  type="button"
-                  onClick={() => setReviewStep(reviewSteps[Math.max(0, activeReviewStepIndex - 1)]?.id || 'draft')}
-                  disabled={activeReviewStepIndex === 0}
-                  className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Back
-                </button>
-                {activeReviewStepIndex < reviewSteps.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setReviewStep(reviewSteps[Math.min(reviewSteps.length - 1, activeReviewStepIndex + 1)]?.id || 'approve')}
-                    className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-                  >
-                    Continue to {reviewSteps[activeReviewStepIndex + 1]?.label}
-                  </button>
-                ) : (
+              <section className="rounded-[28px] border border-slate-200 bg-white/95 p-5 shadow-sm sticky bottom-0 z-10">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <CalendarClock className="h-4 w-4" />
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Approval</p>
+                </div>
+                <label className="mt-4 block text-sm font-semibold text-slate-700" htmlFor="review-post-time-input">
+                  Post time (optional)
+                </label>
+                <input
+                  id="review-post-time-input"
+                  type="datetime-local"
+                  value={postTime}
+                  onChange={(event) => setPostTime(event.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                />
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => void handleApprove()}
                     disabled={submitting}
-                    className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                    className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300 flex-1"
                   >
                     {submitting ? 'Approving...' : 'Approve draft'}
                   </button>
-                )}
-              </div>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hasUnsavedReviewState) {
+                        setPendingClose(true);
+                        return;
+                      }
+                      onCancel();
+                    }}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </section>
+            </aside>
           </div>
         </div>
       </div>

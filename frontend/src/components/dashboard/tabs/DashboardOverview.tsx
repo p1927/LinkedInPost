@@ -22,6 +22,7 @@ export function DashboardOverview({
   telegramConfigured,
   whatsappConfigured,
   lastDeliverySummary,
+  onEditDelivery,
 }: {
   setActiveDashboardTab: (tab: DashboardTab) => void;
   setStatusFilter: (filter: QueueFilter) => void;
@@ -37,26 +38,29 @@ export function DashboardOverview({
   telegramConfigured: boolean;
   whatsappConfigured: boolean;
   lastDeliverySummary: DeliverySummary | null;
+  onEditDelivery: () => void;
 }) {
   return (
-    <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
-      <div className="space-y-6">
-        <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+      {/* Left column */}
+      <div className="space-y-4">
+        {/* Stat cards */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Queue snapshot</p>
-              <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Status at a glance</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Queue snapshot</p>
+              <h3 className="mt-0.5 text-sm font-semibold text-slate-900">Status at a glance</h3>
             </div>
             <button
               type="button"
               onClick={() => setActiveDashboardTab('queue')}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 cursor-pointer"
             >
               Go to Queue →
             </button>
           </div>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-4 grid gap-2 grid-cols-2 sm:grid-cols-5">
             {filterOptions.map((option) => (
               <button
                 key={option.value}
@@ -65,32 +69,31 @@ export function DashboardOverview({
                   setStatusFilter(option.value);
                   setActiveDashboardTab('queue');
                 }}
-                className={`rounded-[24px] border px-4 py-4 text-left transition-all ${statusFilter === option.value ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                className={`rounded-xl border px-3 py-3 text-left transition-all cursor-pointer ${statusFilter === option.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100'}`}
               >
-                <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${statusFilter === option.value ? 'text-slate-300' : 'text-slate-400'}`}>{option.label}</p>
-                <p className="mt-2 text-2xl font-semibold">{queueCounts[option.value]}</p>
+                <p className={`text-[10px] font-semibold uppercase tracking-widest ${statusFilter === option.value ? 'text-slate-400' : 'text-slate-400'}`}>{option.label}</p>
+                <p className="mt-1 text-xl font-bold">{queueCounts[option.value]}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-white/50 bg-white/85 shadow-xl backdrop-blur-md overflow-hidden">
-          <div className="border-b border-slate-200/80 px-6 py-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Up next</p>
-                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Items needing attention</h3>
-              </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                {filterOptions.find((option) => option.value === statusFilter)?.label}
-              </span>
+        {/* Spotlight rows */}
+        <section className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="border-b border-slate-100 px-4 py-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Up next</p>
+              <h3 className="mt-0.5 text-sm font-semibold text-slate-900">Items needing attention</h3>
             </div>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+              {filterOptions.find((option) => option.value === statusFilter)?.label}
+            </span>
           </div>
-          <div className="space-y-0">
+          <div>
             {queueSpotlightRows.length === 0 ? (
-              <div className="px-6 py-14 text-center text-slate-500">
-                <p className="text-lg font-semibold text-slate-700">No rows match the current filter.</p>
-                <p className="mt-1 text-sm text-slate-500">Switch filters or open the queue tab for the full list.</p>
+              <div className="px-4 py-10 text-center">
+                <p className="text-sm font-medium text-slate-600">No rows match the current filter.</p>
+                <p className="mt-1 text-xs text-slate-400">Switch filters or open the queue tab.</p>
               </div>
             ) : (
               queueSpotlightRows.map((row) => (
@@ -101,16 +104,16 @@ export function DashboardOverview({
                     setActiveDashboardTab('queue');
                     setStatusFilter(getNormalizedRowStatus(row.status) as QueueFilter);
                   }}
-                  className="w-full border-t border-slate-100 first:border-t-0 px-6 py-5 text-left transition-colors hover:bg-slate-50/60"
+                  className="w-full border-t border-slate-100 first:border-t-0 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 cursor-pointer"
                 >
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h4 className="text-base font-semibold text-slate-900">{row.topic}</h4>
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold shadow-sm ${getStatusColor(row.status)}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="text-sm font-semibold text-slate-900">{row.topic}</h4>
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${getStatusColor(row.status)}`}>
                       {row.status || 'Pending'}
                     </span>
-                    <span className="text-sm text-slate-500">{row.date}</span>
+                    <span className="text-xs text-slate-400">{row.date}</span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{(row.selectedText || row.variant1 || 'No draft content yet.').trim()}</p>
+                  <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">{(row.selectedText || row.variant1 || 'No draft content yet.').trim()}</p>
                 </button>
               ))
             )}
@@ -118,60 +121,64 @@ export function DashboardOverview({
         </section>
       </div>
 
-      <div className="space-y-6">
-        <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
-          <div className="mt-2 flex items-start justify-between gap-4">
+      {/* Right column */}
+      <div className="space-y-4">
+        {/* Delivery target */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-2xl font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Approved posts will use this destination until you change it.</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Delivery target</p>
+              <h3 className="mt-0.5 text-sm font-semibold text-slate-900">{getChannelLabel(selectedChannel)}</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Approved posts use this destination.</p>
             </div>
             <button
               type="button"
-              onClick={() => setActiveDashboardTab('delivery')}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              onClick={onEditDelivery}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 shrink-0 cursor-pointer"
             >
-              Edit delivery
+              Edit
             </button>
           </div>
-          <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
-            <p className="mt-2 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-500">{selectedChannelOption.description}</p>
+          <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Destination</p>
+            <p className="mt-1 text-xs font-semibold text-slate-800">{deliveryTargetSummary}</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-slate-400">{selectedChannelOption.description}</p>
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Publishing health</p>
-          <div className="mt-4 space-y-3">
+        {/* Publishing health */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Publishing health</p>
+          <div className="mt-3 space-y-1.5">
             {[
               { label: 'LinkedIn', ready: linkedinConfigured },
               { label: 'Instagram', ready: instagramConfigured },
               { label: 'Telegram', ready: telegramConfigured },
               { label: 'WhatsApp', ready: whatsappConfigured },
             ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-white px-4 py-3">
-                <span className="text-sm font-semibold text-slate-800">{item.label}</span>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.ready ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                  {item.ready ? 'Connected' : 'Needs setup'}
+              <div key={item.label} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                <span className="text-xs font-medium text-slate-700">{item.label}</span>
+                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${item.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {item.ready ? 'Connected' : 'Setup needed'}
                 </span>
               </div>
             ))}
           </div>
         </section>
 
+        {/* Last delivery */}
         {lastDeliverySummary ? (
-          <section className="rounded-[32px] border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
-              <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Last delivery</p>
+              <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 ring-1 ring-emerald-200">
                 {getChannelLabel(lastDeliverySummary.channel)}
               </span>
-              <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+              <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 ring-1 ring-emerald-200">
                 {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
               </span>
             </div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-xs leading-5 text-slate-600">
               {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
                 ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
                 : lastDeliverySummary.channel === 'instagram'

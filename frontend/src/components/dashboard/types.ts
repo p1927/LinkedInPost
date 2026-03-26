@@ -3,7 +3,7 @@ import { type WhatsAppPhoneOption } from '../../services/backendApi';
 
 export type PopupProvider = 'instagram' | 'linkedin' | 'whatsapp';
 export type QueueFilter = 'all' | 'pending' | 'drafted' | 'approved' | 'published';
-export type DashboardTab = 'overview' | 'queue' | 'delivery';
+export type DashboardTab = 'overview' | 'queue';
 
 export interface OAuthPopupMessage {
   source: 'channel-bot-oauth';
