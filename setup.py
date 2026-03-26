@@ -85,6 +85,20 @@ class GoogleResources:
     credentials_json: str
 
 
+def parse_service_account_json(raw_value: str) -> tuple[dict[str, Any], str]:
+    try:
+        creds_dict = json.loads(raw_value)
+    except json.JSONDecodeError as error:
+        fail('GOOGLE_CREDENTIALS_JSON', f'invalid JSON: {error}')
+        sys.exit(1)
+
+    private_key = creds_dict.get('private_key')
+    if isinstance(private_key, str) and '\\n' in private_key:
+        creds_dict['private_key'] = private_key.replace('\\n', '\n')
+
+    return creds_dict, json.dumps(creds_dict)
+
+
 def ensure_sheet_tab(sheets: Any, spreadsheet_id: str, title: str, headers: list[str]) -> None:
     metadata = sheets.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
     existing = {
@@ -206,11 +220,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         fail('GOOGLE_CREDENTIALS_JSON', 'not set. Add it to .env or your shell and rerun setup.py.')
         sys.exit(1)
 
-    try:
-        creds_dict = json.loads(creds_json)
-    except json.JSONDecodeError as error:
-        fail('GOOGLE_CREDENTIALS_JSON', f'invalid JSON: {error}')
-        sys.exit(1)
+    creds_dict, normalized_creds_json = parse_service_account_json(creds_json)
 
     service_account_email = creds_dict.get('client_email', 'unknown')
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
@@ -355,7 +365,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         images_folder_id=images_folder_id,
         doc_id=doc_id,
         linkedin_person_urn=linkedin_person_urn,
-        credentials_json=creds_json,
+        credentials_json=normalized_creds_json,
     )
 
 

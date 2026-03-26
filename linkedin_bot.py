@@ -64,7 +64,11 @@ DISCOVERY_ENGINE_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
 def load_service_account_info():
     if not GOOGLE_CREDENTIALS_JSON:
         raise ValueError('Missing GOOGLE_CREDENTIALS_JSON')
-    return json.loads(GOOGLE_CREDENTIALS_JSON)
+    service_account_info = json.loads(GOOGLE_CREDENTIALS_JSON)
+    private_key = service_account_info.get('private_key')
+    if isinstance(private_key, str) and '\\n' in private_key:
+        service_account_info['private_key'] = private_key.replace('\\n', '\n')
+    return service_account_info
 
 
 def get_vertex_ai_search_project_id():
@@ -152,7 +156,7 @@ def get_google_services():
     if not GOOGLE_CREDENTIALS_JSON:
         print("Missing GOOGLE_CREDENTIALS_JSON")
         return None, None
-    creds_dict = json.loads(GOOGLE_CREDENTIALS_JSON)
+    creds_dict = load_service_account_info()
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     sheets_service = build('sheets', 'v4', credentials=creds)
     drive_service = build('drive', 'v3', credentials=creds)
