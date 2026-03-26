@@ -12,7 +12,7 @@ import {
 import { useEffect, useState, type ReactNode } from 'react';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { type ChannelId } from '../integrations/channels';
-import { Badge } from './ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { cn } from '../lib/cn';
 import { Button } from '@/components/ui/button';

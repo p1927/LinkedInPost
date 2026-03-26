@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Download, ImagePlus, LoaderCircle, RefreshCw, Upload } from 'lucide-react';
-import { Badge } from './ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { useAlert } from './AlertProvider';
 import { Input } from './ui/input';
