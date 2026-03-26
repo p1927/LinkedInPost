@@ -343,10 +343,12 @@ export function VariantSelection({
                         <Button
                           key={`variant-dot-${index}`}
                           type="button"
+                          variant="ghost"
+                          size="icon-lg"
                           onClick={() => selectOption(index)}
-                          className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ${
+                          className={`group relative size-11 rounded-full transition-colors duration-200 ${
                             isActive
-                              ? 'bg-primary text-primary-fg shadow-md'
+                              ? 'bg-primary text-primary-fg shadow-md hover:bg-primary hover:text-primary-fg'
                               : 'border border-border bg-surface text-muted hover:border-border-strong hover:text-ink'
                           }`}
                           aria-label={`Jump to draft ${index + 1}`}
@@ -364,18 +366,22 @@ export function VariantSelection({
                   <div className="absolute right-5 top-5 z-10 flex flex-col gap-2">
                     <Button
                       type="button"
+                      variant="secondary"
+                      size="icon-lg"
                       onClick={() => changeVariantBy(-1)}
                       disabled={selectedOptionIndex === null || selectedOptionIndex === 0}
-                      className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink shadow-md transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-45"
+                      className="size-11 rounded-full shadow-md"
                       aria-label="Previous draft"
                     >
                       <ChevronUp className="h-5 w-5" />
                     </Button>
                     <Button
                       type="button"
+                      variant="secondary"
+                      size="icon-lg"
                       onClick={() => changeVariantBy(1)}
                       disabled={selectedOptionIndex === null || selectedOptionIndex === options.length - 1}
-                      className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink shadow-md transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-45"
+                      className="size-11 rounded-full shadow-md"
                       aria-label="Next draft"
                     >
                       <ChevronDown className="h-5 w-5" />
@@ -478,8 +484,10 @@ export function VariantSelection({
                   <Button
                     onClick={handleRefine}
                     type="button"
+                    variant="ai"
+                    size="md"
                     disabled={refining || submitting || selectedOptionIndex === null}
-                    className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-ai-border bg-ai-surface px-4 py-3 text-sm font-semibold text-ai-ink transition-colors duration-200 hover:bg-cyan-100/80 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-4 w-full rounded-xl disabled:opacity-50"
                   >
                     {refining ? 'Requesting 4 refined variants...' : 'Generate 4 improved variants'}
                   </Button>
@@ -519,15 +527,21 @@ export function VariantSelection({
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <Button
                     onClick={handleSubmit}
+                    type="button"
+                    variant="primary"
+                    size="md"
                     disabled={submitting || selectedOptionIndex === null}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-fg transition-colors duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl px-6 disabled:opacity-50"
                   >
                     {submitting ? 'Approving...' : 'Approve selected post'}
                   </Button>
                   <Button
                     onClick={() => requestAction({ type: 'close' })}
+                    type="button"
+                    variant="secondary"
+                    size="md"
                     disabled={submitting}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas disabled:opacity-50"
+                    className="rounded-xl px-6 disabled:opacity-50"
                   >
                     Cancel
                   </Button>

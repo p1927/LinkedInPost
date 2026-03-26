@@ -77,9 +77,11 @@ export function DraftEditor({
         <Button
           key={id}
           type="button"
+          variant="ghost"
+          size="inline"
           title={label}
           onClick={() => onFormatting(id)}
-          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-medium text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${fmtBtn}`}
+          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-medium text-ink transition-colors hover:bg-canvas focus-visible:ring-2 focus-visible:ring-primary/30 ${fmtBtn}`}
         >
           <Icon className={fmtIcon} aria-hidden />
           <span className="sr-only">{label}</span>
@@ -94,16 +96,20 @@ export function DraftEditor({
         <div className={`inline-flex rounded-full border border-border bg-surface ${compact ? 'p-0.5' : 'p-1'}`}>
           <Button
             type="button"
+            variant="ghost"
+            size="inline"
             onClick={() => onScopeChange('whole-post')}
-            className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg' : 'text-muted hover:bg-canvas'}`}
+            className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg hover:bg-ink hover:text-primary-fg' : 'text-muted hover:bg-canvas'}`}
           >
             Whole post
           </Button>
           <Button
             type="button"
+            variant="ghost"
+            size="inline"
             onClick={() => onScopeChange('selection')}
             disabled={!selection?.text.trim()}
-            className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg' : 'text-muted hover:bg-canvas disabled:cursor-not-allowed disabled:text-muted/50'}`}
+            className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg' : 'text-muted hover:bg-canvas disabled:cursor-not-allowed disabled:text-muted/50'}`}
           >
             Selection
           </Button>
@@ -124,13 +130,13 @@ export function DraftEditor({
               >
                 Formatting actions
               </Button>} />
-            <DropdownMenuContent align="end" className="z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-xl border border-border bg-surface p-3 shadow-lift">
+            <DropdownMenuContent
+              align="end"
+              sideOffset={6}
+              className="mt-1 grid min-w-[220px] max-w-[min(100vw-2rem,280px)] gap-0.5"
+            >
               {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
-                <DropdownMenuItem
-                  key={id}
-                  onClick={() => onFormatting(id)}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas focus:bg-canvas focus:text-ink"
-                >
+                <DropdownMenuItem key={id} onClick={() => onFormatting(id)}>
                   <Icon className="h-4 w-4" />
                   {label}
                 </DropdownMenuItem>

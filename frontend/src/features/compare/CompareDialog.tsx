@@ -119,18 +119,18 @@ export function CompareDialog({
   const { beforeSegments, afterSegments } = buildDiff(currentText, proposedText);
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-deep-purple/35 px-4 py-6 backdrop-blur-md">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/25 px-4 py-6 backdrop-blur-xl">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="compare-dialog-title"
-        className="glass-panel-strong w-full max-w-6xl rounded-3xl"
+        className="glass-panel-strong w-full max-w-6xl rounded-3xl shadow-2xl ring-1 ring-white/30 overflow-hidden bg-gradient-to-br from-white/95 to-indigo-50/80 backdrop-blur-xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-white/45 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-indigo-200/30 px-8 py-6 bg-gradient-to-r from-indigo-50/50 to-white/50 backdrop-blur-sm">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Compare before apply</p>
-            <h3 id="compare-dialog-title" className="mt-2 font-heading text-2xl font-semibold text-ink">{title}</h3>
-            <p className="mt-2 text-sm leading-6 text-muted">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-600/80">Compare before apply</p>
+            <h3 id="compare-dialog-title" className="mt-3 font-heading text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-indigo-700">{title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
               {scope === 'selection'
                 ? 'Only the selected passage will change if you apply this preview.'
                 : 'Applying this preview will replace the full editor draft.'}
@@ -138,52 +138,46 @@ export function CompareDialog({
           </div>
           <Button
             type="button"
+            variant="ghost"
+            size="icon-lg"
             onClick={onCancel}
-            className="glass-inset inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-white/85 hover:text-ink"
+            className="size-10 shrink-0 rounded-full text-muted hover:bg-violet-100/70 hover:text-ink"
             aria-label="Close compare dialog"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="grid gap-5 px-6 py-6 lg:grid-cols-2">
-          <section className="glass-inset rounded-2xl p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Current target</p>
-            <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-ink">
+        <div className="grid gap-6 px-8 py-6 lg:grid-cols-2">
+          <section className="rounded-2xl p-6 border border-slate-200/60 bg-gradient-to-br from-slate-50/80 to-white/60 backdrop-blur-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-700/80">Current target</p>
+            <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900 max-h-[300px] overflow-y-auto">
               {renderSegments(beforeSegments)}
             </div>
           </section>
 
-          <section className="rounded-2xl border border-success-border/90 bg-success-surface/95 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-success-ink">Proposed target</p>
-            <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-ink">
+          <section className="rounded-2xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-white/60 p-6 backdrop-blur-sm shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-700/80">Proposed target</p>
+            <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900 max-h-[300px] overflow-y-auto">
               {renderSegments(afterSegments)}
             </div>
           </section>
         </div>
 
-        <div className="px-6 pb-2">
-          <section className="glass-panel rounded-2xl p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Resulting editor draft</p>
-            <div className="glass-inset mt-3 max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words rounded-2xl px-4 py-4 text-sm leading-7 text-ink">
+        <div className="px-8 pb-4">
+          <section className="glass-panel rounded-2xl p-6 border border-indigo-200/40 bg-gradient-to-br from-indigo-50/50 to-white/50 backdrop-blur-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-700/80">Resulting editor draft</p>
+            <div className="mt-4 max-h-[240px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl px-5 py-4 text-sm leading-7 text-slate-900 border border-indigo-200/30 bg-white/60 backdrop-blur-sm">
               {resultingText}
             </div>
           </section>
         </div>
 
-        <div className="flex flex-col-reverse gap-3 px-6 py-5 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            onClick={onCancel}
-            className="glass-inset inline-flex cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-white/85"
-          >
+        <div className="flex flex-col-reverse gap-3 px-8 py-6 sm:flex-row sm:justify-end border-t border-indigo-200/30 bg-gradient-to-r from-indigo-50/30 to-white/30 backdrop-blur-sm">
+          <Button type="button" variant="secondary" size="md" onClick={onCancel} className="rounded-xl">
             Cancel
           </Button>
-          <Button
-            type="button"
-            onClick={onConfirm}
-            className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-hover"
-          >
+          <Button type="button" variant="primary" size="md" onClick={onConfirm} className="rounded-xl">
             Apply to editor
           </Button>
         </div>

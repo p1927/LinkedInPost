@@ -39,8 +39,10 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
             </div>
             <Button
               type="button"
+              variant="secondary"
+              size="icon-lg"
               onClick={onClose}
-              className="glass-inset inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-white/85 hover:text-ink"
+              className="glass-inset size-11 rounded-full text-muted hover:bg-white/85 hover:text-ink"
               aria-label="Close preview"
             >
               <X className="h-4 w-4" />
@@ -97,8 +99,10 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
               <div className="mt-4 flex justify-end">
                 <Button
                   type="button"
+                  variant="secondary"
+                  size="md"
                   onClick={onClose}
-                  className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
+                  className="rounded-xl px-5"
                 >
                   Close preview
                 </Button>

@@ -117,18 +117,22 @@ export function ImageAssetManager({
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
+            variant="outline"
+            size="md"
             onClick={handleFetchMore}
             disabled={fetching || uploading}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/35 bg-canvas px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="gap-2 rounded-xl"
           >
             {fetching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {fetching ? 'Fetching...' : 'Fetch other images'}
           </Button>
           <Button
             type="button"
+            variant="secondary"
+            size="md"
             onClick={() => inputRef.current?.click()}
             disabled={uploading || fetching}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
+            className="gap-2 rounded-xl"
           >
             {uploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {uploading ? 'Uploading...' : 'Upload image'}
@@ -170,8 +174,10 @@ export function ImageAssetManager({
               >
                 <Button
                   type="button"
+                  variant="ghost"
+                  size="inline"
                   onClick={() => onSelectImage(option.imageUrl)}
-                  className="block w-full text-left"
+                  className="block w-full rounded-none text-left hover:bg-transparent"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-surface-muted">
                     <img
@@ -206,9 +212,11 @@ export function ImageAssetManager({
 
                   <Button
                     type="button"
+                    variant="secondary"
+                    size="icon-lg"
                     onClick={() => void handleDownload(option)}
                     disabled={downloadingId === option.id}
-                    className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-canvas text-muted transition-colors hover:border-border-strong hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+                    className="size-10 shrink-0 rounded-full border-border bg-canvas text-muted hover:text-ink"
                     aria-label={`Download ${option.label}`}
                   >
                     {downloadingId === option.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}

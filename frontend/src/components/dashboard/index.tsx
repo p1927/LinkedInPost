@@ -146,8 +146,14 @@ export function Dashboard({
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
     : channelsHook.selectedChannel === 'instagram'
-      ? (session.config.instagramUsername ? `@${session.config.instagramUsername}` : 'Connected Instagram account')
-      : 'Connected LinkedIn account';
+      ? session.config.instagramUsername
+        ? `@${session.config.instagramUsername}`
+        : instagramConfigured
+          ? 'Connected Instagram account'
+          : 'Instagram not connected'
+      : linkedinConfigured
+        ? 'Connected LinkedIn account'
+        : 'LinkedIn not connected';
 
   const handleScrollTargetHandled = useCallback(() => {
     setQueueScrollTargetId(null);
@@ -330,10 +336,21 @@ export function Dashboard({
 
   return (
     <div className="w-full pb-12">
+      {session.config.spreadsheetId ? (
+        <header className="mx-auto mb-6 flex max-w-[1400px] justify-end">
+          <div
+            className="shrink-0 rounded-2xl border border-violet-200/70 bg-white/70 px-3 py-2 text-xs font-medium text-ink shadow-sm ring-1 ring-white/60 backdrop-blur-md transition-shadow duration-200 hover:shadow-card"
+            title="Topics sync from your connected Google Sheet"
+          >
+            <span className="block text-[10px] font-semibold uppercase tracking-wider text-ink/60">Data source</span>
+            <span className="mt-0.5 block truncate font-semibold text-ink">Sheet connected</span>
+          </div>
+        </header>
+      ) : null}
       <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="min-w-0">{queueContent}</div>
-        <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto">
-          <div className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
+        <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
+          <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
             <section aria-labelledby="topics-rail-ai-model" className="space-y-2">
               <h2 id="topics-rail-ai-model" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
                 AI model

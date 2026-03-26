@@ -49,8 +49,8 @@ export function DashboardDelivery({
   onOpenSettings?: () => void;
 }) {
   const targetBlockClass = embedded
-    ? 'flex flex-col gap-3 rounded-xl bg-canvas/60 p-3 ring-1 ring-border/80'
-    : 'rounded-2xl border border-border bg-canvas p-4';
+    ? 'flex flex-col gap-3 rounded-xl bg-gradient-to-br from-white/70 to-indigo-50/60 p-4 ring-1 ring-indigo-200/40 shadow-md backdrop-blur-sm transition-all duration-200 hover:ring-indigo-200/60 hover:shadow-lg'
+    : 'rounded-2xl border border-indigo-200/40 bg-gradient-to-br from-white/80 to-indigo-50/60 p-6 shadow-lg backdrop-blur-xl transition-all duration-300 hover:shadow-xl hover:border-indigo-200/60';
 
   return (
     <div className="flex flex-col gap-4">
@@ -65,10 +65,12 @@ export function DashboardDelivery({
           {isAdmin && onOpenSettings ? (
             <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onOpenSettings}
-              className="mt-2 inline-flex cursor-pointer font-semibold text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+              className="mt-3 h-9 min-h-9 w-full cursor-pointer rounded-xl border-amber-300/80 bg-white/90 text-amber-950 hover:bg-white sm:w-auto"
             >
-              Open Settings to connect
+              Connect in Settings
             </Button>
           ) : (
             <p className="mt-1 text-amber-900/90">Ask an admin to connect this channel in Settings.</p>
@@ -81,7 +83,7 @@ export function DashboardDelivery({
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70">Target</p>
             <Select value={selectedChannel} onValueChange={(val) => setSelectedChannel(val as ChannelId)}>
-              <SelectTrigger className="mt-1 h-9 w-full max-w-full rounded-xl border border-violet-200/55 bg-white/88 px-3.5 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] hover:border-primary/40 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/25">
+              <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -130,7 +132,7 @@ export function DashboardDelivery({
                     onValueChange={(val) => setSelectedRecipientId(val as string)}
                     disabled={activeRecipientOptions.length === 0}
                   >
-                    <SelectTrigger className="h-9 w-full rounded-xl border border-violet-200/55 bg-white/88 px-3.5 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] hover:border-primary/40 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/25">
+                    <SelectTrigger>
                       <SelectValue placeholder={`No saved ${selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet`} />
                     </SelectTrigger>
                     <SelectContent>

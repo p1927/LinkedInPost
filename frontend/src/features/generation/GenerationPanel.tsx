@@ -53,29 +53,32 @@ export function GenerationPanel({
   };
 
   return (
-    <section className={`rounded-2xl border border-border bg-surface shadow-card ${pad}`}>
-      <p className={`font-semibold uppercase tracking-[0.18em] text-muted ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Refine with AI</p>
-      <h4 className={`mt-1.5 font-heading font-semibold text-ink ${title}`}>Try rewrites before you commit to one</h4>
-      <p className={`mt-1.5 text-muted ${body}`}>
+    <section className={`rounded-2xl border border-indigo-200/40 bg-gradient-to-br from-indigo-50/80 to-white/80 shadow-lg backdrop-blur-xl transition-all duration-300 hover:shadow-xl hover:border-indigo-200/60 ${pad}`}>
+      <div className="flex items-center gap-2 mb-1">
+        <div className="h-1 w-1 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500"></div>
+        <p className={`font-semibold uppercase tracking-[0.15em] text-indigo-600/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Refine with AI</p>
+      </div>
+      <h4 className={`mt-2 font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-indigo-700 ${title}`}>Try rewrites before you commit to one</h4>
+      <p className={`mt-2 text-slate-600 leading-relaxed ${body}`}>
         {compact
           ? 'Describe the change you want, then run 4 Variants to explore or Quick Change for a single pass.'
           : 'Quick Change returns one preview. Generate 4 Variants returns four preview options. Use Save on a preview to write that slot to Sheets.'}
       </p>
 
       {compact ? (
-        <Collapsible className="mt-2 rounded-lg border border-violet-200/40 bg-white/40 px-2 py-1.5">
-          <CollapsibleTrigger className="flex cursor-pointer items-center text-[0.65rem] font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm">
+        <Collapsible className="mt-3 rounded-lg border border-violet-200/40 bg-white/60 px-2.5 py-2 shadow-sm">
+          <CollapsibleTrigger className="flex cursor-pointer items-center text-[0.65rem] font-semibold text-primary transition-colors duration-200 hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm">
             How this works
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <p className="mt-1.5 text-[0.65rem] leading-relaxed text-muted">
+            <p className="mt-2 text-[0.65rem] leading-relaxed text-muted">
               Quick Change returns one preview. 4 Variants returns four. Use Save on a variant to write that slot to your Sheet. Use Review changes to see a diff before applying.
             </p>
           </CollapsibleContent>
         </Collapsible>
       ) : null}
 
-      <label className={`mt-3 block font-semibold text-ink ${label}`} htmlFor="generation-instruction">
+      <label className={`mt-4 block font-semibold text-ink ${label}`} htmlFor="generation-instruction">
         Rewrite direction
       </label>
       <Textarea
@@ -113,18 +116,18 @@ export function GenerationPanel({
       </div>
 
       {quickChangePreview ? (
-        <div className={`mt-4 rounded-xl border border-ai-border/90 bg-ai-surface/90 ${compact ? 'p-2.5' : 'p-4'}`}>
-          <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className={`mt-4 rounded-xl border border-ai-border/80 bg-ai-surface/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${compact ? 'p-3' : 'p-4'}`}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className={`font-semibold uppercase tracking-[0.15em] text-ai-ink ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Quick Change preview</p>
-              <p className={`mt-1.5 text-ink ${compact ? 'line-clamp-4 text-xs leading-5' : 'line-clamp-6 text-sm leading-6'}`}>{quickChangePreview.replacementText}</p>
+              <p className={`font-semibold uppercase tracking-[0.15em] text-ai-ink/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Quick Change preview</p>
+              <p className={`mt-2 text-ink ${compact ? 'line-clamp-4 text-xs leading-5' : 'line-clamp-6 text-sm leading-6'}`}>{quickChangePreview.replacementText}</p>
             </div>
             <Button
               type="button"
               variant="outline"
               size={compact ? 'sm' : 'md'}
               onClick={onApplyQuickChange}
-              className={`shrink-0 ${compact ? 'px-2.5 py-1.5 text-xs' : 'px-4 py-2 text-sm'}`}
+              className={`shrink-0 transition-all duration-200 ${compact ? 'px-2.5 py-1.5 text-xs' : 'px-4 py-2.5 text-sm'}`}
             >
               Review changes
             </Button>
@@ -135,7 +138,7 @@ export function GenerationPanel({
       {variantsPreview?.variants.length ? (
         <div className={`mt-4 ${compact ? 'space-y-2' : 'space-y-3'}`}>
           {variantsPreview.variants.map((variant, index) => (
-            <div key={variant.id} className={`rounded-xl border border-border bg-canvas ${compact ? 'p-2.5' : 'p-4'}`}>
+            <div key={variant.id} className={`rounded-xl border border-violet-200/50 bg-white/50 backdrop-blur-sm shadow-sm transition-all duration-200 hover:shadow-md hover:border-violet-200/70 ${compact ? 'p-3' : 'p-4'}`}>
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className={`font-semibold uppercase tracking-[0.15em] text-muted ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Preview {index + 1}</p>

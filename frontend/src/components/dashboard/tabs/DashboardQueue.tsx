@@ -15,19 +15,14 @@ function queueRowDomId(row: SheetRow) {
   return `${row.sourceSheet}-${row.rowIndex}`;
 }
 
-/** Primary row CTAs: start pipeline or first publish */
-const btnPrimary =
-  'inline-flex h-9 min-h-[36px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
-
-/** Secondary row CTAs: review draft or republish — same shape as primary, outline style */
-const btnSecondary =
-  'inline-flex h-9 min-h-[36px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-primary/25 bg-white/90 px-3 text-xs font-semibold text-ink shadow-sm transition-[color,background-color,border-color,box-shadow] duration-200 outline-none hover:border-primary/40 hover:bg-white focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
+const rowActionClass =
+  'h-9 min-h-9 shrink-0 gap-1.5 rounded-full px-3 text-xs font-semibold active:translate-y-0 disabled:opacity-40';
 
 const iconBtn =
-  'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted transition-colors duration-200 outline-none hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
+  'size-9 shrink-0 cursor-pointer rounded-xl text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-40';
 
 const iconBtnMuted =
-  'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted transition-colors duration-200 outline-none hover:bg-white/80 hover:text-ink focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
+  'size-9 shrink-0 cursor-pointer rounded-xl text-muted hover:bg-white/80 hover:text-ink disabled:opacity-40';
 
 export function DashboardQueue({
   handleAddTopic,
@@ -93,7 +88,10 @@ export function DashboardQueue({
 
   return (
     <div className="flex flex-col gap-5">
-      <section aria-label="Add topic" className={cn('glass-panel rounded-xl', hasTopics ? 'p-2.5' : 'p-4')}>
+      <section
+        aria-label="Add topic"
+        className={cn('glass-panel rounded-xl', hasTopics ? 'p-2.5' : 'p-4')}
+      >
         <form
           onSubmit={handleAddTopic}
           className={cn('flex flex-col gap-2 sm:flex-row sm:items-stretch', hasTopics && 'sm:items-center')}
@@ -111,10 +109,12 @@ export function DashboardQueue({
           />
           <Button
             type="submit"
+            variant="primary"
+            size={hasTopics ? 'sm' : 'md'}
             disabled={loading || !newTopic.trim()}
             className={cn(
-              'inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-primary/20 bg-primary font-semibold text-primary-fg transition-[color,background-color,box-shadow] duration-200 hover:border-primary-hover hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40',
-              hasTopics ? 'min-h-10 px-3 text-xs' : 'min-h-[44px] gap-2 px-4 py-2 text-sm shadow-card',
+              'w-full shrink-0 cursor-pointer rounded-lg sm:w-auto',
+              hasTopics ? 'min-h-10' : 'min-h-[44px]',
             )}
           >
             <Plus className={hasTopics ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden />
@@ -125,25 +125,34 @@ export function DashboardQueue({
 
       <div className="flex flex-col">
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <p className="w-full text-[10px] font-semibold uppercase tracking-wider text-ink/70">Queue</p>
-          <div className="flex flex-wrap gap-1.5">
-          {filterOptions.map((option) => (
-            <ChipToggle
-              key={`chip-${option.value}`}
-              type="button"
-              selected={statusFilter === option.value}
-              onClick={() => setStatusFilter(option.value)}
-              className="min-h-[36px] px-3 py-1.5 text-xs font-semibold"
-            >
-              {option.label} ({queueCounts[option.value]})
-            </ChipToggle>
-          ))}
+          <div className="flex w-full flex-col gap-0.5 sm:w-auto sm:flex-1 sm:min-w-[12rem]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Status</p>
+            <p id="queue-filter-hint" className="text-[11px] leading-snug text-muted">
+              Filter by status; counts follow the sheet.
+            </p>
+          </div>
+          <div
+            className="flex flex-wrap gap-1.5"
+            role="group"
+            aria-label="Filter topics by status"
+            aria-describedby="queue-filter-hint"
+          >
+            {filterOptions.map((option) => (
+              <ChipToggle
+                key={`chip-${option.value}`}
+                type="button"
+                selected={statusFilter === option.value}
+                onClick={() => setStatusFilter(option.value)}
+              >
+                {option.label} ({queueCounts[option.value]})
+              </ChipToggle>
+            ))}
           </div>
         </div>
 
         <div>
           {filteredRows.length === 0 ? (
-            <div className="glass-panel rounded-xl border-dashed border-violet-200/50 px-4 py-12 text-center">
+            <div className="glass-panel rounded-xl border border-dashed border-violet-200/50 px-4 py-12 text-center">
               <div className="glass-inset mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full text-muted">
                 <Bot className="h-5 w-5" strokeWidth={1.5} />
               </div>
@@ -154,9 +163,9 @@ export function DashboardQueue({
             </div>
           ) : (
             <div
-              className="glass-inset scroll-mt-24 overflow-x-auto rounded-xl border-violet-200/40 shadow-sm"
+              className="glass-inset custom-scrollbar scroll-mt-24 overflow-x-auto rounded-xl border border-violet-200/50 shadow-sm"
               role="table"
-              aria-label="Topic queue: title, status, date, and actions per row"
+              aria-label="Topics: title, status, date, and actions per row"
             >
               <div className="min-w-[520px]">
                 <div role="rowgroup">
@@ -183,7 +192,7 @@ export function DashboardQueue({
                   </div>
                 </div>
                 <div role="rowgroup" className="text-sm">
-                  {filteredRows.map((row) => {
+                  {filteredRows.map((row, rowIndex) => {
                     const normalizedStatus = getNormalizedRowStatus(row.status);
                     const showPreview = canPreviewPublishedContent(row);
                     const dateRaw = row.date?.trim() ?? '';
@@ -193,11 +202,14 @@ export function DashboardQueue({
                         key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
                         role="row"
                         data-queue-row-id={queueRowDomId(row)}
-                        className="flex items-center gap-3 border-b border-violet-100/50 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-white/65"
+                        className={cn(
+                          'flex items-center gap-3 border-b border-violet-100/50 px-4 py-2.5 transition-colors duration-200 last:border-b-0 hover:bg-white/65',
+                          rowIndex % 2 === 1 && 'bg-violet-50/30',
+                        )}
                       >
                         <div role="cell" className="min-w-0 flex-1">
                           <p
-                            className="line-clamp-2 font-medium leading-snug text-ink"
+                            className="line-clamp-2 font-medium leading-snug text-ink transition-colors duration-200"
                             title={row.topic.length > 80 ? row.topic : undefined}
                           >
                             {row.topic}
@@ -219,12 +231,13 @@ export function DashboardQueue({
                             {normalizedStatus === 'pending' ? (
                               <Button
                                 type="button"
+                                variant="primary"
                                 onClick={() => void triggerRowGithubAction(row, 'draft')}
                                 disabled={
                                   actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
                                 }
                                 title="Generate draft"
-                                className={`${btnPrimary} bg-primary text-primary-fg hover:bg-primary-hover`}
+                                className={rowActionClass}
                               >
                                 {actionLoading === buildRowActionKey('draft', row) ? (
                                   <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
@@ -238,9 +251,10 @@ export function DashboardQueue({
                             {normalizedStatus === 'drafted' ? (
                               <Button
                                 type="button"
+                                variant="secondary"
                                 onClick={() => setSelectedRowForReview(row)}
                                 title="Review draft"
-                                className={btnSecondary}
+                                className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
                               >
                                 <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 <span className="sm:hidden">Edit</span>
@@ -251,10 +265,11 @@ export function DashboardQueue({
                             {normalizedStatus === 'approved' ? (
                               <Button
                                 type="button"
+                                variant="primary"
                                 onClick={() => void publishRowToSelectedChannel(row)}
                                 disabled={actionLoading !== null}
                                 title="Publish"
-                                className={`${btnPrimary} bg-primary text-primary-fg hover:bg-primary-hover`}
+                                className={rowActionClass}
                               >
                                 {actionLoading === buildRowActionKey('publish', row) ? (
                                   <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
@@ -268,10 +283,11 @@ export function DashboardQueue({
                             {normalizedStatus === 'published' ? (
                               <Button
                                 type="button"
+                                variant="secondary"
                                 onClick={() => void republishRowToSelectedChannel(row)}
                                 disabled={actionLoading !== null}
                                 title="Republish to channel"
-                                className={btnSecondary}
+                                className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
                               >
                                 {actionLoading === buildRowActionKey('publish', row) ? (
                                   <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
@@ -286,6 +302,7 @@ export function DashboardQueue({
                             {showPreview ? (
                               <Button
                                 type="button"
+                                variant="ghost"
                                 onClick={() => setSelectedApprovedRowPreview(row)}
                                 title="Preview"
                                 aria-label="Preview post"
@@ -298,6 +315,7 @@ export function DashboardQueue({
                             )}
                             <Button
                               type="button"
+                              variant="ghost"
                               onClick={() => handleDeleteTopic(row)}
                               disabled={deletingRowIndex === row.rowIndex}
                               title="Delete topic"

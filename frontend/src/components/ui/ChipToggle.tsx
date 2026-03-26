@@ -10,12 +10,11 @@ export function ChipToggle({ selected, className, type = 'button', ...props }: C
   return (
     <Button
       type={type}
+      variant={selected ? 'primary' : 'secondary'}
+      size="sm"
       className={cn(
-        'inline-flex min-h-[40px] cursor-pointer items-center justify-center rounded-full px-3.5 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow] duration-200',
-        'outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
-        selected
-          ? 'border border-primary/25 bg-primary text-primary-fg shadow-sm'
-          : 'border border-violet-200/50 bg-white/70 text-muted shadow-sm backdrop-blur-md hover:border-primary/35 hover:bg-white/90 hover:text-ink',
+        'h-9 min-h-9 cursor-pointer rounded-full px-3.5 text-xs font-semibold shadow-sm',
+        !selected && 'text-muted hover:text-ink',
         className,
       )}
       {...props}

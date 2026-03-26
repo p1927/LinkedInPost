@@ -286,6 +286,7 @@ export function LinkedInPostPreview({
               {shouldClamp && (
                 <Button
                   type="button"
+                  variant="link"
                   onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                     event.stopPropagation();
                     if (isPickCarousel) {
@@ -293,7 +294,7 @@ export function LinkedInPostPreview({
                     }
                     onToggleExpanded();
                   }}
-                  className={`mt-1.5 font-semibold text-primary transition-colors hover:text-primary-hover ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
+                  className={`mt-1.5 font-semibold ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
                 >
                   {bodyExpanded ? 'Show less' : 'See more'}
                 </Button>
@@ -352,23 +353,27 @@ export function LinkedInPostPreview({
                 <div className="flex shrink-0 flex-wrap justify-center gap-2">
                   <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                       event.stopPropagation();
                       setImageLoadFailed(false);
                       setImageRetryKey((k) => k + 1);
                     }}
-                    className="cursor-pointer rounded-lg border border-border-strong bg-surface px-2.5 py-1 text-[0.7rem] font-semibold text-ink shadow-sm transition-colors hover:border-primary/40 hover:text-primary"
+                    className="rounded-lg px-2.5 py-1 text-[0.7rem] shadow-sm"
                   >
                     Retry
                   </Button>
                   {onOpenMedia ? (
                     <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                         event.stopPropagation();
                         onOpenMedia();
                       }}
-                      className="cursor-pointer rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1 text-[0.7rem] font-semibold text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/15"
+                      className="rounded-lg px-2.5 py-1 text-[0.7rem] shadow-sm"
                     >
                       Open Media
                     </Button>

@@ -18,20 +18,22 @@ export function DashboardToolbar({
   return (
     <div
       className={cn(
-        embedded ? '' : 'glass-panel rounded-2xl px-4 py-3 shadow-card',
+        embedded ? '' : 'glass-panel rounded-2xl border border-violet-200/50 px-5 py-4 shadow-card',
         embedded && 'px-0 py-0',
       )}
     >
-      <label className="flex cursor-pointer flex-col gap-1">
+      <label className="flex cursor-pointer flex-col gap-1.5">
         {!embedded ? (
-          <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70">
-            <Bot className="h-3.5 w-3.5 text-primary" aria-hidden />
-            Model
+          <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+            <Bot className="h-4 w-4 text-primary" aria-hidden />
+            AI model
           </span>
         ) : null}
-        <span className="text-[11px] leading-4 text-muted">Quick Change and variants in review.</span>
+        <span className="text-[11px] leading-relaxed text-muted">
+          Powers Quick Change and variant generation during review.
+        </span>
         <Select value={googleModel} onValueChange={(val) => setGoogleModel(val as string)}>
-          <SelectTrigger className="mt-1 h-9 w-full max-w-none rounded-xl border border-violet-200/55 bg-white/88 px-3.5 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] hover:border-primary/40 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/25">
+          <SelectTrigger className="mt-1">
             <SelectValue placeholder="Select a model" />
           </SelectTrigger>
           <SelectContent>

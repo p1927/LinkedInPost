@@ -162,6 +162,8 @@ export function AppSidebar({
       <li key={page}>
         <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => {
             onNavigate(page);
             closeMobile();
@@ -198,9 +200,10 @@ export function AppSidebar({
     <>
       <Button
         type="button"
+        variant="ghost"
         aria-label="Close menu"
         className={clsx(
-          'fixed inset-0 z-40 bg-deep-purple/20 backdrop-blur-sm transition-opacity duration-200 md:hidden',
+          'fixed inset-0 z-40 min-h-0 rounded-none border-0 bg-deep-purple/20 p-0 backdrop-blur-sm transition-opacity duration-200 md:hidden',
           mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={closeMobile}
@@ -238,6 +241,8 @@ export function AppSidebar({
           </div>
           <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onToggleCollapsed}
             aria-expanded={!collapsed}
             aria-controls="workspace-sidebar-nav"
@@ -362,11 +367,12 @@ export function AppSidebar({
                 </p>
                 <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleLogout}
                   className={clsx(
-                    'mt-1 inline-flex cursor-pointer items-center gap-1 rounded-md text-xs font-semibold text-muted transition-colors duration-200 hover:bg-white/50 hover:text-ink',
+                    'mt-1 -ml-1 inline-flex h-auto min-h-0 cursor-pointer gap-1 rounded-md px-1 py-0.5 text-xs font-semibold text-muted transition-colors duration-200 hover:bg-white/50 hover:text-ink',
                     focusRing,
-                    'px-1 py-0.5 -ml-1',
                   )}
                 >
                   <LogOut className="h-3 w-3 shrink-0" aria-hidden />
@@ -376,11 +382,13 @@ export function AppSidebar({
             ) : (
               <Button
                 type="button"
+                variant="secondary"
+                size="icon-sm"
                 onClick={handleLogout}
                 aria-label="Log out"
                 title="Log out"
                 className={clsx(
-                  'flex cursor-pointer items-center justify-center border border-white/45 bg-white/30 text-muted transition-colors duration-200 hover:border-white/55 hover:bg-white/55 hover:text-ink',
+                  'flex cursor-pointer items-center justify-center border-white/45 bg-white/30 text-muted transition-colors duration-200 hover:border-white/55 hover:bg-white/55 hover:text-ink',
                   RAIL_TILE,
                   RAIL_RADIUS,
                   focusRing,

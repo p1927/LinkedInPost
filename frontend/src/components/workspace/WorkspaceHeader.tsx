@@ -23,8 +23,10 @@ export function WorkspaceHeader({
       <div className="flex min-w-0 items-center gap-2">
         <Button
           type="button"
+          variant="secondary"
+          size="icon-lg"
           onClick={onOpenMobileSidebar}
-          className="glass-inset flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink transition-colors hover:bg-white/80 md:hidden"
+          className="glass-inset size-9 shrink-0 cursor-pointer rounded-lg text-ink md:hidden"
           aria-label="Open menu"
           aria-controls="workspace-sidebar"
         >
@@ -43,13 +45,14 @@ export function WorkspaceHeader({
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={() => onRefreshQueue?.()}
           disabled={!onRefreshQueue || queueLoading}
-          className="glass-inset inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-45 sm:px-4"
+          className="glass-inset h-9 min-h-9 cursor-pointer gap-2 rounded-xl px-3 text-xs font-semibold text-ink hover:bg-white/75 sm:px-4"
         >
           <RefreshCw className={clsx('h-3.5 w-3.5 shrink-0', queueLoading && 'animate-spin')} aria-hidden />
-          <span className="hidden sm:inline">Refresh from Sheets</span>
-          <span className="sm:hidden">Refresh</span>
+          <span>Refresh</span>
         </Button>
       </div>
     </header>

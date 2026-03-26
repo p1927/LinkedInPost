@@ -177,9 +177,11 @@ export function DashboardSettingsDrawer({
             <Button
               key={id}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => scrollToSection(id)}
               className={cn(
-                'shrink-0 rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                'w-full shrink-0 justify-start rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
                 activeSectionId === id
                   ? 'bg-primary/12 font-semibold text-ink'
                   : 'text-muted hover:bg-white/60 hover:text-ink',
@@ -284,9 +286,11 @@ export function DashboardSettingsDrawer({
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
+                variant="ghost"
+                size="md"
                 onClick={() => void handleInstagramConnection()}
                 disabled={channelActionBusy || !session.config.instagramAuthAvailable}
-                className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {connectingChannel === 'instagram'
                   ? 'Opening Instagram approval...'
@@ -297,9 +301,11 @@ export function DashboardSettingsDrawer({
               {session.config.hasInstagramAccessToken ? (
                 <Button
                   type="button"
+                  variant="ghost"
+                  size="md"
                   onClick={() => void handleDisconnectChannel('instagram')}
                   disabled={channelActionBusy}
-                  className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
                 >
                   {disconnectingChannel === 'instagram' ? 'Disconnecting Instagram...' : 'Disconnect Instagram'}
                 </Button>
@@ -335,9 +341,11 @@ export function DashboardSettingsDrawer({
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
+                variant="ghost"
+                size="md"
                 onClick={() => void handleLinkedInConnection()}
                 disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
-                className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-white hover:bg-[#004182] disabled:opacity-50"
               >
                 {connectingChannel === 'linkedin'
                   ? 'Opening LinkedIn approval...'
@@ -348,9 +356,11 @@ export function DashboardSettingsDrawer({
               {session.config.hasLinkedInAccessToken ? (
                 <Button
                   type="button"
+                  variant="ghost"
+                  size="md"
                   onClick={() => void handleDisconnectChannel('linkedin')}
                   disabled={channelActionBusy}
-                  className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                 >
                   {disconnectingChannel === 'linkedin' ? 'Disconnecting LinkedIn...' : 'Disconnect LinkedIn'}
                 </Button>
@@ -425,17 +435,21 @@ export function DashboardSettingsDrawer({
                   <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
                     <Button
                       type="button"
+                      variant="ghost"
+                      size="md"
                       onClick={() => void handleVerifyTelegramChat()}
                       disabled={verifyingTelegramChat}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="gap-2 rounded-xl border-success-border bg-success-surface text-success-ink hover:bg-emerald-100/90 disabled:opacity-60"
                     >
                       <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
                       {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
                     </Button>
                     <Button
                       type="button"
+                      variant="ink"
+                      size="md"
                       onClick={handleAddTelegramRecipient}
-                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover"
+                      className="gap-2 rounded-xl"
                     >
                       <Plus className="h-4 w-4" /> Add chat
                     </Button>
@@ -460,8 +474,9 @@ export function DashboardSettingsDrawer({
                 {selectedChannel === 'telegram' && recipientMode === 'manual' ? (
                   <Button
                     type="button"
+                    variant="link"
                     onClick={handleUseManualTelegramChat}
-                    className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-primary-hover"
+                    className="mt-3 inline-flex items-center gap-2 text-xs font-semibold"
                   >
                     <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
                   </Button>
@@ -483,8 +498,10 @@ export function DashboardSettingsDrawer({
                         </div>
                         <Button
                           type="button"
+                          variant="secondary"
+                          size="sm"
                           onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
-                          className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted transition hover:border-rose-200 hover:text-rose-600"
+                          className="gap-2 rounded-lg text-muted hover:border-rose-200 hover:text-rose-600"
                         >
                           <Trash2 className="h-4 w-4" /> Remove
                         </Button>
@@ -528,9 +545,11 @@ export function DashboardSettingsDrawer({
               <div className="flex flex-col gap-2">
                 <Button
                   type="button"
+                  variant="ghost"
+                  size="md"
                   onClick={() => void handleWhatsAppConnection()}
                   disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
-                  className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white hover:bg-[#128C7E] disabled:opacity-50"
                 >
                   {connectingChannel === 'whatsapp'
                     ? 'Opening Meta approval...'
@@ -541,9 +560,11 @@ export function DashboardSettingsDrawer({
                 {session.config.hasWhatsAppAccessToken ? (
                   <Button
                     type="button"
+                    variant="ghost"
+                    size="md"
                     onClick={() => void handleDisconnectChannel('whatsapp')}
                     disabled={channelActionBusy}
-                    className="w-full rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-xl border-success-border bg-success-surface text-success-ink hover:bg-emerald-100/90 disabled:opacity-50"
                   >
                     {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
                   </Button>
@@ -572,9 +593,11 @@ export function DashboardSettingsDrawer({
                   </Select>
                   <Button
                     type="button"
+                    variant="ink"
+                    size="md"
                     onClick={() => void completeWhatsAppPhoneSelection()}
                     disabled={channelActionBusy || !selectedWhatsAppPhoneId}
-                    className="mt-3 w-full cursor-pointer rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-3 w-full rounded-xl disabled:opacity-50"
                   >
                     Save selected phone
                   </Button>
@@ -598,9 +621,11 @@ export function DashboardSettingsDrawer({
         <div className="border-t border-border pt-4">
           <Button
             type="button"
+            variant="primary"
+            size="md"
             onClick={saveSettings}
             disabled={savingConfig}
-            className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-fg transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+            className="w-full rounded-xl font-semibold disabled:opacity-50"
           >
             {savingConfig ? 'Saving...' : 'Save settings'}
           </Button>

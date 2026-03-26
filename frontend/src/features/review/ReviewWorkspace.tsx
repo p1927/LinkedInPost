@@ -1,5 +1,5 @@
 import { ArrowLeft, Info } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
 import { useAlert } from '../../components/AlertProvider';
@@ -131,6 +131,15 @@ export function ReviewWorkspace({
   );
   const [topicExpanded, setTopicExpanded] = useState(false);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const topicHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     const initialText = getInitialEditorText(row);
@@ -172,6 +181,33 @@ export function ReviewWorkspace({
   const editorDirty = editorText !== editorBaselineText;
   const hasUnsavedReviewState = editorDirty || instruction.trim().length > 0 || Boolean(quickChangePreview) || Boolean(variantsPreview?.variants.length);
   const previewReadyCount = variantsPreview?.variants.length || (quickChangePreview ? 1 : 0);
+
+  const requestClose = useCallback(() => {
+    if (hasUnsavedReviewState) {
+      setPendingClose(true);
+      return;
+    }
+    onCancel();
+  }, [hasUnsavedReviewState, onCancel]);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+      if (pendingClose || pendingVariantIndex !== null || compareState !== null) {
+        return;
+      }
+      event.preventDefault();
+      requestClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [compareState, pendingClose, pendingVariantIndex, requestClose]);
+
+  useEffect(() => {
+    topicHeadingRef.current?.focus();
+  }, [row]);
 
   useEffect(() => {
     if (!selectedImageUrl && imageOptions[0]?.imageUrl) {
@@ -404,11 +440,30 @@ export function ReviewWorkspace({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-deep-purple/35 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8">
-      <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
-        <div className="glass-panel-strong flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl">
-          <div className="shrink-0 border-b border-white/45 bg-white/50 px-4 py-3 backdrop-blur-md sm:py-2.5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+    <>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-gradient-to-b from-ink/60 via-ink/48 to-ink/55 backdrop-blur-md motion-safe:transition-colors">
+      <div
+        className="flex min-h-[100dvh] min-w-full items-center justify-center px-3 py-5 sm:px-6 sm:py-8"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            requestClose();
+          }
+        }}
+        role="presentation"
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-workspace-title"
+          aria-describedby="review-workspace-desc"
+          className="glass-panel-strong flex max-h-[calc(100dvh-3rem)] w-full max-w-[min(100vw-1.5rem,1760px)] flex-col overflow-hidden rounded-3xl border border-white/55 shadow-2xl shadow-ink/20 ring-1 ring-white/45 outline-none transition-[box-shadow,transform] duration-200 motion-safe:transition-shadow focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+          tabIndex={-1}
+        >
+          <p id="review-workspace-desc" className="sr-only">
+            Review your draft, refine text and media, then approve to mark the topic ready for publishing.
+          </p>
+          <div className="shrink-0 border-b border-white/50 bg-white/60 px-4 py-4 backdrop-blur-xl sm:py-3.5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="flex min-w-0 items-start gap-2 sm:gap-3">
                 {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
                   <Button
@@ -432,8 +487,11 @@ export function ReviewWorkspace({
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Review</p>
                   )}
                   <h2
+                    id="review-workspace-title"
+                    ref={topicHeadingRef}
+                    tabIndex={-1}
                     className={cn(
-                      'mt-0.5 text-sm font-medium leading-snug text-ink',
+                      'mt-0.5 text-sm font-medium leading-snug text-ink outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80',
                       !topicExpanded && topicIsLong && 'line-clamp-3',
                     )}
                   >
@@ -442,8 +500,9 @@ export function ReviewWorkspace({
                   {topicIsLong ? (
                     <Button
                       type="button"
+                      variant="link"
                       onClick={() => setTopicExpanded((v) => !v)}
-                      className="mt-1 cursor-pointer text-left text-[11px] font-semibold text-primary transition-colors hover:text-primary-hover"
+                      className="mt-1 text-left text-[11px] font-semibold"
                     >
                       {topicExpanded ? 'Show less' : 'Show full topic'}
                     </Button>
@@ -469,7 +528,9 @@ export function ReviewWorkspace({
                     ) : null}
                     <Button
                       type="button"
-                      className="inline-flex cursor-pointer items-center rounded-full border border-violet-200/60 bg-white/70 p-1 text-muted transition-colors hover:border-primary/40 hover:text-primary"
+                      variant="secondary"
+                      size="icon-sm"
+                      className="size-7 min-h-7 min-w-7 rounded-full border-violet-200/60 bg-white/70 p-0 text-muted hover:border-primary/40 hover:text-primary"
                       title={`Generation model: ${googleModel}`}
                       aria-label={`Generation model: ${googleModel}`}
                     >
@@ -488,15 +549,15 @@ export function ReviewWorkspace({
                   </div>
                 </div>
               </div>
-              <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-end">
                 {!showPickPhase ? (
-                  <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto">
+                  <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px]">
                     <label
                       htmlFor="review-post-time-input"
-                      className="text-[10px] font-semibold uppercase tracking-wider text-ink/70"
+                      className="text-[10px] font-semibold uppercase tracking-wider text-ink/75"
                     >
                       Schedule{' '}
-                      <span className="font-normal normal-case tracking-normal text-ink/60">(optional)</span>
+                      <span className="font-normal normal-case tracking-normal text-ink/65">(optional)</span>
                     </label>
                     <Input
                       id="review-post-time-input"
@@ -505,49 +566,20 @@ export function ReviewWorkspace({
                       onChange={(event) => setPostTime(event.target.value)}
                       aria-label="Schedule post time (optional)"
                       className={cn(
-                        'min-h-[40px] w-full min-w-0 rounded-xl border border-violet-200/55 bg-white/85 px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200',
-                        'focus:border-primary focus:ring-2 focus:ring-primary/25 focus:ring-offset-2 focus:ring-offset-canvas sm:w-[220px]',
+                        'min-h-[44px] w-full min-w-0 rounded-xl border border-violet-200/60 bg-white/90 px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200',
+                        'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white/90 sm:w-[220px]',
                       )}
                     />
                   </div>
                 ) : null}
-                <div className="flex flex-wrap gap-2">
-                  {!showPickPhase ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="primary"
-                      onClick={() => void handleApprove()}
-                      disabled={submitting}
-                      className="min-h-[40px]"
-                    >
-                      {submitting ? 'Approving…' : 'Approve'}
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      if (hasUnsavedReviewState) {
-                        setPendingClose(true);
-                        return;
-                      }
-                      onCancel();
-                    }}
-                    className="min-h-[40px]"
-                  >
-                    Cancel
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
 
           {reviewPhase === 'pick-variant' && sheetVariants.length > 0 ? (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink/70">Choose a sheet draft</p>
-              <p className="mt-0.5 max-w-2xl text-xs leading-relaxed text-ink/80">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink/75">Choose a sheet draft</p>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink/85">
                 Select a draft to open it in the editor. Use &ldquo;Back to variants&rdquo; anytime to compare again.
               </p>
               <div className="mt-4 grid min-h-[min(44vh,520px)] flex-1 grid-cols-1 gap-4 sm:min-h-[min(48vh,560px)] sm:grid-cols-2 sm:grid-rows-2 [grid-auto-rows:minmax(0,1fr)]">
@@ -579,26 +611,42 @@ export function ReviewWorkspace({
 
           {reviewPhase === 'edit' || sheetVariants.length === 0 ? (
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:min-h-0 xl:grid-cols-[minmax(220px,0.26fr)_minmax(0,1fr)_minmax(200px,0.3fr)] xl:gap-0 xl:overflow-hidden">
-              <aside className="order-2 min-h-0 border-b border-white/40 bg-white/15 px-3 py-3 backdrop-blur-sm xl:order-none xl:max-h-full xl:border-b-0 xl:border-r xl:border-white/40 xl:overflow-y-auto">
-                <div className="glass-panel grid grid-cols-3 gap-1 rounded-lg p-0.5 shadow-sm">
+              <aside className="order-2 min-h-0 border-b border-white/45 bg-white/20 px-3 py-3 backdrop-blur-md xl:order-none xl:max-h-full xl:border-b-0 xl:border-r xl:border-white/45 xl:overflow-y-auto">
+                <div
+                  className="glass-panel grid grid-cols-3 gap-1 rounded-xl border border-white/40 p-0.5 shadow-sm"
+                  role="tablist"
+                  aria-label="Review workspace panels"
+                >
                   <Button
                     type="button"
+                    variant="ghost"
+                    size="inline"
+                    role="tab"
+                    aria-selected={activeWorkspacePanel === 'refine'}
                     onClick={() => setActiveWorkspacePanel('refine')}
-                    className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
+                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'refine' ? 'bg-white/80 text-ink shadow-sm ring-1 ring-violet-200/65' : 'text-muted hover:bg-white/50'}`}
                   >
                     Refine
                   </Button>
                   <Button
                     type="button"
+                    variant="ghost"
+                    size="inline"
+                    role="tab"
+                    aria-selected={activeWorkspacePanel === 'media'}
                     onClick={() => setActiveWorkspacePanel('media')}
-                    className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
+                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'media' ? 'bg-white/80 text-ink shadow-sm ring-1 ring-violet-200/65' : 'text-muted hover:bg-white/50'}`}
                   >
                     Media
                   </Button>
                   <Button
                     type="button"
+                    variant="ghost"
+                    size="inline"
+                    role="tab"
+                    aria-selected={activeWorkspacePanel === 'rules'}
                     onClick={() => setActiveWorkspacePanel('rules')}
-                    className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
+                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'rules' ? 'bg-white/80 text-ink shadow-sm ring-1 ring-violet-200/65' : 'text-muted hover:bg-white/50'}`}
                   >
                     Rules
                   </Button>
@@ -641,7 +689,7 @@ export function ReviewWorkspace({
                 </div>
               </aside>
 
-              <section className="order-1 flex min-h-0 flex-col overflow-y-auto border-b border-white/40 px-3 py-3 xl:order-none xl:h-full xl:max-h-full xl:overflow-hidden xl:border-b-0 xl:border-r xl:border-white/40">
+              <section className="order-1 flex min-h-0 flex-col overflow-y-auto border-b border-white/45 bg-white/10 px-3 py-3 xl:order-none xl:h-full xl:max-h-full xl:overflow-hidden xl:border-b-0 xl:border-r xl:border-white/45">
                 <DraftEditor
                   value={editorText}
                   selection={selection}
@@ -656,18 +704,20 @@ export function ReviewWorkspace({
                 />
               </section>
 
-              <aside className="order-3 min-h-0 overflow-y-auto bg-white/10 px-2 py-3 xl:order-none xl:max-h-full xl:overflow-y-auto">
+              <aside className="order-3 min-h-0 overflow-y-auto bg-white/15 px-2 py-3 xl:order-none xl:max-h-full xl:overflow-y-auto">
                 <div className="sticky top-0 flex flex-col gap-1.5">
                   <div className="flex flex-wrap items-center justify-between gap-1.5 px-0.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Live preview</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/65">Live preview</p>
                     <div className="flex flex-wrap items-center gap-1">
                       <Badge variant="neutral" size="xs" className="normal-case">
                         {selectedImageUrl ? 'Image' : 'Text only'}
                       </Badge>
                       <Button
                         type="button"
+                        variant="ghost"
+                        size="inline"
                         onClick={() => setPreviewCollapsed((c) => !c)}
-                        className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-primary transition-colors hover:bg-white/50 hover:text-primary-hover"
+                        className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-primary hover:bg-white/55 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
                       >
                         {previewCollapsed ? 'Show' : 'Hide'}
                       </Button>
@@ -698,8 +748,35 @@ export function ReviewWorkspace({
               </aside>
             </div>
           ) : null}
+
+          <footer className="shrink-0 border-t border-white/50 bg-white/70 px-4 py-3.5 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 sm:px-5">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={requestClose}
+                className="min-h-[44px] w-full cursor-pointer sm:w-auto sm:min-w-[7.5rem]"
+              >
+                {showPickPhase ? 'Close' : 'Cancel'}
+              </Button>
+              {!showPickPhase ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => void handleApprove()}
+                  disabled={submitting}
+                  className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.28)] transition-[box-shadow,opacity] duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.32)] sm:w-auto sm:min-w-[9rem]"
+                >
+                  {submitting ? 'Approving…' : 'Approve draft'}
+                </Button>
+              ) : null}
+            </div>
+          </footer>
         </div>
       </div>
+    </div>
 
       <Dialog
         open={pendingVariantIndex !== null}
@@ -752,6 +829,6 @@ export function ReviewWorkspace({
         onCancel={() => setCompareState(null)}
         onConfirm={() => compareState?.onConfirm()}
       />
-    </div>
+    </>
   );
 }
