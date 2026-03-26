@@ -34,6 +34,10 @@ interface LinkedInPostPreviewProps {
   forceExpanded?: boolean;
   /** Sheet-variant picker: clamp body, shorter chrome, “Open” CTA styling. */
   pickMode?: boolean;
+  /** Shown as the preview profile name (e.g. derived from the signed-in user). */
+  previewAuthorName?: string;
+  /** Opens the Media panel in review; shown when an image fails to load if provided. */
+  onOpenMedia?: () => void;
 }
 
 const SOCIAL_PROOF = [
@@ -56,6 +60,18 @@ const TAG_CLASS_BY_CHANNEL: Record<ChannelId, string> = {
   telegram: 'font-medium text-[#229ED9]',
   whatsapp: 'font-medium text-[#128C7E]',
 };
+
+function previewAuthorInitials(name: string): string {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]!.slice(0, 1)}${parts[parts.length - 1]!.slice(0, 1)}`.toUpperCase();
+  }
+  const one = parts[0] ?? '?';
+  return one.slice(0, 2).toUpperCase();
+}
 
 function previewSubtitle(channel: ChannelId | undefined): string {
   switch (channel) {
@@ -113,24 +129,37 @@ export function LinkedInPostPreview({
   className,
   forceExpanded = false,
   pickMode = false,
+  previewAuthorName,
+  onOpenMedia,
 }: LinkedInPostPreviewProps) {
   const proof = SOCIAL_PROOF[(optionNumber - 1) % SOCIAL_PROOF.length];
+  const authorLabel = previewAuthorName?.trim() || 'Your channel';
+  const authorInitials = previewAuthorInitials(authorLabel);
   const isCarousel = mode === 'carousel';
   const isPickCarousel = pickMode && isCarousel;
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+  const [imageRetryKey, setImageRetryKey] = useState(0);
+  const [pickBodyExpanded, setPickBodyExpanded] = useState(false);
+  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 280 || text.split('\n').length > 5);
-  const bodyExpanded = forceExpanded || expanded;
-  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
-  const [imageLoadFailed, setImageLoadFailed] = useState(false);
-  const [imageRetryKey, setImageRetryKey] = useState(0);
+  const bodyExpanded = forceExpanded || expanded || (isPickCarousel && pickBodyExpanded);
   const isSidebar = layout === 'sidebar';
   const compact = isCarousel || isSidebar;
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // Reset stale load state when the resolved URL changes (sync with img key).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on prop-derived URL
     setImageLoadFailed(false);
   }, [resolvedImageUrl]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pick tile body when draft changes
+    setPickBodyExpanded(false);
+  }, [text, pickMode, optionNumber]);
+
+  const lineClampLines = isSidebar ? 8 : isPickCarousel ? 5 : isCarousel ? 4 : 5;
 
   return (
     <div
@@ -143,7 +172,11 @@ export function LinkedInPostPreview({
       }}
       tabIndex={0}
       role="region"
-      aria-label={`Preview draft ${optionNumber}`}
+      aria-label={
+        isPickCarousel
+          ? `Draft ${optionNumber}, select to open in editor`
+          : `Preview draft ${optionNumber}`
+      }
       className={`group relative w-full cursor-pointer text-left outline-none transition-colors duration-200 ${
         isSidebar ? 'rounded-xl p-2' : isCarousel ? 'h-full min-h-0 rounded-xl p-3' : 'rounded-xl p-3 sm:p-4'
       } ${
@@ -157,20 +190,27 @@ export function LinkedInPostPreview({
           <p className={`font-heading font-bold uppercase tracking-widest text-muted ${isSidebar ? 'text-[0.65rem]' : 'text-xs'}`}>
             Draft {optionNumber}
           </p>
-          <p className={`mt-0.5 text-muted ${isSidebar ? 'text-[0.7rem]' : isCarousel ? 'text-[0.8rem]' : 'text-sm'}`}>
-            {isCarousel ? 'Tap to preview' : previewSubtitle(previewChannel)}
+          <p
+            className={`mt-0.5 text-ink/80 ${isSidebar ? 'text-[0.7rem]' : isCarousel ? 'text-[0.8rem]' : 'text-sm'}`}
+          >
+            {isPickCarousel
+              ? 'Select to open in editor'
+              : isCarousel
+                ? 'Feed preview'
+                : previewSubtitle(previewChannel)}
           </p>
         </div>
         <Badge
           variant={selected ? 'primary' : 'neutral'}
           size="md"
+          title={isPickCarousel ? 'Open this draft in the editor' : undefined}
           className={cn(
             'min-w-10 justify-center font-bold normal-case transition-[color,background-color,border-color,box-shadow] duration-200',
             !selected &&
               'group-hover:border-primary/35 group-hover:bg-canvas group-hover:text-primary group-hover:shadow-md',
           )}
         >
-          {selected ? (isCarousel ? 'Active' : 'Selected') : `Pick ${optionNumber}`}
+          {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
         </Badge>
       </div>
 
@@ -191,12 +231,13 @@ export function LinkedInPostPreview({
                   className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 font-bold text-primary-fg shadow-inner ${
                     isSidebar ? 'h-8 w-8 text-xs' : isCarousel ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base'
                   }`}
+                  aria-hidden
                 >
-                  CB
+                  {authorInitials}
                 </div>
                 <div className="min-w-0">
                   <p className={`truncate font-bold text-ink ${isSidebar ? 'text-[0.8rem]' : isCarousel ? 'text-[0.9rem]' : 'text-[0.95rem]'}`}>
-                    Channel Bot
+                    {authorLabel}
                   </p>
                   <p className={`truncate text-muted ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.75rem]' : 'text-[0.8rem]'}`}>
                     {previewChannel === 'instagram'
@@ -232,7 +273,7 @@ export function LinkedInPostPreview({
                   !bodyExpanded && shouldClamp
                     ? {
                         display: '-webkit-box',
-                        WebkitLineClamp: isSidebar ? 8 : isCarousel ? 4 : 5,
+                        WebkitLineClamp: lineClampLines,
                         WebkitBoxOrient: 'vertical',
                       }
                     : undefined
@@ -245,11 +286,14 @@ export function LinkedInPostPreview({
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
+                    if (isPickCarousel) {
+                      setPickBodyExpanded((v) => !v);
+                    }
                     onToggleExpanded();
                   }}
                   className={`mt-1.5 font-semibold text-primary transition-colors hover:text-primary-hover ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
                 >
-                  {bodyExpanded ? 'Show less' : '...see more'}
+                  {bodyExpanded ? 'Show less' : 'See more'}
                 </button>
               )}
             </div>
@@ -261,74 +305,140 @@ export function LinkedInPostPreview({
                 className={`${isSidebar || isCarousel ? 'aspect-[4/3]' : 'aspect-[4/5] sm:aspect-[1.2/1]'} relative overflow-hidden bg-surface-muted group/image`}
               >
                 <img
+                  key={`${resolvedImageUrl}-${imageRetryKey}`}
                   src={resolvedImageUrl}
                   alt={`Preview media for option ${optionNumber}`}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover/image:scale-105"
                   onLoad={() => {
-                    console.info('Preview image loaded', {
-                      optionNumber,
-                      originalUrl: imageUrl,
-                      resolvedImageUrl,
-                    });
+                    if (import.meta.env.DEV) {
+                      console.info('Preview image loaded', {
+                        optionNumber,
+                        originalUrl: imageUrl,
+                        resolvedImageUrl,
+                      });
+                    }
                   }}
                   onError={() => {
-                    console.warn('Preview image failed to load', {
-                      optionNumber,
-                      originalUrl: imageUrl,
-                      resolvedImageUrl,
-                    });
+                    if (import.meta.env.DEV) {
+                      console.warn('Preview image failed to load', {
+                        optionNumber,
+                        originalUrl: imageUrl,
+                        resolvedImageUrl,
+                      });
+                    }
                     setImageLoadFailed(true);
                   }}
                 />
               </div>
             </div>
           ) : imageUrl ? (
-            <div className="border-y border-border bg-canvas px-4 py-6 text-center text-muted">
-              <div className="mx-auto flex max-w-[260px] flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-surface px-4 py-5 shadow-sm">
-                <div className="rounded-full bg-canvas p-3">
-                  <ImageOff className="h-6 w-6 text-muted" />
+            <div
+              className="border-y border-border-strong bg-surface-muted/50 px-3 py-2"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-between">
+                <div className="flex min-w-0 items-center gap-2 text-left">
+                  <ImageOff className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                  <p className="text-xs font-semibold leading-snug text-ink">
+                    Couldn&apos;t load this image.
+                    <span className="mt-0.5 block text-[0.7rem] font-normal text-ink/75">
+                      You can still compare text and open a draft in the editor.
+                    </span>
+                  </p>
                 </div>
-                <p className="text-sm font-semibold text-ink">Image preview unavailable</p>
-                <p className="text-xs leading-relaxed text-muted">Open the browser console to inspect the logged source URL.</p>
+                <div className="flex shrink-0 flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setImageLoadFailed(false);
+                      setImageRetryKey((k) => k + 1);
+                    }}
+                    className="cursor-pointer rounded-lg border border-border-strong bg-surface px-2.5 py-1 text-[0.7rem] font-semibold text-ink shadow-sm transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    Retry
+                  </button>
+                  {onOpenMedia ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenMedia();
+                      }}
+                      className="cursor-pointer rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1 text-[0.7rem] font-semibold text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/15"
+                    >
+                      Open Media
+                    </button>
+                  ) : null}
+                </div>
               </div>
+              {import.meta.env.DEV ? (
+                <details className="mt-2 border-t border-border pt-2 text-left">
+                  <summary className="cursor-pointer text-[0.65rem] font-medium text-muted">Technical details (dev)</summary>
+                  <p className="mt-1 break-all font-mono text-[0.6rem] text-muted">
+                    {imageUrl}
+                    {resolvedImageUrl !== imageUrl ? (
+                      <>
+                        <br />
+                        <span className="text-ink/70">Resolved: </span>
+                        {resolvedImageUrl}
+                      </>
+                    ) : null}
+                  </p>
+                </details>
+              ) : null}
             </div>
           ) : null}
 
-          <div
-            className={`text-muted ${
-              isSidebar ? 'px-2 py-1.5 text-[0.62rem]' : isCarousel ? 'px-4 py-2.5 text-[0.75rem]' : 'px-4 py-2.5 text-[0.8rem]'
-            }`}
-          >
-            <div className={`flex items-center justify-between gap-2 border-b border-border ${isSidebar ? 'pb-1.5' : 'pb-3'}`}>
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-1.5">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[0.6rem] text-primary-fg ring-2 ring-surface z-20 shadow-sm">👍</span>
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cta text-[0.6rem] text-success-fg ring-2 ring-surface z-10 shadow-sm">👏</span>
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[0.6rem] text-primary-fg ring-2 ring-surface z-0 shadow-sm">❤</span>
-                </div>
-                <span className="font-medium">{proof.reactions}</span>
-              </div>
-              <div className="flex items-center gap-1.5 whitespace-nowrap">
-                <span>{proof.comments} comments</span>
-                <span aria-hidden="true" className="text-border-strong">•</span>
-                <span>{proof.reposts} shares</span>
-              </div>
-            </div>
-          </div>
-
-          <div className={`grid grid-cols-4 ${isSidebar ? 'px-1 pb-1 pt-0' : isCarousel ? 'px-1.5 pb-2 pt-0.5' : 'px-2 pb-2 pt-0.5'}`}>
-            {ACTIONS.map(({ label, icon: Icon }) => (
+          {!isPickCarousel ? (
+            <>
               <div
-                key={label}
-                className={`flex cursor-pointer items-center justify-center gap-1 rounded-xl font-semibold text-muted transition-colors hover:bg-canvas hover:text-ink ${
-                  isSidebar ? 'px-1 py-1.5 text-[0.58rem]' : isCarousel ? 'px-2 py-2.5 text-[0.7rem]' : 'px-2 py-2.5 text-[0.8rem]'
+                className={`text-muted ${
+                  isSidebar ? 'px-2 py-1.5 text-[0.62rem]' : isCarousel ? 'px-4 py-2.5 text-[0.75rem]' : 'px-4 py-2.5 text-[0.8rem]'
                 }`}
               >
-                <Icon className={isSidebar ? 'h-3 w-3' : isCarousel ? 'h-4 w-4' : 'h-4.5 w-4.5'} />
-                <span className="hidden sm:inline">{label}</span>
+                <p className="mb-1 text-[0.62rem] font-medium uppercase tracking-wide text-ink/55">Preview only</p>
+                <div className={`flex items-center justify-between gap-2 border-b border-border ${isSidebar ? 'pb-1.5' : 'pb-3'}`}>
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-1.5">
+                      <span className="z-20 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-primary-fg ring-2 ring-surface shadow-sm">
+                        <ThumbsUp className="h-2.5 w-2.5" aria-hidden />
+                      </span>
+                      <span className="z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cta text-success-fg ring-2 ring-surface shadow-sm">
+                        <PartyPopper className="h-2.5 w-2.5" aria-hidden />
+                      </span>
+                      <span className="z-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-primary-fg ring-2 ring-surface shadow-sm">
+                        <Heart className="h-2.5 w-2.5" aria-hidden />
+                      </span>
+                    </div>
+                    <span className="font-medium">{proof.reactions}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 whitespace-nowrap">
+                    <span>{proof.comments} comments</span>
+                    <span aria-hidden="true" className="text-border-strong">
+                      •
+                    </span>
+                    <span>{proof.reposts} shares</span>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
+
+              <div className={`grid grid-cols-4 ${isSidebar ? 'px-1 pb-1 pt-0' : isCarousel ? 'px-1.5 pb-2 pt-0.5' : 'px-2 pb-2 pt-0.5'}`}>
+                {ACTIONS.map(({ label, icon: Icon }) => (
+                  <div
+                    key={label}
+                    className={`flex cursor-pointer items-center justify-center gap-1 rounded-xl font-semibold text-muted transition-colors hover:bg-canvas hover:text-ink ${
+                      isSidebar ? 'px-1 py-1.5 text-[0.58rem]' : isCarousel ? 'px-2 py-2.5 text-[0.7rem]' : 'px-2 py-2.5 text-[0.8rem]'
+                    }`}
+                  >
+                    <Icon className={isSidebar ? 'h-3 w-3' : isCarousel ? 'h-4 w-4' : 'h-4.5 w-4.5'} />
+                    <span className="hidden sm:inline">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </div>

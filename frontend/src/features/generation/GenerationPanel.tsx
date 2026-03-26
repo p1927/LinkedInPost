@@ -55,8 +55,19 @@ export function GenerationPanel({
       <p className={`font-semibold uppercase tracking-[0.18em] text-muted ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Refine with AI</p>
       <h4 className={`mt-1.5 font-heading font-semibold text-ink ${title}`}>Try rewrites before you commit to one</h4>
       <p className={`mt-1.5 text-muted ${body}`}>
-        Quick Change returns one preview. Generate 4 Variants returns four preview options. Use Save on a preview to write that slot to Sheets.
+        {compact
+          ? 'Describe the change you want, then run 4 Variants to explore or Quick Change for a single pass.'
+          : 'Quick Change returns one preview. Generate 4 Variants returns four preview options. Use Save on a preview to write that slot to Sheets.'}
       </p>
+
+      {compact ? (
+        <details className="mt-2 rounded-lg border border-violet-200/40 bg-white/40 px-2 py-1.5">
+          <summary className="cursor-pointer text-[0.65rem] font-semibold text-primary">How this works</summary>
+          <p className="mt-1.5 text-[0.65rem] leading-relaxed text-muted">
+            Quick Change returns one preview. 4 Variants returns four. Use Save on a variant to write that slot to your Sheet. Use Review changes to see a diff before applying.
+          </p>
+        </details>
+      ) : null}
 
       <label className={`mt-3 block font-semibold text-ink ${label}`} htmlFor="generation-instruction">
         Rewrite direction
@@ -65,22 +76,12 @@ export function GenerationPanel({
         id="generation-instruction"
         value={instruction}
         onChange={(event) => onInstructionChange(event.target.value)}
-        className={`mt-1.5 w-full rounded-xl border border-violet-200/55 bg-white/80 text-ink shadow-sm outline-none backdrop-blur-sm transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-muted focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 focus:ring-offset-canvas ${compact ? 'min-h-[72px] px-2.5 py-2 text-xs leading-5' : 'min-h-[110px] px-4 py-4 text-sm leading-6'}`}
+        rows={compact ? 4 : undefined}
+        className={`mt-1.5 w-full resize-y rounded-xl border border-violet-200/55 bg-white/80 text-ink shadow-sm outline-none backdrop-blur-sm transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-muted focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 focus:ring-offset-canvas ${compact ? 'min-h-[96px] max-h-[200px] px-2.5 py-2 text-xs leading-5' : 'min-h-[110px] px-4 py-4 text-sm leading-6'}`}
         placeholder="Examples: make the hook stronger, sound more founder-like, keep it concise, add one sharper example."
       />
 
       <div className={`mt-3 flex flex-wrap ${compact ? 'gap-2' : 'gap-3'}`}>
-        <Button
-          type="button"
-          variant="ai"
-          size={compact ? 'sm' : 'md'}
-          onClick={onGenerateQuickChange}
-          disabled={loadingAction !== null}
-          className={btn}
-        >
-          <WandSparkles className={icon} />
-          {loadingAction === 'quick-change' ? 'Generating…' : 'Quick Change'}
-        </Button>
         <Button
           type="button"
           variant="ink"
@@ -91,6 +92,17 @@ export function GenerationPanel({
         >
           <Sparkles className={icon} />
           {loadingAction === 'variants' ? 'Generating…' : '4 Variants'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size={compact ? 'sm' : 'md'}
+          onClick={onGenerateQuickChange}
+          disabled={loadingAction !== null}
+          className={btn}
+        >
+          <WandSparkles className={icon} />
+          {loadingAction === 'quick-change' ? 'Generating…' : 'Quick Change'}
         </Button>
       </div>
 
@@ -108,7 +120,7 @@ export function GenerationPanel({
               onClick={onApplyQuickChange}
               className={`shrink-0 ${compact ? 'px-2.5 py-1.5 text-xs' : 'px-4 py-2 text-sm'}`}
             >
-              Compare
+              Review changes
             </Button>
           </div>
         </div>
@@ -143,7 +155,7 @@ export function GenerationPanel({
                       onClick={() => onApplyVariant(index)}
                       className="px-2.5 py-1 text-xs sm:text-sm"
                     >
-                      Compare
+                      Review changes
                     </Button>
                   </div>
                 </div>

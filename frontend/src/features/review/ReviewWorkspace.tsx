@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
@@ -20,11 +20,13 @@ import { cn } from '../../lib/cn';
 import { GenerationPanel } from '../generation/GenerationPanel';
 import { RulesPanel } from '../rules/RulesPanel';
 import { CompareDialog } from '../compare/CompareDialog';
-import { type ChannelId } from '../../integrations/channels';
+import { getChannelLabel, type ChannelId } from '../../integrations/channels';
 
 interface ReviewWorkspaceProps {
   row: SheetRow;
   deliveryChannel: ChannelId;
+  /** Shown on the feed preview card (e.g. derived from the signed-in user’s email). */
+  previewAuthorName?: string;
   sharedRules: string;
   googleModel: string;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string) => Promise<void>;
@@ -87,6 +89,7 @@ function mergeUniqueImageOptions(nextOptions: ImageAssetOption[]): ImageAssetOpt
 export function ReviewWorkspace({
   row,
   deliveryChannel,
+  previewAuthorName,
   sharedRules,
   googleModel,
   onApprove,
@@ -117,6 +120,7 @@ export function ReviewWorkspace({
   const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
   const [uploadedImageOptions, setUploadedImageOptions] = useState<ImageAssetOption[]>([]);
   const [pendingVariantIndex, setPendingVariantIndex] = useState<number | null>(null);
+  const [openMediaAfterVariantConfirm, setOpenMediaAfterVariantConfirm] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
   const [compareState, setCompareState] = useState<CompareState | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -124,6 +128,8 @@ export function ReviewWorkspace({
   const [reviewPhase, setReviewPhase] = useState<'pick-variant' | 'edit'>(() =>
     buildSheetVariants(row).length > 0 ? 'pick-variant' : 'edit',
   );
+  const [topicExpanded, setTopicExpanded] = useState(false);
+  const [previewCollapsed, setPreviewCollapsed] = useState(false);
 
   useEffect(() => {
     const initialText = getInitialEditorText(row);
@@ -143,13 +149,18 @@ export function ReviewWorkspace({
     setAlternateImageOptions([]);
     setUploadedImageOptions([]);
     setPendingVariantIndex(null);
+    setOpenMediaAfterVariantConfirm(false);
     setPendingClose(false);
     setCompareState(null);
     setActiveWorkspacePanel('refine');
     setReviewPhase(buildSheetVariants(row).length > 0 ? 'pick-variant' : 'edit');
+    setTopicExpanded(false);
+    setPreviewCollapsed(false);
   }, [row]);
 
   const sheetVariants = useMemo(() => buildSheetVariants(sheetRow), [sheetRow]);
+  const showPickPhase = reviewPhase === 'pick-variant' && sheetVariants.length > 0;
+  const topicIsLong = sheetRow.topic.length > 140 || sheetRow.topic.split('\n').length > 2;
   const generatedImageOptions = useMemo(() => buildGeneratedImages(sheetRow), [sheetRow]);
   const imageOptions = useMemo(
     () => [...uploadedImageOptions, ...generatedImageOptions, ...alternateImageOptions],
@@ -356,6 +367,7 @@ export function ReviewWorkspace({
 
   const handleLoadSheetVariant = (index: number) => {
     if (hasUnsavedReviewState) {
+      setOpenMediaAfterVariantConfirm(false);
       setPendingVariantIndex(index);
       return;
     }
@@ -368,6 +380,22 @@ export function ReviewWorkspace({
     applySheetVariantBase(variant);
   };
 
+  const handleOpenMediaFromPickTile = (index: number) => {
+    if (hasUnsavedReviewState) {
+      setOpenMediaAfterVariantConfirm(true);
+      setPendingVariantIndex(index);
+      return;
+    }
+
+    const variant = sheetVariants[index];
+    if (!variant) {
+      return;
+    }
+
+    applySheetVariantBase(variant);
+    setActiveWorkspacePanel('media');
+  };
+
   const handleFormatting = (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => {
     const nextState = applyFormattingAction(editorText, effectiveScope, selection, action);
     setEditorText(nextState.value);
@@ -378,55 +406,123 @@ export function ReviewWorkspace({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-deep-purple/35 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
         <div className="glass-panel-strong flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl">
-          <div className="shrink-0 border-b border-white/45 bg-white/50 px-4 py-2.5 backdrop-blur-md">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-              <div className="flex min-w-0 items-start gap-2">
+          <div className="shrink-0 border-b border-white/45 bg-white/50 px-4 py-3 backdrop-blur-md sm:py-2.5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <div className="flex min-w-0 items-start gap-2 sm:gap-3">
                 {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setReviewPhase('pick-variant')}
-                    className="glass-inset mt-0.5 inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-ink transition-colors hover:bg-white/80 sm:text-[11px]"
                     aria-label="Back to sheet variants"
+                    className="min-h-[44px] shrink-0 gap-1.5 px-3 sm:mt-0.5 sm:min-h-[40px]"
                   >
-                    <ArrowLeft className="h-3 w-3 shrink-0" aria-hidden />
-                    <span className="max-w-[5.5rem] leading-tight sm:max-w-none">Back to variants</span>
-                  </button>
+                    <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                    <span className="whitespace-nowrap">Back to variants</span>
+                  </Button>
                 ) : null}
                 <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Review</p>
-                <h2 className="truncate text-sm font-medium leading-snug text-ink">{sheetRow.topic}</h2>
-                <p className="mt-0.5 text-[11px] text-muted">
-                  {sheetVariants.length} sheet variant{sheetVariants.length === 1 ? '' : 's'}
-                  {reviewPhase === 'edit' ? ' · editing' : ''}
-                  {editorDirty ? ' · draft edited' : ''}
-                  {previewReadyCount ? ` · ${previewReadyCount} preview${previewReadyCount === 1 ? '' : 's'}` : ''}
-                  <span className="text-muted/80"> · {googleModel}</span>
-                </p>
+                  {sheetVariants.length > 0 ? (
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+                      {showPickPhase ? 'Step 1 of 2 · Choose draft' : 'Step 2 of 2 · Refine and approve'}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Review</p>
+                  )}
+                  <h2
+                    className={cn(
+                      'mt-0.5 text-sm font-medium leading-snug text-ink',
+                      !topicExpanded && topicIsLong && 'line-clamp-3',
+                    )}
+                  >
+                    {sheetRow.topic}
+                  </h2>
+                  {topicIsLong ? (
+                    <button
+                      type="button"
+                      onClick={() => setTopicExpanded((v) => !v)}
+                      className="mt-1 cursor-pointer text-left text-[11px] font-semibold text-primary transition-colors hover:text-primary-hover"
+                    >
+                      {topicExpanded ? 'Show less' : 'Show full topic'}
+                    </button>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="neutral" size="xs" className="normal-case">
+                      {getChannelLabel(deliveryChannel)}
+                    </Badge>
+                    {sheetVariants.length > 0 ? (
+                      <Badge variant="neutral" size="xs" className="normal-case">
+                        {sheetVariants.length} sheet variant{sheetVariants.length === 1 ? '' : 's'}
+                      </Badge>
+                    ) : null}
+                    {showPickPhase ? (
+                      <Badge variant="info" size="xs" className="normal-case">
+                        Choosing variant
+                      </Badge>
+                    ) : null}
+                    {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
+                      <Badge variant="info" size="xs" className="normal-case">
+                        Editing
+                      </Badge>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="inline-flex cursor-pointer items-center rounded-full border border-violet-200/60 bg-white/70 p-1 text-muted transition-colors hover:border-primary/40 hover:text-primary"
+                      title={`Generation model: ${googleModel}`}
+                      aria-label={`Generation model: ${googleModel}`}
+                    >
+                      <Info className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                    {editorDirty ? (
+                      <Badge variant="warning" size="xs" className="normal-case">
+                        Draft edited
+                      </Badge>
+                    ) : null}
+                    {previewReadyCount > 0 ? (
+                      <Badge variant="neutral" size="xs" className="normal-case">
+                        {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
+                      </Badge>
+                    ) : null}
+                  </div>
                 </div>
               </div>
               <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-                <input
-                  id="review-post-time-input"
-                  type="datetime-local"
-                  value={postTime}
-                  onChange={(event) => setPostTime(event.target.value)}
-                  aria-label="Post time (optional)"
-                  className={cn(
-                    'min-h-[40px] w-full min-w-0 rounded-xl border border-violet-200/55 bg-white/85 px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200',
-                    'focus:border-primary focus:ring-2 focus:ring-primary/25 focus:ring-offset-2 focus:ring-offset-canvas sm:w-[220px]',
-                  )}
-                />
+                {!showPickPhase ? (
+                  <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto">
+                    <label
+                      htmlFor="review-post-time-input"
+                      className="text-[10px] font-semibold uppercase tracking-wider text-ink/70"
+                    >
+                      Schedule{' '}
+                      <span className="font-normal normal-case tracking-normal text-ink/60">(optional)</span>
+                    </label>
+                    <input
+                      id="review-post-time-input"
+                      type="datetime-local"
+                      value={postTime}
+                      onChange={(event) => setPostTime(event.target.value)}
+                      aria-label="Schedule post time (optional)"
+                      className={cn(
+                        'min-h-[40px] w-full min-w-0 rounded-xl border border-violet-200/55 bg-white/85 px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200',
+                        'focus:border-primary focus:ring-2 focus:ring-primary/25 focus:ring-offset-2 focus:ring-offset-canvas sm:w-[220px]',
+                      )}
+                    />
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    onClick={() => void handleApprove()}
-                    disabled={submitting}
-                    className="min-h-[40px]"
-                  >
-                    {submitting ? 'Approving…' : 'Approve'}
-                  </Button>
+                  {!showPickPhase ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="primary"
+                      onClick={() => void handleApprove()}
+                      disabled={submitting}
+                      className="min-h-[40px]"
+                    >
+                      {submitting ? 'Approving…' : 'Approve'}
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     size="sm"
@@ -448,16 +544,16 @@ export function ReviewWorkspace({
           </div>
 
           {reviewPhase === 'pick-variant' && sheetVariants.length > 0 ? (
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Choose a sheet draft</p>
-              <p className="mt-0.5 text-xs text-muted">
-                Click a feed preview to open the editor and tools. You can go back to switch.
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink/70">Choose a sheet draft</p>
+              <p className="mt-0.5 max-w-2xl text-xs leading-relaxed text-ink/80">
+                Select a draft to open it in the editor. Use &ldquo;Back to variants&rdquo; anytime to compare again.
               </p>
-              <div className="mt-4 grid min-h-[min(48vh,560px)] flex-1 grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-rows-2 [grid-auto-rows:minmax(0,1fr)] xl:min-h-[min(52vh,620px)] xl:grid-cols-4 xl:grid-rows-1">
+              <div className="mt-4 grid min-h-[min(44vh,520px)] flex-1 grid-cols-1 gap-4 sm:min-h-[min(48vh,560px)] sm:grid-cols-2 sm:grid-rows-2 [grid-auto-rows:minmax(0,1fr)]">
                 {sheetVariants.map((variant, index) => (
                   <div
                     key={`sheet-variant-${variant.originalIndex}`}
-                    className="flex h-full min-h-[280px] flex-col"
+                    className="flex h-full min-h-[260px] flex-col sm:min-h-[280px]"
                   >
                     <LinkedInPostPreview
                       optionNumber={index + 1}
@@ -465,12 +561,14 @@ export function ReviewWorkspace({
                       imageUrl={variant.imageUrl || undefined}
                       selected={false}
                       expanded={false}
-                      forceExpanded
+                      pickMode
                       previewChannel={deliveryChannel}
+                      previewAuthorName={previewAuthorName}
                       mode="carousel"
-                      className="glass-inset h-full min-h-0 overflow-y-auto overscroll-contain border-white/50 bg-white/55 shadow-card backdrop-blur-sm"
+                      className="glass-inset h-full min-h-0 overflow-y-auto overscroll-contain border-2 border-border-strong bg-white/80 shadow-card backdrop-blur-sm"
                       onSelect={() => handleLoadSheetVariant(index)}
                       onToggleExpanded={() => undefined}
+                      onOpenMedia={() => handleOpenMediaFromPickTile(index)}
                     />
                   </div>
                 ))}
@@ -479,8 +577,8 @@ export function ReviewWorkspace({
           ) : null}
 
           {reviewPhase === 'edit' || sheetVariants.length === 0 ? (
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:grid-cols-[minmax(220px,0.26fr)_minmax(0,1fr)_minmax(200px,0.3fr)] xl:gap-0 xl:overflow-hidden">
-              <aside className="order-2 min-h-0 border-b border-white/40 bg-white/15 px-3 py-3 backdrop-blur-sm xl:order-none xl:border-b-0 xl:border-r xl:border-white/40 xl:overflow-y-auto">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:min-h-0 xl:grid-cols-[minmax(220px,0.26fr)_minmax(0,1fr)_minmax(200px,0.3fr)] xl:gap-0 xl:overflow-hidden">
+              <aside className="order-2 min-h-0 border-b border-white/40 bg-white/15 px-3 py-3 backdrop-blur-sm xl:order-none xl:max-h-full xl:border-b-0 xl:border-r xl:border-white/40 xl:overflow-y-auto">
                 <div className="glass-panel grid grid-cols-3 gap-1 rounded-lg p-0.5 shadow-sm">
                   <button
                     type="button"
@@ -542,7 +640,7 @@ export function ReviewWorkspace({
                 </div>
               </aside>
 
-              <section className="order-1 min-h-0 overflow-y-auto border-b border-white/40 px-3 py-3 xl:order-none xl:border-b-0 xl:border-r xl:border-white/40">
+              <section className="order-1 flex min-h-0 flex-col overflow-y-auto border-b border-white/40 px-3 py-3 xl:order-none xl:h-full xl:max-h-full xl:overflow-hidden xl:border-b-0 xl:border-r xl:border-white/40">
                 <DraftEditor
                   value={editorText}
                   selection={selection}
@@ -553,30 +651,48 @@ export function ReviewWorkspace({
                   onScopeChange={setScope}
                   onFormatting={handleFormatting}
                   compact
+                  className="min-h-0 flex-1"
                 />
               </section>
 
-              <aside className="order-3 min-h-0 overflow-y-auto bg-white/10 px-2 py-3 xl:order-none">
+              <aside className="order-3 min-h-0 overflow-y-auto bg-white/10 px-2 py-3 xl:order-none xl:max-h-full xl:overflow-y-auto">
                 <div className="sticky top-0 flex flex-col gap-1.5">
-                  <div className="flex flex-wrap items-center justify-between gap-1 px-0.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Feed preview</p>
-                    <Badge variant="neutral" size="xs" className="normal-case">
-                      {selectedImageUrl ? 'Image' : 'Text only'}
-                    </Badge>
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 px-0.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Live preview</p>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Badge variant="neutral" size="xs" className="normal-case">
+                        {selectedImageUrl ? 'Image' : 'Text only'}
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewCollapsed((c) => !c)}
+                        className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-primary transition-colors hover:bg-white/50 hover:text-primary-hover"
+                      >
+                        {previewCollapsed ? 'Show' : 'Hide'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-center">
-                    <LinkedInPostPreview
-                      optionNumber={1}
-                      text={editorText}
-                      imageUrl={selectedImageUrl}
-                      previewChannel={deliveryChannel}
-                      layout="sidebar"
-                      selected
-                      expanded
-                      onSelect={() => undefined}
-                      onToggleExpanded={() => undefined}
-                    />
-                  </div>
+                  {!previewCollapsed ? (
+                    <div className="flex justify-center">
+                      <LinkedInPostPreview
+                        optionNumber={1}
+                        text={editorText}
+                        imageUrl={selectedImageUrl}
+                        previewChannel={deliveryChannel}
+                        previewAuthorName={previewAuthorName}
+                        layout="sidebar"
+                        selected
+                        expanded
+                        onSelect={() => undefined}
+                        onToggleExpanded={() => undefined}
+                        onOpenMedia={() => setActiveWorkspacePanel('media')}
+                      />
+                    </div>
+                  ) : (
+                    <p className="px-1 text-center text-[10px] leading-relaxed text-muted">
+                      Preview hidden. Show when you want to check layout and media.
+                    </p>
+                  )}
                 </div>
               </aside>
             </div>
@@ -589,19 +705,27 @@ export function ReviewWorkspace({
         title="Discard current editor changes?"
         description="Loading a different sheet variant will replace the current editor working state."
         confirmLabel="Discard and load"
-        onCancel={() => setPendingVariantIndex(null)}
+        onCancel={() => {
+          setOpenMediaAfterVariantConfirm(false);
+          setPendingVariantIndex(null);
+        }}
         onConfirm={() => {
           if (pendingVariantIndex === null) {
             return;
           }
 
           const variant = sheetVariants[pendingVariantIndex];
+          const alsoMedia = openMediaAfterVariantConfirm;
           setPendingVariantIndex(null);
+          setOpenMediaAfterVariantConfirm(false);
           if (!variant) {
             return;
           }
 
           applySheetVariantBase(variant);
+          if (alsoMedia) {
+            setActiveWorkspacePanel('media');
+          }
         }}
       />
 

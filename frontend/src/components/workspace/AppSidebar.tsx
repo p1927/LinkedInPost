@@ -1,7 +1,15 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { googleLogout } from '@react-oauth/google';
-import { ChevronLeft, ChevronRight, ListOrdered, LogOut, Settings } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ListOrdered,
+  LogOut,
+  Minus,
+  Settings,
+} from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
@@ -12,8 +20,22 @@ export type WorkspaceNavPage = 'topics' | 'settings';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
+/** One module for square rail controls (collapsed + expanded icon cells). */
+const RAIL_TILE = 'h-10 w-10 min-h-10 min-w-10 shrink-0';
+const RAIL_RADIUS = 'rounded-xl';
+const RAIL_ICON = '[&>svg]:h-[1.125rem] [&>svg]:w-[1.125rem]';
+
 const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
+
+const navButtonBase =
+  'relative flex w-full min-h-10 cursor-pointer items-center text-sm font-semibold transition-[background-color,border-color,box-shadow,color] duration-200';
+
+const navInactive =
+  'border border-white/40 bg-white/30 text-muted hover:border-white/55 hover:bg-white/45 hover:text-ink';
+
+const navActive =
+  'border border-primary/25 bg-white/65 text-ink shadow-sm before:pointer-events-none before:absolute before:left-0 before:top-1/2 before:h-7 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-primary';
 
 export function readSidebarCollapsed(): boolean {
   try {
@@ -66,7 +88,7 @@ function SidebarUserAvatar({
     <div
       className={clsx(
         'relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 ring-2 ring-white/90 shadow-sm',
-        collapsed ? 'h-10 w-10' : 'h-9 w-9',
+        RAIL_TILE,
       )}
       title={collapsed ? avatarLabel : undefined}
       {...(collapsed
@@ -123,6 +145,16 @@ export function AppSidebar({
     closeMobile();
   };
 
+  const publishingRows =
+    workspacePage === 'settings' && session.isAdmin && health
+      ? ([
+          { id: 'li', label: 'LinkedIn', abbrev: 'LI', ok: health.linkedin },
+          { id: 'ig', label: 'Instagram', abbrev: 'IG', ok: health.instagram },
+          { id: 'tg', label: 'Telegram', abbrev: 'TG', ok: health.telegram },
+          { id: 'wa', label: 'WhatsApp', abbrev: 'WA', ok: health.whatsapp },
+        ] as const)
+      : null;
+
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
     const active = workspacePage === page;
     return (
@@ -137,16 +169,20 @@ export function AppSidebar({
           aria-label={collapsed ? label : undefined}
           title={collapsed ? label : undefined}
           className={clsx(
-            'flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-sm font-semibold transition-colors duration-200',
+            navButtonBase,
+            RAIL_RADIUS,
             focusRing,
-            active
-              ? 'bg-white/70 text-ink shadow-sm ring-1 ring-white/60 backdrop-blur-md'
-              : 'text-muted hover:bg-white/45 hover:text-ink',
-            collapsed && 'justify-center gap-0 px-1.5',
+            'overflow-hidden backdrop-blur-sm',
+            active ? navActive : navInactive,
+            collapsed ? 'h-10 justify-center gap-0 px-2 py-0' : 'gap-3 px-2 py-2',
           )}
         >
           <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-transparent text-ink [&>svg]:h-4 [&>svg]:w-4"
+            className={clsx(
+              'flex shrink-0 items-center justify-center text-ink',
+              RAIL_ICON,
+              collapsed ? 'h-6 w-6' : clsx(RAIL_TILE, RAIL_RADIUS),
+            )}
             aria-hidden
           >
             {icon}
@@ -182,11 +218,17 @@ export function AppSidebar({
         <div
           className={clsx(
             'shrink-0 border-b border-white/40 px-2 py-2.5',
-            collapsed ? 'flex flex-col items-center gap-2' : 'flex h-14 items-center justify-between gap-2',
+            collapsed ? 'flex flex-col items-center gap-1.5' : 'flex h-14 items-center justify-between gap-2',
           )}
         >
           <div className={clsx('flex min-w-0 items-center gap-2', collapsed && 'w-full justify-center')}>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg shadow-sm">
+            <div
+              className={clsx(
+                'flex shrink-0 items-center justify-center bg-primary font-heading text-sm font-semibold text-primary-fg shadow-sm',
+                RAIL_TILE,
+                RAIL_RADIUS,
+              )}
+            >
               CB
             </div>
             {!collapsed ? (
@@ -200,52 +242,60 @@ export function AppSidebar({
             aria-controls="workspace-sidebar-nav"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className={clsx(
-              'glass-inset hidden h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-200 hover:bg-white/80 hover:text-ink md:flex',
+              'glass-inset hidden cursor-pointer items-center justify-center border border-white/45 text-muted transition-colors duration-200 hover:bg-white/80 hover:text-ink md:flex',
+              RAIL_TILE,
+              RAIL_RADIUS,
               focusRing,
             )}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" aria-hidden /> : <ChevronLeft className="h-4 w-4" />}
+            <span className="sr-only">{collapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span>
           </button>
         </div>
 
-        <nav className="flex flex-1 flex-col overflow-hidden" aria-label="Workspace navigation">
-          <ul id="workspace-sidebar-nav" className="custom-scrollbar flex flex-1 list-none flex-col gap-0.5 overflow-y-auto p-2">
+        <nav className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Workspace navigation">
+          <ul
+            id="workspace-sidebar-nav"
+            className="custom-scrollbar shrink-0 list-none flex flex-col gap-1.5 overflow-y-auto p-2"
+          >
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
           </ul>
+          <div className="mx-2 min-h-2 flex-1 border-t border-white/30" aria-hidden />
         </nav>
 
-        {workspacePage === 'settings' && session.isAdmin && health ? (
+        {publishingRows ? (
           <div
             className={clsx(
-              'shrink-0 border-t border-white/40 px-2 py-3',
-              collapsed ? 'flex flex-col items-center gap-2' : 'px-3',
+              'shrink-0 border-t border-white/40',
+              collapsed ? 'px-2 py-2' : 'px-3 py-3',
             )}
+            role="region"
             aria-label="Publishing connections"
           >
             {!collapsed ? (
               <>
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">Connections</p>
                 <ul className="list-none space-y-1.5">
-                  {(
-                    [
-                      { id: 'li', label: 'LinkedIn', ok: health.linkedin },
-                      { id: 'ig', label: 'Instagram', ok: health.instagram },
-                      { id: 'tg', label: 'Telegram', ok: health.telegram },
-                      { id: 'wa', label: 'WhatsApp', ok: health.whatsapp },
-                    ] as const
-                  ).map(({ id, label, ok }) => (
+                  {publishingRows.map(({ id, label, ok }) => (
                     <li
                       key={id}
-                      className="glass-inset flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5"
+                      className="glass-inset flex items-center justify-between gap-2 rounded-xl border border-white/35 px-2.5 py-1.5"
                     >
                       <span className="text-xs font-medium text-ink">{label}</span>
                       <span
                         className={clsx(
-                          'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                          ok ? 'border border-success-border bg-success-surface text-success-ink' : 'bg-surface-muted text-muted',
+                          'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                          ok
+                            ? 'border border-success-border bg-success-surface text-success-ink'
+                            : 'border border-dashed border-border-strong bg-white/30 text-muted',
                         )}
                       >
+                        {ok ? (
+                          <Check className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
+                        ) : (
+                          <Minus className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
+                        )}
                         {ok ? 'Connected' : 'Not connected'}
                       </span>
                     </li>
@@ -253,23 +303,29 @@ export function AppSidebar({
                 </ul>
               </>
             ) : (
-              <ul className="flex list-none flex-col items-center gap-2 py-1">
-                {(
-                  [
-                    { id: 'li', label: 'LinkedIn', ok: health.linkedin },
-                    { id: 'ig', label: 'Instagram', ok: health.instagram },
-                    { id: 'tg', label: 'Telegram', ok: health.telegram },
-                    { id: 'wa', label: 'WhatsApp', ok: health.whatsapp },
-                  ] as const
-                ).map(({ id, label, ok }) => (
+              <ul className="flex list-none flex-col items-center gap-1.5 py-0.5" role="list">
+                {publishingRows.map(({ id, label, abbrev, ok }) => (
                   <li key={id}>
                     <span
+                      role="img"
                       title={`${label}: ${ok ? 'Connected' : 'Not connected'}`}
+                      aria-label={`${label}: ${ok ? 'Connected' : 'Not connected'}`}
                       className={clsx(
-                        'block h-2.5 w-2.5 rounded-full border border-border',
-                        ok ? 'bg-cta' : 'bg-border-strong',
+                        'relative flex h-9 w-10 flex-col items-center justify-center gap-0.5 rounded-xl text-[9px] font-bold leading-none tracking-tight',
+                        ok
+                          ? 'border border-solid border-success-border bg-success-surface text-success-ink'
+                          : 'border border-dashed border-border-strong bg-white/30 text-muted',
                       )}
-                    />
+                    >
+                      <span aria-hidden className="select-none">
+                        {abbrev}
+                      </span>
+                      {ok ? (
+                        <Check className="h-2.5 w-2.5 shrink-0" aria-hidden strokeWidth={2.5} />
+                      ) : (
+                        <Minus className="h-2.5 w-2.5 shrink-0" aria-hidden strokeWidth={2.5} />
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -277,11 +333,11 @@ export function AppSidebar({
           </div>
         ) : null}
 
-        <div className="mt-auto border-t border-white/40 p-2">
+        <div className="mt-auto shrink-0 border-t border-white/40 p-2">
           <div
             className={clsx(
-              'rounded-xl border border-white/35 bg-white/40 p-2 shadow-sm backdrop-blur-sm',
-              collapsed ? 'flex flex-col items-center gap-2' : 'flex flex-row items-center gap-2.5',
+              'rounded-xl border border-white/40 bg-white/35 shadow-sm backdrop-blur-sm',
+              collapsed ? 'flex flex-col items-center gap-2.5 px-2 py-3' : 'flex flex-row items-center gap-2.5 p-2.5',
             )}
           >
             <SidebarUserAvatar
@@ -323,7 +379,9 @@ export function AppSidebar({
                 aria-label="Log out"
                 title="Log out"
                 className={clsx(
-                  'flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-200 hover:bg-white/60 hover:text-ink',
+                  'flex cursor-pointer items-center justify-center border border-white/45 bg-white/30 text-muted transition-colors duration-200 hover:border-white/55 hover:bg-white/55 hover:text-ink',
+                  RAIL_TILE,
+                  RAIL_RADIUS,
                   focusRing,
                 )}
               >

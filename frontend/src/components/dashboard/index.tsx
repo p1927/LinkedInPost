@@ -18,6 +18,15 @@ import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { ReviewWorkspace } from '../../features/review/ReviewWorkspace';
 import { ApprovedPostPreview } from '../ApprovedPostPreview';
 
+function previewAuthorDisplayName(email: string): string {
+  const local = email.split('@')[0]?.trim() ?? '';
+  if (!local) {
+    return email;
+  }
+
+  return local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function Dashboard({
   idToken,
   session,
@@ -295,6 +304,7 @@ export function Dashboard({
           <ReviewWorkspace
             row={queueHook.selectedRowForReview}
             deliveryChannel={channelsHook.selectedChannel}
+            previewAuthorName={previewAuthorDisplayName(session.email)}
             sharedRules={session.config.generationRules}
             googleModel={settingsHook.googleModel}
             onApprove={queueHook.handleApproveVariant}
@@ -350,6 +360,7 @@ export function Dashboard({
         <ReviewWorkspace
           row={queueHook.selectedRowForReview}
           deliveryChannel={channelsHook.selectedChannel}
+          previewAuthorName={previewAuthorDisplayName(session.email)}
           sharedRules={session.config.generationRules}
           googleModel={settingsHook.googleModel}
           onApprove={queueHook.handleApproveVariant}

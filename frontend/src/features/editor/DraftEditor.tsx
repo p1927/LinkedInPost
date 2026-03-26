@@ -1,6 +1,7 @@
 import { Highlighter, List, ScanSearch } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { GenerationScope, TextSelectionRange } from '../../services/backendApi';
+import { cn } from '../../lib/cn';
 import { type FormattingAction, getEffectiveScope, normalizeSelection } from './selection';
 
 interface DraftEditorProps {
@@ -14,6 +15,7 @@ interface DraftEditorProps {
   onFormatting: (action: FormattingAction) => void;
   /** Tighter toolbar and editor for multi-column review layout. */
   compact?: boolean;
+  className?: string;
 }
 
 const FORMATTING_ACTIONS: Array<{ id: FormattingAction; label: string; icon: typeof ScanSearch }> = [
@@ -31,6 +33,7 @@ export function DraftEditor({
   onScopeChange,
   onFormatting,
   compact = false,
+  className,
 }: DraftEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const effectiveScope = getEffectiveScope(preferredScope, selection);
@@ -56,11 +59,34 @@ export function DraftEditor({
 
   const t = compact ? 'text-xs' : 'text-sm';
   const tBtn = compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm';
-  const taMin = compact ? 'min-h-[220px]' : 'min-h-[320px]';
+  const taMin = compact ? 'min-h-[160px] xl:min-h-0' : 'min-h-[320px]';
   const taText = compact ? 'px-3 py-3 text-sm leading-6' : 'px-5 py-4 text-base leading-7';
+  const fmtIcon = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
+  const fmtBtn = compact ? 'p-1.5' : 'p-2';
+
+  const formattingBar = (
+    <div
+      className={`flex flex-wrap items-center gap-1 rounded-xl border border-border bg-surface/90 ${compact ? 'px-1.5 py-1' : 'px-2 py-1.5'}`}
+      role="toolbar"
+      aria-label="Formatting"
+    >
+      {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          title={label}
+          onClick={() => onFormatting(id)}
+          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-medium text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${fmtBtn}`}
+        >
+          <Icon className={fmtIcon} aria-hidden />
+          <span className="sr-only">{label}</span>
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className={cn('flex min-h-0 flex-col', compact && 'flex-1', className)}>
       <div className={`mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-canvas ${compact ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
         <div className={`inline-flex rounded-full border border-border bg-surface ${compact ? 'p-0.5' : 'p-1'}`}>
           <button
@@ -82,28 +108,40 @@ export function DraftEditor({
         <div className={`min-w-0 flex-1 rounded-2xl border border-border bg-surface px-2.5 py-1 text-muted ${t}`}>
           <span className="font-semibold text-ink">Target:</span>{' '}
           {effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}
+          <span className="mt-0.5 block text-[0.65rem] font-normal text-muted/90">
+            Quick Change and 4 Variants use this target.
+          </span>
         </div>
-        <details className="group relative">
-          <summary
-            className={`list-none cursor-pointer rounded-full border border-border bg-surface font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'}`}
-          >
-            Formatting actions
-          </summary>
-          <div className="absolute right-0 z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-xl border border-border bg-surface p-3 shadow-lift sm:left-0 sm:right-auto">
-            {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onFormatting(id)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas"
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </div>
-        </details>
+        {!compact ? (
+          <details className="group relative">
+            <summary
+              className="list-none cursor-pointer rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Formatting actions
+            </summary>
+            <div className="absolute right-0 z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-xl border border-border bg-surface p-3 shadow-lift sm:left-0 sm:right-auto">
+              {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onFormatting(id)}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas"
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </details>
+        ) : null}
       </div>
+
+      {compact ? (
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Format</p>
+          {formattingBar}
+        </div>
+      ) : null}
 
       <textarea
         ref={textareaRef}
@@ -113,7 +151,11 @@ export function DraftEditor({
         onKeyUp={syncSelection}
         onMouseUp={syncSelection}
         spellCheck={false}
-        className={`${taMin} w-full flex-1 resize-none rounded-xl border border-border bg-canvas text-ink outline-none transition-colors focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 ${taText}`}
+        className={cn(
+          'w-full flex-1 resize-none rounded-xl border border-border bg-canvas text-ink outline-none transition-colors focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20',
+          taMin,
+          taText,
+        )}
         placeholder="Edit the draft here. Select a sentence to target only that part with Quick Change or 4 Variants."
       />
     </div>
