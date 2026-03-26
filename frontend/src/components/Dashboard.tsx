@@ -1665,14 +1665,14 @@ export function Dashboard({
         
         <div className="bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-3xl overflow-hidden flex-1 flex flex-col mt-2">
           
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100 text-left">
+        <div className="overflow-hidden w-full">
+          <table className="w-full divide-y divide-slate-100 text-left table-fixed">
             <thead className="bg-slate-50/80">
               <tr>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Topic</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Status</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading hidden sm:table-cell">Date</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading text-right sm:text-left">Actions</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading w-full sm:w-[40%]">Topic</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading w-[100px] sm:w-[15%]">Status</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading hidden sm:table-cell sm:w-[15%]">Date</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading text-right sm:text-left w-[120px] sm:w-[30%]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white/40">
@@ -1693,9 +1693,11 @@ export function Dashboard({
               ) : (
                 rows.map((row) => (
                   <tr key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="hover:bg-white/80 transition-colors duration-150 group">
-                    <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">
-                      {row.topic}
-                      <div className="sm:hidden text-xs text-slate-500 mt-1 font-normal">{row.date}</div>
+                    <td className="px-5 py-4 text-sm font-semibold text-slate-800">
+                      <div className="truncate w-full pr-4" title={row.topic}>
+                        {row.topic}
+                      </div>
+                      <div className="sm:hidden text-xs text-slate-500 mt-1 font-normal truncate">{row.date}</div>
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap text-sm">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full shadow-sm ${getStatusColor(row.status)}`}>
@@ -1703,7 +1705,9 @@ export function Dashboard({
                       </span>
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-500 hidden sm:table-cell">
-                      {row.date}
+                      <div className="truncate w-full pr-2">
+                        {row.date}
+                      </div>
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap text-sm font-medium text-right sm:text-left">
                       <div className="flex flex-wrap items-center justify-end sm:justify-start gap-3 opacity-90 group-hover:opacity-100 transition-opacity duration-200">
