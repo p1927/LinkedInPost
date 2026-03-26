@@ -1671,8 +1671,8 @@ export function Dashboard({
               <tr>
                 <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Topic</th>
                 <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Status</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Date</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading">Actions</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading hidden sm:table-cell">Date</th>
+                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading text-right sm:text-left">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white/40">
@@ -1695,81 +1695,82 @@ export function Dashboard({
                   <tr key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="hover:bg-white/80 transition-colors duration-150 group">
                     <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">
                       {row.topic}
+                      <div className="sm:hidden text-xs text-slate-500 mt-1 font-normal">{row.date}</div>
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap text-sm">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full shadow-sm ${getStatusColor(row.status)}`}>
                         {row.status || 'Pending'}
                       </span>
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-500 hidden sm:table-cell">
                       {row.date}
                     </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex flex-wrap items-center gap-3 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+                    <td className="px-5 py-4 whitespace-nowrap text-sm font-medium text-right sm:text-left">
+                      <div className="flex flex-wrap items-center justify-end sm:justify-start gap-3 opacity-90 group-hover:opacity-100 transition-opacity duration-200">
                         {getNormalizedRowStatus(row.status) === 'pending' && (
                           <button
                             onClick={() => void triggerRowGithubAction(row, 'draft')}
                             disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary bg-primary/5 hover:bg-primary/10 hover:text-indigo-800 transition-all duration-200 disabled:opacity-50 font-semibold"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary bg-primary/5 hover:bg-primary/10 hover:text-indigo-800 transition-all duration-200 disabled:opacity-50 font-semibold shadow-sm hover:shadow active:scale-95"
                           >
                             {actionLoading === buildRowActionKey('draft', row) ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
                             ) : (
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                             )}
-                            Draft
+                            <span className="hidden sm:inline">Draft</span>
                           </button>
                         )}
                         {getNormalizedRowStatus(row.status) === 'drafted' && (
                           <button 
                             onClick={() => setSelectedRowForReview(row)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all duration-200 font-bold"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all duration-200 font-bold shadow-sm hover:shadow active:scale-95"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                            Review
+                            <span className="hidden sm:inline">Review</span>
                           </button>
                         )}
                         {canPreviewPublishedContent(row) && (
                           <button
                             onClick={() => setSelectedApprovedRowPreview(row)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all duration-200 font-bold"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all duration-200 font-bold shadow-sm hover:shadow active:scale-95"
                           >
                             <Eye className="w-4 h-4" />
-                            Preview
+                            <span className="hidden sm:inline">Preview</span>
                           </button>
                         )}
                         {getNormalizedRowStatus(row.status) === 'approved' && (
                           <button
                             onClick={() => void publishRowToSelectedChannel(row)}
                             disabled={actionLoading !== null}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50 shadow-sm hover:shadow active:scale-95"
                           >
                             {actionLoading === buildRowActionKey('publish', row) ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
                             ) : (
                               <Send className="w-4 h-4" />
                             )}
-                            Publish
+                            <span className="hidden sm:inline">Publish</span>
                           </button>
                         )}
                         {getNormalizedRowStatus(row.status) === 'published' && (
                           <button
                             onClick={() => void republishRowToSelectedChannel(row)}
                             disabled={actionLoading !== null}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50 shadow-sm hover:shadow active:scale-95"
                           >
                             {actionLoading === buildRowActionKey('publish', row) ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
                             ) : (
                               <Send className="w-4 h-4" />
                             )}
-                            Publish Again
+                            <span className="hidden sm:inline">Publish Again</span>
                           </button>
                         )}
                         <button
                           onClick={() => handleDeleteTopic(row)}
                           disabled={deletingRowIndex === row.rowIndex}
-                          className="inline-flex items-center gap-1.5 p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all duration-200 disabled:opacity-50 ml-auto"
+                          className="inline-flex items-center gap-1.5 p-2 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all duration-200 disabled:opacity-50 sm:ml-auto"
                           title="Delete topic"
                         >
                           <Trash2 className="w-4 h-4" />
