@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Bot, RefreshCw } from 'lucide-react';
+import { useState, useCallback } from 'react';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '../../services/configService';
 import { getNormalizedRowStatus } from './utils';
@@ -16,6 +15,7 @@ import { normalizeTelegramChatId } from '../../integrations/telegram';
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { ReviewWorkspace } from '../../features/review/ReviewWorkspace';
 import { ApprovedPostPreview } from '../ApprovedPostPreview';
+import { type SheetRow } from '../../services/sheets';
 
 export function Dashboard({
   idToken,
@@ -32,6 +32,7 @@ export function Dashboard({
 }) {
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
+  const [queueScrollTargetId, setQueueScrollTargetId] = useState<string | null>(null);
 
   const channelsHook = useDashboardChannels({
     idToken,
@@ -131,13 +132,27 @@ export function Dashboard({
       ? (session.config.instagramUsername ? `@${session.config.instagramUsername}` : 'Connected Instagram account')
       : 'Connected LinkedIn account';
 
+  const handleSpotlightRowActivate = useCallback((row: SheetRow) => {
+    setStatusFilter(getNormalizedRowStatus(row.status) as QueueFilter);
+    setQueueScrollTargetId(`${row.sourceSheet}-${row.rowIndex}`);
+  }, []);
+
+  const handleScrollTargetHandled = useCallback(() => {
+    setQueueScrollTargetId(null);
+  }, []);
+
   if (!session.config.spreadsheetId && !session.isAdmin) {
     return (
       <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-border bg-surface p-8 text-left shadow-card">
         <h2 className="font-heading text-xl font-semibold text-ink">Workspace setup pending</h2>
         <p className="mt-3 text-sm leading-6 text-muted">
-          You are signed in as <strong className="text-ink">{session.email}</strong>, but an admin still needs to finish the shared spreadsheet, draft workflow, Instagram publishing, LinkedIn publishing, plus Telegram and WhatsApp delivery settings in the backend.
+          You are signed in as <strong className="text-ink">{session.email}</strong>. An admin still needs to finish setup before you can use the queue:
         </p>
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-muted">
+          <li>Connect the shared Google Sheet and draft workflow</li>
+          <li>Configure publishing for LinkedIn and Instagram</li>
+          <li>Configure Telegram and WhatsApp delivery in the Worker</li>
+        </ul>
       </div>
     );
   }
@@ -163,6 +178,8 @@ export function Dashboard({
       setSelectedApprovedRowPreview={queueHook.setSelectedApprovedRowPreview}
       handleDeleteTopic={queueHook.handleDeleteTopic}
       deletingRowIndex={queueHook.deletingRowIndex}
+      scrollTargetId={queueScrollTargetId}
+      onScrollTargetHandled={handleScrollTargetHandled}
     />
   );
 
@@ -180,6 +197,15 @@ export function Dashboard({
       manualRecipientId={channelsHook.manualRecipientId}
       setManualRecipientId={channelsHook.setManualRecipientId}
       lastDeliverySummary={lastDeliverySummary}
+      googleModel={settingsHook.googleModel}
+      setGoogleModel={settingsHook.setGoogleModel}
+      availableModels={settingsHook.availableModels}
+      linkedinConfigured={linkedinConfigured}
+      instagramConfigured={instagramConfigured}
+      telegramConfigured={telegramConfigured}
+      whatsappConfigured={whatsappConfigured}
+      onRefreshQueue={() => void loadData()}
+      queueLoading={queueHook.loading}
     />
   );
 
@@ -189,12 +215,8 @@ export function Dashboard({
       sheetIdInput={settingsHook.sheetIdInput}
       setSheetIdInput={settingsHook.setSheetIdInput}
       selectedChannel={channelsHook.selectedChannel}
-      setSelectedChannel={channelsHook.setSelectedChannel}
       githubRepo={settingsHook.githubRepo}
       setGithubRepo={settingsHook.setGithubRepo}
-      googleModel={settingsHook.googleModel}
-      setGoogleModel={settingsHook.setGoogleModel}
-      availableModels={settingsHook.availableModels}
       generationRules={settingsHook.generationRules}
       setGenerationRules={settingsHook.setGenerationRules}
       githubTokenInput={settingsHook.githubTokenInput}
@@ -235,40 +257,7 @@ export function Dashboard({
   );
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-0 pb-12 sm:px-1">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3.5 shadow-card">
-        <div>
-          <h2 className="font-heading text-base font-semibold text-ink">Overview</h2>
-          <p className="mt-0.5 text-xs text-muted">Queue snapshot and delivery context.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-canvas px-3 py-2 text-xs text-muted transition-colors focus-within:ring-2 focus-within:ring-primary/30">
-            <Bot className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-            <span className="hidden sm:inline">Model</span>
-            <select
-              value={settingsHook.googleModel}
-              onChange={(e) => settingsHook.setGoogleModel(e.target.value)}
-              className="max-w-[200px] cursor-pointer bg-transparent font-semibold text-ink outline-none sm:max-w-xs"
-            >
-              {settingsHook.availableModels.map((model) => (
-                <option key={model.value} value={model.value}>
-                  {model.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            onClick={() => void loadData()}
-            disabled={queueHook.loading}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-canvas px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${queueHook.loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
-      </div>
-
+    <div className="w-full pb-12">
       <div className="relative flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
         <aside className="custom-scrollbar sticky top-20 flex max-h-[calc(100vh-5rem)] w-full shrink-0 flex-col gap-6 overflow-y-auto pb-4 pr-1 lg:w-[320px] xl:w-[360px]">
           <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card">
@@ -284,20 +273,12 @@ export function Dashboard({
           ) : null}
         </aside>
 
-        <div className="flex-1 min-w-0 space-y-6 flex flex-col">
+        <div className="flex min-w-0 flex-1 flex-col space-y-6">
           <DashboardOverview
-            setStatusFilter={setStatusFilter}
             statusFilter={statusFilter}
             queueSpotlightRows={queueSpotlightRows}
             getStatusColor={queueHook.getStatusColor}
-            selectedChannel={channelsHook.selectedChannel}
-            deliveryTargetSummary={deliveryTargetSummary}
-            selectedChannelOption={selectedChannelOption}
-            linkedinConfigured={linkedinConfigured}
-            instagramConfigured={instagramConfigured}
-            telegramConfigured={telegramConfigured}
-            whatsappConfigured={whatsappConfigured}
-            lastDeliverySummary={lastDeliverySummary}
+            onSpotlightRowActivate={handleSpotlightRowActivate}
           />
           {queueContent}
         </div>
@@ -305,7 +286,8 @@ export function Dashboard({
 
       {queueHook.selectedRowForReview && (
         <ReviewWorkspace
-          row={queueHook.selectedRowForReview} 
+          row={queueHook.selectedRowForReview}
+          deliveryChannel={channelsHook.selectedChannel}
           sharedRules={session.config.generationRules}
           googleModel={settingsHook.googleModel}
           onApprove={queueHook.handleApproveVariant}

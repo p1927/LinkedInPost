@@ -1,6 +1,7 @@
 import { Globe2, ImageOff, MessageCircle, MoreHorizontal, Repeat2, Send, ThumbsUp } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
+import { type ChannelId } from '../integrations/channels';
 
 interface LinkedInPostPreviewProps {
   optionNumber: number;
@@ -11,6 +12,8 @@ interface LinkedInPostPreviewProps {
   onSelect: () => void;
   onToggleExpanded: () => void;
   mode?: 'hero' | 'carousel';
+  /** Shapes labels and accent styling to match the selected delivery channel. */
+  previewChannel?: ChannelId;
 }
 
 const SOCIAL_PROOF = [
@@ -27,7 +30,29 @@ const ACTIONS = [
   { label: 'Share', icon: Send },
 ];
 
-function renderLinkedText(text: string): ReactNode[] {
+const TAG_CLASS_BY_CHANNEL: Record<ChannelId, string> = {
+  linkedin: 'font-medium text-[#0a66c2]',
+  instagram: 'font-medium text-[#d62976]',
+  telegram: 'font-medium text-[#229ED9]',
+  whatsapp: 'font-medium text-[#128C7E]',
+};
+
+function previewSubtitle(channel: ChannelId | undefined): string {
+  switch (channel) {
+    case 'instagram':
+      return 'Approximate feed-style preview';
+    case 'telegram':
+      return 'Message-style preview';
+    case 'whatsapp':
+      return 'Message-style preview';
+    case 'linkedin':
+    default:
+      return 'LinkedIn-style preview';
+  }
+}
+
+function renderLinkedText(text: string, previewChannel?: ChannelId): ReactNode[] {
+  const tagClass = TAG_CLASS_BY_CHANNEL[previewChannel ?? 'linkedin'];
   return text.split('\n').flatMap((line, lineIndex) => {
     const segments = line.split(/([#@][\w-]+)/g);
     const nodes = segments.map((segment, segmentIndex) => {
@@ -38,7 +63,7 @@ function renderLinkedText(text: string): ReactNode[] {
       }
 
       return isTag ? (
-        <span key={`segment-${lineIndex}-${segmentIndex}`} className="font-medium text-[#0a66c2]">
+        <span key={`segment-${lineIndex}-${segmentIndex}`} className={tagClass}>
           {segment}
         </span>
       ) : (
@@ -63,6 +88,7 @@ export function LinkedInPostPreview({
   onSelect,
   onToggleExpanded,
   mode = 'hero',
+  previewChannel,
 }: LinkedInPostPreviewProps) {
   const proof = SOCIAL_PROOF[(optionNumber - 1) % SOCIAL_PROOF.length];
   const shouldClamp = text.length > 280 || text.split('\n').length > 5;
@@ -99,7 +125,7 @@ export function LinkedInPostPreview({
         <div>
           <p className="font-heading text-xs font-bold uppercase tracking-widest text-muted">Draft {optionNumber}</p>
           <p className={`mt-1 text-muted ${isCarousel ? 'text-[0.8rem]' : 'text-sm'}`}>
-            {isCarousel ? 'Tap to preview' : 'Full message preview'}
+            {isCarousel ? 'Tap to preview' : previewSubtitle(previewChannel)}
           </p>
         </div>
         <div
@@ -121,7 +147,15 @@ export function LinkedInPostPreview({
                 </div>
                 <div className="min-w-0">
                   <p className={`truncate font-bold text-ink ${isCarousel ? 'text-[0.9rem]' : 'text-[0.95rem]'}`}>Channel Bot</p>
-                  <p className={`truncate text-muted ${isCarousel ? 'text-[0.75rem]' : 'text-[0.8rem]'}`}>AI-assisted message preview</p>
+                  <p className={`truncate text-muted ${isCarousel ? 'text-[0.75rem]' : 'text-[0.8rem]'}`}>
+                    {previewChannel === 'instagram'
+                      ? 'Instagram-oriented layout'
+                      : previewChannel === 'telegram'
+                        ? 'Telegram-oriented layout'
+                        : previewChannel === 'whatsapp'
+                          ? 'WhatsApp-oriented layout'
+                          : 'LinkedIn-oriented layout'}
+                  </p>
                   <div className={`mt-0.5 flex items-center gap-1.5 text-muted ${isCarousel ? 'text-[0.7rem]' : 'text-[0.75rem]'}`}>
                     <span>Now</span>
                     <span aria-hidden="true">•</span>
@@ -137,7 +171,7 @@ export function LinkedInPostPreview({
                 className={!expanded && shouldClamp ? 'overflow-hidden' : undefined}
                 style={!expanded && shouldClamp ? { display: '-webkit-box', WebkitLineClamp: isCarousel ? 4 : 5, WebkitBoxOrient: 'vertical' } : undefined}
               >
-                {renderLinkedText(text)}
+                {renderLinkedText(text, previewChannel)}
               </div>
               {shouldClamp && (
                 <button

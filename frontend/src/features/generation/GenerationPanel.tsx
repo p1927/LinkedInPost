@@ -69,7 +69,7 @@ export function GenerationPanel({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-900">Quick Change preview</p>
-              <p className="mt-2 text-sm leading-6 text-ink">{quickChangePreview.replacementText}</p>
+              <p className="mt-2 line-clamp-6 text-sm leading-6 text-ink">{quickChangePreview.replacementText}</p>
             </div>
             <button
               type="button"
@@ -89,7 +89,7 @@ export function GenerationPanel({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Preview {index + 1}</p>
-                  <p className="mt-2 text-sm leading-6 text-ink">{variant.fullText}</p>
+                  <p className="mt-2 line-clamp-6 text-sm leading-6 text-ink">{variant.fullText}</p>
                 </div>
                 <button
                   type="button"

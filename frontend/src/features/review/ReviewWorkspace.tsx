@@ -18,9 +18,11 @@ import { GenerationPanel } from '../generation/GenerationPanel';
 import { VariantPersistencePanel } from '../persistence/VariantPersistencePanel';
 import { RulesPanel } from '../rules/RulesPanel';
 import { CompareDialog } from '../compare/CompareDialog';
+import { type ChannelId } from '../../integrations/channels';
 
 interface ReviewWorkspaceProps {
   row: SheetRow;
+  deliveryChannel: ChannelId;
   sharedRules: string;
   googleModel: string;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string) => Promise<void>;
@@ -82,6 +84,7 @@ function mergeUniqueImageOptions(nextOptions: ImageAssetOption[]): ImageAssetOpt
 
 export function ReviewWorkspace({
   row,
+  deliveryChannel,
   sharedRules,
   googleModel,
   onApprove,
@@ -375,31 +378,40 @@ export function ReviewWorkspace({
             </div>
           </div>
 
-          <div className="border-b border-border px-6 py-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Start from an existing sheet draft</p>
-                <p className="mt-1 text-sm text-muted">Loading a sheet variant resets the local working draft.</p>
+          {sheetVariants.length > 0 ? (
+            <div className="border-b border-border px-6 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Start from an existing sheet draft</p>
+                  <p className="mt-1 text-sm text-muted">Loading a sheet variant resets the local working draft.</p>
+                </div>
+                <div className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">
+                  Model: {googleModel}
+                </div>
               </div>
-              <div className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">
-                Model: {googleModel}
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                {sheetVariants.map((variant, index) => (
+                  <button
+                    key={`sheet-variant-${index}`}
+                    type="button"
+                    onClick={() => handleLoadSheetVariant(index)}
+                    className="min-w-[220px] cursor-pointer rounded-2xl border border-border bg-canvas px-4 py-4 text-left transition-colors hover:border-border-strong hover:bg-surface"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Variant {index + 1}</p>
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-ink">{variant.text}</p>
+                    <span className="mt-3 inline-flex rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">Use as base</span>
+                  </button>
+                ))}
               </div>
             </div>
-            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
-              {sheetVariants.map((variant, index) => (
-                <button
-                  key={`sheet-variant-${index}`}
-                  type="button"
-                  onClick={() => handleLoadSheetVariant(index)}
-                  className="min-w-[220px] cursor-pointer rounded-2xl border border-border bg-canvas px-4 py-4 text-left transition-colors hover:border-border-strong hover:bg-surface"
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Variant {index + 1}</p>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-ink">{variant.text}</p>
-                  <span className="mt-3 inline-flex rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">Use as base</span>
-                </button>
-              ))}
+          ) : (
+            <div className="border-b border-border px-6 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-muted">No extra variants in the sheet yet—edit the draft below or use AI tools on the right.</p>
+                <span className="shrink-0 rounded-full border border-border bg-canvas px-3 py-1 text-xs font-semibold text-muted">Model: {googleModel}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
             <section className="min-h-0 space-y-5 overflow-y-auto border-b border-border px-6 py-6 pb-32 xl:border-b-0 xl:border-r xl:border-border">
@@ -429,6 +441,7 @@ export function ReviewWorkspace({
                     optionNumber={1}
                     text={editorText}
                     imageUrl={selectedImageUrl}
+                    previewChannel={deliveryChannel}
                     selected
                     expanded
                     onSelect={() => undefined}
@@ -513,7 +526,7 @@ export function ReviewWorkspace({
             </aside>
           </div>
 
-          <div className="border-t border-border bg-surface px-6 py-5">
+          <div className="sticky bottom-0 z-20 border-t border-border bg-surface px-6 py-5 shadow-[0_-12px_32px_-12px_rgba(15,23,42,0.12)]">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-xl">
                 <div className="flex items-center gap-2 text-ink">

@@ -1,7 +1,6 @@
 import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
 import { type AppSession } from '../../../services/backendApi';
-import { type ChannelId, CHANNEL_OPTIONS } from '../../../integrations/channels';
-import { type GoogleModelOption } from '../../../services/configService';
+import { type ChannelId } from '../../../integrations/channels';
 import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '../../../services/backendApi';
 import { type PopupProvider } from '../types';
 import { type TelegramRecipient } from '../../../integrations/telegram';
@@ -11,12 +10,8 @@ export function DashboardSettingsDrawer({
   sheetIdInput,
   setSheetIdInput,
   selectedChannel,
-  setSelectedChannel,
   githubRepo,
   setGithubRepo,
-  googleModel,
-  setGoogleModel,
-  availableModels,
   generationRules,
   setGenerationRules,
   githubTokenInput,
@@ -58,12 +53,8 @@ export function DashboardSettingsDrawer({
   sheetIdInput: string;
   setSheetIdInput: (val: string) => void;
   selectedChannel: ChannelId;
-  setSelectedChannel: (val: ChannelId) => void;
   githubRepo: string;
   setGithubRepo: (val: string) => void;
-  googleModel: string;
-  setGoogleModel: (val: string) => void;
-  availableModels: GoogleModelOption[];
   generationRules: string;
   setGenerationRules: (val: string) => void;
   githubTokenInput: string;
@@ -112,7 +103,7 @@ export function DashboardSettingsDrawer({
                 </svg>
               </summary>
               <div className="border-t border-border p-4 pt-0">
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="mt-4 space-y-4">
                   <div>
                     <label className="mb-1 block text-sm font-semibold text-ink">Google Spreadsheet ID</label>
                     <input
@@ -124,22 +115,9 @@ export function DashboardSettingsDrawer({
                     />
                     <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
                   </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">Default Channel</label>
-                    <select
-                      value={selectedChannel}
-                      onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    >
-                      {CHANNEL_OPTIONS.map((channel) => (
-                        <option key={channel.value} value={channel.value}>
-                          {channel.label}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-1.5 text-xs text-muted">Used as the default destination in the delivery panel.</p>
-                  </div>
+                  <p className="rounded-xl border border-border bg-surface-muted/60 px-3 py-2.5 text-xs leading-5 text-muted">
+                    Publish channel, recipient, AI model, and queue refresh live in the <strong className="font-semibold text-ink">Delivery</strong> sidebar so the team has one place to operate day to day.
+                  </p>
                 </div>
               </div>
             </details>
@@ -163,21 +141,6 @@ export function DashboardSettingsDrawer({
                       placeholder="e.g. username/repo-name"
                       className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">Google Model</label>
-                    <select
-                      value={googleModel}
-                      onChange={(e) => setGoogleModel(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    >
-                      {availableModels.map((model) => (
-                        <option key={model.value} value={model.value}>
-                          {model.label}
-                        </option>
-                      ))}
-                    </select>
                   </div>
 
                   <div>

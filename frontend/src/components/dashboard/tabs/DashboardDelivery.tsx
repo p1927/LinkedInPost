@@ -1,4 +1,4 @@
-import { MessageCircle, Phone } from 'lucide-react';
+import { Bot, MessageCircle, Phone, RefreshCw } from 'lucide-react';
 import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel } from '../../../integrations/channels';
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';
@@ -6,6 +6,7 @@ import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../../.
 
 import { type ChannelOption } from '../../../integrations/channels';
 import { type DeliverySummary } from '../types';
+import { type GoogleModelOption } from '../../../services/configService';
 
 export function DashboardDelivery({
   selectedChannel,
@@ -20,6 +21,15 @@ export function DashboardDelivery({
   manualRecipientId,
   setManualRecipientId,
   lastDeliverySummary,
+  googleModel,
+  setGoogleModel,
+  availableModels,
+  linkedinConfigured,
+  instagramConfigured,
+  telegramConfigured,
+  whatsappConfigured,
+  onRefreshQueue,
+  queueLoading,
 }: {
   selectedChannel: ChannelId;
   setSelectedChannel: (val: ChannelId) => void;
@@ -33,6 +43,15 @@ export function DashboardDelivery({
   manualRecipientId: string;
   setManualRecipientId: (val: string) => void;
   lastDeliverySummary: DeliverySummary | null;
+  googleModel: string;
+  setGoogleModel: (val: string) => void;
+  availableModels: GoogleModelOption[];
+  linkedinConfigured: boolean;
+  instagramConfigured: boolean;
+  telegramConfigured: boolean;
+  whatsappConfigured: boolean;
+  onRefreshQueue: () => void;
+  queueLoading: boolean;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -128,16 +147,79 @@ export function DashboardDelivery({
         </div>
       </div>
 
+      <div className="rounded-2xl border border-border bg-canvas p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Publishing health</p>
+        <div className="mt-2 space-y-1.5">
+          {[
+            { label: 'LinkedIn', ready: linkedinConfigured },
+            { label: 'Instagram', ready: instagramConfigured },
+            { label: 'Telegram', ready: telegramConfigured },
+            { label: 'WhatsApp', ready: whatsappConfigured },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center justify-between rounded-lg border border-border bg-surface px-2.5 py-1.5">
+              <span className="text-[11px] font-medium text-ink">{item.label}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  item.ready ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
+                }`}
+              >
+                {item.ready ? 'Ready' : 'Setup'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-canvas p-4">
+        <label className="flex cursor-pointer flex-col gap-1">
+          <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
+            <Bot className="h-3.5 w-3.5 text-primary" aria-hidden />
+            AI model
+          </span>
+          <span className="text-[11px] leading-4 text-muted">Used for Quick Change and variants in review.</span>
+          <select
+            value={googleModel}
+            onChange={(e) => setGoogleModel(e.target.value)}
+            className="mt-1 w-full cursor-pointer rounded-lg border border-border bg-surface px-2 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-primary/25"
+          >
+            {availableModels.map((model) => (
+              <option key={model.value} value={model.value}>
+                {model.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onRefreshQueue()}
+        disabled={queueLoading}
+        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-surface px-3 py-2.5 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <RefreshCw className={`h-3.5 w-3.5 shrink-0 ${queueLoading ? 'animate-spin' : ''}`} aria-hidden />
+        Refresh queue from Sheets
+      </button>
+
       {lastDeliverySummary ? (
         <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800">Last send</p>
-            <span className="rounded-full border border-emerald-200 bg-surface px-2 py-0.5 text-[10px] font-semibold text-ink">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Last delivery</p>
+            <span className="rounded-full border border-emerald-200 bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
               {getChannelLabel(lastDeliverySummary.channel)}
+            </span>
+            <span className="rounded-full border border-emerald-200 bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
+              {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
             </span>
           </div>
           <p className="mt-2 text-xs leading-5 text-muted">
-            {lastDeliverySummary.recipientLabel}.
+            {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
+              ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
+              : lastDeliverySummary.channel === 'instagram'
+                ? lastDeliverySummary.recipientLabel === 'connected account'
+                  ? 'Published to Instagram using the connected professional account.'
+                  : `Published to Instagram as @${lastDeliverySummary.recipientLabel}.`
+                : 'Delivered to LinkedIn using the approved text and selected media.'}
           </p>
         </div>
       ) : null}

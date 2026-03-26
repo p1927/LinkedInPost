@@ -1,9 +1,14 @@
+import { useEffect } from 'react';
 import { Plus, RefreshCw, Send, Eye, Trash2, Bot, PenLine } from 'lucide-react';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent } from '../utils';
 import { filterOptions } from '../constants';
+
+function queueRowDomId(row: SheetRow) {
+  return `${row.sourceSheet}-${row.rowIndex}`;
+}
 
 export function DashboardQueue({
   handleAddTopic,
@@ -25,6 +30,8 @@ export function DashboardQueue({
   setSelectedApprovedRowPreview,
   handleDeleteTopic,
   deletingRowIndex,
+  scrollTargetId,
+  onScrollTargetHandled,
 }: {
   handleAddTopic: (e: React.FormEvent) => Promise<void>;
   newTopic: string;
@@ -45,7 +52,24 @@ export function DashboardQueue({
   setSelectedApprovedRowPreview: (row: SheetRow) => void;
   handleDeleteTopic: (row: SheetRow) => Promise<void>;
   deletingRowIndex: number | null;
+  scrollTargetId: string | null;
+  onScrollTargetHandled: () => void;
 }) {
+  useEffect(() => {
+    if (!scrollTargetId) return;
+    const match = filteredRows.some((r) => queueRowDomId(r) === scrollTargetId);
+    if (!match) {
+      onScrollTargetHandled();
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-queue-row-id="${scrollTargetId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      onScrollTargetHandled();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [scrollTargetId, filteredRows, onScrollTargetHandled]);
+
   return (
     <div className="flex flex-col gap-5">
       <div className="rounded-2xl border border-border bg-surface-muted/80 p-4">
@@ -104,7 +128,8 @@ export function DashboardQueue({
               return (
                 <div
                   key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
-                  className="rounded-2xl border border-border bg-surface p-4 shadow-card"
+                  data-queue-row-id={queueRowDomId(row)}
+                  className="rounded-2xl border border-border bg-surface p-4 shadow-card scroll-mt-24"
                 >
                   <div className="flex flex-col gap-3">
                     <div>
