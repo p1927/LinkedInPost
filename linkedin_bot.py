@@ -6,6 +6,7 @@ import requests
 from dotenv import load_dotenv
 load_dotenv()
 import google.generativeai as genai
+from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -27,9 +28,14 @@ GOOGLE_MODEL = os.environ.get('GOOGLE_MODEL', 'gemini-2.5-flash')
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# Search API (using Google Custom Search here as an example for images and web research)
-GOOGLE_SEARCH_API_KEY = os.environ.get('GOOGLE_SEARCH_API_KEY')
-GOOGLE_SEARCH_CX = os.environ.get('GOOGLE_SEARCH_CX')
+# Search configuration
+VERTEX_AI_SEARCH_PROJECT_ID = os.environ.get('VERTEX_AI_SEARCH_PROJECT_ID', '').strip()
+VERTEX_AI_SEARCH_LOCATION = os.environ.get('VERTEX_AI_SEARCH_LOCATION', 'global').strip() or 'global'
+VERTEX_AI_SEARCH_ENGINE_ID = (
+    os.environ.get('VERTEX_AI_SEARCH_ENGINE_ID', '').strip()
+    or os.environ.get('VERTEX_AI_SEARCH_APP_ID', '').strip()
+)
+VERTEX_AI_SEARCH_SERVING_CONFIG = os.environ.get('VERTEX_AI_SEARCH_SERVING_CONFIG', '').strip()
 DRAFT_MODE = os.environ.get('DRAFT_MODE', '').strip().lower()
 TARGET_TOPIC = os.environ.get('TARGET_TOPIC', '').strip()
 TARGET_DATE = os.environ.get('TARGET_DATE', '').strip()
@@ -52,19 +58,45 @@ PIPELINE_HEADERS = [
     'Image Link 1', 'Image Link 2', 'Image Link 3', 'Image Link 4',
     'Selected Text', 'Selected Image ID', 'Post Time',
 ]
+DISCOVERY_ENGINE_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
+
+
+def load_service_account_info():
+    if not GOOGLE_CREDENTIALS_JSON:
+        raise ValueError('Missing GOOGLE_CREDENTIALS_JSON')
+    return json.loads(GOOGLE_CREDENTIALS_JSON)
+
+
+def get_vertex_ai_search_project_id():
+    if VERTEX_AI_SEARCH_PROJECT_ID:
+        return VERTEX_AI_SEARCH_PROJECT_ID
+    try:
+        return load_service_account_info().get('project_id', '').strip()
+    except Exception:
+        return ''
+
+
+def has_vertex_ai_search_config():
+    return bool(VERTEX_AI_SEARCH_SERVING_CONFIG or VERTEX_AI_SEARCH_ENGINE_ID)
+
+
+def get_vertex_serving_config():
+    if VERTEX_AI_SEARCH_SERVING_CONFIG:
+        return VERTEX_AI_SEARCH_SERVING_CONFIG
+
+    project_id = get_vertex_ai_search_project_id()
+    if not project_id or not VERTEX_AI_SEARCH_ENGINE_ID:
+        return ''
+
+    return (
+        f'projects/{project_id}/locations/{VERTEX_AI_SEARCH_LOCATION}/collections/default_collection/'
+        f'engines/{VERTEX_AI_SEARCH_ENGINE_ID}/servingConfigs/default_search'
+    )
 
 
 def validate_environment(action):
     """Fail fast with actionable guidance when required environment variables are missing."""
     required = {
-        'draft': [
-            'GOOGLE_SHEET_ID',
-            'GOOGLE_DRIVE_FOLDER_ID',
-            'GOOGLE_CREDENTIALS_JSON',
-            'GEMINI_API_KEY',
-            'GOOGLE_SEARCH_API_KEY',
-            'GOOGLE_SEARCH_CX',
-        ],
         'publish': [
             'GOOGLE_SHEET_ID',
             'GOOGLE_CREDENTIALS_JSON',
@@ -73,7 +105,19 @@ def validate_environment(action):
         ],
     }
 
-    missing = [name for name in required.get(action, []) if not os.environ.get(name)]
+    if action == 'draft':
+        missing = [
+            name for name in ['GOOGLE_SHEET_ID', 'GOOGLE_DRIVE_FOLDER_ID', 'GOOGLE_CREDENTIALS_JSON', 'GEMINI_API_KEY']
+            if not os.environ.get(name)
+        ]
+
+        if not get_vertex_serving_config():
+            missing.append('VERTEX_AI_SEARCH_ENGINE_ID or VERTEX_AI_SEARCH_SERVING_CONFIG')
+        if not get_vertex_ai_search_project_id():
+            missing.append('VERTEX_AI_SEARCH_PROJECT_ID')
+    else:
+        missing = [name for name in required.get(action, []) if not os.environ.get(name)]
+
     if not missing:
         return
 
@@ -203,6 +247,7 @@ def extract_google_api_error(response):
             'message': response.text[:1000],
             'status': response.status_code,
             'reasons': [],
+            'api_status': '',
         }
 
     error = payload.get('error', {})
@@ -213,89 +258,187 @@ def extract_google_api_error(response):
         'message': error.get('message', response.text[:1000]),
         'status': error.get('code', response.status_code),
         'reasons': reasons,
+        'api_status': error.get('status', ''),
     }
 
 
-def get_custom_search_fix_hints(reasons, status_code):
-    normalized = set(reasons)
+def get_vertex_search_fix_hints(status_code, message='', api_status=''):
+    normalized_message = (message or '').lower()
+    normalized_status = (api_status or '').upper()
     hints = []
 
-    if status_code == 403 and not normalized:
-        hints.append('The request reached Google but was forbidden. This is usually a Custom Search API enablement, billing, API-key restriction, or CX configuration problem.')
+    if status_code == 404:
+        hints.append('Verify VERTEX_AI_SEARCH_ENGINE_ID and VERTEX_AI_SEARCH_SERVING_CONFIG point to an existing Vertex AI Search app and serving config.')
 
-    if 'accessNotConfigured' in normalized or 'SERVICE_DISABLED' in normalized:
-        hints.append('Enable the Custom Search API in the same Google Cloud project that owns GOOGLE_SEARCH_API_KEY.')
+    if status_code == 403 or normalized_status in {'PERMISSION_DENIED', 'UNAUTHENTICATED'}:
+        hints.append('Ensure the Discovery Engine API is enabled and the service account from GOOGLE_CREDENTIALS_JSON can call Vertex AI Search.')
+        hints.append('Grant the service account a role that includes discoveryengine.servingConfigs.search on the Vertex AI Search app.')
 
-    if 'forbidden' in normalized or 'ipRefererBlocked' in normalized:
-        hints.append('Check API-key application restrictions. If the key is HTTP-referrer or IP restricted, GitHub Actions and local runs will be blocked.')
+    if 'failed_precondition' in normalized_status.lower() or 'public website search' in normalized_message:
+        hints.append('Vertex AI Search searchLite only supports public website search. For service-account auth, make sure the app is a website search app and the serving config is valid.')
 
-    if 'keyInvalid' in normalized or 'badRequest' in normalized:
-        hints.append('Verify GOOGLE_SEARCH_API_KEY is the correct key for this project and was copied fully into your environment or GitHub Secrets.')
+    if 'enterprise edition' in normalized_message:
+        hints.append('Enable Enterprise edition features for the Vertex AI Search website app before using text or image search results.')
 
-    if 'dailyLimitExceeded' in normalized or 'quotaExceeded' in normalized or 'rateLimitExceeded' in normalized:
-        hints.append('The Custom Search quota is exhausted. Check quota and billing in Google Cloud Console.')
-
-    if 'billingNotActive' in normalized:
-        hints.append('Enable billing for the Google Cloud project tied to GOOGLE_SEARCH_API_KEY. Custom Search can reject requests without active billing.')
-
-    if 'invalid' in normalized or 'keyExpired' in normalized:
-        hints.append('Recreate the API key and update GOOGLE_SEARCH_API_KEY if the current key is stale or malformed.')
+    if 'advanced website indexing' in normalized_message:
+        hints.append('Enable Advanced website indexing for the Vertex AI Search website app before using image search.')
 
     if not hints:
-        hints.append('Verify GOOGLE_SEARCH_CX belongs to a Programmable Search Engine configured for the entire web and that Image Search is enabled on that engine.')
+        hints.append('Verify the Vertex AI Search app is a website search engine, the serving config path is correct, and the service account has Discovery Engine search permission.')
 
     return hints
 
 
-def log_custom_search_failure(feature_name, topic, response):
+def log_vertex_search_failure(feature_name, topic, response):
     details = extract_google_api_error(response)
-    reasons = details['reasons']
-    print(f"Custom Search {feature_name} request failed for topic '{topic}'.")
+    message = details['message']
+    api_status = details.get('api_status', '')
+    print(f"Vertex AI Search {feature_name} request failed for topic '{topic}'.")
     print(f"- HTTP status: {details['status']}")
-    print(f"- Google message: {details['message']}")
-    if reasons:
-        print(f"- Google reasons: {', '.join(reasons)}")
+    print(f"- Google message: {message}")
+    if api_status:
+        print(f"- Google status: {api_status}")
 
     print('- Likely fixes:')
-    for hint in get_custom_search_fix_hints(reasons, response.status_code):
+    for hint in get_vertex_search_fix_hints(response.status_code, message=message, api_status=api_status):
         print(f"  * {hint}")
 
-    print('- Quick checks:')
-    print('  * Confirm GOOGLE_SEARCH_API_KEY comes from the same Google Cloud project where the Custom Search API is enabled.')
-    print('  * Confirm GOOGLE_SEARCH_CX is the Search Engine ID, not the project ID.')
-    print('  * Confirm the engine is set to search the entire web.')
-    print('  * Confirm Image Search is enabled if image fetching is failing.')
-    print('  * If running in GitHub Actions, verify the secrets are set on the repository/environment actually used by the workflow.')
+
+def build_vertex_search_headers():
+    creds = Credentials.from_service_account_info(
+        load_service_account_info(),
+        scopes=[DISCOVERY_ENGINE_SCOPE],
+    )
+    creds.refresh(GoogleAuthRequest())
+    headers = {
+        'Authorization': f'Bearer {creds.token}',
+        'Content-Type': 'application/json',
+    }
+
+    project_id = get_vertex_ai_search_project_id()
+    if project_id:
+        headers['X-Goog-User-Project'] = project_id
+
+    return headers
+
+
+def build_vertex_search_url():
+    serving_config = get_vertex_serving_config()
+    if not serving_config:
+        raise ValueError('Missing Vertex AI Search serving config. Set VERTEX_AI_SEARCH_ENGINE_ID or VERTEX_AI_SEARCH_SERVING_CONFIG.')
+    return f'https://discoveryengine.googleapis.com/v1/{serving_config}:search', serving_config
+
+
+def extract_vertex_candidate_maps(result):
+    document = result.get('document', {}) if isinstance(result, dict) else {}
+    return [
+        result if isinstance(result, dict) else {},
+        document if isinstance(document, dict) else {},
+        document.get('derivedStructData', {}) if isinstance(document, dict) else {},
+        document.get('structData', {}) if isinstance(document, dict) else {},
+        document.get('jsonData', {}) if isinstance(document, dict) else {},
+    ]
+
+
+def first_non_empty(*values):
+    for value in values:
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ''
+
+
+def extract_vertex_snippet(result):
+    for candidate in extract_vertex_candidate_maps(result):
+        snippet = first_non_empty(candidate.get('snippet', ''), candidate.get('htmlSnippet', ''))
+        if snippet:
+            return snippet
+
+        snippets = candidate.get('snippets', [])
+        if isinstance(snippets, list):
+            for entry in snippets:
+                if isinstance(entry, dict):
+                    snippet = first_non_empty(entry.get('snippet', ''), entry.get('htmlSnippet', ''))
+                    if snippet:
+                        return snippet
+
+        extractive_answers = candidate.get('extractiveAnswers', [])
+        if isinstance(extractive_answers, list):
+            for entry in extractive_answers:
+                if isinstance(entry, dict):
+                    snippet = first_non_empty(entry.get('content', ''), entry.get('snippet', ''))
+                    if snippet:
+                        return snippet
+
+    return ''
+
+
+def extract_vertex_title_and_link(result):
+    title = ''
+    link = ''
+    for candidate in extract_vertex_candidate_maps(result):
+        if not title:
+            title = first_non_empty(candidate.get('title', ''), candidate.get('htmlTitle', ''))
+        if not link:
+            image = candidate.get('image', {})
+            link = first_non_empty(
+                candidate.get('link', ''),
+                candidate.get('uri', ''),
+                image.get('link', '') if isinstance(image, dict) else '',
+                image.get('contextLink', '') if isinstance(image, dict) else '',
+            )
+        if title and link:
+            break
+    return title, link
+
+
+def run_vertex_search(topic, page_size, image_search=False):
+    url, serving_config = build_vertex_search_url()
+    payload = {
+        'servingConfig': serving_config,
+        'query': topic,
+        'pageSize': page_size,
+        'safeSearch': True,
+        'userPseudoId': 'linkedin-bot',
+    }
+
+    if image_search:
+        payload['params'] = {
+            'search_type': 1,
+            'searchType': 1,
+        }
+    else:
+        payload['contentSearchSpec'] = {
+            'snippetSpec': {
+                'returnSnippet': True,
+            }
+        }
+
+    response = requests.post(url, headers=build_vertex_search_headers(), json=payload, timeout=30)
+    if not response.ok:
+        log_vertex_search_failure('image' if image_search else 'research', topic, response)
+        response.raise_for_status()
+    return response.json()
+
 
 # ==========================================
 # 1. RESEARCH & GENERATE (GEMINI)
 # ==========================================
 def fetch_web_research(topic, num_results=3):
-    """Searches for text snippets related to the topic using Google Custom Search."""
-    print(f"Fetching web research for: {topic}")
-    url = f"https://www.googleapis.com/customsearch/v1"
-    params = {
-        'q': topic,
-        'cx': GOOGLE_SEARCH_CX,
-        'key': GOOGLE_SEARCH_API_KEY,
-        'num': num_results,
-        'safe': 'active'
-    }
-    
     research_text = ""
+    print(f"Fetching web research for: {topic}")
+
     try:
-        response = requests.get(url, params=params, timeout=20)
-        if not response.ok:
-            log_custom_search_failure('research', topic, response)
-            response.raise_for_status()
-        results = response.json()
-        if 'items' in results:
-            for item in results['items']:
-                research_text += f"- {item.get('title')}: {item.get('snippet')}\n"
-        else:
-            print(f"No research items returned for topic '{topic}'. Response keys: {list(results.keys())}")
+        results = run_vertex_search(topic, num_results, image_search=False)
+        for item in results.get('results', []):
+            title, _link = extract_vertex_title_and_link(item)
+            snippet = extract_vertex_snippet(item)
+            if title or snippet:
+                research_text += f"- {title or 'Result'}: {snippet}\n"
+
+        if not research_text:
+            print(f"No Vertex AI Search research items returned for topic '{topic}'. Response keys: {list(results.keys())}")
     except Exception as e:
-        print(f"Error fetching web research: {e}")
+        print(f"Error fetching Vertex AI Search web research: {e}")
         
     return research_text
 
@@ -357,36 +500,22 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
 # 2. IMAGE SEARCH & UPLOAD
 # ==========================================
 def fetch_images(topic, num_images=4):
-    """Searches for images related to the topic using Google Custom Search."""
     print(f"Searching for images on: {topic}")
-    url = f"https://www.googleapis.com/customsearch/v1"
-    params = {
-        'q': topic,
-        'cx': GOOGLE_SEARCH_CX,
-        'key': GOOGLE_SEARCH_API_KEY,
-        'searchType': 'image',
-        'num': num_images,
-        'safe': 'active'
-    }
+
     try:
-        response = requests.get(url, params=params, timeout=20)
-        print(f"Image search status for '{topic}': {response.status_code}")
-        if not response.ok:
-            log_custom_search_failure('image', topic, response)
-            response.raise_for_status()
-        results = response.json()
+        results = run_vertex_search(topic, num_images, image_search=True)
     except Exception as e:
-        print(f"Image search request failed for '{topic}': {e}")
+        print(f"Vertex AI Search image request failed for '{topic}': {e}")
         return []
     
     image_urls = []
-    if 'items' in results:
-        for index, item in enumerate(results['items'], start=1):
-            image_url = item.get('link', '')
+    if 'results' in results:
+        for index, item in enumerate(results['results'], start=1):
+            _title, image_url = extract_vertex_title_and_link(item)
             image_urls.append(image_url)
-            print(f"Image search result {index} for '{topic}': {image_url}")
+            print(f"Vertex AI Search image result {index} for '{topic}': {image_url}")
     else:
-        print(f"No image items returned for '{topic}'. Raw response: {json.dumps(results)[:1000]}")
+        print(f"No Vertex AI Search image items returned for '{topic}'. Raw response: {json.dumps(results)[:1000]}")
 
     return image_urls
 

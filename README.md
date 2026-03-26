@@ -19,6 +19,7 @@ The current deployment model is:
 * Cloudflare Workers verifies Google ID tokens, enforces the allowlist, stores shared config in KV, and proxies GitHub dispatch calls
 * Cloudflare Workers also owns the Instagram, LinkedIn, and Meta OAuth callback flows, exchanges auth codes server-side, and stores channel tokens encrypted in KV
 * A Google service account gives the Worker access to the shared Google Sheet
+* Vertex AI Search provides website-backed research snippets and website image results for the Python draft workflow
 * GitHub Actions runs the Python draft and publish jobs
 * Google Drive and Google Docs continue to store media and published-post logs for the automation workflow
 
@@ -37,7 +38,8 @@ The short version is:
 
 1. Run `python setup.py` to create the shared Google resources.
 2. Run `python setup.py --all` to bootstrap the Worker config, deploy the Worker, verify the production URL, and sync GitHub secrets when `wrangler` and `gh` are available.
-3. Keep the GitHub Actions secrets used by the Python automation for any values you do not provide to the setup script.
+3. Configure Vertex AI Search for website search and add the Vertex environment variables used by the Python automation.
+4. Keep the GitHub Actions secrets used by the Python automation for any values you do not provide to the setup script.
 
 Only one Cloudflare deployment target is kept in this repository: the API Worker defined in [worker/wrangler.jsonc](worker/wrangler.jsonc). The frontend stays on GitHub Pages.
 

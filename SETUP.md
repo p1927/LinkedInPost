@@ -33,7 +33,7 @@ Create a Google Cloud project, enable the APIs below, and create a service accou
 * Google Sheets API
 * Google Drive API
 * Google Docs API
-* Custom Search API
+* Discovery Engine API
 
 Then run the local bootstrap script:
 
@@ -146,7 +146,38 @@ Do not expose GitHub tokens, service-account JSON, or owner-only configuration i
 
 If you run `python setup.py --all` and `gh` is authenticated, the script will try to write these repository secrets automatically.
 
-## Step 5: Configure GitHub Actions secrets
+## Step 5: Configure Vertex AI Search
+
+Vertex AI Search is now the only supported search backend for research and image discovery in the Python draft workflow.
+
+In Google Cloud Console, create a Vertex AI Search app with website data:
+
+1. Open AI Applications in Google Cloud Console.
+2. Create an app for website search.
+3. Add the websites you want the bot to search.
+4. Wait for the initial indexing pass to finish.
+5. Turn on Enterprise edition features for the app.
+6. Turn on Advanced website indexing if you want image search results.
+7. Copy the app ID from the AI Applications list.
+
+The Python job uses the service account from `GOOGLE_CREDENTIALS_JSON` to call Discovery Engine. Grant that service account a role that includes `discoveryengine.servingConfigs.search` on the Vertex AI Search app.
+
+Set these environment variables locally and in GitHub Actions:
+
+* `VERTEX_AI_SEARCH_PROJECT_ID`
+* `VERTEX_AI_SEARCH_LOCATION`
+* `VERTEX_AI_SEARCH_ENGINE_ID`
+* `VERTEX_AI_SEARCH_SERVING_CONFIG` if you need a non-default serving config
+
+Use `global` for `VERTEX_AI_SEARCH_LOCATION` unless your app is configured differently.
+
+If you omit `VERTEX_AI_SEARCH_SERVING_CONFIG`, the bot builds this default path:
+
+```text
+projects/<project-id>/locations/<location>/collections/default_collection/engines/<engine-id>/servingConfigs/default_search
+```
+
+## Step 6: Configure GitHub Actions secrets
 
 The scheduled Python jobs still need their existing secrets.
 Keep these configured in GitHub Actions:
@@ -156,8 +187,10 @@ Keep these configured in GitHub Actions:
 * `GOOGLE_DOC_ID`
 * `GOOGLE_CREDENTIALS_JSON`
 * `GEMINI_API_KEY`
-* `GOOGLE_SEARCH_API_KEY`
-* `GOOGLE_SEARCH_CX`
+* `VERTEX_AI_SEARCH_PROJECT_ID`
+* `VERTEX_AI_SEARCH_LOCATION`
+* `VERTEX_AI_SEARCH_ENGINE_ID`
+* `VERTEX_AI_SEARCH_SERVING_CONFIG` if you use a custom serving config
 * `LINKEDIN_ACCESS_TOKEN`
 * `LINKEDIN_PERSON_URN`
 
@@ -167,7 +200,7 @@ Telegram delivery is Worker-only. It does not require any additional GitHub Acti
 
 When `python setup.py --sync-github-secrets` runs with the corresponding environment variables present, it will sync any of these values that it can resolve.
 
-## Step 6: Deploy the frontend
+## Step 7: Deploy the frontend
 
 Enable GitHub Pages with GitHub Actions as the source.
 Set the `VITE_GOOGLE_CLIENT_ID` and `VITE_WORKER_URL` repository secrets used by [deploy-pages.yml](.github/workflows/deploy-pages.yml).
@@ -221,7 +254,10 @@ Add these too if you want `setup.py --sync-github-secrets` to populate the autom
 
 ```bash
 export GEMINI_API_KEY='...'
-export GOOGLE_SEARCH_API_KEY='...'
-export GOOGLE_SEARCH_CX='...'
+export VERTEX_AI_SEARCH_PROJECT_ID='your-gcp-project-id'
+export VERTEX_AI_SEARCH_LOCATION='global'
+export VERTEX_AI_SEARCH_ENGINE_ID='your-vertex-app-id'
+# Optional when using the default serving config path
+export VERTEX_AI_SEARCH_SERVING_CONFIG='projects/your-gcp-project-id/locations/global/collections/default_collection/engines/your-vertex-app-id/servingConfigs/default_search'
 export LINKEDIN_ACCESS_TOKEN='...'
 ```
