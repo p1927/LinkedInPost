@@ -116,7 +116,7 @@ export function DashboardSettingsDrawer({
                     <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
                   </div>
                   <p className="rounded-xl border border-border bg-surface-muted/60 px-3 py-2.5 text-xs leading-5 text-muted">
-                    Publish channel, recipient, AI model, and queue refresh live in the <strong className="font-semibold text-ink">Delivery</strong> sidebar so the team has one place to operate day to day.
+                    Publish target and recipients stay in the <strong className="font-semibold text-ink">Delivery</strong> sidebar on the dashboard. AI model and sheet refresh sit in the dashboard toolbar.
                   </p>
                 </div>
               </div>

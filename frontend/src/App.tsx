@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import clsx from 'clsx'
 import { Share2, Sparkles, TableProperties } from 'lucide-react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/dashboard'
@@ -21,6 +22,7 @@ function App() {
   const [session, setSession] = useState<AppSession | null>(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [workspacePage, setWorkspacePage] = useState<'dashboard' | 'settings'>('dashboard')
 
   useEffect(() => {
     if (!idToken) {
@@ -54,6 +56,12 @@ function App() {
       })
   }, [api, idToken])
 
+  useEffect(() => {
+    if (session && !session.isAdmin && workspacePage === 'settings') {
+      setWorkspacePage('dashboard')
+    }
+  }, [session, workspacePage])
+
   const handleLogin = (newToken: string) => {
     setErrorMessage('')
     setIdToken(newToken || null)
@@ -70,12 +78,47 @@ function App() {
     <AlertProvider>
       <div className="flex min-h-screen w-full flex-col bg-canvas font-sans text-ink">
         <header className="w-full border-b border-border bg-surface px-4 py-3.5 sm:px-6">
-          <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg">
-                CB
+          <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg">
+                  CB
+                </div>
+                <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
               </div>
-              <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
+              {idToken && session ? (
+                <nav
+                  className="flex items-center gap-0.5 rounded-xl border border-border bg-canvas p-0.5"
+                  aria-label="Workspace"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setWorkspacePage('dashboard')}
+                    className={clsx(
+                      'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
+                      workspacePage === 'dashboard'
+                        ? 'bg-surface text-ink shadow-sm'
+                        : 'text-muted hover:text-ink',
+                    )}
+                  >
+                    Dashboard
+                  </button>
+                  {session.isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => setWorkspacePage('settings')}
+                      className={clsx(
+                        'rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors',
+                        workspacePage === 'settings'
+                          ? 'bg-surface text-ink shadow-sm'
+                          : 'text-muted hover:text-ink',
+                      )}
+                    >
+                      Settings
+                    </button>
+                  ) : null}
+                </nav>
+              ) : null}
             </div>
             {idToken ? <GoogleLoginButton onLogin={handleLogin} /> : null}
           </div>
@@ -158,6 +201,8 @@ function App() {
               idToken={idToken}
               session={session}
               api={api}
+              workspacePage={workspacePage}
+              onWorkspacePageChange={setWorkspacePage}
               onSaveConfig={async (config) => {
                 const updatedConfig = await api.saveConfig(idToken, config)
                 setSession((current) => (current ? { ...current, config: updatedConfig } : current))

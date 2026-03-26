@@ -7,15 +7,15 @@ import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
 import { useDashboardQueue } from './hooks/useDashboardQueue';
 import { DashboardSettingsDrawer } from './components/DashboardSettingsDrawer';
-import { DashboardOverview } from './tabs/DashboardOverview';
+import { DashboardToolbar } from './components/DashboardToolbar';
 import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
+import { ArrowLeft } from 'lucide-react';
 import { getChannelOption } from '../../integrations/channels';
 import { normalizeTelegramChatId } from '../../integrations/telegram';
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { ReviewWorkspace } from '../../features/review/ReviewWorkspace';
 import { ApprovedPostPreview } from '../ApprovedPostPreview';
-import { type SheetRow } from '../../services/sheets';
 
 export function Dashboard({
   idToken,
@@ -23,12 +23,16 @@ export function Dashboard({
   api,
   onSaveConfig,
   onAuthExpired,
+  workspacePage,
+  onWorkspacePageChange,
 }: {
   idToken: string;
   session: AppSession;
   api: BackendApi;
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
+  workspacePage: 'dashboard' | 'settings';
+  onWorkspacePageChange: (page: 'dashboard' | 'settings') => void;
 }) {
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
@@ -124,18 +128,12 @@ export function Dashboard({
   }, { all: 0, pending: 0, drafted: 0, approved: 0, published: 0 });
 
   const filteredRows = queueHook.rows.filter((row) => statusFilter === 'all' || getNormalizedRowStatus(row.status) === statusFilter);
-  const queueSpotlightRows = filteredRows.slice(0, 3);
-  
+
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
     : channelsHook.selectedChannel === 'instagram'
       ? (session.config.instagramUsername ? `@${session.config.instagramUsername}` : 'Connected Instagram account')
       : 'Connected LinkedIn account';
-
-  const handleSpotlightRowActivate = useCallback((row: SheetRow) => {
-    setStatusFilter(getNormalizedRowStatus(row.status) as QueueFilter);
-    setQueueScrollTargetId(`${row.sourceSheet}-${row.rowIndex}`);
-  }, []);
 
   const handleScrollTargetHandled = useCallback(() => {
     setQueueScrollTargetId(null);
@@ -197,15 +195,10 @@ export function Dashboard({
       manualRecipientId={channelsHook.manualRecipientId}
       setManualRecipientId={channelsHook.setManualRecipientId}
       lastDeliverySummary={lastDeliverySummary}
-      googleModel={settingsHook.googleModel}
-      setGoogleModel={settingsHook.setGoogleModel}
-      availableModels={settingsHook.availableModels}
       linkedinConfigured={linkedinConfigured}
       instagramConfigured={instagramConfigured}
       telegramConfigured={telegramConfigured}
       whatsappConfigured={whatsappConfigured}
-      onRefreshQueue={() => void loadData()}
-      queueLoading={queueHook.loading}
     />
   );
 
@@ -256,32 +249,71 @@ export function Dashboard({
     />
   );
 
+  if (workspacePage === 'settings' && session.isAdmin) {
+    return (
+      <div className="w-full pb-12">
+        <div className="mb-8">
+          <button
+            type="button"
+            onClick={() => onWorkspacePageChange('dashboard')}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            Back to dashboard
+          </button>
+          <h2 className="mt-4 font-heading text-2xl font-semibold text-ink">Workspace settings</h2>
+          <p className="mt-1 text-sm text-muted">Google Sheet, GitHub Actions, and channel connections.</p>
+        </div>
+        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+          {settingsContent}
+        </div>
+
+        {queueHook.selectedRowForReview && (
+          <ReviewWorkspace
+            row={queueHook.selectedRowForReview}
+            deliveryChannel={channelsHook.selectedChannel}
+            sharedRules={session.config.generationRules}
+            googleModel={settingsHook.googleModel}
+            onApprove={queueHook.handleApproveVariant}
+            onGenerateQuickChange={queueHook.handleGenerateQuickChange}
+            onGenerateVariants={queueHook.handleGenerateVariantsPreview}
+            onSaveVariants={queueHook.handleSaveDraftVariants}
+            onFetchMoreImages={queueHook.handleFetchReviewImages}
+            onUploadImage={queueHook.handleUploadReviewImage}
+            onDownloadImage={queueHook.handleDownloadReviewImage}
+            onCancel={() => queueHook.setSelectedRowForReview(null)}
+          />
+        )}
+
+        {queueHook.selectedApprovedRowPreview && (
+          <ApprovedPostPreview
+            row={queueHook.selectedApprovedRowPreview}
+            onClose={() => queueHook.setSelectedApprovedRowPreview(null)}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="w-full pb-12">
-      <div className="relative flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
+      <DashboardToolbar
+        googleModel={settingsHook.googleModel}
+        setGoogleModel={settingsHook.setGoogleModel}
+        availableModels={settingsHook.availableModels}
+        onRefreshQueue={() => void loadData()}
+        queueLoading={queueHook.loading}
+      />
+
+      <div className="relative mt-5 flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
         <aside className="custom-scrollbar sticky top-20 flex max-h-[calc(100vh-5rem)] w-full shrink-0 flex-col gap-6 overflow-y-auto pb-4 pr-1 lg:w-[320px] xl:w-[360px]">
           <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card">
             <h2 className="font-heading text-lg font-semibold text-ink">Delivery</h2>
             {deliveryContent}
           </div>
-
-          {session.isAdmin ? (
-            <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card">
-              <h2 className="font-heading text-lg font-semibold text-ink">Workspace settings</h2>
-              {settingsContent}
-            </div>
-          ) : null}
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col space-y-6">
-          <DashboardOverview
-            statusFilter={statusFilter}
-            queueSpotlightRows={queueSpotlightRows}
-            getStatusColor={queueHook.getStatusColor}
-            onSpotlightRowActivate={handleSpotlightRowActivate}
-          />
-          {queueContent}
-        </div>
+        <div className="flex min-w-0 flex-1 flex-col">{queueContent}</div>
       </div>
 
       {queueHook.selectedRowForReview && (
