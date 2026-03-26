@@ -444,6 +444,33 @@ def extract_vertex_summary_text(results):
     return ''
 
 
+def extract_requested_word_limit(*texts):
+    patterns = [
+        r'\b(?:make|keep|limit|under|within)\s+(?:it|them|each variant|each post|the post)?\s*(\d+)\s+words?\s+or\s+less\b',
+        r'\b(\d+)\s+words?\s+or\s+less\b',
+        r'\bunder\s+(\d+)\s+words?\b',
+        r'\bwithin\s+(\d+)\s+words?\b',
+        r'\bmax(?:imum)?\s+(\d+)\s+words?\b',
+        r'\b(\d+)\s+word\b',
+    ]
+
+    for text in texts:
+        normalized = normalize_search_text(text)
+        if not normalized:
+            continue
+        for pattern in patterns:
+            match = re.search(pattern, normalized, flags=re.IGNORECASE)
+            if match:
+                try:
+                    limit = int(match.group(1))
+                except (TypeError, ValueError):
+                    continue
+                if limit > 0:
+                    return limit
+
+    return None
+
+
 def extract_vertex_snippet(result):
     for candidate in extract_vertex_candidate_maps(result):
         snippet = first_non_empty(candidate.get('snippet', ''), candidate.get('htmlSnippet', ''))
@@ -501,7 +528,6 @@ def run_vertex_search(topic, page_size, image_search=False):
     if image_search:
         payload['params'] = {
             'search_type': 1,
-            'searchType': 1,
         }
     else:
         payload['contentSearchSpec'] = {
@@ -561,6 +587,7 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
 
     # Fetch web research
     web_research = fetch_web_research(topic)
+    word_limit = extract_requested_word_limit(refinement_instructions, topic)
 
     refinement_context = ""
     if base_text:
@@ -568,6 +595,10 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
 
     if refinement_instructions:
         refinement_context += f'\nApply these improvement notes while generating the new variants:\n{refinement_instructions}\n'
+
+    word_limit_instruction = ""
+    if word_limit:
+        word_limit_instruction = f"Each variant must be {word_limit} words or fewer."
 
     prompt = f"""
     Act as an expert LinkedIn ghostwriter. Write 4 distinct, engaging variants for a LinkedIn post about the topic: "{topic}".
@@ -582,6 +613,7 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
 
     Make each variant distinct in tone (e.g., 1. Storytelling, 2. Analytical/Data-driven, 3. Short & Punchy, 4. Question/Engagement focused).
     If a draft and refinement notes are provided, treat them as instructions to improve the post instead of starting from scratch.
+    {word_limit_instruction}
     Do NOT include hashtags in the text block itself, but keep them at the end.
     
     Output JSON format ONLY:
