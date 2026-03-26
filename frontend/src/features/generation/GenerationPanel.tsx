@@ -26,14 +26,14 @@ export function GenerationPanel({
 }: GenerationPanelProps) {
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white/90 p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Generation preview state</p>
-      <h4 className="mt-2 text-lg font-semibold text-slate-900">Preview first, then compare and apply</h4>
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Refine with AI</p>
+      <h4 className="mt-2 text-lg font-semibold text-slate-900">Try rewrites before you commit to one</h4>
       <p className="mt-2 text-sm leading-6 text-slate-600">
         Quick Change returns one preview. Generate 4 Variants returns four preview options. Neither action writes to Sheets.
       </p>
 
       <label className="mt-4 block text-sm font-semibold text-slate-700" htmlFor="generation-instruction">
-        Per-run instruction
+        Rewrite direction
       </label>
       <textarea
         id="generation-instruction"

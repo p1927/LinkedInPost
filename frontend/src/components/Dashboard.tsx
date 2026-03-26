@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bot, Eye, MessageCircle, Phone, Plus, RefreshCw, Send, Settings, Trash2 } from 'lucide-react';
+import { Bot, Eye, MessageCircle, Phone, Plus, RefreshCw, Send, Settings, Trash2, X } from 'lucide-react';
 import {
   BackendApi,
   isAuthErrorMessage,
@@ -92,6 +92,7 @@ function tryParseTelegramRecipients(input: string): TelegramRecipient[] {
 }
 
 type PopupProvider = 'instagram' | 'linkedin' | 'whatsapp';
+type QueueFilter = 'all' | 'pending' | 'drafted' | 'approved' | 'published';
 
 interface OAuthPopupMessage {
   source: 'channel-bot-oauth';
@@ -214,6 +215,8 @@ export function Dashboard({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastDeliverySummary, setLastDeliverySummary] = useState<{
     topic: string;
     channel: ChannelId;
@@ -357,6 +360,33 @@ export function Dashboard({
   const linkedinConfigured = Boolean(session.config.linkedinPersonUrn && session.config.hasLinkedInAccessToken);
   const channelActionBusy = connectingChannel !== null || disconnectingChannel !== null;
   const telegramConfigured = Boolean(session.config.hasTelegramBotToken);
+  const queueCounts = rows.reduce<Record<QueueFilter, number>>((accumulator, row) => {
+    const status = getNormalizedRowStatus(row.status) as Exclude<QueueFilter, 'all'>;
+    accumulator.all += 1;
+    if (status in accumulator) {
+      accumulator[status] += 1;
+    }
+    return accumulator;
+  }, {
+    all: 0,
+    pending: 0,
+    drafted: 0,
+    approved: 0,
+    published: 0,
+  });
+  const filteredRows = rows.filter((row) => statusFilter === 'all' || getNormalizedRowStatus(row.status) === statusFilter);
+  const filterOptions: Array<{ value: QueueFilter; label: string }> = [
+    { value: 'all', label: 'All' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'drafted', label: 'Drafted' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'published', label: 'Published' },
+  ];
+  const deliveryTargetSummary = selectedChannelOption.requiresRecipient
+    ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
+    : selectedChannel === 'instagram'
+      ? (session.config.instagramUsername ? `@${session.config.instagramUsername}` : 'Connected Instagram account')
+      : 'Connected LinkedIn account';
 
   const loadData = async (quiet = false) => {
     if (!session.config.spreadsheetId) return;
@@ -939,97 +969,121 @@ export function Dashboard({
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto w-full p-4 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-      {/* Left Sidebar */}
-      <div className="w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col gap-6 sticky top-[90px] max-h-[calc(100vh-100px)] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-        
-        {/* Content Pipeline Card */}
-        <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-3xl p-5">
-          
-        <div>
-          <h2 className="text-2xl font-bold text-deep-indigo font-heading tracking-tight">Content Pipeline</h2>
-          <p className="mt-1 text-sm text-slate-500">Workspace: <span className="font-medium text-slate-700">{session.email}</span></p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex flex-1 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
-            <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-primary" />
-              <span className="text-slate-500">Model</span>
+    <div className="max-w-[1600px] mx-auto w-full px-4 pb-16 space-y-6">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <div className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Content pipeline</p>
+              <h2 className="mt-2 text-3xl font-bold text-deep-indigo font-heading tracking-tight">Queue first, settings second</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Review the pipeline, pick the next item, and publish through one active delivery target instead of juggling admin controls all day.
+              </p>
+              <p className="mt-3 text-sm text-slate-500">Workspace: <span className="font-medium text-slate-700">{session.email}</span></p>
             </div>
-            <select
-              value={googleModel}
-              onChange={(e) => setGoogleModel(e.target.value)}
-              className="bg-transparent font-medium text-deep-indigo outline-none cursor-pointer text-right max-w-[120px] truncate"
-            >
-              {availableModels.map((model) => (
-                <option key={model.value} value={model.value}>
-                  {model.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          
-          <button 
-            onClick={() => void loadData(false)}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:text-deep-indigo transition-all duration-200 shadow-sm disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => void loadData(false)}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh queue
+              </button>
+              {session.isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                >
+                  <Settings className="h-4 w-4" />
+                  Workspace settings
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setStatusFilter(option.value)}
+                className={`rounded-[24px] border px-4 py-4 text-left transition-all ${statusFilter === option.value ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+              >
+                <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${statusFilter === option.value ? 'text-slate-300' : 'text-slate-400'}`}>{option.label}</p>
+                <p className="mt-2 text-2xl font-semibold">{queueCounts[option.value]}</p>
+              </button>
+            ))}
+          </div>
+
+          {lastDeliverySummary ? (
+            <div className="mt-6 rounded-[28px] border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
+                <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+                  {getChannelLabel(lastDeliverySummary.channel)}
+                </span>
+                <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
+                  {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
+                  ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
+                  : lastDeliverySummary.channel === 'instagram'
+                    ? lastDeliverySummary.recipientLabel === 'connected account'
+                      ? 'Published to Instagram using the connected professional account.'
+                      : `Published to Instagram as @${lastDeliverySummary.recipientLabel}.`
+                    : 'Delivered to LinkedIn using the currently approved text and selected media.'}
+              </p>
+            </div>
+          ) : null}
         </div>
 
-        {/* Delivery Card */}
-        <div className="flex flex-col gap-4 rounded-3xl border border-white/50 bg-white/80 p-5 shadow-xl">
-          
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Delivery</p>
-          <h3 className="mt-2 text-xl font-bold text-deep-indigo font-heading">Choose channel</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Approved rows publish through the channel selected here.</p>
-        </div>
+        <div className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Active delivery target</p>
+          <div className="mt-2 flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-2xl font-bold text-deep-indigo font-heading">{getChannelLabel(selectedChannel)}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Approved posts will use this destination until you change it.</p>
+            </div>
+            <label className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
+              <select
+                value={selectedChannel}
+                onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
+                className="w-full bg-transparent text-base font-semibold text-deep-indigo outline-none"
+              >
+                {CHANNEL_OPTIONS.map((channel) => (
+                  <option key={channel.value} value={channel.value}>
+                    {channel.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-        <div className="grid gap-4 flex flex-col">
-          <label className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/50 cursor-pointer">
-            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Channel</span>
-            <select
-              value={selectedChannel}
-              onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-              className="w-full bg-transparent text-base font-semibold text-deep-indigo outline-none cursor-pointer"
-            >
-              {CHANNEL_OPTIONS.map((channel) => (
-                <option key={channel.value} value={channel.value}>
-                  {channel.label}
-                </option>
-              ))}
-            </select>
-            <span className="mt-2 block text-xs leading-5 text-slate-500">{selectedChannelOption.description}</span>
-          </label>
+          <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
+            <p className="mt-2 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">{selectedChannelOption.description}</p>
 
-          <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
             {selectedChannelOption.requiresRecipient ? (
               <>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setRecipientMode('saved')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                      recipientMode === 'saved'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'saved' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
                   >
                     {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setRecipientMode('manual')}
-                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                      recipientMode === 'manual'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'manual' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
                   >
                     {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
                   </button>
@@ -1071,723 +1125,675 @@ export function Dashboard({
                     />
                   </label>
                 )}
-
-                <p className="mt-3 text-xs leading-5 text-slate-500">
-                  {selectedChannel === 'telegram'
-                    ? 'Sending uses the Telegram Bot API directly from the Worker. Make sure the bot is already a member of the destination chat or channel before publishing.'
-                    : 'Sending uses Meta\'s WhatsApp Cloud API directly from the Worker. Free-form text usually requires an active customer conversation window.'}
-                </p>
               </>
             ) : selectedChannel === 'instagram' ? (
-              <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Instagram flow</span>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
-                  {getInstagramDeliveryDescription()}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {getInstagramDeliveryHint()}
-                </p>
-              </div>
+              <>
+                <p className="mt-4 text-sm leading-6 text-slate-700">{getInstagramDeliveryDescription()}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">{getInstagramDeliveryHint()}</p>
+              </>
             ) : (
-              <div className="flex h-full flex-col justify-center rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-4">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">LinkedIn flow</span>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
-                  {getLinkedInDeliveryDescription()}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
-                  {getLinkedInDeliveryHint()}
-                </p>
-              </div>
+              <>
+                <p className="mt-4 text-sm leading-6 text-slate-700">{getLinkedInDeliveryDescription()}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">{getLinkedInDeliveryHint()}</p>
+              </>
             )}
           </div>
         </div>
-      
+      </section>
+
+      <section className="rounded-[32px] border border-white/50 bg-white/85 p-6 shadow-xl backdrop-blur-md">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Add to queue</p>
+            <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Capture the next topic</h3>
+          </div>
+          <form onSubmit={handleAddTopic} className="flex w-full max-w-3xl flex-col gap-3 sm:flex-row sm:items-stretch">
+            <input
+              type="text"
+              value={newTopic}
+              onChange={(e) => setNewTopic(e.target.value)}
+              placeholder="Add a new topic for research..."
+              className="flex-1 rounded-2xl border border-slate-200/60 bg-white/90 px-6 py-4 text-lg text-slate-900 shadow-sm outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-primary/30 focus:ring-2 focus:ring-primary/50"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !newTopic.trim()}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-lg font-bold text-white shadow-sm transition-all duration-300 hover:bg-indigo-600 hover:shadow-md disabled:opacity-50"
+            >
+              <Plus className="h-6 w-6" /> <span className="hidden sm:inline">Add topic</span><span className="sm:hidden">Add</span>
+            </button>
+          </form>
         </div>
-        
-        {session.isAdmin && (
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-bold text-deep-indigo font-heading flex items-center gap-2 px-1">
-              <Settings className="w-5 h-5 text-primary" /> Workspace Settings
-            </h3>
-            
-            <div className="flex flex-col gap-3">
-              
-          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
-              Workspace core
-              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="p-4 pt-0 border-t border-slate-100">
-              
-            
-            
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Google Spreadsheet ID</label>
+      </section>
 
-            {lastDeliverySummary ? (
-              <div className="rounded-2xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-5 shadow-[0_12px_30px_rgba(16,185,129,0.08)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last delivery</p>
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  
-                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
-                    {getChannelLabel(lastDeliverySummary.channel)}
-                  </span>
-                  <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-emerald-200">
-                    {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
-                    ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
-                    : lastDeliverySummary.channel === 'instagram'
-                      ? lastDeliverySummary.recipientLabel === 'connected account'
-                        ? 'Published to Instagram using the connected professional account.'
-                        : `Published to Instagram as @${lastDeliverySummary.recipientLabel}.`
-                      : 'Delivered to LinkedIn using the currently approved text and selected media.'}
-                </p>
-              </div>
-            ) : null}
-                <input
-                  type="text"
-                  value={sheetIdInput}
-                  onChange={(e) => setSheetIdInput(e.target.value)}
-                  placeholder="e.g. 1BxiMVs0XRYFgwnV_v..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                />
-                <p className="text-xs text-slate-500 mt-1.5">Found in the URL of your Google Sheet.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Default Channel</label>
-                <select
-                  value={selectedChannel}
-                  onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 cursor-pointer"
-                >
-                  {CHANNEL_OPTIONS.map((channel) => (
-                    <option key={channel.value} value={channel.value}>
-                      {channel.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-slate-500 mt-1.5">Used as the default destination in the delivery panel.</p>
-              </div>
-            </div>
-          
-            </div>
-          </details>
-
-          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
-              GitHub Actions
-              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="p-4 pt-0 border-t border-slate-100">
-              
-            
-            
-            <p className="mt-2 text-xs leading-5 text-slate-500">GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.</p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">GitHub Repository</label>
-                <input
-                  type="text"
-                  value={githubRepo}
-                  onChange={(e) => setGithubRepo(e.target.value)}
-                  placeholder="e.g. username/repo-name"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Google Model</label>
-                <select
-                  value={googleModel}
-                  onChange={(e) => setGoogleModel(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200 cursor-pointer"
-                >
-                  {availableModels.map((model) => (
-                    <option key={model.value} value={model.value}>
-                      {model.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Shared Generation Rules</label>
-                <textarea
-                  value={generationRules}
-                  onChange={(e) => setGenerationRules(e.target.value)}
-                  placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
-                  className="min-h-[120px] w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                />
-                <p className="mt-1.5 text-xs text-slate-500">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Replace GitHub Personal Access Token</label>
-                <input
-                  type="password"
-                  value={githubTokenInput}
-                  onChange={(e) => setGithubTokenInput(e.target.value)}
-                  placeholder={session.config.hasGitHubToken ? 'Leave blank to keep the current token' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                />
-                <p className="text-xs text-slate-500 mt-1.5">
-                  {session.config.hasGitHubToken
-                    ? 'A token is already stored. Enter a new one only when you want to rotate it.'
-                    : 'Required once so the backend can dispatch the GitHub workflows.'}
-                </p>
-              </div>
-            </div>
-          
-            </div>
-          </details>
-
-          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
-              Instagram Publishing
-              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="p-4 pt-0 border-t border-slate-100">
-              
-            
-            
-            <p className="mt-2 text-xs leading-5 text-slate-500">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-slate-300'}`}></div>
-                  <p className="text-sm font-medium text-slate-700">
-                    {session.config.hasInstagramAccessToken && session.config.instagramUserId
-                      ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
-                      : session.config.instagramAuthAvailable
-                        ? 'No Instagram professional account connected yet.'
-                        : 'Instagram app credentials are still missing from the Worker environment.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleInstagramConnection()}
-                  disabled={channelActionBusy || !session.config.instagramAuthAvailable}
-                  className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm active:scale-[0.98]"
-                >
-                  {connectingChannel === 'instagram'
-                    ? 'Opening Instagram approval...'
-                    : session.config.hasInstagramAccessToken
-                      ? 'Reconnect Instagram'
-                      : 'Connect Instagram'}
-                </button>
-                {session.config.hasInstagramAccessToken ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleDisconnectChannel('instagram')}
-                    disabled={channelActionBusy}
-                    className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {disconnectingChannel === 'instagram' ? 'Disconnecting Instagram...' : 'Disconnect Instagram'}
-                  </button>
-                ) : null}
-              </div>
-              <p className="text-xs text-slate-500">
-                {session.config.instagramAuthAvailable
-                  ? 'The Worker opens Instagram approval in a popup, exchanges the code server-side, and stores the long-lived token securely.'
-                  : 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in the Worker before this button can be used.'}
+      <section className="rounded-[32px] border border-white/50 bg-white/85 shadow-xl backdrop-blur-md overflow-hidden">
+        <div className="border-b border-slate-200/80 px-6 py-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Queue</p>
+              <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Focus on the next action, not the whole system</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Every row surfaces one primary next step based on status. Filter the queue when you want a narrower working set.
               </p>
             </div>
-          
-            </div>
-          </details>
-
-          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
-              LinkedIn Publishing
-              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="p-4 pt-0 border-t border-slate-100">
-              
-            
-            
-            <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-slate-300'}`}></div>
-                  <p className="text-sm font-medium text-slate-700">
-                    {session.config.hasLinkedInAccessToken
-                      ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
-                      : session.config.linkedinAuthAvailable
-                        ? 'No LinkedIn account connected yet.'
-                        : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map((option) => (
                 <button
+                  key={`chip-${option.value}`}
                   type="button"
-                  onClick={() => void handleLinkedInConnection()}
-                  disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
-                  className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50 shadow-sm active:scale-[0.98]"
+                  onClick={() => setStatusFilter(option.value)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${statusFilter === option.value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                 >
-                  {connectingChannel === 'linkedin'
-                    ? 'Opening LinkedIn approval...'
-                    : session.config.hasLinkedInAccessToken
-                      ? 'Reconnect LinkedIn'
-                      : 'Connect LinkedIn'}
+                  {option.label} ({queueCounts[option.value]})
                 </button>
-                {session.config.hasLinkedInAccessToken ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleDisconnectChannel('linkedin')}
-                    disabled={channelActionBusy}
-                    className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {disconnectingChannel === 'linkedin' ? 'Disconnecting LinkedIn...' : 'Disconnect LinkedIn'}
-                  </button>
-                ) : null}
-              </div>
-              <p className="text-xs text-slate-500">
-                {session.config.linkedinAuthAvailable
-                  ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
-                  : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
-              </p>
-            </div>
-          
-            </div>
-          </details>
-
-          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
-              Telegram Delivery
-              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="p-4 pt-0 border-t border-slate-100">
-              
-            
-            
-            <p className="mt-2 text-xs leading-5 text-slate-500">This path sends approved content directly through the Telegram Bot API.</p>
-            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-              <div className="space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-slate-300'}`}></div>
-                  <p className="text-sm font-medium text-slate-700">
-                    {session.config.hasTelegramBotToken
-                      ? 'Telegram bot token is stored in the Worker.'
-                      : 'No Telegram bot token stored yet.'}
-                  </p>
-                </div>
-              </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Replace Telegram Bot Token</label>
-                  <input
-                    type="password"
-                    value={telegramBotTokenInput}
-                    onChange={(e) => setTelegramBotTokenInput(e.target.value)}
-                    placeholder={session.config.hasTelegramBotToken ? 'Leave blank to keep the current bot token' : '123456789:AA...'}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                  />
-                  <p className="text-xs text-slate-500 mt-1.5">
-                    {session.config.hasTelegramBotToken
-                      ? 'A bot token is already stored. Enter a new one only when you want to rotate it.'
-                      : 'Create a bot with BotFather, then paste the token here once so the Worker can deliver messages.'}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Saved Chats</label>
-                <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Quick add</p>
-                  <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
-                    <input
-                      type="text"
-                      value={telegramDraftLabel}
-                      onChange={(e) => {
-                        setTelegramDraftLabel(e.target.value);
-                        setTelegramVerification(null);
-                      }}
-                      placeholder="Team channel"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-primary/50"
-                    />
-                    <input
-                      type="text"
-                      value={telegramDraftChatId}
-                      onChange={(e) => {
-                        setTelegramDraftChatId(e.target.value);
-                        setTelegramVerification(null);
-                      }}
-                      placeholder="@my_channel or 123456789 / -1001234567890"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-primary/50"
-                    />
-                    <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
-                      <button
-                        type="button"
-                        onClick={() => void handleVerifyTelegramChat()}
-                        disabled={verifyingTelegramChat}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
-                        {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAddTelegramRecipient}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800"
-                      >
-                        <Plus className="h-4 w-4" /> Add chat
-                      </button>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-xs text-slate-500">Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.</p>
-                  {telegramVerification ? (
-                    <div
-                      className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success'
-                        ? 'border-emerald-200 bg-emerald-50/80 text-emerald-800'
-                        : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}
-                    >
-                      <p className="font-semibold">{telegramVerification.message}</p>
-                      {telegramVerification.kind === 'success' && telegramVerification.result ? (
-                        <p className="mt-1 text-xs opacity-80">
-                          Saved target will use {telegramVerification.result.chatId}
-                          {telegramVerification.result.username ? ` as @${telegramVerification.result.username}` : ''}.
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {selectedChannel === 'telegram' && recipientMode === 'manual' ? (
-                    <button
-                      type="button"
-                      onClick={handleUseManualTelegramChat}
-                      className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-indigo-600"
-                    >
-                      <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
-                    </button>
-                  ) : null}
-                </div>
-
-                {parsedTelegramRecipients.length > 0 ? (
-                  <div className="mt-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Saved now</p>
-                    <div className="mt-3 space-y-2">
-                      {parsedTelegramRecipients.map((recipient) => (
-                        <div
-                          key={`${recipient.label}-${recipient.chatId}`}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3"
-                        >
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800">{recipient.label}</p>
-                            <p className="text-xs text-slate-500">{recipient.chatId}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600"
-                          >
-                            <Trash2 className="h-4 w-4" /> Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <textarea
-                  className="mt-3 min-h-[176px] w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                  value={telegramRecipientsInput}
-                  onChange={(e) => setTelegramRecipientsInput(e.target.value)}
-                  placeholder={['Channel | @my_channel', 'Founders group | -1001234567890'].join('\n')}
-                />
-                <p className="text-xs text-slate-500 mt-1.5">Bulk editor. One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
-              </div>
-            </div>
-          
-            </div>
-          </details>
-
-          <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-            <summary className="cursor-pointer font-bold text-deep-indigo list-none flex justify-between items-center p-4">
-              WhatsApp Delivery
-              <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="p-4 pt-0 border-t border-slate-100">
-              
-            
-            
-            <p className="mt-2 text-xs leading-5 text-slate-500">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
-            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-              <div className="space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur-sm">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500 mb-3">Status</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-slate-300'}`}></div>
-                  <p className="text-sm font-medium text-slate-700">
-                    {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
-                      ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
-                      : session.config.whatsappAuthAvailable
-                        ? 'No WhatsApp Business phone connected yet.'
-                        : 'Meta OAuth app credentials are still missing from the Worker environment.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleWhatsAppConnection()}
-                  disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
-                  className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50 shadow-sm active:scale-[0.98]"
-                >
-                  {connectingChannel === 'whatsapp'
-                    ? 'Opening Meta approval...'
-                    : session.config.hasWhatsAppAccessToken
-                      ? 'Reconnect WhatsApp'
-                      : 'Connect WhatsApp Business'}
-                </button>
-                {session.config.hasWhatsAppAccessToken ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleDisconnectChannel('whatsapp')}
-                    disabled={channelActionBusy}
-                    className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
-                  </button>
-                ) : null}
-              </div>
-                <p className="text-xs text-slate-500">
-                  {session.config.whatsappAuthAvailable
-                    ? 'The Worker opens Meta approval in a popup, exchanges the code server-side, and discovers your available WhatsApp Business phone numbers.'
-                    : 'Set META_APP_ID and META_APP_SECRET in the Worker before this button can be used.'}
-                </p>
-
-                {pendingWhatsAppOptions.length > 0 ? (
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700/80">Choose a phone</p>
-                    <select
-                      value={selectedWhatsAppPhoneId}
-                      onChange={(e) => setSelectedWhatsAppPhoneId(e.target.value)}
-                      className="mt-3 w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-400/50"
-                    >
-                      {pendingWhatsAppOptions.map((option) => (
-                        <option key={option.phoneNumberId} value={option.phoneNumberId}>
-                          {option.displayPhoneNumber || option.phoneNumberId} - {option.verifiedName || option.businessAccountName}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => void completeWhatsAppPhoneSelection()}
-                      disabled={channelActionBusy || !selectedWhatsAppPhoneId}
-                      className="mt-3 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Save selected phone
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Saved Recipients</label>
-                <textarea
-                  value={whatsappRecipientsInput}
-                  onChange={(e) => setWhatsappRecipientsInput(e.target.value)}
-                  placeholder={['Founders group | +14155550101', 'Ops lead | +919876543210'].join('\n')}
-                  className="min-h-[176px] w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 bg-white focus:ring-2 focus:ring-primary/50 focus:outline-none transition-all duration-200"
-                />
-                <p className="text-xs text-slate-500 mt-1.5">One recipient per line using the format "Label | +15551234567".</p>
-              </div>
-            </div>
-          
-            </div>
-          </details>
-
-            </div>
-            
-            <div className="mt-2">
-              <p className="text-xs text-slate-400 mt-5 flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Secrets stay in the backend. The browser no longer talks to Google Sheets, Instagram, LinkedIn, Telegram, or Meta directly.
-          </p>
-              <button
-            onClick={saveSettings}
-            disabled={savingConfig}
-            className="bg-primary text-white font-medium px-4 py-3 rounded-xl hover:bg-indigo-600 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 w-full mt-4 disabled:opacity-50 disabled:hover:translate-y-0"
-          >
-            {savingConfig ? 'Saving shared configuration...' : 'Save Settings'}
-          </button>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 w-full flex flex-col gap-6 min-w-0 pb-16">
-        <form onSubmit={handleAddTopic} className="flex flex-col sm:flex-row gap-3 items-stretch w-full max-w-3xl">
-        <input 
-          type="text" 
-          value={newTopic}
-          onChange={(e) => setNewTopic(e.target.value)}
-          placeholder="Add a new topic for research..."
-          className="flex-1 border border-slate-200/60 shadow-sm rounded-2xl px-6 py-4 text-slate-900 bg-white/90 backdrop-blur-md focus:ring-2 focus:ring-primary/50 focus:border-primary/30 outline-none transition-all duration-300 text-lg placeholder:text-slate-400"
-          disabled={loading}
-        />
-        <button 
-          type="submit"
-          disabled={loading || !newTopic.trim()}
-          className="flex items-center justify-center gap-2 bg-primary text-white px-8 py-4 rounded-2xl hover:bg-indigo-600 disabled:opacity-50 disabled:hover:scale-100 transition-all duration-300 font-bold text-lg shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap"
-        >
-          <Plus className="w-6 h-6" /> <span className="hidden sm:inline">Add Topic</span><span className="sm:hidden">Add</span>
-        </button>
-      </form>
-        
-        <div className="bg-white/80 backdrop-blur-md border border-white/50 shadow-xl rounded-3xl overflow-hidden flex-1 flex flex-col mt-2">
-          
-        <div className="overflow-hidden w-full">
-          <table className="w-full divide-y divide-slate-100 text-left table-fixed">
-            <thead className="bg-slate-50/80">
-              <tr>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading w-full sm:w-[40%]">Topic</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading w-[100px] sm:w-[15%]">Status</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading hidden sm:table-cell sm:w-[15%]">Date</th>
-                <th className="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider font-heading text-right sm:text-left w-[120px] sm:w-[30%]">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white/40">
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-16 text-center text-slate-500">
-                    <div className="flex flex-col items-center justify-center space-y-4">
-                      <div className="w-16 h-16 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mb-2">
-                        <Bot className="w-8 h-8 text-indigo-300" />
+        <div className="space-y-0">
+          {filteredRows.length === 0 ? (
+            <div className="px-6 py-16 text-center text-slate-500">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-slate-100 bg-white shadow-sm">
+                <Bot className="h-8 w-8 text-indigo-300" />
+              </div>
+              <p className="text-lg font-semibold text-slate-700">
+                {rows.length === 0 ? 'No topics found' : `No ${statusFilter === 'all' ? '' : statusFilter} items right now`}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {rows.length === 0 ? 'Add one above to get started with research.' : 'Try another filter or refresh the queue.'}
+              </p>
+            </div>
+          ) : (
+            filteredRows.map((row) => {
+              const normalizedStatus = getNormalizedRowStatus(row.status);
+              const previewText = (row.selectedText || row.variant1 || 'No draft content yet.').trim();
+              return (
+                <div key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="border-t border-slate-100 first:border-t-0 px-6 py-5">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)] xl:items-start">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h4 className="text-lg font-semibold text-slate-900">{row.topic}</h4>
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold shadow-sm ${getStatusColor(row.status)}`}>
+                          {row.status || 'Pending'}
+                        </span>
+                        <span className="text-sm text-slate-500">{row.date}</span>
                       </div>
+                      <p className="mt-3 max-w-3xl line-clamp-2 text-sm leading-6 text-slate-600">
+                        {previewText}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+                      {normalizedStatus === 'pending' ? (
+                        <button
+                          onClick={() => void triggerRowGithubAction(row, 'draft')}
+                          disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
+                          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
+                        >
+                          {actionLoading === buildRowActionKey('draft', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                          Generate draft
+                        </button>
+                      ) : null}
+
+                      {normalizedStatus === 'drafted' ? (
+                        <button
+                          onClick={() => setSelectedRowForReview(row)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+                        >
+                          Review draft
+                        </button>
+                      ) : null}
+
+                      {normalizedStatus === 'approved' ? (
+                        <button
+                          onClick={() => void publishRowToSelectedChannel(row)}
+                          disabled={actionLoading !== null}
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+                        >
+                          {actionLoading === buildRowActionKey('publish', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                          Publish approved post
+                        </button>
+                      ) : null}
+
+                      {normalizedStatus === 'published' ? (
+                        <button
+                          onClick={() => void republishRowToSelectedChannel(row)}
+                          disabled={actionLoading !== null}
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                        >
+                          {actionLoading === buildRowActionKey('publish', row) ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                          Publish again
+                        </button>
+                      ) : null}
+
+                      {canPreviewPublishedContent(row) ? (
+                        <button
+                          onClick={() => setSelectedApprovedRowPreview(row)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 transition-colors hover:bg-sky-100"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Preview
+                        </button>
+                      ) : null}
+
+                      <button
+                        onClick={() => handleDeleteTopic(row)}
+                        disabled={deletingRowIndex === row.rowIndex}
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-rose-200 hover:text-rose-600 disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </section>
+
+      {session.isAdmin && settingsOpen ? (
+        <div className="fixed inset-0 z-40 flex justify-end bg-slate-900/45 backdrop-blur-sm">
+          <div className="flex h-full w-full max-w-[760px] flex-col border-l border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Admin</p>
+                <h3 className="mt-2 text-2xl font-bold text-deep-indigo font-heading">Workspace settings</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Configuration lives here now so day-to-day queue work stays focused.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:text-slate-700"
+                aria-label="Close settings"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="flex flex-col gap-3">
+                <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden" open>
+                  <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+                    Workspace core
+                    <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="border-t border-slate-100 p-4 pt-0">
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
                       <div>
-                        <p className="font-semibold text-slate-700 text-lg">No topics found</p>
-                        <p className="text-sm text-slate-500 mt-1">Add one above to get started with research.</p>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">Google Spreadsheet ID</label>
+                        <input
+                          type="text"
+                          value={sheetIdInput}
+                          onChange={(e) => setSheetIdInput(e.target.value)}
+                          placeholder="e.g. 1BxiMVs0XRYFgwnV_v..."
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <p className="mt-1.5 text-xs text-slate-500">Found in the URL of your Google Sheet.</p>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">Default Channel</label>
+                        <select
+                          value={selectedChannel}
+                          onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        >
+                          {CHANNEL_OPTIONS.map((channel) => (
+                            <option key={channel.value} value={channel.value}>
+                              {channel.label}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-1.5 text-xs text-slate-500">Used as the default destination in the delivery panel.</p>
                       </div>
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row) => (
-                  <tr key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`} className="hover:bg-white/80 transition-colors duration-150 group">
-                    <td className="px-5 py-4 text-sm font-semibold text-slate-800">
-                      <div className="truncate w-full pr-4" title={row.topic}>
-                        {row.topic}
+                  </div>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+                    GitHub Actions
+                    <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="border-t border-slate-100 p-4 pt-0">
+                    <p className="mt-2 text-xs leading-5 text-slate-500">GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.</p>
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">GitHub Repository</label>
+                        <input
+                          type="text"
+                          value={githubRepo}
+                          onChange={(e) => setGithubRepo(e.target.value)}
+                          placeholder="e.g. username/repo-name"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
                       </div>
-                      <div className="sm:hidden text-xs text-slate-500 mt-1 font-normal truncate">{row.date}</div>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full shadow-sm ${getStatusColor(row.status)}`}>
-                        {row.status || 'Pending'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-500 hidden sm:table-cell">
-                      <div className="truncate w-full pr-2">
-                        {row.date}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 whitespace-nowrap text-sm font-medium text-right sm:text-left">
-                      <div className="flex flex-wrap items-center justify-end sm:justify-start gap-3 opacity-90 group-hover:opacity-100 transition-opacity duration-200">
-                        {getNormalizedRowStatus(row.status) === 'pending' && (
-                          <button
-                            onClick={() => void triggerRowGithubAction(row, 'draft')}
-                            disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary bg-primary/5 hover:bg-primary/10 hover:text-indigo-800 transition-all duration-200 disabled:opacity-50 font-semibold shadow-sm hover:shadow active:scale-95"
-                          >
-                            {actionLoading === buildRowActionKey('draft', row) ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                            )}
-                            <span className="hidden sm:inline">Draft</span>
-                          </button>
-                        )}
-                        {getNormalizedRowStatus(row.status) === 'drafted' && (
-                          <button 
-                            onClick={() => setSelectedRowForReview(row)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all duration-200 font-bold shadow-sm hover:shadow active:scale-95"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                            <span className="hidden sm:inline">Review</span>
-                          </button>
-                        )}
-                        {canPreviewPublishedContent(row) && (
-                          <button
-                            onClick={() => setSelectedApprovedRowPreview(row)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sky-700 bg-sky-50 hover:bg-sky-100 transition-all duration-200 font-bold shadow-sm hover:shadow active:scale-95"
-                          >
-                            <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">Preview</span>
-                          </button>
-                        )}
-                        {getNormalizedRowStatus(row.status) === 'approved' && (
-                          <button
-                            onClick={() => void publishRowToSelectedChannel(row)}
-                            disabled={actionLoading !== null}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50 shadow-sm hover:shadow active:scale-95"
-                          >
-                            {actionLoading === buildRowActionKey('publish', row) ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Send className="w-4 h-4" />
-                            )}
-                            <span className="hidden sm:inline">Publish</span>
-                          </button>
-                        )}
-                        {getNormalizedRowStatus(row.status) === 'published' && (
-                          <button
-                            onClick={() => void republishRowToSelectedChannel(row)}
-                            disabled={actionLoading !== null}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all duration-200 font-bold disabled:opacity-50 shadow-sm hover:shadow active:scale-95"
-                          >
-                            {actionLoading === buildRowActionKey('publish', row) ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Send className="w-4 h-4" />
-                            )}
-                            <span className="hidden sm:inline">Publish Again</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteTopic(row)}
-                          disabled={deletingRowIndex === row.rowIndex}
-                          className="inline-flex items-center gap-1.5 p-2 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all duration-200 disabled:opacity-50 sm:ml-auto"
-                          title="Delete topic"
+
+                      <div>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">Google Model</label>
+                        <select
+                          value={googleModel}
+                          onChange={(e) => setGoogleModel(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          {availableModels.map((model) => (
+                            <option key={model.value} value={model.value}>
+                              {model.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">Shared Generation Rules</label>
+                        <textarea
+                          value={generationRules}
+                          onChange={(e) => setGenerationRules(e.target.value)}
+                          placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
+                          className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <p className="mt-1.5 text-xs text-slate-500">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">Replace GitHub Personal Access Token</label>
+                        <input
+                          type="password"
+                          value={githubTokenInput}
+                          onChange={(e) => setGithubTokenInput(e.target.value)}
+                          placeholder={session.config.hasGitHubToken ? 'Leave blank to keep the current token' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <p className="mt-1.5 text-xs text-slate-500">
+                          {session.config.hasGitHubToken
+                            ? 'A token is already stored. Enter a new one only when you want to rotate it.'
+                            : 'Required once so the backend can dispatch the GitHub workflows.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+                    Instagram Publishing
+                    <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="border-t border-slate-100 p-4 pt-0">
+                    <p className="mt-2 text-xs leading-5 text-slate-500">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
+                    <div className="mt-4 space-y-4">
+                      <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
+                        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                        <div className="flex items-center gap-3">
+                          <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-slate-300'}`}></div>
+                          <p className="text-sm font-medium text-slate-700">
+                            {session.config.hasInstagramAccessToken && session.config.instagramUserId
+                              ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
+                              : session.config.instagramAuthAvailable
+                                ? 'No Instagram professional account connected yet.'
+                                : 'Instagram app credentials are still missing from the Worker environment.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleInstagramConnection()}
+                          disabled={channelActionBusy || !session.config.instagramAuthAvailable}
+                          className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {connectingChannel === 'instagram'
+                            ? 'Opening Instagram approval...'
+                            : session.config.hasInstagramAccessToken
+                              ? 'Reconnect Instagram'
+                              : 'Connect Instagram'}
+                        </button>
+                        {session.config.hasInstagramAccessToken ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleDisconnectChannel('instagram')}
+                            disabled={channelActionBusy}
+                            className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {disconnectingChannel === 'instagram' ? 'Disconnecting Instagram...' : 'Disconnect Instagram'}
+                          </button>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {session.config.instagramAuthAvailable
+                          ? 'The Worker opens Instagram approval in a popup, exchanges the code server-side, and stores the long-lived token securely.'
+                          : 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in the Worker before this button can be used.'}
+                      </p>
+                    </div>
+                  </div>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+                    LinkedIn Publishing
+                    <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="border-t border-slate-100 p-4 pt-0">
+                    <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
+                    <div className="mt-4 space-y-4">
+                      <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
+                        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                        <div className="flex items-center gap-3">
+                          <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-slate-300'}`}></div>
+                          <p className="text-sm font-medium text-slate-700">
+                            {session.config.hasLinkedInAccessToken
+                              ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
+                              : session.config.linkedinAuthAvailable
+                                ? 'No LinkedIn account connected yet.'
+                                : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleLinkedInConnection()}
+                          disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
+                          className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {connectingChannel === 'linkedin'
+                            ? 'Opening LinkedIn approval...'
+                            : session.config.hasLinkedInAccessToken
+                              ? 'Reconnect LinkedIn'
+                              : 'Connect LinkedIn'}
+                        </button>
+                        {session.config.hasLinkedInAccessToken ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleDisconnectChannel('linkedin')}
+                            disabled={channelActionBusy}
+                            className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {disconnectingChannel === 'linkedin' ? 'Disconnecting LinkedIn...' : 'Disconnect LinkedIn'}
+                          </button>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {session.config.linkedinAuthAvailable
+                          ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
+                          : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
+                      </p>
+                    </div>
+                  </div>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+                    Telegram Delivery
+                    <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="border-t border-slate-100 p-4 pt-0">
+                    <p className="mt-2 text-xs leading-5 text-slate-500">This path sends approved content directly through the Telegram Bot API.</p>
+                    <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                      <div className="space-y-4">
+                        <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
+                          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-slate-300'}`}></div>
+                            <p className="text-sm font-medium text-slate-700">
+                              {session.config.hasTelegramBotToken
+                                ? 'Telegram bot token is stored in the Worker.'
+                                : 'No Telegram bot token stored yet.'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-sm font-semibold text-slate-700">Replace Telegram Bot Token</label>
+                          <input
+                            type="password"
+                            value={telegramBotTokenInput}
+                            onChange={(e) => setTelegramBotTokenInput(e.target.value)}
+                            placeholder={session.config.hasTelegramBotToken ? 'Leave blank to keep the current bot token' : '123456789:AA...'}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          />
+                          <p className="mt-1.5 text-xs text-slate-500">
+                            {session.config.hasTelegramBotToken
+                              ? 'A bot token is already stored. Enter a new one only when you want to rotate it.'
+                              : 'Create a bot with BotFather, then paste the token here once so the Worker can deliver messages.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">Saved Chats</label>
+                        <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Quick add</p>
+                          <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
+                            <input
+                              type="text"
+                              value={telegramDraftLabel}
+                              onChange={(e) => {
+                                setTelegramDraftLabel(e.target.value);
+                                setTelegramVerification(null);
+                              }}
+                              placeholder="Team channel"
+                              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                            <input
+                              type="text"
+                              value={telegramDraftChatId}
+                              onChange={(e) => {
+                                setTelegramDraftChatId(e.target.value);
+                                setTelegramVerification(null);
+                              }}
+                              placeholder="@my_channel or 123456789 / -1001234567890"
+                              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
+                              <button
+                                type="button"
+                                onClick={() => void handleVerifyTelegramChat()}
+                                disabled={verifyingTelegramChat}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
+                                {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleAddTelegramRecipient}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800"
+                              >
+                                <Plus className="h-4 w-4" /> Add chat
+                              </button>
+                            </div>
+                          </div>
+                          <p className="mt-2 text-xs text-slate-500">Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.</p>
+                          {telegramVerification ? (
+                            <div className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success' ? 'border-emerald-200 bg-emerald-50/80 text-emerald-800' : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}>
+                              <p className="font-semibold">{telegramVerification.message}</p>
+                              {telegramVerification.kind === 'success' && telegramVerification.result ? (
+                                <p className="mt-1 text-xs opacity-80">
+                                  Saved target will use {telegramVerification.result.chatId}
+                                  {telegramVerification.result.username ? ` as @${telegramVerification.result.username}` : ''}.
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                          {selectedChannel === 'telegram' && recipientMode === 'manual' ? (
+                            <button
+                              type="button"
+                              onClick={handleUseManualTelegramChat}
+                              className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-indigo-600"
+                            >
+                              <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {parsedTelegramRecipients.length > 0 ? (
+                          <div className="mt-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Saved now</p>
+                            <div className="mt-3 space-y-2">
+                              {parsedTelegramRecipients.map((recipient) => (
+                                <div
+                                  key={`${recipient.label}-${recipient.chatId}`}
+                                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3"
+                                >
+                                  <div>
+                                    <p className="text-sm font-semibold text-slate-800">{recipient.label}</p>
+                                    <p className="text-xs text-slate-500">{recipient.chatId}</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" /> Remove
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <textarea
+                          className="mt-3 min-h-[176px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          value={telegramRecipientsInput}
+                          onChange={(e) => setTelegramRecipientsInput(e.target.value)}
+                          placeholder={['Channel | @my_channel', 'Founders group | -1001234567890'].join('\n')}
+                        />
+                        <p className="mt-1.5 text-xs text-slate-500">Bulk editor. One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+
+                <details className="group rounded-2xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-indigo list-none">
+                    WhatsApp Delivery
+                    <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <div className="border-t border-slate-100 p-4 pt-0">
+                    <p className="mt-2 text-xs leading-5 text-slate-500">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
+                    <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                      <div className="space-y-4">
+                        <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
+                          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-slate-300'}`}></div>
+                            <p className="text-sm font-medium text-slate-700">
+                              {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
+                                ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
+                                : session.config.whatsappAuthAvailable
+                                  ? 'No WhatsApp Business phone connected yet.'
+                                  : 'Meta OAuth app credentials are still missing from the Worker environment.'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleWhatsAppConnection()}
+                            disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
+                            className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {connectingChannel === 'whatsapp'
+                              ? 'Opening Meta approval...'
+                              : session.config.hasWhatsAppAccessToken
+                                ? 'Reconnect WhatsApp'
+                                : 'Connect WhatsApp Business'}
+                          </button>
+                          {session.config.hasWhatsAppAccessToken ? (
+                            <button
+                              type="button"
+                              onClick={() => void handleDisconnectChannel('whatsapp')}
+                              disabled={channelActionBusy}
+                              className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
+                            </button>
+                          ) : null}
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {session.config.whatsappAuthAvailable
+                            ? 'The Worker opens Meta approval in a popup, exchanges the code server-side, and discovers your available WhatsApp Business phone numbers.'
+                            : 'Set META_APP_ID and META_APP_SECRET in the Worker before this button can be used.'}
+                        </p>
+
+                        {pendingWhatsAppOptions.length > 0 ? (
+                          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700/80">Choose a phone</p>
+                            <select
+                              value={selectedWhatsAppPhoneId}
+                              onChange={(e) => setSelectedWhatsAppPhoneId(e.target.value)}
+                              className="mt-3 w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+                            >
+                              {pendingWhatsAppOptions.map((option) => (
+                                <option key={option.phoneNumberId} value={option.phoneNumberId}>
+                                  {option.displayPhoneNumber || option.phoneNumberId} - {option.verifiedName || option.businessAccountName}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => void completeWhatsAppPhoneSelection()}
+                              disabled={channelActionBusy || !selectedWhatsAppPhoneId}
+                              className="mt-3 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Save selected phone
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-semibold text-slate-700">Saved Recipients</label>
+                        <textarea
+                          value={whatsappRecipientsInput}
+                          onChange={(e) => setWhatsappRecipientsInput(e.target.value)}
+                          placeholder={['Founders group | +14155550101', 'Ops lead | +919876543210'].join('\n')}
+                          className="min-h-[176px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <p className="mt-1.5 text-xs text-slate-500">One recipient per line using the format "Label | +15551234567".</p>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 px-6 py-5">
+              <p className="flex items-center gap-1.5 text-xs text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0 text-primary/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Secrets stay in the backend. The browser no longer talks to Google Sheets, Instagram, LinkedIn, Telegram, or Meta directly.
+              </p>
+              <button
+                onClick={saveSettings}
+                disabled={savingConfig}
+                className="mt-4 w-full rounded-xl bg-primary px-4 py-3 font-medium text-white transition-all duration-200 hover:bg-indigo-600 disabled:opacity-50"
+              >
+                {savingConfig ? 'Saving shared configuration...' : 'Save settings'}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {selectedRowForReview && (
         <ReviewWorkspace
@@ -1811,8 +1817,6 @@ export function Dashboard({
           onClose={() => setSelectedApprovedRowPreview(null)}
         />
       )}
-
-      </div>
     </div>
   );
 
