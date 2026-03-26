@@ -210,10 +210,6 @@ export function Dashboard({
       manualRecipientId={channelsHook.manualRecipientId}
       setManualRecipientId={channelsHook.setManualRecipientId}
       lastDeliverySummary={lastDeliverySummary}
-      linkedinConfigured={linkedinConfigured}
-      instagramConfigured={instagramConfigured}
-      telegramConfigured={telegramConfigured}
-      whatsappConfigured={whatsappConfigured}
     />
   );
 

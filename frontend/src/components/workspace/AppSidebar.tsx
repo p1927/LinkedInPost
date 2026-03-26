@@ -3,6 +3,7 @@ import { type ReactNode } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { ChevronLeft, ChevronRight, Home, ListOrdered, LogOut, Settings } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
+import { useWorkspaceChrome } from './WorkspaceChromeContext';
 
 const STORED_ID_TOKEN_KEY = 'google_id_token';
 
@@ -54,6 +55,7 @@ export function AppSidebar({
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
 }) {
+  const { health } = useWorkspaceChrome();
   const closeMobile = () => onMobileOpenChange(false);
 
   const handleLogout = () => {
@@ -105,9 +107,9 @@ export function AppSidebar({
         id="workspace-sidebar"
         data-collapsed={collapsed ? 'true' : 'false'}
         className={clsx(
-          'custom-scrollbar flex h-full shrink-0 flex-col border-r border-border bg-surface transition-[transform,width] duration-200 ease-out',
+          'custom-scrollbar flex min-h-screen w-60 max-w-[85vw] shrink-0 flex-col self-stretch border-r border-border bg-surface transition-[transform,width] duration-200 ease-out',
           collapsed ? 'md:w-[4.5rem]' : 'md:w-60',
-          'fixed bottom-0 left-0 top-0 z-50 w-60 max-w-[85vw] md:static md:max-w-none',
+          'fixed bottom-0 left-0 top-0 z-50 md:static md:max-w-none',
           mobileOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full md:translate-x-0 md:shadow-none',
         )}
       >
@@ -140,6 +142,67 @@ export function AppSidebar({
           {link('topics', <ListOrdered aria-hidden />, 'Topics')}
           {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
         </nav>
+
+        {workspacePage === 'settings' && session.isAdmin && health ? (
+          <div
+            className={clsx(
+              'shrink-0 border-t border-border px-2 py-3',
+              collapsed ? 'flex flex-col items-center gap-2' : 'px-3',
+            )}
+            aria-label="Publishing connections"
+          >
+            {!collapsed ? (
+              <>
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">Connections</p>
+                <ul className="space-y-1.5">
+                  {(
+                    [
+                      { id: 'li', label: 'LinkedIn', ok: health.linkedin },
+                      { id: 'ig', label: 'Instagram', ok: health.instagram },
+                      { id: 'tg', label: 'Telegram', ok: health.telegram },
+                      { id: 'wa', label: 'WhatsApp', ok: health.whatsapp },
+                    ] as const
+                  ).map(({ id, label, ok }) => (
+                    <li
+                      key={id}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border bg-canvas px-2.5 py-1.5"
+                    >
+                      <span className="text-xs font-medium text-ink">{label}</span>
+                      <span
+                        className={clsx(
+                          'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                          ok ? 'bg-emerald-100 text-emerald-800' : 'bg-surface-muted text-muted',
+                        )}
+                      >
+                        {ok ? 'Connected' : 'Not connected'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-2 py-1">
+                {(
+                  [
+                    { id: 'li', label: 'LinkedIn', ok: health.linkedin },
+                    { id: 'ig', label: 'Instagram', ok: health.instagram },
+                    { id: 'tg', label: 'Telegram', ok: health.telegram },
+                    { id: 'wa', label: 'WhatsApp', ok: health.whatsapp },
+                  ] as const
+                ).map(({ id, label, ok }) => (
+                  <span
+                    key={id}
+                    title={`${label}: ${ok ? 'Connected' : 'Not connected'}`}
+                    className={clsx(
+                      'h-2.5 w-2.5 rounded-full border border-border',
+                      ok ? 'bg-emerald-500' : 'bg-border-strong',
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
 
         <div className="mt-auto border-t border-border p-2">
           <div

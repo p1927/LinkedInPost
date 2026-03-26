@@ -16,7 +16,7 @@ export function WorkspaceHeader({
   workspacePage: WorkspaceNavPage;
   onOpenMobileSidebar: () => void;
 }) {
-  const { onRefreshQueue, queueLoading, health } = useWorkspaceChrome();
+  const { onRefreshQueue, queueLoading } = useWorkspaceChrome();
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface/95 px-3 backdrop-blur-sm sm:px-4">
@@ -36,34 +36,6 @@ export function WorkspaceHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        {health ? (
-          <div
-            className="hidden items-center gap-2 rounded-full border border-border bg-canvas px-2 py-1 sm:flex"
-            title="Publishing health"
-          >
-            {(
-              [
-                { key: 'li', ok: health.linkedin, short: 'In' },
-                { key: 'ig', ok: health.instagram, short: 'Ig' },
-                { key: 'tg', ok: health.telegram, short: 'Tg' },
-                { key: 'wa', ok: health.whatsapp, short: 'Wa' },
-              ] as const
-            ).map(({ key, ok, short }) => (
-              <span
-                key={key}
-                className="flex items-center gap-1"
-                title={ok ? 'Ready' : 'Setup needed'}
-              >
-                <span
-                  className={clsx('h-2 w-2 rounded-full', ok ? 'bg-emerald-500' : 'bg-amber-400')}
-                  aria-hidden
-                />
-                <span className="text-[10px] font-semibold uppercase text-muted">{short}</span>
-              </span>
-            ))}
-          </div>
-        ) : null}
-
         <button
           type="button"
           onClick={() => onRefreshQueue?.()}

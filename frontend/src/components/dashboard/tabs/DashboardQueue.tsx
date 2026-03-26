@@ -10,6 +10,9 @@ function queueRowDomId(row: SheetRow) {
   return `${row.sourceSheet}-${row.rowIndex}`;
 }
 
+const actionBtnBase =
+  'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+
 export function DashboardQueue({
   handleAddTopic,
   newTopic,
@@ -111,7 +114,7 @@ export function DashboardQueue({
           ))}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filteredRows.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-surface-muted/50 px-4 py-12 text-center text-muted">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface">
@@ -129,35 +132,40 @@ export function DashboardQueue({
                 <div
                   key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
                   data-queue-row-id={queueRowDomId(row)}
-                  className="rounded-2xl border border-border bg-surface p-4 shadow-card scroll-mt-24"
+                  className="scroll-mt-24 rounded-xl border border-border bg-surface px-3 py-2.5 shadow-sm"
                 >
-                  <div className="flex flex-col gap-3">
-                    <div>
-                      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-ink" title={row.topic}>
+                        {row.topic}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
                         <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${getStatusColor(row.status)}`}
+                          className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${getStatusColor(row.status)}`}
                         >
                           {row.status || 'Pending'}
                         </span>
-                        <span className="text-[11px] text-muted">{row.date}</span>
+                        {row.date ? (
+                          <span className="text-[11px] tabular-nums text-muted">{row.date}</span>
+                        ) : null}
                       </div>
-                      <h4 className="line-clamp-2 font-heading text-base font-semibold text-ink">{row.topic}</h4>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center justify-start gap-1 sm:justify-end">
                       {normalizedStatus === 'pending' ? (
                         <button
                           type="button"
                           onClick={() => void triggerRowGithubAction(row, 'draft')}
                           disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-                          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+                          title="Generate draft"
+                          className={`${actionBtnBase} bg-primary px-2.5 text-primary-fg hover:bg-primary-hover`}
                         >
                           {actionLoading === buildRowActionKey('draft', row) ? (
                             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                           ) : (
                             <PenLine className="h-3.5 w-3.5" />
                           )}
-                          Draft
+                          <span className="hidden sm:inline">Draft</span>
                         </button>
                       ) : null}
 
@@ -165,9 +173,11 @@ export function DashboardQueue({
                         <button
                           type="button"
                           onClick={() => setSelectedRowForReview(row)}
-                          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 border-primary bg-surface px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-canvas"
+                          title="Review draft"
+                          className={`${actionBtnBase} border-2 border-primary bg-surface px-2.5 text-primary hover:bg-canvas`}
                         >
-                          Review
+                          <span className="sm:hidden">Edit</span>
+                          <span className="hidden sm:inline">Review</span>
                         </button>
                       ) : null}
 
@@ -176,14 +186,15 @@ export function DashboardQueue({
                           type="button"
                           onClick={() => void publishRowToSelectedChannel(row)}
                           disabled={actionLoading !== null}
-                          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+                          title="Publish"
+                          className={`${actionBtnBase} bg-primary px-2.5 text-primary-fg hover:bg-primary-hover`}
                         >
                           {actionLoading === buildRowActionKey('publish', row) ? (
                             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                           ) : (
                             <Send className="h-3.5 w-3.5" />
                           )}
-                          Publish
+                          <span className="hidden sm:inline">Publish</span>
                         </button>
                       ) : null}
 
@@ -192,14 +203,15 @@ export function DashboardQueue({
                           type="button"
                           onClick={() => void republishRowToSelectedChannel(row)}
                           disabled={actionLoading !== null}
-                          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border-2 border-primary bg-surface px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-45"
+                          title="Republish"
+                          className={`${actionBtnBase} border border-primary bg-surface px-2.5 text-primary hover:bg-canvas`}
                         >
                           {actionLoading === buildRowActionKey('publish', row) ? (
                             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                           ) : (
                             <Send className="h-3.5 w-3.5" />
                           )}
-                          Republish
+                          <span className="hidden sm:inline">Republish</span>
                         </button>
                       ) : null}
 
@@ -207,10 +219,11 @@ export function DashboardQueue({
                         <button
                           type="button"
                           onClick={() => setSelectedApprovedRowPreview(row)}
-                          className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-border-strong bg-surface-muted px-3 py-2 text-xs font-semibold text-ink transition-colors hover:border-primary/35 hover:bg-canvas"
+                          title="Preview"
+                          className={`${actionBtnBase} border border-border-strong bg-surface-muted px-2 text-ink hover:border-primary/35 hover:bg-canvas`}
                         >
                           <Eye className="h-3.5 w-3.5" />
-                          Preview
+                          <span className="hidden sm:inline">Preview</span>
                         </button>
                       ) : null}
 
@@ -219,7 +232,7 @@ export function DashboardQueue({
                         onClick={() => handleDeleteTopic(row)}
                         disabled={deletingRowIndex === row.rowIndex}
                         title="Delete topic"
-                        className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-canvas p-2 text-muted transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-45"
+                        className={`${actionBtnBase} w-8 border border-border bg-canvas p-0 text-muted hover:border-red-200 hover:bg-red-50 hover:text-red-700`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

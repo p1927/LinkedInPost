@@ -30,7 +30,7 @@ export function WorkspaceShell({
 
   return (
     <WorkspaceChromeProvider>
-      <div className="flex min-h-screen w-full bg-canvas">
+      <div className="flex min-h-screen w-full items-stretch bg-canvas">
         <AppSidebar
           collapsed={sidebarCollapsed}
           onToggleCollapsed={toggleCollapsed}
@@ -47,7 +47,7 @@ export function WorkspaceShell({
             workspacePage={workspacePage}
             onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
           />
-          <main className="custom-scrollbar flex-1 overflow-y-auto px-4 py-6 sm:px-6">{children}</main>
+          <main className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">{children}</main>
         </div>
       </div>
     </WorkspaceChromeProvider>

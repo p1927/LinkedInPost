@@ -19,10 +19,6 @@ export function DashboardDelivery({
   manualRecipientId,
   setManualRecipientId,
   lastDeliverySummary,
-  linkedinConfigured,
-  instagramConfigured,
-  telegramConfigured,
-  whatsappConfigured,
 }: {
   selectedChannel: ChannelId;
   setSelectedChannel: (val: ChannelId) => void;
@@ -36,10 +32,6 @@ export function DashboardDelivery({
   manualRecipientId: string;
   setManualRecipientId: (val: string) => void;
   lastDeliverySummary: DeliverySummary | null;
-  linkedinConfigured: boolean;
-  instagramConfigured: boolean;
-  telegramConfigured: boolean;
-  whatsappConfigured: boolean;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -132,29 +124,6 @@ export function DashboardDelivery({
               <p className="mt-2 text-xs leading-5 text-muted">{getLinkedInDeliveryHint()}</p>
             </>
           )}
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-canvas p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Publishing health</p>
-        <div className="mt-2 space-y-1.5">
-          {[
-            { label: 'LinkedIn', ready: linkedinConfigured },
-            { label: 'Instagram', ready: instagramConfigured },
-            { label: 'Telegram', ready: telegramConfigured },
-            { label: 'WhatsApp', ready: whatsappConfigured },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center justify-between rounded-lg border border-border bg-surface px-2.5 py-1.5">
-              <span className="text-[11px] font-medium text-ink">{item.label}</span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                  item.ready ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
-                }`}
-              >
-                {item.ready ? 'Ready' : 'Setup'}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
 
