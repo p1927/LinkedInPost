@@ -142,7 +142,7 @@ export function LinkedInPostPreview({
           <div className={isCarousel ? 'px-4 pb-3.5 pt-4' : 'px-4 pb-3 pt-4'}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 gap-3 items-center">
-                <div className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 font-bold text-primary-fg shadow-inner ${isCarousel ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base'}`}>
+                <div className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 font-bold text-primary-fg shadow-inner ${isCarousel ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base'}`}>
                   CB
                 </div>
                 <div className="min-w-0">
