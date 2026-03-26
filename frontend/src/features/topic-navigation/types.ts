@@ -1,10 +1,10 @@
-import { type SheetRow } from '../../../services/sheets';
+import { type SheetRow } from '../../services/sheets';
 import {
   type GenerationRequest,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
-} from '../../../services/backendApi';
-import { type ChannelId } from '../../../integrations/channels';
+} from '../../services/backendApi';
+import { type ChannelId } from '../../integrations/channels';
 
 export type TopicReviewPagesBaseProps = {
   rows: SheetRow[];
