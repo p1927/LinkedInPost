@@ -351,35 +351,37 @@ export function ReviewWorkspace({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.18),transparent_35%),rgba(15,23,42,0.68)] px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/55 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
-        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-[36px] border border-white/30 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(241,245,249,0.95))] shadow-[0_40px_120px_rgba(15,23,42,0.35)]">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 px-6 py-5">
+        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-lift">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Review workspace</p>
-              <h2 className="mt-2 text-3xl font-semibold text-slate-900">{sheetRow.topic}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">Review workspace</p>
+              <h2 className="mt-2 font-heading text-3xl font-semibold text-ink">{sheetRow.topic}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
                 Work from left to right: edit the draft, open only the tools you need, then approve the final version.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Sheet variants: {sheetVariants.length}</span>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${editorDirty ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+              <span className="rounded-full border border-border bg-canvas px-3 py-1 text-xs font-semibold text-muted">
+                Sheet variants: {sheetVariants.length}
+              </span>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${editorDirty ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}>
                 Draft: {editorDirty ? 'edited locally' : 'clean'}
               </span>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${previewReadyCount ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700'}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${previewReadyCount ? 'bg-orange-50 text-orange-900 ring-1 ring-orange-200' : 'border border-border bg-canvas text-muted'}`}>
                 Previews: {previewReadyCount ? `${previewReadyCount} ready` : 'none'}
               </span>
             </div>
           </div>
 
-          <div className="border-b border-slate-200/80 px-6 py-4">
+          <div className="border-b border-border px-6 py-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Start from an existing sheet draft</p>
-                <p className="mt-1 text-sm text-slate-600">Loading a sheet variant resets the local working draft.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Start from an existing sheet draft</p>
+                <p className="mt-1 text-sm text-muted">Loading a sheet variant resets the local working draft.</p>
               </div>
-              <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+              <div className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">
                 Model: {googleModel}
               </div>
             </div>
@@ -389,18 +391,18 @@ export function ReviewWorkspace({
                   key={`sheet-variant-${index}`}
                   type="button"
                   onClick={() => handleLoadSheetVariant(index)}
-                  className="min-w-[220px] rounded-[24px] border border-slate-200 bg-white px-4 py-4 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
+                  className="min-w-[220px] cursor-pointer rounded-2xl border border-border bg-canvas px-4 py-4 text-left transition-colors hover:border-border-strong hover:bg-surface"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Variant {index + 1}</p>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-700">{variant.text}</p>
-                  <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Use as base</span>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Variant {index + 1}</p>
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-ink">{variant.text}</p>
+                  <span className="mt-3 inline-flex rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">Use as base</span>
                 </button>
               ))}
             </div>
           </div>
 
           <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-            <section className="min-h-0 space-y-5 overflow-y-auto border-b border-slate-200/80 px-6 py-6 pb-32 xl:border-b-0 xl:border-r">
+            <section className="min-h-0 space-y-5 overflow-y-auto border-b border-border px-6 py-6 pb-32 xl:border-b-0 xl:border-r xl:border-border">
               <DraftEditor
                 value={editorText}
                 selection={selection}
@@ -412,13 +414,13 @@ export function ReviewWorkspace({
                 onFormatting={handleFormatting}
               />
 
-              <section className="rounded-[30px] border border-slate-200 bg-white/90 p-6 shadow-sm">
+              <section className="rounded-3xl border border-border bg-surface-muted/50 p-6 shadow-card">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Current draft</p>
-                    <h3 className="mt-2 text-xl font-semibold text-slate-900">This is the version you are about to approve</h3>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Current draft</p>
+                    <h3 className="mt-2 font-heading text-xl font-semibold text-ink">This is the version you are about to approve</h3>
                   </div>
-                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                  <div className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">
                     Image: {selectedImageUrl ? 'attached' : 'not selected'}
                   </div>
                 </div>
@@ -436,31 +438,31 @@ export function ReviewWorkspace({
               </section>
             </section>
 
-            <aside className="min-h-0 overflow-y-auto px-6 py-6 pb-32">
-              <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Layers3 className="h-4 w-4" />
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Workspace tools</p>
+            <aside className="min-h-0 overflow-y-auto bg-canvas px-6 py-6 pb-32">
+              <section className="rounded-3xl border border-border bg-surface p-5 shadow-card">
+                <div className="flex items-center gap-2 text-ink">
+                  <Layers3 className="h-4 w-4 text-primary" />
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Workspace tools</p>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 rounded-[22px] bg-slate-100 p-1.5">
+                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-border bg-canvas p-1.5">
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('refine')}
-                    className={`rounded-[18px] px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-white/70'}`}
+                    className={`cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-surface text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-surface/80'}`}
                   >
                     Refine
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('media')}
-                    className={`rounded-[18px] px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-white/70'}`}
+                    className={`cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-surface text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-surface/80'}`}
                   >
                     Media
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('rules')}
-                    className={`rounded-[18px] px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-white/70'}`}
+                    className={`cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-surface text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-surface/80'}`}
                   >
                     Rules
                   </button>
@@ -493,7 +495,7 @@ export function ReviewWorkspace({
                 ) : null}
 
                 {activeWorkspacePanel === 'media' ? (
-                  <section className="rounded-[28px] border border-slate-200 bg-white/85 p-5 shadow-sm">
+                  <section className="rounded-3xl border border-border bg-surface p-5 shadow-card">
                     <ImageAssetManager
                       topic={sheetRow.topic}
                       images={imageOptions}
@@ -511,19 +513,19 @@ export function ReviewWorkspace({
             </aside>
           </div>
 
-          <div className="border-t border-slate-200/80 bg-white/95 px-6 py-5 backdrop-blur-sm">
+          <div className="border-t border-border bg-surface px-6 py-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-xl">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <CalendarClock className="h-4 w-4" />
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Approve</p>
+                <div className="flex items-center gap-2 text-ink">
+                  <CalendarClock className="h-4 w-4 text-primary" />
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Approve</p>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-muted">
                   Approval saves the current draft, selected image, and optional schedule. Preview variants stay separate until you save them.
                 </p>
               </div>
               <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[460px]">
-                <label className="block text-sm font-semibold text-slate-700" htmlFor="review-post-time-input">
+                <label className="block text-sm font-semibold text-ink" htmlFor="review-post-time-input">
                   Post time (optional)
                 </label>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -532,13 +534,13 @@ export function ReviewWorkspace({
                     type="datetime-local"
                     value={postTime}
                     onChange={(event) => setPostTime(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                   <button
                     type="button"
                     onClick={() => void handleApprove()}
                     disabled={submitting}
-                    className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submitting ? 'Approving...' : 'Approve draft'}
                   </button>
@@ -551,7 +553,7 @@ export function ReviewWorkspace({
                       }
                       onCancel();
                     }}
-                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
                   >
                     Cancel
                   </button>

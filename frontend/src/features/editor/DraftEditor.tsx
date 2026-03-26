@@ -53,12 +53,12 @@ export function DraftEditor({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2">
-        <div className="inline-flex rounded-full bg-white p-1 shadow-sm ring-1 ring-slate-200">
+      <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-canvas px-3 py-2">
+        <div className="inline-flex rounded-full border border-border bg-surface p-1">
           <button
             type="button"
             onClick={() => onScopeChange('whole-post')}
-            className={`rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${effectiveScope === 'whole-post' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg' : 'text-muted hover:bg-canvas'}`}
           >
             Whole post
           </button>
@@ -66,26 +66,26 @@ export function DraftEditor({
             type="button"
             onClick={() => onScopeChange('selection')}
             disabled={!selection?.text.trim()}
-            className={`rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${effectiveScope === 'selection' ? 'bg-purple-600 text-white' : 'text-slate-700 hover:bg-slate-100 disabled:text-slate-400'}`}
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg' : 'text-muted hover:bg-canvas disabled:cursor-not-allowed disabled:text-muted/50'}`}
           >
             Selection
           </button>
         </div>
-        <div className="min-w-0 flex-1 rounded-2xl bg-white px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200">
-          <span className="font-semibold text-slate-900">Target:</span>{' '}
+        <div className="min-w-0 flex-1 rounded-2xl border border-border bg-surface px-3 py-1.5 text-sm text-muted">
+          <span className="font-semibold text-ink">Target:</span>{' '}
           {effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}
         </div>
         <details className="group relative">
-          <summary className="list-none cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20">
+          <summary className="list-none cursor-pointer rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
             Formatting actions
           </summary>
-          <div className="absolute right-0 z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-xl sm:right-auto sm:left-0">
+          <div className="absolute right-0 z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-xl border border-border bg-surface p-3 shadow-lift sm:left-0 sm:right-auto">
             {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => onFormatting(id)}
-                className="inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas"
               >
                 <Icon className="h-4 w-4" />
                 {label}
@@ -103,7 +103,7 @@ export function DraftEditor({
         onKeyUp={syncSelection}
         onMouseUp={syncSelection}
         spellCheck={false}
-        className="flex-1 min-h-[320px] w-full rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-base leading-7 text-slate-900 outline-none transition-all focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/20 resize-none"
+        className="min-h-[320px] w-full flex-1 resize-none rounded-xl border border-border bg-canvas px-5 py-4 text-base leading-7 text-ink outline-none transition-colors focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20"
         placeholder="Edit the draft here. Select a sentence to target only that part with Quick Change or 4 Variants."
       />
     </div>

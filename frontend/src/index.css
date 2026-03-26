@@ -3,12 +3,34 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply font-sans bg-slate-50 text-slate-900 antialiased;
+  html {
+    @apply scroll-smooth;
   }
-  
+
+  body {
+    @apply font-sans bg-canvas text-ink antialiased;
+  }
+
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading text-deep-purple tracking-tight;
+    @apply font-heading text-ink tracking-tight;
+  }
+
+  code {
+    @apply rounded-md bg-surface-muted px-1.5 py-0.5 text-sm text-ink border border-border;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -21,9 +43,9 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 rounded-full;
+    @apply rounded-full bg-border-strong;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-400;
+    @apply bg-muted;
   }
 }

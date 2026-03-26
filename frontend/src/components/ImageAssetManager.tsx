@@ -111,8 +111,8 @@ export function ImageAssetManager({
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h4 className="text-sm font-semibold text-[#1f2937]">Choose the image</h4>
-          <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
+          <h4 className="font-heading text-sm font-semibold text-ink">Choose the image</h4>
+          <p className="mt-1 max-w-xl text-sm leading-6 text-muted">
             Keep the generated options, pull fresh alternatives, or upload a custom asset for this post before approval.
           </p>
         </div>
@@ -122,7 +122,7 @@ export function ImageAssetManager({
             type="button"
             onClick={handleFetchMore}
             disabled={fetching || uploading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/35 bg-canvas px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
             {fetching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {fetching ? 'Fetching...' : 'Fetch other images'}
@@ -131,7 +131,7 @@ export function ImageAssetManager({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading || fetching}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
           >
             {uploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {uploading ? 'Uploading...' : 'Upload image'}
@@ -147,12 +147,12 @@ export function ImageAssetManager({
       </div>
 
       {images.length === 0 ? (
-        <div className="mt-4 rounded-[24px] border border-dashed border-slate-300 bg-slate-50/70 px-5 py-8 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm">
+        <div className="mt-4 rounded-3xl border border-dashed border-border bg-canvas px-5 py-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface text-muted shadow-sm">
             <ImagePlus className="h-6 w-6" />
           </div>
-          <p className="mt-4 text-sm font-semibold text-slate-700">No images are attached yet</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
+          <p className="mt-4 text-sm font-semibold text-ink">No images are attached yet</p>
+          <p className="mt-2 text-sm leading-6 text-muted">
             Fetch fresh image options or upload your own asset to attach one before approval.
           </p>
         </div>
@@ -165,10 +165,10 @@ export function ImageAssetManager({
             return (
               <div
                 key={option.id}
-                className={`overflow-hidden rounded-[24px] border bg-white transition-all duration-200 ${
+                className={`overflow-hidden rounded-3xl border bg-surface transition-colors ${
                   isSelected
                     ? 'border-primary shadow-lg ring-2 ring-primary/15'
-                    : 'border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md'
+                    : 'border-border shadow-card hover:border-border-strong hover:shadow-lift'
                 }`}
               >
                 <button
@@ -176,7 +176,7 @@ export function ImageAssetManager({
                   onClick={() => onSelectImage(option.imageUrl)}
                   className="block w-full text-left"
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-surface-muted">
                     <img
                       src={resolvedImageUrl}
                       alt={option.label}
@@ -184,11 +184,11 @@ export function ImageAssetManager({
                         isSelected ? 'scale-[1.03]' : 'hover:scale-[1.03]'
                       }`}
                     />
-                    <div className="absolute left-3 top-3 rounded-full bg-slate-950/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
+                    <div className="absolute left-3 top-3 rounded-full bg-ink/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-fg">
                       {getOptionBadge(option)}
                     </div>
                     {isSelected ? (
-                      <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
+                      <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-fg">
                         Selected
                       </div>
                     ) : null}
@@ -197,8 +197,8 @@ export function ImageAssetManager({
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-800">{option.label}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                    <p className="truncate text-sm font-semibold text-ink">{option.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted">
                       {isSelected ? 'This image will be attached on approval.' : 'Select this image for the approved post.'}
                     </p>
                   </div>
@@ -207,7 +207,7 @@ export function ImageAssetManager({
                     type="button"
                     onClick={() => void handleDownload(option)}
                     disabled={downloadingId === option.id}
-                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-canvas text-muted transition-colors hover:border-border-strong hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={`Download ${option.label}`}
                   >
                     {downloadingId === option.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}

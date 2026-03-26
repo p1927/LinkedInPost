@@ -325,14 +325,14 @@ export function VariantSelection({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/55 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-8 font-sans">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
-        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-[32px] border border-white/40 bg-gradient-to-b from-white/95 to-slate-50/95 shadow-2xl backdrop-blur-xl">
-          <div className="grid flex-1 gap-0 overflow-y-auto overflow-x-hidden xl:overflow-hidden xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
-            <section className="relative flex min-h-[460px] flex-col border-b border-slate-200/60 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.18),_transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.72),rgba(241,245,249,0.68))] p-3 xl:min-h-0 xl:border-b-0 xl:border-r xl:p-4">
+        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-lift">
+          <div className="grid flex-1 gap-0 overflow-y-auto overflow-x-hidden xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)] xl:overflow-hidden">
+            <section className="relative flex min-h-[460px] flex-col border-b border-border bg-canvas p-3 xl:min-h-0 xl:border-b-0 xl:border-r xl:border-border xl:p-4">
               {options.length > 0 ? (
                 <>
-                  <div className="absolute left-4 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-3 rounded-full border border-white/60 bg-white/80 px-2 py-3 shadow-lg backdrop-blur-sm">
+                  <div className="absolute left-4 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-3 rounded-full border border-border bg-surface px-2 py-3 shadow-card">
                     {options.map((_, index) => {
                       const isActive = index === selectedOptionIndex;
 
@@ -341,16 +341,16 @@ export function VariantSelection({
                           key={`variant-dot-${index}`}
                           type="button"
                           onClick={() => selectOption(index)}
-                          className={`group relative flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 ${
+                          className={`group relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-colors duration-200 ${
                             isActive
-                              ? 'bg-primary text-white shadow-md'
-                              : 'bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                              ? 'bg-primary text-primary-fg shadow-md'
+                              : 'border border-border bg-surface text-muted hover:border-border-strong hover:text-ink'
                           }`}
                           aria-label={`Jump to draft ${index + 1}`}
                           aria-pressed={isActive}
                         >
                           <span className="text-sm font-semibold">{index + 1}</span>
-                          <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                          <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-full bg-ink px-3 py-1 text-xs font-medium text-primary-fg opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
                             Draft {index + 1}
                           </span>
                         </button>
@@ -363,7 +363,7 @@ export function VariantSelection({
                       type="button"
                       onClick={() => changeVariantBy(-1)}
                       disabled={selectedOptionIndex === null || selectedOptionIndex === 0}
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/60 bg-white/85 text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                      className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink shadow-md transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-45"
                       aria-label="Previous draft"
                     >
                       <ChevronUp className="h-5 w-5" />
@@ -372,7 +372,7 @@ export function VariantSelection({
                       type="button"
                       onClick={() => changeVariantBy(1)}
                       disabled={selectedOptionIndex === null || selectedOptionIndex === options.length - 1}
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/60 bg-white/85 text-slate-700 shadow-md transition-all duration-200 hover:translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                      className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink shadow-md transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-45"
                       aria-label="Next draft"
                     >
                       <ChevronDown className="h-5 w-5" />
@@ -380,19 +380,19 @@ export function VariantSelection({
                   </div>
 
                   <div className="mb-3 pl-16 pr-16 sm:pr-20">
-                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Draft Carousel</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">Draft Carousel</p>
                     <div className="mt-2 flex items-end justify-between gap-4">
                       <div>
-                        <h3 className="text-2xl font-semibold text-slate-900">Review one variant at a time</h3>
-                        <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
+                        <h3 className="font-heading text-2xl font-semibold text-ink">Review one variant at a time</h3>
+                        <p className="mt-1 max-w-xl text-sm leading-6 text-muted">
                           Scroll the preview, use the arrow keys, or tap the left rail to move through drafts. The refine panel stays in sync with the active variant.
                         </p>
                       </div>
-                      <div className="hidden rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-right shadow-sm sm:block">
-                        <p className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">Active draft</p>
-                        <p className="mt-1 text-lg font-semibold text-slate-900">
+                      <div className="hidden rounded-2xl border border-border bg-surface px-4 py-3 text-right shadow-card sm:block">
+                        <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted">Active draft</p>
+                        <p className="mt-1 text-lg font-semibold text-ink">
                           {(selectedOptionIndex ?? 0) + 1}
-                          <span className="ml-1 text-sm font-medium text-slate-500">/ {options.length}</span>
+                          <span className="ml-1 text-sm font-medium text-muted">/ {options.length}</span>
                         </p>
                       </div>
                     </div>
@@ -404,7 +404,7 @@ export function VariantSelection({
                     onKeyDown={handleCarouselKeyDown}
                     tabIndex={0}
                   >
-                    <div className="h-full overflow-hidden rounded-[32px] border border-white/70 bg-white/75 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+                    <div className="h-full overflow-hidden rounded-3xl border border-border bg-surface shadow-card">
                       <div
                         className="flex h-full flex-col transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
                         style={{ transform: `translateY(-${(selectedOptionIndex ?? 0) * 100}%)` }}
@@ -428,28 +428,28 @@ export function VariantSelection({
                   </div>
                 </>
               ) : (
-                <div className="flex h-full items-center justify-center rounded-3xl border-2 border-dashed border-slate-300 bg-white/50 px-6 py-16 text-center text-slate-500 shadow-sm">
+                <div className="flex h-full items-center justify-center rounded-3xl border-2 border-dashed border-border bg-canvas px-6 py-16 text-center text-muted shadow-sm">
                   No draft variants are available for this topic yet.
                 </div>
               )}
             </section>
 
-            <aside className="flex min-h-fit xl:min-h-0 flex-col bg-white/60 p-3 xl:p-4 backdrop-blur-sm">
-              <div className="flex h-full min-h-fit xl:min-h-0 flex-col rounded-[32px] border border-white/60 bg-white/90 p-6 shadow-xl sm:p-8 backdrop-blur-md">
+            <aside className="flex min-h-fit flex-col bg-canvas p-3 xl:min-h-0 xl:p-4">
+              <div className="flex h-full min-h-fit flex-col rounded-3xl border border-border bg-surface p-6 shadow-card sm:p-8 xl:min-h-0">
                 <div className="min-h-fit xl:min-h-0 xl:flex-1 xl:overflow-y-auto pr-2 custom-scrollbar">
                 <section>
-                  <div className="mb-3 flex items-center justify-between gap-4 text-[#1f2937]">
+                  <div className="mb-3 flex items-center justify-between gap-4 text-ink">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-4 w-4 text-primary" />
                       <h4 className="text-sm font-semibold">Improve this draft</h4>
                     </div>
                     {selectedOptionIndex !== null ? (
-                      <span className="rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-primary">
+                      <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-900">
                         Draft {selectedOptionIndex + 1}
                       </span>
                     ) : null}
                   </div>
-                  <label className="block text-sm font-medium text-[#374151]" htmlFor="editable-post-text">
+                  <label className="block text-sm font-medium text-ink" htmlFor="editable-post-text">
                     Edit the post directly
                   </label>
                   <textarea
@@ -457,9 +457,9 @@ export function VariantSelection({
                     value={editableText}
                     onChange={(event) => setEditableText(event.target.value)}
                     placeholder="Edit the selected draft here before approval or refinement."
-                    className="mt-2 min-h-[160px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
+                    className="mt-2 min-h-[160px] w-full rounded-2xl border border-border bg-canvas px-4 py-4 text-sm leading-6 text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
-                  <label className="mt-4 block text-sm font-medium text-[#374151]" htmlFor="refinement-notes">
+                  <label className="mt-4 block text-sm font-medium text-ink" htmlFor="refinement-notes">
                     Tell Gemini what to improve
                   </label>
                   <textarea
@@ -467,22 +467,22 @@ export function VariantSelection({
                     value={refinementPrompt}
                     onChange={(event) => setRefinementPrompt(event.target.value)}
                     placeholder="Examples: make it more founder-like, remove jargon, add a stronger hook, keep it under 180 words."
-                    className="mt-2 min-h-[80px] w-full rounded-2xl border border-slate-200 bg-white/50 px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50"
+                    className="mt-2 min-h-[80px] w-full rounded-2xl border border-border bg-canvas px-4 py-4 text-sm leading-6 text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
-                  <p className="mt-2 text-xs leading-5 text-[#6b7280]">
+                  <p className="mt-2 text-xs leading-5 text-muted">
                     Approval uses the edited copy above immediately. Refinement sends the edited draft plus these notes to Gemini and replaces the four sheet variants with a fresh set.
                   </p>
                   <button
                     onClick={handleRefine}
                     type="button"
                     disabled={refining || submitting || selectedOptionIndex === null}
-                    className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 text-sm font-semibold text-primary transition-all duration-200 hover:bg-purple-100 hover:-translate-y-0.5 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                    className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-900 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {refining ? 'Requesting 4 refined variants...' : 'Generate 4 improved variants'}
                   </button>
                 </section>
 
-                <section className="mt-8 pt-6 border-t border-slate-200">
+                <section className="mt-8 border-t border-border pt-6">
                   <ImageAssetManager
                     topic={row.topic}
                     images={imageOptions}
@@ -494,12 +494,12 @@ export function VariantSelection({
                   />
                 </section>
 
-                <section className="mt-8 pt-6 border-t border-slate-200">
-                  <div className="mb-3 flex items-center gap-2 text-[#1f2937]">
+                <section className="mt-8 border-t border-border pt-6">
+                  <div className="mb-3 flex items-center gap-2 text-ink">
                     <CalendarClock className="h-5 w-5 text-primary" />
                     <h4 className="text-sm font-semibold">Schedule Delivery</h4>
                   </div>
-                  <label className="block text-sm font-medium text-[#374151]" htmlFor="post-time-input">
+                  <label className="block text-sm font-medium text-ink" htmlFor="post-time-input">
                     Post time (optional)
                   </label>
                   <input
@@ -507,9 +507,9 @@ export function VariantSelection({
                     type="datetime-local"
                     value={postTime}
                     onChange={(e) => setPostTime(e.target.value)}
-                    className="mt-2 w-full max-w-sm rounded-xl border border-slate-200 bg-white/50 px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/50 cursor-pointer"
+                    className="mt-2 w-full max-w-sm cursor-pointer rounded-xl border border-border bg-canvas px-4 py-3 text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
-                  <p className="mt-2 text-xs leading-5 text-slate-500">Leave this empty if the post should publish the next time the publishing workflow runs.</p>
+                  <p className="mt-2 text-xs leading-5 text-muted">Leave this empty if the post should publish the next time the publishing workflow runs.</p>
                 </section>
                 </div>
 
@@ -517,14 +517,14 @@ export function VariantSelection({
                   <button
                     onClick={handleSubmit}
                     disabled={submitting || selectedOptionIndex === null}
-                    className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-purple-600 hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-fg transition-colors duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submitting ? 'Approving...' : 'Approve selected post'}
                   </button>
                   <button
                     onClick={() => requestAction({ type: 'close' })}
                     disabled={submitting}
-                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/50 px-6 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas disabled:opacity-50"
                   >
                     Cancel
                   </button>

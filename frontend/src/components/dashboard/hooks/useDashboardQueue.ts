@@ -303,11 +303,16 @@ export function useDashboardQueue({
 
   const getStatusColor = (status: string) => {
     switch (getNormalizedRowStatus(status)) {
-      case 'pending': return 'bg-amber-100 text-amber-800 border border-amber-200';
-      case 'drafted': return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
-      case 'approved': return 'bg-purple-100 text-purple-800 border border-purple-200';
-      case 'published': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
-      default: return 'bg-slate-100 text-slate-800 border border-slate-200';
+      case 'pending':
+        return 'bg-amber-100 text-amber-900 border border-amber-200/80';
+      case 'drafted':
+        return 'bg-teal-50 text-teal-900 border border-teal-200/80';
+      case 'approved':
+        return 'bg-orange-50 text-orange-900 border border-orange-200/80';
+      case 'published':
+        return 'bg-emerald-50 text-emerald-900 border border-emerald-200/80';
+      default:
+        return 'bg-surface-muted text-muted border border-border';
     }
   };
 

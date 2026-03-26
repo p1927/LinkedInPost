@@ -36,24 +36,22 @@ export function DashboardOverview({
 }) {
   return (
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
-      {/* Left column */}
       <div className="space-y-4">
-        {/* Spotlight rows */}
-        <section className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="border-b border-slate-100 px-4 py-3 flex items-center justify-between gap-3">
+        <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Up next</p>
-              <h3 className="mt-0.5 text-sm font-semibold text-slate-900">Items needing attention</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Up next</p>
+              <h3 className="mt-0.5 font-heading text-sm font-semibold text-ink">Needs attention</h3>
             </div>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+            <span className="rounded-full border border-border bg-canvas px-2.5 py-1 text-[11px] font-semibold text-muted">
               {filterOptions.find((option) => option.value === statusFilter)?.label}
             </span>
           </div>
           <div>
             {queueSpotlightRows.length === 0 ? (
               <div className="px-4 py-10 text-center">
-                <p className="text-sm font-medium text-slate-600">No rows match the current filter.</p>
-                <p className="mt-1 text-xs text-slate-400">Switch filters or open the queue tab.</p>
+                <p className="text-sm font-medium text-ink">No rows match this filter.</p>
+                <p className="mt-1 text-xs text-muted">Change the filter chips above the queue.</p>
               </div>
             ) : (
               queueSpotlightRows.map((row) => (
@@ -63,16 +61,18 @@ export function DashboardOverview({
                   onClick={() => {
                     setStatusFilter(getNormalizedRowStatus(row.status) as QueueFilter);
                   }}
-                  className="w-full border-t border-slate-100 first:border-t-0 px-4 py-3.5 text-left transition-colors hover:bg-slate-50 cursor-pointer"
+                  className="w-full cursor-pointer border-t border-border px-4 py-3.5 text-left transition-colors first:border-t-0 hover:bg-canvas"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-lg font-semibold text-slate-900">{row.topic}</h4>
+                    <h4 className="font-heading text-lg font-semibold text-ink">{row.topic}</h4>
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${getStatusColor(row.status)}`}>
                       {row.status || 'Pending'}
                     </span>
-                    <span className="text-xs text-slate-400">{row.date}</span>
+                    <span className="text-xs text-muted">{row.date}</span>
                   </div>
-                  <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">{(row.selectedText || row.variant1 || 'No draft content yet.').trim()}</p>
+                  <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-muted">
+                    {(row.selectedText || row.variant1 || 'No draft content yet.').trim()}
+                  </p>
                 </button>
               ))
             )}
@@ -80,27 +80,24 @@ export function DashboardOverview({
         </section>
       </div>
 
-      {/* Right column */}
       <div className="space-y-4">
-        {/* Delivery target */}
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-border bg-surface p-4 shadow-card">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Delivery target</p>
-              <h3 className="mt-0.5 text-base font-semibold text-slate-900">{getChannelLabel(selectedChannel)}</h3>
-              <p className="mt-1 text-xs leading-5 text-slate-500">Approved posts use this destination.</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Delivery target</p>
+              <h3 className="mt-0.5 font-heading text-base font-semibold text-ink">{getChannelLabel(selectedChannel)}</h3>
+              <p className="mt-1 text-xs leading-5 text-muted">Approved posts use this destination.</p>
             </div>
           </div>
-          <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Destination</p>
-            <p className="mt-1 text-xs font-semibold text-slate-800">{deliveryTargetSummary}</p>
-            <p className="mt-0.5 text-[11px] leading-4 text-slate-400">{selectedChannelOption.description}</p>
+          <div className="mt-3 rounded-xl border border-border bg-canvas px-3 py-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Destination</p>
+            <p className="mt-1 text-xs font-semibold text-ink">{deliveryTargetSummary}</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-muted">{selectedChannelOption.description}</p>
           </div>
         </section>
 
-        {/* Publishing health */}
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Publishing health</p>
+        <section className="rounded-2xl border border-border bg-surface p-4 shadow-card">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Publishing health</p>
           <div className="mt-3 space-y-1.5">
             {[
               { label: 'LinkedIn', ready: linkedinConfigured },
@@ -108,9 +105,13 @@ export function DashboardOverview({
               { label: 'Telegram', ready: telegramConfigured },
               { label: 'WhatsApp', ready: whatsappConfigured },
             ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                <span className="text-xs font-medium text-slate-700">{item.label}</span>
-                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${item.ready ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+              <div key={item.label} className="flex items-center justify-between rounded-xl border border-border bg-canvas px-3 py-2">
+                <span className="text-xs font-medium text-ink">{item.label}</span>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                    item.ready ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
+                  }`}
+                >
                   {item.ready ? 'Connected' : 'Setup needed'}
                 </span>
               </div>
@@ -118,19 +119,18 @@ export function DashboardOverview({
           </div>
         </section>
 
-        {/* Last delivery */}
         {lastDeliverySummary ? (
-          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <section className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Last delivery</p>
-              <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 ring-1 ring-emerald-200">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Last delivery</p>
+              <span className="rounded-full border border-emerald-200 bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
                 {getChannelLabel(lastDeliverySummary.channel)}
               </span>
-              <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 ring-1 ring-emerald-200">
+              <span className="rounded-full border border-emerald-200 bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
                 {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
               </span>
             </div>
-            <p className="mt-2 text-xs leading-5 text-slate-600">
+            <p className="mt-2 text-xs leading-5 text-muted">
               {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'
                 ? `Delivered to ${lastDeliverySummary.recipientLabel}.`
                 : lastDeliverySummary.channel === 'instagram'

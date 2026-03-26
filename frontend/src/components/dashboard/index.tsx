@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { Bot, RefreshCw } from 'lucide-react';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '../../services/configService';
 import { getNormalizedRowStatus } from './utils';
@@ -133,10 +133,10 @@ export function Dashboard({
 
   if (!session.config.spreadsheetId && !session.isAdmin) {
     return (
-      <div className="bg-white/80 backdrop-blur-md border border-white/50 text-left max-w-xl mx-auto mt-8 p-8 rounded-2xl shadow-xl">
-        <h2 className="text-xl font-bold text-deep-purple font-heading">Workspace setup pending</h2>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          You are signed in as <strong>{session.email}</strong>, but an admin still needs to finish the shared spreadsheet, draft workflow, Instagram publishing, LinkedIn publishing, plus Telegram and WhatsApp delivery settings in the backend.
+      <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-border bg-surface p-8 text-left shadow-card">
+        <h2 className="font-heading text-xl font-semibold text-ink">Workspace setup pending</h2>
+        <p className="mt-3 text-sm leading-6 text-muted">
+          You are signed in as <strong className="text-ink">{session.email}</strong>, but an admin still needs to finish the shared spreadsheet, draft workflow, Instagram publishing, LinkedIn publishing, plus Telegram and WhatsApp delivery settings in the backend.
         </p>
       </div>
     );
@@ -235,18 +235,33 @@ export function Dashboard({
   );
 
   return (
-    <div className="max-w-[1600px] mx-auto w-full px-4 pb-12">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm mb-4">
+    <div className="mx-auto w-full max-w-[1600px] px-0 pb-12 sm:px-1">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3.5 shadow-card">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Overview</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Snapshot of queue and delivery state.</p>
+          <h2 className="font-heading text-base font-semibold text-ink">Overview</h2>
+          <p className="mt-0.5 text-xs text-muted">Queue snapshot and delivery context.</p>
         </div>
-        <div className="flex items-center">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-canvas px-3 py-2 text-xs text-muted transition-colors focus-within:ring-2 focus-within:ring-primary/30">
+            <Bot className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <span className="hidden sm:inline">Model</span>
+            <select
+              value={settingsHook.googleModel}
+              onChange={(e) => settingsHook.setGoogleModel(e.target.value)}
+              className="max-w-[200px] cursor-pointer bg-transparent font-semibold text-ink outline-none sm:max-w-xs"
+            >
+              {settingsHook.availableModels.map((model) => (
+                <option key={model.value} value={model.value}>
+                  {model.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
             onClick={() => void loadData()}
             disabled={queueHook.loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-canvas px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${queueHook.loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -254,19 +269,19 @@ export function Dashboard({
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 relative">
-        <aside className="w-full lg:w-[320px] xl:w-[360px] shrink-0 flex flex-col gap-6 sticky top-[90px] max-h-[calc(100vh-100px)] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-          <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-5">
-            <h2 className="text-lg font-bold text-slate-900">Delivery Configuration</h2>
+      <div className="relative flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
+        <aside className="custom-scrollbar sticky top-20 flex max-h-[calc(100vh-5rem)] w-full shrink-0 flex-col gap-6 overflow-y-auto pb-4 pr-1 lg:w-[320px] xl:w-[360px]">
+          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card">
+            <h2 className="font-heading text-lg font-semibold text-ink">Delivery</h2>
             {deliveryContent}
           </div>
-          
-          {session.isAdmin && (
-            <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-5">
-              <h2 className="text-lg font-bold text-slate-900">Workspace Settings</h2>
+
+          {session.isAdmin ? (
+            <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 shadow-card">
+              <h2 className="font-heading text-lg font-semibold text-ink">Workspace settings</h2>
               {settingsContent}
             </div>
-          )}
+          ) : null}
         </aside>
 
         <div className="flex-1 min-w-0 space-y-6 flex flex-col">

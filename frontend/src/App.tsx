@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Share2, Sparkles, TableProperties } from 'lucide-react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/dashboard'
 import { AlertProvider } from './components/AlertProvider'
@@ -67,116 +68,114 @@ function App() {
 
   return (
     <AlertProvider>
-      <div className="min-h-screen flex w-full flex-col bg-slate-50 text-slate-900 font-sans">
-      <header className="w-full bg-white border-b border-slate-200 px-4 sm:px-6 py-3">
-        <div className="max-w-[1600px] mx-auto flex w-full items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center shrink-0">
-              <span className="text-white text-xs font-bold tracking-tight">CB</span>
+      <div className="flex min-h-screen w-full flex-col bg-canvas font-sans text-ink">
+        <header className="w-full border-b border-border bg-surface px-4 py-3.5 sm:px-6">
+          <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg">
+                CB
+              </div>
+              <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
             </div>
-            <h1 className="text-base font-bold text-slate-800 tracking-tight">Channel Bot</h1>
+            {idToken ? <GoogleLoginButton onLogin={handleLogin} /> : null}
           </div>
-          {idToken && <GoogleLoginButton onLogin={handleLogin} />}
-        </div>
-      </header>
+        </header>
 
-      <main className="flex flex-1 flex-col pt-5 pb-10 w-full max-w-[1600px] mx-auto">
-        {!api.isConfigured() ? (
-          <div className="mx-auto flex max-w-2xl flex-1 flex-col justify-center px-4 text-center">
-            <h2 className="mb-4 text-2xl font-bold text-deep-purple font-heading">Backend URL required</h2>
-            <p className="text-slate-600">
-              Set <code>VITE_WORKER_URL</code> to the deployed Cloudflare Worker URL, then rebuild the frontend.
-            </p>
-          </div>
-        ) : !idToken ? (
-          <div className="flex flex-1 flex-col lg:flex-row items-center justify-center px-6 lg:px-12 gap-12 lg:gap-24 min-h-[calc(100vh-140px)]">
-            <div className="flex-1 max-w-2xl text-left space-y-8">
-              <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 font-heading tracking-tight leading-tight">
-                Automate your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">omnichannel</span> content pipeline.
-              </h2>
-              <ul className="space-y-6 text-lg text-slate-600">
-                <li className="flex items-start gap-4">
-                  <div className="bg-emerald-100 p-2.5 rounded-xl shrink-0 mt-0.5">
-                    <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  </div>
-                  <div>
-                    <strong className="block text-slate-900 font-semibold mb-1">Source from Google Sheets</strong>
-                    Manage your content calendar entirely from a shared spreadsheet.
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="bg-purple-100 p-2.5 rounded-xl shrink-0 mt-0.5">
-                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                  </div>
-                  <div>
-                    <strong className="block text-slate-900 font-semibold mb-1">AI-Powered Generation</strong>
-                    Automatically draft, refine, and select variants using integrated models.
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="bg-sky-100 p-2.5 rounded-xl shrink-0 mt-0.5">
-                    <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                  </div>
-                  <div>
-                    <strong className="block text-slate-900 font-semibold mb-1">Omnichannel Delivery</strong>
-                    Publish directly to LinkedIn, Instagram, Telegram, and WhatsApp.
-                  </div>
-                </li>
-              </ul>
+        <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pb-12 pt-6 sm:px-6">
+          {!api.isConfigured() ? (
+            <div className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-2 text-center">
+              <h2 className="mb-3 font-heading text-2xl font-semibold text-ink">Backend URL required</h2>
+              <p className="text-muted">
+                Set <code>VITE_WORKER_URL</code> to the deployed Cloudflare Worker URL, then rebuild the frontend.
+              </p>
             </div>
-            
-            <div className="w-full max-w-md lg:w-[40%] bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 p-8 sm:p-10">
-              <div className="text-center space-y-6">
-                <div className="bg-primary/5 w-16 h-16 rounded-2xl mx-auto flex items-center justify-center">
-                  <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-slate-900 font-heading">Welcome Back</h3>
-                  <p className="text-slate-500 mt-2">Sign in to access your workspace.</p>
-                </div>
-                
-                <div className="pt-4 pb-2 flex justify-center w-full">
-                  <GoogleLoginButton onLogin={handleLogin} />
-                </div>
-                
-                {errorMessage ? (
-                  <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
-                    {errorMessage}
+          ) : !idToken ? (
+            <div className="flex min-h-[calc(100vh-9rem)] flex-1 flex-col items-center justify-center gap-14 lg:flex-row lg:gap-20">
+              <div className="max-w-xl flex-1 space-y-10 text-left">
+                <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight text-ink lg:text-[2.75rem] lg:leading-[1.12]">
+                  One pipeline for drafts, review, and delivery across every channel you use.
+                </h2>
+                <ul className="space-y-8 text-lg text-muted">
+                  <li className="flex gap-4">
+                    <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-card">
+                      <TableProperties className="h-5 w-5 text-primary" aria-hidden />
+                    </span>
+                    <div>
+                      <strong className="mb-1 block font-semibold text-ink">Google Sheets at the center</strong>
+                      Keep topics and status in a shared spreadsheet the whole team already understands.
+                    </div>
+                  </li>
+                  <li className="flex gap-4">
+                    <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-card">
+                      <Sparkles className="h-5 w-5 text-primary" aria-hidden />
+                    </span>
+                    <div>
+                      <strong className="mb-1 block font-semibold text-ink">Model-assisted drafting</strong>
+                      Generate quick edits and variants, then compare before anything ships.
+                    </div>
+                  </li>
+                  <li className="flex gap-4">
+                    <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-card">
+                      <Share2 className="h-5 w-5 text-primary" aria-hidden />
+                    </span>
+                    <div>
+                      <strong className="mb-1 block font-semibold text-ink">Publish where it belongs</strong>
+                      Send approved posts to LinkedIn, Instagram, Telegram, and WhatsApp from one place.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-lift sm:p-10">
+                <div className="space-y-6 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-muted">
+                    <TableProperties className="h-7 w-7 text-primary" aria-hidden />
                   </div>
-                ) : null}
+                  <div>
+                    <h3 className="font-heading text-2xl font-semibold text-ink">Sign in</h3>
+                    <p className="mt-2 text-sm text-muted">Use an approved Google account to open the workspace.</p>
+                  </div>
+                  <div className="flex justify-center pt-2">
+                    <GoogleLoginButton onLogin={handleLogin} />
+                  </div>
+                  {errorMessage ? (
+                    <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-800">
+                      {errorMessage}
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
-          </div>
-        ) : loading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 rounded-full border-4 border-primary/30 border-t-primary animate-spin"></div>
-              <p className="text-slate-500">Loading shared workspace...</p>
+          ) : loading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-border border-t-primary" />
+                <p className="text-sm text-muted">Loading shared workspace…</p>
+              </div>
             </div>
-          </div>
-        ) : session ? (
-          <Dashboard
-            idToken={idToken}
-            session={session}
-            api={api}
-            onSaveConfig={async (config) => {
-              const updatedConfig = await api.saveConfig(idToken, config)
-              setSession((current) => (current ? { ...current, config: updatedConfig } : current))
-              return updatedConfig
-            }}
-            onAuthExpired={handleAuthExpired}
-          />
-        ) : (
-          <div className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center px-4 text-center">
-            <h2 className="mb-4 text-2xl font-bold text-deep-purple font-heading">Unable to start the session</h2>
-            <p className="text-slate-600">{errorMessage || 'Verify the Cloudflare Worker deployment and try again.'}</p>
-            <p className="mt-3 text-sm text-slate-500">
-              Current backend: {getBackendHostLabel(import.meta.env.VITE_WORKER_URL || '')}
-            </p>
-          </div>
-        )}
-      </main>
-    </div>
+          ) : session ? (
+            <Dashboard
+              idToken={idToken}
+              session={session}
+              api={api}
+              onSaveConfig={async (config) => {
+                const updatedConfig = await api.saveConfig(idToken, config)
+                setSession((current) => (current ? { ...current, config: updatedConfig } : current))
+                return updatedConfig
+              }}
+              onAuthExpired={handleAuthExpired}
+            />
+          ) : (
+            <div className="mx-auto flex max-w-lg flex-1 flex-col items-center justify-center px-2 text-center">
+              <h2 className="mb-3 font-heading text-2xl font-semibold text-ink">Unable to start the session</h2>
+              <p className="text-muted">{errorMessage || 'Verify the Cloudflare Worker deployment and try again.'}</p>
+              <p className="mt-4 text-sm text-muted">
+                Current backend: {getBackendHostLabel(import.meta.env.VITE_WORKER_URL || '')}
+              </p>
+            </div>
+          )}
+        </main>
+      </div>
     </AlertProvider>
   )
 }

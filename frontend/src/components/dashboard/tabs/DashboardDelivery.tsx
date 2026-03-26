@@ -36,14 +36,14 @@ export function DashboardDelivery({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+      <div className="rounded-2xl border border-border bg-canvas p-4">
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Target</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">Target</p>
             <select
               value={selectedChannel}
               onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-              className="mt-1 w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-semibold text-deep-purple outline-none"
+              className="mt-1 w-full cursor-pointer rounded-lg border border-border bg-surface px-2 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-primary/25"
             >
               {CHANNEL_OPTIONS.map((channel) => (
                 <option key={channel.value} value={channel.value}>
@@ -55,8 +55,8 @@ export function DashboardDelivery({
         </div>
 
         <div className="mt-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Current destination</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">{deliveryTargetSummary}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Current destination</p>
+          <p className="mt-1 text-sm font-semibold text-ink">{deliveryTargetSummary}</p>
           
           {selectedChannelOption.requiresRecipient ? (
             <>
@@ -64,14 +64,14 @@ export function DashboardDelivery({
                 <button
                   type="button"
                   onClick={() => setRecipientMode('saved')}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'saved' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+                  className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${recipientMode === 'saved' ? 'bg-primary text-primary-fg' : 'border border-border bg-surface text-muted hover:text-ink'}`}
                 >
                   {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setRecipientMode('manual')}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${recipientMode === 'manual' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+                  className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${recipientMode === 'manual' ? 'bg-primary text-primary-fg' : 'border border-border bg-surface text-muted hover:text-ink'}`}
                 >
                   {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
                 </button>
@@ -79,13 +79,13 @@ export function DashboardDelivery({
 
               {recipientMode === 'saved' ? (
                 <label className="mt-3 block">
-                  <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
                     <MessageCircle className="h-4 w-4" /> {selectedChannel === 'telegram' ? 'Chat' : 'Recipient'}
                   </span>
                   <select
                     value={selectedRecipientId}
                     onChange={(e) => setSelectedRecipientId(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                    className="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-3 text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     disabled={activeRecipientOptions.length === 0}
                   >
                     {activeRecipientOptions.length === 0 ? (
@@ -101,7 +101,7 @@ export function DashboardDelivery({
                 </label>
               ) : (
                 <label className="mt-3 block">
-                  <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                  <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
                     {selectedChannel === 'telegram' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />} {selectedChannel === 'telegram' ? 'Chat ID' : 'Phone number'}
                   </span>
                   <input
@@ -109,34 +109,34 @@ export function DashboardDelivery({
                     value={manualRecipientId}
                     onChange={(e) => setManualRecipientId(e.target.value)}
                     placeholder={selectedChannel === 'telegram' ? '@my_channel or -1001234567890' : '+14155550101'}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                    className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </label>
               )}
             </>
           ) : selectedChannel === 'instagram' ? (
             <>
-              <p className="mt-4 text-sm leading-6 text-slate-700">{getInstagramDeliveryDescription()}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">{getInstagramDeliveryHint()}</p>
+              <p className="mt-4 text-sm leading-6 text-ink">{getInstagramDeliveryDescription()}</p>
+              <p className="mt-2 text-xs leading-5 text-muted">{getInstagramDeliveryHint()}</p>
             </>
           ) : (
             <>
-              <p className="mt-4 text-sm leading-6 text-slate-700">{getLinkedInDeliveryDescription()}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-500">{getLinkedInDeliveryHint()}</p>
+              <p className="mt-4 text-sm leading-6 text-ink">{getLinkedInDeliveryDescription()}</p>
+              <p className="mt-2 text-xs leading-5 text-muted">{getLinkedInDeliveryHint()}</p>
             </>
           )}
         </div>
       </div>
 
       {lastDeliverySummary ? (
-        <div className="rounded-xl border border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.96)_0%,rgba(240,249,255,0.92)_100%)] p-4">
+        <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/90 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Last</p>
-            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-slate-700 ring-1 ring-emerald-200">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800">Last send</p>
+            <span className="rounded-full border border-emerald-200 bg-surface px-2 py-0.5 text-[10px] font-semibold text-ink">
               {getChannelLabel(lastDeliverySummary.channel)}
             </span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-slate-600">
+          <p className="mt-2 text-xs leading-5 text-muted">
             {lastDeliverySummary.recipientLabel}.
           </p>
         </div>

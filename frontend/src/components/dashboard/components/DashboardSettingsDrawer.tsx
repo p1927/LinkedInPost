@@ -104,33 +104,33 @@ export function DashboardSettingsDrawer({
   return (
     <>
       <div className="flex flex-col gap-3">
-      <details className="group rounded-xl border border-slate-200 bg-slate-50/50 shadow-sm [&_summary::-webkit-details-marker]:hidden" open>
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
+      <details className="group rounded-xl border border-border bg-canvas shadow-sm [&_summary::-webkit-details-marker]:hidden" open>
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
                 Workspace core
-                <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
-              <div className="border-t border-slate-100 p-4 pt-0">
+              <div className="border-t border-border p-4 pt-0">
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">Google Spreadsheet ID</label>
+                    <label className="mb-1 block text-sm font-semibold text-ink">Google Spreadsheet ID</label>
                     <input
                       type="text"
                       value={sheetIdInput}
                       onChange={(e) => setSheetIdInput(e.target.value)}
                       placeholder="e.g. 1BxiMVs0XRYFgwnV_v..."
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                    <p className="mt-1.5 text-xs text-slate-500">Found in the URL of your Google Sheet.</p>
+                    <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">Default Channel</label>
+                    <label className="mb-1 block text-sm font-semibold text-ink">Default Channel</label>
                     <select
                       value={selectedChannel}
                       onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       {CHANNEL_OPTIONS.map((channel) => (
                         <option key={channel.value} value={channel.value}>
@@ -138,39 +138,39 @@ export function DashboardSettingsDrawer({
                         </option>
                       ))}
                     </select>
-                    <p className="mt-1.5 text-xs text-slate-500">Used as the default destination in the delivery panel.</p>
+                    <p className="mt-1.5 text-xs text-muted">Used as the default destination in the delivery panel.</p>
                   </div>
                 </div>
               </div>
             </details>
 
-            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
+            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
                 GitHub Actions
-                <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
-              <div className="border-t border-slate-100 p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-slate-500">GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.</p>
+              <div className="border-t border-border p-4 pt-0">
+                <p className="mt-2 text-xs leading-5 text-muted">GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.</p>
                 <div className="mt-4 space-y-4">
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">GitHub Repository</label>
+                    <label className="mb-1 block text-sm font-semibold text-ink">GitHub Repository</label>
                     <input
                       type="text"
                       value={githubRepo}
                       onChange={(e) => setGithubRepo(e.target.value)}
                       placeholder="e.g. username/repo-name"
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">Google Model</label>
+                    <label className="mb-1 block text-sm font-semibold text-ink">Google Model</label>
                     <select
                       value={googleModel}
                       onChange={(e) => setGoogleModel(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       {availableModels.map((model) => (
                         <option key={model.value} value={model.value}>
@@ -181,26 +181,26 @@ export function DashboardSettingsDrawer({
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">Shared Generation Rules</label>
+                    <label className="mb-1 block text-sm font-semibold text-ink">Shared Generation Rules</label>
                     <textarea
                       value={generationRules}
                       onChange={(e) => setGenerationRules(e.target.value)}
                       placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
-                      className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="min-h-[120px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                    <p className="mt-1.5 text-xs text-slate-500">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
+                    <p className="mt-1.5 text-xs text-muted">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">Replace GitHub Personal Access Token</label>
+                    <label className="mb-1 block text-sm font-semibold text-ink">Replace GitHub Personal Access Token</label>
                     <input
                       type="password"
                       value={githubTokenInput}
                       onChange={(e) => setGithubTokenInput(e.target.value)}
                       placeholder={session.config.hasGitHubToken ? 'Leave blank to keep the current token' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                    <p className="mt-1.5 text-xs text-slate-500">
+                    <p className="mt-1.5 text-xs text-muted">
                       {session.config.hasGitHubToken
                         ? 'A token is already stored. Enter a new one only when you want to rotate it.'
                         : 'Required once so the backend can dispatch the GitHub workflows.'}
@@ -210,21 +210,21 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
+            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
                 Instagram Publishing
-                <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
-              <div className="border-t border-slate-100 p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-slate-500">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
+              <div className="border-t border-border p-4 pt-0">
+                <p className="mt-2 text-xs leading-5 text-muted">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
                 <div className="mt-4 space-y-4">
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                  <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
                     <div className="flex items-center gap-3">
-                      <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-slate-300'}`}></div>
-                      <p className="text-sm font-medium text-slate-700">
+                      <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-border-strong'}`}></div>
+                      <p className="text-sm font-medium text-ink">
                         {session.config.hasInstagramAccessToken && session.config.instagramUserId
                           ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
                           : session.config.instagramAuthAvailable
@@ -239,7 +239,7 @@ export function DashboardSettingsDrawer({
                       type="button"
                       onClick={() => void handleInstagramConnection()}
                       disabled={channelActionBusy || !session.config.instagramAuthAvailable}
-                      className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {connectingChannel === 'instagram'
                         ? 'Opening Instagram approval...'
@@ -258,7 +258,7 @@ export function DashboardSettingsDrawer({
                       </button>
                     ) : null}
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted">
                     {session.config.instagramAuthAvailable
                       ? 'The Worker opens Instagram approval in a popup, exchanges the code server-side, and stores the long-lived token securely.'
                       : 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in the Worker before this button can be used.'}
@@ -267,21 +267,21 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
+            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
                 LinkedIn Publishing
-                <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
-              <div className="border-t border-slate-100 p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-slate-500">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
+              <div className="border-t border-border p-4 pt-0">
+                <p className="mt-2 text-xs leading-5 text-muted">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
                 <div className="mt-4 space-y-4">
-                  <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                  <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
                     <div className="flex items-center gap-3">
-                      <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-slate-300'}`}></div>
-                      <p className="text-sm font-medium text-slate-700">
+                      <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-border-strong'}`}></div>
+                      <p className="text-sm font-medium text-ink">
                         {session.config.hasLinkedInAccessToken
                           ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
                           : session.config.linkedinAuthAvailable
@@ -296,7 +296,7 @@ export function DashboardSettingsDrawer({
                       type="button"
                       onClick={() => void handleLinkedInConnection()}
                       disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
-                      className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {connectingChannel === 'linkedin'
                         ? 'Opening LinkedIn approval...'
@@ -315,7 +315,7 @@ export function DashboardSettingsDrawer({
                       </button>
                     ) : null}
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted">
                     {session.config.linkedinAuthAvailable
                       ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
                       : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
@@ -324,22 +324,22 @@ export function DashboardSettingsDrawer({
               </div>
             </details>
 
-            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
+            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
                 Telegram Delivery
-                <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
-              <div className="border-t border-slate-100 p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-slate-500">This path sends approved content directly through the Telegram Bot API.</p>
+              <div className="border-t border-border p-4 pt-0">
+                <p className="mt-2 text-xs leading-5 text-muted">This path sends approved content directly through the Telegram Bot API.</p>
                 <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                    <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
                       <div className="flex items-center gap-3">
-                        <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-slate-300'}`}></div>
-                        <p className="text-sm font-medium text-slate-700">
+                        <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-border-strong'}`}></div>
+                        <p className="text-sm font-medium text-ink">
                           {session.config.hasTelegramBotToken
                             ? 'Telegram bot token is stored in the Worker.'
                             : 'No Telegram bot token stored yet.'}
@@ -348,15 +348,15 @@ export function DashboardSettingsDrawer({
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-sm font-semibold text-slate-700">Replace Telegram Bot Token</label>
+                      <label className="mb-1 block text-sm font-semibold text-ink">Replace Telegram Bot Token</label>
                       <input
                         type="password"
                         value={telegramBotTokenInput}
                         onChange={(e) => setTelegramBotTokenInput(e.target.value)}
                         placeholder={session.config.hasTelegramBotToken ? 'Leave blank to keep the current bot token' : '123456789:AA...'}
-                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
-                      <p className="mt-1.5 text-xs text-slate-500">
+                      <p className="mt-1.5 text-xs text-muted">
                         {session.config.hasTelegramBotToken
                           ? 'A bot token is already stored. Enter a new one only when you want to rotate it.'
                           : 'Create a bot with BotFather, then paste the token here once so the Worker can deliver messages.'}
@@ -365,9 +365,9 @@ export function DashboardSettingsDrawer({
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">Saved Chats</label>
-                    <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Quick add</p>
+                    <label className="mb-1 block text-sm font-semibold text-ink">Saved Chats</label>
+                    <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Quick add</p>
                       <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
                         <input
                           type="text"
@@ -377,7 +377,7 @@ export function DashboardSettingsDrawer({
                             setTelegramVerification(null);
                           }}
                           placeholder="Team channel"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                         <input
                           type="text"
@@ -387,7 +387,7 @@ export function DashboardSettingsDrawer({
                             setTelegramVerification(null);
                           }}
                           placeholder="@my_channel or 123456789 / -1001234567890"
-                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                          className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                         <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
                           <button
@@ -402,13 +402,13 @@ export function DashboardSettingsDrawer({
                           <button
                             type="button"
                             onClick={handleAddTelegramRecipient}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800"
+                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover"
                           >
                             <Plus className="h-4 w-4" /> Add chat
                           </button>
                         </div>
                       </div>
-                      <p className="mt-2 text-xs text-slate-500">Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.</p>
+                      <p className="mt-2 text-xs text-muted">Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.</p>
                       {telegramVerification ? (
                         <div className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success' ? 'border-emerald-200 bg-emerald-50/80 text-emerald-800' : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}>
                           <p className="font-semibold">{telegramVerification.message}</p>
@@ -424,7 +424,7 @@ export function DashboardSettingsDrawer({
                         <button
                           type="button"
                           onClick={handleUseManualTelegramChat}
-                          className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-purple-600"
+                          className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-primary-hover"
                         >
                           <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
                         </button>
@@ -432,22 +432,22 @@ export function DashboardSettingsDrawer({
                     </div>
 
                     {parsedTelegramRecipients.length > 0 ? (
-                      <div className="mt-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Saved now</p>
+                      <div className="mt-3 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Saved now</p>
                         <div className="mt-3 space-y-2">
                           {parsedTelegramRecipients.map((recipient) => (
                             <div
                               key={`${recipient.label}-${recipient.chatId}`}
-                              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-3"
+                              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-canvas px-3 py-3"
                             >
                               <div>
-                                <p className="text-sm font-semibold text-slate-800">{recipient.label}</p>
-                                <p className="text-xs text-slate-500">{recipient.chatId}</p>
+                                <p className="text-sm font-semibold text-ink">{recipient.label}</p>
+                                <p className="text-xs text-muted">{recipient.chatId}</p>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600"
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted transition hover:border-rose-200 hover:text-rose-600"
                               >
                                 <Trash2 className="h-4 w-4" /> Remove
                               </button>
@@ -458,33 +458,33 @@ export function DashboardSettingsDrawer({
                     ) : null}
 
                     <textarea
-                      className="mt-3 min-h-[176px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="mt-3 min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                       value={telegramRecipientsInput}
                       onChange={(e) => setTelegramRecipientsInput(e.target.value)}
                       placeholder={['Channel | @my_channel', 'Founders group | -1001234567890'].join('\n')}
                     />
-                    <p className="mt-1.5 text-xs text-slate-500">Bulk editor. One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
+                    <p className="mt-1.5 text-xs text-muted">Bulk editor. One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
                   </div>
                 </div>
               </div>
             </details>
 
-            <details className="group rounded-xl border border-slate-200 bg-white/80 shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-bold text-deep-purple list-none">
+            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
                 WhatsApp Delivery
-                <svg className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
-              <div className="border-t border-slate-100 p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-slate-500">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
+              <div className="border-t border-border p-4 pt-0">
+                <p className="mt-2 text-xs leading-5 text-muted">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
                 <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                    <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
                       <div className="flex items-center gap-3">
-                        <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-slate-300'}`}></div>
-                        <p className="text-sm font-medium text-slate-700">
+                        <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-border-strong'}`}></div>
+                        <p className="text-sm font-medium text-ink">
                           {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
                             ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
                             : session.config.whatsappAuthAvailable
@@ -499,7 +499,7 @@ export function DashboardSettingsDrawer({
                         type="button"
                         onClick={() => void handleWhatsAppConnection()}
                         disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
-                        className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-white transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {connectingChannel === 'whatsapp'
                           ? 'Opening Meta approval...'
@@ -518,7 +518,7 @@ export function DashboardSettingsDrawer({
                         </button>
                       ) : null}
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted">
                       {session.config.whatsappAuthAvailable
                         ? 'The Worker opens Meta approval in a popup, exchanges the code server-side, and discovers your available WhatsApp Business phone numbers.'
                         : 'Set META_APP_ID and META_APP_SECRET in the Worker before this button can be used.'}
@@ -530,7 +530,7 @@ export function DashboardSettingsDrawer({
                         <select
                           value={selectedWhatsAppPhoneId}
                           onChange={(e) => setSelectedWhatsAppPhoneId(e.target.value)}
-                          className="mt-3 w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+                          className="mt-3 w-full cursor-pointer rounded-xl border border-emerald-200 bg-surface px-4 py-3 text-sm text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
                         >
                           {pendingWhatsAppOptions.map((option) => (
                             <option key={option.phoneNumberId} value={option.phoneNumberId}>
@@ -542,7 +542,7 @@ export function DashboardSettingsDrawer({
                           type="button"
                           onClick={() => void completeWhatsAppPhoneSelection()}
                           disabled={channelActionBusy || !selectedWhatsAppPhoneId}
-                          className="mt-3 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="mt-3 w-full cursor-pointer rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Save selected phone
                         </button>
@@ -551,24 +551,24 @@ export function DashboardSettingsDrawer({
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-semibold text-slate-700">Saved Recipients</label>
+                    <label className="mb-1 block text-sm font-semibold text-ink">Saved Recipients</label>
                     <textarea
                       value={whatsappRecipientsInput}
                       onChange={(e) => setWhatsappRecipientsInput(e.target.value)}
                       placeholder={['Founders group | +14155550101', 'Ops lead | +919876543210'].join('\n')}
-                      className="min-h-[176px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                    <p className="mt-1.5 text-xs text-slate-500">One recipient per line using the format "Label | +15551234567".</p>
+                    <p className="mt-1.5 text-xs text-muted">One recipient per line using the format "Label | +15551234567".</p>
                   </div>
                 </div>
               </div>
             </details>
           </div>
-      <div className="mt-4 pt-4 border-t border-slate-200">
+      <div className="mt-4 pt-4 border-t border-border">
         <button
           onClick={saveSettings}
           disabled={savingConfig}
-          className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-white transition-all duration-200 hover:bg-purple-600 disabled:opacity-50"
+          className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-fg transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
         >
           {savingConfig ? 'Saving...' : 'Save settings'}
         </button>
