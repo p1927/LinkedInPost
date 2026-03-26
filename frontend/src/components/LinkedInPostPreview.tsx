@@ -286,7 +286,7 @@ export function LinkedInPostPreview({
               {shouldClamp && (
                 <Button
                   type="button"
-                  onClick={(event) => {
+                  onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                     event.stopPropagation();
                     if (isPickCarousel) {
                       setPickBodyExpanded((v) => !v);
@@ -352,7 +352,7 @@ export function LinkedInPostPreview({
                 <div className="flex shrink-0 flex-wrap justify-center gap-2">
                   <Button
                     type="button"
-                    onClick={(event) => {
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                       event.stopPropagation();
                       setImageLoadFailed(false);
                       setImageRetryKey((k) => k + 1);
@@ -364,7 +364,7 @@ export function LinkedInPostPreview({
                   {onOpenMedia ? (
                     <Button
                       type="button"
-                      onClick={(event) => {
+                      onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                         event.stopPropagation();
                         onOpenMedia();
                       }}
