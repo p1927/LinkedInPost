@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '../../services/configService';
-import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
+import { getNormalizedRowStatus, queueStatusToBadgeVariant, canPreviewPublishedContent } from './utils';
 import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
@@ -13,11 +14,17 @@ import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
 import { getChannelOption } from '../../integrations/channels';
 import { useRegisterWorkspaceChrome } from '../workspace/WorkspaceChromeContext';
-import { type WorkspaceNavPage } from '../workspace/AppSidebar';
 import { normalizeTelegramChatId, parseTelegramRecipientsInput } from '../../integrations/telegram';
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
-import { ReviewWorkspace } from '../../features/review/ReviewWorkspace';
+import { TopicVariantsPage } from '../../features/topic-navigation/screens/TopicVariantsPage';
+import { TopicEditorPage } from '../../features/topic-navigation/screens/TopicEditorPage';
 import { ApprovedPostPreview } from '../ApprovedPostPreview';
+import { findRowByTopicRouteId, normalizeTopicRouteParam } from '../../features/topic-navigation/utils/topicRoute';
+import {
+  WORKSPACE_PATHS,
+  WORKSPACE_ROUTE_PATHS,
+  topicVariantsPathForRow,
+} from '../../features/topic-navigation/utils/workspaceRoutes';
 
 function previewAuthorDisplayName(email: string): string {
   const local = email.split('@')[0]?.trim() ?? '';
@@ -34,17 +41,19 @@ export function Dashboard({
   api,
   onSaveConfig,
   onAuthExpired,
-  workspacePage,
-  onOpenSettings,
 }: {
   idToken: string;
   session: AppSession;
   api: BackendApi;
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
-  workspacePage: WorkspaceNavPage;
-  onOpenSettings?: () => void;
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const topicIdFromPathRaw =
+    location.pathname.match(new RegExp(`^${WORKSPACE_PATHS.topics.replace(/\//g, '\\/')}/([^/]+)`))?.[1] ??
+    null;
+  const topicIdFromPath = topicIdFromPathRaw ? normalizeTopicRouteParam(topicIdFromPathRaw) : null;
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
   const [queueScrollTargetId, setQueueScrollTargetId] = useState<string | null>(null);
@@ -119,6 +128,14 @@ export function Dashboard({
           ? telegramConfigured
           : whatsappConfigured;
 
+  const openPreviewForTopicKey =
+    typeof location.state === 'object' &&
+    location.state !== null &&
+    'openPreviewForTopicKey' in location.state &&
+    typeof (location.state as { openPreviewForTopicKey: unknown }).openPreviewForTopicKey === 'string'
+      ? (location.state as { openPreviewForTopicKey: string }).openPreviewForTopicKey
+      : undefined;
+
   const queueHook = useDashboardQueue({
     idToken,
     api,
@@ -133,6 +150,9 @@ export function Dashboard({
     instagramConfigured,
     linkedinConfigured,
     setLastDeliverySummary,
+    viewingTopicRouteId: topicIdFromPath,
+    onLeaveTopicRoute: () => navigate(WORKSPACE_PATHS.topics),
+    onAfterApprove: () => navigate(WORKSPACE_PATHS.topics),
   });
 
   const queueCounts = queueHook.rows.reduce<Record<QueueFilter, number>>((acc, row) => {
@@ -143,6 +163,16 @@ export function Dashboard({
   }, { all: 0, pending: 0, drafted: 0, approved: 0, published: 0 });
 
   const filteredRows = queueHook.rows.filter((row) => statusFilter === 'all' || getNormalizedRowStatus(row.status) === statusFilter);
+
+  useEffect(() => {
+    if (!openPreviewForTopicKey) return;
+    if (queueHook.loading) return;
+    const row = findRowByTopicRouteId(queueHook.rows, openPreviewForTopicKey);
+    if (row) {
+      queueHook.setSelectedApprovedRowPreview(row);
+    }
+    navigate(WORKSPACE_PATHS.topics, { replace: true, state: null });
+  }, [openPreviewForTopicKey, queueHook.loading, queueHook.rows, navigate, queueHook.setSelectedApprovedRowPreview]);
 
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
@@ -175,35 +205,45 @@ export function Dashboard({
     [linkedinConfigured, instagramConfigured, telegramConfigured, whatsappConfigured],
   );
 
-  const topicReviewWorkspace =
-    queueHook.selectedRowForReview ? (
-      <div className="-mx-4 min-h-[calc(100dvh-7.5rem)] sm:-mx-6">
-        <ReviewWorkspace
-          row={queueHook.selectedRowForReview}
-          deliveryChannel={channelsHook.selectedChannel}
-          previewAuthorName={previewAuthorDisplayName(session.email)}
-          sharedRules={session.config.generationRules}
-          googleModel={settingsHook.googleModel}
-          onApprove={queueHook.handleApproveVariant}
-          onGenerateQuickChange={queueHook.handleGenerateQuickChange}
-          onGenerateVariants={queueHook.handleGenerateVariantsPreview}
-          onSaveVariants={queueHook.handleSaveDraftVariants}
-          onFetchMoreImages={queueHook.handleFetchReviewImages}
-          onUploadImage={queueHook.handleUploadReviewImage}
-          onDownloadImage={queueHook.handleDownloadReviewImage}
-          onCancel={() => queueHook.setSelectedRowForReview(null)}
-        />
-      </div>
-    ) : null;
+  const topicReviewBase = {
+    rows: queueHook.rows,
+    queueLoading: queueHook.loading,
+    deliveryChannel: channelsHook.selectedChannel,
+    previewAuthorName: previewAuthorDisplayName(session.email),
+    sharedRules: session.config.generationRules,
+    googleModel: settingsHook.googleModel,
+    onApprove: queueHook.handleApproveVariant,
+    onGenerateQuickChange: queueHook.handleGenerateQuickChange,
+    onGenerateVariants: queueHook.handleGenerateVariantsPreview,
+    onSaveVariants: queueHook.handleSaveDraftVariants,
+    onFetchMoreImages: queueHook.handleFetchReviewImages,
+    onUploadImage: queueHook.handleUploadReviewImage,
+    onDownloadImage: queueHook.handleDownloadReviewImage,
+  };
+
+  const topicChromeRow = topicIdFromPath
+    ? findRowByTopicRouteId(queueHook.rows, topicIdFromPath)
+    : undefined;
+
+  const headerOverrideTitle = topicChromeRow?.topic?.trim() || (queueHook.loading ? 'Loading topic…' : 'Topic');
+  const headerOverride = useMemo(() => {
+    return topicIdFromPath ? { title: headerOverrideTitle, subtitle: null } : null;
+  }, [topicIdFromPath, headerOverrideTitle]);
 
   useRegisterWorkspaceChrome({
     onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,
     queueLoading: queueHook.loading,
     health: publishingHealth,
-    headerOverride: queueHook.selectedRowForReview
-      ? { title: 'Topic', subtitle: 'Variants, refine, and approve' }
-      : null,
+    headerOverride,
   });
+
+  const parsedTelegramRecipientsForSettings = useMemo(() => {
+    try {
+      return parseTelegramRecipientsInput(channelsHook.telegramRecipientsInput);
+    } catch {
+      return [];
+    }
+  }, [channelsHook.telegramRecipientsInput]);
 
   if (!session.config.spreadsheetId && !session.isAdmin) {
     return (
@@ -236,7 +276,17 @@ export function Dashboard({
       triggerRowGithubAction={queueHook.triggerRowGithubAction}
       actionLoading={queueHook.actionLoading}
       session={session}
-      setSelectedRowForReview={queueHook.setSelectedRowForReview}
+      onOpenTopicReview={(row) => navigate(topicVariantsPathForRow(row))}
+      onTopicNavigate={(row) => {
+        const st = getNormalizedRowStatus(row.status);
+        if (canPreviewPublishedContent(row)) {
+          queueHook.setSelectedApprovedRowPreview(row);
+          return;
+        }
+        if (st === 'drafted') {
+          navigate(topicVariantsPathForRow(row));
+        }
+      }}
       publishRowToSelectedChannel={queueHook.publishRowToSelectedChannel}
       republishRowToSelectedChannel={queueHook.republishRowToSelectedChannel}
       setSelectedApprovedRowPreview={queueHook.setSelectedApprovedRowPreview}
@@ -246,14 +296,6 @@ export function Dashboard({
       onScrollTargetHandled={handleScrollTargetHandled}
     />
   );
-
-  const parsedTelegramRecipientsForSettings = useMemo(() => {
-    try {
-      return parseTelegramRecipientsInput(channelsHook.telegramRecipientsInput);
-    } catch {
-      return [];
-    }
-  }, [channelsHook.telegramRecipientsInput]);
 
   const deliveryContent = (
     <DashboardDelivery
@@ -272,7 +314,7 @@ export function Dashboard({
       embedded
       channelCredentialsConfigured={selectedChannelCredentialsConfigured}
       isAdmin={session.isAdmin}
-      onOpenSettings={onOpenSettings}
+      onOpenSettings={() => navigate(WORKSPACE_PATHS.settings)}
     />
   );
 
@@ -323,65 +365,90 @@ export function Dashboard({
     />
   );
 
-  if (workspacePage === 'settings' && session.isAdmin) {
-    return (
-      <div className="w-full pb-12">
-        {topicReviewWorkspace ?? (
-          <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
-            <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
-            <SettingsConnectionsCard
-              health={publishingHealth}
-              className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md lg:sticky lg:top-4"
+  const topicsHome = (
+    <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <div className="min-w-0">{queueContent}</div>
+      <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
+        <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
+          <section aria-labelledby="topics-rail-ai-model" className="space-y-2">
+            <h2 id="topics-rail-ai-model" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+              AI model
+            </h2>
+            <DashboardToolbar
+              embedded
+              googleModel={settingsHook.googleModel}
+              setGoogleModel={settingsHook.setGoogleModel}
+              availableModels={settingsHook.availableModels}
             />
-          </div>
-        )}
+          </section>
+          <div className="my-5 border-t border-violet-200/45" aria-hidden />
+          <section aria-labelledby="topics-rail-delivery" className="space-y-3">
+            <h2 id="topics-rail-delivery" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+              Channel delivery
+            </h2>
+            {deliveryContent}
+          </section>
+        </div>
+      </aside>
+    </div>
+  );
 
-        {queueHook.selectedApprovedRowPreview && (
-          <ApprovedPostPreview
-            row={queueHook.selectedApprovedRowPreview}
-            onClose={() => queueHook.setSelectedApprovedRowPreview(null)}
-          />
-        )}
-      </div>
-    );
-  }
+  const settingsHome = (
+    <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
+      <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
+      <SettingsConnectionsCard
+        health={publishingHealth}
+        className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md lg:sticky lg:top-4"
+      />
+    </div>
+  );
+
+  const isTopicsMain = location.pathname === WORKSPACE_PATHS.topics;
+  const savedScrollY = useRef(0);
+
+  useEffect(() => {
+    if (!isTopicsMain) return;
+    const handleScroll = () => {
+      savedScrollY.current = window.scrollY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isTopicsMain]);
+
+  useEffect(() => {
+    if (isTopicsMain) {
+      window.scrollTo(0, savedScrollY.current);
+    }
+  }, [isTopicsMain]);
 
   return (
     <div className="w-full pb-12">
-      {topicReviewWorkspace ?? (
-        <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
-          <div className="min-w-0">{queueContent}</div>
-          <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
-            <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
-              <section aria-labelledby="topics-rail-ai-model" className="space-y-2">
-                <h2 id="topics-rail-ai-model" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
-                  AI model
-                </h2>
-                <DashboardToolbar
-                  embedded
-                  googleModel={settingsHook.googleModel}
-                  setGoogleModel={settingsHook.setGoogleModel}
-                  availableModels={settingsHook.availableModels}
-                />
-              </section>
-              <div className="my-5 border-t border-violet-200/45" aria-hidden />
-              <section aria-labelledby="topics-rail-delivery" className="space-y-3">
-                <h2 id="topics-rail-delivery" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
-                  Channel delivery
-                </h2>
-                {deliveryContent}
-              </section>
-            </div>
-          </aside>
-        </div>
-      )}
+      <div style={{ display: isTopicsMain ? 'block' : 'none' }}>
+        {topicsHome}
+      </div>
 
-      {queueHook.selectedApprovedRowPreview && (
+      <Routes>
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.topicEditor}
+          element={<TopicEditorPage {...topicReviewBase} />}
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.topicVariants}
+          element={<TopicVariantsPage {...topicReviewBase} />}
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.settings}
+          element={session.isAdmin ? settingsHome : <Navigate to={WORKSPACE_PATHS.topics} replace />}
+        />
+        <Route path="*" element={isTopicsMain ? null : <Navigate to={WORKSPACE_PATHS.topics} replace />} />
+      </Routes>
+
+      {queueHook.selectedApprovedRowPreview ? (
         <ApprovedPostPreview
           row={queueHook.selectedApprovedRowPreview}
           onClose={() => queueHook.setSelectedApprovedRowPreview(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 }

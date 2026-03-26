@@ -1,0 +1,137 @@
+import { type ReactNode } from 'react';
+import { type SheetRow } from '../../../services/sheets';
+import {
+  type GenerationRequest,
+  type GenerationScope,
+  type QuickChangePreviewResult,
+  type TextSelectionRange,
+  type VariantsPreviewResponse,
+} from '../../../services/backendApi';
+import { type ImageAssetOption } from '../../../components/ImageAssetManager';
+import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
+import { type ChannelId } from '../../../integrations/channels';
+
+export interface CompareState {
+  scope: GenerationScope;
+  title: string;
+  currentText: string;
+  proposedText: string;
+  resultingText: string;
+  onConfirm: () => void;
+}
+
+export interface ReviewFlowContextValue {
+  // Props
+  row: SheetRow;
+  deliveryChannel: ChannelId;
+  previewAuthorName?: string;
+  sharedRules: string;
+  googleModel: string;
+  routed?: ReviewRoutedNavigation;
+  editorStartMediaPanel: boolean;
+  onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
+
+  // State
+  sheetRow: SheetRow;
+  setSheetRow: React.Dispatch<React.SetStateAction<SheetRow>>;
+  editorText: string;
+  setEditorText: React.Dispatch<React.SetStateAction<string>>;
+  editorBaselineText: string;
+  setEditorBaselineText: React.Dispatch<React.SetStateAction<string>>;
+  selection: TextSelectionRange | null;
+  setSelection: React.Dispatch<React.SetStateAction<TextSelectionRange | null>>;
+  scope: GenerationScope;
+  setScope: React.Dispatch<React.SetStateAction<GenerationScope>>;
+  instruction: string;
+  setInstruction: React.Dispatch<React.SetStateAction<string>>;
+  generationLoading: 'quick-change' | 'variants' | null;
+  quickChangePreview: QuickChangePreviewResult | null;
+  setQuickChangePreview: React.Dispatch<React.SetStateAction<QuickChangePreviewResult | null>>;
+  variantsPreview: VariantsPreviewResponse | null;
+  setVariantsPreview: React.Dispatch<React.SetStateAction<VariantsPreviewResponse | null>>;
+  previewVariantSaveByIndex: Record<number, 'idle' | 'saving' | 'saved' | 'error'>;
+  previewVariantSaveErrors: Record<number, string>;
+  postTime: string;
+  setPostTime: React.Dispatch<React.SetStateAction<string>>;
+  selectedImageUrl: string;
+  setSelectedImageUrl: React.Dispatch<React.SetStateAction<string>>;
+  alternateImageOptions: ImageAssetOption[];
+  uploadedImageOptions: ImageAssetOption[];
+  pendingVariantIndex: number | null;
+  setPendingVariantIndex: React.Dispatch<React.SetStateAction<number | null>>;
+  openMediaAfterVariantConfirm: boolean;
+  setOpenMediaAfterVariantConfirm: React.Dispatch<React.SetStateAction<boolean>>;
+  pendingClose: boolean;
+  setPendingClose: React.Dispatch<React.SetStateAction<boolean>>;
+  pendingNavigateToVariants: boolean;
+  setPendingNavigateToVariants: React.Dispatch<React.SetStateAction<boolean>>;
+  compareState: CompareState | null;
+  setCompareState: React.Dispatch<React.SetStateAction<CompareState | null>>;
+  submitting: boolean;
+  activeWorkspacePanel: 'refine' | 'media' | 'rules';
+  setActiveWorkspacePanel: React.Dispatch<React.SetStateAction<'refine' | 'media' | 'rules'>>;
+  reviewPhase: 'pick-variant' | 'edit';
+  setReviewPhase: React.Dispatch<React.SetStateAction<'pick-variant' | 'edit'>>;
+  topicExpanded: boolean;
+  setTopicExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  previewCollapsed: boolean;
+  setPreviewCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  pickCarouselIndex: number;
+  setPickCarouselIndex: React.Dispatch<React.SetStateAction<number>>;
+  
+  // Computed
+  sheetVariants: { text: string; imageUrl: string; originalIndex: number }[];
+  showPickPhase: boolean;
+  showEditorLayout: boolean;
+  topicTitleInWorkspaceChrome: boolean;
+  topicIsLong: boolean;
+  generatedImageOptions: ImageAssetOption[];
+  imageOptions: ImageAssetOption[];
+  effectiveScope: GenerationScope;
+  currentTargetText: string;
+  editorDirty: boolean;
+  hasUnsavedReviewState: boolean;
+  previewReadyCount: number;
+
+  // Refs
+  topicHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+
+  // Functions
+  leaveToTopics: () => void;
+  requestNavigateToVariants: () => void;
+  applySheetVariantBase: (variant: { text: string; imageUrl: string }) => void;
+  handleGenerateQuickChange: () => Promise<void>;
+  handleGenerateVariants: () => Promise<void>;
+  openCompare: (title: string, proposedText: string, resultingText: string) => void;
+  handleApplyQuickChange: () => void;
+  handleApplyVariant: (index: number) => void;
+  handleSavePreviewVariantAtIndex: (index: number) => Promise<void>;
+  handleFetchMoreImageOptions: () => Promise<void>;
+  handleUploadImageOption: (file: File) => Promise<void>;
+  handleApprove: () => Promise<void>;
+  handleLoadSheetVariant: (index: number) => void;
+  handleOpenMediaFromPickTile: (index: number) => void;
+  changePickCarouselBy: (direction: -1 | 1) => void;
+  handlePickCarouselKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+  handleFormatting: (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => void;
+  onCancel: () => void;
+}
+
+export interface ReviewFlowProviderProps {
+  children: ReactNode;
+  row: SheetRow;
+  deliveryChannel: ChannelId;
+  previewAuthorName?: string;
+  sharedRules: string;
+  googleModel: string;
+  onApprove: (selectedText: string, selectedImageId: string, postTime: string) => Promise<void>;
+  onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
+  onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
+  onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
+  onFetchMoreImages: () => Promise<string[]>;
+  onUploadImage: (file: File) => Promise<string>;
+  onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
+  onCancel: () => void;
+  routed?: ReviewRoutedNavigation;
+  editorStartMediaPanel?: boolean;
+}

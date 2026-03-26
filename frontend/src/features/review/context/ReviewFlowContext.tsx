@@ -1,0 +1,43 @@
+import { createContext, useContext } from 'react';
+import { type ReviewFlowContextValue, type ReviewFlowProviderProps } from './types';
+import { useReviewFlowState } from './useReviewFlowState';
+import { useReviewFlowActions } from './useReviewFlowActions';
+
+const ReviewFlowContext = createContext<ReviewFlowContextValue | null>(null);
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useReviewFlow(): ReviewFlowContextValue {
+  const context = useContext(ReviewFlowContext);
+  if (!context) {
+    throw new Error('useReviewFlow must be used within a ReviewFlowProvider');
+  }
+  return context;
+}
+
+export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
+  const state = useReviewFlowState(props);
+  const actions = useReviewFlowActions(props, state);
+
+  // We omit `setChrome` from the context value since it's an internal detail of the state hook
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { setChrome, ...restState } = state;
+
+  const value: ReviewFlowContextValue = {
+    // Props
+    row: props.row,
+    deliveryChannel: props.deliveryChannel,
+    previewAuthorName: props.previewAuthorName,
+    sharedRules: props.sharedRules,
+    googleModel: props.googleModel,
+    routed: props.routed,
+    editorStartMediaPanel: props.editorStartMediaPanel ?? false,
+    onDownloadImage: props.onDownloadImage,
+    onCancel: props.onCancel,
+
+    // State & Actions
+    ...restState,
+    ...actions,
+  };
+
+  return <ReviewFlowContext.Provider value={value}>{props.children}</ReviewFlowContext.Provider>;
+}

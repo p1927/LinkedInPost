@@ -14,7 +14,7 @@ export function RulesPanel({ sharedRules, compact = false }: RulesPanelProps) {
       <div
         className={`mt-3 rounded-xl border border-border/70 bg-canvas/80 text-ink transition-all duration-200 hover:border-border ${compact ? 'max-h-[min(40vh,280px)] overflow-y-auto px-2.5 py-2 text-xs leading-5' : 'px-4 py-4 text-sm leading-6'}`}
       >
-        {sharedRules.trim() || 'No shared rules are configured yet. Admins can add them in Settings.'}
+        {(sharedRules || '').trim() || 'No shared rules are configured yet. Admins can add them in Settings.'}
       </div>
     </section>
   );

@@ -12,14 +12,12 @@ export function WorkspaceShell({
   session,
   googleProfile,
   workspacePage,
-  onWorkspacePageChange,
   onLogoutComplete,
   children,
 }: {
   session: AppSession;
   googleProfile?: GoogleIdTokenProfile | null;
   workspacePage: WorkspaceNavPage;
-  onWorkspacePageChange: (page: WorkspaceNavPage) => void;
   onLogoutComplete: () => void;
   children: ReactNode;
 }) {
@@ -56,8 +54,6 @@ export function WorkspaceShell({
         <AppSidebar
           collapsed={sidebarCollapsed}
           onToggleCollapsed={toggleCollapsed}
-          workspacePage={workspacePage}
-          onNavigate={onWorkspacePageChange}
           session={session}
           googleProfile={googleProfile ?? null}
           mobileOpen={mobileSidebarOpen}

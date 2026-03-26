@@ -6,6 +6,7 @@ import { type DeliverySummary } from '../types';
 
 import { type ChannelId, getChannelOption, getChannelLabel } from '../../../integrations/channels';
 import { buildRowActionKey, isSameTopicDate } from '../utils';
+import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
 import { useAlert } from '../../AlertProvider';
 
@@ -23,6 +24,9 @@ export function useDashboardQueue({
   instagramConfigured,
   linkedinConfigured,
   setLastDeliverySummary,
+  viewingTopicRouteId,
+  onLeaveTopicRoute,
+  onAfterApprove,
 }: {
   idToken: string;
   api: BackendApi;
@@ -37,11 +41,15 @@ export function useDashboardQueue({
   instagramConfigured: boolean;
   linkedinConfigured: boolean;
   setLastDeliverySummary: (summary: DeliverySummary) => void;
+  /** When set, deleting this row navigates away from the topic route. */
+  viewingTopicRouteId?: string | null;
+  onLeaveTopicRoute?: () => void;
+  onAfterApprove?: () => void;
 }) {
   const [rows, setRows] = useState<SheetRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  /** Start true when a sheet is configured so first paint does not run “loaded” logic before loadData runs. */
+  const [loading, setLoading] = useState(() => Boolean(session.config.spreadsheetId));
   const [newTopic, setNewTopic] = useState('');
-  const [selectedRowForReview, setSelectedRowForReview] = useState<SheetRow | null>(null);
   const [selectedApprovedRowPreview, setSelectedApprovedRowPreview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
@@ -81,6 +89,7 @@ export function useDashboardQueue({
   useEffect(() => {
     if (!session.config.spreadsheetId) {
       setRows([]);
+      setLoading(false);
       return;
     }
     void loadData(true);
@@ -102,12 +111,11 @@ export function useDashboardQueue({
     }
   };
 
-  const handleApproveVariant = async (selectedText: string, selectedImageId: string, postTime: string) => {
-    if (!selectedRowForReview) return;
+  const handleApproveVariant = async (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string) => {
     try {
-      await api.updateRowStatus(idToken, selectedRowForReview, 'Approved', selectedText, selectedImageId, postTime);
-      setSelectedRowForReview(null);
+      await api.updateRowStatus(idToken, row, 'Approved', selectedText, selectedImageId, postTime);
       await loadData(true);
+      onAfterApprove?.();
     } catch (error) {
       handleFailure(error, 'Failed to approve variant.');
     }
@@ -181,8 +189,7 @@ export function useDashboardQueue({
   const handleSaveDraftVariants = async (row: SheetRow, variants: string[]): Promise<SheetRow> => {
     try {
       const updatedRow = await api.saveDraftVariants(idToken, row, variants);
-    setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
-    setSelectedRowForReview((current: SheetRow | null) => (current && isSameTopicDate(current, updatedRow) ? updatedRow : current));
+      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
       return updatedRow;
     } catch (error) {
       handleFailure(error, 'Failed to save preview variants to Sheets.');
@@ -190,15 +197,13 @@ export function useDashboardQueue({
     }
   };
 
-  const handleFetchReviewImages = async () => {
-    if (!selectedRowForReview) return [];
-    const result = await api.fetchDraftImages(idToken, selectedRowForReview.topic, 4);
+  const handleFetchReviewImages = async (row: SheetRow) => {
+    const result = await api.fetchDraftImages(idToken, row.topic, 4);
     return result.imageUrls;
   };
 
-  const handleUploadReviewImage = async (file: File) => {
-    if (!selectedRowForReview) throw new Error('Open a draft review before uploading an image.');
-    const result = await api.uploadDraftImage(idToken, selectedRowForReview.topic, file);
+  const handleUploadReviewImage = async (row: SheetRow, file: File) => {
+    const result = await api.uploadDraftImage(idToken, row.topic, file);
     return result.imageUrl;
   };
 
@@ -239,13 +244,13 @@ export function useDashboardQueue({
       return;
     }
 
-    const message = (row.selectedText || row.variant1).trim();
+    const message = (row.selectedText || row.variant1 || '').trim();
     if (!message) {
       void showAlert({ title: 'Notice', description: 'This row does not have approved text yet. Review and approve a draft first.' });
       return;
     }
 
-    if (selectedChannel === 'instagram' && !row.selectedImageId.trim()) {
+    if (selectedChannel === 'instagram' && !(row.selectedImageId || '').trim()) {
       void showAlert({ title: 'Notice', description: 'Instagram requires a selected image. Approve the row with an image before publishing.' });
       return;
     }
@@ -258,7 +263,7 @@ export function useDashboardQueue({
         channel: selectedChannel,
         recipientId: selectedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
         message,
-        imageUrl: row.selectedImageId.trim() || undefined,
+        imageUrl: (row.selectedImageId || '').trim() || undefined,
       });
 
       if (result.deliveryMode === 'sent') {
@@ -290,8 +295,9 @@ export function useDashboardQueue({
     setDeletingRowIndex(row.rowIndex);
     try {
       await api.deleteRow(idToken, row);
-      if (selectedRowForReview?.rowIndex === row.rowIndex) {
-        setSelectedRowForReview(null);
+      const viewingId = viewingTopicRouteId ? normalizeTopicRouteParam(viewingTopicRouteId) : '';
+      if (viewingTopicRouteId && encodeTopicRouteId(row) === viewingId) {
+        onLeaveTopicRoute?.();
       }
       await loadData(true);
     } catch (error) {
@@ -306,8 +312,6 @@ export function useDashboardQueue({
     loading,
     newTopic,
     setNewTopic,
-    selectedRowForReview,
-    setSelectedRowForReview,
     selectedApprovedRowPreview,
     setSelectedApprovedRowPreview,
     actionLoading,

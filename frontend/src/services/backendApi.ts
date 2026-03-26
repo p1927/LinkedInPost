@@ -119,11 +119,22 @@ export function isAuthErrorMessage(message: string): boolean {
   return AUTH_ERROR_PATTERN.test(message);
 }
 
+/** API is always POST JSON at the worker origin; strip accidental paths (e.g. `/topics`) from env. */
+export function normalizeWorkerApiUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/$/, '');
+  if (!trimmed) return '';
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return trimmed;
+  }
+}
+
 export class BackendApi {
   private endpointUrl: string;
 
   constructor(endpointUrl: string = import.meta.env.VITE_WORKER_URL || '') {
-    this.endpointUrl = endpointUrl.trim().replace(/\/$/, '');
+    this.endpointUrl = normalizeWorkerApiUrl(endpointUrl);
   }
 
   isConfigured(): boolean {

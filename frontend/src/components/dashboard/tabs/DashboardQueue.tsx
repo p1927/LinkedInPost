@@ -5,24 +5,21 @@ import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent, formatQueueDate } from '../utils';
+import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-function queueRowDomId(row: SheetRow) {
-  return `${row.sourceSheet}-${row.rowIndex}`;
-}
-
 const rowActionClass =
-  'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-40';
+  'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-40 transition-colors duration-200 cursor-pointer';
 
 const iconBtn =
-  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-40 transition-colors duration-200';
+  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-40 transition-colors duration-200 focus:ring-2 focus:ring-primary/50 focus:outline-none';
 
 const iconBtnMuted =
-  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-white/60 hover:text-ink disabled:opacity-40 transition-colors duration-200';
+  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-white/60 hover:text-ink disabled:opacity-40 transition-colors duration-200 focus:ring-2 focus:ring-primary/50 focus:outline-none';
 
 export function DashboardQueue({
   handleAddTopic,
@@ -38,7 +35,8 @@ export function DashboardQueue({
   triggerRowGithubAction,
   actionLoading,
   session,
-  setSelectedRowForReview,
+  onOpenTopicReview,
+  onTopicNavigate,
   publishRowToSelectedChannel,
   republishRowToSelectedChannel,
   setSelectedApprovedRowPreview,
@@ -60,7 +58,9 @@ export function DashboardQueue({
   triggerRowGithubAction: (row: SheetRow, action: 'draft' | 'publish') => Promise<void>;
   actionLoading: string | null;
   session: AppSession;
-  setSelectedRowForReview: (row: SheetRow) => void;
+  onOpenTopicReview: (row: SheetRow) => void;
+  /** Topic title / row primary action: preview when post is ready to view, else open draft review. */
+  onTopicNavigate: (row: SheetRow) => void;
   publishRowToSelectedChannel: (row: SheetRow) => Promise<void>;
   republishRowToSelectedChannel: (row: SheetRow) => Promise<void>;
   setSelectedApprovedRowPreview: (row: SheetRow) => void;
@@ -71,7 +71,7 @@ export function DashboardQueue({
 }) {
   useEffect(() => {
     if (!scrollTargetId) return;
-    const match = filteredRows.some((r) => queueRowDomId(r) === scrollTargetId);
+    const match = filteredRows.some((r) => topicRowElementId(r) === scrollTargetId);
     if (!match) {
       onScrollTargetHandled();
       return;
@@ -194,19 +194,37 @@ export function DashboardQueue({
                       <div
                         key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
                         role="row"
-                        data-queue-row-id={queueRowDomId(row)}
+                        data-queue-row-id={topicRowElementId(row)}
                         className={cn(
-                          'flex items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0 hover:bg-white/70',
+                          'flex items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0 hover:bg-white/80 cursor-pointer',
                           rowIndex % 2 === 1 && 'bg-violet-50/40',
                         )}
                       >
                         <div role="cell" className="min-w-0 flex-1">
-                          <p
-                            className="line-clamp-2 font-medium leading-snug text-ink transition-colors duration-200"
-                            title={row.topic.length > 80 ? row.topic : undefined}
-                          >
-                            {row.topic}
-                          </p>
+                          {normalizedStatus === 'drafted' || canPreviewPublishedContent(row) ? (
+                            <button
+                              type="button"
+                              onClick={() => onTopicNavigate(row)}
+                              className={cn(
+                                'line-clamp-2 w-full text-left font-medium leading-snug text-ink transition-colors duration-200',
+                                'rounded-lg outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40',
+                              )}
+                              title={
+                                normalizedStatus === 'drafted'
+                                  ? 'Review draft variants'
+                                  : 'Preview post'
+                              }
+                            >
+                              {row.topic}
+                            </button>
+                          ) : (
+                            <p
+                              className="line-clamp-2 font-medium leading-snug text-ink transition-colors duration-200"
+                              title={row.topic.length > 80 ? row.topic : undefined}
+                            >
+                              {row.topic}
+                            </p>
+                          )}
                         </div>
                         <div role="cell" className="flex shrink-0 items-center justify-end gap-3">
                           <div className="flex w-[100px] shrink-0 justify-end">
@@ -245,7 +263,7 @@ export function DashboardQueue({
                               <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={() => setSelectedRowForReview(row)}
+                                onClick={() => onOpenTopicReview(row)}
                                 title="Review draft"
                                 className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
                               >

@@ -292,7 +292,7 @@ export function LinkedInChannelPreview({
               <div
                 className={cn(
                   'relative mx-auto w-full overflow-hidden group/image flex items-center justify-center',
-                  isPickCarousel && 'min-h-[6rem] py-1',
+                  isPickCarousel && 'min-h-[10rem] py-1',
                   !isPickCarousel && 'min-h-[100px]',
                 )}
               >
@@ -303,7 +303,7 @@ export function LinkedInChannelPreview({
                   className={cn(
                     'transition-transform duration-700 w-full object-contain object-center',
                     !isPickCarousel && 'group-hover/image:scale-[1.02]',
-                    isPickCarousel ? 'max-h-[9.5rem]' : isSidebar ? 'max-h-[12rem]' : isCarousel ? 'max-h-[16rem]' : 'max-h-[400px]',
+                    isPickCarousel ? 'max-h-[14rem]' : isSidebar ? 'max-h-[12rem]' : isCarousel ? 'max-h-[16rem]' : 'max-h-[400px]',
                   )}
                   onLoad={() => {
                     if (import.meta.env.DEV) {

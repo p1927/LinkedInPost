@@ -1,8 +1,11 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ListOrdered, Settings } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
+import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
+import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { Button } from '@/components/ui/button';
 
 export type WorkspaceNavPage = 'topics' | 'settings';
@@ -104,8 +107,6 @@ function SidebarUserAvatar({
 export function AppSidebar({
   collapsed,
   onToggleCollapsed,
-  workspacePage,
-  onNavigate,
   session,
   googleProfile,
   mobileOpen,
@@ -113,40 +114,43 @@ export function AppSidebar({
 }: {
   collapsed: boolean;
   onToggleCollapsed: () => void;
-  workspacePage: WorkspaceNavPage;
-  onNavigate: (page: WorkspaceNavPage) => void;
   session: AppSession;
   googleProfile?: GoogleIdTokenProfile | null;
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
 }) {
+  const { hasUnsavedChanges } = useWorkspaceChrome();
   const closeMobile = () => onMobileOpenChange(false);
   const displayName = googleProfile?.name?.trim() || null;
   const pictureUrl = googleProfile?.picture?.trim() || null;
 
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
-    const active = workspacePage === page;
+    const to = page === 'topics' ? WORKSPACE_PATHS.topics : WORKSPACE_PATHS.settings;
     return (
       <li key={page}>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            onNavigate(page);
+        <NavLink
+          to={to}
+          onClick={(e) => {
+            if (hasUnsavedChanges) {
+              if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
+                e.preventDefault();
+                return;
+              }
+            }
             closeMobile();
           }}
-          aria-current={active ? 'page' : undefined}
           aria-label={collapsed ? label : undefined}
           title={collapsed ? label : undefined}
-          className={clsx(
-            navButtonBase,
-            RAIL_RADIUS,
-            focusRing,
-            'overflow-hidden backdrop-blur-sm',
-            active ? navActive : navInactive,
-            collapsed ? 'h-10 justify-center gap-0 px-2 py-0' : 'gap-3 px-2 py-2',
-          )}
+          className={({ isActive }) =>
+            clsx(
+              navButtonBase,
+              RAIL_RADIUS,
+              focusRing,
+              'overflow-hidden backdrop-blur-sm no-underline',
+              isActive ? navActive : navInactive,
+              collapsed ? 'h-10 justify-center gap-0 px-2 py-0' : 'gap-3 px-2 py-2',
+            )
+          }
         >
           <span
             className={clsx(
@@ -159,7 +163,7 @@ export function AppSidebar({
             {icon}
           </span>
           {!collapsed ? <span className="min-w-0 flex-1 truncate text-left">{label}</span> : null}
-        </Button>
+        </NavLink>
       </li>
     );
   };
@@ -235,7 +239,6 @@ export function AppSidebar({
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
           </ul>
-          <div className="mx-2 min-h-2 flex-1 border-t border-white/30" aria-hidden />
         </nav>
 
         <div className="mt-auto shrink-0 border-t border-white/40 p-2">

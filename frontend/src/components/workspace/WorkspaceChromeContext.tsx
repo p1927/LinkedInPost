@@ -15,12 +15,33 @@ export type WorkspacePublishingHealth = {
   whatsapp: boolean;
 };
 
+/** Breadcrumb segment in the sticky workspace header (topic review routes). */
+export type TopicReviewCrumb = {
+  key: string;
+  label: string;
+  /** Navigable (e.g. Topics). */
+  onPress?: () => void;
+  /** Current page step. */
+  current?: boolean;
+};
+
+export type TopicReviewHeaderChrome = {
+  onBackToTopics: () => void;
+  /** Editor step: back to variant carousel. */
+  onBackToVariants?: (() => void) | null;
+  crumbs: TopicReviewCrumb[];
+  pickToolbar: { onMedia: () => void; onOpenEditor: () => void } | null;
+};
+
 type WorkspaceChromeState = {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
   /** When set, the workspace header shows this instead of the nav page title. */
   headerOverride: { title: string; subtitle?: string | null } | null;
+  /** Topic draft review: back, breadcrumb, optional pick-phase actions. */
+  topicReviewHeader: TopicReviewHeaderChrome | null;
+  hasUnsavedChanges: boolean;
 };
 
 const defaultState: WorkspaceChromeState = {
@@ -28,6 +49,8 @@ const defaultState: WorkspaceChromeState = {
   queueLoading: false,
   health: null,
   headerOverride: null,
+  topicReviewHeader: null,
+  hasUnsavedChanges: false,
 };
 
 type WorkspaceChromeContextValue = WorkspaceChromeState & {
@@ -78,7 +101,27 @@ export function useRegisterWorkspaceChrome(config: {
 
   useEffect(() => {
     return () => {
-      setChrome({ onRefreshQueue: null, queueLoading: false, health: null, headerOverride: null });
+      setChrome({
+        onRefreshQueue: null,
+        queueLoading: false,
+        health: null,
+        headerOverride: null,
+        topicReviewHeader: null,
+      });
+    };
+  }, [setChrome]);
+}
+
+export function useRegisterUnsavedChanges(hasUnsaved: boolean) {
+  const { setChrome } = useWorkspaceChrome();
+
+  useEffect(() => {
+    setChrome({ hasUnsavedChanges: hasUnsaved });
+  }, [setChrome, hasUnsaved]);
+
+  useEffect(() => {
+    return () => {
+      setChrome({ hasUnsavedChanges: false });
     };
   }, [setChrome]);
 }

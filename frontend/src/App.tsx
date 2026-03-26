@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { BrowserRouter, useLocation } from 'react-router-dom'
 import { Share2, Sparkles, TableProperties } from 'lucide-react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/dashboard'
@@ -6,9 +7,60 @@ import { AlertProvider } from './components/AlertProvider'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
+import { workspaceRouterBasename, WORKSPACE_PATHS } from './features/topic-navigation/utils/workspaceRoutes'
 import { parseGoogleIdTokenProfile } from './utils/googleIdTokenProfile'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
+
+function WorkspaceSession({
+  idToken,
+  session,
+  googleProfile,
+  api,
+  setSession,
+  setIdToken,
+  setErrorMessage,
+  onAuthExpired,
+}: {
+  idToken: string
+  session: AppSession
+  googleProfile: ReturnType<typeof parseGoogleIdTokenProfile>
+  api: BackendApi
+  setSession: Dispatch<SetStateAction<AppSession | null>>
+  setIdToken: Dispatch<SetStateAction<string | null>>
+  setErrorMessage: Dispatch<SetStateAction<string>>
+  onAuthExpired: () => void
+}) {
+  const location = useLocation()
+  const workspacePage: WorkspaceNavPage = location.pathname.startsWith(WORKSPACE_PATHS.settings)
+    ? 'settings'
+    : 'topics'
+
+  return (
+    <WorkspaceShell
+      session={session}
+      googleProfile={googleProfile}
+      workspacePage={workspacePage}
+      onLogoutComplete={() => {
+        setIdToken(null)
+        setSession(null)
+        setErrorMessage('')
+      }}
+    >
+      <Dashboard
+        idToken={idToken}
+        session={session}
+        api={api}
+        onSaveConfig={async (config) => {
+          const updatedConfig = await api.saveConfig(idToken, config)
+          setSession((current) => (current ? { ...current, config: updatedConfig } : current))
+          return updatedConfig
+        }}
+        onAuthExpired={onAuthExpired}
+      />
+    </WorkspaceShell>
+  )
+}
 
 function getBackendHostLabel(endpointUrl: string): string {
   try {
@@ -25,8 +77,6 @@ function App() {
   const [session, setSession] = useState<AppSession | null>(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [workspacePage, setWorkspacePage] = useState<WorkspaceNavPage>('topics')
-
   useEffect(() => {
     if (!idToken) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -59,12 +109,6 @@ function App() {
       })
   }, [api, idToken])
 
-  useEffect(() => {
-    if (session && !session.isAdmin && workspacePage === 'settings') {
-      setWorkspacePage('topics')
-    }
-  }, [session, workspacePage])
-
   const handleLogin = (newToken: string) => {
     setErrorMessage('')
     setIdToken(newToken || null)
@@ -78,6 +122,7 @@ function App() {
   }
 
   const showMarketingHeader = !idToken || !session
+  const routerBasename = workspaceRouterBasename()
 
   return (
     <AlertProvider>
@@ -97,31 +142,18 @@ function App() {
         ) : null}
 
         {idToken && session ? (
-          <WorkspaceShell
-            session={session}
-            googleProfile={googleProfile}
-            workspacePage={workspacePage}
-            onWorkspacePageChange={setWorkspacePage}
-            onLogoutComplete={() => {
-              setIdToken(null)
-              setSession(null)
-              setErrorMessage('')
-            }}
-          >
-            <Dashboard
+          <BrowserRouter {...(routerBasename ? { basename: routerBasename } : {})}>
+            <WorkspaceSession
               idToken={idToken}
               session={session}
+              googleProfile={googleProfile}
               api={api}
-              workspacePage={workspacePage}
-              onOpenSettings={() => setWorkspacePage('settings')}
-              onSaveConfig={async (config) => {
-                const updatedConfig = await api.saveConfig(idToken, config)
-                setSession((current) => (current ? { ...current, config: updatedConfig } : current))
-                return updatedConfig
-              }}
+              setSession={setSession}
+              setIdToken={setIdToken}
+              setErrorMessage={setErrorMessage}
               onAuthExpired={handleAuthExpired}
             />
-          </WorkspaceShell>
+          </BrowserRouter>
         ) : (
           <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pb-12 pt-6 sm:px-6">
           {!api.isConfigured() ? (

@@ -7,11 +7,11 @@ import { type PopupProvider, type OAuthPopupMessage, type RecipientOption } from
 import { type OAuthStartResult } from '../../services/backendApi';
 
 export function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
-  return `${action}:${row.topic.trim()}::${row.date.trim()}`;
+  return `${action}:${(row.topic || '').trim()}::${(row.date || '').trim()}`;
 }
 
 export function getNormalizedRowStatus(status?: string): string {
-  return status?.trim().toLowerCase() || 'pending';
+  return (status || '').trim().toLowerCase() || 'pending';
 }
 
 export function queueStatusToBadgeVariant(status?: string): BadgeVariant {
@@ -35,7 +35,7 @@ export function canPreviewPublishedContent(row: SheetRow): boolean {
 }
 
 export function isSameTopicDate(left: SheetRow, right: SheetRow): boolean {
-  return left.topic.trim() === right.topic.trim() && left.date.trim() === right.date.trim();
+  return (left.topic || '').trim() === (right.topic || '').trim() && (left.date || '').trim() === (right.date || '').trim();
 }
 
 /** Single-line queue date for compact list rows (ISO yyyy-mm-dd or parseable string). */

@@ -40,12 +40,12 @@ export function DraftEditor({
 }: DraftEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const effectiveScope = getEffectiveScope(preferredScope, selection);
-  const selectionSummary = selection?.text.trim()
+  const selectionSummary = selection?.text?.trim()
     ? `${selection.text.trim().slice(0, 72)}${selection.text.trim().length > 72 ? '...' : ''}`
     : 'No text selected';
 
   useEffect(() => {
-    if (preferredScope === 'selection' && !selection?.text.trim()) {
+    if (preferredScope === 'selection' && !selection?.text?.trim()) {
       onScopeChange('whole-post');
     }
   }, [onScopeChange, preferredScope, selection]);
@@ -108,7 +108,7 @@ export function DraftEditor({
             variant="ghost"
             size="inline"
             onClick={() => onScopeChange('selection')}
-            disabled={!selection?.text.trim()}
+            disabled={!selection?.text?.trim()}
             className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70 disabled:cursor-not-allowed disabled:text-muted/40'}`}
           >
             Selection

@@ -9,7 +9,7 @@ interface ApprovedPostPreviewProps {
 }
 
 export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) {
-  const normalizedStatus = row.status?.trim().toLowerCase() || 'approved';
+  const normalizedStatus = (row.status || '').trim().toLowerCase() || 'approved';
   const isPublished = normalizedStatus === 'published';
   const previewLabel = isPublished ? 'Published Preview' : 'Approved Preview';
   const previewDescription = isPublished
@@ -42,10 +42,10 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
               variant="secondary"
               size="icon-lg"
               onClick={onClose}
-              className="glass-inset size-11 rounded-full text-muted hover:bg-white/85 hover:text-ink"
+              className="cursor-pointer rounded-full bg-white/60 p-2.5 text-muted transition-all duration-200 hover:bg-white/90 hover:text-ink hover:shadow-md focus:ring-2 focus:ring-primary/50 focus:outline-none"
               aria-label="Close preview"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
 
@@ -102,7 +102,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                   variant="secondary"
                   size="md"
                   onClick={onClose}
-                  className="rounded-xl px-5"
+                  className="cursor-pointer rounded-xl px-5 transition-all duration-200 hover:shadow-md focus:ring-2 focus:ring-primary/50 focus:outline-none"
                 >
                   Close preview
                 </Button>

@@ -4,14 +4,14 @@ import { cn } from '../../lib/cn';
 
 /** Responsive max-width for the LinkedIn feed card (wider on desktop). */
 export function linkedInFeedCardWidthClass(sidebar: boolean, carousel: boolean, pickCarousel = false): string {
-  if (sidebar) return 'w-full max-w-[300px]';
-  if (carousel && pickCarousel) return 'mx-auto w-full max-w-[min(100%,17.5rem)] sm:max-w-[18.5rem]';
+  if (sidebar) return 'w-full max-w-[600px]';
+  if (carousel && pickCarousel) return 'mx-auto w-full max-w-[min(100%,35rem)] sm:max-w-[37rem]';
   if (carousel) return 'w-full max-w-none';
   return cn(
-    'mx-auto w-full max-w-[min(100%,22rem)]',
-    'sm:max-w-[min(100%,24rem)]',
-    'md:max-w-[min(100%,26rem)]',
-    'lg:max-w-[28rem]',
+    'mx-auto w-full max-w-[min(100%,44rem)]',
+    'sm:max-w-[min(100%,48rem)]',
+    'md:max-w-[min(100%,52rem)]',
+    'lg:max-w-[56rem]',
   );
 }
 
