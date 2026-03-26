@@ -1,5 +1,13 @@
 import { ArrowLeft, ChevronLeft, ChevronRight, Info } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type WheelEvent as ReactWheelEvent,
+} from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
 import { useAlert } from '../../components/AlertProvider';
@@ -442,6 +450,55 @@ export function ReviewWorkspace({
     setActiveWorkspacePanel('media');
   };
 
+  const changePickCarouselBy = useCallback(
+    (direction: -1 | 1) => {
+      if (sheetVariants.length <= 1) {
+        return;
+      }
+      setPickCarouselIndex((index) =>
+        Math.max(0, Math.min(sheetVariants.length - 1, index + direction)),
+      );
+    },
+    [sheetVariants.length],
+  );
+
+  const handlePickCarouselWheel = useCallback(
+    (event: ReactWheelEvent<HTMLDivElement>) => {
+      if (sheetVariants.length <= 1) {
+        return;
+      }
+
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (Math.abs(delta) < 24) {
+        return;
+      }
+
+      event.preventDefault();
+      const now = Date.now();
+      if (now - pickCarouselNavAtRef.current < 380) {
+        return;
+      }
+      pickCarouselNavAtRef.current = now;
+      changePickCarouselBy(delta > 0 ? 1 : -1);
+    },
+    [changePickCarouselBy, sheetVariants.length],
+  );
+
+  const handlePickCarouselKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        changePickCarouselBy(1);
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        changePickCarouselBy(-1);
+      }
+    },
+    [changePickCarouselBy],
+  );
+
   const handleFormatting = (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => {
     const nextState = applyFormattingAction(editorText, effectiveScope, selection, action);
     setEditorText(nextState.value);
@@ -469,7 +526,7 @@ export function ReviewWorkspace({
           tabIndex={-1}
         >
           <p id="review-workspace-desc" className="sr-only">
-            Review your draft, refine text and media, then approve to mark the topic ready for publishing.
+            Pick a variant, refine, then approve.
           </p>
           <div className="shrink-0 border-b border-white/50 bg-white/60 px-4 py-4 backdrop-blur-xl sm:py-3.5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -480,17 +537,17 @@ export function ReviewWorkspace({
                     variant="secondary"
                     size="sm"
                     onClick={() => setReviewPhase('pick-variant')}
-                    aria-label="Back to sheet variants"
+                    aria-label="Back to variants"
                     className="min-h-[44px] shrink-0 gap-1.5 px-3 sm:mt-0.5 sm:min-h-[40px]"
                   >
                     <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-                    <span className="whitespace-nowrap">Back to variants</span>
+                    <span className="whitespace-nowrap">Back</span>
                   </Button>
                 ) : null}
                 <div className="min-w-0 flex-1">
                   {sheetVariants.length > 0 ? (
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
-                      {showPickPhase ? 'Step 1 of 2 · Choose draft' : 'Step 2 of 2 · Refine and approve'}
+                      {showPickPhase ? 'Choose variant' : 'Refine'}
                     </p>
                   ) : (
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Review</p>
@@ -522,12 +579,7 @@ export function ReviewWorkspace({
                     </Badge>
                     {sheetVariants.length > 0 ? (
                       <Badge variant="neutral" size="xs" className="normal-case">
-                        {sheetVariants.length} sheet variant{sheetVariants.length === 1 ? '' : 's'}
-                      </Badge>
-                    ) : null}
-                    {showPickPhase ? (
-                      <Badge variant="info" size="xs" className="normal-case">
-                        Choosing variant
+                        {sheetVariants.length} variant{sheetVariants.length === 1 ? '' : 's'}
                       </Badge>
                     ) : null}
                     {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
@@ -586,34 +638,111 @@ export function ReviewWorkspace({
           </div>
 
           {reviewPhase === 'pick-variant' && sheetVariants.length > 0 ? (
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink/75">Choose a sheet draft</p>
-              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink/85">
-                Select a draft to open it in the editor. Use &ldquo;Back to variants&rdquo; anytime to compare again.
-              </p>
-              <div className="mt-4 grid min-h-[min(44vh,520px)] flex-1 grid-cols-1 gap-4 sm:min-h-[min(48vh,560px)] sm:grid-cols-2 sm:grid-rows-2 [grid-auto-rows:minmax(0,1fr)]">
-                {sheetVariants.map((variant, index) => (
-                  <div
-                    key={`sheet-variant-${variant.originalIndex}`}
-                    className="flex h-full min-h-[260px] flex-col sm:min-h-[280px]"
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 sm:px-5">
+              <div className="flex shrink-0 items-center justify-end gap-2">
+                <p className="mr-auto text-xs font-semibold tabular-nums text-ink/70">
+                  {pickCarouselIndex + 1}
+                  <span className="font-medium text-ink/50"> / {sheetVariants.length}</span>
+                </p>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    className="size-9 rounded-full border-violet-200/60 bg-white/80 shadow-sm"
+                    aria-label="Previous variant"
+                    disabled={pickCarouselIndex === 0}
+                    onClick={() => changePickCarouselBy(-1)}
                   >
-                    <LinkedInPostPreview
-                      optionNumber={index + 1}
-                      text={variant.text}
-                      imageUrl={variant.imageUrl || undefined}
-                      selected={false}
-                      expanded={false}
-                      pickMode
-                      previewChannel={deliveryChannel}
-                      previewAuthorName={previewAuthorName}
-                      mode="carousel"
-                      className="glass-inset h-full min-h-0 overflow-y-auto overscroll-contain border-2 border-border-strong bg-white/80 shadow-card backdrop-blur-sm"
-                      onSelect={() => handleLoadSheetVariant(index)}
-                      onToggleExpanded={() => undefined}
-                      onOpenMedia={() => handleOpenMediaFromPickTile(index)}
-                    />
+                    <ChevronLeft className="h-4 w-4" aria-hidden />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    className="size-9 rounded-full border-violet-200/60 bg-white/80 shadow-sm"
+                    aria-label="Next variant"
+                    disabled={pickCarouselIndex === sheetVariants.length - 1}
+                    onClick={() => changePickCarouselBy(1)}
+                  >
+                    <ChevronRight className="h-4 w-4" aria-hidden />
+                  </Button>
+                </div>
+              </div>
+
+              <div
+                className="relative mt-4 flex min-h-[min(44vh,520px)] flex-1 flex-col sm:min-h-[min(48vh,560px)]"
+                role="region"
+                aria-roledescription="carousel"
+                aria-label="Variants"
+              >
+                <div
+                  className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/50 bg-white/25 shadow-inner backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+                  onWheel={handlePickCarouselWheel}
+                  onKeyDown={handlePickCarouselKeyDown}
+                  tabIndex={0}
+                >
+                  <div
+                    className="flex h-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                    style={{
+                      width: `${sheetVariants.length * 100}%`,
+                      transform: `translateX(-${(100 / sheetVariants.length) * pickCarouselIndex}%)`,
+                    }}
+                  >
+                    {sheetVariants.map((variant, index) => (
+                      <div
+                        key={`sheet-variant-${variant.originalIndex}`}
+                        className="flex h-full min-h-[260px] flex-shrink-0 flex-col px-1 sm:min-h-[280px] sm:px-2"
+                        style={{ width: `${100 / sheetVariants.length}%` }}
+                        aria-hidden={index !== pickCarouselIndex}
+                      >
+                        <LinkedInPostPreview
+                          optionNumber={index + 1}
+                          text={variant.text}
+                          imageUrl={variant.imageUrl || undefined}
+                          selected={index === pickCarouselIndex}
+                          expanded={false}
+                          pickMode
+                          previewChannel={deliveryChannel}
+                          previewAuthorName={previewAuthorName}
+                          mode="carousel"
+                          className="glass-inset h-full min-h-0 overflow-y-auto overscroll-contain border-2 border-border-strong bg-white/80 shadow-card backdrop-blur-sm"
+                          onSelect={() => handleLoadSheetVariant(index)}
+                          onToggleExpanded={() => undefined}
+                          onOpenMedia={() => handleOpenMediaFromPickTile(index)}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div
+                  className="mt-3 flex justify-center gap-2"
+                  role="tablist"
+                  aria-label="Jump to variant"
+                >
+                  {sheetVariants.map((variant, index) => {
+                    const active = index === pickCarouselIndex;
+                    return (
+                      <Button
+                        key={`pick-dot-${variant.originalIndex}`}
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        role="tab"
+                        aria-selected={active}
+                        aria-label={`Variant ${index + 1}`}
+                        onClick={() => setPickCarouselIndex(index)}
+                        className={cn(
+                          'size-2.5 min-h-0 min-w-0 rounded-full p-0 transition-colors duration-200',
+                          active
+                            ? 'scale-110 bg-primary shadow-sm ring-2 ring-primary/25'
+                            : 'bg-ink/20 hover:bg-ink/35',
+                        )}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
           ) : null}
