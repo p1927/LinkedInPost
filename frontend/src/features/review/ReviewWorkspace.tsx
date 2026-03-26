@@ -1,4 +1,4 @@
-import { ArrowLeft, Info } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
@@ -131,7 +131,9 @@ export function ReviewWorkspace({
   );
   const [topicExpanded, setTopicExpanded] = useState(false);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [pickCarouselIndex, setPickCarouselIndex] = useState(0);
   const topicHeadingRef = useRef<HTMLHeadingElement>(null);
+  const pickCarouselNavAtRef = useRef(0);
 
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -166,9 +168,16 @@ export function ReviewWorkspace({
     setReviewPhase(buildSheetVariants(row).length > 0 ? 'pick-variant' : 'edit');
     setTopicExpanded(false);
     setPreviewCollapsed(false);
+    setPickCarouselIndex(0);
   }, [row]);
 
   const sheetVariants = useMemo(() => buildSheetVariants(sheetRow), [sheetRow]);
+
+  useEffect(() => {
+    setPickCarouselIndex((index) =>
+      sheetVariants.length === 0 ? 0 : Math.min(index, sheetVariants.length - 1),
+    );
+  }, [sheetVariants.length]);
   const showPickPhase = reviewPhase === 'pick-variant' && sheetVariants.length > 0;
   const topicIsLong = sheetRow.topic.length > 140 || sheetRow.topic.split('\n').length > 2;
   const generatedImageOptions = useMemo(() => buildGeneratedImages(sheetRow), [sheetRow]);
