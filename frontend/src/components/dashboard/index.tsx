@@ -11,7 +11,6 @@ import { DashboardSettingsDrawer } from './components/DashboardSettingsDrawer';
 import { DashboardOverview } from './tabs/DashboardOverview';
 import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
-import { CollapsibleSidebar } from './components/CollapsibleSidebar';
 import { getChannelOption } from '../../integrations/channels';
 import { normalizeTelegramChatId } from '../../integrations/telegram';
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
@@ -255,15 +254,22 @@ export function Dashboard({
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-start gap-5 relative">
-        <CollapsibleSidebar 
-          queueContent={queueContent}
-          deliveryContent={deliveryContent}
-          settingsContent={settingsContent}
-          isAdmin={session.isAdmin}
-        />
+      <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 relative">
+        <aside className="w-full lg:w-[320px] xl:w-[360px] shrink-0 flex flex-col gap-6 sticky top-[90px] max-h-[calc(100vh-100px)] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-5">
+            <h2 className="text-lg font-bold text-slate-900">Delivery Configuration</h2>
+            {deliveryContent}
+          </div>
+          
+          {session.isAdmin && (
+            <div className="flex flex-col gap-4 bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-5">
+              <h2 className="text-lg font-bold text-slate-900">Workspace Settings</h2>
+              {settingsContent}
+            </div>
+          )}
+        </aside>
 
-        <div className="flex-1 min-w-0 space-y-4">
+        <div className="flex-1 min-w-0 space-y-6 flex flex-col">
           <DashboardOverview
             setStatusFilter={setStatusFilter}
             statusFilter={statusFilter}
@@ -278,6 +284,7 @@ export function Dashboard({
             whatsappConfigured={whatsappConfigured}
             lastDeliverySummary={lastDeliverySummary}
           />
+          {queueContent}
         </div>
       </div>
 

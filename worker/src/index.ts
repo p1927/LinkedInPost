@@ -6,9 +6,15 @@ import { sendWhatsAppMessage } from './integrations/whatsapp';
 import { buildScheduledPublishTaskName } from './scheduler/time';
 import type { ScheduledLinkedInPublishTask } from './scheduler/types';
 
+import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
+import { coerceVariantList } from './generation/normalize';
+import { SheetsGateway } from './persistence/drafts';
+import type { SheetRow } from './generation/types';
+
+
 export { ScheduledPublishAlarm } from './scheduler/ScheduledPublishAlarm';
 
-type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
+
 
 type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp';
 type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp';
@@ -65,7 +71,7 @@ interface BotConfig {
   whatsappRecipients: WhatsAppRecipient[];
 }
 
-interface StoredConfig {
+export interface StoredConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
@@ -154,66 +160,19 @@ interface RequestPayload {
   payload?: Record<string, unknown>;
 }
 
-interface SheetRow {
-  rowIndex: number;
-  sourceSheet: ManagedSheetName;
-  topicRowIndex?: number;
-  draftRowIndex?: number;
-  postRowIndex?: number;
-  topic: string;
-  date: string;
-  status: string;
-  variant1: string;
-  variant2: string;
-  variant3: string;
-  variant4: string;
-  imageLink1: string;
-  imageLink2: string;
-  imageLink3: string;
-  imageLink4: string;
-  selectedText: string;
-  selectedImageId: string;
-  postTime: string;
-}
 
-type GenerationScope = 'selection' | 'whole-post';
 
-interface TextSelectionRange {
-  start: number;
-  end: number;
-  text: string;
-}
 
-interface GenerationRequestPayload {
-  row: SheetRow;
-  editorText: string;
-  scope?: GenerationScope;
-  selection?: TextSelectionRange | null;
-  instruction?: string;
-  googleModel?: string;
-}
 
-interface QuickChangePreviewResult {
-  scope: GenerationScope;
-  model: string;
-  selection: TextSelectionRange | null;
-  replacementText: string;
-  fullText: string;
-}
 
-interface VariantPreviewResult {
-  id: string;
-  label: string;
-  replacementText: string;
-  fullText: string;
-}
 
-interface VariantsPreviewResponse {
-  scope: GenerationScope;
-  model: string;
-  selection: TextSelectionRange | null;
-  variants: VariantPreviewResult[];
-}
+
+
+
+
+
+
+
 
 interface VerifiedSession {
   email: string;
@@ -334,16 +293,9 @@ interface GoogleTokenInfo {
   aud?: string;
 }
 
-interface SpreadsheetMetadataResponse {
-  sheets?: SpreadsheetSheetMetadata[];
-}
 
-interface SpreadsheetSheetMetadata {
-  properties?: {
-    sheetId?: number;
-    title?: string;
-  };
-}
+
+
 
 interface GoogleModelOption {
   value: string;
@@ -376,18 +328,7 @@ interface GeminiModelsResponse {
   }>;
 }
 
-interface GeminiGenerateResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-  promptFeedback?: {
-    blockReason?: string;
-  };
-}
+
 
 const CONFIG_KEY = 'shared-config';
 const GOOGLE_MODEL_DEFAULT = 'gemini-2.5-flash';
@@ -419,26 +360,11 @@ const META_OAUTH_SCOPES = [
   'whatsapp_business_management',
   'whatsapp_business_messaging',
 ].join(',');
-const TOPICS_SHEET = 'Topics';
-const DRAFT_SHEET = 'Draft';
-const POST_SHEET = 'Post';
-const TOPICS_HEADERS = ['Topic', 'Date'];
-const PIPELINE_HEADERS = [
-  'Topic',
-  'Date',
-  'Status',
-  'Variant 1',
-  'Variant 2',
-  'Variant 3',
-  'Variant 4',
-  'Image Link 1',
-  'Image Link 2',
-  'Image Link 3',
-  'Image Link 4',
-  'Selected Text',
-  'Selected Image ID',
-  'Post Time',
-];
+
+
+
+
+
 const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
   { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
@@ -645,7 +571,7 @@ function ensureAdmin(session: VerifiedSession): void {
   }
 }
 
-function coerceSheetRow(value: unknown): SheetRow {
+export function coerceSheetRow(value: unknown): SheetRow {
   if (!value || typeof value !== 'object') {
     throw new Error('Missing row payload.');
   }
@@ -2065,384 +1991,33 @@ function requireGeminiApiKey(env: Env): string {
   return apiKey;
 }
 
-function coerceVariantList(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    throw new Error('Missing preview variants payload.');
-  }
 
-  const variants = value
-    .map((entry) => normalizePlainTextValue(entry))
-    .filter((entry) => entry.trim())
-    .slice(0, 4);
 
-  if (variants.length !== 4) {
-    throw new Error('Exactly four variants are required before saving them to Sheets.');
-  }
 
-  return variants;
-}
 
-function coerceSelectionRange(value: unknown): TextSelectionRange | null {
-  if (!value || typeof value !== 'object') {
-    return null;
-  }
 
-  const start = Number((value as TextSelectionRange).start);
-  const end = Number((value as TextSelectionRange).end);
 
-  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start) {
-    return null;
-  }
 
-  return {
-    start,
-    end,
-    text: String((value as TextSelectionRange).text || ''),
-  };
-}
 
-function resolveGenerationTarget(editorText: string, requestedScope?: GenerationScope, rawSelection?: TextSelectionRange | null): {
-  scope: GenerationScope;
-  selection: TextSelectionRange | null;
-} {
-  const selection = rawSelection
-    && rawSelection.end <= editorText.length
-    && rawSelection.start >= 0
-    && rawSelection.end > rawSelection.start
-      ? {
-        start: rawSelection.start,
-        end: rawSelection.end,
-        text: editorText.slice(rawSelection.start, rawSelection.end),
-      }
-      : null;
 
-  if (requestedScope === 'selection' && selection && selection.text.trim()) {
-    return {
-      scope: 'selection',
-      selection,
-    };
-  }
 
-  return {
-    scope: 'whole-post',
-    selection: null,
-  };
-}
 
-function applyReplacement(editorText: string, scope: GenerationScope, selection: TextSelectionRange | null, replacementText: string): string {
-  if (scope === 'selection' && selection) {
-    return `${editorText.slice(0, selection.start)}${replacementText}${editorText.slice(selection.end)}`;
-  }
 
-  return replacementText;
-}
 
-function buildRulesPrefix(sharedRules: string, instruction: string): string {
-  const rules = [sharedRules.trim(), instruction.trim()].filter(Boolean);
-  if (rules.length === 0) {
-    return '';
-  }
 
-  return [
-    'Follow these generation rules exactly unless they conflict with safety constraints:',
-    ...rules.map((rule, index) => `${index + 1}. ${rule}`),
-    '',
-  ].join('\n');
-}
 
-function buildQuickChangePrompt(
-  row: SheetRow,
-  editorText: string,
-  scope: GenerationScope,
-  selection: TextSelectionRange | null,
-  instruction: string,
-  sharedRules: string,
-): string {
-  const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
-  if (scope === 'selection' && selection) {
-    return [
-      'You are editing a LinkedIn draft.',
-      rulesPrefix,
-      'Return strict JSON with the shape {"result":"..."}.',
-      'Rewrite only the selected segment. Return only the replacement text for that segment, not the entire post.',
-      'Keep the surrounding context coherent, plain-text safe, and ready for downstream posting.',
-      `Topic: ${row.topic}`,
-      `Date: ${row.date}`,
-      '',
-      'Full draft:',
-      editorText,
-      '',
-      'Selected segment:',
-      selection.text,
-    ].join('\n');
-  }
 
-  return [
-    'You are editing a LinkedIn draft.',
-    rulesPrefix,
-    'Return strict JSON with the shape {"result":"..."}.',
-    'Rewrite the full draft. Return the full revised post text only.',
-    'Keep the result plain-text safe and ready for downstream posting.',
-    `Topic: ${row.topic}`,
-    `Date: ${row.date}`,
-    '',
-    'Draft:',
-    editorText,
-  ].join('\n');
-}
 
-function buildVariantsPrompt(
-  row: SheetRow,
-  editorText: string,
-  scope: GenerationScope,
-  selection: TextSelectionRange | null,
-  instruction: string,
-  sharedRules: string,
-): string {
-  const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
-  const promptLines = [
-    'You are generating four distinct LinkedIn draft options.',
-    rulesPrefix,
-    'Return strict JSON with the shape {"variants":["...","...","...","..."]}.',
-    'Return exactly four non-empty plain-text options.',
-    'Each option should take a clearly different angle while staying on-topic and ready for downstream posting.',
-    `Topic: ${row.topic}`,
-    `Date: ${row.date}`,
-    '',
-  ];
 
-  if (scope === 'selection' && selection) {
-    return [
-      ...promptLines,
-      'Rewrite only the selected segment. Each variant must contain only the replacement text for that selected segment, not the entire post.',
-      'Full draft:',
-      editorText,
-      '',
-      'Selected segment:',
-      selection.text,
-    ].join('\n');
-  }
 
-  return [
-    ...promptLines,
-    'Rewrite the full draft. Each variant must contain the full revised post text.',
-    'Draft:',
-    editorText,
-  ].join('\n');
-}
 
-async function callGeminiText(env: Env, model: string, prompt: string): Promise<string> {
-  const apiKey = requireGeminiApiKey(env);
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          role: 'user',
-          parts: [{ text: prompt }],
-        }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-        },
-      }),
-    },
-  );
 
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`Gemini generation failed with status ${response.status}. ${message.slice(0, 280)}`.trim());
-  }
 
-  const payload = (await response.json()) as GeminiGenerateResponse;
-  if (payload.promptFeedback?.blockReason) {
-    throw new Error(`Gemini blocked the generation request: ${payload.promptFeedback.blockReason}.`);
-  }
 
-  const text = payload.candidates?.[0]?.content?.parts?.map((part) => String(part.text || '')).join('\n').trim() || '';
-  if (!text) {
-    throw new Error('Gemini returned an empty generation response.');
-  }
 
-  return text;
-}
 
-function extractJsonCandidate(text: string): string {
-  const trimmed = text.trim();
-  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fencedMatch?.[1]) {
-    return fencedMatch[1].trim();
-  }
 
-  const objectStart = trimmed.indexOf('{');
-  const objectEnd = trimmed.lastIndexOf('}');
-  if (objectStart > -1 && objectEnd > objectStart) {
-    return trimmed.slice(objectStart, objectEnd + 1);
-  }
 
-  const arrayStart = trimmed.indexOf('[');
-  const arrayEnd = trimmed.lastIndexOf(']');
-  if (arrayStart > -1 && arrayEnd > arrayStart) {
-    return trimmed.slice(arrayStart, arrayEnd + 1);
-  }
-
-  return trimmed;
-}
-
-function tryParseJson(text: string): unknown {
-  const candidate = extractJsonCandidate(text);
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    return candidate;
-  }
-}
-
-function normalizePlainTextValue(value: unknown): string {
-  if (typeof value === 'string') {
-    return value.trim();
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((entry) => normalizePlainTextValue(entry)).filter(Boolean).join('\n').trim();
-  }
-
-  if (value && typeof value === 'object') {
-    for (const key of ['result', 'text', 'post', 'content', 'caption', 'value']) {
-      const candidate = normalizePlainTextValue((value as Record<string, unknown>)[key]);
-      if (candidate) {
-        return candidate;
-      }
-    }
-
-    return Object.values(value as Record<string, unknown>)
-      .map((entry) => normalizePlainTextValue(entry))
-      .filter(Boolean)
-      .join('\n')
-      .trim();
-  }
-
-  return '';
-}
-
-function normalizeVariantList(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.map((entry) => normalizePlainTextValue(entry)).filter(Boolean).slice(0, 4);
-  }
-
-  if (value && typeof value === 'object') {
-    const record = value as Record<string, unknown>;
-    if (Array.isArray(record.variants)) {
-      return normalizeVariantList(record.variants);
-    }
-
-    const keyedVariants = ['variant1', 'variant2', 'variant3', 'variant4']
-      .map((key) => normalizePlainTextValue(record[key]))
-      .filter(Boolean);
-    if (keyedVariants.length > 0) {
-      return keyedVariants.slice(0, 4);
-    }
-  }
-
-  const text = normalizePlainTextValue(value);
-  if (!text) {
-    return [];
-  }
-
-  const splitVariants = text
-    .split(/(?:^|\n)\s*(?:variant\s*\d+[:.-]|\d+[.)])\s*/i)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-
-  if (splitVariants.length >= 4) {
-    return splitVariants.slice(0, 4);
-  }
-
-  return [text];
-}
-
-async function generateQuickChangePreview(
-  env: Env,
-  storedConfig: StoredConfig,
-  payload: Record<string, unknown>,
-): Promise<QuickChangePreviewResult> {
-  const request = payload as unknown as GenerationRequestPayload;
-  const row = coerceSheetRow(request.row);
-  const editorText = String(request.editorText || '');
-  if (!editorText.trim()) {
-    throw new Error('Draft text is required before running Quick Change.');
-  }
-
-  const instruction = String(request.instruction || '').trim();
-  if (!instruction) {
-    throw new Error('Quick Change needs a per-run instruction.');
-  }
-
-  const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
-  const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
-  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, storedConfig.generationRules || '');
-  const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
-
-  if (!replacementText) {
-    throw new Error('Quick Change returned empty preview text.');
-  }
-
-  return {
-    scope,
-    model,
-    selection,
-    replacementText,
-    fullText: applyReplacement(editorText, scope, selection, replacementText),
-  };
-}
-
-async function generateVariantsPreview(
-  env: Env,
-  storedConfig: StoredConfig,
-  payload: Record<string, unknown>,
-): Promise<VariantsPreviewResponse> {
-  const request = payload as unknown as GenerationRequestPayload;
-  const row = coerceSheetRow(request.row);
-  const editorText = String(request.editorText || '');
-  if (!editorText.trim()) {
-    throw new Error('Draft text is required before generating preview variants.');
-  }
-
-  const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
-  const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
-  const prompt = buildVariantsPrompt(
-    row,
-    editorText,
-    scope,
-    selection,
-    String(request.instruction || '').trim(),
-    storedConfig.generationRules || '',
-  );
-  const variants = normalizeVariantList(tryParseJson(await callGeminiText(env, model, prompt)));
-
-  if (variants.length !== 4) {
-    throw new Error('Gemini did not return four valid preview variants.');
-  }
-
-  return {
-    scope,
-    model,
-    selection,
-    variants: variants.map((replacementText, index) => ({
-      id: `preview-${index + 1}`,
-      label: `Preview ${index + 1}`,
-      replacementText,
-      fullText: applyReplacement(editorText, scope, selection, replacementText),
-    })),
-  };
-}
 
 async function listGoogleModels(env: Env): Promise<GoogleModelOption[]> {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
@@ -2830,380 +2405,9 @@ async function downloadDraftImage(payload: Record<string, unknown>): Promise<Res
   });
 }
 
-class SheetsGateway {
-  private env: Env;
-  private accessTokenPromise: Promise<string> | null = null;
 
-  constructor(env: Env) {
-    this.env = env;
-  }
 
-  async getRows(spreadsheetId: string): Promise<SheetRow[]> {
-    await this.ensureRequiredSheets(spreadsheetId);
-
-    const [topicRows, draftRows, postRows] = await Promise.all([
-      this.getValues(spreadsheetId, `${TOPICS_SHEET}!A2:B`),
-      this.getValues(spreadsheetId, `${DRAFT_SHEET}!A2:N`),
-      this.getValues(spreadsheetId, `${POST_SHEET}!A2:N`),
-    ]);
-
-    const topics = topicRows
-      .map((row, index) => {
-        const [topic = '', date = ''] = padRow(row, 2);
-        return { rowIndex: index + 2, topic, date };
-      })
-      .filter((row) => row.topic.trim());
-
-    const drafts = draftRows
-      .map((row, index) => this.mapDraftOrPostRow(row, index, 'Draft'))
-      .filter((row) => row.topic.trim());
-
-    const posts = postRows
-      .map((row, index) => this.mapDraftOrPostRow(row, index, 'Post'))
-      .filter((row) => row.topic.trim());
-
-    return this.mergeRows(topics, drafts, posts);
-  }
-
-  async getRowByTopicDate(spreadsheetId: string, topic: string, date: string): Promise<SheetRow | null> {
-    const rows = await this.getRows(spreadsheetId);
-    const targetKey = buildTopicKey(topic, date);
-    return rows.find((row) => buildTopicKey(row.topic, row.date) === targetKey) || null;
-  }
-
-  async addTopic(spreadsheetId: string, topic: string): Promise<{ success: true }> {
-    if (!topic) {
-      throw new Error('Topic is required.');
-    }
-
-    await this.ensureRequiredSheets(spreadsheetId);
-    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, [[topic, new Date().toISOString().slice(0, 10)]]);
-    return { success: true };
-  }
-
-  async updateRowStatus(
-    spreadsheetId: string,
-    row: SheetRow,
-    status: string,
-    selectedText: string,
-    selectedImageId: string,
-    postTime: string,
-  ): Promise<{ success: true }> {
-    await this.ensureRequiredSheets(spreadsheetId);
-
-    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
-    if (!draftRowIndex) {
-      throw new Error('Draft row not found for this topic.');
-    }
-
-    await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!C${draftRowIndex}`, [[status || 'Pending']]);
-    if (status === 'Approved') {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!L${draftRowIndex}:N${draftRowIndex}`, [[selectedText, selectedImageId, postTime]]);
-    }
-
-    return { success: true };
-  }
-
-  async saveDraftVariants(spreadsheetId: string, row: SheetRow, variants: string[]): Promise<SheetRow> {
-    await this.ensureRequiredSheets(spreadsheetId);
-
-    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
-    if (!draftRowIndex) {
-      throw new Error('Draft row not found for this topic.');
-    }
-
-    await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!D${draftRowIndex}:G${draftRowIndex}`, [[
-      variants[0],
-      variants[1],
-      variants[2],
-      variants[3],
-    ]]);
-
-    const updatedRow = await this.getRowByTopicDate(spreadsheetId, row.topic, row.date);
-    if (!updatedRow) {
-      throw new Error('Draft variants were saved, but the updated row could not be reloaded.');
-    }
-
-    return updatedRow;
-  }
-
-  async markRowPublished(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {
-    await this.ensureRequiredSheets(spreadsheetId);
-
-    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
-    if (draftRowIndex) {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:N${draftRowIndex}`, [[
-        row.topic,
-        row.date,
-        row.status || 'Published',
-        row.variant1,
-        row.variant2,
-        row.variant3,
-        row.variant4,
-        row.imageLink1,
-        row.imageLink2,
-        row.imageLink3,
-        row.imageLink4,
-        row.selectedText,
-        row.selectedImageId,
-        row.postTime,
-      ]]);
-    }
-
-    const postValues = [[
-      row.topic,
-      row.date,
-      row.status || 'Published',
-      row.variant1,
-      row.variant2,
-      row.variant3,
-      row.variant4,
-      row.imageLink1,
-      row.imageLink2,
-      row.imageLink3,
-      row.imageLink4,
-      row.selectedText,
-      row.selectedImageId,
-      row.postTime,
-    ]];
-
-    if (row.postRowIndex) {
-      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:N${row.postRowIndex}`, postValues);
-    } else {
-      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:N`, postValues);
-    }
-
-    return { success: true };
-  }
-
-  async deleteRow(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {
-    await this.ensureRequiredSheets(spreadsheetId);
-
-    const metadata = await this.getSpreadsheetMetadata(spreadsheetId);
-    const deletions: Array<{ sheetTitle: ManagedSheetName; rowIndex?: number }> = [
-      { sheetTitle: POST_SHEET, rowIndex: row.postRowIndex },
-      { sheetTitle: DRAFT_SHEET, rowIndex: row.draftRowIndex },
-      { sheetTitle: TOPICS_SHEET, rowIndex: row.topicRowIndex },
-    ];
-
-    for (const deletion of deletions) {
-      if (!deletion.rowIndex) {
-        continue;
-      }
-
-      const sheetId = metadata.find((sheet) => sheet.properties?.title === deletion.sheetTitle)?.properties?.sheetId;
-      if (sheetId === undefined) {
-        continue;
-      }
-
-      await this.batchUpdate(spreadsheetId, {
-        requests: [
-          {
-            deleteDimension: {
-              range: {
-                sheetId,
-                dimension: 'ROWS',
-                startIndex: deletion.rowIndex - 1,
-                endIndex: deletion.rowIndex,
-              },
-            },
-          },
-        ],
-      });
-    }
-
-    return { success: true };
-  }
-
-  private mapDraftOrPostRow(row: string[], index: number, sourceSheet: 'Draft' | 'Post'): SheetRow {
-    const paddedRow = padRow(row, 14);
-    return {
-      rowIndex: index + 2,
-      sourceSheet,
-      topic: paddedRow[0],
-      date: paddedRow[1],
-      status: paddedRow[2] || 'Pending',
-      variant1: paddedRow[3],
-      variant2: paddedRow[4],
-      variant3: paddedRow[5],
-      variant4: paddedRow[6],
-      imageLink1: paddedRow[7],
-      imageLink2: paddedRow[8],
-      imageLink3: paddedRow[9],
-      imageLink4: paddedRow[10],
-      selectedText: paddedRow[11],
-      selectedImageId: paddedRow[12],
-      postTime: paddedRow[13],
-      draftRowIndex: sourceSheet === 'Draft' ? index + 2 : undefined,
-      postRowIndex: sourceSheet === 'Post' ? index + 2 : undefined,
-    };
-  }
-
-  private mergeRows(
-    topics: Array<{ rowIndex: number; topic: string; date: string }>,
-    drafts: SheetRow[],
-    posts: SheetRow[],
-  ): SheetRow[] {
-    const merged = new Map<string, SheetRow>();
-
-    for (const topicRow of topics) {
-      merged.set(buildTopicKey(topicRow.topic, topicRow.date), {
-        rowIndex: topicRow.rowIndex,
-        sourceSheet: 'Topics',
-        topicRowIndex: topicRow.rowIndex,
-        topic: topicRow.topic,
-        date: topicRow.date,
-        status: 'Pending',
-        variant1: '',
-        variant2: '',
-        variant3: '',
-        variant4: '',
-        imageLink1: '',
-        imageLink2: '',
-        imageLink3: '',
-        imageLink4: '',
-        selectedText: '',
-        selectedImageId: '',
-        postTime: '',
-      });
-    }
-
-    for (const draftRow of drafts) {
-      const key = buildTopicKey(draftRow.topic, draftRow.date);
-      const existing = merged.get(key);
-      merged.set(key, {
-        ...(existing ?? ({} as SheetRow)),
-        ...draftRow,
-        sourceSheet: 'Draft',
-        rowIndex: draftRow.draftRowIndex ?? draftRow.rowIndex,
-        topicRowIndex: existing?.topicRowIndex,
-        draftRowIndex: draftRow.draftRowIndex ?? draftRow.rowIndex,
-      });
-    }
-
-    for (const postRow of posts) {
-      const key = buildTopicKey(postRow.topic, postRow.date);
-      const existing = merged.get(key);
-      merged.set(key, {
-        ...(existing ?? ({} as SheetRow)),
-        ...postRow,
-        sourceSheet: 'Post',
-        rowIndex: postRow.postRowIndex ?? postRow.rowIndex,
-        topicRowIndex: existing?.topicRowIndex,
-        draftRowIndex: existing?.draftRowIndex,
-        postRowIndex: postRow.postRowIndex ?? postRow.rowIndex,
-      });
-    }
-
-    return Array.from(merged.values());
-  }
-
-  private async ensureRequiredSheets(spreadsheetId: string): Promise<void> {
-    await this.ensureSheetExists(spreadsheetId, TOPICS_SHEET, TOPICS_HEADERS);
-    await this.ensureSheetExists(spreadsheetId, DRAFT_SHEET, PIPELINE_HEADERS);
-    await this.ensureSheetExists(spreadsheetId, POST_SHEET, PIPELINE_HEADERS);
-  }
-
-  private async ensureSheetExists(spreadsheetId: string, sheetTitle: ManagedSheetName, headers: string[]): Promise<void> {
-    const metadata = await this.getSpreadsheetMetadata(spreadsheetId);
-    const existingTitles = new Set(metadata.map((sheet) => sheet.properties?.title).filter(Boolean));
-
-    if (!existingTitles.has(sheetTitle)) {
-      await this.batchUpdate(spreadsheetId, {
-        requests: [
-          {
-            addSheet: {
-              properties: {
-                title: sheetTitle,
-              },
-            },
-          },
-        ],
-      });
-    }
-
-    const currentHeaders = await this.getValues(spreadsheetId, `${sheetTitle}!A1`);
-    if (!currentHeaders.length) {
-      await this.updateValues(spreadsheetId, `${sheetTitle}!A1`, [headers]);
-    }
-  }
-
-  private async getSpreadsheetMetadata(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {
-    const response = await this.fetchGoogleJson<SpreadsheetMetadataResponse>(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties(sheetId,title)`,
-    );
-
-    return response.sheets || [];
-  }
-
-  private async getValues(spreadsheetId: string, range: string): Promise<string[][]> {
-    const response = await this.fetchGoogleJson<{ values?: string[][] }>(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
-    );
-
-    return response.values || [];
-  }
-
-  private async updateValues(spreadsheetId: string, range: string, values: string[][]): Promise<void> {
-    await this.fetchGoogleJson(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ values }),
-      },
-    );
-  }
-
-  private async appendValues(spreadsheetId: string, range: string, values: string[][]): Promise<void> {
-    await this.fetchGoogleJson(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ values }),
-      },
-    );
-  }
-
-  private async batchUpdate(spreadsheetId: string, body: Record<string, unknown>): Promise<void> {
-    await this.fetchGoogleJson(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
-  }
-
-  private async fetchGoogleJson<T = unknown>(url: string, init: RequestInit = {}): Promise<T> {
-    const accessToken = await this.getAccessToken();
-    const response = await fetch(url, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        ...(init.headers || {}),
-      },
-    });
-
-    if (!response.ok) {
-      const message = await response.text();
-      throw new Error(`Google Sheets request failed: ${message || response.status}`);
-    }
-
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return response.json<T>();
-  }
-
-  private async getAccessToken(): Promise<string> {
-    if (!this.accessTokenPromise) {
-      this.accessTokenPromise = mintGoogleAccessToken(this.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-    }
-
-    return this.accessTokenPromise;
-  }
-}
-
-async function mintGoogleAccessToken(serviceAccountJson: string): Promise<string> {
+export async function mintGoogleAccessToken(serviceAccountJson: string): Promise<string> {
   let credentials: ServiceAccountCredentials;
   try {
     credentials = JSON.parse(serviceAccountJson) as ServiceAccountCredentials;
@@ -3281,13 +2485,7 @@ function buildTopicKey(topic: string, date: string): string {
   return `${topic.trim()}::${date.trim()}`;
 }
 
-function padRow(row: string[], width: number): string[] {
-  const padded = [...row];
-  while (padded.length < width) {
-    padded.push('');
-  }
-  return padded;
-}
+
 
 function buildCorsHeaders(request: Request, env: Env): Headers {
   const origin = request.headers.get('Origin');

@@ -1,0 +1,82 @@
+export type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
+
+export interface SheetRow {
+  rowIndex: number;
+  sourceSheet: ManagedSheetName;
+  topicRowIndex?: number;
+  draftRowIndex?: number;
+  postRowIndex?: number;
+  topic: string;
+  date: string;
+  status: string;
+  variant1: string;
+  variant2: string;
+  variant3: string;
+  variant4: string;
+  imageLink1: string;
+  imageLink2: string;
+  imageLink3: string;
+  imageLink4: string;
+  selectedText: string;
+  selectedImageId: string;
+  postTime: string;
+}
+
+export type GenerationScope = 'selection' | 'whole-post';
+
+export interface TextSelectionRange {
+  start: number;
+  end: number;
+  text: string;
+}
+
+export interface GenerationRequestPayload {
+  row: SheetRow;
+  editorText: string;
+  scope?: GenerationScope;
+  selection?: TextSelectionRange | null;
+  instruction?: string;
+  googleModel?: string;
+}
+
+export interface QuickChangePreviewResult {
+  scope: GenerationScope;
+  model: string;
+  selection: TextSelectionRange | null;
+  replacementText: string;
+  fullText: string;
+}
+
+export interface VariantPreviewResult {
+  id: string;
+  label: string;
+  replacementText: string;
+  fullText: string;
+}
+
+export interface VariantsPreviewResponse {
+  scope: GenerationScope;
+  model: string;
+  selection: TextSelectionRange | null;
+  variants: VariantPreviewResult[];
+}
+
+export interface GeminiModelsResponse {
+  models?: Array<{
+    name?: string;
+    supportedGenerationMethods?: string[];
+  }>;
+}
+
+export interface GeminiGenerateResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+  promptFeedback?: {
+    blockReason?: string;
+  };
+}
