@@ -124,18 +124,11 @@ export function DashboardQueue({
       </section>
 
       <div className="flex flex-col gap-4">
-        <div className="space-y-2.5">
-          <div className="flex flex-col gap-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink/70">Status Filter</p>
-            <p id="queue-filter-hint" className="text-xs leading-snug text-muted">
-              Filter by status; counts follow the sheet.
-            </p>
-          </div>
+        <div>
           <div
             className="flex flex-wrap gap-2"
             role="group"
             aria-label="Filter topics by status"
-            aria-describedby="queue-filter-hint"
           >
             {filterOptions.map((option) => (
               <ChipToggle

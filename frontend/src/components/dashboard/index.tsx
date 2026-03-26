@@ -341,23 +341,13 @@ export function Dashboard({
   return (
     <div className="w-full pb-12">
       <header className="mx-auto mb-6 max-w-[1400px]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2.5">
-              <h1 className="font-heading text-2xl font-semibold tracking-tight text-ink sm:text-[1.65rem]">
-                Topic queue
-              </h1>
-              {session.config.spreadsheetId && (
-                <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 ring-1 ring-emerald-200/70">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
-                  <span className="text-xs font-semibold text-emerald-700">Sheet connected</span>
-                </div>
-              )}
+        <div className="flex items-center gap-2.5">
+          {session.config.spreadsheetId && (
+            <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 ring-1 ring-emerald-200/70">
+              <div className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+              <span className="text-xs font-semibold text-emerald-700">Sheet connected</span>
             </div>
-            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted">
-              Add topics, run drafts, then review and approve before publishing to your connected channel.
-            </p>
-          </div>
+          )}
         </div>
       </header>
       <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
