@@ -4,10 +4,9 @@ import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
-import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent } from '../utils';
+import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent, formatQueueDate } from '../utils';
 import { filterOptions } from '../constants';
 import { Badge, type BadgeVariant } from '../../ui/Badge';
-import { CalendarDateChip } from '../../ui/CalendarDateChip';
 import { ChipToggle } from '../../ui/ChipToggle';
 
 function queueRowDomId(row: SheetRow) {
@@ -152,69 +151,69 @@ export function DashboardQueue({
               {rows.length === 0 ? <p className="mt-1 text-xs text-muted">Add a topic above to start.</p> : null}
             </div>
           ) : (
-            <div className="glass-inset scroll-mt-24 overflow-x-auto rounded-xl border-violet-200/40 shadow-sm">
-              <table className="w-full min-w-[600px] border-separate border-spacing-0 text-sm">
-                <caption className="sr-only">Topic queue: title, status, date, and actions per row</caption>
-                <colgroup>
-                  <col className="min-w-[8rem]" />
-                  <col className="w-[1%]" />
-                  <col className="w-[1%]" />
-                  <col className="w-[1%]" />
-                  <col className="w-10" />
-                  <col className="w-10" />
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-violet-200/80 bg-white/85 text-left text-xs font-semibold uppercase tracking-wide text-ink/80 backdrop-blur-md">
-                    <th scope="col" className="px-4 py-3 pl-4">
+            <div
+              className="glass-inset scroll-mt-24 overflow-x-auto rounded-xl border-violet-200/40 shadow-sm"
+              role="table"
+              aria-label="Topic queue: title, status, date, and actions per row"
+            >
+              <div className="min-w-[520px]">
+                <div role="rowgroup">
+                  <div
+                    role="row"
+                    className="flex items-center gap-3 border-b border-violet-200/80 bg-white/85 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink/55 backdrop-blur-md"
+                  >
+                    <div role="columnheader" className="min-w-0 flex-1 text-left">
                       Topic
-                    </th>
-                    <th scope="col" className="whitespace-nowrap px-3 py-3">
-                      Status
-                    </th>
-                    <th scope="col" className="whitespace-nowrap px-3 py-3">
-                      Date
-                    </th>
-                    <th scope="col" className="whitespace-nowrap px-3 py-3 text-right">
-                      Action
-                    </th>
-                    <th scope="col" className="px-1 py-3 text-center">
-                      <span className="sr-only">Preview</span>
-                      <Eye className="mx-auto h-4 w-4 text-ink/55" aria-hidden />
-                    </th>
-                    <th scope="col" className="px-1 py-3 text-center">
-                      <span className="sr-only">Delete</span>
-                      <Trash2 className="mx-auto h-4 w-4 text-ink/55" aria-hidden />
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+                    </div>
+                    <div
+                      role="columnheader"
+                      className="flex shrink-0 items-center justify-end gap-3 text-ink/55"
+                    >
+                      <span className="w-[92px] text-right">Status</span>
+                      <span className="w-[108px] text-right">Date</span>
+                      <span className="min-w-[108px] text-right">Action</span>
+                      <div className="flex w-[76px] shrink-0 items-center justify-end gap-0.5">
+                        <span className="sr-only">Preview and delete</span>
+                        <Eye className="h-3.5 w-3.5 text-ink/45" aria-hidden />
+                        <Trash2 className="h-3.5 w-3.5 text-ink/45" aria-hidden />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div role="rowgroup" className="text-sm">
                   {filteredRows.map((row) => {
                     const normalizedStatus = getNormalizedRowStatus(row.status);
                     const showPreview = canPreviewPublishedContent(row);
+                    const dateRaw = row.date?.trim() ?? '';
+                    const dateLabel = formatQueueDate(dateRaw);
                     return (
-                      <tr
+                      <div
                         key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
+                        role="row"
                         data-queue-row-id={queueRowDomId(row)}
-                        className="border-b border-violet-100/50 transition-colors last:border-b-0 hover:bg-white/65"
+                        className="flex items-center gap-3 border-b border-violet-100/50 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-white/65"
                       >
-                        <td className="max-w-0 px-4 py-2.5 align-middle">
+                        <div role="cell" className="min-w-0 flex-1">
                           <p
                             className="line-clamp-2 font-medium leading-snug text-ink"
                             title={row.topic.length > 80 ? row.topic : undefined}
                           >
                             {row.topic}
                           </p>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 align-middle">
-                          <Badge variant={getQueueStatusVariant(row.status)} size="xs">
-                            {row.status || 'Pending'}
-                          </Badge>
-                        </td>
-                        <td className="max-w-[10rem] px-3 py-2.5 align-middle">
-                          <CalendarDateChip date={row.date ?? ''} />
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 align-middle text-right">
-                          <div className="flex justify-end gap-1.5">
+                        </div>
+                        <div role="cell" className="flex shrink-0 items-center justify-end gap-3">
+                          <div className="flex w-[92px] shrink-0 justify-end">
+                            <Badge variant={getQueueStatusVariant(row.status)} size="xs">
+                              {row.status || 'Pending'}
+                            </Badge>
+                          </div>
+                          <div
+                            className="w-[108px] shrink-0 truncate text-right text-xs tabular-nums text-muted"
+                            title={dateRaw || undefined}
+                          >
+                            {dateLabel}
+                          </div>
+                          <div className="flex min-w-[108px] shrink-0 justify-end gap-1.5">
                             {normalizedStatus === 'pending' ? (
                               <button
                                 type="button"
@@ -281,39 +280,37 @@ export function DashboardQueue({
                               </button>
                             ) : null}
                           </div>
-                        </td>
-                        <td className="px-1 py-2.5 align-middle text-center">
-                          {showPreview ? (
+                          <div className="flex w-[76px] shrink-0 items-center justify-end gap-0.5">
+                            {showPreview ? (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedApprovedRowPreview(row)}
+                                title="Preview"
+                                aria-label="Preview post"
+                                className={iconBtnMuted}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+                            ) : (
+                              <span className="inline-block h-9 w-9 shrink-0" aria-hidden />
+                            )}
                             <button
                               type="button"
-                              onClick={() => setSelectedApprovedRowPreview(row)}
-                              title="Preview"
-                              aria-label="Preview post"
-                              className={iconBtnMuted}
+                              onClick={() => handleDeleteTopic(row)}
+                              disabled={deletingRowIndex === row.rowIndex}
+                              title="Delete topic"
+                              aria-label="Delete topic"
+                              className={iconBtn}
                             >
-                              <Eye className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
-                          ) : (
-                            <span className="inline-block h-9 w-9" aria-hidden />
-                          )}
-                        </td>
-                        <td className="px-1 py-2.5 align-middle text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTopic(row)}
-                            disabled={deletingRowIndex === row.rowIndex}
-                            title="Delete topic"
-                            aria-label="Delete topic"
-                            className={iconBtn}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </td>
-                      </tr>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
           )}
         </div>

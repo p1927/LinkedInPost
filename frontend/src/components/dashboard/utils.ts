@@ -38,6 +38,27 @@ export function isSameTopicDate(left: SheetRow, right: SheetRow): boolean {
   return left.topic.trim() === right.topic.trim() && left.date.trim() === right.date.trim();
 }
 
+/** Single-line queue date for compact list rows (ISO yyyy-mm-dd or parseable string). */
+export function formatQueueDate(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '—';
+
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const d = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  }
+
+  const d = new Date(t);
+  if (!Number.isNaN(d.getTime())) {
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  return t;
+}
+
 export function getRecipientOptions(channel: ChannelId, config: BotConfig): RecipientOption[] {
   if (channel === 'telegram') {
     return config.telegramRecipients.map((recipient) => ({
