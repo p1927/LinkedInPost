@@ -81,7 +81,7 @@ export function DraftEditor({
           size="inline"
           title={label}
           onClick={() => onFormatting(id)}
-          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-medium text-ink transition-colors hover:bg-canvas focus-visible:ring-2 focus-visible:ring-primary/30 ${fmtBtn}`}
+          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-medium text-ink transition-all duration-200 hover:bg-canvas hover:text-primary hover:shadow-sm active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/30 ${fmtBtn}`}
         >
           <Icon className={fmtIcon} aria-hidden />
           <span className="sr-only">{label}</span>
@@ -99,7 +99,7 @@ export function DraftEditor({
             variant="ghost"
             size="inline"
             onClick={() => onScopeChange('whole-post')}
-            className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg hover:bg-ink hover:text-primary-fg' : 'text-muted hover:bg-canvas'}`}
+            className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg shadow-sm hover:bg-ink/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
           >
             Whole post
           </Button>
@@ -109,7 +109,7 @@ export function DraftEditor({
             size="inline"
             onClick={() => onScopeChange('selection')}
             disabled={!selection?.text.trim()}
-            className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg hover:bg-primary hover:text-primary-fg' : 'text-muted hover:bg-canvas disabled:cursor-not-allowed disabled:text-muted/50'}`}
+            className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70 disabled:cursor-not-allowed disabled:text-muted/40'}`}
           >
             Selection
           </Button>
@@ -162,7 +162,7 @@ export function DraftEditor({
         onMouseUp={syncSelection}
         spellCheck={false}
         className={cn(
-          'w-full flex-1 resize-none rounded-xl border border-border bg-canvas text-ink outline-none transition-colors focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20',
+          'w-full flex-1 resize-none rounded-xl border border-border bg-canvas text-ink outline-none transition-all duration-200 focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/25 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]',
           taMin,
           taText,
         )}

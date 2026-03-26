@@ -53,7 +53,7 @@ export function GenerationPanel({
   };
 
   return (
-    <section className={`rounded-2xl border border-indigo-200/40 bg-gradient-to-br from-indigo-50/80 to-white/80 shadow-lg backdrop-blur-xl transition-all duration-300 hover:shadow-xl hover:border-indigo-200/60 ${pad}`}>
+    <section className={`rounded-2xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50/90 to-white/85 shadow-lg backdrop-blur-xl transition-all duration-300 hover:shadow-xl hover:border-indigo-200/70 hover:bg-gradient-to-br hover:from-indigo-50/95 hover:to-white/90 ${pad}`}>
       <div className="flex items-center gap-2 mb-1">
         <div className="h-1 w-1 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500"></div>
         <p className={`font-semibold uppercase tracking-[0.15em] text-indigo-600/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Refine with AI</p>
@@ -97,7 +97,7 @@ export function GenerationPanel({
           size={compact ? 'sm' : 'md'}
           onClick={onGenerateVariants}
           disabled={loadingAction !== null}
-          className={btn}
+          className={`${btn} transition-all duration-200 shadow-sm hover:shadow-md active:shadow-sm`}
         >
           <Sparkles className={icon} />
           {loadingAction === 'variants' ? 'Generating…' : '4 Variants'}
@@ -108,7 +108,7 @@ export function GenerationPanel({
           size={compact ? 'sm' : 'md'}
           onClick={onGenerateQuickChange}
           disabled={loadingAction !== null}
-          className={btn}
+          className={`${btn} transition-all duration-200 shadow-sm hover:shadow-md active:shadow-sm`}
         >
           <WandSparkles className={icon} />
           {loadingAction === 'quick-change' ? 'Generating…' : 'Quick Change'}
@@ -116,7 +116,7 @@ export function GenerationPanel({
       </div>
 
       {quickChangePreview ? (
-        <div className={`mt-4 rounded-xl border border-ai-border/80 bg-ai-surface/80 backdrop-blur-sm shadow-sm transition-all duration-200 ${compact ? 'p-3' : 'p-4'}`}>
+        <div className={`mt-4 rounded-xl border border-ai-border/90 bg-gradient-to-br from-ai-surface/90 to-white/80 backdrop-blur-sm shadow-sm transition-all duration-200 hover:shadow-md ${compact ? 'p-3' : 'p-4'}`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className={`font-semibold uppercase tracking-[0.15em] text-ai-ink/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Quick Change preview</p>
@@ -138,7 +138,7 @@ export function GenerationPanel({
       {variantsPreview?.variants.length ? (
         <div className={`mt-4 ${compact ? 'space-y-2' : 'space-y-3'}`}>
           {variantsPreview.variants.map((variant, index) => (
-            <div key={variant.id} className={`rounded-xl border border-violet-200/50 bg-white/50 backdrop-blur-sm shadow-sm transition-all duration-200 hover:shadow-md hover:border-violet-200/70 ${compact ? 'p-3' : 'p-4'}`}>
+            <div key={variant.id} className={`rounded-xl border border-violet-200/60 bg-white/60 backdrop-blur-sm shadow-sm transition-all duration-200 hover:shadow-md hover:border-violet-200/80 hover:bg-white/70 ${compact ? 'p-3' : 'p-4'}`}>
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className={`font-semibold uppercase tracking-[0.15em] text-muted ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Preview {index + 1}</p>

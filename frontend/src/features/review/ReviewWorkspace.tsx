@@ -517,14 +517,14 @@ export function ReviewWorkspace({
         }}
         role="presentation"
       >
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="review-workspace-title"
-          aria-describedby="review-workspace-desc"
-          className="glass-panel-strong flex max-h-[calc(100dvh-3rem)] w-full max-w-[min(100vw-1.5rem,1760px)] flex-col overflow-hidden rounded-3xl border border-white/55 shadow-2xl shadow-ink/20 ring-1 ring-white/45 outline-none transition-[box-shadow,transform] duration-200 motion-safe:transition-shadow focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          tabIndex={-1}
-        >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="review-workspace-title"
+        aria-describedby="review-workspace-desc"
+        className="glass-panel-strong flex max-h-[calc(100dvh-3rem)] w-full max-w-[min(100vw-1.5rem,1760px)] flex-col overflow-hidden rounded-3xl border border-white/60 shadow-2xl shadow-ink/25 ring-1 ring-white/50 outline-none transition-[box-shadow,transform] duration-200 motion-safe:transition-shadow focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+        tabIndex={-1}
+      >
           <p id="review-workspace-desc" className="sr-only">
             Pick a variant, refine, then approve.
           </p>
@@ -762,7 +762,7 @@ export function ReviewWorkspace({
                     role="tab"
                     aria-selected={activeWorkspacePanel === 'refine'}
                     onClick={() => setActiveWorkspacePanel('refine')}
-                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'refine' ? 'bg-white/80 text-ink shadow-sm ring-1 ring-violet-200/65' : 'text-muted hover:bg-white/50'}`}
+                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'refine' ? 'bg-white/90 text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
                   >
                     Refine
                   </Button>
@@ -773,7 +773,7 @@ export function ReviewWorkspace({
                     role="tab"
                     aria-selected={activeWorkspacePanel === 'media'}
                     onClick={() => setActiveWorkspacePanel('media')}
-                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'media' ? 'bg-white/80 text-ink shadow-sm ring-1 ring-violet-200/65' : 'text-muted hover:bg-white/50'}`}
+                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'media' ? 'bg-white/90 text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
                   >
                     Media
                   </Button>
@@ -784,7 +784,7 @@ export function ReviewWorkspace({
                     role="tab"
                     aria-selected={activeWorkspacePanel === 'rules'}
                     onClick={() => setActiveWorkspacePanel('rules')}
-                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'rules' ? 'bg-white/80 text-ink shadow-sm ring-1 ring-violet-200/65' : 'text-muted hover:bg-white/50'}`}
+                    className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'rules' ? 'bg-white/90 text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
                   >
                     Rules
                   </Button>

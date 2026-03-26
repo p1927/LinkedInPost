@@ -78,9 +78,9 @@ function buildDiff(before: string, after: string): { beforeSegments: DiffSegment
 function renderSegments(segments: DiffSegment[]) {
   return segments.map((segment, index) => {
     const className = segment.status === 'added'
-      ? 'border border-success-border bg-success-surface text-success-ink'
+      ? 'border border-emerald-400/60 bg-emerald-100/80 text-emerald-900 font-medium'
       : segment.status === 'removed'
-        ? 'bg-rose-100 text-rose-900 line-through'
+        ? 'border border-rose-400/60 bg-rose-100/80 text-rose-900 line-through font-medium'
         : '';
 
     return (
@@ -149,15 +149,15 @@ export function CompareDialog({
         </div>
 
         <div className="grid gap-6 px-8 py-6 lg:grid-cols-2">
-          <section className="rounded-2xl p-6 border border-slate-200/60 bg-gradient-to-br from-slate-50/80 to-white/60 backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-700/80">Current target</p>
+          <section className="rounded-2xl p-6 border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-700/90">Current target</p>
             <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900 max-h-[300px] overflow-y-auto">
               {renderSegments(beforeSegments)}
             </div>
           </section>
 
-          <section className="rounded-2xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-white/60 p-6 backdrop-blur-sm shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-700/80">Proposed target</p>
+          <section className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white/70 p-6 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-700/90">Proposed target</p>
             <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900 max-h-[300px] overflow-y-auto">
               {renderSegments(afterSegments)}
             </div>
@@ -165,9 +165,9 @@ export function CompareDialog({
         </div>
 
         <div className="px-8 pb-4">
-          <section className="glass-panel rounded-2xl p-6 border border-indigo-200/40 bg-gradient-to-br from-indigo-50/50 to-white/50 backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-700/80">Resulting editor draft</p>
-            <div className="mt-4 max-h-[240px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl px-5 py-4 text-sm leading-7 text-slate-900 border border-indigo-200/30 bg-white/60 backdrop-blur-sm">
+          <section className="glass-panel rounded-2xl p-6 border border-indigo-200/50 bg-gradient-to-br from-indigo-50/70 to-white/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-700/90">Resulting editor draft</p>
+            <div className="mt-4 max-h-[240px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl px-5 py-4 text-sm leading-7 text-slate-900 border border-indigo-200/40 bg-white/70 backdrop-blur-sm transition-all duration-200 hover:border-indigo-200/60">
               {resultingText}
             </div>
           </section>
