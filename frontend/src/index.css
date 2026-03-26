@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply font-sans bg-canvas text-ink antialiased;
+    @apply min-h-screen font-sans text-ink antialiased bg-app-mesh bg-fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -35,6 +35,37 @@
 }
 
 @layer utilities {
+  /* Vibrant mesh behind glass layers (ui-ux-pro-max Glassmorphism + purple accent) */
+  .bg-app-mesh {
+    background-color: #ede9fe;
+    background-image:
+      radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124, 58, 237, 0.42), transparent 55%),
+      radial-gradient(ellipse 95% 75% at 100% 5%, rgba(167, 139, 250, 0.36), transparent 52%),
+      radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192, 132, 252, 0.32), transparent 58%),
+      linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+  }
+
+  /* Light-mode glass: ≥80% white fill + blur (skill pre-delivery checklist) */
+  .glass-panel {
+    @apply border border-white/55 bg-white/80 shadow-glass backdrop-blur-xl;
+  }
+
+  .glass-panel-strong {
+    @apply border border-white/60 bg-white/90 shadow-lift backdrop-blur-2xl;
+  }
+
+  .glass-sidebar {
+    @apply border-white/50 bg-white/75 shadow-[4px_0_28px_rgba(91,33,182,0.07)] backdrop-blur-2xl;
+  }
+
+  .glass-header {
+    @apply border-white/50 bg-white/80 backdrop-blur-2xl;
+  }
+
+  .glass-inset {
+    @apply border border-violet-200/45 bg-white/60 backdrop-blur-md;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;

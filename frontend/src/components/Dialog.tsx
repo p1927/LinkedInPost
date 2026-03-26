@@ -42,13 +42,13 @@ export function Dialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/40 px-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-deep-purple/35 px-4 backdrop-blur-md">
       <div
         aria-modal="true"
         role="dialog"
         aria-labelledby="dialog-title"
         aria-describedby="dialog-description"
-        className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-lift"
+        className="glass-panel-strong w-full max-w-md rounded-2xl p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -62,7 +62,7 @@ export function Dialog({
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-border-strong hover:text-ink"
+            className="glass-inset inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-white/80 hover:text-ink"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" />
@@ -75,7 +75,7 @@ export function Dialog({
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
+            className="glass-inset inline-flex cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-white/80"
           >
             {cancelLabel}
           </button>

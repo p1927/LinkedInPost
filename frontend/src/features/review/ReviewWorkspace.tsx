@@ -359,10 +359,10 @@ export function ReviewWorkspace({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/55 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-8">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-deep-purple/35 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
-        <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-lift">
-          <div className="shrink-0 border-b border-border bg-surface px-4 py-2.5">
+        <div className="glass-panel-strong flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl">
+          <div className="shrink-0 border-b border-white/45 bg-white/50 px-4 py-2.5 backdrop-blur-md">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Review</p>
@@ -382,7 +382,7 @@ export function ReviewWorkspace({
                   value={postTime}
                   onChange={(event) => setPostTime(event.target.value)}
                   aria-label="Post time (optional)"
-                  className="w-full min-w-0 rounded-lg border border-border bg-canvas px-2.5 py-1.5 text-xs text-ink outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary/20 sm:w-[200px]"
+                  className="glass-inset w-full min-w-0 rounded-lg px-2.5 py-1.5 text-xs text-ink outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary/20 sm:w-[200px]"
                 />
                 <div className="flex gap-2">
                   <button
@@ -402,7 +402,7 @@ export function ReviewWorkspace({
                       }
                       onCancel();
                     }}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-canvas"
+                    className="glass-inset inline-flex cursor-pointer items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-white/80"
                   >
                     Cancel
                   </button>
@@ -421,11 +421,11 @@ export function ReviewWorkspace({
                     key={`sheet-variant-${index}`}
                     type="button"
                     onClick={() => handleLoadSheetVariant(index)}
-                    className="min-w-[200px] max-w-md flex-1 cursor-pointer rounded-2xl border border-border bg-canvas px-4 py-3 text-left transition-colors hover:border-border-strong hover:bg-surface sm:min-w-[220px]"
+                    className="glass-inset min-w-[200px] max-w-md flex-1 cursor-pointer rounded-2xl px-4 py-3 text-left transition-colors hover:border-violet-300/70 hover:bg-white/75 sm:min-w-[220px]"
                   >
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Variant {index + 1}</p>
                     <p className="mt-1.5 line-clamp-4 text-xs leading-relaxed text-ink">{variant.text}</p>
-                    <span className="mt-2 inline-flex rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-muted">
+                    <span className="glass-inset mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-muted">
                       Use as base
                     </span>
                   </button>
@@ -436,12 +436,12 @@ export function ReviewWorkspace({
 
           {reviewPhase === 'edit' || sheetVariants.length === 0 ? (
             <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-              <section className="min-h-0 space-y-4 overflow-y-auto border-b border-border px-4 py-4 xl:border-b-0 xl:border-r xl:border-border">
+              <section className="min-h-0 space-y-4 overflow-y-auto border-b border-white/40 px-4 py-4 xl:border-b-0 xl:border-r xl:border-white/40">
                 {sheetVariants.length > 0 ? (
                   <button
                     type="button"
                     onClick={() => setReviewPhase('pick-variant')}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-surface"
+                    className="glass-inset inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-white/80"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
                     Back to variants
@@ -459,10 +459,10 @@ export function ReviewWorkspace({
                   onFormatting={handleFormatting}
                 />
 
-                <section className="rounded-2xl border border-border bg-surface-muted/50 p-4 shadow-card">
+                <section className="glass-panel rounded-2xl p-4 shadow-card">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Preview</p>
-                    <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted">
+                    <span className="glass-inset rounded-full px-2 py-0.5 text-[11px] font-semibold text-muted">
                       {selectedImageUrl ? 'Image attached' : 'No image'}
                     </span>
                   </div>
@@ -481,26 +481,26 @@ export function ReviewWorkspace({
                 </section>
               </section>
 
-              <aside className="min-h-0 overflow-y-auto bg-canvas px-4 py-4">
-                <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-border bg-surface p-1 shadow-sm">
+              <aside className="min-h-0 overflow-y-auto bg-white/20 px-4 py-4 backdrop-blur-sm">
+                <div className="glass-panel grid grid-cols-3 gap-1.5 rounded-xl p-1 shadow-sm">
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('refine')}
-                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-canvas text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-canvas/80'}`}
+                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Refine
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('media')}
-                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-canvas text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-canvas/80'}`}
+                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Media
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('rules')}
-                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-canvas text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-canvas/80'}`}
+                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Rules
                   </button>
@@ -532,7 +532,7 @@ export function ReviewWorkspace({
                   ) : null}
 
                   {activeWorkspacePanel === 'media' ? (
-                    <section className="rounded-2xl border border-border bg-surface p-4 shadow-card">
+                    <section className="glass-panel rounded-2xl p-4 shadow-card">
                       <ImageAssetManager
                         topic={sheetRow.topic}
                         images={imageOptions}

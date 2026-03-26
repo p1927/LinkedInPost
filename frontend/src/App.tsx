@@ -6,6 +6,7 @@ import { AlertProvider } from './components/AlertProvider'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
+import { parseGoogleIdTokenProfile } from './utils/googleIdTokenProfile'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
 
@@ -20,6 +21,7 @@ function getBackendHostLabel(endpointUrl: string): string {
 function App() {
   const api = useMemo(() => new BackendApi(), [])
   const [idToken, setIdToken] = useState<string | null>(localStorage.getItem(STORED_ID_TOKEN_KEY))
+  const googleProfile = useMemo(() => parseGoogleIdTokenProfile(idToken), [idToken])
   const [session, setSession] = useState<AppSession | null>(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -79,9 +81,9 @@ function App() {
 
   return (
     <AlertProvider>
-      <div className="flex min-h-screen w-full flex-col bg-canvas font-sans text-ink">
+      <div className="flex min-h-screen w-full flex-col bg-transparent font-sans text-ink">
         {showMarketingHeader ? (
-          <header className="w-full border-b border-border bg-surface px-4 py-3.5 sm:px-6">
+          <header className="glass-header w-full border-b px-4 py-3.5 sm:px-6">
             <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg">
@@ -97,6 +99,7 @@ function App() {
         {idToken && session ? (
           <WorkspaceShell
             session={session}
+            googleProfile={googleProfile}
             workspacePage={workspacePage}
             onWorkspacePageChange={setWorkspacePage}
             onLogoutComplete={() => {
@@ -135,7 +138,7 @@ function App() {
                 </h2>
                 <ul className="space-y-8 text-lg text-muted">
                   <li className="flex gap-4">
-                    <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-card">
+                    <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
                       <TableProperties className="h-5 w-5 text-primary" aria-hidden />
                     </span>
                     <div>
@@ -144,7 +147,7 @@ function App() {
                     </div>
                   </li>
                   <li className="flex gap-4">
-                    <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-card">
+                    <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
                       <Sparkles className="h-5 w-5 text-primary" aria-hidden />
                     </span>
                     <div>
@@ -153,7 +156,7 @@ function App() {
                     </div>
                   </li>
                   <li className="flex gap-4">
-                    <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-card">
+                    <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
                       <Share2 className="h-5 w-5 text-primary" aria-hidden />
                     </span>
                     <div>
@@ -164,9 +167,9 @@ function App() {
                 </ul>
               </div>
 
-              <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-lift sm:p-10">
+              <div className="glass-panel-strong w-full max-w-md rounded-3xl p-8 sm:p-10">
                 <div className="space-y-6 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-muted">
+                  <div className="glass-inset mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
                     <TableProperties className="h-7 w-7 text-primary" aria-hidden />
                   </div>
                   <div>

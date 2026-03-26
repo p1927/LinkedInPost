@@ -156,7 +156,7 @@ export function Dashboard({
 
   if (!session.config.spreadsheetId && !session.isAdmin) {
     return (
-      <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-border bg-surface p-8 text-left shadow-card">
+      <div className="glass-panel mx-auto mt-8 max-w-xl rounded-2xl p-8 text-left shadow-card">
         <h2 className="font-heading text-xl font-semibold text-ink">Workspace setup pending</h2>
         <p className="mt-3 text-sm leading-6 text-muted">
           You are signed in as <strong className="text-ink">{session.email}</strong>. An admin still needs to finish setup before you can use the queue:
@@ -264,7 +264,7 @@ export function Dashboard({
     return (
       <div className="w-full pb-12">
         <p className="mb-5 text-sm text-muted">Google Sheet, GitHub Actions, and channel connections.</p>
-        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-surface p-5 shadow-card sm:p-6">
+        <div className="glass-panel mx-auto max-w-3xl rounded-2xl p-5 shadow-card sm:p-6">
           {settingsContent}
         </div>
 
@@ -304,7 +304,7 @@ export function Dashboard({
             setGoogleModel={settingsHook.setGoogleModel}
             availableModels={settingsHook.availableModels}
           />
-          <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
+          <div className="glass-panel rounded-2xl p-5 shadow-card">
             <h2 className="mb-4 font-heading text-lg font-semibold text-ink">Delivery</h2>
             {deliveryContent}
           </div>

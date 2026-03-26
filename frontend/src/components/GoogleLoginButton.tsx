@@ -29,7 +29,7 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
       <button
         type="button"
         onClick={handleLogout}
-        className="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-muted transition-colors duration-200 hover:border-border-strong hover:bg-canvas hover:text-ink"
+        className="glass-inset flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted transition-colors duration-200 hover:bg-white/85 hover:text-ink"
       >
         <LogOut className="h-4 w-4" aria-hidden />
         Log out
@@ -38,7 +38,7 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
   }
 
   return (
-    <div className="rounded-full border border-border bg-surface p-1 shadow-sm transition-shadow duration-200 hover:shadow-card">
+    <div className="glass-panel rounded-full p-1 shadow-sm transition-shadow duration-200 hover:shadow-card">
       <GoogleLogin
         onSuccess={(credentialResponse) => {
           const credential = credentialResponse.credential;
