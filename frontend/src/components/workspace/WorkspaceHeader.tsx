@@ -4,7 +4,6 @@ import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { type WorkspaceNavPage } from './AppSidebar';
 
 const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
-  home: 'Home',
   topics: 'Topics',
   settings: 'Settings',
 };

@@ -3,11 +3,17 @@ import { cn } from '../../lib/cn';
 
 const variants = {
   primary:
-    'bg-primary text-primary-fg shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+    'border border-primary/20 bg-primary text-primary-fg shadow-card hover:border-primary-hover hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offset-canvas focus-visible:outline-primary',
   secondary:
-    'bg-white/75 text-ink border border-white/55 backdrop-blur-md hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
-  ghost: 'text-muted hover:bg-white/45 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
-  danger: 'bg-red-600 text-primary-fg hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600',
+    'border border-violet-200/55 bg-white/80 text-ink shadow-sm backdrop-blur-md hover:border-primary/30 hover:bg-white hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offset-canvas focus-visible:outline-primary',
+  ghost:
+    'border border-transparent text-muted hover:border-violet-200/40 hover:bg-white/55 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offset-canvas focus-visible:outline-primary',
+  danger:
+    'border border-red-700/20 bg-red-600 text-primary-fg shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offset-canvas focus-visible:outline-red-600',
+  outline:
+    'border-2 border-primary/40 bg-primary/5 text-primary hover:border-primary hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offset-canvas focus-visible:outline-primary',
+  ai: 'border border-ai-border bg-ai-surface text-ai-ink shadow-sm hover:border-ai-hover hover:bg-cyan-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offset-canvas focus-visible:outline-cyan-600',
+  ink: 'border border-ink/20 bg-ink text-primary-fg shadow-sm hover:border-ink-hover hover:bg-ink-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offset-canvas focus-visible:outline-deep-indigo',
 } as const;
 
 const sizes = {
@@ -28,7 +34,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       type={type}
       disabled={disabled}
       className={cn(
-        'inline-flex cursor-pointer items-center justify-center font-semibold transition-colors duration-200 disabled:pointer-events-none disabled:opacity-45',
+        'inline-flex cursor-pointer items-center justify-center font-semibold transition-[color,background-color,border-color,box-shadow] duration-200 disabled:pointer-events-none disabled:opacity-45',
         variants[variant],
         sizes[size],
         className,

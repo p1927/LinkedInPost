@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '../../services/configService';
-import { getNormalizedRowStatus } from './utils';
+import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
 import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
@@ -13,7 +13,7 @@ import { DashboardDelivery } from './tabs/DashboardDelivery';
 import { getChannelOption } from '../../integrations/channels';
 import { useRegisterWorkspaceChrome } from '../workspace/WorkspaceChromeContext';
 import { type WorkspaceNavPage } from '../workspace/AppSidebar';
-import { normalizeTelegramChatId } from '../../integrations/telegram';
+import { normalizeTelegramChatId, parseTelegramRecipientsInput } from '../../integrations/telegram';
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { ReviewWorkspace } from '../../features/review/ReviewWorkspace';
 import { ApprovedPostPreview } from '../ApprovedPostPreview';
@@ -181,7 +181,7 @@ export function Dashboard({
       queueCounts={queueCounts}
       filteredRows={filteredRows}
       rows={queueHook.rows}
-      getStatusColor={queueHook.getStatusColor}
+      getQueueStatusVariant={queueStatusToBadgeVariant}
       triggerRowGithubAction={queueHook.triggerRowGithubAction}
       actionLoading={queueHook.actionLoading}
       session={session}
@@ -195,6 +195,14 @@ export function Dashboard({
       onScrollTargetHandled={handleScrollTargetHandled}
     />
   );
+
+  const parsedTelegramRecipientsForSettings = useMemo(() => {
+    try {
+      return parseTelegramRecipientsInput(channelsHook.telegramRecipientsInput);
+    } catch {
+      return [];
+    }
+  }, [channelsHook.telegramRecipientsInput]);
 
   const deliveryContent = (
     <DashboardDelivery
@@ -238,7 +246,7 @@ export function Dashboard({
       setTelegramVerification={setTelegramVerification}
       recipientMode={channelsHook.recipientMode}
       handleUseManualTelegramChat={channelsHook.handleUseManualTelegramChat}
-      parsedTelegramRecipients={[]} 
+      parsedTelegramRecipients={parsedTelegramRecipientsForSettings}
       handleRemoveTelegramRecipient={channelsHook.handleRemoveTelegramRecipient}
       telegramRecipientsInput={channelsHook.telegramRecipientsInput}
       setTelegramRecipientsInput={channelsHook.setTelegramRecipientsInput}
@@ -264,7 +272,7 @@ export function Dashboard({
     return (
       <div className="w-full pb-12">
         <p className="mb-5 text-sm text-muted">Google Sheet, GitHub Actions, and channel connections.</p>
-        <div className="glass-panel mx-auto max-w-3xl rounded-2xl p-5 shadow-card sm:p-6">
+        <div className="glass-panel mx-auto max-w-6xl rounded-2xl p-5 shadow-card sm:p-6">
           {settingsContent}
         </div>
 
@@ -297,21 +305,23 @@ export function Dashboard({
 
   return (
     <div className="w-full pb-12">
-      {workspacePage === 'home' ? (
-        <div className="mx-auto flex max-w-2xl flex-col gap-5">
-          <DashboardToolbar
-            googleModel={settingsHook.googleModel}
-            setGoogleModel={settingsHook.setGoogleModel}
-            availableModels={settingsHook.availableModels}
-          />
-          <div className="glass-panel rounded-2xl p-5 shadow-card">
-            <h2 className="mb-4 font-heading text-lg font-semibold text-ink">Delivery</h2>
+      <div className="mx-auto grid w-full max-w-[1600px] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,400px)] xl:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,440px)]">
+        <div className="min-w-0">{queueContent}</div>
+        <aside className="flex min-w-0 flex-col gap-4 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <div>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">Agent</p>
+            <DashboardToolbar
+              googleModel={settingsHook.googleModel}
+              setGoogleModel={settingsHook.setGoogleModel}
+              availableModels={settingsHook.availableModels}
+            />
+          </div>
+          <div className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
+            <h2 className="mb-3 font-heading text-base font-semibold text-ink">Channel delivery</h2>
             {deliveryContent}
           </div>
-        </div>
-      ) : (
-        <div className="mx-auto w-full max-w-4xl">{queueContent}</div>
-      )}
+        </aside>
+      </div>
 
       {queueHook.selectedRowForReview && (
         <ReviewWorkspace

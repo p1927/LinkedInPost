@@ -5,7 +5,7 @@ import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../s
 import { type DeliverySummary } from '../types';
 
 import { type ChannelId, getChannelOption, getChannelLabel } from '../../../integrations/channels';
-import { buildRowActionKey, getNormalizedRowStatus, isSameTopicDate } from '../utils';
+import { buildRowActionKey, isSameTopicDate } from '../utils';
 
 import { useAlert } from '../../AlertProvider';
 
@@ -301,21 +301,6 @@ export function useDashboardQueue({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (getNormalizedRowStatus(status)) {
-      case 'pending':
-        return 'bg-amber-100 text-amber-900 border border-amber-200/80';
-      case 'drafted':
-        return 'bg-teal-50 text-teal-900 border border-teal-200/80';
-      case 'approved':
-        return 'bg-orange-50 text-orange-900 border border-orange-200/80';
-      case 'published':
-        return 'bg-emerald-50 text-emerald-900 border border-emerald-200/80';
-      default:
-        return 'bg-surface-muted text-muted border border-border';
-    }
-  };
-
   return {
     rows,
     loading,
@@ -340,6 +325,5 @@ export function useDashboardQueue({
     publishRowToSelectedChannel,
     republishRowToSelectedChannel,
     handleDeleteTopic,
-    getStatusColor,
   };
 }

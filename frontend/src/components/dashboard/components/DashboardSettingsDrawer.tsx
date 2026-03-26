@@ -1,9 +1,45 @@
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
 import { type AppSession } from '../../../services/backendApi';
 import { type ChannelId } from '../../../integrations/channels';
 import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '../../../services/backendApi';
 import { type PopupProvider } from '../types';
 import { type TelegramRecipient } from '../../../integrations/telegram';
+import { cn } from '../../../lib/cn';
+
+const SETTINGS_SECTIONS = [
+  { id: 'settings-workspace-core', label: 'Workspace core' },
+  { id: 'settings-github-actions', label: 'GitHub Actions' },
+  { id: 'settings-instagram', label: 'Instagram' },
+  { id: 'settings-linkedin', label: 'LinkedIn' },
+  { id: 'settings-telegram', label: 'Telegram' },
+  { id: 'settings-whatsapp', label: 'WhatsApp' },
+] as const;
+
+function SettingsSectionCard({
+  id,
+  title,
+  variant = 'surface',
+  children,
+}: {
+  id: string;
+  title: string;
+  variant?: 'canvas' | 'surface';
+  children: ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className={cn(
+        'scroll-mt-6 rounded-xl border border-border shadow-sm',
+        variant === 'canvas' ? 'bg-canvas' : 'bg-surface',
+      )}
+    >
+      <h2 className="border-b border-border px-4 py-3 font-heading text-base font-semibold text-ink">{title}</h2>
+      <div className="p-4 pt-4">{children}</div>
+    </section>
+  );
+}
 
 export function DashboardSettingsDrawer({
   session,
@@ -92,450 +128,479 @@ export function DashboardSettingsDrawer({
   saveSettings: () => Promise<void>;
   savingConfig: boolean;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string>(SETTINGS_SECTIONS[0].id);
+
+  const scrollToSection = useCallback((id: string) => {
+    const root = scrollRef.current;
+    const el = (root?.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)) as HTMLElement | null;
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+
+    const elements = SETTINGS_SECTIONS.map(({ id }) => root.querySelector(`#${CSS.escape(id)}`)).filter(
+      (n): n is Element => Boolean(n),
+    );
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting && e.intersectionRatio > 0.12)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const id = visible[0]?.target.id;
+        if (id) setActiveSectionId(id);
+      },
+      { root, rootMargin: '-12% 0px -52% 0px', threshold: [0, 0.1, 0.2, 0.35, 0.5, 0.75, 1] },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <>
-      <div className="flex flex-col gap-3">
-      <details className="group rounded-xl border border-border bg-canvas shadow-sm [&_summary::-webkit-details-marker]:hidden" open>
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
-                Workspace core
-                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="border-t border-border p-4 pt-0">
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">Google Spreadsheet ID</label>
-                    <input
-                      type="text"
-                      value={sheetIdInput}
-                      onChange={(e) => setSheetIdInput(e.target.value)}
-                      placeholder="e.g. 1BxiMVs0XRYFgwnV_v..."
-                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                    <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
-                  </div>
-                  <p className="rounded-xl border border-border bg-surface-muted/60 px-3 py-2.5 text-xs leading-5 text-muted">
-                    Publish target and recipients are on <strong className="font-semibold text-ink">Home</strong>. AI model is there too. Refresh stays in the top bar; channel connection status appears in the sidebar when you open <strong className="font-semibold text-ink">Settings</strong>.
+    <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+      <aside className="shrink-0 lg:sticky lg:top-4 lg:w-52 lg:max-w-[13rem] lg:self-start">
+        <nav
+          className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:pr-1"
+          aria-label="Settings sections"
+        >
+          <p className="mb-2 hidden text-xs font-bold uppercase tracking-[0.14em] text-muted lg:block">Jump to</p>
+          {SETTINGS_SECTIONS.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => scrollToSection(id)}
+              className={cn(
+                'shrink-0 rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                activeSectionId === id
+                  ? 'bg-primary/12 font-semibold text-ink'
+                  : 'text-muted hover:bg-white/60 hover:text-ink',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <div
+        ref={scrollRef}
+        className="custom-scrollbar flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto lg:max-h-[min(72vh,calc(100vh-10rem))] lg:pr-1"
+      >
+        <SettingsSectionCard id="settings-workspace-core" title="Workspace core" variant="canvas">
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-ink">Google Spreadsheet ID</label>
+              <input
+                type="text"
+                value={sheetIdInput}
+                onChange={(e) => setSheetIdInput(e.target.value)}
+                placeholder="e.g. 1BxiMVs0XRYFgwnV_v..."
+                className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
+            </div>
+            <p className="rounded-xl border border-border bg-surface-muted/60 px-3 py-2.5 text-xs leading-5 text-muted">
+              Publish target and recipients are on <strong className="font-semibold text-ink">Home</strong>. AI model is there too. Refresh stays in the top bar; channel connection status appears in the sidebar when you open{' '}
+              <strong className="font-semibold text-ink">Settings</strong>.
+            </p>
+          </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-github-actions" title="GitHub Actions">
+          <p className="text-xs leading-5 text-muted">
+            GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.
+          </p>
+          <div className="mt-4 space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-ink">GitHub Repository</label>
+              <input
+                type="text"
+                value={githubRepo}
+                onChange={(e) => setGithubRepo(e.target.value)}
+                placeholder="e.g. username/repo-name"
+                className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-ink">Shared Generation Rules</label>
+              <textarea
+                value={generationRules}
+                onChange={(e) => setGenerationRules(e.target.value)}
+                placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
+                className="min-h-[120px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <p className="mt-1.5 text-xs text-muted">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-ink">Replace GitHub Personal Access Token</label>
+              <input
+                type="password"
+                value={githubTokenInput}
+                onChange={(e) => setGithubTokenInput(e.target.value)}
+                placeholder={session.config.hasGitHubToken ? 'Leave blank to keep the current token' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}
+                className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <p className="mt-1.5 text-xs text-muted">
+                {session.config.hasGitHubToken
+                  ? 'A token is already stored. Enter a new one only when you want to rotate it.'
+                  : 'Required once so the backend can dispatch the GitHub workflows.'}
+              </p>
+            </div>
+          </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-instagram" title="Instagram Publishing">
+          <p className="text-xs leading-5 text-muted">
+            Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.
+          </p>
+          <div className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
+              <div className="flex items-center gap-3">
+                <div
+                  className={`h-2.5 w-2.5 rounded-full ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-border-strong'}`}
+                />
+                <p className="text-sm font-medium text-ink">
+                  {session.config.hasInstagramAccessToken && session.config.instagramUserId
+                    ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
+                    : session.config.instagramAuthAvailable
+                      ? 'No Instagram professional account connected yet.'
+                      : 'Instagram app credentials are still missing from the Worker environment.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => void handleInstagramConnection()}
+                disabled={channelActionBusy || !session.config.instagramAuthAvailable}
+                className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {connectingChannel === 'instagram'
+                  ? 'Opening Instagram approval...'
+                  : session.config.hasInstagramAccessToken
+                    ? 'Reconnect Instagram'
+                    : 'Connect Instagram'}
+              </button>
+              {session.config.hasInstagramAccessToken ? (
+                <button
+                  type="button"
+                  onClick={() => void handleDisconnectChannel('instagram')}
+                  disabled={channelActionBusy}
+                  className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {disconnectingChannel === 'instagram' ? 'Disconnecting Instagram...' : 'Disconnect Instagram'}
+                </button>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted">
+              {session.config.instagramAuthAvailable
+                ? 'The Worker opens Instagram approval in a popup, exchanges the code server-side, and stores the long-lived token securely.'
+                : 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in the Worker before this button can be used.'}
+            </p>
+          </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-linkedin" title="LinkedIn Publishing">
+          <p className="text-xs leading-5 text-muted">
+            Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.
+          </p>
+          <div className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
+              <div className="flex items-center gap-3">
+                <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-border-strong'}`} />
+                <p className="text-sm font-medium text-ink">
+                  {session.config.hasLinkedInAccessToken
+                    ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
+                    : session.config.linkedinAuthAvailable
+                      ? 'No LinkedIn account connected yet.'
+                      : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => void handleLinkedInConnection()}
+                disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
+                className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {connectingChannel === 'linkedin'
+                  ? 'Opening LinkedIn approval...'
+                  : session.config.hasLinkedInAccessToken
+                    ? 'Reconnect LinkedIn'
+                    : 'Connect LinkedIn'}
+              </button>
+              {session.config.hasLinkedInAccessToken ? (
+                <button
+                  type="button"
+                  onClick={() => void handleDisconnectChannel('linkedin')}
+                  disabled={channelActionBusy}
+                  className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {disconnectingChannel === 'linkedin' ? 'Disconnecting LinkedIn...' : 'Disconnect LinkedIn'}
+                </button>
+              ) : null}
+            </div>
+            <p className="text-xs text-muted">
+              {session.config.linkedinAuthAvailable
+                ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
+                : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
+            </p>
+          </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-telegram" title="Telegram Delivery">
+          <p className="text-xs leading-5 text-muted">This path sends approved content directly through the Telegram Bot API.</p>
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
+                <div className="flex items-center gap-3">
+                  <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-border-strong'}`} />
+                  <p className="text-sm font-medium text-ink">
+                    {session.config.hasTelegramBotToken
+                      ? 'Telegram bot token is stored in the Worker.'
+                      : 'No Telegram bot token stored yet.'}
                   </p>
                 </div>
               </div>
-            </details>
 
-            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
-                GitHub Actions
-                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="border-t border-border p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-muted">GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.</p>
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">GitHub Repository</label>
-                    <input
-                      type="text"
-                      value={githubRepo}
-                      onChange={(e) => setGithubRepo(e.target.value)}
-                      placeholder="e.g. username/repo-name"
-                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">Shared Generation Rules</label>
-                    <textarea
-                      value={generationRules}
-                      onChange={(e) => setGenerationRules(e.target.value)}
-                      placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
-                      className="min-h-[120px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                    <p className="mt-1.5 text-xs text-muted">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">Replace GitHub Personal Access Token</label>
-                    <input
-                      type="password"
-                      value={githubTokenInput}
-                      onChange={(e) => setGithubTokenInput(e.target.value)}
-                      placeholder={session.config.hasGitHubToken ? 'Leave blank to keep the current token' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}
-                      className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                    <p className="mt-1.5 text-xs text-muted">
-                      {session.config.hasGitHubToken
-                        ? 'A token is already stored. Enter a new one only when you want to rotate it.'
-                        : 'Required once so the backend can dispatch the GitHub workflows.'}
-                    </p>
-                  </div>
-                </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">Replace Telegram Bot Token</label>
+                <input
+                  type="password"
+                  value={telegramBotTokenInput}
+                  onChange={(e) => setTelegramBotTokenInput(e.target.value)}
+                  placeholder={session.config.hasTelegramBotToken ? 'Leave blank to keep the current bot token' : '123456789:AA...'}
+                  className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <p className="mt-1.5 text-xs text-muted">
+                  {session.config.hasTelegramBotToken
+                    ? 'A bot token is already stored. Enter a new one only when you want to rotate it.'
+                    : 'Create a bot with BotFather, then paste the token here once so the Worker can deliver messages.'}
+                </p>
               </div>
-            </details>
+            </div>
 
-            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
-                Instagram Publishing
-                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="border-t border-border p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-muted">Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.</p>
-                <div className="mt-4 space-y-4">
-                  <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-                    <div className="flex items-center gap-3">
-                      <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-border-strong'}`}></div>
-                      <p className="text-sm font-medium text-ink">
-                        {session.config.hasInstagramAccessToken && session.config.instagramUserId
-                          ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
-                          : session.config.instagramAuthAvailable
-                            ? 'No Instagram professional account connected yet.'
-                            : 'Instagram app credentials are still missing from the Worker environment.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-ink">Saved Chats</label>
+              <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Quick add</p>
+                <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
+                  <input
+                    type="text"
+                    value={telegramDraftLabel}
+                    onChange={(e) => {
+                      setTelegramDraftLabel(e.target.value);
+                      setTelegramVerification(null);
+                    }}
+                    placeholder="Team channel"
+                    className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <input
+                    type="text"
+                    value={telegramDraftChatId}
+                    onChange={(e) => {
+                      setTelegramDraftChatId(e.target.value);
+                      setTelegramVerification(null);
+                    }}
+                    placeholder="@my_channel or 123456789 / -1001234567890"
+                    className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
                     <button
                       type="button"
-                      onClick={() => void handleInstagramConnection()}
-                      disabled={channelActionBusy || !session.config.instagramAuthAvailable}
-                      className="w-full rounded-xl bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F56040] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => void handleVerifyTelegramChat()}
+                      disabled={verifyingTelegramChat}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {connectingChannel === 'instagram'
-                        ? 'Opening Instagram approval...'
-                        : session.config.hasInstagramAccessToken
-                          ? 'Reconnect Instagram'
-                          : 'Connect Instagram'}
+                      <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
+                      {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
                     </button>
-                    {session.config.hasInstagramAccessToken ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleDisconnectChannel('instagram')}
-                        disabled={channelActionBusy}
-                        className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {disconnectingChannel === 'instagram' ? 'Disconnecting Instagram...' : 'Disconnect Instagram'}
-                      </button>
-                    ) : null}
-                  </div>
-                  <p className="text-xs text-muted">
-                    {session.config.instagramAuthAvailable
-                      ? 'The Worker opens Instagram approval in a popup, exchanges the code server-side, and stores the long-lived token securely.'
-                      : 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET in the Worker before this button can be used.'}
-                  </p>
-                </div>
-              </div>
-            </details>
-
-            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
-                LinkedIn Publishing
-                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="border-t border-border p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-muted">Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.</p>
-                <div className="mt-4 space-y-4">
-                  <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-                    <div className="flex items-center gap-3">
-                      <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-border-strong'}`}></div>
-                      <p className="text-sm font-medium text-ink">
-                        {session.config.hasLinkedInAccessToken
-                          ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
-                          : session.config.linkedinAuthAvailable
-                            ? 'No LinkedIn account connected yet.'
-                            : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
                     <button
                       type="button"
-                      onClick={() => void handleLinkedInConnection()}
-                      disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
-                      className="w-full rounded-xl bg-[#0A66C2] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#004182] disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={handleAddTelegramRecipient}
+                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover"
                     >
-                      {connectingChannel === 'linkedin'
-                        ? 'Opening LinkedIn approval...'
-                        : session.config.hasLinkedInAccessToken
-                          ? 'Reconnect LinkedIn'
-                          : 'Connect LinkedIn'}
+                      <Plus className="h-4 w-4" /> Add chat
                     </button>
-                    {session.config.hasLinkedInAccessToken ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleDisconnectChannel('linkedin')}
-                        disabled={channelActionBusy}
-                        className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {disconnectingChannel === 'linkedin' ? 'Disconnecting LinkedIn...' : 'Disconnect LinkedIn'}
-                      </button>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted">
+                  Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.
+                </p>
+                {telegramVerification ? (
+                  <div
+                    className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success' ? 'border-success-border bg-success-surface/90 text-success-ink' : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}
+                  >
+                    <p className="font-semibold">{telegramVerification.message}</p>
+                    {telegramVerification.kind === 'success' && telegramVerification.result ? (
+                      <p className="mt-1 text-xs opacity-80">
+                        Saved target will use {telegramVerification.result.chatId}
+                        {telegramVerification.result.username ? ` as @${telegramVerification.result.username}` : ''}.
+                      </p>
                     ) : null}
                   </div>
-                  <p className="text-xs text-muted">
-                    {session.config.linkedinAuthAvailable
-                      ? 'The Worker opens LinkedIn approval in a popup, exchanges the code server-side, and stores the token securely.'
-                      : 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in the Worker before this button can be used.'}
+                ) : null}
+                {selectedChannel === 'telegram' && recipientMode === 'manual' ? (
+                  <button
+                    type="button"
+                    onClick={handleUseManualTelegramChat}
+                    className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-primary-hover"
+                  >
+                    <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
+                  </button>
+                ) : null}
+              </div>
+
+              {parsedTelegramRecipients.length > 0 ? (
+                <div className="mt-3 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Saved now</p>
+                  <div className="mt-3 space-y-2">
+                    {parsedTelegramRecipients.map((recipient) => (
+                      <div
+                        key={`${recipient.label}-${recipient.chatId}`}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-canvas px-3 py-3"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-ink">{recipient.label}</p>
+                          <p className="text-xs text-muted">{recipient.chatId}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
+                          className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted transition hover:border-rose-200 hover:text-rose-600"
+                        >
+                          <Trash2 className="h-4 w-4" /> Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <textarea
+                className="mt-3 min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                value={telegramRecipientsInput}
+                onChange={(e) => setTelegramRecipientsInput(e.target.value)}
+                placeholder={['Channel | @my_channel', 'Founders group | -1001234567890'].join('\n')}
+              />
+              <p className="mt-1.5 text-xs text-muted">Bulk editor. One chat per line using the format &quot;Label | @channelusername&quot; or &quot;Label | -1001234567890&quot;.</p>
+            </div>
+          </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-whatsapp" title="WhatsApp Delivery">
+          <p className="text-xs leading-5 text-muted">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-2.5 w-2.5 rounded-full ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-border-strong'}`}
+                  />
+                  <p className="text-sm font-medium text-ink">
+                    {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
+                      ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
+                      : session.config.whatsappAuthAvailable
+                        ? 'No WhatsApp Business phone connected yet.'
+                        : 'Meta OAuth app credentials are still missing from the Worker environment.'}
                   </p>
                 </div>
               </div>
-            </details>
 
-            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
-                Telegram Delivery
-                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="border-t border-border p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-muted">This path sends approved content directly through the Telegram Bot API.</p>
-                <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-                      <div className="flex items-center gap-3">
-                        <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-border-strong'}`}></div>
-                        <p className="text-sm font-medium text-ink">
-                          {session.config.hasTelegramBotToken
-                            ? 'Telegram bot token is stored in the Worker.'
-                            : 'No Telegram bot token stored yet.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-sm font-semibold text-ink">Replace Telegram Bot Token</label>
-                      <input
-                        type="password"
-                        value={telegramBotTokenInput}
-                        onChange={(e) => setTelegramBotTokenInput(e.target.value)}
-                        placeholder={session.config.hasTelegramBotToken ? 'Leave blank to keep the current bot token' : '123456789:AA...'}
-                        className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      />
-                      <p className="mt-1.5 text-xs text-muted">
-                        {session.config.hasTelegramBotToken
-                          ? 'A bot token is already stored. Enter a new one only when you want to rotate it.'
-                          : 'Create a bot with BotFather, then paste the token here once so the Worker can deliver messages.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">Saved Chats</label>
-                    <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Quick add</p>
-                      <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
-                        <input
-                          type="text"
-                          value={telegramDraftLabel}
-                          onChange={(e) => {
-                            setTelegramDraftLabel(e.target.value);
-                            setTelegramVerification(null);
-                          }}
-                          placeholder="Team channel"
-                          className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                        <input
-                          type="text"
-                          value={telegramDraftChatId}
-                          onChange={(e) => {
-                            setTelegramDraftChatId(e.target.value);
-                            setTelegramVerification(null);
-                          }}
-                          placeholder="@my_channel or 123456789 / -1001234567890"
-                          className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
-                          <button
-                            type="button"
-                            onClick={() => void handleVerifyTelegramChat()}
-                            disabled={verifyingTelegramChat}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
-                            {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleAddTelegramRecipient}
-                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover"
-                          >
-                            <Plus className="h-4 w-4" /> Add chat
-                          </button>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-xs text-muted">Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.</p>
-                      {telegramVerification ? (
-                        <div className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success' ? 'border-success-border bg-success-surface/90 text-success-ink' : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}>
-                          <p className="font-semibold">{telegramVerification.message}</p>
-                          {telegramVerification.kind === 'success' && telegramVerification.result ? (
-                            <p className="mt-1 text-xs opacity-80">
-                              Saved target will use {telegramVerification.result.chatId}
-                              {telegramVerification.result.username ? ` as @${telegramVerification.result.username}` : ''}.
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : null}
-                      {selectedChannel === 'telegram' && recipientMode === 'manual' ? (
-                        <button
-                          type="button"
-                          onClick={handleUseManualTelegramChat}
-                          className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-primary-hover"
-                        >
-                          <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
-                        </button>
-                      ) : null}
-                    </div>
-
-                    {parsedTelegramRecipients.length > 0 ? (
-                      <div className="mt-3 rounded-2xl border border-border bg-surface p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Saved now</p>
-                        <div className="mt-3 space-y-2">
-                          {parsedTelegramRecipients.map((recipient) => (
-                            <div
-                              key={`${recipient.label}-${recipient.chatId}`}
-                              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-canvas px-3 py-3"
-                            >
-                              <div>
-                                <p className="text-sm font-semibold text-ink">{recipient.label}</p>
-                                <p className="text-xs text-muted">{recipient.chatId}</p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
-                                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted transition hover:border-rose-200 hover:text-rose-600"
-                              >
-                                <Trash2 className="h-4 w-4" /> Remove
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-
-                    <textarea
-                      className="mt-3 min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      value={telegramRecipientsInput}
-                      onChange={(e) => setTelegramRecipientsInput(e.target.value)}
-                      placeholder={['Channel | @my_channel', 'Founders group | -1001234567890'].join('\n')}
-                    />
-                    <p className="mt-1.5 text-xs text-muted">Bulk editor. One chat per line using the format "Label | @channelusername" or "Label | -1001234567890".</p>
-                  </div>
-                </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleWhatsAppConnection()}
+                  disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
+                  className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {connectingChannel === 'whatsapp'
+                    ? 'Opening Meta approval...'
+                    : session.config.hasWhatsAppAccessToken
+                      ? 'Reconnect WhatsApp'
+                      : 'Connect WhatsApp Business'}
+                </button>
+                {session.config.hasWhatsAppAccessToken ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleDisconnectChannel('whatsapp')}
+                    disabled={channelActionBusy}
+                    className="w-full rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
+                  </button>
+                ) : null}
               </div>
-            </details>
+              <p className="text-xs text-muted">
+                {session.config.whatsappAuthAvailable
+                  ? 'The Worker opens Meta approval in a popup, exchanges the code server-side, and discovers your available WhatsApp Business phone numbers.'
+                  : 'Set META_APP_ID and META_APP_SECRET in the Worker before this button can be used.'}
+              </p>
 
-            <details className="group rounded-xl border border-border bg-surface shadow-sm [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold font-heading text-ink list-none">
-                WhatsApp Delivery
-                <svg className="w-5 h-5 text-muted transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </summary>
-              <div className="border-t border-border p-4 pt-0">
-                <p className="mt-2 text-xs leading-5 text-muted">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
-                <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-                      <div className="flex items-center gap-3">
-                        <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-border-strong'}`}></div>
-                        <p className="text-sm font-medium text-ink">
-                          {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
-                            ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
-                            : session.config.whatsappAuthAvailable
-                              ? 'No WhatsApp Business phone connected yet.'
-                              : 'Meta OAuth app credentials are still missing from the Worker environment.'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleWhatsAppConnection()}
-                        disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
-                        className="w-full rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-primary-fg transition-all duration-300 hover:bg-[#128C7E] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {connectingChannel === 'whatsapp'
-                          ? 'Opening Meta approval...'
-                          : session.config.hasWhatsAppAccessToken
-                            ? 'Reconnect WhatsApp'
-                            : 'Connect WhatsApp Business'}
-                      </button>
-                      {session.config.hasWhatsAppAccessToken ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleDisconnectChannel('whatsapp')}
-                          disabled={channelActionBusy}
-                          className="w-full rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
-                        </button>
-                      ) : null}
-                    </div>
-                    <p className="text-xs text-muted">
-                      {session.config.whatsappAuthAvailable
-                        ? 'The Worker opens Meta approval in a popup, exchanges the code server-side, and discovers your available WhatsApp Business phone numbers.'
-                        : 'Set META_APP_ID and META_APP_SECRET in the Worker before this button can be used.'}
-                    </p>
-
-                    {pendingWhatsAppOptions.length > 0 ? (
-                      <div className="rounded-2xl border border-success-border bg-success-surface/80 p-4 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-success-ink/85">Choose a phone</p>
+              {pendingWhatsAppOptions.length > 0 ? (
+                <div className="rounded-2xl border border-success-border bg-success-surface/80 p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-success-ink/85">Choose a phone</p>
                         <select
                           value={selectedWhatsAppPhoneId}
                           onChange={(e) => setSelectedWhatsAppPhoneId(e.target.value)}
-                          className="mt-3 w-full cursor-pointer rounded-xl border border-success-border bg-surface px-4 py-3 text-sm text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cta/35"
+                          className="ui-select ui-select-lg ui-select-success mt-3 w-full text-sm"
                         >
-                          {pendingWhatsAppOptions.map((option) => (
-                            <option key={option.phoneNumberId} value={option.phoneNumberId}>
-                              {option.displayPhoneNumber || option.phoneNumberId} - {option.verifiedName || option.businessAccountName}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => void completeWhatsAppPhoneSelection()}
-                          disabled={channelActionBusy || !selectedWhatsAppPhoneId}
-                          className="mt-3 w-full cursor-pointer rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Save selected phone
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-semibold text-ink">Saved Recipients</label>
-                    <textarea
-                      value={whatsappRecipientsInput}
-                      onChange={(e) => setWhatsappRecipientsInput(e.target.value)}
-                      placeholder={['Founders group | +14155550101', 'Ops lead | +919876543210'].join('\n')}
-                      className="min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                    <p className="mt-1.5 text-xs text-muted">One recipient per line using the format "Label | +15551234567".</p>
-                  </div>
+                    {pendingWhatsAppOptions.map((option) => (
+                      <option key={option.phoneNumberId} value={option.phoneNumberId}>
+                        {option.displayPhoneNumber || option.phoneNumberId} - {option.verifiedName || option.businessAccountName}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => void completeWhatsAppPhoneSelection()}
+                    disabled={channelActionBusy || !selectedWhatsAppPhoneId}
+                    className="mt-3 w-full cursor-pointer rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Save selected phone
+                  </button>
                 </div>
-              </div>
-            </details>
+              ) : null}
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-ink">Saved Recipients</label>
+              <textarea
+                value={whatsappRecipientsInput}
+                onChange={(e) => setWhatsappRecipientsInput(e.target.value)}
+                placeholder={['Founders group | +14155550101', 'Ops lead | +919876543210'].join('\n')}
+                className="min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <p className="mt-1.5 text-xs text-muted">One recipient per line using the format &quot;Label | +15551234567&quot;.</p>
+            </div>
           </div>
-      <div className="mt-4 pt-4 border-t border-border">
-        <button
-          onClick={saveSettings}
-          disabled={savingConfig}
-          className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-fg transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
-        >
-          {savingConfig ? 'Saving...' : 'Save settings'}
-        </button>
+        </SettingsSectionCard>
+
+        <div className="border-t border-border pt-4">
+          <button
+            type="button"
+            onClick={saveSettings}
+            disabled={savingConfig}
+            className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-fg transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
+          >
+            {savingConfig ? 'Saving...' : 'Save settings'}
+          </button>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

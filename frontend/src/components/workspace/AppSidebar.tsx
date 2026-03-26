@@ -1,14 +1,14 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { googleLogout } from '@react-oauth/google';
-import { ChevronLeft, ChevronRight, Home, ListOrdered, LogOut, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListOrdered, LogOut, Settings } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 
 const STORED_ID_TOKEN_KEY = 'google_id_token';
 
-export type WorkspaceNavPage = 'home' | 'topics' | 'settings';
+export type WorkspaceNavPage = 'topics' | 'settings';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -210,7 +210,6 @@ export function AppSidebar({
 
         <nav className="flex flex-1 flex-col overflow-hidden" aria-label="Workspace navigation">
           <ul id="workspace-sidebar-nav" className="custom-scrollbar flex flex-1 list-none flex-col gap-0.5 overflow-y-auto p-2">
-            {link('home', <Home aria-hidden />, 'Home')}
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
           </ul>

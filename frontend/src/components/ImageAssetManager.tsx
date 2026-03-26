@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Download, ImagePlus, LoaderCircle, RefreshCw, Upload } from 'lucide-react';
+import { Badge } from './ui/Badge';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { useAlert } from './AlertProvider';
 
@@ -32,15 +33,9 @@ function buildDownloadName(topic: string, option: ImageAssetOption): string {
   return `${baseTopic}-${suffix}.jpg`;
 }
 
-function getOptionBadge(option: ImageAssetOption): string {
-  if (option.kind === 'upload') {
-    return 'Uploaded';
-  }
-
-  if (option.kind === 'alternate') {
-    return 'Alternate';
-  }
-
+function getOptionBadgeLabel(option: ImageAssetOption): string {
+  if (option.kind === 'upload') return 'Uploaded';
+  if (option.kind === 'alternate') return 'Alternate';
   return 'Generated';
 }
 
@@ -184,13 +179,17 @@ export function ImageAssetManager({
                         isSelected ? 'scale-[1.03]' : 'hover:scale-[1.03]'
                       }`}
                     />
-                    <div className="absolute left-3 top-3 rounded-full bg-ink/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-fg">
-                      {getOptionBadge(option)}
-                    </div>
+                    <Badge
+                      variant="neutral"
+                      size="sm"
+                      className="absolute left-3 top-3 border-white/35 bg-ink/88 text-primary-fg shadow-md backdrop-blur-sm normal-case"
+                    >
+                      {getOptionBadgeLabel(option)}
+                    </Badge>
                     {isSelected ? (
-                      <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary-fg">
+                      <Badge variant="primary" size="sm" className="absolute right-3 top-3 shadow-md normal-case">
                         Selected
-                      </div>
+                      </Badge>
                     ) : null}
                   </div>
                 </button>

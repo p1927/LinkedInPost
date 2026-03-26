@@ -5,6 +5,9 @@ import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent } from '../utils';
 import { filterOptions } from '../constants';
+import { Badge, type BadgeVariant } from '../../ui/Badge';
+import { CalendarDateChip } from '../../ui/CalendarDateChip';
+import { ChipToggle } from '../../ui/ChipToggle';
 
 function queueRowDomId(row: SheetRow) {
   return `${row.sourceSheet}-${row.rowIndex}`;
@@ -12,13 +15,13 @@ function queueRowDomId(row: SheetRow) {
 
 /** Distill: one height, light borders, primary only for main actions — see design-system/content-queue-theme.md */
 const btn =
-  'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex h-9 min-h-[36px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
 
 const iconBtn =
-  'inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-150 outline-none hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-200/60 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted transition-colors duration-200 outline-none hover:bg-red-50 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-300/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
 
 const iconBtnMuted =
-  'inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-150 outline-none hover:bg-white/70 hover:text-ink focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl text-muted transition-colors duration-200 outline-none hover:bg-white/80 hover:text-ink focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40';
 
 export function DashboardQueue({
   handleAddTopic,
@@ -30,7 +33,7 @@ export function DashboardQueue({
   queueCounts,
   filteredRows,
   rows,
-  getStatusColor,
+  getQueueStatusVariant,
   triggerRowGithubAction,
   actionLoading,
   session,
@@ -52,7 +55,7 @@ export function DashboardQueue({
   queueCounts: Record<QueueFilter, number>;
   filteredRows: SheetRow[];
   rows: SheetRow[];
-  getStatusColor: (status: string) => string;
+  getQueueStatusVariant: (status: string) => BadgeVariant;
   triggerRowGithubAction: (row: SheetRow, action: 'draft' | 'publish') => Promise<void>;
   actionLoading: string | null;
   session: AppSession;
@@ -95,7 +98,7 @@ export function DashboardQueue({
           <button
             type="submit"
             disabled={loading || !newTopic.trim()}
-            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-card transition-[color,background-color,box-shadow] duration-200 hover:border-primary-hover hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Plus className="h-4 w-4" />
             Add topic
@@ -106,22 +109,19 @@ export function DashboardQueue({
       <div className="flex flex-col">
         <div className="mb-3 flex flex-wrap gap-1.5">
           {filterOptions.map((option) => (
-            <button
+            <ChipToggle
               key={`chip-${option.value}`}
               type="button"
+              selected={statusFilter === option.value}
               onClick={() => setStatusFilter(option.value)}
-              className={`cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent ${
-                statusFilter === option.value
-                  ? 'bg-ink text-white'
-                  : 'text-muted hover:bg-white/55 hover:text-ink'
-              }`}
+              className="min-h-[36px] px-3 py-1.5 text-xs font-semibold"
             >
               {option.label} ({queueCounts[option.value]})
-            </button>
+            </ChipToggle>
           ))}
         </div>
 
-        <div className="space-y-2">
+        <div>
           {filteredRows.length === 0 ? (
             <div className="glass-panel rounded-xl border-dashed border-violet-200/50 px-4 py-12 text-center">
               <div className="glass-inset mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full text-muted">
@@ -133,119 +133,165 @@ export function DashboardQueue({
               {rows.length === 0 ? <p className="mt-1 text-xs text-muted">Add a topic above to start.</p> : null}
             </div>
           ) : (
-            filteredRows.map((row) => {
-              const normalizedStatus = getNormalizedRowStatus(row.status);
-              return (
-                <div
-                  key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
-                  data-queue-row-id={queueRowDomId(row)}
-                  className="glass-inset scroll-mt-24 rounded-xl px-4 py-3 transition-colors hover:border-violet-300/70 hover:bg-white/70"
-                >
-                  <div className="flex min-h-9 items-center justify-between gap-3">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink" title={row.topic}>
-                        {row.topic}
-                      </p>
-                      <span
-                        className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getStatusColor(row.status)}`}
+            <div className="glass-inset scroll-mt-24 overflow-x-auto rounded-xl border-violet-200/40">
+              <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
+                <caption className="sr-only">Topic queue: title, status, date, and actions per row</caption>
+                <colgroup>
+                  <col className="min-w-[8rem]" />
+                  <col className="w-[1%]" />
+                  <col className="w-[1%]" />
+                  <col className="w-[1%]" />
+                  <col className="w-10" />
+                  <col className="w-10" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-violet-200/60 bg-white/60 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted backdrop-blur-md">
+                    <th scope="col" className="px-4 py-2.5 pl-4">
+                      Topic
+                    </th>
+                    <th scope="col" className="whitespace-nowrap px-3 py-2.5">
+                      Status
+                    </th>
+                    <th scope="col" className="whitespace-nowrap px-3 py-2.5">
+                      Date
+                    </th>
+                    <th scope="col" className="whitespace-nowrap px-3 py-2.5 text-right">
+                      Action
+                    </th>
+                    <th scope="col" className="px-1 py-2.5 text-center">
+                      <span className="sr-only">Preview</span>
+                      <Eye className="mx-auto h-3.5 w-3.5 opacity-40" aria-hidden />
+                    </th>
+                    <th scope="col" className="px-1 py-2.5 text-center">
+                      <span className="sr-only">Delete</span>
+                      <Trash2 className="mx-auto h-3.5 w-3.5 opacity-40" aria-hidden />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.map((row) => {
+                    const normalizedStatus = getNormalizedRowStatus(row.status);
+                    const showPreview = canPreviewPublishedContent(row);
+                    return (
+                      <tr
+                        key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
+                        data-queue-row-id={queueRowDomId(row)}
+                        className="border-b border-violet-100/50 transition-colors last:border-b-0 hover:bg-white/65"
                       >
-                        {row.status || 'Pending'}
-                      </span>
-                      {row.date ? (
-                        <span className="shrink-0 text-xs tabular-nums text-muted">{row.date}</span>
-                      ) : null}
-                    </div>
+                        <td className="max-w-0 px-4 py-2.5 align-middle">
+                          <p className="truncate font-medium text-ink" title={row.topic}>
+                            {row.topic}
+                          </p>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 align-middle">
+                          <Badge variant={getQueueStatusVariant(row.status)} size="xs">
+                            {row.status || 'Pending'}
+                          </Badge>
+                        </td>
+                        <td className="max-w-[10rem] px-3 py-2.5 align-middle">
+                          <CalendarDateChip date={row.date ?? ''} />
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 align-middle text-right">
+                          <div className="flex justify-end gap-1.5">
+                            {normalizedStatus === 'pending' ? (
+                              <button
+                                type="button"
+                                onClick={() => void triggerRowGithubAction(row, 'draft')}
+                                disabled={
+                                  actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
+                                }
+                                title="Generate draft"
+                                className={`${btn} bg-primary text-primary-fg hover:bg-primary-hover`}
+                              >
+                                {actionLoading === buildRowActionKey('draft', row) ? (
+                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <PenLine className="h-3.5 w-3.5" />
+                                )}
+                                <span className="hidden sm:inline">Draft</span>
+                              </button>
+                            ) : null}
 
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:flex-nowrap">
-                      {normalizedStatus === 'pending' ? (
-                        <button
-                          type="button"
-                          onClick={() => void triggerRowGithubAction(row, 'draft')}
-                          disabled={actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken}
-                          title="Generate draft"
-                          className={`${btn} bg-primary text-primary-fg hover:bg-primary-hover`}
-                        >
-                          {actionLoading === buildRowActionKey('draft', row) ? (
-                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            {normalizedStatus === 'drafted' ? (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedRowForReview(row)}
+                                title="Review draft"
+                                className={`${btn} border border-white/50 bg-white/35 text-ink backdrop-blur-sm hover:bg-white/65`}
+                              >
+                                <span className="sm:hidden">Edit</span>
+                                <span className="hidden sm:inline">Review</span>
+                              </button>
+                            ) : null}
+
+                            {normalizedStatus === 'approved' ? (
+                              <button
+                                type="button"
+                                onClick={() => void publishRowToSelectedChannel(row)}
+                                disabled={actionLoading !== null}
+                                title="Publish"
+                                className={`${btn} bg-primary text-primary-fg hover:bg-primary-hover`}
+                              >
+                                {actionLoading === buildRowActionKey('publish', row) ? (
+                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Send className="h-3.5 w-3.5" />
+                                )}
+                                <span className="hidden sm:inline">Publish</span>
+                              </button>
+                            ) : null}
+
+                            {normalizedStatus === 'published' ? (
+                              <button
+                                type="button"
+                                onClick={() => void republishRowToSelectedChannel(row)}
+                                disabled={actionLoading !== null}
+                                title="Republish"
+                                className={`${btn} border border-white/50 bg-white/35 text-ink backdrop-blur-sm hover:bg-white/65`}
+                              >
+                                {actionLoading === buildRowActionKey('publish', row) ? (
+                                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Send className="h-3.5 w-3.5" />
+                                )}
+                                <span className="hidden sm:inline">Republish</span>
+                              </button>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-1 py-2.5 align-middle text-center">
+                          {showPreview ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedApprovedRowPreview(row)}
+                              title="Preview"
+                              aria-label="Preview post"
+                              className={iconBtnMuted}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
                           ) : (
-                            <PenLine className="h-3.5 w-3.5" />
+                            <span className="inline-block h-9 w-9" aria-hidden />
                           )}
-                          <span className="hidden sm:inline">Draft</span>
-                        </button>
-                      ) : null}
-
-                      {normalizedStatus === 'drafted' ? (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedRowForReview(row)}
-                          title="Review draft"
-                          className={`${btn} border border-white/50 bg-white/35 text-ink backdrop-blur-sm hover:bg-white/65`}
-                        >
-                          <span className="sm:hidden">Edit</span>
-                          <span className="hidden sm:inline">Review</span>
-                        </button>
-                      ) : null}
-
-                      {normalizedStatus === 'approved' ? (
-                        <button
-                          type="button"
-                          onClick={() => void publishRowToSelectedChannel(row)}
-                          disabled={actionLoading !== null}
-                          title="Publish"
-                          className={`${btn} bg-primary text-primary-fg hover:bg-primary-hover`}
-                        >
-                          {actionLoading === buildRowActionKey('publish', row) ? (
-                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Send className="h-3.5 w-3.5" />
-                          )}
-                          <span className="hidden sm:inline">Publish</span>
-                        </button>
-                      ) : null}
-
-                      {normalizedStatus === 'published' ? (
-                        <button
-                          type="button"
-                          onClick={() => void republishRowToSelectedChannel(row)}
-                          disabled={actionLoading !== null}
-                          title="Republish"
-                          className={`${btn} border border-white/50 bg-white/35 text-ink backdrop-blur-sm hover:bg-white/65`}
-                        >
-                          {actionLoading === buildRowActionKey('publish', row) ? (
-                            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Send className="h-3.5 w-3.5" />
-                          )}
-                          <span className="hidden sm:inline">Republish</span>
-                        </button>
-                      ) : null}
-
-                      {canPreviewPublishedContent(row) ? (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedApprovedRowPreview(row)}
-                          title="Preview"
-                          aria-label="Preview post"
-                          className={iconBtnMuted}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteTopic(row)}
-                        disabled={deletingRowIndex === row.rowIndex}
-                        title="Delete topic"
-                        className={iconBtn}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+                        </td>
+                        <td className="px-1 py-2.5 align-middle text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTopic(row)}
+                            disabled={deletingRowIndex === row.rowIndex}
+                            title="Delete topic"
+                            aria-label="Delete topic"
+                            className={iconBtn}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

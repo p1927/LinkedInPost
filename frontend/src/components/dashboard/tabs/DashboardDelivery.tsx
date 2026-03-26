@@ -1,4 +1,7 @@
 import { MessageCircle, Phone } from 'lucide-react';
+import { Badge } from '../../ui/Badge';
+import { ChipToggle } from '../../ui/ChipToggle';
+import { cn } from '../../../lib/cn';
 import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel } from '../../../integrations/channels';
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';
@@ -42,7 +45,7 @@ export function DashboardDelivery({
             <select
               value={selectedChannel}
               onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-              className="mt-1 w-full cursor-pointer rounded-lg border border-border bg-surface px-2 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-primary/25"
+              className={cn('ui-select ui-select-sm mt-1 max-w-full')}
             >
               {CHANNEL_OPTIONS.map((channel) => (
                 <option key={channel.value} value={channel.value}>
@@ -60,20 +63,12 @@ export function DashboardDelivery({
           {selectedChannelOption.requiresRecipient ? (
             <>
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setRecipientMode('saved')}
-                  className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${recipientMode === 'saved' ? 'bg-primary text-primary-fg' : 'border border-border bg-surface text-muted hover:text-ink'}`}
-                >
+                <ChipToggle type="button" selected={recipientMode === 'saved'} onClick={() => setRecipientMode('saved')}>
                   {selectedChannel === 'telegram' ? 'Saved chat' : 'Saved recipient'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRecipientMode('manual')}
-                  className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${recipientMode === 'manual' ? 'bg-primary text-primary-fg' : 'border border-border bg-surface text-muted hover:text-ink'}`}
-                >
+                </ChipToggle>
+                <ChipToggle type="button" selected={recipientMode === 'manual'} onClick={() => setRecipientMode('manual')}>
                   {selectedChannel === 'telegram' ? 'Manual chat ID' : 'Manual number'}
-                </button>
+                </ChipToggle>
               </div>
 
               {recipientMode === 'saved' ? (
@@ -84,7 +79,7 @@ export function DashboardDelivery({
                   <select
                     value={selectedRecipientId}
                     onChange={(e) => setSelectedRecipientId(e.target.value)}
-                    className="w-full cursor-pointer rounded-xl border border-border bg-surface px-4 py-3 text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className={cn('ui-select ui-select-lg w-full')}
                     disabled={activeRecipientOptions.length === 0}
                   >
                     {activeRecipientOptions.length === 0 ? (
@@ -108,7 +103,7 @@ export function DashboardDelivery({
                     value={manualRecipientId}
                     onChange={(e) => setManualRecipientId(e.target.value)}
                     placeholder={selectedChannel === 'telegram' ? '@my_channel or -1001234567890' : '+14155550101'}
-                    className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="w-full min-h-[44px] rounded-xl border border-violet-200/55 bg-white/85 px-4 py-3 text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200 placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/20 focus:ring-offset-2 focus:ring-offset-canvas"
                   />
                 </label>
               )}
@@ -131,12 +126,12 @@ export function DashboardDelivery({
         <div className="rounded-2xl border border-success-border/90 bg-success-surface/95 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-success-ink">Last delivery</p>
-            <span className="rounded-full border border-success-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
+            <Badge variant="neutral" size="sm" className="border-success-border/80 bg-white/90 text-ink normal-case">
               {getChannelLabel(lastDeliverySummary.channel)}
-            </span>
-            <span className="rounded-full border border-success-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-ink">
+            </Badge>
+            <Badge variant="neutral" size="sm" className="border-success-border/80 bg-white/90 text-ink normal-case">
               {lastDeliverySummary.mediaMode === 'image' ? 'Image post' : 'Text post'}
-            </span>
+            </Badge>
           </div>
           <p className="mt-2 text-xs leading-5 text-muted">
             {lastDeliverySummary.channel === 'whatsapp' || lastDeliverySummary.channel === 'telegram'

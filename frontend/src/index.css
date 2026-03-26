@@ -79,4 +79,36 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-muted;
   }
+
+  /*
+   * Native <select> — glass surface, custom chevron, strong focus (WCAG keyboard).
+   * Pair with min-h-[44px] on touch-heavy screens via .ui-select-lg.
+   */
+  .ui-select {
+    appearance: none;
+    background-color: rgba(255, 255, 255, 0.88);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 1.15rem;
+    @apply w-full cursor-pointer rounded-xl border border-violet-200/55 pl-3.5 pr-10 text-sm font-semibold text-ink shadow-sm outline-none backdrop-blur-md;
+    @apply transition-[box-shadow,border-color,background-color] duration-200;
+    @apply hover:border-primary/40 hover:bg-white hover:shadow-md;
+    @apply focus:border-primary focus:ring-2 focus:ring-primary/25 focus:ring-offset-2 focus:ring-offset-canvas;
+    @apply disabled:cursor-not-allowed disabled:opacity-45;
+  }
+
+  .ui-select-lg {
+    @apply min-h-[44px] py-3;
+  }
+
+  .ui-select-sm {
+    @apply min-h-0 rounded-lg py-2 text-sm;
+    background-position: right 0.5rem center;
+    @apply pl-2.5 pr-9;
+  }
+
+  .ui-select-success {
+    @apply border-success-border bg-success-surface/90 focus:border-cta focus:ring-cta/30;
+  }
 }

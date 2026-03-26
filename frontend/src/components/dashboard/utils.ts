@@ -1,3 +1,4 @@
+import { type BadgeVariant } from '../ui/Badge';
 import { type SheetRow } from '../../services/sheets';
 import { type ChannelId } from '../../integrations/channels';
 import { type BotConfig } from '../../services/configService';
@@ -11,6 +12,21 @@ export function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): s
 
 export function getNormalizedRowStatus(status?: string): string {
   return status?.trim().toLowerCase() || 'pending';
+}
+
+export function queueStatusToBadgeVariant(status?: string): BadgeVariant {
+  switch (getNormalizedRowStatus(status)) {
+    case 'pending':
+      return 'pending';
+    case 'drafted':
+      return 'drafted';
+    case 'approved':
+      return 'approved';
+    case 'published':
+      return 'published';
+    default:
+      return 'neutral';
+  }
 }
 
 export function canPreviewPublishedContent(row: SheetRow): boolean {

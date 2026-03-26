@@ -14,8 +14,10 @@ import {
 } from '../../services/backendApi';
 import { DraftEditor } from '../editor/DraftEditor';
 import { applyFormattingAction, getEffectiveScope, getTargetText } from '../editor/selection';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { cn } from '../../lib/cn';
 import { GenerationPanel } from '../generation/GenerationPanel';
-import { VariantPersistencePanel } from '../persistence/VariantPersistencePanel';
 import { RulesPanel } from '../rules/RulesPanel';
 import { CompareDialog } from '../compare/CompareDialog';
 import { type ChannelId } from '../../integrations/channels';
@@ -106,8 +108,10 @@ export function ReviewWorkspace({
   const [generationLoading, setGenerationLoading] = useState<'quick-change' | 'variants' | null>(null);
   const [quickChangePreview, setQuickChangePreview] = useState<QuickChangePreviewResult | null>(null);
   const [variantsPreview, setVariantsPreview] = useState<VariantsPreviewResponse | null>(null);
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [saveError, setSaveError] = useState('');
+  const [previewVariantSaveByIndex, setPreviewVariantSaveByIndex] = useState<
+    Record<number, 'idle' | 'saving' | 'saved' | 'error'>
+  >({});
+  const [previewVariantSaveErrors, setPreviewVariantSaveErrors] = useState<Record<number, string>>({});
   const [postTime, setPostTime] = useState('');
   const [selectedImageUrl, setSelectedImageUrl] = useState(row.selectedImageId || row.imageLink1 || '');
   const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
@@ -132,8 +136,8 @@ export function ReviewWorkspace({
     setGenerationLoading(null);
     setQuickChangePreview(null);
     setVariantsPreview(null);
-    setSaveState('idle');
-    setSaveError('');
+    setPreviewVariantSaveByIndex({});
+    setPreviewVariantSaveErrors({});
     setPostTime('');
     setSelectedImageUrl(row.selectedImageId || row.imageLink1 || '');
     setAlternateImageOptions([]);
@@ -185,8 +189,8 @@ export function ReviewWorkspace({
     setInstruction('');
     setQuickChangePreview(null);
     setVariantsPreview(null);
-    setSaveState('idle');
-    setSaveError('');
+    setPreviewVariantSaveByIndex({});
+    setPreviewVariantSaveErrors({});
     if (variant.imageUrl) {
       setSelectedImageUrl(variant.imageUrl);
     }
@@ -223,8 +227,8 @@ export function ReviewWorkspace({
     try {
       const preview = await onGenerateVariants(buildGenerationRequest());
       setVariantsPreview(preview);
-      setSaveState('idle');
-      setSaveError('');
+      setPreviewVariantSaveByIndex({});
+      setPreviewVariantSaveErrors({});
     } finally {
       setGenerationLoading(null);
     }
@@ -263,20 +267,32 @@ export function ReviewWorkspace({
     openCompare(`Apply preview ${index + 1}`, variant.replacementText, variant.fullText);
   };
 
-  const handleSavePreviewVariants = async () => {
-    if (!variantsPreview?.variants.length) {
+  const handleSavePreviewVariantAtIndex = async (index: number) => {
+    const variant = variantsPreview?.variants[index];
+    if (!variant || variantsPreview.variants.length !== 4) {
       return;
     }
 
-    setSaveState('saving');
-    setSaveError('');
+    setPreviewVariantSaveByIndex((current) => ({ ...current, [index]: 'saving' }));
+    setPreviewVariantSaveErrors((current) => {
+      const next = { ...current };
+      delete next[index];
+      return next;
+    });
     try {
-      const updatedRow = await onSaveVariants(sheetRow, variantsPreview.variants.map((variant) => variant.fullText));
+      const merged = [
+        index === 0 ? variant.fullText : sheetRow.variant1,
+        index === 1 ? variant.fullText : sheetRow.variant2,
+        index === 2 ? variant.fullText : sheetRow.variant3,
+        index === 3 ? variant.fullText : sheetRow.variant4,
+      ];
+      const updatedRow = await onSaveVariants(sheetRow, merged);
       setSheetRow(updatedRow);
-      setSaveState('saved');
+      setPreviewVariantSaveByIndex((current) => ({ ...current, [index]: 'saved' }));
     } catch (error) {
-      setSaveState('error');
-      setSaveError(error instanceof Error ? error.message : 'Failed to save preview variants.');
+      const message = error instanceof Error ? error.message : 'Failed to save to Sheets.';
+      setPreviewVariantSaveByIndex((current) => ({ ...current, [index]: 'error' }));
+      setPreviewVariantSaveErrors((current) => ({ ...current, [index]: message }));
     }
   };
 
@@ -363,8 +379,20 @@ export function ReviewWorkspace({
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
         <div className="glass-panel-strong flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl">
           <div className="shrink-0 border-b border-white/45 bg-white/50 px-4 py-2.5 backdrop-blur-md">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-              <div className="min-w-0">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setReviewPhase('pick-variant')}
+                    className="glass-inset mt-0.5 inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-ink transition-colors hover:bg-white/80 sm:text-[11px]"
+                    aria-label="Back to sheet variants"
+                  >
+                    <ArrowLeft className="h-3 w-3 shrink-0" aria-hidden />
+                    <span className="max-w-[5.5rem] leading-tight sm:max-w-none">Back to variants</span>
+                  </button>
+                ) : null}
+                <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Review</p>
                 <h2 className="truncate text-sm font-medium leading-snug text-ink">{sheetRow.topic}</h2>
                 <p className="mt-0.5 text-[11px] text-muted">
@@ -374,6 +402,7 @@ export function ReviewWorkspace({
                   {previewReadyCount ? ` · ${previewReadyCount} preview${previewReadyCount === 1 ? '' : 's'}` : ''}
                   <span className="text-muted/80"> · {googleModel}</span>
                 </p>
+                </div>
               </div>
               <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
                 <input
@@ -382,19 +411,26 @@ export function ReviewWorkspace({
                   value={postTime}
                   onChange={(event) => setPostTime(event.target.value)}
                   aria-label="Post time (optional)"
-                  className="glass-inset w-full min-w-0 rounded-lg px-2.5 py-1.5 text-xs text-ink outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary/20 sm:w-[200px]"
+                  className={cn(
+                    'min-h-[40px] w-full min-w-0 rounded-xl border border-violet-200/55 bg-white/85 px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200',
+                    'focus:border-primary focus:ring-2 focus:ring-primary/25 focus:ring-offset-2 focus:ring-offset-canvas sm:w-[220px]',
+                  )}
                 />
-                <div className="flex gap-2">
-                  <button
+                <div className="flex flex-wrap gap-2">
+                  <Button
                     type="button"
+                    size="sm"
+                    variant="primary"
                     onClick={() => void handleApprove()}
                     disabled={submitting}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-h-[40px]"
                   >
                     {submitting ? 'Approving…' : 'Approve'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    size="sm"
+                    variant="secondary"
                     onClick={() => {
                       if (hasUnsavedReviewState) {
                         setPendingClose(true);
@@ -402,137 +438,94 @@ export function ReviewWorkspace({
                       }
                       onCancel();
                     }}
-                    className="glass-inset inline-flex cursor-pointer items-center justify-center rounded-lg px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-white/80"
+                    className="min-h-[40px]"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
 
           {reviewPhase === 'pick-variant' && sheetVariants.length > 0 ? (
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Choose a sheet draft</p>
-              <p className="mt-0.5 text-xs text-muted">Picking one opens the editor and tools. You can go back to switch.</p>
-              <div className="mt-4 flex flex-wrap gap-3">
+              <p className="mt-0.5 text-xs text-muted">
+                Click a feed preview to open the editor and tools. You can go back to switch.
+              </p>
+              <div className="mt-4 grid min-h-[min(48vh,560px)] flex-1 grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-rows-2 [grid-auto-rows:minmax(0,1fr)] xl:min-h-[min(52vh,620px)] xl:grid-cols-4 xl:grid-rows-1">
                 {sheetVariants.map((variant, index) => (
-                  <button
-                    key={`sheet-variant-${index}`}
-                    type="button"
-                    onClick={() => handleLoadSheetVariant(index)}
-                    className="glass-inset min-w-[200px] max-w-md flex-1 cursor-pointer rounded-2xl px-4 py-3 text-left transition-colors hover:border-violet-300/70 hover:bg-white/75 sm:min-w-[220px]"
+                  <div
+                    key={`sheet-variant-${variant.originalIndex}`}
+                    className="flex h-full min-h-[280px] flex-col"
                   >
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Variant {index + 1}</p>
-                    <p className="mt-1.5 line-clamp-4 text-xs leading-relaxed text-ink">{variant.text}</p>
-                    <span className="glass-inset mt-2 inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-muted">
-                      Use as base
-                    </span>
-                  </button>
+                    <LinkedInPostPreview
+                      optionNumber={index + 1}
+                      text={variant.text}
+                      imageUrl={variant.imageUrl || undefined}
+                      selected={false}
+                      expanded={false}
+                      forceExpanded
+                      previewChannel={deliveryChannel}
+                      mode="carousel"
+                      className="glass-inset h-full min-h-0 overflow-y-auto overscroll-contain border-white/50 bg-white/55 shadow-card backdrop-blur-sm"
+                      onSelect={() => handleLoadSheetVariant(index)}
+                      onToggleExpanded={() => undefined}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
           ) : null}
 
           {reviewPhase === 'edit' || sheetVariants.length === 0 ? (
-            <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-              <section className="min-h-0 space-y-4 overflow-y-auto border-b border-white/40 px-4 py-4 xl:border-b-0 xl:border-r xl:border-white/40">
-                {sheetVariants.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => setReviewPhase('pick-variant')}
-                    className="glass-inset inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-white/80"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-                    Back to variants
-                  </button>
-                ) : null}
-
-                <DraftEditor
-                  value={editorText}
-                  selection={selection}
-                  preferredScope={scope}
-                  dirty={editorDirty}
-                  onChange={setEditorText}
-                  onSelectionChange={setSelection}
-                  onScopeChange={setScope}
-                  onFormatting={handleFormatting}
-                />
-
-                <section className="glass-panel rounded-2xl p-4 shadow-card">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Preview</p>
-                    <span className="glass-inset rounded-full px-2 py-0.5 text-[11px] font-semibold text-muted">
-                      {selectedImageUrl ? 'Image attached' : 'No image'}
-                    </span>
-                  </div>
-                  <div className="mt-3">
-                    <LinkedInPostPreview
-                      optionNumber={1}
-                      text={editorText}
-                      imageUrl={selectedImageUrl}
-                      previewChannel={deliveryChannel}
-                      selected
-                      expanded
-                      onSelect={() => undefined}
-                      onToggleExpanded={() => undefined}
-                    />
-                  </div>
-                </section>
-              </section>
-
-              <aside className="min-h-0 overflow-y-auto bg-white/20 px-4 py-4 backdrop-blur-sm">
-                <div className="glass-panel grid grid-cols-3 gap-1.5 rounded-xl p-1 shadow-sm">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:grid-cols-[minmax(220px,0.26fr)_minmax(0,1fr)_minmax(200px,0.3fr)] xl:gap-0 xl:overflow-hidden">
+              <aside className="order-2 min-h-0 border-b border-white/40 bg-white/15 px-3 py-3 backdrop-blur-sm xl:order-none xl:border-b-0 xl:border-r xl:border-white/40 xl:overflow-y-auto">
+                <div className="glass-panel grid grid-cols-3 gap-1 rounded-lg p-0.5 shadow-sm">
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('refine')}
-                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
+                    className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Refine
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('media')}
-                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
+                    className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Media
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('rules')}
-                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
+                    className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Rules
                   </button>
                 </div>
 
-                <div className="mt-4 space-y-4">
+                <div className="mt-3 space-y-3">
                   {activeWorkspacePanel === 'refine' ? (
-                    <>
-                      <GenerationPanel
-                        instruction={instruction}
-                        loadingAction={generationLoading}
-                        quickChangePreview={quickChangePreview}
-                        variantsPreview={variantsPreview}
-                        onInstructionChange={setInstruction}
-                        onGenerateQuickChange={() => void handleGenerateQuickChange()}
-                        onGenerateVariants={() => void handleGenerateVariants()}
-                        onApplyQuickChange={handleApplyQuickChange}
-                        onApplyVariant={handleApplyVariant}
-                      />
-
-                      <VariantPersistencePanel
-                        hasPreview={Boolean(variantsPreview?.variants.length)}
-                        variantCount={variantsPreview?.variants.length || 0}
-                        saveState={saveState}
-                        errorMessage={saveError}
-                        onSave={() => void handleSavePreviewVariants()}
-                      />
-                    </>
+                    <GenerationPanel
+                      instruction={instruction}
+                      loadingAction={generationLoading}
+                      quickChangePreview={quickChangePreview}
+                      variantsPreview={variantsPreview}
+                      onInstructionChange={setInstruction}
+                      onGenerateQuickChange={() => void handleGenerateQuickChange()}
+                      onGenerateVariants={() => void handleGenerateVariants()}
+                      onApplyQuickChange={handleApplyQuickChange}
+                      onApplyVariant={handleApplyVariant}
+                      compact
+                      previewVariantSaveByIndex={previewVariantSaveByIndex}
+                      previewVariantSaveErrors={previewVariantSaveErrors}
+                      onSavePreviewVariant={(index) => void handleSavePreviewVariantAtIndex(index)}
+                    />
                   ) : null}
 
                   {activeWorkspacePanel === 'media' ? (
-                    <section className="glass-panel rounded-2xl p-4 shadow-card">
+                    <section className="glass-panel rounded-xl p-3 shadow-card">
                       <ImageAssetManager
                         topic={sheetRow.topic}
                         images={imageOptions}
@@ -545,7 +538,45 @@ export function ReviewWorkspace({
                     </section>
                   ) : null}
 
-                  {activeWorkspacePanel === 'rules' ? <RulesPanel sharedRules={sharedRules} /> : null}
+                  {activeWorkspacePanel === 'rules' ? <RulesPanel sharedRules={sharedRules} compact /> : null}
+                </div>
+              </aside>
+
+              <section className="order-1 min-h-0 overflow-y-auto border-b border-white/40 px-3 py-3 xl:order-none xl:border-b-0 xl:border-r xl:border-white/40">
+                <DraftEditor
+                  value={editorText}
+                  selection={selection}
+                  preferredScope={scope}
+                  dirty={editorDirty}
+                  onChange={setEditorText}
+                  onSelectionChange={setSelection}
+                  onScopeChange={setScope}
+                  onFormatting={handleFormatting}
+                  compact
+                />
+              </section>
+
+              <aside className="order-3 min-h-0 overflow-y-auto bg-white/10 px-2 py-3 xl:order-none">
+                <div className="sticky top-0 flex flex-col gap-1.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1 px-0.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Feed preview</p>
+                    <Badge variant="neutral" size="xs" className="normal-case">
+                      {selectedImageUrl ? 'Image' : 'Text only'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-center">
+                    <LinkedInPostPreview
+                      optionNumber={1}
+                      text={editorText}
+                      imageUrl={selectedImageUrl}
+                      previewChannel={deliveryChannel}
+                      layout="sidebar"
+                      selected
+                      expanded
+                      onSelect={() => undefined}
+                      onToggleExpanded={() => undefined}
+                    />
+                  </div>
                 </div>
               </aside>
             </div>

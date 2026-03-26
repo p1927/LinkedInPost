@@ -1,4 +1,5 @@
 import { Bot } from 'lucide-react';
+import { cn } from '../../../lib/cn';
 import { type GoogleModelOption } from '../../../services/configService';
 
 export function DashboardToolbar({
@@ -21,7 +22,7 @@ export function DashboardToolbar({
         <select
           value={googleModel}
           onChange={(e) => setGoogleModel(e.target.value)}
-          className="glass-inset mt-1 w-full max-w-md cursor-pointer rounded-lg px-2 py-2 text-sm font-semibold text-ink outline-none focus:ring-2 focus:ring-primary/25"
+          className={cn('ui-select ui-select-sm mt-1 w-full max-w-md')}
         >
           {availableModels.map((model) => (
             <option key={model.value} value={model.value}>
