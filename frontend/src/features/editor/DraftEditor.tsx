@@ -69,7 +69,7 @@ export function DraftEditor({
 
   const formattingBar = (
     <div
-      className={`flex flex-wrap items-center gap-1 rounded-xl border border-border bg-surface/90 ${compact ? 'px-1.5 py-1' : 'px-2 py-1.5'}`}
+      className={`flex flex-wrap items-center gap-1.5 rounded-xl border border-violet-200/60 bg-white/70 backdrop-blur-sm transition-all duration-200 hover:bg-white/80 ${compact ? 'px-2 py-1.5' : 'px-3 py-2'}`}
       role="toolbar"
       aria-label="Formatting"
     >
@@ -81,7 +81,7 @@ export function DraftEditor({
           size="inline"
           title={label}
           onClick={() => onFormatting(id)}
-          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-medium text-ink transition-all duration-200 hover:bg-canvas hover:text-primary hover:shadow-sm active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/30 ${fmtBtn}`}
+          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${fmtBtn}`}
         >
           <Icon className={fmtIcon} aria-hidden />
           <span className="sr-only">{label}</span>
@@ -92,8 +92,8 @@ export function DraftEditor({
 
   return (
     <div className={cn('flex min-h-0 flex-col', compact && 'flex-1', className)}>
-      <div className={`mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-canvas ${compact ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
-        <div className={`inline-flex rounded-full border border-border bg-surface ${compact ? 'p-0.5' : 'p-1'}`}>
+      <div className={`mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200/60 bg-white/70 backdrop-blur-sm transition-all duration-200 ${compact ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
+        <div className={`inline-flex rounded-full border border-violet-200/50 bg-white/80 backdrop-blur-sm transition-all duration-200 ${compact ? 'p-0.5' : 'p-1'}`}>
           <Button
             type="button"
             variant="ghost"
@@ -162,7 +162,7 @@ export function DraftEditor({
         onMouseUp={syncSelection}
         spellCheck={false}
         className={cn(
-          'w-full flex-1 resize-none rounded-xl border border-border bg-canvas text-ink outline-none transition-all duration-200 focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/25 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.08)]',
+          'w-full flex-1 resize-none rounded-xl border border-violet-200/60 bg-white/85 text-ink outline-none transition-all duration-200 hover:border-violet-300/70 hover:bg-white/95 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/35 focus:ring-offset-0 focus:shadow-lg',
           taMin,
           taText,
         )}

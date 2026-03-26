@@ -18,7 +18,11 @@ export function WorkspaceHeader({
   onOpenMobileSidebar: () => void;
   onLogout: () => void;
 }) {
-  const { onRefreshQueue, queueLoading, sheetConnected } = useWorkspaceChrome();
+  const { onRefreshQueue, queueLoading, headerOverride } = useWorkspaceChrome();
+  const headerTitle = headerOverride?.title ?? PAGE_TITLES[workspacePage];
+  const headerSubtitle =
+    headerOverride?.subtitle ??
+    (workspacePage === 'topics' ? 'Sheet queue and publish target' : null);
 
   return (
     <header className="glass-header sticky top-0 z-30 flex min-h-14 shrink-0 items-center justify-between gap-3 border-b px-3 py-2 sm:px-4">
@@ -36,18 +40,15 @@ export function WorkspaceHeader({
         </Button>
         <div className="min-w-0 leading-tight">
           <h1 className="truncate font-heading text-base font-semibold text-ink sm:text-lg">
-            {PAGE_TITLES[workspacePage]}
+            {headerTitle}
           </h1>
-          {workspacePage === 'topics' ? (
-            <p className="truncate text-[11px] text-ink/55">Sheet queue and publish target</p>
+          {headerSubtitle ? (
+            <p className="truncate text-[11px] text-ink/55">{headerSubtitle}</p>
           ) : null}
         </div>
       </div>
 
-      <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-        {sheetConnected ? (
-          <span className="truncate text-xs text-ink/55">Sheet connected</span>
-        ) : null}
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <Button
           type="button"
           variant="secondary"

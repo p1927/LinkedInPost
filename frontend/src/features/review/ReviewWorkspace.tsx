@@ -142,14 +142,6 @@ export function ReviewWorkspace({
   const topicHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, []);
-
-  useEffect(() => {
     const initialText = getInitialEditorText(row);
     setSheetRow(row);
     setEditorText(initialText);
@@ -483,44 +475,45 @@ export function ReviewWorkspace({
 
   return (
     <>
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-gradient-to-b from-ink/60 via-ink/48 to-ink/55 backdrop-blur-md motion-safe:transition-colors">
-      <div
-        className="flex min-h-[100dvh] min-w-full items-center justify-center px-3 py-5 sm:px-6 sm:py-8"
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) {
-            requestClose();
-          }
-        }}
-        role="presentation"
-      >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="review-workspace-title"
-        aria-describedby="review-workspace-desc"
-        className="glass-panel-strong flex max-h-[calc(100dvh-3rem)] w-full max-w-[min(100vw-1.5rem,1760px)] flex-col overflow-hidden rounded-3xl border border-white/70 shadow-2xl shadow-ink/30 ring-1 ring-white/60 outline-none transition-[box-shadow,transform] duration-200 motion-safe:transition-shadow focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-        tabIndex={-1}
-      >
+    <section
+      aria-labelledby="review-workspace-title"
+      aria-describedby="review-workspace-desc"
+      className="flex min-h-[calc(100dvh-7.5rem)] w-full max-w-[1760px] flex-col self-stretch outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+    >
+      <div className="glass-panel-strong flex min-h-[calc(100dvh-7.5rem)] w-full flex-1 flex-col overflow-hidden rounded-2xl border border-white/70 shadow-card ring-1 ring-white/60 transition-[box-shadow] duration-200 motion-safe:transition-shadow">
           <p id="review-workspace-desc" className="sr-only">
             Pick a variant, refine, then approve.
           </p>
           <div className="shrink-0 border-b border-white/60 bg-white/70 px-4 py-4 backdrop-blur-md sm:py-3.5 transition-colors duration-200">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-              <div className="flex min-w-0 flex-1 items-start gap-2 sm:gap-3">
-                {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
+              <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 sm:flex-row sm:items-start sm:gap-3">
+                <div className="flex flex-wrap items-start gap-2">
                   <Button
                     type="button"
                     variant="secondary"
                     size="sm"
-                    onClick={() => setReviewPhase('pick-variant')}
-                    aria-label="Back to variants"
-                    className="min-h-[44px] shrink-0 gap-1.5 px-3 sm:mt-1 sm:min-h-[40px]"
+                    onClick={requestClose}
+                    aria-label="Back to topics list"
+                    className="min-h-[44px] shrink-0 gap-1.5 px-3 sm:mt-1 sm:min-h-[40px] transition-all duration-200 hover:shadow-md active:shadow-sm"
                   >
                     <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-                    <span className="whitespace-nowrap">Back</span>
+                    <span className="whitespace-nowrap">Topics</span>
                   </Button>
-                ) : null}
-                <div className="min-w-0 flex-1">
+                  {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setReviewPhase('pick-variant')}
+                      aria-label="Back to variants"
+                      className="min-h-[44px] shrink-0 gap-1.5 px-3 sm:mt-1 sm:min-h-[40px] transition-all duration-200 hover:shadow-md active:shadow-sm"
+                    >
+                      <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                      <span className="whitespace-nowrap">Variants</span>
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1 sm:min-w-[12rem]">
                   {sheetVariants.length > 0 ? (
                     <p className="text-[10px] font-bold uppercase tracking-wider text-ink/60 transition-colors duration-200">
                       {showPickPhase ? 'Choose variant' : 'Refine'}
@@ -552,19 +545,19 @@ export function ReviewWorkspace({
                 </div>
               </div>
               <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-end">
-                <div className="flex flex-wrap items-center justify-end gap-1.5 sm:max-w-[min(100%,28rem)]">
+                <div className="flex flex-wrap items-center justify-end gap-2 sm:max-w-[min(100%,28rem)]">
                   {reviewPhase === 'edit' && sheetVariants.length > 0 ? (
-                    <Badge variant="info" size="xs" className="normal-case">
+                    <Badge variant="info" size="xs" className="normal-case font-bold shadow-sm transition-all duration-200 hover:shadow-md">
                       Editing
                     </Badge>
                   ) : null}
                   {editorDirty ? (
-                    <Badge variant="warning" size="xs" className="normal-case">
+                    <Badge variant="warning" size="xs" className="normal-case font-bold shadow-sm transition-all duration-200 hover:shadow-md">
                       Draft edited
                     </Badge>
                   ) : null}
                   {previewReadyCount > 0 ? (
-                    <Badge variant="neutral" size="xs" className="normal-case">
+                    <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm transition-all duration-200 hover:shadow-md">
                       {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
                     </Badge>
                   ) : null}
@@ -573,7 +566,7 @@ export function ReviewWorkspace({
                   <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px]">
                     <label
                       htmlFor="review-post-time-input"
-                      className="text-[10px] font-semibold uppercase tracking-wider text-ink/75"
+                      className="text-[10px] font-bold uppercase tracking-wider text-ink/70 transition-colors duration-200"
                     >
                       Schedule{' '}
                       <span className="font-normal normal-case tracking-normal text-ink/65">(optional)</span>
@@ -585,8 +578,8 @@ export function ReviewWorkspace({
                       onChange={(event) => setPostTime(event.target.value)}
                       aria-label="Schedule post time (optional)"
                       className={cn(
-                        'min-h-[44px] w-full min-w-0 rounded-xl border border-violet-200/60 bg-white/90 px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,box-shadow] duration-200',
-                        'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white/90 sm:w-[220px]',
+                        'min-h-[44px] w-full min-w-0 rounded-xl border border-violet-200/70 bg-white/95 px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-all duration-200 hover:border-violet-300/80 hover:bg-white hover:shadow-md',
+                        'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/95 sm:w-[220px]',
                       )}
                     />
                   </div>
@@ -607,27 +600,27 @@ export function ReviewWorkspace({
                   type="button"
                   variant="secondary"
                   size="icon-sm"
-                  className="absolute left-1 top-1/2 z-20 size-12 min-h-12 min-w-12 -translate-y-1/2 rounded-full border-violet-200/70 bg-white/95 shadow-lg ring-1 ring-white/80 backdrop-blur-sm sm:left-2 sm:size-14 sm:min-h-14 sm:min-w-14"
+                  className="absolute left-1 top-1/2 z-20 size-12 min-h-12 min-w-12 -translate-y-1/2 rounded-full border-violet-200/80 bg-white/98 shadow-lg hover:shadow-xl ring-1 ring-white/90 backdrop-blur-sm transition-all duration-200 hover:bg-white sm:left-2 sm:size-14 sm:min-h-14 sm:min-w-14"
                   aria-label="Previous variant"
                   disabled={pickCarouselIndex === 0 || sheetVariants.length <= 1}
                   onClick={() => changePickCarouselBy(-1)}
                 >
-                  <ChevronLeft className="size-7 sm:size-8" aria-hidden strokeWidth={2.25} />
+                  <ChevronLeft className="size-7 sm:size-8 transition-transform duration-200" aria-hidden strokeWidth={2.25} />
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   size="icon-sm"
-                  className="absolute right-1 top-1/2 z-20 size-12 min-h-12 min-w-12 -translate-y-1/2 rounded-full border-violet-200/70 bg-white/95 shadow-lg ring-1 ring-white/80 backdrop-blur-sm sm:right-2 sm:size-14 sm:min-h-14 sm:min-w-14"
+                  className="absolute right-1 top-1/2 z-20 size-12 min-h-12 min-w-12 -translate-y-1/2 rounded-full border-violet-200/80 bg-white/98 shadow-lg hover:shadow-xl ring-1 ring-white/90 backdrop-blur-sm transition-all duration-200 hover:bg-white sm:right-2 sm:size-14 sm:min-h-14 sm:min-w-14"
                   aria-label="Next variant"
                   disabled={pickCarouselIndex === sheetVariants.length - 1 || sheetVariants.length <= 1}
                   onClick={() => changePickCarouselBy(1)}
                 >
-                  <ChevronRight className="size-7 sm:size-8" aria-hidden strokeWidth={2.25} />
+                  <ChevronRight className="size-7 sm:size-8 transition-transform duration-200" aria-hidden strokeWidth={2.25} />
                 </Button>
 
                 <div
-                  className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/50 bg-white/25 px-1 shadow-inner backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/35 sm:px-12"
+                  className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/60 bg-white/35 px-1 shadow-inner backdrop-blur-md outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-all duration-200 sm:px-12"
                   onKeyDown={handlePickCarouselKeyDown}
                   tabIndex={0}
                 >
@@ -842,16 +835,16 @@ export function ReviewWorkspace({
             </div>
           ) : null}
 
-          <footer className="shrink-0 border-t border-white/50 bg-white/70 px-4 py-3.5 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 sm:px-5">
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <footer className="shrink-0 border-t border-white/60 bg-white/80 px-4 py-3.5 backdrop-blur-md transition-colors duration-200 supports-[backdrop-filter]:bg-white/70 sm:px-5">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
               <Button
                 type="button"
                 size="sm"
                 variant="secondary"
                 onClick={requestClose}
-                className="min-h-[44px] w-full cursor-pointer sm:w-auto sm:min-w-[7.5rem]"
+                className="min-h-[44px] w-full cursor-pointer transition-all duration-200 hover:shadow-md sm:w-auto sm:min-w-[7.5rem]"
               >
-                {showPickPhase ? 'Close' : 'Cancel'}
+                Back to topics
               </Button>
               {!showPickPhase ? (
                 <Button
@@ -860,16 +853,15 @@ export function ReviewWorkspace({
                   variant="primary"
                   onClick={() => void handleApprove()}
                   disabled={submitting}
-                  className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.28)] transition-[box-shadow,opacity] duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.32)] sm:w-auto sm:min-w-[9rem]"
+                  className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 sm:w-auto sm:min-w-[9rem]"
                 >
                   {submitting ? 'Approving…' : 'Approve draft'}
                 </Button>
               ) : null}
             </div>
           </footer>
-        </div>
       </div>
-    </div>
+    </section>
 
       <Dialog
         open={pendingVariantIndex !== null}
@@ -903,8 +895,8 @@ export function ReviewWorkspace({
       <Dialog
         open={pendingClose}
         title="Discard current editor changes?"
-        description="Closing now will remove the current local editor state and preview context. Sheet drafts will remain unchanged."
-        confirmLabel="Discard and close"
+        description="Going back will remove the current local editor state and preview context. Sheet drafts will remain unchanged."
+        confirmLabel="Discard and go back"
         onCancel={() => setPendingClose(false)}
         onConfirm={() => {
           setPendingClose(false);

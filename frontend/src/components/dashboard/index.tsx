@@ -175,11 +175,34 @@ export function Dashboard({
     [linkedinConfigured, instagramConfigured, telegramConfigured, whatsappConfigured],
   );
 
+  const topicReviewWorkspace =
+    queueHook.selectedRowForReview ? (
+      <div className="-mx-4 min-h-[calc(100dvh-7.5rem)] sm:-mx-6">
+        <ReviewWorkspace
+          row={queueHook.selectedRowForReview}
+          deliveryChannel={channelsHook.selectedChannel}
+          previewAuthorName={previewAuthorDisplayName(session.email)}
+          sharedRules={session.config.generationRules}
+          googleModel={settingsHook.googleModel}
+          onApprove={queueHook.handleApproveVariant}
+          onGenerateQuickChange={queueHook.handleGenerateQuickChange}
+          onGenerateVariants={queueHook.handleGenerateVariantsPreview}
+          onSaveVariants={queueHook.handleSaveDraftVariants}
+          onFetchMoreImages={queueHook.handleFetchReviewImages}
+          onUploadImage={queueHook.handleUploadReviewImage}
+          onDownloadImage={queueHook.handleDownloadReviewImage}
+          onCancel={() => queueHook.setSelectedRowForReview(null)}
+        />
+      </div>
+    ) : null;
+
   useRegisterWorkspaceChrome({
     onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,
     queueLoading: queueHook.loading,
     health: publishingHealth,
-    sheetConnected: Boolean(session.config.spreadsheetId),
+    headerOverride: queueHook.selectedRowForReview
+      ? { title: 'Topic', subtitle: 'Variants, refine, and approve' }
+      : null,
   });
 
   if (!session.config.spreadsheetId && !session.isAdmin) {
@@ -303,30 +326,14 @@ export function Dashboard({
   if (workspacePage === 'settings' && session.isAdmin) {
     return (
       <div className="w-full pb-12">
-        <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
-          <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
-          <SettingsConnectionsCard
-            health={publishingHealth}
-            className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md lg:sticky lg:top-4"
-          />
-        </div>
-
-        {queueHook.selectedRowForReview && (
-          <ReviewWorkspace
-            row={queueHook.selectedRowForReview}
-            deliveryChannel={channelsHook.selectedChannel}
-            previewAuthorName={previewAuthorDisplayName(session.email)}
-            sharedRules={session.config.generationRules}
-            googleModel={settingsHook.googleModel}
-            onApprove={queueHook.handleApproveVariant}
-            onGenerateQuickChange={queueHook.handleGenerateQuickChange}
-            onGenerateVariants={queueHook.handleGenerateVariantsPreview}
-            onSaveVariants={queueHook.handleSaveDraftVariants}
-            onFetchMoreImages={queueHook.handleFetchReviewImages}
-            onUploadImage={queueHook.handleUploadReviewImage}
-            onDownloadImage={queueHook.handleDownloadReviewImage}
-            onCancel={() => queueHook.setSelectedRowForReview(null)}
-          />
+        {topicReviewWorkspace ?? (
+          <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
+            <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
+            <SettingsConnectionsCard
+              health={publishingHealth}
+              className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md lg:sticky lg:top-4"
+            />
+          </div>
         )}
 
         {queueHook.selectedApprovedRowPreview && (
@@ -341,48 +348,32 @@ export function Dashboard({
 
   return (
     <div className="w-full pb-12">
-      <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="min-w-0">{queueContent}</div>
-        <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
-          <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
-            <section aria-labelledby="topics-rail-ai-model" className="space-y-2">
-              <h2 id="topics-rail-ai-model" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
-                AI model
-              </h2>
-              <DashboardToolbar
-                embedded
-                googleModel={settingsHook.googleModel}
-                setGoogleModel={settingsHook.setGoogleModel}
-                availableModels={settingsHook.availableModels}
-              />
-            </section>
-            <div className="my-5 border-t border-violet-200/45" aria-hidden />
-            <section aria-labelledby="topics-rail-delivery" className="space-y-3">
-              <h2 id="topics-rail-delivery" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
-                Channel delivery
-              </h2>
-              {deliveryContent}
-            </section>
-          </div>
-        </aside>
-      </div>
-
-      {queueHook.selectedRowForReview && (
-        <ReviewWorkspace
-          row={queueHook.selectedRowForReview}
-          deliveryChannel={channelsHook.selectedChannel}
-          previewAuthorName={previewAuthorDisplayName(session.email)}
-          sharedRules={session.config.generationRules}
-          googleModel={settingsHook.googleModel}
-          onApprove={queueHook.handleApproveVariant}
-          onGenerateQuickChange={queueHook.handleGenerateQuickChange}
-          onGenerateVariants={queueHook.handleGenerateVariantsPreview}
-          onSaveVariants={queueHook.handleSaveDraftVariants}
-          onFetchMoreImages={queueHook.handleFetchReviewImages}
-          onUploadImage={queueHook.handleUploadReviewImage}
-          onDownloadImage={queueHook.handleDownloadReviewImage}
-          onCancel={() => queueHook.setSelectedRowForReview(null)}
-        />
+      {topicReviewWorkspace ?? (
+        <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
+          <div className="min-w-0">{queueContent}</div>
+          <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
+            <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
+              <section aria-labelledby="topics-rail-ai-model" className="space-y-2">
+                <h2 id="topics-rail-ai-model" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+                  AI model
+                </h2>
+                <DashboardToolbar
+                  embedded
+                  googleModel={settingsHook.googleModel}
+                  setGoogleModel={settingsHook.setGoogleModel}
+                  availableModels={settingsHook.availableModels}
+                />
+              </section>
+              <div className="my-5 border-t border-violet-200/45" aria-hidden />
+              <section aria-labelledby="topics-rail-delivery" className="space-y-3">
+                <h2 id="topics-rail-delivery" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
+                  Channel delivery
+                </h2>
+                {deliveryContent}
+              </section>
+            </div>
+          </aside>
+        </div>
       )}
 
       {queueHook.selectedApprovedRowPreview && (

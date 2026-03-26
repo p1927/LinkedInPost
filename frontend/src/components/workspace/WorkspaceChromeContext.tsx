@@ -19,14 +19,15 @@ type WorkspaceChromeState = {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
-  sheetConnected: boolean;
+  /** When set, the workspace header shows this instead of the nav page title. */
+  headerOverride: { title: string; subtitle?: string | null } | null;
 };
 
 const defaultState: WorkspaceChromeState = {
   onRefreshQueue: null,
   queueLoading: false,
   health: null,
-  sheetConnected: false,
+  headerOverride: null,
 };
 
 type WorkspaceChromeContextValue = WorkspaceChromeState & {
@@ -66,18 +67,18 @@ export function useRegisterWorkspaceChrome(config: {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
-  sheetConnected: boolean;
+  headerOverride?: { title: string; subtitle?: string | null } | null;
 }) {
   const { setChrome } = useWorkspaceChrome();
-  const { onRefreshQueue, queueLoading, health, sheetConnected } = config;
+  const { onRefreshQueue, queueLoading, health, headerOverride = null } = config;
 
   useEffect(() => {
-    setChrome({ onRefreshQueue, queueLoading, health, sheetConnected });
-  }, [setChrome, onRefreshQueue, queueLoading, health, sheetConnected]);
+    setChrome({ onRefreshQueue, queueLoading, health, headerOverride });
+  }, [setChrome, onRefreshQueue, queueLoading, health, headerOverride]);
 
   useEffect(() => {
     return () => {
-      setChrome({ onRefreshQueue: null, queueLoading: false, health: null, sheetConnected: false });
+      setChrome({ onRefreshQueue: null, queueLoading: false, health: null, headerOverride: null });
     };
   }, [setChrome]);
 }
