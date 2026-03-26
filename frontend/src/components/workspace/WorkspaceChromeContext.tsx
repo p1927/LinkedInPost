@@ -19,12 +19,14 @@ type WorkspaceChromeState = {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
+  sheetConnected: boolean;
 };
 
 const defaultState: WorkspaceChromeState = {
   onRefreshQueue: null,
   queueLoading: false,
   health: null,
+  sheetConnected: false,
 };
 
 type WorkspaceChromeContextValue = WorkspaceChromeState & {
@@ -64,17 +66,18 @@ export function useRegisterWorkspaceChrome(config: {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
+  sheetConnected: boolean;
 }) {
   const { setChrome } = useWorkspaceChrome();
-  const { onRefreshQueue, queueLoading, health } = config;
+  const { onRefreshQueue, queueLoading, health, sheetConnected } = config;
 
   useEffect(() => {
-    setChrome({ onRefreshQueue, queueLoading, health });
-  }, [setChrome, onRefreshQueue, queueLoading, health]);
+    setChrome({ onRefreshQueue, queueLoading, health, sheetConnected });
+  }, [setChrome, onRefreshQueue, queueLoading, health, sheetConnected]);
 
   useEffect(() => {
     return () => {
-      setChrome({ onRefreshQueue: null, queueLoading: false, health: null });
+      setChrome({ onRefreshQueue: null, queueLoading: false, health: null, sheetConnected: false });
     };
   }, [setChrome]);
 }

@@ -47,6 +47,8 @@ export interface Env {
   WORKER_SCHEDULER_SECRET?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WHATSAPP_ACCESS_TOKEN?: string;
+  /** Local only (.dev.vars): overrides CONFIG_KV spreadsheetId when preview KV has no config */
+  DEV_SPREADSHEET_ID?: string;
 }
 
 interface BotConfig {
@@ -654,8 +656,11 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
   const linkedinDisconnected = disconnectedAuthProviders.includes('linkedin');
   const whatsappDisconnected = disconnectedAuthProviders.includes('whatsapp');
 
+  const devSpreadsheetId = String(env.DEV_SPREADSHEET_ID || '').trim();
+  const spreadsheetId = devSpreadsheetId || String(config?.spreadsheetId || '').trim();
+
   return {
-    spreadsheetId: config?.spreadsheetId || '',
+    spreadsheetId,
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
     generationRules: config?.generationRules || '',

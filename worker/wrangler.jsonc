@@ -38,5 +38,43 @@
     "LINKEDIN_PERSON_URN": "",
     "META_APP_ID": "2059399091272282",
     "WHATSAPP_PHONE_NUMBER_ID": "1052083514653755"
+  },
+  "env": {
+    "local": {
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "SCHEDULED_LINKEDIN_PUBLISH",
+            "class_name": "ScheduledPublishAlarm"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["ScheduledPublishAlarm"]
+        }
+      ],
+      "vars": {
+        "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
+        "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
+        "GOOGLE_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+        "GOOGLE_CLOUD_STORAGE_BUCKET": "linkedin-image-archive-742",
+        "DELETE_UNUSED_GENERATED_IMAGES": "true",
+        "CORS_ALLOWED_ORIGINS": "http://localhost:5173 https://p1927.github.io",
+        "INSTAGRAM_APP_ID": "",
+        "LINKEDIN_CLIENT_ID": "77152yw16gugq6",
+        "LINKEDIN_PERSON_URN": "",
+        "META_APP_ID": "2059399091272282",
+        "WHATSAPP_PHONE_NUMBER_ID": "1052083514653755"
+      },
+      "kv_namespaces": [
+        {
+          "binding": "CONFIG_KV",
+          "id": "66555d70f03b45d9aadae69aa1d08c67",
+          "preview_id": "66555d70f03b45d9aadae69aa1d08c67"
+        }
+      ]
+    }
   }
 }

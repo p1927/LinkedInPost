@@ -505,7 +505,7 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: Go
 
     with build_wrangler_secrets_file(secret_values) as secrets_file:
         result = run_command(
-            ['npx', 'wrangler', 'deploy', '--secrets-file', secrets_file],
+            ['npx', 'wrangler', 'deploy', '--env', '', '--secrets-file', secrets_file],
             cwd=WORKER_DIR,
             capture_output=True,
         )

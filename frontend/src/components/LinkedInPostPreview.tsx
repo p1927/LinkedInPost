@@ -89,6 +89,11 @@ function previewSubtitle(channel: ChannelId | undefined): string {
   }
 }
 
+/** Classic in-app LinkedIn feed mock (frosted shell + white card + emoji reactions). Other channels keep design tokens. */
+function isLinkedInChrome(channel: ChannelId | undefined): boolean {
+  return channel == null || channel === 'linkedin';
+}
+
 function renderLinkedText(text: string, previewChannel?: ChannelId): ReactNode[] {
   const tagClass = TAG_CLASS_BY_CHANNEL[previewChannel ?? 'linkedin'];
   return text.split('\n').flatMap((line, lineIndex) => {
@@ -162,6 +167,8 @@ export function LinkedInPostPreview({
   }, [text, pickMode, optionNumber]);
 
   const lineClampLines = isSidebar ? 8 : isPickCarousel ? 5 : isCarousel ? 4 : 5;
+  const liChrome = isLinkedInChrome(previewChannel);
+  const heroLift = liChrome && !isSidebar && !isCarousel;
 
   return (
     <div
@@ -179,21 +186,42 @@ export function LinkedInPostPreview({
           ? `Draft ${optionNumber}, select to open in editor`
           : `Preview draft ${optionNumber}`
       }
-      className={`group relative w-full cursor-pointer text-left outline-none transition-colors duration-200 ${
-        isSidebar ? 'rounded-xl p-2' : isCarousel ? 'h-full min-h-0 rounded-xl p-3' : 'rounded-xl p-3 sm:p-4'
-      } ${
-        selected
-          ? 'border-2 border-primary bg-surface shadow-lift ring-4 ring-primary/10'
-          : 'border-2 border-border bg-canvas hover:border-primary/40 hover:bg-surface hover:shadow-card focus-visible:ring-4 focus-visible:ring-primary/20'
-      } ${className ?? ''}`}
+      className={cn(
+        'group relative w-full cursor-pointer text-left outline-none',
+        heroLift ? 'transition-all duration-300' : 'transition-colors duration-200',
+        isSidebar ? 'rounded-xl p-2' : isCarousel ? 'h-full min-h-0 rounded-3xl p-3' : liChrome ? 'rounded-[28px] p-3 sm:rounded-[32px] sm:p-4' : 'rounded-xl p-3 sm:p-4',
+        liChrome
+          ? selected
+            ? 'border-2 border-primary bg-white/90 shadow-xl ring-4 ring-primary/10'
+            : cn(
+                'border-2 border-white/90 bg-white/45 shadow-sm',
+                !isSidebar && 'hover:border-primary/35 hover:bg-white/70 hover:shadow-lg',
+                heroLift && 'hover:-translate-y-0.5',
+                'focus-visible:ring-4 focus-visible:ring-primary/20',
+              )
+          : selected
+            ? 'border-2 border-primary bg-surface shadow-lift ring-4 ring-primary/10'
+            : 'border-2 border-border bg-canvas hover:border-primary/40 hover:bg-surface hover:shadow-card focus-visible:ring-4 focus-visible:ring-primary/20',
+        className,
+      )}
     >
       <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-4'}`}>
         <div>
-          <p className={`font-heading font-bold uppercase tracking-widest text-muted ${isSidebar ? 'text-[0.65rem]' : 'text-xs'}`}>
+          <p
+            className={cn(
+              'font-heading font-bold uppercase tracking-widest',
+              isSidebar ? 'text-[0.65rem]' : 'text-xs',
+              liChrome ? 'text-slate-500' : 'text-muted',
+            )}
+          >
             Draft {optionNumber}
           </p>
           <p
-            className={`mt-0.5 text-ink/80 ${isSidebar ? 'text-[0.7rem]' : isCarousel ? 'text-[0.8rem]' : 'text-sm'}`}
+            className={cn(
+              'mt-0.5',
+              isSidebar ? 'text-[0.7rem]' : isCarousel ? 'text-[0.8rem]' : 'text-sm',
+              liChrome ? 'text-slate-600' : 'text-ink/80',
+            )}
           >
             {isPickCarousel
               ? 'Select to open in editor'
@@ -202,56 +230,98 @@ export function LinkedInPostPreview({
                 : previewSubtitle(previewChannel)}
           </p>
         </div>
-        <Badge
-          variant={selected ? 'primary' : 'neutral'}
-          size="md"
-          title={isPickCarousel ? 'Open this draft in the editor' : undefined}
-          className={cn(
-            'min-w-10 justify-center font-bold normal-case transition-[color,background-color,border-color,box-shadow] duration-200',
-            !selected &&
-              'group-hover:border-primary/35 group-hover:bg-canvas group-hover:text-primary group-hover:shadow-md',
-          )}
-        >
-          {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
-        </Badge>
+        {liChrome ? (
+          <div
+            title={isPickCarousel ? 'Open this draft in the editor' : undefined}
+            className={cn(
+              'flex min-w-10 items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition-colors duration-300',
+              selected
+                ? 'bg-primary text-primary-fg shadow-md'
+                : 'border border-slate-200 bg-white/85 text-slate-500 shadow-sm group-hover:border-primary/25 group-hover:bg-white group-hover:text-primary',
+            )}
+          >
+            {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
+          </div>
+        ) : (
+          <Badge
+            variant={selected ? 'primary' : 'neutral'}
+            size="md"
+            title={isPickCarousel ? 'Open this draft in the editor' : undefined}
+            className={cn(
+              'min-w-10 justify-center font-bold normal-case transition-[color,background-color,border-color,box-shadow] duration-200',
+              !selected &&
+                'group-hover:border-primary/35 group-hover:bg-canvas group-hover:text-primary group-hover:shadow-md',
+            )}
+          >
+            {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
+          </Badge>
+        )}
       </div>
 
       <div
-        className={`overflow-hidden border border-border bg-surface-muted/80 backdrop-blur-sm ${
-          isSidebar ? 'rounded-lg p-1.5' : isCarousel ? 'rounded-lg p-2.5 sm:p-3' : 'rounded-xl p-2.5 sm:p-4'
-        }`}
+        className={cn(
+          'overflow-hidden backdrop-blur-sm',
+          liChrome
+            ? 'border border-slate-200 bg-slate-50/50'
+            : 'border border-border bg-surface-muted/80',
+          isSidebar ? 'rounded-lg p-1.5' : isCarousel ? 'rounded-2xl p-2.5 sm:p-3' : liChrome ? 'rounded-[24px] p-2.5 sm:rounded-[28px] sm:p-4' : 'rounded-xl p-2.5 sm:p-4',
+        )}
       >
         <div
-          className={`mx-auto overflow-hidden border border-border bg-surface shadow-sm ${
-            isSidebar ? 'max-w-[300px] rounded-lg' : isCarousel ? 'max-w-none rounded-lg' : 'max-w-[430px] rounded-xl'
-          }`}
+          className={cn(
+            'mx-auto overflow-hidden shadow-sm',
+            liChrome ? 'border border-slate-100 bg-white' : 'border border-border bg-surface',
+            isSidebar ? 'max-w-[300px] rounded-lg' : isCarousel ? 'max-w-none rounded-[16px]' : liChrome ? 'max-w-[430px] rounded-2xl' : 'max-w-[430px] rounded-xl',
+          )}
         >
           <div className={isSidebar ? 'px-2.5 pb-2 pt-2.5' : isCarousel ? 'px-4 pb-3.5 pt-4' : 'px-4 pb-3 pt-4'}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 gap-3 items-center">
                 <div
-                  className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 font-bold text-primary-fg shadow-inner ${
-                    isSidebar ? 'h-8 w-8 text-xs' : isCarousel ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base'
-                  }`}
+                  className={cn(
+                    'flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br font-bold shadow-inner',
+                    liChrome
+                      ? 'from-emerald-500 to-teal-600 text-white'
+                      : 'from-violet-500 to-indigo-600 text-primary-fg',
+                    isSidebar ? 'h-8 w-8 text-xs' : isCarousel ? 'h-10 w-10 text-sm' : 'h-12 w-12 text-base',
+                  )}
                   aria-hidden
                 >
                   {authorInitials}
                 </div>
                 <div className="min-w-0">
-                  <p className={`truncate font-bold text-ink ${isSidebar ? 'text-[0.8rem]' : isCarousel ? 'text-[0.9rem]' : 'text-[0.95rem]'}`}>
+                  <p
+                    className={cn(
+                      'truncate font-bold',
+                      liChrome ? 'text-slate-900' : 'text-ink',
+                      isSidebar ? 'text-[0.8rem]' : isCarousel ? 'text-[0.9rem]' : 'text-[0.95rem]',
+                    )}
+                  >
                     {authorLabel}
                   </p>
-                  <p className={`truncate text-muted ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.75rem]' : 'text-[0.8rem]'}`}>
+                  <p
+                    className={cn(
+                      'truncate',
+                      liChrome ? 'text-slate-500' : 'text-muted',
+                      isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.75rem]' : 'text-[0.8rem]',
+                    )}
+                  >
                     {previewChannel === 'instagram'
                       ? 'Instagram-oriented layout'
                       : previewChannel === 'telegram'
                         ? 'Telegram-oriented layout'
                         : previewChannel === 'whatsapp'
                           ? 'WhatsApp-oriented layout'
-                          : 'LinkedIn-oriented layout'}
+                          : liChrome
+                            ? 'AI-assisted feed preview'
+                            : 'LinkedIn-oriented layout'}
                   </p>
                   <div
-                    className={`mt-0.5 flex items-center gap-1.5 text-muted ${isSidebar ? 'text-[0.62rem]' : isCarousel ? 'text-[0.7rem]' : 'text-[0.75rem]'}`}
+                    className={cn(
+                      'mt-0.5 flex items-center gap-1.5',
+                      liChrome ? 'text-slate-400' : 'text-muted',
+                      isSidebar ? 'text-[0.62rem]' : isCarousel ? 'text-[0.7rem]' : 'text-[0.75rem]',
+                    )}
                   >
                     <span>Now</span>
                     <span aria-hidden="true">•</span>
@@ -260,14 +330,19 @@ export function LinkedInPostPreview({
                 </div>
               </div>
               <MoreHorizontal
-                className={`mt-1 shrink-0 text-muted transition-colors hover:text-ink ${isSidebar ? 'h-3.5 w-3.5' : isCarousel ? 'h-4 w-4' : 'h-5 w-5'}`}
+                className={cn(
+                  'mt-1 shrink-0 transition-colors',
+                  liChrome ? 'text-slate-400 hover:text-slate-600' : 'text-muted hover:text-ink',
+                  isSidebar ? 'h-3.5 w-3.5' : isCarousel ? 'h-4 w-4' : 'h-5 w-5',
+                )}
               />
             </div>
 
             <div
-              className={`text-ink ${
-                isSidebar ? 'mt-2 text-[0.72rem] leading-snug' : isCarousel ? 'mt-4 text-[0.85rem] leading-snug' : 'mt-4 text-[0.95rem] leading-relaxed'
-              }`}
+              className={cn(
+                isSidebar ? 'mt-2 text-[0.72rem] leading-snug' : isCarousel ? 'mt-4 text-[0.85rem] leading-snug' : 'mt-4 text-[0.95rem] leading-relaxed',
+                liChrome ? 'text-slate-800' : 'text-ink',
+              )}
             >
               <div
                 className={!bodyExpanded && shouldClamp ? 'overflow-hidden' : undefined}
@@ -283,29 +358,47 @@ export function LinkedInPostPreview({
               >
                 {renderLinkedText(text, previewChannel)}
               </div>
-              {shouldClamp && (
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
-                    event.stopPropagation();
-                    if (isPickCarousel) {
-                      setPickBodyExpanded((v) => !v);
-                    }
-                    onToggleExpanded();
-                  }}
-                  className={`mt-1.5 font-semibold ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
-                >
-                  {bodyExpanded ? 'Show less' : 'See more'}
-                </Button>
-              )}
+              {shouldClamp &&
+                (liChrome ? (
+                  <button
+                    type="button"
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                      event.stopPropagation();
+                      if (isPickCarousel) {
+                        setPickBodyExpanded((v) => !v);
+                      }
+                      onToggleExpanded();
+                    }}
+                    className={cn(
+                      'mt-2 font-semibold text-[#0a66c2] transition-colors hover:text-[#004182]',
+                      isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]',
+                    )}
+                  >
+                    {bodyExpanded ? 'Show less' : isPickCarousel ? 'See more' : '...see more'}
+                  </button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                      event.stopPropagation();
+                      if (isPickCarousel) {
+                        setPickBodyExpanded((v) => !v);
+                      }
+                      onToggleExpanded();
+                    }}
+                    className={`mt-1.5 font-semibold ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
+                  >
+                    {bodyExpanded ? 'Show less' : 'See more'}
+                  </Button>
+                ))}
             </div>
           </div>
 
           {resolvedImageUrl && !imageLoadFailed ? (
-            <div className="border-y border-border bg-canvas">
+            <div className={liChrome ? 'border-y border-slate-100 bg-slate-50' : 'border-y border-border bg-canvas'}>
               <div
-                className={`${isSidebar || isCarousel ? 'aspect-[4/3]' : 'aspect-[4/5] sm:aspect-[1.2/1]'} relative overflow-hidden bg-surface-muted group/image`}
+                className={`${isSidebar || isCarousel ? 'aspect-[4/3]' : 'aspect-[4/5] sm:aspect-[1.2/1]'} relative overflow-hidden group/image ${liChrome ? 'bg-slate-100' : 'bg-surface-muted'}`}
               >
                 <img
                   key={`${resolvedImageUrl}-${imageRetryKey}`}
@@ -335,99 +428,186 @@ export function LinkedInPostPreview({
               </div>
             </div>
           ) : imageUrl ? (
-            <div
-              className="border-y border-border-strong bg-surface-muted/50 px-3 py-2"
-              role="status"
-              aria-live="polite"
-            >
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-between">
-                <div className="flex min-w-0 items-center gap-2 text-left">
-                  <ImageOff className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                  <p className="text-xs font-semibold leading-snug text-ink">
-                    Couldn&apos;t load this image.
-                    <span className="mt-0.5 block text-[0.7rem] font-normal text-ink/75">
-                      You can still compare text and open a draft in the editor.
-                    </span>
+            liChrome ? (
+              <div
+                className="border-y border-slate-100 bg-slate-50 px-4 py-6 text-center text-slate-500"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="mx-auto flex max-w-[260px] flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-5 shadow-sm">
+                  <div className="rounded-full bg-slate-50 p-3">
+                    <ImageOff className="h-6 w-6 text-slate-400" aria-hidden />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700">Image preview unavailable</p>
+                  <p className="text-xs leading-relaxed text-slate-500">
+                    Retry the URL or open Media to pick another image.
                   </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                        event.stopPropagation();
+                        setImageLoadFailed(false);
+                        setImageRetryKey((k) => k + 1);
+                      }}
+                      className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[0.7rem] font-semibold text-slate-700 shadow-sm transition-colors hover:border-primary/40 hover:text-primary"
+                    >
+                      Retry
+                    </button>
+                    {onOpenMedia ? (
+                      <button
+                        type="button"
+                        onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                          event.stopPropagation();
+                          onOpenMedia();
+                        }}
+                        className="cursor-pointer rounded-lg border border-[#0a66c2]/35 bg-[#0a66c2]/10 px-3 py-1.5 text-[0.7rem] font-semibold text-[#0a66c2] shadow-sm transition-colors hover:border-[#0a66c2] hover:bg-[#0a66c2]/15"
+                      >
+                        Open Media
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="flex shrink-0 flex-wrap justify-center gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
-                      event.stopPropagation();
-                      setImageLoadFailed(false);
-                      setImageRetryKey((k) => k + 1);
-                    }}
-                    className="rounded-lg px-2.5 py-1 text-[0.7rem] shadow-sm"
-                  >
-                    Retry
-                  </Button>
-                  {onOpenMedia ? (
+                {import.meta.env.DEV ? (
+                  <Collapsible className="mt-4 text-left">
+                    <CollapsibleTrigger className="mx-auto flex cursor-pointer items-center justify-center text-[0.65rem] font-medium text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm">
+                      Technical details (dev)
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <p className="mt-1 break-all font-mono text-[0.6rem] text-slate-400">
+                        {imageUrl}
+                        {resolvedImageUrl !== imageUrl ? (
+                          <>
+                            <br />
+                            <span className="text-slate-600">Resolved: </span>
+                            {resolvedImageUrl}
+                          </>
+                        ) : null}
+                      </p>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : null}
+              </div>
+            ) : (
+              <div
+                className="border-y border-border-strong bg-surface-muted/50 px-3 py-2"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-2 text-left">
+                    <ImageOff className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                    <p className="text-xs font-semibold leading-snug text-ink">
+                      Couldn&apos;t load this image.
+                      <span className="mt-0.5 block text-[0.7rem] font-normal text-ink/75">
+                        You can still compare text and open a draft in the editor.
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap justify-center gap-2">
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
                         event.stopPropagation();
-                        onOpenMedia();
+                        setImageLoadFailed(false);
+                        setImageRetryKey((k) => k + 1);
                       }}
                       className="rounded-lg px-2.5 py-1 text-[0.7rem] shadow-sm"
                     >
-                      Open Media
+                      Retry
                     </Button>
-                  ) : null}
+                    {onOpenMedia ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                          event.stopPropagation();
+                          onOpenMedia();
+                        }}
+                        className="rounded-lg px-2.5 py-1 text-[0.7rem] shadow-sm"
+                      >
+                        Open Media
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
+                {import.meta.env.DEV ? (
+                  <Collapsible className="mt-2 border-t border-border pt-2 text-left">
+                    <CollapsibleTrigger className="flex cursor-pointer items-center text-[0.65rem] font-medium text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm">
+                      Technical details (dev)
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <p className="mt-1 break-all font-mono text-[0.6rem] text-muted">
+                        {imageUrl}
+                        {resolvedImageUrl !== imageUrl ? (
+                          <>
+                            <br />
+                            <span className="text-ink/70">Resolved: </span>
+                            {resolvedImageUrl}
+                          </>
+                        ) : null}
+                      </p>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : null}
               </div>
-              {import.meta.env.DEV ? (
-                <Collapsible className="mt-2 border-t border-border pt-2 text-left">
-                  <CollapsibleTrigger className="flex cursor-pointer items-center text-[0.65rem] font-medium text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm">
-                    Technical details (dev)
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <p className="mt-1 break-all font-mono text-[0.6rem] text-muted">
-                      {imageUrl}
-                      {resolvedImageUrl !== imageUrl ? (
-                        <>
-                          <br />
-                          <span className="text-ink/70">Resolved: </span>
-                          {resolvedImageUrl}
-                        </>
-                      ) : null}
-                    </p>
-                  </CollapsibleContent>
-                </Collapsible>
-              ) : null}
-            </div>
+            )
           ) : null}
 
           {!isPickCarousel ? (
             <>
               <div
-                className={`text-muted ${
-                  isSidebar ? 'px-2 py-1.5 text-[0.62rem]' : isCarousel ? 'px-4 py-2.5 text-[0.75rem]' : 'px-4 py-2.5 text-[0.8rem]'
-                }`}
+                className={cn(
+                  isSidebar ? 'px-2 py-1.5 text-[0.62rem]' : isCarousel ? 'px-4 py-2.5 text-[0.75rem]' : 'px-4 py-2.5 text-[0.8rem]',
+                  liChrome ? 'text-slate-500' : 'text-muted',
+                )}
               >
-                <p className="mb-1 text-[0.62rem] font-medium uppercase tracking-wide text-ink/55">Preview only</p>
-                <div className={`flex items-center justify-between gap-2 border-b border-border ${isSidebar ? 'pb-1.5' : 'pb-3'}`}>
+                {!liChrome ? (
+                  <p className="mb-1 text-[0.62rem] font-medium uppercase tracking-wide text-ink/55">Preview only</p>
+                ) : null}
+                <div
+                  className={cn(
+                    'flex items-center justify-between gap-2 border-b',
+                    liChrome ? 'border-slate-100' : 'border-border',
+                    isSidebar ? 'pb-1.5' : 'pb-3',
+                  )}
+                >
                   <div className="flex items-center gap-2">
                     <div className="flex -space-x-1.5">
-                      <span className="z-20 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-primary-fg ring-2 ring-surface shadow-sm">
-                        <ThumbsUp className="h-2.5 w-2.5" aria-hidden />
-                      </span>
-                      <span className="z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cta text-success-fg ring-2 ring-surface shadow-sm">
-                        <PartyPopper className="h-2.5 w-2.5" aria-hidden />
-                      </span>
-                      <span className="z-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-primary-fg ring-2 ring-surface shadow-sm">
-                        <Heart className="h-2.5 w-2.5" aria-hidden />
-                      </span>
+                      {liChrome ? (
+                        <>
+                          <span className="z-20 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[0.6rem] text-white ring-2 ring-white shadow-sm">
+                            👍
+                          </span>
+                          <span className="z-10 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[0.6rem] text-white ring-2 ring-white shadow-sm">
+                            👏
+                          </span>
+                          <span className="z-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[0.6rem] text-white ring-2 ring-white shadow-sm">
+                            ❤
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="z-20 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-primary-fg ring-2 ring-surface shadow-sm">
+                            <ThumbsUp className="h-2.5 w-2.5" aria-hidden />
+                          </span>
+                          <span className="z-10 flex h-5 w-5 items-center justify-center rounded-full bg-cta text-success-fg ring-2 ring-surface shadow-sm">
+                            <PartyPopper className="h-2.5 w-2.5" aria-hidden />
+                          </span>
+                          <span className="z-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-primary-fg ring-2 ring-surface shadow-sm">
+                            <Heart className="h-2.5 w-2.5" aria-hidden />
+                          </span>
+                        </>
+                      )}
                     </div>
                     <span className="font-medium">{proof.reactions}</span>
                   </div>
                   <div className="flex items-center gap-1.5 whitespace-nowrap">
                     <span>{proof.comments} comments</span>
-                    <span aria-hidden="true" className="text-border-strong">
+                    <span aria-hidden="true" className={liChrome ? 'text-slate-300' : 'text-border-strong'}>
                       •
                     </span>
                     <span>{proof.reposts} shares</span>
@@ -439,9 +619,11 @@ export function LinkedInPostPreview({
                 {ACTIONS.map(({ label, icon: Icon }) => (
                   <div
                     key={label}
-                    className={`flex cursor-pointer items-center justify-center gap-1 rounded-xl font-semibold text-muted transition-colors hover:bg-canvas hover:text-ink ${
-                      isSidebar ? 'px-1 py-1.5 text-[0.58rem]' : isCarousel ? 'px-2 py-2.5 text-[0.7rem]' : 'px-2 py-2.5 text-[0.8rem]'
-                    }`}
+                    className={cn(
+                      'flex cursor-pointer items-center justify-center gap-1 rounded-xl font-semibold transition-colors',
+                      liChrome ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-700' : 'text-muted hover:bg-canvas hover:text-ink',
+                      isSidebar ? 'px-1 py-1.5 text-[0.58rem]' : isCarousel ? 'px-2 py-2.5 text-[0.7rem]' : 'px-2 py-2.5 text-[0.8rem]',
+                    )}
                   >
                     <Icon className={isSidebar ? 'h-3 w-3' : isCarousel ? 'h-4 w-4' : 'h-4.5 w-4.5'} />
                     <span className="hidden sm:inline">{label}</span>

@@ -66,6 +66,10 @@ For GitHub Pages, that is usually your production Pages origin plus `http://loca
 
 The setup script writes [worker/.dev.vars](.dev.vars) automatically when you run `python setup.py --cloudflare` or `python setup.py --all`.
 
+Run the Worker API with `npm run dev` from the `worker` directory. That uses Wrangler `--env local`, which binds `CONFIG_KV` to the **preview** namespace only so local runs do not read or write production KV. Secrets still come from `.dev.vars`. To run on Cloudflare's network with those same `local` bindings, use `npm run dev:remote`. To start `wrangler dev` without the `local` environment (root profile only), use `npm run dev:default`.
+
+Preview KV often has no `shared-config` yet, so the queue stays empty until you either copy that key from production KV or set `DEV_SPREADSHEET_ID` in `.dev.vars` to your Google Sheet id (from the spreadsheet URL). That variable is local-only and overrides the stored spreadsheet id when present.
+
 ## Required environment values
 
 | Variable | Purpose |
@@ -131,7 +135,7 @@ Then deploy the Worker:
 
 ```bash
 cd worker
-npx wrangler deploy --secrets-file .deploy-secrets.json
+npx wrangler deploy --env "" --secrets-file .deploy-secrets.json
 ```
 
 Remove the temporary file after deployment.

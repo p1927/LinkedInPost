@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -128,6 +129,21 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
             'new_sqlite_classes': ['ScheduledPublishAlarm'],
         }
     ]
+    preview_binding_id = worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID'
+    config['env'] = {
+        'local': {
+            'durable_objects': copy.deepcopy(config['durable_objects']),
+            'migrations': copy.deepcopy(config['migrations']),
+            'vars': copy.deepcopy(config['vars']),
+            'kv_namespaces': [
+                {
+                    'binding': 'CONFIG_KV',
+                    'id': preview_binding_id,
+                    'preview_id': preview_binding_id,
+                }
+            ],
+        }
+    }
     wrangler_config_path.write_text(json.dumps(config, indent=2) + '\n')
 
 
