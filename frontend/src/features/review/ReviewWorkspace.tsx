@@ -1,4 +1,4 @@
-import { CalendarClock, Layers3 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { ImageAssetManager, type ImageAssetOption } from '../../components/ImageAssetManager';
@@ -117,6 +117,9 @@ export function ReviewWorkspace({
   const [compareState, setCompareState] = useState<CompareState | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [activeWorkspacePanel, setActiveWorkspacePanel] = useState<'refine' | 'media' | 'rules'>('refine');
+  const [reviewPhase, setReviewPhase] = useState<'pick-variant' | 'edit'>(() =>
+    buildSheetVariants(row).length > 0 ? 'pick-variant' : 'edit',
+  );
 
   useEffect(() => {
     const initialText = getInitialEditorText(row);
@@ -139,6 +142,7 @@ export function ReviewWorkspace({
     setPendingClose(false);
     setCompareState(null);
     setActiveWorkspacePanel('refine');
+    setReviewPhase(buildSheetVariants(row).length > 0 ? 'pick-variant' : 'edit');
   }, [row]);
 
   const sheetVariants = useMemo(() => buildSheetVariants(sheetRow), [sheetRow]);
@@ -186,6 +190,7 @@ export function ReviewWorkspace({
     if (variant.imageUrl) {
       setSelectedImageUrl(variant.imageUrl);
     }
+    setReviewPhase('edit');
   };
 
   const handleGenerateQuickChange = async () => {
@@ -357,209 +362,36 @@ export function ReviewWorkspace({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/55 px-4 py-6 backdrop-blur-sm sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1760px)] items-center justify-center">
         <div className="flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-lift">
-          <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">Review workspace</p>
-              <h2 className="mt-2 font-heading text-3xl font-semibold text-ink">{sheetRow.topic}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Work from left to right: edit the draft, open only the tools you need, then approve the final version.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-border bg-canvas px-3 py-1 text-xs font-semibold text-muted">
-                Sheet variants: {sheetVariants.length}
-              </span>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${editorDirty ? 'bg-amber-100 text-amber-900' : 'border border-success-border bg-success-surface text-success-ink'}`}
-              >
-                Draft: {editorDirty ? 'edited locally' : 'clean'}
-              </span>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${previewReadyCount ? 'border border-ai-border bg-ai-surface text-ai-ink ring-1 ring-ai-border' : 'border border-border bg-canvas text-muted'}`}
-              >
-                Previews: {previewReadyCount ? `${previewReadyCount} ready` : 'none'}
-              </span>
-            </div>
-          </div>
-
-          {sheetVariants.length > 0 ? (
-            <div className="border-b border-border px-6 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Start from an existing sheet draft</p>
-                  <p className="mt-1 text-sm text-muted">Loading a sheet variant resets the local working draft.</p>
-                </div>
-                <div className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">
-                  Model: {googleModel}
-                </div>
-              </div>
-              <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
-                {sheetVariants.map((variant, index) => (
-                  <button
-                    key={`sheet-variant-${index}`}
-                    type="button"
-                    onClick={() => handleLoadSheetVariant(index)}
-                    className="min-w-[220px] cursor-pointer rounded-2xl border border-border bg-canvas px-4 py-4 text-left transition-colors hover:border-border-strong hover:bg-surface"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Variant {index + 1}</p>
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-ink">{variant.text}</p>
-                    <span className="mt-3 inline-flex rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">Use as base</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="border-b border-border px-6 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-muted">No extra variants in the sheet yet—edit the draft below or use AI tools on the right.</p>
-                <span className="shrink-0 rounded-full border border-border bg-canvas px-3 py-1 text-xs font-semibold text-muted">Model: {googleModel}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="grid flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
-            <section className="min-h-0 space-y-5 overflow-y-auto border-b border-border px-6 py-6 pb-32 xl:border-b-0 xl:border-r xl:border-border">
-              <DraftEditor
-                value={editorText}
-                selection={selection}
-                preferredScope={scope}
-                dirty={editorDirty}
-                onChange={setEditorText}
-                onSelectionChange={setSelection}
-                onScopeChange={setScope}
-                onFormatting={handleFormatting}
-              />
-
-              <section className="rounded-3xl border border-border bg-surface-muted/50 p-6 shadow-card">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Current draft</p>
-                    <h3 className="mt-2 font-heading text-xl font-semibold text-ink">This is the version you are about to approve</h3>
-                  </div>
-                  <div className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">
-                    Image: {selectedImageUrl ? 'attached' : 'not selected'}
-                  </div>
-                </div>
-                <div className="mt-5">
-                  <LinkedInPostPreview
-                    optionNumber={1}
-                    text={editorText}
-                    imageUrl={selectedImageUrl}
-                    previewChannel={deliveryChannel}
-                    selected
-                    expanded
-                    onSelect={() => undefined}
-                    onToggleExpanded={() => undefined}
-                  />
-                </div>
-              </section>
-            </section>
-
-            <aside className="min-h-0 overflow-y-auto bg-canvas px-6 py-6 pb-32">
-              <section className="rounded-3xl border border-border bg-surface p-5 shadow-card">
-                <div className="flex items-center gap-2 text-ink">
-                  <Layers3 className="h-4 w-4 text-primary" />
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Workspace tools</p>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-border bg-canvas p-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setActiveWorkspacePanel('refine')}
-                    className={`cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-surface text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-surface/80'}`}
-                  >
-                    Refine
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveWorkspacePanel('media')}
-                    className={`cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-surface text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-surface/80'}`}
-                  >
-                    Media
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveWorkspacePanel('rules')}
-                    className={`cursor-pointer rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-surface text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-surface/80'}`}
-                  >
-                    Rules
-                  </button>
-                </div>
-              </section>
-
-              <div className="mt-5 space-y-5">
-                {activeWorkspacePanel === 'refine' ? (
-                  <>
-                    <GenerationPanel
-                      instruction={instruction}
-                      loadingAction={generationLoading}
-                      quickChangePreview={quickChangePreview}
-                      variantsPreview={variantsPreview}
-                      onInstructionChange={setInstruction}
-                      onGenerateQuickChange={() => void handleGenerateQuickChange()}
-                      onGenerateVariants={() => void handleGenerateVariants()}
-                      onApplyQuickChange={handleApplyQuickChange}
-                      onApplyVariant={handleApplyVariant}
-                    />
-
-                    <VariantPersistencePanel
-                      hasPreview={Boolean(variantsPreview?.variants.length)}
-                      variantCount={variantsPreview?.variants.length || 0}
-                      saveState={saveState}
-                      errorMessage={saveError}
-                      onSave={() => void handleSavePreviewVariants()}
-                    />
-                  </>
-                ) : null}
-
-                {activeWorkspacePanel === 'media' ? (
-                  <section className="rounded-3xl border border-border bg-surface p-5 shadow-card">
-                    <ImageAssetManager
-                      topic={sheetRow.topic}
-                      images={imageOptions}
-                      selectedImageUrl={selectedImageUrl}
-                      onSelectImage={setSelectedImageUrl}
-                      onFetchMoreImages={handleFetchMoreImageOptions}
-                      onUploadImage={handleUploadImageOption}
-                      onDownloadImage={onDownloadImage}
-                    />
-                  </section>
-                ) : null}
-
-                {activeWorkspacePanel === 'rules' ? <RulesPanel sharedRules={sharedRules} /> : null}
-              </div>
-            </aside>
-          </div>
-
-          <div className="sticky bottom-0 z-20 border-t border-border bg-surface px-6 py-5 shadow-[0_-12px_32px_-12px_rgba(15,23,42,0.12)]">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-              <div className="max-w-xl">
-                <div className="flex items-center gap-2 text-ink">
-                  <CalendarClock className="h-4 w-4 text-primary" />
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Approve</p>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Approval saves the current draft, selected image, and optional schedule. Preview variants stay separate until you save them.
+          <div className="shrink-0 border-b border-border bg-surface px-4 py-2.5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Review</p>
+                <h2 className="truncate text-sm font-medium leading-snug text-ink">{sheetRow.topic}</h2>
+                <p className="mt-0.5 text-[11px] text-muted">
+                  {sheetVariants.length} sheet variant{sheetVariants.length === 1 ? '' : 's'}
+                  {reviewPhase === 'edit' ? ' · editing' : ''}
+                  {editorDirty ? ' · draft edited' : ''}
+                  {previewReadyCount ? ` · ${previewReadyCount} preview${previewReadyCount === 1 ? '' : 's'}` : ''}
+                  <span className="text-muted/80"> · {googleModel}</span>
                 </p>
               </div>
-              <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[460px]">
-                <label className="block text-sm font-semibold text-ink" htmlFor="review-post-time-input">
-                  Post time (optional)
-                </label>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <input
-                    id="review-post-time-input"
-                    type="datetime-local"
-                    value={postTime}
-                    onChange={(event) => setPostTime(event.target.value)}
-                    className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
+              <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  id="review-post-time-input"
+                  type="datetime-local"
+                  value={postTime}
+                  onChange={(event) => setPostTime(event.target.value)}
+                  aria-label="Post time (optional)"
+                  className="w-full min-w-0 rounded-lg border border-border bg-canvas px-2.5 py-1.5 text-xs text-ink outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary/20 sm:w-[200px]"
+                />
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => void handleApprove()}
                     disabled={submitting}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {submitting ? 'Approving...' : 'Approve draft'}
+                    {submitting ? 'Approving…' : 'Approve'}
                   </button>
                   <button
                     type="button"
@@ -570,7 +402,7 @@ export function ReviewWorkspace({
                       }
                       onCancel();
                     }}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-canvas"
                   >
                     Cancel
                   </button>
@@ -578,6 +410,146 @@ export function ReviewWorkspace({
               </div>
             </div>
           </div>
+
+          {reviewPhase === 'pick-variant' && sheetVariants.length > 0 ? (
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Choose a sheet draft</p>
+              <p className="mt-0.5 text-xs text-muted">Picking one opens the editor and tools. You can go back to switch.</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {sheetVariants.map((variant, index) => (
+                  <button
+                    key={`sheet-variant-${index}`}
+                    type="button"
+                    onClick={() => handleLoadSheetVariant(index)}
+                    className="min-w-[200px] max-w-md flex-1 cursor-pointer rounded-2xl border border-border bg-canvas px-4 py-3 text-left transition-colors hover:border-border-strong hover:bg-surface sm:min-w-[220px]"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Variant {index + 1}</p>
+                    <p className="mt-1.5 line-clamp-4 text-xs leading-relaxed text-ink">{variant.text}</p>
+                    <span className="mt-2 inline-flex rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-semibold text-muted">
+                      Use as base
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {reviewPhase === 'edit' || sheetVariants.length === 0 ? (
+            <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+              <section className="min-h-0 space-y-4 overflow-y-auto border-b border-border px-4 py-4 xl:border-b-0 xl:border-r xl:border-border">
+                {sheetVariants.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setReviewPhase('pick-variant')}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-canvas px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-surface"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+                    Back to variants
+                  </button>
+                ) : null}
+
+                <DraftEditor
+                  value={editorText}
+                  selection={selection}
+                  preferredScope={scope}
+                  dirty={editorDirty}
+                  onChange={setEditorText}
+                  onSelectionChange={setSelection}
+                  onScopeChange={setScope}
+                  onFormatting={handleFormatting}
+                />
+
+                <section className="rounded-2xl border border-border bg-surface-muted/50 p-4 shadow-card">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Preview</p>
+                    <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted">
+                      {selectedImageUrl ? 'Image attached' : 'No image'}
+                    </span>
+                  </div>
+                  <div className="mt-3">
+                    <LinkedInPostPreview
+                      optionNumber={1}
+                      text={editorText}
+                      imageUrl={selectedImageUrl}
+                      previewChannel={deliveryChannel}
+                      selected
+                      expanded
+                      onSelect={() => undefined}
+                      onToggleExpanded={() => undefined}
+                    />
+                  </div>
+                </section>
+              </section>
+
+              <aside className="min-h-0 overflow-y-auto bg-canvas px-4 py-4">
+                <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-border bg-surface p-1 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setActiveWorkspacePanel('refine')}
+                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-canvas text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-canvas/80'}`}
+                  >
+                    Refine
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveWorkspacePanel('media')}
+                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-canvas text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-canvas/80'}`}
+                  >
+                    Media
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveWorkspacePanel('rules')}
+                    className={`cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-canvas text-ink shadow-sm ring-1 ring-border' : 'text-muted hover:bg-canvas/80'}`}
+                  >
+                    Rules
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-4">
+                  {activeWorkspacePanel === 'refine' ? (
+                    <>
+                      <GenerationPanel
+                        instruction={instruction}
+                        loadingAction={generationLoading}
+                        quickChangePreview={quickChangePreview}
+                        variantsPreview={variantsPreview}
+                        onInstructionChange={setInstruction}
+                        onGenerateQuickChange={() => void handleGenerateQuickChange()}
+                        onGenerateVariants={() => void handleGenerateVariants()}
+                        onApplyQuickChange={handleApplyQuickChange}
+                        onApplyVariant={handleApplyVariant}
+                      />
+
+                      <VariantPersistencePanel
+                        hasPreview={Boolean(variantsPreview?.variants.length)}
+                        variantCount={variantsPreview?.variants.length || 0}
+                        saveState={saveState}
+                        errorMessage={saveError}
+                        onSave={() => void handleSavePreviewVariants()}
+                      />
+                    </>
+                  ) : null}
+
+                  {activeWorkspacePanel === 'media' ? (
+                    <section className="rounded-2xl border border-border bg-surface p-4 shadow-card">
+                      <ImageAssetManager
+                        topic={sheetRow.topic}
+                        images={imageOptions}
+                        selectedImageUrl={selectedImageUrl}
+                        onSelectImage={setSelectedImageUrl}
+                        onFetchMoreImages={handleFetchMoreImageOptions}
+                        onUploadImage={handleUploadImageOption}
+                        onDownloadImage={onDownloadImage}
+                      />
+                    </section>
+                  ) : null}
+
+                  {activeWorkspacePanel === 'rules' ? <RulesPanel sharedRules={sharedRules} /> : null}
+                </div>
+              </aside>
+            </div>
+          ) : null}
         </div>
       </div>
 

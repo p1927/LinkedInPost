@@ -3,6 +3,9 @@
  * - Primary palette: "Micro SaaS" (row 2) — indigo brand + lavender canvas + emerald CTA.
  * - AI surfaces: "AI/Chatbot Platform" (row 19) — cyan accent for model-assisted flows.
  * - Content pattern from design-system search: Newsletter / Content First + vibrant blocks.
+ *
+ * Content queue (dashboard list): ui-ux-pro-max for tokens + checklist; apply the **distill**
+ * skill for layout — see `design-system/content-queue-theme.md`.
  */
 /** @type {import('tailwindcss').Config} */
 export default {
