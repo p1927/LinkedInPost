@@ -3,6 +3,9 @@ import { useEffect, useRef } from 'react';
 import type { GenerationScope, TextSelectionRange } from '../../services/backendApi';
 import { cn } from '../../lib/cn';
 import { type FormattingAction, getEffectiveScope, normalizeSelection } from './selection';
+import { Textarea } from '../../components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 interface DraftEditorProps {
   value: string;
@@ -71,7 +74,7 @@ export function DraftEditor({
       aria-label="Formatting"
     >
       {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
-        <button
+        <Button
           key={id}
           type="button"
           title={label}
@@ -80,7 +83,7 @@ export function DraftEditor({
         >
           <Icon className={fmtIcon} aria-hidden />
           <span className="sr-only">{label}</span>
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -89,21 +92,21 @@ export function DraftEditor({
     <div className={cn('flex min-h-0 flex-col', compact && 'flex-1', className)}>
       <div className={`mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-canvas ${compact ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
         <div className={`inline-flex rounded-full border border-border bg-surface ${compact ? 'p-0.5' : 'p-1'}`}>
-          <button
+          <Button
             type="button"
             onClick={() => onScopeChange('whole-post')}
             className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg' : 'text-muted hover:bg-canvas'}`}
           >
             Whole post
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => onScopeChange('selection')}
             disabled={!selection?.text.trim()}
             className={`cursor-pointer rounded-full font-semibold transition-colors ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg' : 'text-muted hover:bg-canvas disabled:cursor-not-allowed disabled:text-muted/50'}`}
           >
             Selection
-          </button>
+          </Button>
         </div>
         <div className={`min-w-0 flex-1 rounded-2xl border border-border bg-surface px-2.5 py-1 text-muted ${t}`}>
           <span className="font-semibold text-ink">Target:</span>{' '}
@@ -113,26 +116,27 @@ export function DraftEditor({
           </span>
         </div>
         {!compact ? (
-          <details className="group relative">
-            <summary
-              className="list-none cursor-pointer rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              Formatting actions
-            </summary>
-            <div className="absolute right-0 z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-xl border border-border bg-surface p-3 shadow-lift sm:left-0 sm:right-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button
+                variant="ghost"
+                type="button"
+                className="inline-flex cursor-pointer rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              >
+                Formatting actions
+              </Button>} />
+            <DropdownMenuContent align="end" className="z-10 mt-2 grid min-w-[220px] max-w-[calc(100vw-2rem)] gap-2 rounded-xl border border-border bg-surface p-3 shadow-lift">
               {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
-                <button
+                <DropdownMenuItem
                   key={id}
-                  type="button"
                   onClick={() => onFormatting(id)}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-canvas focus:bg-canvas focus:text-ink"
                 >
                   <Icon className="h-4 w-4" />
                   {label}
-                </button>
+                </DropdownMenuItem>
               ))}
-            </div>
-          </details>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
       </div>
 
@@ -143,7 +147,7 @@ export function DraftEditor({
         </div>
       ) : null}
 
-      <textarea
+      <Textarea
         ref={textareaRef}
         value={value}
         onChange={(event) => onChange(event.target.value)}

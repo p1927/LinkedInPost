@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import type { GenerationScope } from '../../services/backendApi';
+import { Button } from '@/components/ui/button';
 
 interface CompareDialogProps {
   open: boolean;
@@ -135,14 +136,14 @@ export function CompareDialog({
                 : 'Applying this preview will replace the full editor draft.'}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             className="glass-inset inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-white/85 hover:text-ink"
             aria-label="Close compare dialog"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="grid gap-5 px-6 py-6 lg:grid-cols-2">
@@ -171,20 +172,20 @@ export function CompareDialog({
         </div>
 
         <div className="flex flex-col-reverse gap-3 px-6 py-5 sm:flex-row sm:justify-end">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
             className="glass-inset inline-flex cursor-pointer items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-white/85"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onConfirm}
             className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-hover"
           >
             Apply to editor
-          </button>
+          </Button>
         </div>
       </div>
     </div>

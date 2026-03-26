@@ -14,8 +14,9 @@ import {
 } from '../../services/backendApi';
 import { DraftEditor } from '../editor/DraftEditor';
 import { applyFormattingAction, getEffectiveScope, getTargetText } from '../editor/selection';
-import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { cn } from '../../lib/cn';
 import { GenerationPanel } from '../generation/GenerationPanel';
 import { RulesPanel } from '../rules/RulesPanel';
@@ -439,13 +440,13 @@ export function ReviewWorkspace({
                     {sheetRow.topic}
                   </h2>
                   {topicIsLong ? (
-                    <button
+                    <Button
                       type="button"
                       onClick={() => setTopicExpanded((v) => !v)}
                       className="mt-1 cursor-pointer text-left text-[11px] font-semibold text-primary transition-colors hover:text-primary-hover"
                     >
                       {topicExpanded ? 'Show less' : 'Show full topic'}
-                    </button>
+                    </Button>
                   ) : null}
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <Badge variant="neutral" size="xs" className="normal-case">
@@ -466,14 +467,14 @@ export function ReviewWorkspace({
                         Editing
                       </Badge>
                     ) : null}
-                    <button
+                    <Button
                       type="button"
                       className="inline-flex cursor-pointer items-center rounded-full border border-violet-200/60 bg-white/70 p-1 text-muted transition-colors hover:border-primary/40 hover:text-primary"
                       title={`Generation model: ${googleModel}`}
                       aria-label={`Generation model: ${googleModel}`}
                     >
                       <Info className="h-3.5 w-3.5" aria-hidden />
-                    </button>
+                    </Button>
                     {editorDirty ? (
                       <Badge variant="warning" size="xs" className="normal-case">
                         Draft edited
@@ -497,7 +498,7 @@ export function ReviewWorkspace({
                       Schedule{' '}
                       <span className="font-normal normal-case tracking-normal text-ink/60">(optional)</span>
                     </label>
-                    <input
+                    <Input
                       id="review-post-time-input"
                       type="datetime-local"
                       value={postTime}
@@ -580,27 +581,27 @@ export function ReviewWorkspace({
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:min-h-0 xl:grid-cols-[minmax(220px,0.26fr)_minmax(0,1fr)_minmax(200px,0.3fr)] xl:gap-0 xl:overflow-hidden">
               <aside className="order-2 min-h-0 border-b border-white/40 bg-white/15 px-3 py-3 backdrop-blur-sm xl:order-none xl:max-h-full xl:border-b-0 xl:border-r xl:border-white/40 xl:overflow-y-auto">
                 <div className="glass-panel grid grid-cols-3 gap-1 rounded-lg p-0.5 shadow-sm">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('refine')}
                     className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'refine' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Refine
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('media')}
                     className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'media' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Media
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setActiveWorkspacePanel('rules')}
                     className={`cursor-pointer rounded-md px-1.5 py-1 text-[11px] font-semibold transition-colors ${activeWorkspacePanel === 'rules' ? 'bg-white/75 text-ink shadow-sm ring-1 ring-violet-200/60' : 'text-muted hover:bg-white/45'}`}
                   >
                     Rules
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="mt-3 space-y-3">
@@ -663,13 +664,13 @@ export function ReviewWorkspace({
                       <Badge variant="neutral" size="xs" className="normal-case">
                         {selectedImageUrl ? 'Image' : 'Text only'}
                       </Badge>
-                      <button
+                      <Button
                         type="button"
                         onClick={() => setPreviewCollapsed((c) => !c)}
                         className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-primary transition-colors hover:bg-white/50 hover:text-primary-hover"
                       >
                         {previewCollapsed ? 'Show' : 'Hide'}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   {!previewCollapsed ? (

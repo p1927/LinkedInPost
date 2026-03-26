@@ -13,6 +13,7 @@ import {
 import { type AppSession } from '../../services/backendApi';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
+import { Button } from '@/components/ui/button';
 
 const STORED_ID_TOKEN_KEY = 'google_id_token';
 
@@ -159,7 +160,7 @@ export function AppSidebar({
     const active = workspacePage === page;
     return (
       <li key={page}>
-        <button
+        <Button
           type="button"
           onClick={() => {
             onNavigate(page);
@@ -188,14 +189,14 @@ export function AppSidebar({
             {icon}
           </span>
           {!collapsed ? <span className="min-w-0 flex-1 truncate text-left">{label}</span> : null}
-        </button>
+        </Button>
       </li>
     );
   };
 
   return (
     <>
-      <button
+      <Button
         type="button"
         aria-label="Close menu"
         className={clsx(
@@ -235,7 +236,7 @@ export function AppSidebar({
               <span className="truncate font-heading text-sm font-semibold text-ink">Channel Bot</span>
             ) : null}
           </div>
-          <button
+          <Button
             type="button"
             onClick={onToggleCollapsed}
             aria-expanded={!collapsed}
@@ -250,7 +251,7 @@ export function AppSidebar({
           >
             {collapsed ? <ChevronRight className="h-4 w-4" aria-hidden /> : <ChevronLeft className="h-4 w-4" />}
             <span className="sr-only">{collapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span>
-          </button>
+          </Button>
         </div>
 
         <nav className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Workspace navigation">
@@ -359,7 +360,7 @@ export function AppSidebar({
                 >
                   {session.email}
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={handleLogout}
                   className={clsx(
@@ -370,10 +371,10 @@ export function AppSidebar({
                 >
                   <LogOut className="h-3 w-3 shrink-0" aria-hidden />
                   Log out
-                </button>
+                </Button>
               </div>
             ) : (
-              <button
+              <Button
                 type="button"
                 onClick={handleLogout}
                 aria-label="Log out"
@@ -386,7 +387,7 @@ export function AppSidebar({
                 )}
               >
                 <LogOut className="h-4 w-4" aria-hidden />
-              </button>
+              </Button>
             )}
           </div>
         </div>

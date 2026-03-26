@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
 import { Download, ImagePlus, LoaderCircle, RefreshCw, Upload } from 'lucide-react';
-import { Badge } from './ui/Badge';
+import { Badge } from './ui/badge';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { useAlert } from './AlertProvider';
+import { Input } from './ui/input';
+import { Button } from '@/components/ui/button';
 
 export interface ImageAssetOption {
   id: string;
@@ -113,7 +115,7 @@ export function ImageAssetManager({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
             onClick={handleFetchMore}
             disabled={fetching || uploading}
@@ -121,8 +123,8 @@ export function ImageAssetManager({
           >
             {fetching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {fetching ? 'Fetching...' : 'Fetch other images'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading || fetching}
@@ -130,8 +132,8 @@ export function ImageAssetManager({
           >
             {uploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {uploading ? 'Uploading...' : 'Upload image'}
-          </button>
-          <input
+          </Button>
+          <Input
             ref={inputRef}
             type="file"
             accept="image/*"
@@ -166,7 +168,7 @@ export function ImageAssetManager({
                     : 'border-border shadow-card hover:border-border-strong hover:shadow-lift'
                 }`}
               >
-                <button
+                <Button
                   type="button"
                   onClick={() => onSelectImage(option.imageUrl)}
                   className="block w-full text-left"
@@ -192,7 +194,7 @@ export function ImageAssetManager({
                       </Badge>
                     ) : null}
                   </div>
-                </button>
+                </Button>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
@@ -202,7 +204,7 @@ export function ImageAssetManager({
                     </p>
                   </div>
 
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void handleDownload(option)}
                     disabled={downloadingId === option.id}
@@ -210,7 +212,7 @@ export function ImageAssetManager({
                     aria-label={`Download ${option.label}`}
                   >
                     {downloadingId === option.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                  </button>
+                  </Button>
                 </div>
               </div>
             );

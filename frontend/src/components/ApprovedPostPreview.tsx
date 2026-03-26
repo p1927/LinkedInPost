@@ -1,6 +1,7 @@
 import { CalendarClock, Eye, X } from 'lucide-react';
 import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
+import { Button } from '@/components/ui/button';
 
 interface ApprovedPostPreviewProps {
   row: SheetRow;
@@ -36,14 +37,14 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                 {previewDescription}
               </p>
             </div>
-            <button
+            <Button
               type="button"
               onClick={onClose}
               className="glass-inset inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-white/85 hover:text-ink"
               aria-label="Close preview"
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
 
           <div className="grid flex-1 gap-0 overflow-y-auto overflow-x-hidden xl:grid-cols-[minmax(0,1fr)_360px] xl:overflow-hidden">
@@ -94,13 +95,13 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
               </div>
 
               <div className="mt-4 flex justify-end">
-                <button
+                <Button
                   type="button"
                   onClick={onClose}
                   className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-5 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas"
                 >
                   Close preview
-                </button>
+                </Button>
               </div>
             </aside>
           </div>

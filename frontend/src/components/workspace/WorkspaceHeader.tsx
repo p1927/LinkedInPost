@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import { Menu, RefreshCw } from 'lucide-react';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { type WorkspaceNavPage } from './AppSidebar';
+import { Button } from '@/components/ui/button';
 
 const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   topics: 'Topics',
@@ -20,7 +21,7 @@ export function WorkspaceHeader({
   return (
     <header className="glass-header sticky top-0 z-30 flex min-h-14 shrink-0 items-center justify-between gap-3 border-b px-3 py-2 sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={onOpenMobileSidebar}
           className="glass-inset flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink transition-colors hover:bg-white/80 md:hidden"
@@ -28,7 +29,7 @@ export function WorkspaceHeader({
           aria-controls="workspace-sidebar"
         >
           <Menu className="h-5 w-5" aria-hidden />
-        </button>
+        </Button>
         <div className="min-w-0 leading-tight">
           <h1 className="truncate font-heading text-base font-semibold text-ink sm:text-lg">
             {PAGE_TITLES[workspacePage]}
@@ -40,7 +41,7 @@ export function WorkspaceHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <button
+        <Button
           type="button"
           onClick={() => onRefreshQueue?.()}
           disabled={!onRefreshQueue || queueLoading}
@@ -49,7 +50,7 @@ export function WorkspaceHeader({
           <RefreshCw className={clsx('h-3.5 w-3.5 shrink-0', queueLoading && 'animate-spin')} aria-hidden />
           <span className="hidden sm:inline">Refresh from Sheets</span>
           <span className="sm:hidden">Refresh</span>
-        </button>
+        </Button>
       </div>
     </header>
   );

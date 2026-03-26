@@ -1,5 +1,7 @@
 import { Sparkles, WandSparkles } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
+import { Button } from '../../components/ui/button';
+import { Textarea } from '../../components/ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../components/ui/collapsible';
 import type { QuickChangePreviewResult, VariantsPreviewResponse } from '../../services/backendApi';
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -61,18 +63,22 @@ export function GenerationPanel({
       </p>
 
       {compact ? (
-        <details className="mt-2 rounded-lg border border-violet-200/40 bg-white/40 px-2 py-1.5">
-          <summary className="cursor-pointer text-[0.65rem] font-semibold text-primary">How this works</summary>
-          <p className="mt-1.5 text-[0.65rem] leading-relaxed text-muted">
-            Quick Change returns one preview. 4 Variants returns four. Use Save on a variant to write that slot to your Sheet. Use Review changes to see a diff before applying.
-          </p>
-        </details>
+        <Collapsible className="mt-2 rounded-lg border border-violet-200/40 bg-white/40 px-2 py-1.5">
+          <CollapsibleTrigger className="flex cursor-pointer items-center text-[0.65rem] font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm">
+            How this works
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <p className="mt-1.5 text-[0.65rem] leading-relaxed text-muted">
+              Quick Change returns one preview. 4 Variants returns four. Use Save on a variant to write that slot to your Sheet. Use Review changes to see a diff before applying.
+            </p>
+          </CollapsibleContent>
+        </Collapsible>
       ) : null}
 
       <label className={`mt-3 block font-semibold text-ink ${label}`} htmlFor="generation-instruction">
         Rewrite direction
       </label>
-      <textarea
+      <Textarea
         id="generation-instruction"
         value={instruction}
         onChange={(event) => onInstructionChange(event.target.value)}

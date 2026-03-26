@@ -1,6 +1,7 @@
 import { Bot } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type GoogleModelOption } from '../../../services/configService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 
 export function DashboardToolbar({
   googleModel,
@@ -29,17 +30,18 @@ export function DashboardToolbar({
           </span>
         ) : null}
         <span className="text-[11px] leading-4 text-muted">Quick Change and variants in review.</span>
-        <select
-          value={googleModel}
-          onChange={(e) => setGoogleModel(e.target.value)}
-          className={cn('ui-select ui-select-sm mt-1 h-9 w-full max-w-none')}
-        >
-          {availableModels.map((model) => (
-            <option key={model.value} value={model.value}>
-              {model.label}
-            </option>
-          ))}
-        </select>
+        <Select value={googleModel} onValueChange={(val) => setGoogleModel(val as string)}>
+          <SelectTrigger className="mt-1 h-9 w-full max-w-none rounded-xl border border-violet-200/55 bg-white/88 px-3.5 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] hover:border-primary/40 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/25">
+            <SelectValue placeholder="Select a model" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableModels.map((model) => (
+              <SelectItem key={model.value} value={model.value}>
+                {model.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </label>
     </div>
   );

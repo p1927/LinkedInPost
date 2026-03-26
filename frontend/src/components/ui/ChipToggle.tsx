@@ -1,5 +1,6 @@
 import { type ButtonHTMLAttributes } from 'react';
 import { cn } from '../../lib/cn';
+import { Button } from '@/components/ui/button';
 
 export type ChipToggleProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   selected: boolean;
@@ -7,7 +8,7 @@ export type ChipToggleProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export function ChipToggle({ selected, className, type = 'button', ...props }: ChipToggleProps) {
   return (
-    <button
+    <Button
       type={type}
       className={cn(
         'inline-flex min-h-[40px] cursor-pointer items-center justify-center rounded-full px-3.5 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow] duration-200',

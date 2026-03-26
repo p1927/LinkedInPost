@@ -6,6 +6,10 @@ import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '.
 import { type PopupProvider } from '../types';
 import { type TelegramRecipient } from '../../../integrations/telegram';
 import { cn } from '../../../lib/cn';
+import { Input } from '../../ui/input';
+import { Textarea } from '../../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import { Button } from '@/components/ui/button';
 
 const SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
@@ -170,7 +174,7 @@ export function DashboardSettingsDrawer({
         >
           <p className="mb-2 hidden text-xs font-bold uppercase tracking-[0.14em] text-muted lg:block">Jump to</p>
           {SETTINGS_SECTIONS.map(({ id, label }) => (
-            <button
+            <Button
               key={id}
               type="button"
               onClick={() => scrollToSection(id)}
@@ -182,7 +186,7 @@ export function DashboardSettingsDrawer({
               )}
             >
               {label}
-            </button>
+            </Button>
           ))}
         </nav>
       </aside>
@@ -195,7 +199,7 @@ export function DashboardSettingsDrawer({
           <div className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink">Google Spreadsheet ID</label>
-              <input
+              <Input
                 type="text"
                 value={sheetIdInput}
                 onChange={(e) => setSheetIdInput(e.target.value)}
@@ -218,7 +222,7 @@ export function DashboardSettingsDrawer({
           <div className="mt-4 space-y-4">
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink">GitHub Repository</label>
-              <input
+              <Input
                 type="text"
                 value={githubRepo}
                 onChange={(e) => setGithubRepo(e.target.value)}
@@ -229,7 +233,7 @@ export function DashboardSettingsDrawer({
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink">Shared Generation Rules</label>
-              <textarea
+              <Textarea
                 value={generationRules}
                 onChange={(e) => setGenerationRules(e.target.value)}
                 placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
@@ -240,7 +244,7 @@ export function DashboardSettingsDrawer({
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink">Replace GitHub Personal Access Token</label>
-              <input
+              <Input
                 type="password"
                 value={githubTokenInput}
                 onChange={(e) => setGithubTokenInput(e.target.value)}
@@ -278,7 +282,7 @@ export function DashboardSettingsDrawer({
             </div>
 
             <div className="flex flex-col gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleInstagramConnection()}
                 disabled={channelActionBusy || !session.config.instagramAuthAvailable}
@@ -289,16 +293,16 @@ export function DashboardSettingsDrawer({
                   : session.config.hasInstagramAccessToken
                     ? 'Reconnect Instagram'
                     : 'Connect Instagram'}
-              </button>
+              </Button>
               {session.config.hasInstagramAccessToken ? (
-                <button
+                <Button
                   type="button"
                   onClick={() => void handleDisconnectChannel('instagram')}
                   disabled={channelActionBusy}
                   className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {disconnectingChannel === 'instagram' ? 'Disconnecting Instagram...' : 'Disconnect Instagram'}
-                </button>
+                </Button>
               ) : null}
             </div>
             <p className="text-xs text-muted">
@@ -329,7 +333,7 @@ export function DashboardSettingsDrawer({
             </div>
 
             <div className="flex flex-col gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleLinkedInConnection()}
                 disabled={channelActionBusy || !session.config.linkedinAuthAvailable}
@@ -340,16 +344,16 @@ export function DashboardSettingsDrawer({
                   : session.config.hasLinkedInAccessToken
                     ? 'Reconnect LinkedIn'
                     : 'Connect LinkedIn'}
-              </button>
+              </Button>
               {session.config.hasLinkedInAccessToken ? (
-                <button
+                <Button
                   type="button"
                   onClick={() => void handleDisconnectChannel('linkedin')}
                   disabled={channelActionBusy}
                   className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition-all duration-200 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {disconnectingChannel === 'linkedin' ? 'Disconnecting LinkedIn...' : 'Disconnect LinkedIn'}
-                </button>
+                </Button>
               ) : null}
             </div>
             <p className="text-xs text-muted">
@@ -378,7 +382,7 @@ export function DashboardSettingsDrawer({
 
               <div>
                 <label className="mb-1 block text-sm font-semibold text-ink">Replace Telegram Bot Token</label>
-                <input
+                <Input
                   type="password"
                   value={telegramBotTokenInput}
                   onChange={(e) => setTelegramBotTokenInput(e.target.value)}
@@ -398,7 +402,7 @@ export function DashboardSettingsDrawer({
               <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Quick add</p>
                 <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
-                  <input
+                  <Input
                     type="text"
                     value={telegramDraftLabel}
                     onChange={(e) => {
@@ -408,7 +412,7 @@ export function DashboardSettingsDrawer({
                     placeholder="Team channel"
                     className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
-                  <input
+                  <Input
                     type="text"
                     value={telegramDraftChatId}
                     onChange={(e) => {
@@ -419,7 +423,7 @@ export function DashboardSettingsDrawer({
                     className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                   <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => void handleVerifyTelegramChat()}
                       disabled={verifyingTelegramChat}
@@ -427,14 +431,14 @@ export function DashboardSettingsDrawer({
                     >
                       <RefreshCw className={`h-4 w-4 ${verifyingTelegramChat ? 'animate-spin' : ''}`} />
                       {verifyingTelegramChat ? 'Verifying...' : 'Verify chat'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={handleAddTelegramRecipient}
                       className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover"
                     >
                       <Plus className="h-4 w-4" /> Add chat
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <p className="mt-2 text-xs text-muted">
@@ -454,13 +458,13 @@ export function DashboardSettingsDrawer({
                   </div>
                 ) : null}
                 {selectedChannel === 'telegram' && recipientMode === 'manual' ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={handleUseManualTelegramChat}
                     className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-primary-hover"
                   >
                     <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
-                  </button>
+                  </Button>
                 ) : null}
               </div>
 
@@ -477,20 +481,20 @@ export function DashboardSettingsDrawer({
                           <p className="text-sm font-semibold text-ink">{recipient.label}</p>
                           <p className="text-xs text-muted">{recipient.chatId}</p>
                         </div>
-                        <button
+                        <Button
                           type="button"
                           onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
                           className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted transition hover:border-rose-200 hover:text-rose-600"
                         >
                           <Trash2 className="h-4 w-4" /> Remove
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : null}
 
-              <textarea
+              <Textarea
                 className="mt-3 min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 value={telegramRecipientsInput}
                 onChange={(e) => setTelegramRecipientsInput(e.target.value)}
@@ -522,7 +526,7 @@ export function DashboardSettingsDrawer({
               </div>
 
               <div className="flex flex-col gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => void handleWhatsAppConnection()}
                   disabled={channelActionBusy || !session.config.whatsappAuthAvailable}
@@ -533,16 +537,16 @@ export function DashboardSettingsDrawer({
                     : session.config.hasWhatsAppAccessToken
                       ? 'Reconnect WhatsApp'
                       : 'Connect WhatsApp Business'}
-                </button>
+                </Button>
                 {session.config.hasWhatsAppAccessToken ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void handleDisconnectChannel('whatsapp')}
                     disabled={channelActionBusy}
                     className="w-full rounded-xl border border-success-border bg-success-surface px-4 py-3 text-sm font-semibold text-success-ink transition-all duration-200 hover:bg-emerald-100/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {disconnectingChannel === 'whatsapp' ? 'Disconnecting WhatsApp...' : 'Disconnect WhatsApp'}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
               <p className="text-xs text-muted">
@@ -554,32 +558,33 @@ export function DashboardSettingsDrawer({
               {pendingWhatsAppOptions.length > 0 ? (
                 <div className="rounded-2xl border border-success-border bg-success-surface/80 p-4 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-success-ink/85">Choose a phone</p>
-                        <select
-                          value={selectedWhatsAppPhoneId}
-                          onChange={(e) => setSelectedWhatsAppPhoneId(e.target.value)}
-                          className="ui-select ui-select-lg ui-select-success mt-3 w-full text-sm"
-                        >
-                    {pendingWhatsAppOptions.map((option) => (
-                      <option key={option.phoneNumberId} value={option.phoneNumberId}>
-                        {option.displayPhoneNumber || option.phoneNumberId} - {option.verifiedName || option.businessAccountName}
-                      </option>
-                    ))}
-                  </select>
-                  <button
+                  <Select value={selectedWhatsAppPhoneId} onValueChange={(val) => setSelectedWhatsAppPhoneId(val as string)}>
+                    <SelectTrigger className="mt-3 min-h-[44px] w-full rounded-xl border border-success-border bg-success-surface/90 px-3.5 py-3 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] focus:border-cta focus:ring-2 focus:ring-cta/30">
+                      <SelectValue placeholder="Select a phone number" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pendingWhatsAppOptions.map((option) => (
+                        <SelectItem key={option.phoneNumberId} value={option.phoneNumberId}>
+                          {option.displayPhoneNumber || option.phoneNumberId} - {option.verifiedName || option.businessAccountName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
                     type="button"
                     onClick={() => void completeWhatsAppPhoneSelection()}
                     disabled={channelActionBusy || !selectedWhatsAppPhoneId}
                     className="mt-3 w-full cursor-pointer rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-primary-fg transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Save selected phone
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink">Saved Recipients</label>
-              <textarea
+              <Textarea
                 value={whatsappRecipientsInput}
                 onChange={(e) => setWhatsappRecipientsInput(e.target.value)}
                 placeholder={['Founders group | +14155550101', 'Ops lead | +919876543210'].join('\n')}
@@ -591,14 +596,14 @@ export function DashboardSettingsDrawer({
         </SettingsSectionCard>
 
         <div className="border-t border-border pt-4">
-          <button
+          <Button
             type="button"
             onClick={saveSettings}
             disabled={savingConfig}
             className="w-full rounded-xl bg-primary px-4 py-3 font-medium text-primary-fg transition-all duration-200 hover:bg-primary-hover disabled:opacity-50"
           >
             {savingConfig ? 'Saving...' : 'Save settings'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

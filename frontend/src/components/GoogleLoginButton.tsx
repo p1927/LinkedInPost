@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
 import { LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const STORED_ID_TOKEN_KEY = 'google_id_token';
 
@@ -26,14 +27,14 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
 
   if (idToken) {
     return (
-      <button
+      <Button
         type="button"
         onClick={handleLogout}
         className="glass-inset flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted transition-colors duration-200 hover:bg-white/85 hover:text-ink"
       >
         <LogOut className="h-4 w-4" aria-hidden />
         Log out
-      </button>
+      </Button>
     );
   }
 

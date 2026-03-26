@@ -6,8 +6,10 @@ import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent, formatQueueDate } from '../utils';
 import { filterOptions } from '../constants';
-import { Badge, type BadgeVariant } from '../../ui/Badge';
+import { Badge, type BadgeVariant } from '../../ui/badge';
 import { ChipToggle } from '../../ui/ChipToggle';
+import { Input } from '../../ui/input';
+import { Button } from '@/components/ui/button';
 
 function queueRowDomId(row: SheetRow) {
   return `${row.sourceSheet}-${row.rowIndex}`;
@@ -96,7 +98,7 @@ export function DashboardQueue({
           onSubmit={handleAddTopic}
           className={cn('flex flex-col gap-2 sm:flex-row sm:items-stretch', hasTopics && 'sm:items-center')}
         >
-          <input
+          <Input
             type="text"
             value={newTopic}
             onChange={(e) => setNewTopic(e.target.value)}
@@ -107,7 +109,7 @@ export function DashboardQueue({
             )}
             disabled={loading}
           />
-          <button
+          <Button
             type="submit"
             disabled={loading || !newTopic.trim()}
             className={cn(
@@ -117,7 +119,7 @@ export function DashboardQueue({
           >
             <Plus className={hasTopics ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden />
             Add topic
-          </button>
+          </Button>
         </form>
       </section>
 
@@ -215,7 +217,7 @@ export function DashboardQueue({
                           </div>
                           <div className="flex min-w-[108px] shrink-0 justify-end gap-1.5">
                             {normalizedStatus === 'pending' ? (
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => void triggerRowGithubAction(row, 'draft')}
                                 disabled={
@@ -230,11 +232,11 @@ export function DashboardQueue({
                                   <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 )}
                                 <span className="hidden sm:inline">Draft</span>
-                              </button>
+                              </Button>
                             ) : null}
 
                             {normalizedStatus === 'drafted' ? (
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setSelectedRowForReview(row)}
                                 title="Review draft"
@@ -243,11 +245,11 @@ export function DashboardQueue({
                                 <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 <span className="sm:hidden">Edit</span>
                                 <span className="hidden sm:inline">Review</span>
-                              </button>
+                              </Button>
                             ) : null}
 
                             {normalizedStatus === 'approved' ? (
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => void publishRowToSelectedChannel(row)}
                                 disabled={actionLoading !== null}
@@ -260,11 +262,11 @@ export function DashboardQueue({
                                   <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 )}
                                 <span className="hidden sm:inline">Publish</span>
-                              </button>
+                              </Button>
                             ) : null}
 
                             {normalizedStatus === 'published' ? (
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => void republishRowToSelectedChannel(row)}
                                 disabled={actionLoading !== null}
@@ -277,12 +279,12 @@ export function DashboardQueue({
                                   <RotateCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
                                 )}
                                 <span className="hidden sm:inline">Republish</span>
-                              </button>
+                              </Button>
                             ) : null}
                           </div>
                           <div className="flex w-[76px] shrink-0 items-center justify-end gap-0.5">
                             {showPreview ? (
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => setSelectedApprovedRowPreview(row)}
                                 title="Preview"
@@ -290,11 +292,11 @@ export function DashboardQueue({
                                 className={iconBtnMuted}
                               >
                                 <Eye className="h-3.5 w-3.5" />
-                              </button>
+                              </Button>
                             ) : (
                               <span className="inline-block h-9 w-9 shrink-0" aria-hidden />
                             )}
-                            <button
+                            <Button
                               type="button"
                               onClick={() => handleDeleteTopic(row)}
                               disabled={deletingRowIndex === row.rowIndex}
@@ -303,7 +305,7 @@ export function DashboardQueue({
                               className={iconBtn}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       </div>

@@ -1,7 +1,8 @@
 import { MessageCircle, Phone } from 'lucide-react';
-import { Badge } from '../../ui/Badge';
+import { Badge } from '../../ui/badge';
 import { ChipToggle } from '../../ui/ChipToggle';
-import { cn } from '../../../lib/cn';
+import { Input } from '../../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel } from '../../../integrations/channels';
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';
@@ -9,6 +10,7 @@ import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../../.
 
 import { type ChannelOption } from '../../../integrations/channels';
 import { type DeliverySummary } from '../types';
+import { Button } from '@/components/ui/button';
 export function DashboardDelivery({
   selectedChannel,
   setSelectedChannel,
@@ -61,13 +63,13 @@ export function DashboardDelivery({
             {getChannelLabel(selectedChannel)} is not connected for publishing.
           </p>
           {isAdmin && onOpenSettings ? (
-            <button
+            <Button
               type="button"
               onClick={onOpenSettings}
               className="mt-2 inline-flex cursor-pointer font-semibold text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
             >
               Open Settings to connect
-            </button>
+            </Button>
           ) : (
             <p className="mt-1 text-amber-900/90">Ask an admin to connect this channel in Settings.</p>
           )}
@@ -78,17 +80,18 @@ export function DashboardDelivery({
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70">Target</p>
-            <select
-              value={selectedChannel}
-              onChange={(e) => setSelectedChannel(e.target.value as ChannelId)}
-              className={cn('ui-select ui-select-sm mt-1 h-9 max-w-full')}
-            >
-              {CHANNEL_OPTIONS.map((channel) => (
-                <option key={channel.value} value={channel.value}>
-                  {channel.label}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedChannel} onValueChange={(val) => setSelectedChannel(val as ChannelId)}>
+              <SelectTrigger className="mt-1 h-9 w-full max-w-full rounded-xl border border-violet-200/55 bg-white/88 px-3.5 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] hover:border-primary/40 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/25">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHANNEL_OPTIONS.map((channel) => (
+                  <SelectItem key={channel.value} value={channel.value}>
+                    {channel.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -122,22 +125,22 @@ export function DashboardDelivery({
                   <span className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70">
                     <MessageCircle className="h-4 w-4" /> {selectedChannel === 'telegram' ? 'Chat' : 'Recipient'}
                   </span>
-                  <select
+                  <Select
                     value={selectedRecipientId}
-                    onChange={(e) => setSelectedRecipientId(e.target.value)}
-                    className={cn('ui-select ui-select-sm h-9 w-full')}
+                    onValueChange={(val) => setSelectedRecipientId(val as string)}
                     disabled={activeRecipientOptions.length === 0}
                   >
-                    {activeRecipientOptions.length === 0 ? (
-                      <option value="">No saved {selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet</option>
-                    ) : (
-                      activeRecipientOptions.map((recipient) => (
-                        <option key={`${recipient.label}-${recipient.value}`} value={recipient.value}>
+                    <SelectTrigger className="h-9 w-full rounded-xl border border-violet-200/55 bg-white/88 px-3.5 py-2 text-sm font-semibold text-ink shadow-sm backdrop-blur-md transition-[box-shadow,border-color,background-color] hover:border-primary/40 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/25">
+                      <SelectValue placeholder={`No saved ${selectedChannel === 'telegram' ? 'chats' : 'recipients'} configured yet`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeRecipientOptions.map((recipient) => (
+                        <SelectItem key={`${recipient.label}-${recipient.value}`} value={recipient.value}>
                           {recipient.label} ({recipient.value})
-                        </option>
-                      ))
-                    )}
-                  </select>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
               ) : (
                 <label className="mt-3 block">
@@ -145,7 +148,7 @@ export function DashboardDelivery({
                     {selectedChannel === 'telegram' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />}{' '}
                     {selectedChannel === 'telegram' ? 'Chat ID' : 'Phone number'}
                   </span>
-                  <input
+                  <Input
                     type="text"
                     value={manualRecipientId}
                     onChange={(e) => setManualRecipientId(e.target.value)}

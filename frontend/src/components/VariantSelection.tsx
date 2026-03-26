@@ -6,6 +6,9 @@ import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { Dialog } from './Dialog';
 import { ImageAssetManager, type ImageAssetOption } from './ImageAssetManager';
 import { useAlert } from './AlertProvider';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   row: SheetRow;
@@ -337,7 +340,7 @@ export function VariantSelection({
                       const isActive = index === selectedOptionIndex;
 
                       return (
-                        <button
+                        <Button
                           key={`variant-dot-${index}`}
                           type="button"
                           onClick={() => selectOption(index)}
@@ -353,13 +356,13 @@ export function VariantSelection({
                           <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-full bg-ink px-3 py-1 text-xs font-medium text-primary-fg opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
                             Draft {index + 1}
                           </span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
 
                   <div className="absolute right-5 top-5 z-10 flex flex-col gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => changeVariantBy(-1)}
                       disabled={selectedOptionIndex === null || selectedOptionIndex === 0}
@@ -367,8 +370,8 @@ export function VariantSelection({
                       aria-label="Previous draft"
                     >
                       <ChevronUp className="h-5 w-5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={() => changeVariantBy(1)}
                       disabled={selectedOptionIndex === null || selectedOptionIndex === options.length - 1}
@@ -376,7 +379,7 @@ export function VariantSelection({
                       aria-label="Next draft"
                     >
                       <ChevronDown className="h-5 w-5" />
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="mb-3 pl-16 pr-16 sm:pr-20">
@@ -452,7 +455,7 @@ export function VariantSelection({
                   <label className="block text-sm font-medium text-ink" htmlFor="editable-post-text">
                     Edit the post directly
                   </label>
-                  <textarea
+                  <Textarea
                     id="editable-post-text"
                     value={editableText}
                     onChange={(event) => setEditableText(event.target.value)}
@@ -462,7 +465,7 @@ export function VariantSelection({
                   <label className="mt-4 block text-sm font-medium text-ink" htmlFor="refinement-notes">
                     Tell Gemini what to improve
                   </label>
-                  <textarea
+                  <Textarea
                     id="refinement-notes"
                     value={refinementPrompt}
                     onChange={(event) => setRefinementPrompt(event.target.value)}
@@ -472,14 +475,14 @@ export function VariantSelection({
                   <p className="mt-2 text-xs leading-5 text-muted">
                     Approval uses the edited copy above immediately. Refinement sends the edited draft plus these notes to Gemini and replaces the four sheet variants with a fresh set.
                   </p>
-                  <button
+                  <Button
                     onClick={handleRefine}
                     type="button"
                     disabled={refining || submitting || selectedOptionIndex === null}
                     className="mt-4 inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-ai-border bg-ai-surface px-4 py-3 text-sm font-semibold text-ai-ink transition-colors duration-200 hover:bg-cyan-100/80 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {refining ? 'Requesting 4 refined variants...' : 'Generate 4 improved variants'}
-                  </button>
+                  </Button>
                 </section>
 
                 <section className="mt-8 border-t border-border pt-6">
@@ -502,7 +505,7 @@ export function VariantSelection({
                   <label className="block text-sm font-medium text-ink" htmlFor="post-time-input">
                     Post time (optional)
                   </label>
-                  <input
+                  <Input
                     id="post-time-input"
                     type="datetime-local"
                     value={postTime}
@@ -514,20 +517,20 @@ export function VariantSelection({
                 </div>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <button
+                  <Button
                     onClick={handleSubmit}
                     disabled={submitting || selectedOptionIndex === null}
                     className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-fg transition-colors duration-200 hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submitting ? 'Approving...' : 'Approve selected post'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => requestAction({ type: 'close' })}
                     disabled={submitting}
                     className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 text-sm font-semibold text-ink transition-colors hover:bg-canvas disabled:opacity-50"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             </aside>

@@ -12,8 +12,10 @@ import {
 import { useEffect, useState, type ReactNode } from 'react';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { type ChannelId } from '../integrations/channels';
-import { Badge } from './ui/Badge';
+import { Badge } from './ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { cn } from '../lib/cn';
+import { Button } from '@/components/ui/button';
 
 interface LinkedInPostPreviewProps {
   optionNumber: number;
@@ -282,7 +284,7 @@ export function LinkedInPostPreview({
                 {renderLinkedText(text, previewChannel)}
               </div>
               {shouldClamp && (
-                <button
+                <Button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
@@ -294,7 +296,7 @@ export function LinkedInPostPreview({
                   className={`mt-1.5 font-semibold text-primary transition-colors hover:text-primary-hover ${isSidebar ? 'text-[0.68rem]' : isCarousel ? 'text-[0.8rem]' : 'text-[0.85rem]'}`}
                 >
                   {bodyExpanded ? 'Show less' : 'See more'}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -348,7 +350,7 @@ export function LinkedInPostPreview({
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap justify-center gap-2">
-                  <button
+                  <Button
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -358,9 +360,9 @@ export function LinkedInPostPreview({
                     className="cursor-pointer rounded-lg border border-border-strong bg-surface px-2.5 py-1 text-[0.7rem] font-semibold text-ink shadow-sm transition-colors hover:border-primary/40 hover:text-primary"
                   >
                     Retry
-                  </button>
+                  </Button>
                   {onOpenMedia ? (
-                    <button
+                    <Button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
@@ -369,24 +371,28 @@ export function LinkedInPostPreview({
                       className="cursor-pointer rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1 text-[0.7rem] font-semibold text-primary shadow-sm transition-colors hover:border-primary hover:bg-primary/15"
                     >
                       Open Media
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </div>
               {import.meta.env.DEV ? (
-                <details className="mt-2 border-t border-border pt-2 text-left">
-                  <summary className="cursor-pointer text-[0.65rem] font-medium text-muted">Technical details (dev)</summary>
-                  <p className="mt-1 break-all font-mono text-[0.6rem] text-muted">
-                    {imageUrl}
-                    {resolvedImageUrl !== imageUrl ? (
-                      <>
-                        <br />
-                        <span className="text-ink/70">Resolved: </span>
-                        {resolvedImageUrl}
-                      </>
-                    ) : null}
-                  </p>
-                </details>
+                <Collapsible className="mt-2 border-t border-border pt-2 text-left">
+                  <CollapsibleTrigger className="flex cursor-pointer items-center text-[0.65rem] font-medium text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm">
+                    Technical details (dev)
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <p className="mt-1 break-all font-mono text-[0.6rem] text-muted">
+                      {imageUrl}
+                      {resolvedImageUrl !== imageUrl ? (
+                        <>
+                          <br />
+                          <span className="text-ink/70">Resolved: </span>
+                          {resolvedImageUrl}
+                        </>
+                      ) : null}
+                    </p>
+                  </CollapsibleContent>
+                </Collapsible>
               ) : null}
             </div>
           ) : null}
