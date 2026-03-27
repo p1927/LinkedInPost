@@ -91,13 +91,20 @@ export function useRegisterWorkspaceChrome(config: {
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
   headerOverride?: { title: string; subtitle?: string | null } | null;
+  clearTopicReviewHeader?: boolean;
 }) {
   const { setChrome } = useWorkspaceChrome();
-  const { onRefreshQueue, queueLoading, health, headerOverride = null } = config;
+  const { onRefreshQueue, queueLoading, health, headerOverride = null, clearTopicReviewHeader } = config;
 
   useEffect(() => {
-    setChrome({ onRefreshQueue, queueLoading, health, headerOverride });
-  }, [setChrome, onRefreshQueue, queueLoading, health, headerOverride]);
+    setChrome({ 
+      onRefreshQueue, 
+      queueLoading, 
+      health, 
+      headerOverride,
+      ...(clearTopicReviewHeader ? { topicReviewHeader: null } : {})
+    });
+  }, [setChrome, onRefreshQueue, queueLoading, health, headerOverride, clearTopicReviewHeader]);
 
   useEffect(() => {
     return () => {

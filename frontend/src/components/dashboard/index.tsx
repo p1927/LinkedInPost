@@ -235,6 +235,7 @@ export function Dashboard({
     queueLoading: queueHook.loading,
     health: publishingHealth,
     headerOverride,
+    clearTopicReviewHeader: !topicIdFromPath,
   });
 
   const parsedTelegramRecipientsForSettings = useMemo(() => {
