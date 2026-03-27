@@ -86,7 +86,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                               hour: 'numeric',
                               minute: '2-digit',
                             })
-                          : 'No scheduled time is set. Publishing will use the next available workflow run.'}
+                          : 'No scheduled time is set. It will be published immediately when triggered.'}
                       </p>
                     </div>
                   </div>

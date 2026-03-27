@@ -1,6 +1,6 @@
-import { executeScheduledLinkedInPublish, type Env } from '../index';
+import { executeScheduledPublish, type Env } from '../index';
 import { buildScheduledPublishTaskName, parseScheduledTimeToTimestamp } from './time';
-import type { ScheduledLinkedInPublishTask } from './types';
+import type { ScheduledPublishTask } from './types';
 
 const TASK_STORAGE_KEY = 'scheduled-linkedin-task';
 
@@ -19,7 +19,7 @@ export class ScheduledPublishAlarm {
       return new Response('Not found', { status: 404 });
     }
 
-    const task = await request.json<ScheduledLinkedInPublishTask>();
+    const task = await request.json<ScheduledPublishTask>();
     const scheduledAt = parseScheduledTimeToTimestamp(task.scheduledTime);
     if (!task.topic?.trim() || !task.date?.trim() || !scheduledAt) {
       return new Response('Invalid scheduled task payload.', { status: 400 });
@@ -29,24 +29,27 @@ export class ScheduledPublishAlarm {
       topic: task.topic.trim(),
       date: task.date.trim(),
       scheduledTime: task.scheduledTime.trim(),
-    } satisfies ScheduledLinkedInPublishTask);
+      intent: task.intent || 'publish',
+      channel: task.channel,
+      recipientId: task.recipientId,
+    } satisfies ScheduledPublishTask);
     await this.state.storage.setAlarm(scheduledAt);
 
     return Response.json({
       success: true,
-      taskName: buildScheduledPublishTaskName(task.topic, task.date),
+      taskName: buildScheduledPublishTaskName(task.topic, task.date, task.channel),
       scheduledTime: task.scheduledTime.trim(),
     });
   }
 
   async alarm(): Promise<void> {
-    const task = await this.state.storage.get<ScheduledLinkedInPublishTask>(TASK_STORAGE_KEY);
+    const task = await this.state.storage.get<ScheduledPublishTask>(TASK_STORAGE_KEY);
     if (!task) {
       return;
     }
 
     try {
-      await executeScheduledLinkedInPublish(this.env, task);
+      await executeScheduledPublish(this.env, task);
       await this.state.storage.delete(TASK_STORAGE_KEY);
     } catch (error) {
       console.error('Scheduled LinkedIn publish alarm failed', {

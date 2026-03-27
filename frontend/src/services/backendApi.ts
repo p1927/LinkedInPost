@@ -266,6 +266,17 @@ export class BackendApi {
     });
   }
 
+  async updatePostSchedule(
+    idToken: string,
+    row: SheetRow,
+    postTime: string,
+  ): Promise<void> {
+    await this.post<{ success: true }>('updatePostSchedule', idToken, {
+      row,
+      postTime,
+    });
+  }
+
   async deleteRow(idToken: string, row: SheetRow): Promise<void> {
     await this.post<{ success: true }>('deleteRow', idToken, { row });
   }

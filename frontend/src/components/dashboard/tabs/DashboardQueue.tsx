@@ -273,6 +273,20 @@ export function DashboardQueue({
                               </Button>
                             ) : null}
 
+                            {normalizedStatus === 'approved' || normalizedStatus === 'published' ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => onOpenTopicReview(row)}
+                                title="Edit schedule or content"
+                                className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
+                              >
+                                <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                <span className="sm:hidden">Edit</span>
+                                <span className="hidden sm:inline">Edit</span>
+                              </Button>
+                            ) : null}
+
                             {normalizedStatus === 'approved' ? (
                               <Button
                                 type="button"

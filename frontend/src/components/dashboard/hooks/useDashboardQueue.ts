@@ -5,7 +5,7 @@ import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../s
 import { type DeliverySummary } from '../types';
 
 import { type ChannelId, getChannelOption, getChannelLabel } from '../../../integrations/channels';
-import { buildRowActionKey, isSameTopicDate } from '../utils';
+import { buildRowActionKey, getNormalizedRowStatus, isSameTopicDate } from '../utils';
 import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
 import { useAlert } from '../../AlertProvider';
@@ -113,6 +113,18 @@ export function useDashboardQueue({
 
   const handleApproveVariant = async (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string) => {
     try {
+      const normalizedStatus = getNormalizedRowStatus(row.status);
+      if (normalizedStatus === 'published') {
+        await api.updatePostSchedule(idToken, row, postTime);
+        await loadData(true);
+        void showAlert({
+          title: 'Schedule Updated',
+          description: 'The schedule was updated successfully. Use "Republish" from the dashboard to re-queue the post.',
+        });
+        onAfterApprove?.();
+        return;
+      }
+
       await api.updateRowStatus(idToken, row, 'Approved', selectedText, selectedImageId, postTime);
       await loadData(true);
       onAfterApprove?.();

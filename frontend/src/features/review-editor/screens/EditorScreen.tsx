@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 
 export function EditorScreen() {
   const {
+    sheetRow,
     editorText,
     setEditorText,
     selection,
@@ -14,10 +15,11 @@ export function EditorScreen() {
     setScope,
     editorDirty,
     handleFormatting,
-    leaveToTopics,
     handleApprove,
     submitting,
   } = useReviewFlow();
+
+  const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
 
   return (
     <>
@@ -49,16 +51,7 @@ export function EditorScreen() {
       </div>
 
       <footer className="shrink-0 border-t border-violet-200/35 px-4 py-3.5 sm:px-5">
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={leaveToTopics}
-            className="min-h-[44px] w-full cursor-pointer transition-colors duration-200 hover:bg-white/40 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[7.5rem]"
-          >
-            ← Back to topics
-          </Button>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
           <Button
             type="button"
             size="sm"
@@ -67,7 +60,9 @@ export function EditorScreen() {
             disabled={submitting}
             className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[9rem]"
           >
-            {submitting ? 'Approving…' : '✓ Approve & Publish'}
+            {submitting
+              ? isPublished ? 'Saving…' : 'Approving…'
+              : isPublished ? '✓ Save Schedule' : '✓ Approve & Publish'}
           </Button>
         </div>
       </footer>

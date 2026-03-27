@@ -3,8 +3,8 @@ import { publishLinkedInPost } from './integrations/linkedin';
 import { fetchImageAsset, normalizeDeliveryImageUrl } from './integrations/media';
 import { sendTelegramMessage, verifyTelegramChat as verifyTelegramChatRequest } from './integrations/telegram';
 import { sendWhatsAppMessage } from './integrations/whatsapp';
-import { buildScheduledPublishTaskName } from './scheduler/time';
-import type { ScheduledLinkedInPublishTask } from './scheduler/types';
+import { buildScheduledPublishTaskName, parseScheduledTimeToTimestamp } from './scheduler/time';
+import type { ScheduledPublishTask } from './scheduler/types';
 
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
 import { coerceVariantList } from './generation/normalize';
@@ -435,6 +435,18 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
+async function armScheduledPublish(env: Env, task: ScheduledPublishTask): Promise<Response> {
+  const durableObjectId = env.SCHEDULED_LINKEDIN_PUBLISH.idFromName(buildScheduledPublishTaskName(task.topic, task.date, task.channel));
+  const durableObjectStub = env.SCHEDULED_LINKEDIN_PUBLISH.get(durableObjectId);
+  return durableObjectStub.fetch('https://scheduler/arm', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(task),
+  });
+}
+
 async function handleScheduledLinkedInPublishRequest(request: Request, env: Env): Promise<Response> {
   const providedSecret = String(request.headers.get('X-Scheduler-Secret') || '').trim();
   const expectedSecret = String(env.WORKER_SCHEDULER_SECRET || '').trim();
@@ -448,7 +460,7 @@ async function handleScheduledLinkedInPublishRequest(request: Request, env: Env)
     return Response.json({ ok: false, error: 'LinkedIn publishing is not configured in the Worker.' }, { status: 400 });
   }
 
-  const payload = await request.json<ScheduledLinkedInPublishTask>();
+  const payload = await request.json<ScheduledPublishTask>();
   const topic = String(payload.topic || '').trim();
   const date = String(payload.date || '').trim();
   const scheduledTime = String(payload.scheduledTime || '').trim();
@@ -457,16 +469,7 @@ async function handleScheduledLinkedInPublishRequest(request: Request, env: Env)
     return Response.json({ ok: false, error: 'Missing scheduling payload.' }, { status: 400 });
   }
 
-  const durableObjectId = env.SCHEDULED_LINKEDIN_PUBLISH.idFromName(buildScheduledPublishTaskName(topic, date));
-  const durableObjectStub = env.SCHEDULED_LINKEDIN_PUBLISH.get(durableObjectId);
-  const response = await durableObjectStub.fetch('https://scheduler/arm', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ topic, date, scheduledTime } satisfies ScheduledLinkedInPublishTask),
-  });
-
+  const response = await armScheduledPublish(env, { topic, date, scheduledTime, intent: payload.intent || 'publish', channel: payload.channel, recipientId: payload.recipientId });
   const body = await response.text();
   return new Response(body, {
     status: response.status,
@@ -521,6 +524,13 @@ async function dispatchAction(
         String(payload.status || ''),
         String(payload.selectedText || ''),
         String(payload.selectedImageId || ''),
+        String(payload.postTime || ''),
+      );
+    case 'updatePostSchedule':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.updatePostSchedule(
+        storedConfig.spreadsheetId,
+        coerceSheetRow(payload.row),
         String(payload.postTime || ''),
       );
     case 'deleteRow':
@@ -1569,7 +1579,7 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
   return { success: true };
 }
 
-export async function executeScheduledLinkedInPublish(env: Env, task: ScheduledLinkedInPublishTask): Promise<void> {
+export async function executeScheduledPublish(env: Env, task: ScheduledPublishTask): Promise<void> {
   const config = await loadStoredConfig(env);
   ensureSpreadsheetConfigured(config);
 
@@ -1580,7 +1590,12 @@ export async function executeScheduledLinkedInPublish(env: Env, task: ScheduledL
   }
 
   const normalizedStatus = String(row.status || '').trim().toLowerCase();
-  if (normalizedStatus === 'published' || normalizedStatus !== 'approved') {
+  const intent = task.intent || 'publish';
+  
+  if (intent === 'publish' && (normalizedStatus === 'published' || normalizedStatus !== 'approved')) {
+    return;
+  }
+  if (intent === 'republish' && normalizedStatus !== 'published') {
     return;
   }
 
@@ -1597,9 +1612,11 @@ export async function executeScheduledLinkedInPublish(env: Env, task: ScheduledL
     config,
     {
       row,
-      channel: 'linkedin',
+      channel: task.channel || 'linkedin',
+      recipientId: task.recipientId,
       message: row.selectedText,
       imageUrl: row.selectedImageId,
+      isScheduledExecution: true,
     },
     sheets,
   );
@@ -1634,6 +1651,27 @@ async function publishContent(
 
   if (!message) {
     throw new Error('Approved content text is empty. Approve or edit the draft before sending it.');
+  }
+
+  const scheduledAt = parseScheduledTimeToTimestamp(row.postTime || '');
+  if (!payload.isScheduledExecution && scheduledAt && scheduledAt > Date.now() + 60000) {
+    const intent = String(row.status || '').trim().toLowerCase() === 'published' ? 'republish' : 'publish';
+    await armScheduledPublish(env, {
+      topic: row.topic,
+      date: row.date,
+      scheduledTime: row.postTime!,
+      intent,
+      channel,
+      recipientId: recipientId || undefined,
+    });
+    return {
+      success: true,
+      channel,
+      recipientId: recipientId || null,
+      messageId: null,
+      deliveryMode: 'queued',
+      mediaMode: imageUrl ? 'image' : 'text',
+    };
   }
 
   if (channel === 'instagram') {

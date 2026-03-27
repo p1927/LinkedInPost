@@ -3,7 +3,6 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { WORKSPACE_PATHS } from '../utils/workspaceRoutes';
 import { findRowByTopicRouteId } from '../utils/topicRoute';
 import { ReviewWorkspace } from '../../review/ReviewWorkspace';
-import { getNormalizedRowStatus } from '../../../components/dashboard/utils';
 import { type TopicReviewPagesBaseProps, reviewShellClass } from '../types';
 import { useTopicNavigation } from '../hooks/useTopicNavigation';
 
@@ -35,10 +34,6 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
   }
   if (!row) {
     return <Navigate to={WORKSPACE_PATHS.topics} replace />;
-  }
-
-  if (getNormalizedRowStatus(row.status) === 'published') {
-    return <Navigate to={WORKSPACE_PATHS.topics} replace state={{ openPreviewForTopicKey: topicId }} />;
   }
 
   return (

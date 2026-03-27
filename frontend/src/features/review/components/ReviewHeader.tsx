@@ -66,14 +66,13 @@ export function ReviewHeader() {
               <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                 <Button
                   type="button"
-                  variant="secondary"
-                  size="sm"
+                  variant="ghost"
+                  size="icon-lg"
                   onClick={leaveToTopics}
                   aria-label="Back to topics list"
-                  className="h-10 min-h-10 shrink-0 gap-1.5 px-3 sm:h-9 sm:min-h-9"
+                  className="h-10 w-10 shrink-0 rounded-lg text-slate-700 transition-all duration-200 hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
                 >
-                  <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-                  <span className="whitespace-nowrap">Topics</span>
+                  <ArrowLeft className="size-5 shrink-0" aria-hidden />
                 </Button>
                 <div className="text-xs font-semibold text-muted">
                   Step 1 of 2
@@ -153,29 +152,15 @@ export function ReviewHeader() {
           ) : (
             <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
-                {showEditorLayout && sheetVariants.length > 0 ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={routed ? requestNavigateToVariants : () => setReviewPhase('pick-variant')}
-                    aria-label="Back to variants"
-                    className="h-10 min-h-10 shrink-0 gap-1.5 px-3 sm:h-9 sm:min-h-9"
-                  >
-                    <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-                    <span className="whitespace-nowrap">Variants</span>
-                  </Button>
-                ) : null}
                 <Button
                   type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={leaveToTopics}
-                  aria-label="Back to topics list"
-                  className="h-10 min-h-10 shrink-0 gap-1.5 px-3 sm:h-9 sm:min-h-9"
+                  variant="ghost"
+                  size="icon-lg"
+                  onClick={showEditorLayout && sheetVariants.length > 0 ? (routed ? requestNavigateToVariants : () => setReviewPhase('pick-variant')) : leaveToTopics}
+                  aria-label="Back"
+                  className="h-10 w-10 shrink-0 rounded-lg text-slate-700 transition-all duration-200 hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
                 >
-                  <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
-                  <span className="whitespace-nowrap">Topics</span>
+                  <ArrowLeft className="size-5 shrink-0" aria-hidden />
                 </Button>
                 <div className="min-w-0 flex-1 basis-full border-t border-violet-200/35 pt-2 sm:basis-auto sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                   {sheetVariants.length > 0 ? (

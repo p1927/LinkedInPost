@@ -98,27 +98,14 @@ export function WorkspaceHeader({
             >
               <Menu className="h-5 w-5" aria-hidden />
             </Button>
-            {topicReviewHeader.onBackToVariants ? (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={topicReviewHeader.onBackToVariants}
-                className="h-9 shrink-0 gap-1 px-2.5 text-xs font-semibold sm:px-3"
-                aria-label="Back to variants"
-              >
-                <ChevronLeft className="size-4 shrink-0" aria-hidden />
-                <span className="whitespace-nowrap">Variants</span>
-              </Button>
-            ) : null}
             <Button
               type="button"
               variant="ghost"
               size="icon-lg"
-              onClick={topicReviewHeader.onBackToTopics}
+              onClick={topicReviewHeader.onBackToVariants || topicReviewHeader.onBackToTopics}
               className="h-10 w-10 shrink-0 rounded-lg text-slate-700 transition-all duration-200 hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
-              aria-label="Back to topics list"
-              title="Back to topics"
+              aria-label={topicReviewHeader.onBackToVariants ? "Back to variants" : "Back to topics list"}
+              title={topicReviewHeader.onBackToVariants ? "Back to variants" : "Back to topics"}
             >
               <ChevronLeft className="size-5 shrink-0" aria-hidden />
             </Button>

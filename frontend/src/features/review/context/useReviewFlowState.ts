@@ -7,6 +7,25 @@ import { getVariantSlotContent } from '../../topic-navigation/utils/topicRoute';
 import { getEffectiveScope, getTargetText } from '../../editor/selection';
 import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../components/workspace/WorkspaceChromeContext';
 
+const getInitialPostTime = (rowPostTime: string | undefined): string => {
+  if (!rowPostTime?.trim()) return '';
+  const match = rowPostTime.trim().match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+  if (!match) return '';
+  const yyyy = match[1];
+  const mm = match[2];
+  const dd = match[3];
+  const hh = match[4];
+  const min = match[5];
+  const d = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min)));
+  if (isNaN(d.getTime())) return '';
+  const localY = d.getFullYear();
+  const localM = String(d.getMonth() + 1).padStart(2, '0');
+  const localD = String(d.getDate()).padStart(2, '0');
+  const localH = String(d.getHours()).padStart(2, '0');
+  const localMin = String(d.getMinutes()).padStart(2, '0');
+  return `${localY}-${localM}-${localD}T${localH}:${localMin}`;
+};
+
 export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const { row, routed, editorStartMediaPanel } = props;
   const { setChrome } = useWorkspaceChrome();
@@ -22,7 +41,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [variantsPreview, setVariantsPreview] = useState<VariantsPreviewResponse | null>(null);
   const [previewVariantSaveByIndex, setPreviewVariantSaveByIndex] = useState<Record<number, 'idle' | 'saving' | 'saved' | 'error'>>({});
   const [previewVariantSaveErrors, setPreviewVariantSaveErrors] = useState<Record<number, string>>({});
-  const [postTime, setPostTime] = useState('');
+  const [postTime, setPostTime] = useState(() => getInitialPostTime(row.postTime));
   const [selectedImageUrl, setSelectedImageUrl] = useState(row.selectedImageId || row.imageLink1 || '');
   const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
   const [uploadedImageOptions, setUploadedImageOptions] = useState<ImageAssetOption[]>([]);
@@ -77,7 +96,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       const textForEditor = sc?.text.trim() ? sc.text : getInitialEditorText(row);
       setEditorText(textForEditor);
       setEditorBaselineText(textForEditor);
-      setPostTime('');
+      setPostTime(getInitialPostTime(row.postTime));
       setSelectedImageUrl(
         (sc?.imageUrl?.trim() ? sc.imageUrl : '') || row.selectedImageId || row.imageLink1 || '',
       );
@@ -89,7 +108,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     const initialText = getInitialEditorText(row);
     setEditorText(initialText);
     setEditorBaselineText(initialText);
-    setPostTime('');
+    setPostTime(getInitialPostTime(row.postTime));
     setSelectedImageUrl(row.selectedImageId || row.imageLink1 || '');
     setReviewPhase(
       routed?.screen === 'variants'
