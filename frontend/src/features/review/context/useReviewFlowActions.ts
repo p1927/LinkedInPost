@@ -35,6 +35,10 @@ export function useReviewFlowActions(
     setPreviewVariantSaveByIndex,
     setPreviewVariantSaveErrors,
     postTime,
+    emailTo,
+    emailCc,
+    emailBcc,
+    emailSubject,
     setSelectedImageUrl,
     alternateImageOptions, setAlternateImageOptions,
     setUploadedImageOptions,
@@ -306,7 +310,7 @@ export function useReviewFlowActions(
         formattedTime = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
       }
 
-      await onApprove(editorText.trim(), state.selectedImageUrl, formattedTime);
+      await onApprove(editorText.trim(), state.selectedImageUrl, formattedTime, emailTo, emailCc, emailBcc, emailSubject);
     } catch (error) {
       console.error('Approval failed:', error);
       void showAlert({

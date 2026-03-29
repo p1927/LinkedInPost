@@ -21,6 +21,10 @@ const PIPELINE_HEADERS = [
   'Selected Text',
   'Selected Image ID',
   'Post Time',
+  'Email To',
+  'Email Cc',
+  'Email Bcc',
+  'Email Subject',
 ];
 
 interface SpreadsheetMetadataResponse {
@@ -59,8 +63,8 @@ export class SheetsGateway {
 
     const [topicRows, draftRows, postRows] = await Promise.all([
       this.getValues(spreadsheetId, `${TOPICS_SHEET}!A2:B`),
-      this.getValues(spreadsheetId, `${DRAFT_SHEET}!A2:N`),
-      this.getValues(spreadsheetId, `${POST_SHEET}!A2:N`),
+      this.getValues(spreadsheetId, `${DRAFT_SHEET}!A2:R`),
+      this.getValues(spreadsheetId, `${POST_SHEET}!A2:R`),
     ]);
 
     const topics = topicRows
@@ -104,6 +108,10 @@ export class SheetsGateway {
     selectedText: string,
     selectedImageId: string,
     postTime: string,
+    emailTo = '',
+    emailCc = '',
+    emailBcc = '',
+    emailSubject = '',
   ): Promise<{ success: true }> {
     await this.ensureRequiredSheets(spreadsheetId);
 
@@ -114,7 +122,7 @@ export class SheetsGateway {
 
     await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!C${draftRowIndex}`, [[status || 'Pending']]);
     if (status === 'Approved') {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!L${draftRowIndex}:N${draftRowIndex}`, [[selectedText, selectedImageId, postTime]]);
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!L${draftRowIndex}:R${draftRowIndex}`, [[selectedText, selectedImageId, postTime, emailTo, emailCc, emailBcc, emailSubject]]);
     }
 
     return { success: true };
@@ -165,7 +173,7 @@ export class SheetsGateway {
 
     const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
     if (draftRowIndex) {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:N${draftRowIndex}`, [[
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:R${draftRowIndex}`, [[
         row.topic,
         row.date,
         row.status || 'Published',
@@ -180,6 +188,10 @@ export class SheetsGateway {
         row.selectedText,
         row.selectedImageId,
         row.postTime,
+        row.emailTo || '',
+        row.emailCc || '',
+        row.emailBcc || '',
+        row.emailSubject || '',
       ]]);
     }
 
@@ -198,12 +210,16 @@ export class SheetsGateway {
       row.selectedText,
       row.selectedImageId,
       row.postTime,
+      row.emailTo || '',
+      row.emailCc || '',
+      row.emailBcc || '',
+      row.emailSubject || '',
     ]];
 
     if (row.postRowIndex) {
-      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:N${row.postRowIndex}`, postValues);
+      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:R${row.postRowIndex}`, postValues);
     } else {
-      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:N`, postValues);
+      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:R`, postValues);
     }
 
     return { success: true };
@@ -249,7 +265,7 @@ export class SheetsGateway {
   }
 
   private mapDraftOrPostRow(row: string[], index: number, sourceSheet: 'Draft' | 'Post'): SheetRow {
-    const paddedRow = padRow(row, 14);
+    const paddedRow = padRow(row, 18);
     return {
       rowIndex: index + 2,
       sourceSheet,
@@ -267,6 +283,10 @@ export class SheetsGateway {
       selectedText: paddedRow[11],
       selectedImageId: paddedRow[12],
       postTime: paddedRow[13],
+      emailTo: paddedRow[14],
+      emailCc: paddedRow[15],
+      emailBcc: paddedRow[16],
+      emailSubject: paddedRow[17],
       draftRowIndex: sourceSheet === 'Draft' ? index + 2 : undefined,
       postRowIndex: sourceSheet === 'Post' ? index + 2 : undefined,
     };
@@ -298,6 +318,10 @@ export class SheetsGateway {
         selectedText: '',
         selectedImageId: '',
         postTime: '',
+        emailTo: '',
+        emailCc: '',
+        emailBcc: '',
+        emailSubject: '',
       });
     }
 

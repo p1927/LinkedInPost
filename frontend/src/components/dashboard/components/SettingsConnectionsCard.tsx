@@ -7,6 +7,7 @@ const CHANNEL_ROWS: Array<{ id: string; label: string; key: keyof WorkspacePubli
   { id: 'ig', label: 'Instagram', key: 'instagram' },
   { id: 'tg', label: 'Telegram', key: 'telegram' },
   { id: 'wa', label: 'WhatsApp', key: 'whatsapp' },
+  { id: 'gm', label: 'Gmail', key: 'gmail' },
 ];
 
 export function SettingsConnectionsCard({

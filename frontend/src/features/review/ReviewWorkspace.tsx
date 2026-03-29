@@ -26,7 +26,7 @@ export interface ReviewWorkspaceProps {
   previewAuthorName?: string;
   sharedRules: string;
   googleModel: string;
-  onApprove: (selectedText: string, selectedImageId: string, postTime: string) => Promise<void>;
+  onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
@@ -48,9 +48,9 @@ function ReviewWorkspaceLayout() {
       <section
         aria-labelledby="review-workspace-title"
         aria-describedby="review-workspace-desc"
-        className="flex min-h-[calc(100dvh-7.5rem)] w-full max-w-[1760px] flex-col self-stretch outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+        className="flex h-full w-full flex-col self-stretch outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
       >
-        <div className="flex min-h-[calc(100dvh-7.5rem)] w-full flex-1 flex-col overflow-hidden">
+        <div className="flex h-full w-full flex-1 flex-col overflow-hidden">
           <p id="review-workspace-desc" className="sr-only">
             Pick a variant, refine, then approve.
           </p>

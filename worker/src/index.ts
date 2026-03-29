@@ -3,6 +3,7 @@ import { publishLinkedInPost } from './integrations/linkedin';
 import { fetchImageAsset, normalizeDeliveryImageUrl } from './integrations/media';
 import { sendTelegramMessage, verifyTelegramChat as verifyTelegramChatRequest } from './integrations/telegram';
 import { sendWhatsAppMessage } from './integrations/whatsapp';
+import { sendGmailMessage, GmailAuthError } from './integrations/gmail';
 import { buildScheduledPublishTaskName, parseScheduledTimeToTimestamp } from './scheduler/time';
 import type { ScheduledPublishTask } from './scheduler/types';
 
@@ -16,8 +17,8 @@ export { ScheduledPublishAlarm } from './scheduler/ScheduledPublishAlarm';
 
 
 
-type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp';
-type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp';
+type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp' | 'gmail';
+type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp' | 'gmail';
 
 export interface Env {
   CONFIG_KV: KVNamespace;
@@ -41,6 +42,8 @@ export interface Env {
   LINKEDIN_CLIENT_SECRET?: string;
   LINKEDIN_PERSON_URN?: string;
   LINKEDIN_ACCESS_TOKEN?: string;
+  GMAIL_CLIENT_ID?: string;
+  GMAIL_CLIENT_SECRET?: string;
   TELEGRAM_BOT_TOKEN?: string;
   META_APP_ID?: string;
   META_APP_SECRET?: string;
@@ -65,6 +68,9 @@ interface BotConfig {
   linkedinAuthAvailable: boolean;
   linkedinPersonUrn: string;
   hasLinkedInAccessToken: boolean;
+  gmailAuthAvailable: boolean;
+  gmailEmailAddress: string;
+  hasGmailAccessToken: boolean;
   hasTelegramBotToken: boolean;
   telegramRecipients: TelegramRecipient[];
   whatsappAuthAvailable: boolean;
@@ -88,6 +94,11 @@ export interface StoredConfig {
   linkedinPersonUrn: string;
   linkedinAccessTokenCiphertext?: string;
   linkedinAccessToken?: string;
+  gmailEmailAddress: string;
+  gmailAccessTokenCiphertext?: string;
+  gmailAccessToken?: string;
+  gmailRefreshTokenCiphertext?: string;
+  gmailRefreshToken?: string;
   telegramBotTokenCiphertext?: string;
   telegramBotToken?: string;
   telegramRecipients: TelegramRecipient[];
@@ -109,6 +120,9 @@ interface BotConfigUpdate {
   instagramAccessToken?: string;
   linkedinPersonUrn?: string;
   linkedinAccessToken?: string;
+  gmailEmailAddress?: string;
+  gmailAccessToken?: string;
+  gmailRefreshToken?: string;
   telegramBotToken?: string;
   telegramRecipients?: TelegramRecipient[];
   whatsappPhoneNumberId?: string;
@@ -122,7 +136,7 @@ function normalizeDisconnectedAuthProviders(value: unknown): AuthProvider[] {
   }
 
   return Array.from(new Set(
-    value.filter((provider): provider is AuthProvider => provider === 'instagram' || provider === 'linkedin' || provider === 'whatsapp'),
+    value.filter((provider): provider is AuthProvider => provider === 'instagram' || provider === 'linkedin' || provider === 'whatsapp' || provider === 'gmail'),
   ));
 }
 
@@ -295,6 +309,16 @@ interface GoogleTokenInfo {
   aud?: string;
 }
 
+interface GmailTokenResponse {
+  access_token?: string;
+  expires_in?: number;
+  refresh_token?: string;
+  scope?: string;
+  token_type?: string;
+  error?: string;
+  error_description?: string;
+}
+
 
 
 
@@ -339,6 +363,7 @@ const INSTAGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Instagram access token can no
 const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const TELEGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Telegram bot token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const WHATSAPP_TOKEN_REAUTH_MESSAGE = 'The stored WhatsApp access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
+const GMAIL_TOKEN_REAUTH_MESSAGE = 'The stored Gmail access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const GOOGLE_API_SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/devstorage.read_write',
@@ -362,6 +387,10 @@ const META_OAUTH_SCOPES = [
   'whatsapp_business_management',
   'whatsapp_business_messaging',
 ].join(',');
+const GMAIL_OAUTH_SCOPES = [
+  'https://www.googleapis.com/auth/gmail.send',
+  'email',
+].join(' ');
 
 
 
@@ -399,6 +428,10 @@ export default {
 
       if (url.pathname === '/auth/whatsapp/callback') {
         return handleWhatsAppCallback(request, env);
+      }
+
+      if (url.pathname === '/auth/gmail/callback') {
+        return handleGmailCallback(request, env);
       }
 
       return jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
@@ -525,6 +558,10 @@ async function dispatchAction(
         String(payload.selectedText || ''),
         String(payload.selectedImageId || ''),
         String(payload.postTime || ''),
+        String(payload.emailTo || ''),
+        String(payload.emailCc || ''),
+        String(payload.emailBcc || ''),
+        String(payload.emailSubject || '')
       );
     case 'updatePostSchedule':
       ensureSpreadsheetConfigured(storedConfig);
@@ -548,6 +585,9 @@ async function dispatchAction(
     case 'startWhatsAppAuth':
       ensureAdmin(session);
       return startWhatsAppAuth(request, env, session);
+    case 'startGmailAuth':
+      ensureAdmin(session);
+      return startGmailAuth(request, env, session);
     case 'disconnectChannelAuth':
       ensureAdmin(session);
       return disconnectChannelAuth(env, storedConfig, String(payload.provider || '').trim());
@@ -660,11 +700,14 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
       ? 'telegram'
     : config?.defaultChannel === 'instagram'
       ? 'instagram'
+    : config?.defaultChannel === 'gmail'
+      ? 'gmail'
       : 'linkedin';
   const disconnectedAuthProviders = normalizeDisconnectedAuthProviders(config?.disconnectedAuthProviders);
   const instagramDisconnected = disconnectedAuthProviders.includes('instagram');
   const linkedinDisconnected = disconnectedAuthProviders.includes('linkedin');
   const whatsappDisconnected = disconnectedAuthProviders.includes('whatsapp');
+  const gmailDisconnected = disconnectedAuthProviders.includes('gmail');
 
   const devSpreadsheetId = String(env.DEV_SPREADSHEET_ID || '').trim();
   const spreadsheetId = devSpreadsheetId || String(config?.spreadsheetId || '').trim();
@@ -684,6 +727,11 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     linkedinPersonUrn: linkedinDisconnected ? '' : (config?.linkedinPersonUrn || String(env.LINKEDIN_PERSON_URN || '').trim()),
     linkedinAccessTokenCiphertext: linkedinDisconnected ? undefined : (config?.linkedinAccessTokenCiphertext || undefined),
     linkedinAccessToken: linkedinDisconnected ? undefined : (String(env.LINKEDIN_ACCESS_TOKEN || '').trim() || undefined),
+    gmailEmailAddress: gmailDisconnected ? '' : (config?.gmailEmailAddress || ''),
+    gmailAccessTokenCiphertext: gmailDisconnected ? undefined : (config?.gmailAccessTokenCiphertext || undefined),
+    gmailAccessToken: gmailDisconnected ? undefined : (config?.gmailAccessToken || undefined),
+    gmailRefreshTokenCiphertext: gmailDisconnected ? undefined : (config?.gmailRefreshTokenCiphertext || undefined),
+    gmailRefreshToken: gmailDisconnected ? undefined : (config?.gmailRefreshToken || undefined),
     telegramBotTokenCiphertext: config?.telegramBotTokenCiphertext || undefined,
     telegramBotToken: String(env.TELEGRAM_BOT_TOKEN || '').trim() || undefined,
     telegramRecipients: normalizeTelegramRecipients(config?.telegramRecipients),
@@ -709,6 +757,9 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     linkedinAuthAvailable: hasLinkedInOAuthConfig(env),
     linkedinPersonUrn: config.linkedinPersonUrn,
     hasLinkedInAccessToken: Boolean(config.linkedinAccessTokenCiphertext || config.linkedinAccessToken),
+    gmailAuthAvailable: hasGmailOAuthConfig(env),
+    gmailEmailAddress: config.gmailEmailAddress,
+    hasGmailAccessToken: Boolean(config.gmailAccessTokenCiphertext || config.gmailAccessToken),
     hasTelegramBotToken: Boolean(config.telegramBotTokenCiphertext || config.telegramBotToken),
     telegramRecipients: normalizeTelegramRecipients(config.telegramRecipients),
     whatsappAuthAvailable: hasMetaOAuthConfig(env),
@@ -728,6 +779,10 @@ function hasLinkedInOAuthConfig(env: Env): boolean {
 
 function hasMetaOAuthConfig(env: Env): boolean {
   return Boolean(String(env.META_APP_ID || '').trim() && String(env.META_APP_SECRET || '').trim());
+}
+
+function hasGmailOAuthConfig(env: Env): boolean {
+  return Boolean(String(env.GMAIL_CLIENT_ID || '').trim() && String(env.GMAIL_CLIENT_SECRET || '').trim());
 }
 
 function buildWorkerOrigin(request: Request): string {
@@ -850,6 +905,37 @@ async function startWhatsAppAuth(request: Request, env: Env, session: VerifiedSe
 
   return {
     authorizationUrl: `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth?${params.toString()}`,
+    callbackOrigin,
+  };
+}
+
+async function startGmailAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string; callbackOrigin: string }> {
+  if (!hasGmailOAuthConfig(env)) {
+    throw new Error('Gmail OAuth is not configured in the Worker environment. Add GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET first.');
+  }
+
+  const state = createRandomToken();
+  const callbackOrigin = buildWorkerOrigin(request);
+  const redirectUri = `${callbackOrigin}/auth/gmail/callback`;
+  await storeOAuthState(env, state, {
+    provider: 'gmail',
+    email: session.email,
+    origin: requireFrontendOrigin(request),
+    redirectUri,
+  });
+
+  const params = new URLSearchParams({
+    client_id: String(env.GMAIL_CLIENT_ID || '').trim(),
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: GMAIL_OAUTH_SCOPES,
+    access_type: 'offline', // We need a refresh token
+    prompt: 'consent', // Force consent to ensure we get a refresh token
+    state,
+  });
+
+  return {
+    authorizationUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
     callbackOrigin,
   };
 }
@@ -1110,6 +1196,69 @@ async function handleWhatsAppCallback(request: Request, env: Env): Promise<Respo
   }
 }
 
+async function handleGmailCallback(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const state = String(url.searchParams.get('state') || '').trim();
+  if (!state) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'gmail',
+      ok: false,
+      error: 'Missing Gmail OAuth state.',
+    });
+  }
+
+  let oauthState: OAuthStateRecord;
+  try {
+    oauthState = await consumeOAuthState(env, state, 'gmail');
+  } catch (error) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'gmail',
+      ok: false,
+      error: error instanceof Error ? error.message : 'The Gmail OAuth session expired.',
+    });
+  }
+
+  const errorMessage = String(url.searchParams.get('error') || '').trim();
+  if (errorMessage) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'gmail',
+      ok: false,
+      error: decodeURIComponent(errorMessage),
+    });
+  }
+
+  const code = String(url.searchParams.get('code') || '').trim();
+  if (!code) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'gmail',
+      ok: false,
+      error: 'Gmail did not return an authorization code.',
+    });
+  }
+
+  try {
+    const tokens = await exchangeGmailCodeForToken(code, oauthState.redirectUri, env);
+    const profile = await fetchGmailProfile(tokens.access_token);
+    await persistGmailConnection(env, tokens.access_token, tokens.refresh_token || '', profile.email);
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'gmail',
+      ok: true,
+    });
+  } catch (error) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'gmail',
+      ok: false,
+      error: error instanceof Error ? error.message : 'Gmail connection failed.',
+    });
+  }
+}
+
 async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, env: Env): Promise<string> {
   const response = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
     method: 'POST',
@@ -1132,6 +1281,79 @@ async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, e
   }
 
   return accessToken;
+}
+
+async function exchangeGmailCodeForToken(code: string, redirectUri: string, env: Env): Promise<{ access_token: string; refresh_token?: string }> {
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      client_id: String(env.GMAIL_CLIENT_ID || '').trim(),
+      client_secret: String(env.GMAIL_CLIENT_SECRET || '').trim(),
+      redirect_uri: redirectUri,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as GmailTokenResponse | null;
+  const accessToken = String(payload?.access_token || '').trim();
+  if (!response.ok || !accessToken) {
+    throw new Error(payload?.error_description || payload?.error || `Gmail token exchange failed with status ${response.status}.`);
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: payload?.refresh_token ? String(payload.refresh_token).trim() : undefined,
+  };
+}
+
+async function refreshGmailAccessToken(env: Env, config: StoredConfig): Promise<string> {
+  const refreshToken = config.gmailRefreshTokenCiphertext
+    ? await decryptSecret(config.gmailRefreshTokenCiphertext, requireSecretEncryptionKey(env), GMAIL_TOKEN_REAUTH_MESSAGE)
+    : String(config.gmailRefreshToken || '').trim();
+
+  if (!refreshToken) {
+    throw new Error(GMAIL_TOKEN_REAUTH_MESSAGE);
+  }
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: String(env.GMAIL_CLIENT_ID || '').trim(),
+      client_secret: String(env.GMAIL_CLIENT_SECRET || '').trim(),
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as GmailTokenResponse | null;
+  const newAccessToken = String(payload?.access_token || '').trim();
+  if (!response.ok || !newAccessToken) {
+    throw new Error(payload?.error_description || payload?.error || 'Gmail token refresh failed. Reconnect Gmail in Settings.');
+  }
+
+  return newAccessToken;
+}
+
+async function fetchGmailProfile(accessToken: string): Promise<{ email: string }> {
+  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const payload = (await response.json().catch(() => null)) as { emailAddress?: string } | null;
+  const email = String(payload?.emailAddress || '').trim();
+  
+  if (!response.ok || !email) {
+    throw new Error(`Gmail profile lookup failed with status ${response.status}.`);
+  }
+
+  return { email };
 }
 
 async function exchangeInstagramCodeForLongLivedToken(code: string, redirectUri: string, env: Env): Promise<string> {
@@ -1335,8 +1557,27 @@ async function persistWhatsAppConnection(env: Env, accessToken: string, phoneNum
   return toPublicConfig(nextConfig, env);
 }
 
+async function persistGmailConnection(env: Env, accessToken: string, refreshToken: string, email: string): Promise<BotConfig> {
+  const current = await loadStoredConfig(env);
+  const nextConfig: StoredConfig = {
+    ...current,
+    disconnectedAuthProviders: withoutDisconnectedAuthProvider(current.disconnectedAuthProviders || [], 'gmail'),
+    gmailEmailAddress: email,
+    gmailAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
+    gmailAccessToken: undefined,
+  };
+
+  if (refreshToken) {
+    nextConfig.gmailRefreshTokenCiphertext = await encryptSecret(refreshToken, requireSecretEncryptionKey(env));
+    nextConfig.gmailRefreshToken = undefined;
+  }
+
+  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  return toPublicConfig(nextConfig, env);
+}
+
 async function disconnectChannelAuth(env: Env, current: StoredConfig, provider: string): Promise<BotConfig> {
-  if (provider !== 'instagram' && provider !== 'linkedin' && provider !== 'whatsapp') {
+  if (provider !== 'instagram' && provider !== 'linkedin' && provider !== 'whatsapp' && provider !== 'gmail') {
     throw new Error('Choose a valid OAuth channel to disconnect.');
   }
 
@@ -1356,6 +1597,14 @@ async function disconnectChannelAuth(env: Env, current: StoredConfig, provider: 
     nextConfig.linkedinPersonUrn = '';
     nextConfig.linkedinAccessTokenCiphertext = undefined;
     nextConfig.linkedinAccessToken = undefined;
+  }
+
+  if (provider === 'gmail') {
+    nextConfig.gmailEmailAddress = '';
+    nextConfig.gmailAccessTokenCiphertext = undefined;
+    nextConfig.gmailAccessToken = undefined;
+    nextConfig.gmailRefreshTokenCiphertext = undefined;
+    nextConfig.gmailRefreshToken = undefined;
   }
 
   if (provider === 'whatsapp') {
@@ -1486,6 +1735,8 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
         ? 'telegram'
       : update.defaultChannel === 'instagram'
         ? 'instagram'
+      : update.defaultChannel === 'gmail'
+        ? 'gmail'
       : update.defaultChannel === 'linkedin'
         ? 'linkedin'
         : current.defaultChannel,
@@ -1494,6 +1745,9 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     instagramAccessTokenCiphertext: current.instagramAccessTokenCiphertext,
     linkedinPersonUrn: typeof update.linkedinPersonUrn === 'string' ? update.linkedinPersonUrn.trim() : current.linkedinPersonUrn,
     linkedinAccessTokenCiphertext: current.linkedinAccessTokenCiphertext,
+    gmailEmailAddress: typeof update.gmailEmailAddress === 'string' ? update.gmailEmailAddress.trim() : current.gmailEmailAddress,
+    gmailAccessTokenCiphertext: current.gmailAccessTokenCiphertext,
+    gmailRefreshTokenCiphertext: current.gmailRefreshTokenCiphertext,
     telegramBotTokenCiphertext: current.telegramBotTokenCiphertext,
     telegramRecipients: Array.isArray(update.telegramRecipients)
       ? normalizeTelegramRecipients(update.telegramRecipients)
@@ -1517,6 +1771,15 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
   if (update.linkedinAccessToken) {
     nextConfig.linkedinAccessTokenCiphertext = await encryptSecret(update.linkedinAccessToken.trim(), requireSecretEncryptionKey(env));
     nextConfig.disconnectedAuthProviders = withoutDisconnectedAuthProvider(nextConfig.disconnectedAuthProviders || [], 'linkedin');
+  }
+
+  if (update.gmailAccessToken) {
+    nextConfig.gmailAccessTokenCiphertext = await encryptSecret(update.gmailAccessToken.trim(), requireSecretEncryptionKey(env));
+    nextConfig.disconnectedAuthProviders = withoutDisconnectedAuthProvider(nextConfig.disconnectedAuthProviders || [], 'gmail');
+  }
+
+  if (update.gmailRefreshToken) {
+    nextConfig.gmailRefreshTokenCiphertext = await encryptSecret(update.gmailRefreshToken.trim(), requireSecretEncryptionKey(env));
   }
 
   if (update.telegramBotToken) {
@@ -1794,6 +2057,73 @@ async function publishContent(
       messageId: sendResult.messageId,
       deliveryMode: 'sent',
       mediaMode: imageUrl ? 'image' : 'text',
+    };
+  }
+
+  if (channel === 'gmail') {
+    if (!config.gmailEmailAddress || (!config.gmailAccessTokenCiphertext && !config.gmailAccessToken)) {
+      throw new Error('Gmail delivery is not configured. Ask an admin to connect a Gmail account.');
+    }
+
+    let accessToken: string;
+    if (config.gmailAccessTokenCiphertext) {
+      try {
+        accessToken = await decryptSecret(
+          config.gmailAccessTokenCiphertext,
+          requireSecretEncryptionKey(env),
+          GMAIL_TOKEN_REAUTH_MESSAGE,
+        );
+      } catch (error) {
+        if (error instanceof Error && error.message === GMAIL_TOKEN_REAUTH_MESSAGE) {
+          const nextConfig: StoredConfig = {
+            ...config,
+            gmailAccessTokenCiphertext: undefined,
+          };
+          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+        }
+        throw error;
+      }
+    } else {
+      accessToken = String(config.gmailAccessToken || '').trim();
+    }
+
+    const gmailRequest = {
+      accessToken,
+      to: String(payload.emailTo || row.emailTo || ''),
+      cc: String(payload.emailCc || row.emailCc || ''),
+      bcc: String(payload.emailBcc || row.emailBcc || ''),
+      subject: String(payload.emailSubject || row.emailSubject || row.topic || 'New Message'),
+      body: message,
+    };
+
+    let sendResult: { messageId: string | null };
+    try {
+      sendResult = await sendGmailMessage(gmailRequest);
+    } catch (error) {
+      if (error instanceof GmailAuthError) {
+        const newAccessToken = await refreshGmailAccessToken(env, config);
+        const encryptionKey = requireSecretEncryptionKey(env);
+        const nextConfig: StoredConfig = {
+          ...config,
+          gmailAccessTokenCiphertext: await encryptSecret(newAccessToken, encryptionKey),
+          gmailAccessToken: undefined,
+        };
+        await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+        sendResult = await sendGmailMessage({ ...gmailRequest, accessToken: newAccessToken });
+      } else {
+        throw error;
+      }
+    }
+
+    await markPublishedForChannel();
+
+    return {
+      success: true,
+      channel,
+      recipientId: String(payload.emailTo || row.emailTo || null),
+      messageId: sendResult.messageId,
+      deliveryMode: 'sent',
+      mediaMode: 'text',
     };
   }
 

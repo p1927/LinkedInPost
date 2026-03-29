@@ -20,6 +20,10 @@ export interface SheetRow {
   selectedText: string;
   selectedImageId: string;
   postTime: string;
+  emailTo?: string;
+  emailCc?: string;
+  emailBcc?: string;
+  emailSubject?: string;
 }
 
 export type GenerationScope = 'selection' | 'whole-post';

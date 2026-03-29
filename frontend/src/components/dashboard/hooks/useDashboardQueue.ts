@@ -40,6 +40,7 @@ export function useDashboardQueue({
   whatsappConfigured: boolean;
   instagramConfigured: boolean;
   linkedinConfigured: boolean;
+  gmailConfigured: boolean;
   setLastDeliverySummary: (summary: DeliverySummary) => void;
   /** When set, deleting this row navigates away from the topic route. */
   viewingTopicRouteId?: string | null;
@@ -111,7 +112,7 @@ export function useDashboardQueue({
     }
   };
 
-  const handleApproveVariant = async (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string) => {
+  const handleApproveVariant = async (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => {
     try {
       const normalizedStatus = getNormalizedRowStatus(row.status);
       if (normalizedStatus === 'published') {
@@ -125,7 +126,7 @@ export function useDashboardQueue({
         return;
       }
 
-      await api.updateRowStatus(idToken, row, 'Approved', selectedText, selectedImageId, postTime);
+      await api.updateRowStatus(idToken, row, 'Approved', selectedText, selectedImageId, postTime, emailTo, emailCc, emailBcc, emailSubject);
       await loadData(true);
       onAfterApprove?.();
     } catch (error) {

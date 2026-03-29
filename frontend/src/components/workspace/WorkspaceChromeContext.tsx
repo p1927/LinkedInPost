@@ -13,6 +13,7 @@ export type WorkspacePublishingHealth = {
   instagram: boolean;
   telegram: boolean;
   whatsapp: boolean;
+  gmail: boolean;
 };
 
 /** Breadcrumb segment in the sticky workspace header (topic review routes). */

@@ -4,7 +4,6 @@ import { type BotConfig, type BotConfigUpdate } from '../../../services/configSe
 import { type ChannelId } from '../../../integrations/channels';
 import { formatTelegramRecipientsInput, normalizeTelegramChatId, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
 import { formatRecipientsInput } from '../../../integrations/whatsapp';
-import { type PopupProvider } from '../types';
 import { getDefaultRecipientMode, getDefaultRecipientValue, openOAuthPopup } from '../utils';
 import { useAlert } from '../../AlertProvider';
 
@@ -36,8 +35,8 @@ export function useDashboardChannels({
   const [telegramVerification, setTelegramVerification] = useState<{ kind: 'success' | 'error'; message: string; result?: TelegramChatVerificationResult; } | null>(null);
 
   const [whatsappRecipientsInput, setWhatsappRecipientsInput] = useState(formatRecipientsInput(session.config.whatsappRecipients));
-  const [connectingChannel, setConnectingChannel] = useState<PopupProvider | null>(null);
-  const [disconnectingChannel, setDisconnectingChannel] = useState<PopupProvider | null>(null);
+  const [connectingChannel, setConnectingChannel] = useState<OAuthProvider | null>(null);
+  const [disconnectingChannel, setDisconnectingChannel] = useState<OAuthProvider | null>(null);
   const [pendingWhatsAppConnectionId, setPendingWhatsAppConnectionId] = useState('');
   const [pendingWhatsAppOptions, setPendingWhatsAppOptions] = useState<WhatsAppPhoneOption[]>([]);
   const [selectedWhatsAppPhoneId, setSelectedWhatsAppPhoneId] = useState('');
@@ -183,6 +182,21 @@ export function useDashboardChannels({
     }
   };
 
+  const handleGmailConnection = async () => {
+    if (!session.isAdmin) return;
+    setConnectingChannel('gmail');
+    try {
+      const message = await openOAuthPopup(() => api.startGmailAuth(idToken), 'gmail');
+      if (!message.ok) throw new Error(message.error || 'Gmail connection failed.');
+      await onSaveConfig({});
+      void showAlert({ title: 'Success', description: 'Gmail publishing is now connected through the Worker.' });
+    } catch (error) {
+      handleFailure(error, 'Failed to connect Gmail.');
+    } finally {
+      setConnectingChannel(null);
+    }
+  };
+
   const handleWhatsAppConnection = async () => {
     if (!session.isAdmin) return;
     setConnectingChannel('whatsapp');
@@ -208,7 +222,7 @@ export function useDashboardChannels({
 
   const handleDisconnectChannel = async (provider: OAuthProvider) => {
     if (!session.isAdmin) return;
-    const channelLabel = provider === 'linkedin' ? 'LinkedIn' : provider === 'instagram' ? 'Instagram' : 'WhatsApp';
+    const channelLabel = provider === 'linkedin' ? 'LinkedIn' : provider === 'instagram' ? 'Instagram' : provider === 'gmail' ? 'Gmail' : 'WhatsApp';
     if (!await showConfirm({ title: 'Confirm', description: `Disconnect ${channelLabel}? This clears the stored connection in the Worker and requires OAuth approval the next time you connect it.` })) return;
 
     setDisconnectingChannel(provider);
@@ -280,6 +294,7 @@ export function useDashboardChannels({
     handleLinkedInConnection,
     handleInstagramConnection,
     handleWhatsAppConnection,
+    handleGmailConnection,
     handleDisconnectChannel,
     completeWhatsAppPhoneSelection,
   };

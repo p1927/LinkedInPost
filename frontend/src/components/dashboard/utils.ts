@@ -100,7 +100,8 @@ export function isOAuthPopupMessage(value: unknown): value is OAuthPopupMessage 
       && (value as OAuthPopupMessage).source === 'channel-bot-oauth'
       && ((value as OAuthPopupMessage).provider === 'instagram'
         || (value as OAuthPopupMessage).provider === 'linkedin'
-        || (value as OAuthPopupMessage).provider === 'whatsapp')
+        || (value as OAuthPopupMessage).provider === 'whatsapp'
+        || (value as OAuthPopupMessage).provider === 'gmail')
   );
 }
 

@@ -118,6 +118,7 @@ export function Dashboard({
   const instagramConfigured = Boolean(session.config.instagramUserId && session.config.hasInstagramAccessToken);
   const linkedinConfigured = Boolean(session.config.linkedinPersonUrn && session.config.hasLinkedInAccessToken);
   const telegramConfigured = Boolean(session.config.hasTelegramBotToken);
+  const gmailConfigured = Boolean(session.config.gmailEmailAddress && session.config.hasGmailAccessToken);
 
   const selectedChannelCredentialsConfigured =
     channelsHook.selectedChannel === 'linkedin'
@@ -126,7 +127,9 @@ export function Dashboard({
         ? instagramConfigured
         : channelsHook.selectedChannel === 'telegram'
           ? telegramConfigured
-          : whatsappConfigured;
+          : channelsHook.selectedChannel === 'gmail'
+            ? gmailConfigured
+            : whatsappConfigured;
 
   const openPreviewForTopicKey =
     typeof location.state === 'object' &&
@@ -149,6 +152,7 @@ export function Dashboard({
     whatsappConfigured,
     instagramConfigured,
     linkedinConfigured,
+    gmailConfigured,
     setLastDeliverySummary,
     viewingTopicRouteId: topicIdFromPath,
     onLeaveTopicRoute: () => navigate(WORKSPACE_PATHS.topics),
@@ -201,8 +205,9 @@ export function Dashboard({
       instagram: instagramConfigured,
       telegram: telegramConfigured,
       whatsapp: whatsappConfigured,
+      gmail: gmailConfigured,
     }),
-    [linkedinConfigured, instagramConfigured, telegramConfigured, whatsappConfigured],
+    [linkedinConfigured, instagramConfigured, telegramConfigured, whatsappConfigured, gmailConfigured],
   );
 
   const topicReviewBase = {
@@ -355,6 +360,7 @@ export function Dashboard({
       disconnectingChannel={channelsHook.disconnectingChannel}
       handleLinkedInConnection={channelsHook.handleLinkedInConnection}
       handleWhatsAppConnection={channelsHook.handleWhatsAppConnection}
+      handleGmailConnection={channelsHook.handleGmailConnection}
       pendingWhatsAppOptions={channelsHook.pendingWhatsAppOptions}
       selectedWhatsAppPhoneId={channelsHook.selectedWhatsAppPhoneId}
       setSelectedWhatsAppPhoneId={channelsHook.setSelectedWhatsAppPhoneId}
@@ -424,8 +430,10 @@ export function Dashboard({
     }
   }, [isTopicsMain]);
 
+  const isReviewRoute = location.pathname.includes('/topics/') && location.pathname !== WORKSPACE_PATHS.topics;
+
   return (
-    <div className="w-full pb-12">
+    <div className={`flex w-full flex-1 flex-col ${isReviewRoute ? '' : 'pb-12'}`}>
       <div style={{ display: isTopicsMain ? 'block' : 'none' }}>
         {topicsHome}
       </div>

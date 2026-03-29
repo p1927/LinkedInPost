@@ -1,4 +1,4 @@
-export type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp';
+export type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp' | 'gmail';
 
 export interface ChannelOption {
   value: ChannelId;
@@ -36,6 +36,13 @@ export const CHANNEL_OPTIONS: ChannelOption[] = [
     description: 'Send non-template WhatsApp messages through Meta Cloud API',
     requiresRecipient: true,
     publishVerb: 'Send via WhatsApp',
+  },
+  {
+    value: 'gmail',
+    label: 'Gmail',
+    description: 'Send emails via Gmail API with custom To, CC, BCC, and Subject',
+    requiresRecipient: false, // We'll manage recipients per-post
+    publishVerb: 'Send via Gmail',
   },
 ];
 

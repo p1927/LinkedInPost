@@ -42,6 +42,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [previewVariantSaveByIndex, setPreviewVariantSaveByIndex] = useState<Record<number, 'idle' | 'saving' | 'saved' | 'error'>>({});
   const [previewVariantSaveErrors, setPreviewVariantSaveErrors] = useState<Record<number, string>>({});
   const [postTime, setPostTime] = useState(() => getInitialPostTime(row.postTime));
+  const [emailTo, setEmailTo] = useState(row.emailTo || '');
+  const [emailCc, setEmailCc] = useState(row.emailCc || '');
+  const [emailBcc, setEmailBcc] = useState(row.emailBcc || '');
+  const [emailSubject, setEmailSubject] = useState(row.emailSubject || '');
   const [selectedImageUrl, setSelectedImageUrl] = useState(row.selectedImageId || row.imageLink1 || '');
   const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
   const [uploadedImageOptions, setUploadedImageOptions] = useState<ImageAssetOption[]>([]);
@@ -51,7 +55,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [pendingNavigateToVariants, setPendingNavigateToVariants] = useState(false);
   const [compareState, setCompareState] = useState<CompareState | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [activeWorkspacePanel, setActiveWorkspacePanel] = useState<'refine' | 'media' | 'rules'>('refine');
+  const [activeWorkspacePanel, setActiveWorkspacePanel] = useState<'refine' | 'media' | 'rules' | 'email'>('refine');
   const [reviewPhase, setReviewPhase] = useState<'pick-variant' | 'edit'>(() =>
     buildSheetVariants(row).length > 0 ? 'pick-variant' : 'edit',
   );
@@ -97,6 +101,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       setEditorText(textForEditor);
       setEditorBaselineText(textForEditor);
       setPostTime(getInitialPostTime(row.postTime));
+      setEmailTo(row.emailTo || '');
+      setEmailCc(row.emailCc || '');
+      setEmailBcc(row.emailBcc || '');
+      setEmailSubject(row.emailSubject || '');
       setSelectedImageUrl(
         (sc?.imageUrl?.trim() ? sc.imageUrl : '') || row.selectedImageId || row.imageLink1 || '',
       );
@@ -109,6 +117,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setEditorText(initialText);
     setEditorBaselineText(initialText);
     setPostTime(getInitialPostTime(row.postTime));
+    setEmailTo(row.emailTo || '');
+    setEmailCc(row.emailCc || '');
+    setEmailBcc(row.emailBcc || '');
+    setEmailSubject(row.emailSubject || '');
     setSelectedImageUrl(row.selectedImageId || row.imageLink1 || '');
     setReviewPhase(
       routed?.screen === 'variants'
@@ -216,6 +228,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     topicExpanded, setTopicExpanded,
     previewCollapsed, setPreviewCollapsed,
     pickCarouselIndex, setPickCarouselIndex,
+    emailTo, setEmailTo,
+    emailCc, setEmailCc,
+    emailBcc, setEmailBcc,
+    emailSubject, setEmailSubject,
     sheetVariants,
     showPickPhase,
     showEditorLayout,

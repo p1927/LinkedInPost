@@ -60,68 +60,94 @@ export function DraftEditor({
     onSelectionChange(normalizeSelection(value, element.selectionStart, element.selectionEnd));
   };
 
-  const t = compact ? 'text-xs' : 'text-sm';
   const tBtn = compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm';
   const taMin = compact ? 'min-h-[160px] xl:min-h-0' : 'min-h-[320px]';
   const taText = compact ? 'px-3 py-3 text-sm leading-6' : 'px-5 py-4 text-base leading-7';
   const fmtIcon = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
   const fmtBtn = compact ? 'p-1.5' : 'p-2';
 
-  const formattingBar = (
-    <div
-      className={`flex flex-wrap items-center gap-1.5 rounded-xl border border-violet-200/60 bg-white/70 backdrop-blur-sm transition-all duration-200 hover:bg-white/80 ${compact ? 'px-2 py-1.5' : 'px-3 py-2'}`}
-      role="toolbar"
-      aria-label="Formatting"
-    >
-      {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
-        <Button
-          key={id}
-          type="button"
-          variant="ghost"
-          size="inline"
-          title={label}
-          onClick={() => onFormatting(id)}
-          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${fmtBtn}`}
-        >
-          <Icon className={fmtIcon} aria-hidden />
-          <span className="sr-only">{label}</span>
-        </Button>
-      ))}
-    </div>
-  );
-
   return (
     <div className={cn('flex min-h-0 flex-col', compact && 'flex-1', className)}>
-      <div className={`mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200/60 bg-white/70 backdrop-blur-sm transition-all duration-200 ${compact ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
-        <div className={`inline-flex rounded-full border border-violet-200/50 bg-white/80 backdrop-blur-sm transition-all duration-200 ${compact ? 'p-0.5' : 'p-1'}`}>
-          <Button
-            type="button"
-            variant="ghost"
-            size="inline"
-            onClick={() => onScopeChange('whole-post')}
-            className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg shadow-sm hover:bg-ink/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
-          >
-            Whole post
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="inline"
-            onClick={() => onScopeChange('selection')}
-            disabled={!selection?.text?.trim()}
-            className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70 disabled:cursor-not-allowed disabled:text-muted/40'}`}
-          >
-            Selection
-          </Button>
-        </div>
-        <div className={`min-w-0 flex-1 rounded-2xl border border-border bg-surface px-2.5 py-1 text-muted ${t}`}>
-          <span className="font-semibold text-ink">Target:</span>{' '}
-          {effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}
-          <span className="mt-0.5 block text-[0.65rem] font-normal text-muted/90">
-            Quick Change and 4 Variants use this target.
-          </span>
-        </div>
-        {!compact ? (
+      {compact ? (
+        <>
+          {/* Compact row 1: scope toggle (left) + formatting icons (right) */}
+          <div className="mb-1.5 flex items-center justify-between gap-2 rounded-xl border border-violet-200/60 bg-white/70 px-2 py-1.5 backdrop-blur-sm">
+            <div className="inline-flex rounded-full border border-violet-200/50 bg-white/80 backdrop-blur-sm p-0.5 shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="inline"
+                onClick={() => onScopeChange('whole-post')}
+                className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg shadow-sm hover:bg-ink/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
+              >
+                Whole post
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="inline"
+                onClick={() => onScopeChange('selection')}
+                disabled={!selection?.text?.trim()}
+                className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70 disabled:cursor-not-allowed disabled:text-muted/40'}`}
+              >
+                Selection
+              </Button>
+            </div>
+            <div className="flex items-center gap-0.5 shrink-0" role="toolbar" aria-label="Formatting">
+              {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
+                <Button
+                  key={id}
+                  type="button"
+                  variant="ghost"
+                  size="inline"
+                  title={label}
+                  onClick={() => onFormatting(id)}
+                  className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${fmtBtn}`}
+                >
+                  <Icon className={fmtIcon} aria-hidden />
+                  <span className="sr-only">{label}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Compact row 2: target display, full width */}
+          <div className="mb-2 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted">
+            <span className="font-semibold text-ink">Target: </span>
+            <span className="truncate">{effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}</span>
+          </div>
+        </>
+      ) : (
+        /* Non-compact: original single-row toolbar with dropdown */
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200/60 bg-white/70 backdrop-blur-sm transition-all duration-200 px-3 py-2">
+          <div className="inline-flex rounded-full border border-violet-200/50 bg-white/80 backdrop-blur-sm transition-all duration-200 p-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="inline"
+              onClick={() => onScopeChange('whole-post')}
+              className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg shadow-sm hover:bg-ink/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
+            >
+              Whole post
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="inline"
+              onClick={() => onScopeChange('selection')}
+              disabled={!selection?.text?.trim()}
+              className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70 disabled:cursor-not-allowed disabled:text-muted/40'}`}
+            >
+              Selection
+            </Button>
+          </div>
+          <div className="min-w-0 flex-1 rounded-2xl border border-border bg-surface px-2.5 py-1 text-sm text-muted">
+            <span className="font-semibold text-ink">Target:</span>{' '}
+            {effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}
+            <span className="mt-0.5 block text-[0.65rem] font-normal text-muted/90">
+              Quick Change and 4 Variants use this target.
+            </span>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button
                 variant="ghost"
@@ -143,15 +169,8 @@ export function DraftEditor({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : null}
-      </div>
-
-      {compact ? (
-        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted">Format</p>
-          {formattingBar}
         </div>
-      ) : null}
+      )}
 
       <Textarea
         ref={textareaRef}

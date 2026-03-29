@@ -31,7 +31,7 @@ export interface OAuthStartResult {
   callbackOrigin: string;
 }
 
-export type OAuthProvider = 'instagram' | 'linkedin' | 'whatsapp';
+export type OAuthProvider = 'instagram' | 'linkedin' | 'whatsapp' | 'gmail';
 
 export interface WhatsAppPhoneOption {
   businessAccountId: string;
@@ -256,6 +256,10 @@ export class BackendApi {
     selectedText = '',
     selectedImageId = '',
     postTime = '',
+    emailTo = '',
+    emailCc = '',
+    emailBcc = '',
+    emailSubject = '',
   ): Promise<void> {
     await this.post<{ success: true }>('updateRowStatus', idToken, {
       row,
@@ -263,6 +267,10 @@ export class BackendApi {
       selectedText,
       selectedImageId,
       postTime,
+      emailTo,
+      emailCc,
+      emailBcc,
+      emailSubject,
     });
   }
 
@@ -296,6 +304,10 @@ export class BackendApi {
 
   async startWhatsAppAuth(idToken: string): Promise<OAuthStartResult> {
     return this.post<OAuthStartResult>('startWhatsAppAuth', idToken);
+  }
+
+  async startGmailAuth(idToken: string): Promise<OAuthStartResult> {
+    return this.post<OAuthStartResult>('startGmailAuth', idToken);
   }
 
   async disconnectChannelAuth(idToken: string, provider: OAuthProvider): Promise<BotConfig> {

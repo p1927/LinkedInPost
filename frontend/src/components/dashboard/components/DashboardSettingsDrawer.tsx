@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
-import { type AppSession } from '../../../services/backendApi';
+import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
 import { type ChannelId } from '../../../integrations/channels';
 import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '../../../services/backendApi';
-import { type PopupProvider } from '../types';
 import { type TelegramRecipient } from '../../../integrations/telegram';
 import { cn } from '../../../lib/cn';
 import { Input } from '@/components/ui/input';
@@ -18,6 +17,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-linkedin', label: 'LinkedIn' },
   { id: 'settings-telegram', label: 'Telegram' },
   { id: 'settings-whatsapp', label: 'WhatsApp' },
+  { id: 'settings-gmail', label: 'Gmail' },
 ] as const;
 
 function SettingsSectionCard({
@@ -79,8 +79,9 @@ export function DashboardSettingsDrawer({
   handleDisconnectChannel,
   disconnectingChannel,
   handleLinkedInConnection,
-  handleWhatsAppConnection,
-  pendingWhatsAppOptions,
+      handleWhatsAppConnection,
+      handleGmailConnection,
+      pendingWhatsAppOptions,
   selectedWhatsAppPhoneId,
   setSelectedWhatsAppPhoneId,
   completeWhatsAppPhoneSelection,
@@ -118,11 +119,12 @@ export function DashboardSettingsDrawer({
   setTelegramRecipientsInput: (val: string) => void;
   channelActionBusy: boolean;
   handleInstagramConnection: () => Promise<void>;
-  connectingChannel: PopupProvider | null;
-  handleDisconnectChannel: (provider: PopupProvider) => Promise<void>;
-  disconnectingChannel: PopupProvider | null;
+  connectingChannel: OAuthProvider | null;
+  handleDisconnectChannel: (provider: OAuthProvider) => Promise<void>;
+  disconnectingChannel: OAuthProvider | null;
   handleLinkedInConnection: () => Promise<void>;
   handleWhatsAppConnection: () => Promise<void>;
+  handleGmailConnection: () => Promise<void>;
   pendingWhatsAppOptions: WhatsAppPhoneOption[];
   selectedWhatsAppPhoneId: string;
   setSelectedWhatsAppPhoneId: (val: string) => void;
@@ -625,6 +627,63 @@ export function DashboardSettingsDrawer({
                 className="min-h-[176px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               <p className="mt-1.5 text-xs text-muted">One recipient per line using the format &quot;Label | +15551234567&quot;.</p>
+            </div>
+          </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-gmail" title="Gmail Delivery">
+          <p className="text-xs leading-5 text-muted">This path sends emails directly through the Gmail API.</p>
+          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-2.5 w-2.5 rounded-full ${session.config.hasGmailAccessToken ? 'bg-[#EA4335]' : 'bg-border-strong'}`}
+                  />
+                  <p className="text-sm font-medium text-ink">
+                    {session.config.hasGmailAccessToken
+                      ? `Connected as ${session.config.gmailEmailAddress || 'a Gmail account'}.`
+                      : session.config.gmailAuthAvailable
+                        ? 'No Gmail account connected yet.'
+                        : 'Gmail OAuth app credentials are still missing from the Worker environment.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="md"
+                  onClick={() => void handleGmailConnection()}
+                  disabled={channelActionBusy || !session.config.gmailAuthAvailable}
+                  className="w-full rounded-xl bg-[#EA4335] px-4 py-3 text-sm font-bold text-white hover:bg-[#D93025] disabled:opacity-50"
+                >
+                  {connectingChannel === 'gmail'
+                    ? 'Opening Google approval...'
+                    : session.config.hasGmailAccessToken
+                      ? 'Reconnect Gmail'
+                      : 'Connect Gmail'}
+                </Button>
+                {session.config.hasGmailAccessToken ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="md"
+                    onClick={() => void handleDisconnectChannel('gmail')}
+                    disabled={channelActionBusy}
+                    className="w-full rounded-xl border-success-border bg-success-surface text-success-ink hover:bg-emerald-100/90 disabled:opacity-50"
+                  >
+                    {disconnectingChannel === 'gmail' ? 'Disconnecting Gmail...' : 'Disconnect Gmail'}
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-xs text-muted">
+                {session.config.gmailAuthAvailable
+                  ? 'The Worker opens Google approval in a popup and exchanges the code server-side.'
+                  : 'Set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in the Worker before this button can be used.'}
+              </p>
             </div>
           </div>
         </SettingsSectionCard>

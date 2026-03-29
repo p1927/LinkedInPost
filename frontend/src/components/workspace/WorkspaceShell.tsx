@@ -69,7 +69,7 @@ export function WorkspaceShell({
           <main
             id="workspace-main"
             tabIndex={-1}
-            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/35 sm:px-6"
+            className="custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/35 sm:px-6"
           >
             {children}
           </main>

@@ -68,8 +68,8 @@ export interface ReviewFlowContextValue {
   compareState: CompareState | null;
   setCompareState: React.Dispatch<React.SetStateAction<CompareState | null>>;
   submitting: boolean;
-  activeWorkspacePanel: 'refine' | 'media' | 'rules';
-  setActiveWorkspacePanel: React.Dispatch<React.SetStateAction<'refine' | 'media' | 'rules'>>;
+  activeWorkspacePanel: 'refine' | 'media' | 'rules' | 'email';
+  setActiveWorkspacePanel: React.Dispatch<React.SetStateAction<'refine' | 'media' | 'rules' | 'email'>>;
   reviewPhase: 'pick-variant' | 'edit';
   setReviewPhase: React.Dispatch<React.SetStateAction<'pick-variant' | 'edit'>>;
   topicExpanded: boolean;
@@ -79,6 +79,15 @@ export interface ReviewFlowContextValue {
   pickCarouselIndex: number;
   setPickCarouselIndex: React.Dispatch<React.SetStateAction<number>>;
   
+  emailTo: string;
+  setEmailTo: React.Dispatch<React.SetStateAction<string>>;
+  emailCc: string;
+  setEmailCc: React.Dispatch<React.SetStateAction<string>>;
+  emailBcc: string;
+  setEmailBcc: React.Dispatch<React.SetStateAction<string>>;
+  emailSubject: string;
+  setEmailSubject: React.Dispatch<React.SetStateAction<string>>;
+
   // Computed
   sheetVariants: { text: string; imageUrl: string; originalIndex: number }[];
   showPickPhase: boolean;
@@ -124,7 +133,7 @@ export interface ReviewFlowProviderProps {
   previewAuthorName?: string;
   sharedRules: string;
   googleModel: string;
-  onApprove: (selectedText: string, selectedImageId: string, postTime: string) => Promise<void>;
+  onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;

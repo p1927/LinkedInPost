@@ -37,7 +37,8 @@
     "LINKEDIN_CLIENT_ID": "77152yw16gugq6",
     "LINKEDIN_PERSON_URN": "",
     "META_APP_ID": "2059399091272282",
-    "WHATSAPP_PHONE_NUMBER_ID": "1052083514653755"
+    "WHATSAPP_PHONE_NUMBER_ID": "1052083514653755",
+    "GMAIL_CLIENT_ID":"718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
   },
   "env": {
     "local": {

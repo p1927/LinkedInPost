@@ -18,4 +18,8 @@ export interface SheetRow {
   selectedText: string;    // L
   selectedImageId: string; // M
   postTime: string;        // N
+  emailTo?: string;        // O
+  emailCc?: string;        // P
+  emailBcc?: string;       // Q
+  emailSubject?: string;   // R
 }

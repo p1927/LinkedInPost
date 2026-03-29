@@ -105,6 +105,9 @@ export interface BotConfig {
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
   whatsappRecipients: WhatsAppRecipient[];
+  gmailAuthAvailable: boolean;
+  gmailEmailAddress: string;
+  hasGmailAccessToken: boolean;
 }
 
 export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined): BotConfig {
@@ -114,6 +117,8 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
       ? 'telegram'
     : config?.defaultChannel === 'instagram'
       ? 'instagram'
+    : config?.defaultChannel === 'gmail'
+      ? 'gmail'
       : 'linkedin';
 
   return {
@@ -136,6 +141,9 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     whatsappPhoneNumberId: config?.whatsappPhoneNumberId || '',
     hasWhatsAppAccessToken: Boolean(config?.hasWhatsAppAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
+    gmailAuthAvailable: Boolean(config?.gmailAuthAvailable),
+    gmailEmailAddress: config?.gmailEmailAddress || '',
+    hasGmailAccessToken: Boolean(config?.hasGmailAccessToken),
   };
 }
 
@@ -156,4 +164,7 @@ export interface BotConfigUpdate {
   whatsappPhoneNumberId?: string;
   whatsappAccessToken?: string;
   whatsappRecipients?: WhatsAppRecipient[];
+  gmailEmailAddress?: string;
+  gmailAccessToken?: string;
+  gmailRefreshToken?: string;
 }

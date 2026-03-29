@@ -180,64 +180,65 @@ function App() {
                     </p>
                   </div>
                 ) : !idToken ? (
-                  <>
+                  <div className="flex w-full flex-1 flex-col">
                     <LoginRedirect />
                     <div className="flex min-h-[calc(100vh-9rem)] flex-1 flex-col items-center justify-center gap-14 lg:flex-row lg:gap-20">
-                    <div className="max-w-xl flex-1 space-y-10 text-left">
-                      <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight text-ink lg:text-[2.75rem] lg:leading-[1.12]">
-                        One pipeline for drafts, review, and delivery across every channel you use.
-                      </h2>
-                      <ul className="space-y-8 text-lg text-muted">
-                        <li className="flex gap-4">
-                          <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
-                            <TableProperties className="h-5 w-5 text-primary" aria-hidden />
-                          </span>
-                          <div>
-                            <strong className="mb-1 block font-semibold text-ink">Google Sheets at the center</strong>
-                            Keep topics and status in a shared spreadsheet the whole team already understands.
-                          </div>
-                        </li>
-                        <li className="flex gap-4">
-                          <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
-                            <Sparkles className="h-5 w-5 text-primary" aria-hidden />
-                          </span>
-                          <div>
-                            <strong className="mb-1 block font-semibold text-ink">Model-assisted drafting</strong>
-                            Generate quick edits and variants, then compare before anything ships.
-                          </div>
-                        </li>
-                        <li className="flex gap-4">
-                          <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
-                            <Share2 className="h-5 w-5 text-primary" aria-hidden />
-                          </span>
-                          <div>
-                            <strong className="mb-1 block font-semibold text-ink">Publish where it belongs</strong>
-                            Send approved posts to LinkedIn, Instagram, Telegram, and WhatsApp from one place.
-                          </div>
-                        </li>
-                      </ul>
-                    </div>
+                      <div className="max-w-xl flex-1 space-y-10 text-left">
+                        <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight text-ink lg:text-[2.75rem] lg:leading-[1.12]">
+                          One pipeline for drafts, review, and delivery across every channel you use.
+                        </h2>
+                        <ul className="space-y-8 text-lg text-muted">
+                          <li className="flex gap-4">
+                            <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
+                              <TableProperties className="h-5 w-5 text-primary" aria-hidden />
+                            </span>
+                            <div>
+                              <strong className="mb-1 block font-semibold text-ink">Google Sheets at the center</strong>
+                              Keep topics and status in a shared spreadsheet the whole team already understands.
+                            </div>
+                          </li>
+                          <li className="flex gap-4">
+                            <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
+                              <Sparkles className="h-5 w-5 text-primary" aria-hidden />
+                            </span>
+                            <div>
+                              <strong className="mb-1 block font-semibold text-ink">Model-assisted drafting</strong>
+                              Generate quick edits and variants, then compare before anything ships.
+                            </div>
+                          </li>
+                          <li className="flex gap-4">
+                            <span className="glass-panel mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-card">
+                              <Share2 className="h-5 w-5 text-primary" aria-hidden />
+                            </span>
+                            <div>
+                              <strong className="mb-1 block font-semibold text-ink">Publish where it belongs</strong>
+                              Send approved posts to LinkedIn, Instagram, Telegram, and WhatsApp from one place.
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
 
-                    <div className="glass-panel-strong w-full max-w-md rounded-3xl p-8 sm:p-10">
-                      <div className="space-y-6 text-center">
-                        <div className="glass-inset mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
-                          <TableProperties className="h-7 w-7 text-primary" aria-hidden />
+                      <div className="glass-panel-strong w-full max-w-md rounded-3xl p-8 sm:p-10">
+                        <div className="space-y-6 text-center">
+                          <div className="glass-inset mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
+                            <TableProperties className="h-7 w-7 text-primary" aria-hidden />
+                          </div>
+                          <div>
+                            <h3 className="font-heading text-2xl font-semibold text-ink">Sign in</h3>
+                            <p className="mt-2 text-sm text-muted">Use an approved Google account to open the workspace.</p>
+                          </div>
+                          <div className="flex justify-center pt-2">
+                            <GoogleLoginButton onLogin={handleLogin} />
+                          </div>
+                          {errorMessage ? (
+                            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-800">
+                              {errorMessage}
+                            </p>
+                          ) : null}
                         </div>
-                        <div>
-                          <h3 className="font-heading text-2xl font-semibold text-ink">Sign in</h3>
-                          <p className="mt-2 text-sm text-muted">Use an approved Google account to open the workspace.</p>
-                        </div>
-                        <div className="flex justify-center pt-2">
-                          <GoogleLoginButton onLogin={handleLogin} />
-                        </div>
-                        {errorMessage ? (
-                          <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-800">
-                            {errorMessage}
-                          </p>
-                        ) : null}
                       </div>
                     </div>
-                  </>
+                  </div>
                 ) : loading ? (
                   <div className="flex flex-1 items-center justify-center">
                     <div className="flex flex-col items-center gap-3">
@@ -254,14 +255,14 @@ function App() {
                     </p>
                   </div>
                 )}
-                  </main>
-                )}
+          </main>
+        )}
 
-                {showMarketingHeader ? (
-                  <footer className="mt-auto w-full border-t border-border/40 py-6">
-                    <LegalFooterLinks />
-                  </footer>
-                ) : null}
+        {showMarketingHeader ? (
+          <footer className="mt-auto w-full border-t border-border/40 py-6">
+            <LegalFooterLinks />
+          </footer>
+        ) : null}
               </div>
             }
           />

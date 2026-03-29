@@ -22,4 +22,4 @@ export type TopicReviewPagesBaseProps = {
   queueLoading: boolean;
 };
 
-export const reviewShellClass = '-mx-4 min-h-[calc(100dvh-7.5rem)] sm:-mx-6';
+export const reviewShellClass = '-mx-4 -my-6 flex h-[calc(100dvh-4.25rem)] flex-col sm:-mx-6 sm:h-[calc(100dvh-4.75rem)]';

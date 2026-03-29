@@ -1,7 +1,7 @@
 import { type ChannelId } from '../../integrations/channels';
 import { type WhatsAppPhoneOption } from '../../services/backendApi';
 
-export type PopupProvider = 'instagram' | 'linkedin' | 'whatsapp';
+export type PopupProvider = 'instagram' | 'linkedin' | 'whatsapp' | 'gmail';
 export type QueueFilter = 'all' | 'pending' | 'drafted' | 'approved' | 'published';
 
 export interface OAuthPopupMessage {

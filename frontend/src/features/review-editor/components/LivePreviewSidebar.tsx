@@ -15,32 +15,32 @@ export function LivePreviewSidebar() {
   } = useReviewFlow();
 
   return (
-    <aside className="order-3 min-h-0 min-w-0 overflow-y-auto px-2 py-3 xl:order-none xl:max-h-full xl:overflow-y-auto">
+    <aside className="order-3 min-h-0 min-w-0 overflow-y-auto px-3 py-4 xl:order-none xl:max-h-full xl:overflow-y-auto">
       <section
         aria-labelledby="review-live-preview-heading"
-        className="sticky top-0 flex min-w-0 flex-col gap-2"
+        className="sticky top-0 flex min-w-0 flex-col gap-2.5"
       >
-        <div className="flex flex-wrap items-center justify-between gap-1.5 rounded-lg border border-border bg-white px-2 py-1.5 shadow-sm">
-          <p
-            id="review-live-preview-heading"
-            className="text-[10px] font-semibold uppercase tracking-wider text-ink/65"
-          >
-            Live preview
-          </p>
-          <div className="flex flex-wrap items-center gap-1">
-            <Badge variant="neutral" size="xs" className="normal-case">
+        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-white px-3 py-2 shadow-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <p
+              id="review-live-preview-heading"
+              className="text-[10px] font-semibold uppercase tracking-wider text-ink/65 whitespace-nowrap"
+            >
+              Live preview
+            </p>
+            <Badge variant="neutral" size="xs" className="normal-case shrink-0">
               {selectedImageUrl ? 'Image' : 'Text only'}
             </Badge>
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              onClick={() => setPreviewCollapsed((c) => !c)}
-              className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-primary hover:bg-white/55 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
-            >
-              {previewCollapsed ? 'Show' : 'Hide'}
-            </Button>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="inline"
+            onClick={() => setPreviewCollapsed((c) => !c)}
+            className="shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold text-primary hover:bg-violet-50 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
+          >
+            {previewCollapsed ? 'Show' : 'Hide'}
+          </Button>
         </div>
         {!previewCollapsed ? (
           <div className="flex w-full min-w-0 justify-center overflow-x-auto px-0.5 pb-1">

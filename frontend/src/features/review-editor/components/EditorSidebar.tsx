@@ -28,15 +28,20 @@ export function EditorSidebar() {
     handleUploadImageOption,
     onDownloadImage,
     sharedRules,
+    deliveryChannel,
+    emailTo, setEmailTo,
+    emailCc, setEmailCc,
+    emailBcc, setEmailBcc,
+    emailSubject, setEmailSubject,
   } = useReviewFlow();
 
   return (
     <aside
       aria-label="Refine, media, and publishing rules"
-      className="order-2 min-h-0 min-w-0 border-b border-violet-200/30 px-3 py-3 xl:order-none xl:max-h-full xl:border-b-0 xl:border-r xl:border-violet-200/30 xl:overflow-y-auto"
+      className="order-2 min-h-0 min-w-0 border-b border-violet-200/30 px-4 py-4 xl:order-none xl:max-h-full xl:border-b-0 xl:overflow-y-auto"
     >
       <div
-        className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-white p-0.5 shadow-sm"
+        className={`grid ${deliveryChannel === 'gmail' ? 'grid-cols-4' : 'grid-cols-3'} gap-1 rounded-xl border border-border bg-white p-1 shadow-sm`}
         role="tablist"
         aria-label="Review workspace panels"
       >
@@ -47,7 +52,7 @@ export function EditorSidebar() {
           role="tab"
           aria-selected={activeWorkspacePanel === 'refine'}
           onClick={() => setActiveWorkspacePanel('refine')}
-          className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'refine' ? 'bg-white/90 text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
+          className={`rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'refine' ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
         >
           Refine
         </Button>
@@ -58,7 +63,7 @@ export function EditorSidebar() {
           role="tab"
           aria-selected={activeWorkspacePanel === 'media'}
           onClick={() => setActiveWorkspacePanel('media')}
-          className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'media' ? 'bg-white/90 text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
+          className={`rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'media' ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
         >
           Media
         </Button>
@@ -69,13 +74,26 @@ export function EditorSidebar() {
           role="tab"
           aria-selected={activeWorkspacePanel === 'rules'}
           onClick={() => setActiveWorkspacePanel('rules')}
-          className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'rules' ? 'bg-white/90 text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
+          className={`rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'rules' ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
         >
           Rules
         </Button>
+        {deliveryChannel === 'gmail' ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="inline"
+            role="tab"
+            aria-selected={activeWorkspacePanel === 'email'}
+            onClick={() => setActiveWorkspacePanel('email')}
+            className={`rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'email' ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
+          >
+            Email
+          </Button>
+        ) : null}
       </div>
 
-      <div className="mt-3 space-y-3">
+      <div className="mt-4 space-y-3">
         {activeWorkspacePanel === 'refine' ? (
           <GenerationPanel
             instruction={instruction}
@@ -109,6 +127,27 @@ export function EditorSidebar() {
         ) : null}
 
         {activeWorkspacePanel === 'rules' ? <RulesPanel sharedRules={sharedRules} compact /> : null}
+
+        {activeWorkspacePanel === 'email' && deliveryChannel === 'gmail' ? (
+          <section className="rounded-xl border border-border bg-white p-3 shadow-sm space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-ink mb-1">To</label>
+              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="recipient@example.com" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ink mb-1">Cc</label>
+              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailCc} onChange={e => setEmailCc(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ink mb-1">Bcc</label>
+              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailBcc} onChange={e => setEmailBcc(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-ink mb-1">Subject</label>
+              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject line" />
+            </div>
+          </section>
+        ) : null}
       </div>
     </aside>
   );
