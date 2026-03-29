@@ -130,14 +130,21 @@ export function isAuthErrorMessage(message: string): boolean {
   return AUTH_ERROR_PATTERN.test(message);
 }
 
-/** API is always POST JSON at the worker origin; strip accidental paths (e.g. `/topics`) from env. */
+/**
+ * API is always POST JSON at the worker origin; strip accidental paths (e.g. `/topics`) from env.
+ * Relative values (e.g. `/topics`) are rejected — they would POST to the frontend host and 404.
+ */
 export function normalizeWorkerApiUrl(raw: string): string {
   const trimmed = raw.trim().replace(/\/$/, '');
   if (!trimmed) return '';
   try {
-    return new URL(trimmed).origin;
+    const u = new URL(trimmed);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return '';
+    }
+    return u.origin;
   } catch {
-    return trimmed;
+    return '';
   }
 }
 

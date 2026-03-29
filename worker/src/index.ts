@@ -2377,7 +2377,13 @@ async function cleanupUnusedGeneratedImages(env: Env, row: SheetRow, selectedIma
 }
 
 function coerceChannelId(value: unknown): ChannelId {
-  if (value !== 'instagram' && value !== 'linkedin' && value !== 'telegram' && value !== 'whatsapp') {
+  if (
+    value !== 'instagram' &&
+    value !== 'linkedin' &&
+    value !== 'telegram' &&
+    value !== 'whatsapp' &&
+    value !== 'gmail'
+  ) {
     throw new Error('Unsupported delivery channel.');
   }
 

@@ -279,20 +279,40 @@ export function DashboardQueue({
                             ) : null}
 
                             {normalizedStatus === 'drafted' ? (
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenTopicReview(row);
-                                }}
-                                title="Review draft"
-                                className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
-                              >
-                                <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                <span className="sm:hidden">Edit</span>
-                                <span className="hidden sm:inline">Review</span>
-                              </Button>
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenTopicReview(row);
+                                  }}
+                                  title="Edit draft — updates this row (published topics get a new sheet copy when edited)"
+                                  className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
+                                >
+                                  <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                  <span className="sm:hidden">Edit</span>
+                                  <span className="hidden sm:inline">Edit</span>
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void publishRowToSelectedChannel(row);
+                                  }}
+                                  disabled={actionLoading !== null}
+                                  title="Publish to the selected channel (approve in the editor first if you have not yet)"
+                                  className={rowActionClass}
+                                >
+                                  {actionLoading === buildRowActionKey('publish', row) ? (
+                                    <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                                  ) : (
+                                    <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                                  )}
+                                  <span className="hidden sm:inline">Publish</span>
+                                </Button>
+                              </>
                             ) : null}
 
                             {normalizedStatus === 'approved' || normalizedStatus === 'published' ? (
