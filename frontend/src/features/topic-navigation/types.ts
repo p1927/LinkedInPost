@@ -20,6 +20,9 @@ export type TopicReviewPagesBaseProps = {
   onUploadImage: (row: SheetRow, file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   queueLoading: boolean;
+  isAdmin: boolean;
+  /** Persists shared generation rules (Worker `saveConfig`; admin-only on the server). */
+  onSaveGenerationRules: (rules: string) => Promise<void>;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

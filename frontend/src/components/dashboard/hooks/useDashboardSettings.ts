@@ -48,6 +48,10 @@ export function useDashboardSettings({
   }, [onAuthExpired, showAlert]);
 
   useEffect(() => {
+    setGenerationRules(session.config.generationRules);
+  }, [session.config.generationRules]);
+
+  useEffect(() => {
     let cancelled = false;
     const syncModels = async () => {
       try {

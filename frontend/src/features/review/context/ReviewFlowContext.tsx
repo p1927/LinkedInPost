@@ -28,6 +28,7 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     deliveryChannel: props.deliveryChannel,
     previewAuthorName: props.previewAuthorName,
     sharedRules: props.sharedRules,
+    isAdmin: props.isAdmin,
     googleModel: props.googleModel,
     routed: props.routed,
     editorStartMediaPanel: props.editorStartMediaPanel ?? false,

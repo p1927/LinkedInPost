@@ -228,6 +228,10 @@ export function Dashboard({
     onFetchMoreImages: queueHook.handleFetchReviewImages,
     onUploadImage: queueHook.handleUploadReviewImage,
     onDownloadImage: queueHook.handleDownloadReviewImage,
+    isAdmin: session.isAdmin,
+    onSaveGenerationRules: async (rules: string) => {
+      await onSaveConfig({ generationRules: rules.trim() });
+    },
   };
 
   const topicChromeRow = topicIdFromPath

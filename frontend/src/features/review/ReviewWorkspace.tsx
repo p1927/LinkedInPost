@@ -34,6 +34,8 @@ export interface ReviewWorkspaceProps {
   onUploadImage: (file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
+  isAdmin: boolean;
+  onSaveGenerationRules: (rules: string) => Promise<void>;
   /** URL-driven flow: variants page vs editor page. */
   routed?: ReviewRoutedNavigation;
   /** Set when opening `/topics/.../editor/N?media=1`. */

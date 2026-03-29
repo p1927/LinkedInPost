@@ -28,6 +28,9 @@ export function EditorSidebar() {
     handleUploadImageOption,
     onDownloadImage,
     sharedRules,
+    isAdmin,
+    handleSaveSharedRules,
+    savingSharedRules,
     deliveryChannel,
     emailTo, setEmailTo,
     emailCc, setEmailCc,
@@ -126,7 +129,15 @@ export function EditorSidebar() {
           </section>
         ) : null}
 
-        {activeWorkspacePanel === 'rules' ? <RulesPanel sharedRules={sharedRules} compact /> : null}
+        {activeWorkspacePanel === 'rules' ? (
+          <RulesPanel
+            sharedRules={sharedRules}
+            compact
+            isAdmin={isAdmin}
+            onSave={handleSaveSharedRules}
+            saving={savingSharedRules}
+          />
+        ) : null}
 
         {activeWorkspacePanel === 'email' && deliveryChannel === 'gmail' ? (
           <section className="rounded-xl border border-border bg-white p-3 shadow-sm space-y-3">

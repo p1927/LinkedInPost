@@ -68,6 +68,8 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         onUploadImage={(file) => p.onUploadImage(row, file)}
         onDownloadImage={p.onDownloadImage}
         onCancel={handleCancel}
+        isAdmin={p.isAdmin}
+        onSaveGenerationRules={p.onSaveGenerationRules}
       />
     </div>
   );

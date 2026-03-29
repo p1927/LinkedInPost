@@ -1,6 +1,6 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ReviewFlowProviderProps } from './types';
-import { type GenerationRequest } from '../../../services/backendApi';
+import { type GenerationRequest, isAuthErrorMessage } from '../../../services/backendApi';
 import { useAlert } from '../../../components/AlertProvider';
 import { applyFormattingAction } from '../../editor/selection';
 import { mergeUniqueImageOptions } from './utils';
@@ -20,6 +20,7 @@ export function useReviewFlowActions(
     onCancel,
     routed,
     googleModel,
+    onSaveGenerationRules,
   } = props;
 
   const {
@@ -450,6 +451,33 @@ export function useReviewFlowActions(
     setSelection(nextState.selection);
   };
 
+  const [savingSharedRules, setSavingSharedRules] = useState(false);
+  const saveSharedRulesInFlight = useRef(false);
+
+  const handleSaveSharedRules = useCallback(
+    async (rules: string) => {
+      if (saveSharedRulesInFlight.current) return;
+      saveSharedRulesInFlight.current = true;
+      setSavingSharedRules(true);
+      try {
+        await onSaveGenerationRules(rules);
+        void showAlert({ title: 'Saved', description: 'Shared generation rules were updated.' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to save shared rules.';
+        console.error(error);
+        if (isAuthErrorMessage(message)) {
+          void showAlert({ title: 'Session expired', description: 'Sign in again to continue.' });
+          return;
+        }
+        void showAlert({ title: 'Could not save', description: message });
+      } finally {
+        saveSharedRulesInFlight.current = false;
+        setSavingSharedRules(false);
+      }
+    },
+    [onSaveGenerationRules, showAlert],
+  );
+
   return {
     leaveToTopics,
     requestNavigateToVariants,
@@ -468,5 +496,7 @@ export function useReviewFlowActions(
     changePickCarouselBy,
     handlePickCarouselKeyDown,
     handleFormatting,
+    handleSaveSharedRules,
+    savingSharedRules,
   };
 }

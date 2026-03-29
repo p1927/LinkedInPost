@@ -26,6 +26,7 @@ export interface ReviewFlowContextValue {
   deliveryChannel: ChannelId;
   previewAuthorName?: string;
   sharedRules: string;
+  isAdmin: boolean;
   googleModel: string;
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel: boolean;
@@ -125,6 +126,8 @@ export interface ReviewFlowContextValue {
   changePickCarouselBy: (direction: -1 | 1) => void;
   handlePickCarouselKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   handleFormatting: (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => void;
+  handleSaveSharedRules: (rules: string) => Promise<void>;
+  savingSharedRules: boolean;
   onCancel: () => void;
 }
 
@@ -134,6 +137,7 @@ export interface ReviewFlowProviderProps {
   deliveryChannel: ChannelId;
   previewAuthorName?: string;
   sharedRules: string;
+  isAdmin: boolean;
   googleModel: string;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
@@ -143,6 +147,7 @@ export interface ReviewFlowProviderProps {
   onUploadImage: (file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
+  onSaveGenerationRules: (rules: string) => Promise<void>;
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel?: boolean;
 }
