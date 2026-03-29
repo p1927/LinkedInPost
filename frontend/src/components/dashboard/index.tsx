@@ -190,9 +190,15 @@ export function Dashboard({
         : instagramConfigured
           ? 'Connected Instagram account'
           : 'Instagram not connected'
-      : linkedinConfigured
-        ? 'Connected LinkedIn account'
-        : 'LinkedIn not connected';
+      : channelsHook.selectedChannel === 'gmail'
+        ? session.config.gmailEmailAddress
+          ? session.config.gmailEmailAddress
+          : gmailConfigured
+            ? 'Connected Gmail account'
+            : 'Gmail not connected'
+        : linkedinConfigured
+          ? 'Connected LinkedIn account'
+          : 'LinkedIn not connected';
 
   const handleScrollTargetHandled = useCallback(() => {
     setQueueScrollTargetId(null);

@@ -2122,10 +2122,12 @@ async function publishContent(
 
     await markPublishedForChannel();
 
+    const gmailTo = String(payload.emailTo || row.emailTo || '').trim();
+
     return {
       success: true,
       channel,
-      recipientId: String(payload.emailTo || row.emailTo || null),
+      recipientId: gmailTo || null,
       messageId: sendResult.messageId,
       deliveryMode: 'sent',
       mediaMode: 'text',

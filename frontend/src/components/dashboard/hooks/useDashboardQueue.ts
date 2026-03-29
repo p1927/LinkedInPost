@@ -23,6 +23,7 @@ export function useDashboardQueue({
   whatsappConfigured,
   instagramConfigured,
   linkedinConfigured,
+  gmailConfigured,
   setLastDeliverySummary,
   viewingTopicRouteId,
   onLeaveTopicRoute,
@@ -251,6 +252,10 @@ export function useDashboardQueue({
       void showAlert({ title: 'Notice', description: session.isAdmin ? 'Complete the LinkedIn publishing settings in the workspace drawer first.' : 'A workspace admin still needs to configure LinkedIn publishing settings.' });
       return;
     }
+    if (selectedChannel === 'gmail' && !gmailConfigured) {
+      void showAlert({ title: 'Notice', description: session.isAdmin ? 'Connect Gmail in the workspace settings drawer first.' : 'A workspace admin still needs to connect Gmail for this workspace.' });
+      return;
+    }
 
     if (selectedChannelOption.requiresRecipient && !resolvedRecipientId) {
       void showAlert({ title: 'Notice', description: selectedChannel === 'telegram' ? 'Select a saved Telegram chat or enter a valid chat ID.' : 'Select a saved WhatsApp recipient or enter a valid phone number in international format.' });
@@ -265,6 +270,15 @@ export function useDashboardQueue({
 
     if (selectedChannel === 'instagram' && !(row.selectedImageId || '').trim()) {
       void showAlert({ title: 'Notice', description: 'Instagram requires a selected image. Approve the row with an image before publishing.' });
+      return;
+    }
+
+    if (selectedChannel === 'gmail' && !(row.emailTo || '').trim()) {
+      void showAlert({
+        title: 'Notice',
+        description:
+          'Gmail needs at least one To address on this row. Open the topic in the editor, use the Email tab, fill To (and optional Cc, Bcc, Subject), then approve again so the sheet is updated — or enter addresses before the first approve.',
+      });
       return;
     }
 
@@ -284,7 +298,13 @@ export function useDashboardQueue({
           topic: row.topic,
           channel: selectedChannel,
           mediaMode: result.mediaMode,
-          recipientLabel: selectedChannelOption.requiresRecipient ? (selectedRecipientLabel || resolvedRecipientId) : (selectedChannel === 'instagram' ? (session.config.instagramUsername || 'connected account') : 'LinkedIn audience'),
+          recipientLabel: selectedChannelOption.requiresRecipient
+            ? selectedRecipientLabel || resolvedRecipientId
+            : selectedChannel === 'instagram'
+              ? session.config.instagramUsername || 'connected account'
+              : selectedChannel === 'gmail'
+                ? (result.recipientId || row.emailTo || '').trim() || session.config.gmailEmailAddress || 'recipient'
+                : 'LinkedIn audience',
         });
         await loadData(true);
         void showAlert({ title: 'Success', description: selectedChannelOption.requiresRecipient ? `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.` : `Published "${row.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.` });

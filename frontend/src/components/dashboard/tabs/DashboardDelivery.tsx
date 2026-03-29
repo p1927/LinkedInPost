@@ -7,6 +7,7 @@ import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel, type ChannelOption } 
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';
 import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../../../integrations/linkedin';
+import { getGmailDeliveryDescription, getGmailDeliveryHint } from '../../../integrations/gmail';
 import { type DeliverySummary } from '../types';
 import { Button } from '@/components/ui/button';
 export function DashboardDelivery({
@@ -171,6 +172,11 @@ export function DashboardDelivery({
               <p className="mt-4 text-sm leading-6 text-ink">{getInstagramDeliveryDescription()}</p>
               <p className="mt-2 text-xs leading-5 text-muted">{getInstagramDeliveryHint()}</p>
             </>
+          ) : selectedChannel === 'gmail' ? (
+            <>
+              <p className="mt-4 text-sm leading-6 text-ink">{getGmailDeliveryDescription()}</p>
+              <p className="mt-2 text-xs leading-5 text-muted">{getGmailDeliveryHint()}</p>
+            </>
           ) : (
             <>
               <p className="mt-4 text-sm leading-6 text-ink">{getLinkedInDeliveryDescription()}</p>
@@ -198,7 +204,9 @@ export function DashboardDelivery({
                 ? lastDeliverySummary.recipientLabel === 'connected account'
                   ? 'Published to Instagram using the connected professional account.'
                   : `Published to Instagram as @${lastDeliverySummary.recipientLabel}.`
-                : 'Delivered to LinkedIn using the approved text and selected media.'}
+                : lastDeliverySummary.channel === 'gmail'
+                  ? `Sent to ${lastDeliverySummary.recipientLabel} via Gmail.`
+                  : 'Delivered to LinkedIn using the approved text and selected media.'}
           </p>
         </div>
       ) : null}
