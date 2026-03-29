@@ -11,6 +11,7 @@ import { generateQuickChangePreview, generateVariantsPreview } from './generatio
 import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway } from './persistence/drafts';
 import type { SheetRow } from './generation/types';
+import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
 
 
@@ -53,6 +54,10 @@ export interface Env {
   WHATSAPP_ACCESS_TOKEN?: string;
   /** Local only (.dev.vars): overrides CONFIG_KV spreadsheetId when preview KV has no config */
   DEV_SPREADSHEET_ID?: string;
+  /** Local only: shared secret; client sends as idToken to skip Google Sign-In (see dev-google-auth-bypass plugin) */
+  DEV_GOOGLE_AUTH_BYPASS_SECRET?: string;
+  /** Optional synthetic email for bypass session (default dev-bypass@local.invalid) */
+  DEV_GOOGLE_AUTH_BYPASS_EMAIL?: string;
 }
 
 interface BotConfig {
@@ -728,6 +733,11 @@ function parseEmailList(value: string | undefined): string[] {
 async function verifySession(idToken: string | undefined, env: Env): Promise<VerifiedSession> {
   if (!idToken) {
     throw new Error('Unauthorized: missing Google ID token.');
+  }
+
+  const bypassSession = tryResolveDevGoogleAuthBypassSession(idToken, env);
+  if (bypassSession) {
+    return bypassSession;
   }
 
   const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);

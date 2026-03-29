@@ -7,6 +7,7 @@ import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspace
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { Button } from '@/components/ui/button';
+import { getAppBuildLabel } from '@/lib/appBuildLabel';
 
 export type WorkspaceNavPage = 'topics' | 'settings' | 'rules';
 
@@ -123,6 +124,7 @@ export function AppSidebar({
   const closeMobile = () => onMobileOpenChange(false);
   const displayName = googleProfile?.name?.trim() || null;
   const pictureUrl = googleProfile?.picture?.trim() || null;
+  const buildLabel = getAppBuildLabel();
 
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
     const to =
@@ -272,6 +274,15 @@ export function AppSidebar({
               </div>
             ) : null}
           </div>
+          <p
+            className={clsx(
+              'mt-2 min-w-0 text-[10px] leading-tight tracking-tight text-muted/70 tabular-nums',
+              collapsed ? 'truncate text-center' : 'px-0.5',
+            )}
+            title={buildLabel}
+          >
+            {buildLabel}
+          </p>
         </div>
       </aside>
     </>

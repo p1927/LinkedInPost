@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { BrowserRouter, useLocation, Routes, Route, Navigate } from 'react-router-dom'
-import { Share2, Sparkles, TableProperties } from 'lucide-react'
+import { LogOut, Share2, Sparkles, TableProperties } from 'lucide-react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
+import { Button } from '@/components/ui/button'
 import { Dashboard } from './components/dashboard'
 import { AlertProvider } from './components/AlertProvider'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
@@ -12,12 +13,30 @@ import { workspaceRouterBasename, WORKSPACE_PATHS } from './features/topic-navig
 function isWorkspaceTopicReviewPath(pathname: string): boolean {
   return pathname.includes(`${WORKSPACE_PATHS.topics}/`) && pathname !== WORKSPACE_PATHS.topics
 }
-import { parseGoogleIdTokenProfile } from './utils/googleIdTokenProfile'
+import { parseGoogleIdTokenProfile, type GoogleIdTokenProfile } from './utils/googleIdTokenProfile'
+import {
+  getDevGoogleAuthBypassProfile,
+  getDevGoogleAuthBypassToken,
+  isActiveDevGoogleAuthBypassToken,
+  isDevGoogleAuthBypassEnabled,
+} from './plugins/dev-google-auth-bypass'
 import { PrivacyPolicy } from './components/PrivacyPolicy'
 import { LegalFooterLinks } from './components/LegalFooterLinks'
 import { TermsOfServicePage } from './pages/TermsOfServicePage'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
+
+function readInitialIdToken(): string | null {
+  const bypass = getDevGoogleAuthBypassToken()
+  if (bypass) {
+    return bypass
+  }
+  try {
+    return localStorage.getItem(STORED_ID_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
 
 function WorkspaceSession({
   idToken,
@@ -31,7 +50,7 @@ function WorkspaceSession({
 }: {
   idToken: string
   session: AppSession
-  googleProfile: ReturnType<typeof parseGoogleIdTokenProfile>
+  googleProfile: GoogleIdTokenProfile | null
   api: BackendApi
   setSession: Dispatch<SetStateAction<AppSession | null>>
   setIdToken: Dispatch<SetStateAction<string | null>>
@@ -91,8 +110,13 @@ function LoginRedirect() {
 
 function App() {
   const api = useMemo(() => new BackendApi(), [])
-  const [idToken, setIdToken] = useState<string | null>(localStorage.getItem(STORED_ID_TOKEN_KEY))
-  const googleProfile = useMemo(() => parseGoogleIdTokenProfile(idToken), [idToken])
+  const [idToken, setIdToken] = useState<string | null>(() => readInitialIdToken())
+  const googleProfile = useMemo((): GoogleIdTokenProfile | null => {
+    if (isActiveDevGoogleAuthBypassToken(idToken)) {
+      return getDevGoogleAuthBypassProfile()
+    }
+    return parseGoogleIdTokenProfile(idToken)
+  }, [idToken])
   const [session, setSession] = useState<AppSession | null>(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -162,7 +186,26 @@ function App() {
                         </div>
                         <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
                       </div>
-                      {idToken ? <GoogleLoginButton onLogin={handleLogin} /> : null}
+                      {idToken ? (
+                        isActiveDevGoogleAuthBypassToken(idToken) ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="md"
+                            onClick={() => {
+                              setIdToken(null)
+                              setSession(null)
+                              setErrorMessage('')
+                            }}
+                            className="glass-inset gap-2 rounded-xl text-muted hover:bg-white/85 hover:text-ink"
+                          >
+                            <LogOut className="h-4 w-4" aria-hidden />
+                            Log out
+                          </Button>
+                        ) : (
+                          <GoogleLoginButton onLogin={handleLogin} />
+                        )
+                      ) : null}
                     </div>
                   </header>
                 ) : null}
@@ -233,11 +276,35 @@ function App() {
                           </div>
                           <div>
                             <h3 className="font-heading text-2xl font-semibold text-ink">Sign in</h3>
-                            <p className="mt-2 text-sm text-muted">Use an approved Google account to open the workspace.</p>
+                            <p className="mt-2 text-sm text-muted">
+                              {isDevGoogleAuthBypassEnabled()
+                                ? 'Use an approved Google account or dev bypass to open the workspace.'
+                                : 'Use an approved Google account to open the workspace.'}
+                            </p>
                           </div>
                           <div className="flex justify-center pt-2">
                             <GoogleLoginButton onLogin={handleLogin} />
                           </div>
+                          {isDevGoogleAuthBypassEnabled() && getDevGoogleAuthBypassToken() ? (
+                            <div className="flex flex-col items-center gap-2 border-t border-border/60 pt-4">
+                              <p className="text-xs text-muted">Local development</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="md"
+                                className="rounded-xl"
+                                onClick={() => {
+                                  const token = getDevGoogleAuthBypassToken()
+                                  setErrorMessage('')
+                                  if (token) {
+                                    setIdToken(token)
+                                  }
+                                }}
+                              >
+                                Continue with dev bypass
+                              </Button>
+                            </div>
+                          ) : null}
                           {errorMessage ? (
                             <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-800">
                               {errorMessage}

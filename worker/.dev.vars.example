@@ -1,5 +1,9 @@
 ALLOWED_EMAILS=you@gmail.com teammate@gmail.com
 ADMIN_EMAILS=you@gmail.com
+# Optional local dev: skip Google Sign-In — set the same value as VITE_DEV_GOOGLE_AUTH_BYPASS_SECRET in frontend .env
+# DEV_GOOGLE_AUTH_BYPASS_SECRET=use-a-long-random-string-only-on-localhost
+# Optional label for the synthetic session (default dev-bypass@local.invalid)
+# DEV_GOOGLE_AUTH_BYPASS_EMAIL=dev@example.com
 # Optional local dev: same spreadsheet as production when preview KV has no shared-config (sheet id from the Google Sheet URL)
 # DEV_SPREADSHEET_ID=1AbCdEfGhIjKlMnOpQrStUvWxYz
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
