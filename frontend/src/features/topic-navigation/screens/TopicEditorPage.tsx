@@ -61,6 +61,9 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         routed={routed}
         editorStartMediaPanel={editorStartMediaPanel}
         onApprove={(text, img, time, emailTo, emailCc, emailBcc, emailSubject) => p.onApprove(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject)}
+        onPublishNow={(text, img, time, emailTo, emailCc, emailBcc, emailSubject) =>
+          p.onPublishNow(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject)
+        }
         onSaveEmailFields={(emailTo, emailCc, emailBcc, emailSubject) => p.onSaveEmailFields(row, emailTo, emailCc, emailBcc, emailSubject)}
         globalEmailDefaults={p.globalEmailDefaults}
         onGenerateQuickChange={p.onGenerateQuickChange}

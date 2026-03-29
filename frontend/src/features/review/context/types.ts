@@ -123,6 +123,8 @@ export interface ReviewFlowContextValue {
   handleFetchMoreImageOptions: () => Promise<void>;
   handleUploadImageOption: (file: File) => Promise<void>;
   handleApprove: () => Promise<void>;
+  handlePublishNow: () => Promise<void>;
+  publishSubmitting: boolean;
   handleLoadSheetVariant: (index: number) => void;
   handleOpenMediaFromPickTile: (index: number) => void;
   changePickCarouselBy: (direction: -1 | 1) => void;
@@ -143,6 +145,7 @@ export interface ReviewFlowProviderProps {
   isAdmin: boolean;
   googleModel: string;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
+  onPublishNow: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
   onSaveEmailFields: (emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
   globalEmailDefaults?: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;

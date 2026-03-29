@@ -12,6 +12,7 @@ export function useReviewFlowActions(
 ) {
   const {
     onApprove,
+    onPublishNow,
     onSaveEmailFields,
     onGenerateQuickChange,
     onGenerateVariants,
@@ -27,6 +28,7 @@ export function useReviewFlowActions(
   const {
     sheetRow, setSheetRow,
     editorText, setEditorText,
+    submitting,
     setEditorBaselineText,
     selection, setSelection,
     setScope,
@@ -65,6 +67,7 @@ export function useReviewFlowActions(
   } = state;
 
   const { showAlert } = useAlert();
+  const [publishSubmitting, setPublishSubmitting] = useState(false);
 
   const requestClose = useCallback(() => {
     if (hasUnsavedReviewState) {
@@ -103,7 +106,9 @@ export function useReviewFlowActions(
         pendingClose ||
         pendingNavigateToVariants ||
         pendingVariantIndex !== null ||
-        compareState !== null
+        compareState !== null ||
+        submitting ||
+        publishSubmitting
       ) {
         return;
       }
@@ -121,6 +126,8 @@ export function useReviewFlowActions(
     pendingClose,
     pendingNavigateToVariants,
     pendingVariantIndex,
+    submitting,
+    publishSubmitting,
     leaveToTopics,
     requestNavigateToVariants,
     routed?.screen,
@@ -327,6 +334,45 @@ export function useReviewFlowActions(
     }
   };
 
+  const handlePublishNow = async () => {
+    if (!(editorText || '').trim()) {
+      void showAlert({ title: 'Notice', description: 'Post text cannot be empty.' });
+      return;
+    }
+
+    setPublishSubmitting(true);
+    try {
+      let formattedTime = '';
+      if (postTime) {
+        const date = new Date(postTime);
+        const yyyy = date.getUTCFullYear();
+        const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(date.getUTCDate()).padStart(2, '0');
+        const hh = String(date.getUTCHours()).padStart(2, '0');
+        const min = String(date.getUTCMinutes()).padStart(2, '0');
+        formattedTime = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+      }
+
+      await onPublishNow(
+        editorText.trim(),
+        state.selectedImageUrl,
+        formattedTime,
+        emailTo,
+        emailCc,
+        emailBcc,
+        emailSubject,
+      );
+    } catch (error) {
+      console.error('Publish failed:', error);
+      void showAlert({
+        title: 'Publish Failed',
+        description: error instanceof Error ? error.message : 'An error occurred while publishing. Please try again.',
+      });
+    } finally {
+      setPublishSubmitting(false);
+    }
+  };
+
   const handleLoadSheetVariant = useCallback(
     (index: number) => {
       const variant = sheetVariants[index];
@@ -517,6 +563,8 @@ export function useReviewFlowActions(
     handleFetchMoreImageOptions,
     handleUploadImageOption,
     handleApprove,
+    handlePublishNow,
+    publishSubmitting,
     handleLoadSheetVariant,
     handleOpenMediaFromPickTile,
     changePickCarouselBy,

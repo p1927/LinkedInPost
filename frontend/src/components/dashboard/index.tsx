@@ -229,6 +229,7 @@ export function Dashboard({
     globalGenerationRules: session.config.generationRules,
     googleModel: settingsHook.googleModel,
     onApprove: queueHook.handleApproveVariant,
+    onPublishNow: queueHook.publishFromReviewEditor,
     onSaveEmailFields: queueHook.handleSaveEmailFields,
     globalEmailDefaults: {
       emailTo: settingsHook.gmailDefaultTo,

@@ -14,6 +14,8 @@ export type TopicReviewPagesBaseProps = {
   globalGenerationRules: string;
   googleModel: string;
   onApprove: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
+  /** Approve current editor content and send immediately to the workspace delivery channel (skips the queue Publish click). */
+  onPublishNow: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
   onSaveEmailFields: (row: SheetRow, emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
   globalEmailDefaults: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;

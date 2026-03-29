@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/cn';
+import { getChannelLabel } from '@/integrations/channels';
 
 function ResizeHandle() {
   return (
@@ -31,7 +32,10 @@ export function EditorScreen() {
     editorDirty,
     handleFormatting,
     handleApprove,
+    handlePublishNow,
+    publishSubmitting,
     submitting,
+    deliveryChannel,
     postTime,
     setPostTime,
     sheetVariants,
@@ -40,6 +44,8 @@ export function EditorScreen() {
 
   const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
   const isDesktop = useMediaQuery('(min-width: 1280px)');
+  const footerBusy = submitting || publishSubmitting;
+  const channelLabel = getChannelLabel(deliveryChannel);
 
   const editorSection = (
     <section
@@ -153,23 +159,51 @@ export function EditorScreen() {
               />
             </div>
           </div>
-          <div className="flex shrink-0 justify-stretch lg:justify-end">
-            <Button
-              type="button"
-              size="sm"
-              variant="primary"
-              onClick={() => void handleApprove()}
-              disabled={submitting}
-              className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none lg:w-auto lg:min-w-[9rem]"
-            >
-              {submitting
-                ? isPublished
-                  ? 'Saving…'
-                  : 'Approving…'
-                : isPublished
-                  ? '✓ Save Schedule'
-                  : '✓ Approve & Publish'}
-            </Button>
+          <div
+            className={cn(
+              'flex shrink-0 flex-col gap-2 justify-stretch sm:flex-row sm:flex-wrap sm:justify-end',
+              !isPublished && 'sm:items-center',
+            )}
+          >
+            {isPublished ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="primary"
+                onClick={() => void handleApprove()}
+                disabled={footerBusy}
+                className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none lg:w-auto lg:min-w-[9rem]"
+              >
+                {submitting ? 'Saving…' : '✓ Save as draft'}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void handleApprove()}
+                  disabled={footerBusy}
+                  title="Mark as approved in the sheet only. Publish later from the queue."
+                  className="min-h-[44px] w-full border-primary/25 shadow-sm sm:w-auto sm:min-w-[8.5rem]"
+                >
+                  {submitting ? 'Saving…' : 'Approve only'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => void handlePublishNow()}
+                  disabled={footerBusy}
+                  title={`Approve and send immediately to ${channelLabel} (same as queue Publish).`}
+                  className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[9rem]"
+                >
+                  {publishSubmitting
+                    ? 'Publishing…'
+                    : `Publish to ${channelLabel}`}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </footer>

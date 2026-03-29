@@ -211,7 +211,7 @@ export class SheetsGateway {
     await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:S`, [[
       sourceRow.topic,
       today,
-      'Approved',
+      'Drafted',
       sourceRow.variant1 || '',
       sourceRow.variant2 || '',
       sourceRow.variant3 || '',

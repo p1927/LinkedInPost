@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { type SheetRow } from '../../../services/sheets';
 import { type GenerationRequest, type QuickChangePreviewResult, type VariantsPreviewResponse } from '../../../services/backendApi';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../services/backendApi';
@@ -130,8 +130,8 @@ export function useDashboardQueue({
         );
         await loadData(true);
         void showAlert({
-          title: 'New Draft Created',
-          description: `A new draft of "${row.topic}" was created. The original published post is unchanged.`,
+          title: 'Draft saved',
+          description: `A new drafted copy of "${row.topic}" was added. The original published post is unchanged — open it from the queue to edit further or publish.`,
         });
         onAfterApprove?.();
         return;
@@ -263,52 +263,79 @@ export function useDashboardQueue({
     URL.revokeObjectURL(downloadUrl);
   };
 
+  const describePublishPrerequisiteFailure = useMemo(
+    () =>
+      (message: string, imageUrl: string, emailToForGmail: string, emptyTextHint: 'queue' | 'editor'): string | null => {
+        if (selectedChannel === 'telegram' && !telegramConfigured) {
+          return session.isAdmin
+            ? 'Complete the Telegram delivery settings in the workspace drawer first.'
+            : 'A workspace admin still needs to configure Telegram delivery settings.';
+        }
+        if (selectedChannel === 'whatsapp' && !whatsappConfigured) {
+          return session.isAdmin
+            ? 'Complete the WhatsApp settings in the workspace drawer first.'
+            : 'A workspace admin still needs to configure WhatsApp delivery settings.';
+        }
+        if (selectedChannel === 'instagram' && !instagramConfigured) {
+          return session.isAdmin
+            ? 'Complete the Instagram publishing settings in the workspace drawer first.'
+            : 'A workspace admin still needs to configure Instagram publishing settings.';
+        }
+        if (selectedChannel === 'linkedin' && !linkedinConfigured) {
+          return session.isAdmin
+            ? 'Complete the LinkedIn publishing settings in the workspace drawer first.'
+            : 'A workspace admin still needs to configure LinkedIn publishing settings.';
+        }
+        if (selectedChannel === 'gmail' && !gmailConfigured) {
+          return session.isAdmin
+            ? 'Connect Gmail in the workspace settings drawer first.'
+            : 'A workspace admin still needs to connect Gmail for this workspace.';
+        }
+        if (selectedChannelOption.requiresRecipient && !resolvedRecipientId) {
+          return selectedChannel === 'telegram'
+            ? 'Select a saved Telegram chat or enter a valid chat ID.'
+            : 'Select a saved WhatsApp recipient or enter a valid phone number in international format.';
+        }
+        if (!message.trim()) {
+          return emptyTextHint === 'queue'
+            ? 'This row does not have approved text yet. Review and approve a draft first.'
+            : 'Post text is empty. Write or select content before publishing.';
+        }
+        if (selectedChannel === 'instagram' && !imageUrl.trim()) {
+          return 'Instagram requires a selected image. Choose an image in the Media panel before publishing.';
+        }
+        if (selectedChannel === 'gmail' && !emailToForGmail.trim()) {
+          return emptyTextHint === 'queue'
+            ? 'Gmail needs at least one To address on this row. Open the topic in the editor, use the Email tab, fill To (and optional Cc, Bcc, Subject), then approve again so the sheet is updated — or enter addresses before the first approve.'
+            : 'Gmail needs at least one To address. Open the Email tab, fill To (and optional Cc, Bcc, Subject), then publish again.';
+        }
+        return null;
+      },
+    [
+      selectedChannel,
+      telegramConfigured,
+      whatsappConfigured,
+      instagramConfigured,
+      linkedinConfigured,
+      gmailConfigured,
+      session.isAdmin,
+      selectedChannelOption.requiresRecipient,
+      resolvedRecipientId,
+    ],
+  );
+
   const publishRowToSelectedChannel = async (row: SheetRow) => {
     if (actionLoading !== null) return;
 
-    if (selectedChannel === 'telegram' && !telegramConfigured) {
-      void showAlert({ title: 'Notice', description: session.isAdmin ? 'Complete the Telegram delivery settings in the workspace drawer first.' : 'A workspace admin still needs to configure Telegram delivery settings.' });
-      return;
-    }
-    if (selectedChannel === 'whatsapp' && !whatsappConfigured) {
-      void showAlert({ title: 'Notice', description: session.isAdmin ? 'Complete the WhatsApp settings in the workspace drawer first.' : 'A workspace admin still needs to configure WhatsApp delivery settings.' });
-      return;
-    }
-    if (selectedChannel === 'instagram' && !instagramConfigured) {
-      void showAlert({ title: 'Notice', description: session.isAdmin ? 'Complete the Instagram publishing settings in the workspace drawer first.' : 'A workspace admin still needs to configure Instagram publishing settings.' });
-      return;
-    }
-    if (selectedChannel === 'linkedin' && !linkedinConfigured) {
-      void showAlert({ title: 'Notice', description: session.isAdmin ? 'Complete the LinkedIn publishing settings in the workspace drawer first.' : 'A workspace admin still needs to configure LinkedIn publishing settings.' });
-      return;
-    }
-    if (selectedChannel === 'gmail' && !gmailConfigured) {
-      void showAlert({ title: 'Notice', description: session.isAdmin ? 'Connect Gmail in the workspace settings drawer first.' : 'A workspace admin still needs to connect Gmail for this workspace.' });
-      return;
-    }
-
-    if (selectedChannelOption.requiresRecipient && !resolvedRecipientId) {
-      void showAlert({ title: 'Notice', description: selectedChannel === 'telegram' ? 'Select a saved Telegram chat or enter a valid chat ID.' : 'Select a saved WhatsApp recipient or enter a valid phone number in international format.' });
-      return;
-    }
-
     const message = (row.selectedText || row.variant1 || '').trim();
-    if (!message) {
-      void showAlert({ title: 'Notice', description: 'This row does not have approved text yet. Review and approve a draft first.' });
-      return;
-    }
-
-    if (selectedChannel === 'instagram' && !(row.selectedImageId || '').trim()) {
-      void showAlert({ title: 'Notice', description: 'Instagram requires a selected image. Approve the row with an image before publishing.' });
-      return;
-    }
-
-    if (selectedChannel === 'gmail' && !(row.emailTo || '').trim()) {
-      void showAlert({
-        title: 'Notice',
-        description:
-          'Gmail needs at least one To address on this row. Open the topic in the editor, use the Email tab, fill To (and optional Cc, Bcc, Subject), then approve again so the sheet is updated — or enter addresses before the first approve.',
-      });
+    const fail = describePublishPrerequisiteFailure(
+      message,
+      (row.selectedImageId || '').trim(),
+      (row.emailTo || '').trim(),
+      'queue',
+    );
+    if (fail) {
+      void showAlert({ title: 'Notice', description: fail });
       return;
     }
 
@@ -341,6 +368,106 @@ export function useDashboardQueue({
       } else {
         void showAlert({ title: 'Notice', description: `Queued "${row.topic}" for ${getChannelLabel(selectedChannel)} publishing. Refresh the dashboard in a minute to confirm the updated status.` });
       }
+    } catch (error) {
+      handleFailure(error, `Failed to send the approved message to ${getChannelLabel(selectedChannel)}.`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const publishFromReviewEditor = async (
+    row: SheetRow,
+    selectedText: string,
+    selectedImageId: string,
+    postTime: string,
+    emailTo?: string,
+    emailCc?: string,
+    emailBcc?: string,
+    emailSubject?: string,
+  ) => {
+    if (actionLoading !== null) return;
+
+    const message = selectedText.trim();
+    const imageUrl = (selectedImageId || '').trim();
+    const emailToResolved = (emailTo ?? row.emailTo ?? '').trim();
+
+    const fail = describePublishPrerequisiteFailure(message, imageUrl, emailToResolved, 'editor');
+    if (fail) {
+      void showAlert({ title: 'Notice', description: fail });
+      return;
+    }
+
+    if (getNormalizedRowStatus(row.status) === 'published') {
+      void showAlert({
+        title: 'Notice',
+        description: 'This topic is already published. Save edits as a draft first, then open that draft to publish.',
+      });
+      return;
+    }
+
+    const actionKey = buildRowActionKey('publish', row);
+    setActionLoading(actionKey);
+    try {
+      await api.updateRowStatus(
+        idToken,
+        row,
+        'Approved',
+        selectedText,
+        selectedImageId,
+        postTime,
+        emailTo ?? '',
+        emailCc ?? '',
+        emailBcc ?? '',
+        emailSubject ?? '',
+      );
+
+      const mergedRow: SheetRow = {
+        ...row,
+        status: 'Approved',
+        selectedText: message,
+        selectedImageId: imageUrl,
+        postTime,
+        emailTo: emailTo ?? row.emailTo,
+        emailCc: emailCc ?? row.emailCc,
+        emailBcc: emailBcc ?? row.emailBcc,
+        emailSubject: emailSubject ?? row.emailSubject,
+      };
+
+      const result = await api.publishContent(idToken, {
+        row: mergedRow,
+        channel: selectedChannel,
+        recipientId: selectedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
+        message,
+        imageUrl: imageUrl || undefined,
+      });
+
+      if (result.deliveryMode === 'sent') {
+        setLastDeliverySummary({
+          topic: mergedRow.topic,
+          channel: selectedChannel,
+          mediaMode: result.mediaMode,
+          recipientLabel: selectedChannelOption.requiresRecipient
+            ? selectedRecipientLabel || resolvedRecipientId
+            : selectedChannel === 'instagram'
+              ? session.config.instagramUsername || 'connected account'
+              : selectedChannel === 'gmail'
+                ? (result.recipientId || mergedRow.emailTo || '').trim() || session.config.gmailEmailAddress || 'recipient'
+                : 'LinkedIn audience',
+        });
+        await loadData(true);
+        void showAlert({
+          title: 'Success',
+          description: selectedChannelOption.requiresRecipient
+            ? `Sent "${mergedRow.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`
+            : `Published "${mergedRow.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`,
+        });
+      } else {
+        void showAlert({
+          title: 'Notice',
+          description: `Queued "${mergedRow.topic}" for ${getChannelLabel(selectedChannel)} publishing. Refresh the dashboard in a minute to confirm the updated status.`,
+        });
+      }
+      onAfterApprove?.();
     } catch (error) {
       handleFailure(error, `Failed to send the approved message to ${getChannelLabel(selectedChannel)}.`);
     } finally {
@@ -392,6 +519,7 @@ export function useDashboardQueue({
     handleUploadReviewImage,
     handleDownloadReviewImage,
     publishRowToSelectedChannel,
+    publishFromReviewEditor,
     republishRowToSelectedChannel,
     handleDeleteTopic,
   };
