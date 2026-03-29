@@ -447,6 +447,7 @@ export function Dashboard({
       {queueHook.selectedApprovedRowPreview ? (
         <ApprovedPostPreview
           row={queueHook.selectedApprovedRowPreview}
+          previewChannel={channelsHook.selectedChannel}
           onClose={() => queueHook.setSelectedApprovedRowPreview(null)}
         />
       ) : null}

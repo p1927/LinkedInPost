@@ -1,14 +1,17 @@
 import { CalendarClock, Eye, X } from 'lucide-react';
+import type { ChannelId } from '../integrations/channels';
 import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
 import { Button } from '@/components/ui/button';
 
 interface ApprovedPostPreviewProps {
   row: SheetRow;
+  /** Matches the delivery channel selected on the dashboard so the mock matches where the post will go. */
+  previewChannel: ChannelId;
   onClose: () => void;
 }
 
-export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) {
+export function ApprovedPostPreview({ row, previewChannel, onClose }: ApprovedPostPreviewProps) {
   const normalizedStatus = (row.status || '').trim().toLowerCase() || 'approved';
   const isPublished = normalizedStatus === 'published';
   const previewLabel = isPublished ? 'Published Preview' : 'Approved Preview';
@@ -55,6 +58,7 @@ export function ApprovedPostPreview({ row, onClose }: ApprovedPostPreviewProps) 
                 optionNumber={1}
                 text={row.selectedText || row.variant1}
                 imageUrl={row.selectedImageId}
+                previewChannel={previewChannel}
                 selected={true}
                 expanded={true}
                 onSelect={() => undefined}
