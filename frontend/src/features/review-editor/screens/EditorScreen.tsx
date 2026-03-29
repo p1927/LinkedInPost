@@ -74,23 +74,28 @@ export function EditorScreen() {
           >
             <Panel
               id="review-refine"
-              defaultSize={26}
-              minSize={16}
-              maxSize={48}
+              defaultSize="26%"
+              minSize="16%"
+              maxSize="48%"
               className="flex min-h-0 flex-col"
             >
               <EditorSidebar />
             </Panel>
             <ResizeHandle />
-            <Panel id="review-editor" defaultSize={48} minSize={28} className="flex min-h-0 flex-col">
+            <Panel
+              id="review-editor"
+              defaultSize="48%"
+              minSize="28%"
+              className="flex min-h-0 flex-col"
+            >
               {editorSection}
             </Panel>
             <ResizeHandle />
             <Panel
               id="review-preview"
-              defaultSize={26}
-              minSize={16}
-              maxSize={48}
+              defaultSize="26%"
+              minSize="16%"
+              maxSize="48%"
               className="flex min-h-0 flex-col"
             >
               <LivePreviewSidebar />
