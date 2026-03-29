@@ -9,12 +9,19 @@ export function EditorVariantBar() {
   const {
     sheetVariants,
     editorVariantIndex,
+    pickCarouselIndex,
     handleLoadSheetVariant,
     setPickCarouselIndex,
   } = useReviewFlow();
 
   const [expanded, setExpanded] = useState(false);
   const prevVariantIndexRef = useRef(editorVariantIndex);
+
+  const highlightedVariantIndex = expanded
+    ? pickCarouselIndex
+    : editorVariantIndex !== null
+      ? editorVariantIndex
+      : pickCarouselIndex;
 
   // Auto-collapse when a variant is successfully loaded (editorVariantIndex changes)
   useEffect(() => {
@@ -43,25 +50,33 @@ export function EditorVariantBar() {
 
         <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none">
           {sheetVariants.map((_, index) => {
-            const isActive = index === editorVariantIndex;
+            const isHighlighted = index === highlightedVariantIndex;
             return (
               <button
                 key={index}
                 type="button"
                 onClick={() => {
-                  if (isActive) {
-                    setExpanded((e) => !e);
-                  } else {
-                    handleLoadSheetVariant(index);
+                  if (expanded) {
+                    if (index === pickCarouselIndex) {
+                      setExpanded(false);
+                    } else {
+                      setPickCarouselIndex(index);
+                    }
+                    return;
                   }
+                  if (index === editorVariantIndex) {
+                    setExpanded((e) => !e);
+                    return;
+                  }
+                  handleLoadSheetVariant(index);
                 }}
                 className={cn(
                   'shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                  isActive
+                  isHighlighted
                     ? 'bg-primary text-white shadow-sm ring-2 ring-primary/20'
                     : 'bg-violet-100/70 text-ink/65 hover:bg-violet-200/80 hover:text-ink/85',
                 )}
-                aria-pressed={isActive}
+                aria-pressed={isHighlighted}
               >
                 Variant {index + 1}
               </button>
