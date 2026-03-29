@@ -48,9 +48,9 @@ function ReviewWorkspaceLayout() {
       <section
         aria-labelledby="review-workspace-title"
         aria-describedby="review-workspace-desc"
-        className="flex h-full w-full flex-col self-stretch outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+        className="flex min-h-0 h-full min-w-0 w-full flex-1 flex-col self-stretch outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
       >
-        <div className="flex h-full w-full flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 h-full min-w-0 w-full flex-1 flex-col overflow-hidden">
           <p id="review-workspace-desc" className="sr-only">
             Pick a variant, refine, then approve.
           </p>

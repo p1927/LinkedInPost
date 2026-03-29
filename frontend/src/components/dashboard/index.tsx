@@ -7,7 +7,10 @@ import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
 import { useDashboardQueue } from './hooks/useDashboardQueue';
-import { DashboardSettingsDrawer } from './components/DashboardSettingsDrawer';
+import {
+  DashboardSettingsDrawer,
+  type DashboardSettingsDrawerHandle,
+} from './components/DashboardSettingsDrawer';
 import { SettingsConnectionsCard } from './components/SettingsConnectionsCard';
 import { DashboardToolbar } from './components/DashboardToolbar';
 import { DashboardQueue } from './tabs/DashboardQueue';
@@ -57,6 +60,7 @@ export function Dashboard({
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
   const [queueScrollTargetId, setQueueScrollTargetId] = useState<string | null>(null);
+  const settingsDrawerRef = useRef<DashboardSettingsDrawerHandle>(null);
 
   const channelsHook = useDashboardChannels({
     idToken,
@@ -326,6 +330,7 @@ export function Dashboard({
 
   const settingsContent = (
     <DashboardSettingsDrawer
+      ref={settingsDrawerRef}
       session={session}
       sheetIdInput={settingsHook.sheetIdInput}
       setSheetIdInput={settingsHook.setSheetIdInput}
@@ -405,6 +410,7 @@ export function Dashboard({
       <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
       <SettingsConnectionsCard
         health={publishingHealth}
+        onNavigateToSection={(sectionId) => settingsDrawerRef.current?.scrollToSection(sectionId)}
         className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md lg:sticky lg:top-4"
       />
     </div>
@@ -433,7 +439,9 @@ export function Dashboard({
   const isReviewRoute = location.pathname.includes('/topics/') && location.pathname !== WORKSPACE_PATHS.topics;
 
   return (
-    <div className={`flex w-full flex-1 flex-col ${isReviewRoute ? '' : 'pb-12'}`}>
+    <div
+      className={`flex w-full flex-1 flex-col ${isReviewRoute ? 'min-h-0' : ''} ${isReviewRoute ? '' : 'pb-12'}`}
+    >
       <div style={{ display: isTopicsMain ? 'block' : 'none' }}>
         {topicsHome}
       </div>

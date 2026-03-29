@@ -38,7 +38,7 @@ export function EditorSidebar() {
   return (
     <aside
       aria-label="Refine, media, and publishing rules"
-      className="order-2 min-h-0 min-w-0 border-b border-violet-200/30 px-4 py-4 xl:order-none xl:max-h-full xl:border-b-0 xl:overflow-y-auto"
+      className="order-2 min-h-0 min-w-0 border-b border-violet-200/30 px-4 py-3 xl:order-none xl:max-h-full xl:border-b-0 xl:overflow-y-auto"
     >
       <div
         className={`grid ${deliveryChannel === 'gmail' ? 'grid-cols-4' : 'grid-cols-3'} gap-1 rounded-xl border border-border bg-white p-1 shadow-sm`}

@@ -1,6 +1,7 @@
 import { Check, Minus } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeContext';
+import { PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID } from './DashboardSettingsDrawer';
 
 const CHANNEL_ROWS: Array<{ id: string; label: string; key: keyof WorkspacePublishingHealth }> = [
   { id: 'li', label: 'LinkedIn', key: 'linkedin' },
@@ -13,9 +14,12 @@ const CHANNEL_ROWS: Array<{ id: string; label: string; key: keyof WorkspacePubli
 export function SettingsConnectionsCard({
   health,
   className,
+  onNavigateToSection,
 }: {
   health: WorkspacePublishingHealth;
   className?: string;
+  /** Scrolls the settings panel to the matching "Jump to" section (e.g. LinkedIn → LinkedIn block). */
+  onNavigateToSection?: (sectionId: (typeof PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID)[keyof WorkspacePublishingHealth]) => void;
 }) {
   return (
     <section
@@ -39,7 +43,18 @@ export function SettingsConnectionsCard({
               key={id}
               className="glass-inset flex items-center justify-between gap-2 rounded-xl border border-violet-200/45 px-3 py-2"
             >
-              <span className="text-sm font-medium text-ink">{label}</span>
+              {onNavigateToSection ? (
+                <button
+                  type="button"
+                  className="cursor-pointer text-left text-sm font-medium text-ink underline-offset-2 hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  onClick={() => onNavigateToSection(PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID[key])}
+                  aria-label={`Jump to ${label} settings`}
+                >
+                  {label}
+                </button>
+              ) : (
+                <span className="text-sm font-medium text-ink">{label}</span>
+              )}
               <span
                 className={cn(
                   'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',

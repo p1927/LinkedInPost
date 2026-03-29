@@ -25,7 +25,7 @@ export function WorkspaceHeader({
   const titleBlock = (
     <div className="min-w-0 flex-1 leading-tight">
       {topicReviewHeader?.crumbs.length ? (
-        <nav aria-label="Breadcrumb" className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink/50">
+        <nav aria-label="Breadcrumb" className="mb-2.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ink/50">
           {topicReviewHeader.crumbs.map((c, i) => (
             <span key={c.key} className="flex min-w-0 max-w-full items-center gap-1.5">
               {i > 0 ? (

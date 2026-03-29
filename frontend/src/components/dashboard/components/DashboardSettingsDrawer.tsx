@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
 import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
 import { type ChannelId } from '../../../integrations/channels';
@@ -9,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { type WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeContext';
 
 const SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
@@ -19,6 +28,78 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-whatsapp', label: 'WhatsApp' },
   { id: 'settings-gmail', label: 'Gmail' },
 ] as const;
+
+export type DashboardSettingsDrawerHandle = {
+  scrollToSection: (id: (typeof SETTINGS_SECTIONS)[number]['id']) => void;
+};
+
+/** Maps Connections card rows to settings section ids (Jump to nav / scroll targets). */
+export const PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID: Record<
+  keyof WorkspacePublishingHealth,
+  (typeof SETTINGS_SECTIONS)[number]['id']
+> = {
+  linkedin: 'settings-linkedin',
+  instagram: 'settings-instagram',
+  telegram: 'settings-telegram',
+  whatsapp: 'settings-whatsapp',
+  gmail: 'settings-gmail',
+};
+
+type DashboardSettingsDrawerProps = {
+  session: AppSession;
+  sheetIdInput: string;
+  setSheetIdInput: (val: string) => void;
+  selectedChannel: ChannelId;
+  githubRepo: string;
+  setGithubRepo: (val: string) => void;
+  generationRules: string;
+  setGenerationRules: (val: string) => void;
+  githubTokenInput: string;
+  setGithubTokenInput: (val: string) => void;
+  telegramBotTokenInput: string;
+  setTelegramBotTokenInput: (val: string) => void;
+  telegramDraftLabel: string;
+  setTelegramDraftLabel: (val: string) => void;
+  telegramDraftChatId: string;
+  setTelegramDraftChatId: (val: string) => void;
+  verifyingTelegramChat: boolean;
+  handleVerifyTelegramChat: () => Promise<void>;
+  handleAddTelegramRecipient: () => void;
+  telegramVerification: {
+    kind: 'success' | 'error';
+    message: string;
+    result?: TelegramChatVerificationResult;
+  } | null;
+  setTelegramVerification: (
+    val: {
+      kind: 'success' | 'error';
+      message: string;
+      result?: TelegramChatVerificationResult;
+    } | null,
+  ) => void;
+  recipientMode: 'saved' | 'manual';
+  handleUseManualTelegramChat: () => void;
+  parsedTelegramRecipients: TelegramRecipient[];
+  handleRemoveTelegramRecipient: (chatId: string) => void;
+  telegramRecipientsInput: string;
+  setTelegramRecipientsInput: (val: string) => void;
+  channelActionBusy: boolean;
+  handleInstagramConnection: () => Promise<void>;
+  connectingChannel: OAuthProvider | null;
+  handleDisconnectChannel: (provider: OAuthProvider) => Promise<void>;
+  disconnectingChannel: OAuthProvider | null;
+  handleLinkedInConnection: () => Promise<void>;
+  handleWhatsAppConnection: () => Promise<void>;
+  handleGmailConnection: () => Promise<void>;
+  pendingWhatsAppOptions: WhatsAppPhoneOption[];
+  selectedWhatsAppPhoneId: string;
+  setSelectedWhatsAppPhoneId: (val: string) => void;
+  completeWhatsAppPhoneSelection: () => Promise<void>;
+  whatsappRecipientsInput: string;
+  setWhatsappRecipientsInput: (val: string) => void;
+  saveSettings: () => Promise<void>;
+  savingConfig: boolean;
+};
 
 function SettingsSectionCard({
   id,
@@ -45,103 +126,66 @@ function SettingsSectionCard({
   );
 }
 
-export function DashboardSettingsDrawer({
-  session,
-  sheetIdInput,
-  setSheetIdInput,
-  selectedChannel,
-  githubRepo,
-  setGithubRepo,
-  generationRules,
-  setGenerationRules,
-  githubTokenInput,
-  setGithubTokenInput,
-  telegramBotTokenInput,
-  setTelegramBotTokenInput,
-  telegramDraftLabel,
-  setTelegramDraftLabel,
-  telegramDraftChatId,
-  setTelegramDraftChatId,
-  verifyingTelegramChat,
-  handleVerifyTelegramChat,
-  handleAddTelegramRecipient,
-  telegramVerification,
-  setTelegramVerification,
-  recipientMode,
-  handleUseManualTelegramChat,
-  parsedTelegramRecipients,
-  handleRemoveTelegramRecipient,
-  telegramRecipientsInput,
-  setTelegramRecipientsInput,
-  channelActionBusy,
-  handleInstagramConnection,
-  connectingChannel,
-  handleDisconnectChannel,
-  disconnectingChannel,
-  handleLinkedInConnection,
+export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle, DashboardSettingsDrawerProps>(
+  function DashboardSettingsDrawer(
+    {
+      session,
+      sheetIdInput,
+      setSheetIdInput,
+      selectedChannel,
+      githubRepo,
+      setGithubRepo,
+      generationRules,
+      setGenerationRules,
+      githubTokenInput,
+      setGithubTokenInput,
+      telegramBotTokenInput,
+      setTelegramBotTokenInput,
+      telegramDraftLabel,
+      setTelegramDraftLabel,
+      telegramDraftChatId,
+      setTelegramDraftChatId,
+      verifyingTelegramChat,
+      handleVerifyTelegramChat,
+      handleAddTelegramRecipient,
+      telegramVerification,
+      setTelegramVerification,
+      recipientMode,
+      handleUseManualTelegramChat,
+      parsedTelegramRecipients,
+      handleRemoveTelegramRecipient,
+      telegramRecipientsInput,
+      setTelegramRecipientsInput,
+      channelActionBusy,
+      handleInstagramConnection,
+      connectingChannel,
+      handleDisconnectChannel,
+      disconnectingChannel,
+      handleLinkedInConnection,
       handleWhatsAppConnection,
       handleGmailConnection,
       pendingWhatsAppOptions,
-  selectedWhatsAppPhoneId,
-  setSelectedWhatsAppPhoneId,
-  completeWhatsAppPhoneSelection,
-  whatsappRecipientsInput,
-  setWhatsappRecipientsInput,
-  saveSettings,
-  savingConfig,
-}: {
-  session: AppSession;
-  sheetIdInput: string;
-  setSheetIdInput: (val: string) => void;
-  selectedChannel: ChannelId;
-  githubRepo: string;
-  setGithubRepo: (val: string) => void;
-  generationRules: string;
-  setGenerationRules: (val: string) => void;
-  githubTokenInput: string;
-  setGithubTokenInput: (val: string) => void;
-  telegramBotTokenInput: string;
-  setTelegramBotTokenInput: (val: string) => void;
-  telegramDraftLabel: string;
-  setTelegramDraftLabel: (val: string) => void;
-  telegramDraftChatId: string;
-  setTelegramDraftChatId: (val: string) => void;
-  verifyingTelegramChat: boolean;
-  handleVerifyTelegramChat: () => Promise<void>;
-  handleAddTelegramRecipient: () => void;
-  telegramVerification: { kind: 'success' | 'error'; message: string; result?: TelegramChatVerificationResult } | null;
-  setTelegramVerification: (val: { kind: 'success' | 'error'; message: string; result?: TelegramChatVerificationResult } | null) => void;
-  recipientMode: 'saved' | 'manual';
-  handleUseManualTelegramChat: () => void;
-  parsedTelegramRecipients: TelegramRecipient[];
-  handleRemoveTelegramRecipient: (chatId: string) => void;
-  telegramRecipientsInput: string;
-  setTelegramRecipientsInput: (val: string) => void;
-  channelActionBusy: boolean;
-  handleInstagramConnection: () => Promise<void>;
-  connectingChannel: OAuthProvider | null;
-  handleDisconnectChannel: (provider: OAuthProvider) => Promise<void>;
-  disconnectingChannel: OAuthProvider | null;
-  handleLinkedInConnection: () => Promise<void>;
-  handleWhatsAppConnection: () => Promise<void>;
-  handleGmailConnection: () => Promise<void>;
-  pendingWhatsAppOptions: WhatsAppPhoneOption[];
-  selectedWhatsAppPhoneId: string;
-  setSelectedWhatsAppPhoneId: (val: string) => void;
-  completeWhatsAppPhoneSelection: () => Promise<void>;
-  whatsappRecipientsInput: string;
-  setWhatsappRecipientsInput: (val: string) => void;
-  saveSettings: () => Promise<void>;
-  savingConfig: boolean;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeSectionId, setActiveSectionId] = useState<string>(SETTINGS_SECTIONS[0].id);
+      selectedWhatsAppPhoneId,
+      setSelectedWhatsAppPhoneId,
+      completeWhatsAppPhoneSelection,
+      whatsappRecipientsInput,
+      setWhatsappRecipientsInput,
+      saveSettings,
+      savingConfig,
+    },
+    ref,
+  ) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [activeSectionId, setActiveSectionId] = useState<string>(SETTINGS_SECTIONS[0].id);
 
-  const scrollToSection = useCallback((id: string) => {
-    const root = scrollRef.current;
-    const el = (root?.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)) as HTMLElement | null;
-    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
+    const scrollToSection = useCallback((id: (typeof SETTINGS_SECTIONS)[number]['id']) => {
+      setActiveSectionId(id);
+      const root = scrollRef.current;
+      const el = (root?.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)) as HTMLElement | null;
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, []);
+
+    useImperativeHandle(ref, () => ({ scrollToSection }), [scrollToSection]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -703,4 +747,7 @@ export function DashboardSettingsDrawer({
       </div>
     </div>
   );
-}
+  }
+);
+
+DashboardSettingsDrawer.displayName = 'DashboardSettingsDrawer';

@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 
 /** Responsive max-width for the LinkedIn feed card (wider on desktop). */
 export function linkedInFeedCardWidthClass(sidebar: boolean, carousel: boolean, pickCarousel = false): string {
-  if (sidebar) return 'w-full max-w-[600px]';
+  if (sidebar) return 'w-full max-w-full';
   if (carousel && pickCarousel) return 'mx-auto w-full max-w-[min(100%,35rem)] sm:max-w-[37rem]';
   if (carousel) return 'w-full max-w-none';
   return cn(

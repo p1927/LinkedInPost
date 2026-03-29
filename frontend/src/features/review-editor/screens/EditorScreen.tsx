@@ -43,7 +43,7 @@ export function EditorScreen() {
   const editorSection = (
     <section
       aria-labelledby="review-draft-editor-heading"
-      className="order-1 flex min-h-0 min-w-0 flex-col overflow-y-auto border-b border-violet-200/30 px-4 py-4 xl:order-none xl:h-full xl:max-h-full xl:overflow-hidden xl:border-b-0"
+      className="order-1 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-violet-200/30 px-4 py-3 xl:order-none xl:h-full xl:max-h-full xl:flex-1 xl:border-b-0"
     >
       <h3 id="review-draft-editor-heading" className="sr-only">
         Draft editor
@@ -58,14 +58,14 @@ export function EditorScreen() {
         onScopeChange={setScope}
         onFormatting={handleFormatting}
         compact
-        className="min-h-0 flex-1"
+        className="min-h-0 xl:flex-none"
       />
     </section>
   );
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:min-h-0 xl:overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
         {isDesktop ? (
           <PanelGroup
             orientation="horizontal"
@@ -74,7 +74,7 @@ export function EditorScreen() {
           >
             <Panel
               id="review-refine"
-              defaultSize={22}
+              defaultSize={26}
               minSize={16}
               maxSize={48}
               className="flex min-h-0 flex-col"
@@ -82,13 +82,13 @@ export function EditorScreen() {
               <EditorSidebar />
             </Panel>
             <ResizeHandle />
-            <Panel id="review-editor" defaultSize={56} minSize={28} className="flex min-h-0 flex-col">
+            <Panel id="review-editor" defaultSize={48} minSize={28} className="flex min-h-0 flex-col">
               {editorSection}
             </Panel>
             <ResizeHandle />
             <Panel
               id="review-preview"
-              defaultSize={22}
+              defaultSize={26}
               minSize={16}
               maxSize={48}
               className="flex min-h-0 flex-col"
@@ -105,9 +105,9 @@ export function EditorScreen() {
         )}
       </div>
 
-      <footer className="shrink-0 border-t border-violet-200/35 bg-canvas/95 px-4 py-3.5 backdrop-blur-sm sm:px-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
-          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
+      <footer className="shrink-0 border-t border-violet-200/35 bg-canvas/95 px-4 py-3 backdrop-blur-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold text-muted">Step 2 of 2</span>
               {sheetVariants.length > 0 ? (

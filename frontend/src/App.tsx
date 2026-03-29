@@ -8,6 +8,10 @@ import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
 import { workspaceRouterBasename, WORKSPACE_PATHS } from './features/topic-navigation/utils/workspaceRoutes'
+
+function isWorkspaceTopicReviewPath(pathname: string): boolean {
+  return pathname.includes(`${WORKSPACE_PATHS.topics}/`) && pathname !== WORKSPACE_PATHS.topics
+}
 import { parseGoogleIdTokenProfile } from './utils/googleIdTokenProfile'
 import { PrivacyPolicy } from './components/PrivacyPolicy'
 import { LegalFooterLinks } from './components/LegalFooterLinks'
@@ -38,12 +42,14 @@ function WorkspaceSession({
   const workspacePage: WorkspaceNavPage = location.pathname.startsWith(WORKSPACE_PATHS.settings)
     ? 'settings'
     : 'topics'
+  const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
 
   return (
     <WorkspaceShell
       session={session}
       googleProfile={googleProfile}
       workspacePage={workspacePage}
+      lockMainScroll={lockMainScroll}
       onLogoutComplete={() => {
         setIdToken(null)
         setSession(null)

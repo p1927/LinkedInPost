@@ -13,12 +13,15 @@ export function WorkspaceShell({
   googleProfile,
   workspacePage,
   onLogoutComplete,
+  /** When true, main does not scroll; children own scroll (e.g. topic review fills viewport). */
+  lockMainScroll = false,
   children,
 }: {
   session: AppSession;
   googleProfile?: GoogleIdTokenProfile | null;
   workspacePage: WorkspaceNavPage;
   onLogoutComplete: () => void;
+  lockMainScroll?: boolean;
   children: ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => readSidebarCollapsed());
@@ -69,7 +72,11 @@ export function WorkspaceShell({
           <main
             id="workspace-main"
             tabIndex={-1}
-            className="custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/35 sm:px-6"
+            className={
+              lockMainScroll
+                ? 'flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/35 sm:px-6'
+                : 'custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/35 sm:px-6'
+            }
           >
             {children}
           </main>

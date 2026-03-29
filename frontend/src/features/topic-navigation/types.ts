@@ -22,4 +22,6 @@ export type TopicReviewPagesBaseProps = {
   queueLoading: boolean;
 };
 
-export const reviewShellClass = '-mx-4 -my-6 flex h-[calc(100dvh-4.25rem)] flex-col sm:-mx-6 sm:h-[calc(100dvh-4.75rem)]';
+/** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */
+export const reviewShellClass =
+  '-mx-4 -my-6 flex min-h-0 min-w-0 flex-1 flex-col sm:-mx-6';

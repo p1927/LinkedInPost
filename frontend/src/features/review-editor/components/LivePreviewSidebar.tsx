@@ -15,7 +15,7 @@ export function LivePreviewSidebar() {
   } = useReviewFlow();
 
   return (
-    <aside className="order-3 min-h-0 min-w-0 overflow-y-auto px-3 py-4 xl:order-none xl:max-h-full xl:overflow-y-auto">
+    <aside className="order-3 min-h-0 min-w-0 px-3 py-3 xl:order-none xl:max-h-full xl:overflow-y-auto">
       <section
         aria-labelledby="review-live-preview-heading"
         className="sticky top-0 flex min-w-0 flex-col gap-2.5"
@@ -43,7 +43,7 @@ export function LivePreviewSidebar() {
           </Button>
         </div>
         {!previewCollapsed ? (
-          <div className="flex w-full min-w-0 justify-center overflow-x-auto px-0.5 pb-1">
+          <div className="flex w-full min-w-0 justify-center px-0.5 pb-1">
             <LinkedInPostPreview
               optionNumber={1}
               text={editorText}
