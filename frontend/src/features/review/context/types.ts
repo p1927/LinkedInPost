@@ -90,6 +90,7 @@ export interface ReviewFlowContextValue {
   setEmailBcc: React.Dispatch<React.SetStateAction<string>>;
   emailSubject: string;
   setEmailSubject: React.Dispatch<React.SetStateAction<string>>;
+  savingEmailFields: boolean;
 
   // Computed
   sheetVariants: { text: string; imageUrl: string; originalIndex: number }[];
@@ -128,6 +129,7 @@ export interface ReviewFlowContextValue {
   handleFormatting: (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => void;
   handleSaveSharedRules: (rules: string) => Promise<void>;
   savingSharedRules: boolean;
+  handleSaveEmailFields: () => Promise<void>;
   onCancel: () => void;
 }
 
@@ -140,6 +142,8 @@ export interface ReviewFlowProviderProps {
   isAdmin: boolean;
   googleModel: string;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
+  onSaveEmailFields: (emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
+  globalEmailDefaults?: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;

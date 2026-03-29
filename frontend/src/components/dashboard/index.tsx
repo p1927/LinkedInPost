@@ -228,6 +228,13 @@ export function Dashboard({
     sharedRules: session.config.generationRules,
     googleModel: settingsHook.googleModel,
     onApprove: queueHook.handleApproveVariant,
+    onSaveEmailFields: queueHook.handleSaveEmailFields,
+    globalEmailDefaults: {
+      emailTo: settingsHook.gmailDefaultTo,
+      emailCc: settingsHook.gmailDefaultCc,
+      emailBcc: settingsHook.gmailDefaultBcc,
+      emailSubject: settingsHook.gmailDefaultSubject,
+    },
     onGenerateQuickChange: queueHook.handleGenerateQuickChange,
     onGenerateVariants: queueHook.handleGenerateVariantsPreview,
     onSaveVariants: queueHook.handleSaveDraftVariants,
@@ -376,6 +383,14 @@ export function Dashboard({
       handleLinkedInConnection={channelsHook.handleLinkedInConnection}
       handleWhatsAppConnection={channelsHook.handleWhatsAppConnection}
       handleGmailConnection={channelsHook.handleGmailConnection}
+      gmailDefaultTo={settingsHook.gmailDefaultTo}
+      setGmailDefaultTo={settingsHook.setGmailDefaultTo}
+      gmailDefaultCc={settingsHook.gmailDefaultCc}
+      setGmailDefaultCc={settingsHook.setGmailDefaultCc}
+      gmailDefaultBcc={settingsHook.gmailDefaultBcc}
+      setGmailDefaultBcc={settingsHook.setGmailDefaultBcc}
+      gmailDefaultSubject={settingsHook.gmailDefaultSubject}
+      setGmailDefaultSubject={settingsHook.setGmailDefaultSubject}
       pendingWhatsAppOptions={channelsHook.pendingWhatsAppOptions}
       selectedWhatsAppPhoneId={channelsHook.selectedWhatsAppPhoneId}
       setSelectedWhatsAppPhoneId={channelsHook.setSelectedWhatsAppPhoneId}

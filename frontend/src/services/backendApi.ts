@@ -274,6 +274,46 @@ export class BackendApi {
     });
   }
 
+  async saveEmailFields(
+    idToken: string,
+    row: SheetRow,
+    emailTo: string,
+    emailCc: string,
+    emailBcc: string,
+    emailSubject: string,
+  ): Promise<void> {
+    await this.post<{ success: true }>('saveEmailFields', idToken, {
+      row,
+      emailTo,
+      emailCc,
+      emailBcc,
+      emailSubject,
+    });
+  }
+
+  async createDraftFromPublished(
+    idToken: string,
+    row: SheetRow,
+    selectedText: string,
+    selectedImageId: string,
+    postTime: string,
+    emailTo: string,
+    emailCc: string,
+    emailBcc: string,
+    emailSubject: string,
+  ): Promise<void> {
+    await this.post<{ success: true }>('createDraftFromPublished', idToken, {
+      row,
+      selectedText,
+      selectedImageId,
+      postTime,
+      emailTo,
+      emailCc,
+      emailBcc,
+      emailSubject,
+    });
+  }
+
   async updatePostSchedule(
     idToken: string,
     row: SheetRow,

@@ -44,3 +44,14 @@ export const WA = {
   meta: '#667781',
   tickRead: '#53BDEB',
 } as const;
+
+/** Gmail web compose–adjacent neutrals (not an official palette). */
+export const GM = {
+  shell: '#f6f8fc',
+  card: '#ffffff',
+  border: '#dadce0',
+  text: '#202124',
+  muted: '#5f6368',
+  blue: '#1a73e8',
+  red: '#ea4335',
+} as const;

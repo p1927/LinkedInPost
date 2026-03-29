@@ -36,6 +36,8 @@ export function EditorSidebar() {
     emailCc, setEmailCc,
     emailBcc, setEmailBcc,
     emailSubject, setEmailSubject,
+    handleSaveEmailFields,
+    savingEmailFields,
   } = useReviewFlow();
 
   return (
@@ -157,6 +159,16 @@ export function EditorSidebar() {
               <label className="block text-xs font-semibold text-ink mb-1">Subject</label>
               <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject line" />
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="inline"
+              disabled={savingEmailFields}
+              onClick={() => void handleSaveEmailFields()}
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-violet-50 disabled:opacity-50"
+            >
+              {savingEmailFields ? 'Saving…' : 'Save email settings'}
+            </Button>
           </section>
         ) : null}
       </div>

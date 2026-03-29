@@ -91,6 +91,14 @@ type DashboardSettingsDrawerProps = {
   handleLinkedInConnection: () => Promise<void>;
   handleWhatsAppConnection: () => Promise<void>;
   handleGmailConnection: () => Promise<void>;
+  gmailDefaultTo: string;
+  setGmailDefaultTo: (val: string) => void;
+  gmailDefaultCc: string;
+  setGmailDefaultCc: (val: string) => void;
+  gmailDefaultBcc: string;
+  setGmailDefaultBcc: (val: string) => void;
+  gmailDefaultSubject: string;
+  setGmailDefaultSubject: (val: string) => void;
   pendingWhatsAppOptions: WhatsAppPhoneOption[];
   selectedWhatsAppPhoneId: string;
   setSelectedWhatsAppPhoneId: (val: string) => void;
@@ -164,6 +172,14 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       handleLinkedInConnection,
       handleWhatsAppConnection,
       handleGmailConnection,
+      gmailDefaultTo,
+      setGmailDefaultTo,
+      gmailDefaultCc,
+      setGmailDefaultCc,
+      gmailDefaultBcc,
+      setGmailDefaultBcc,
+      gmailDefaultSubject,
+      setGmailDefaultSubject,
       pendingWhatsAppOptions,
       selectedWhatsAppPhoneId,
       setSelectedWhatsAppPhoneId,
@@ -728,6 +744,26 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                   ? 'The Worker opens Google approval in a popup and exchanges the code server-side.'
                   : 'Set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in the Worker before this button can be used.'}
               </p>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Default recipient (global)</p>
+              <p className="text-xs text-muted">Applied to all topics that don't have their own email settings saved in the editor.</p>
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">Default To</label>
+                <Input value={gmailDefaultTo} onChange={e => setGmailDefaultTo(e.target.value)} placeholder="recipient@example.com" className="text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">Default Cc</label>
+                <Input value={gmailDefaultCc} onChange={e => setGmailDefaultCc(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">Default Bcc</label>
+                <Input value={gmailDefaultBcc} onChange={e => setGmailDefaultBcc(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">Default Subject</label>
+                <Input value={gmailDefaultSubject} onChange={e => setGmailDefaultSubject(e.target.value)} placeholder="Subject line" className="text-sm" />
+              </div>
             </div>
           </div>
         </SettingsSectionCard>

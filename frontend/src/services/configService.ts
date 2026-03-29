@@ -108,6 +108,10 @@ export interface BotConfig {
   gmailAuthAvailable: boolean;
   gmailEmailAddress: string;
   hasGmailAccessToken: boolean;
+  gmailDefaultTo: string;
+  gmailDefaultCc: string;
+  gmailDefaultBcc: string;
+  gmailDefaultSubject: string;
 }
 
 export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined): BotConfig {
@@ -144,6 +148,10 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     gmailAuthAvailable: Boolean(config?.gmailAuthAvailable),
     gmailEmailAddress: config?.gmailEmailAddress || '',
     hasGmailAccessToken: Boolean(config?.hasGmailAccessToken),
+    gmailDefaultTo: config?.gmailDefaultTo || '',
+    gmailDefaultCc: config?.gmailDefaultCc || '',
+    gmailDefaultBcc: config?.gmailDefaultBcc || '',
+    gmailDefaultSubject: config?.gmailDefaultSubject || '',
   };
 }
 
@@ -165,6 +173,10 @@ export interface BotConfigUpdate {
   whatsappAccessToken?: string;
   whatsappRecipients?: WhatsAppRecipient[];
   gmailEmailAddress?: string;
+  gmailDefaultTo?: string;
+  gmailDefaultCc?: string;
+  gmailDefaultBcc?: string;
+  gmailDefaultSubject?: string;
   gmailAccessToken?: string;
   gmailRefreshToken?: string;
 }

@@ -1,4 +1,5 @@
 import type { ChannelId } from '../../integrations/channels';
+import { GmailChannelPreview } from './GmailChannelPreview';
 import { InstagramChannelPreview } from './InstagramChannelPreview';
 import { LinkedInChannelPreview } from './LinkedInChannelPreview';
 import { TelegramChannelPreview } from './TelegramChannelPreview';
@@ -20,6 +21,8 @@ export function ChannelPostPreview({ previewChannel = 'linkedin', ...rest }: Cha
       return <TelegramChannelPreview {...props} />;
     case 'whatsapp':
       return <WhatsAppChannelPreview {...props} />;
+    case 'gmail':
+      return <GmailChannelPreview {...props} />;
     case 'linkedin':
     default:
       return <LinkedInChannelPreview {...props} />;

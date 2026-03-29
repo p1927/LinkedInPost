@@ -12,6 +12,8 @@ export function LivePreviewSidebar() {
     deliveryChannel,
     previewAuthorName,
     setActiveWorkspacePanel,
+    emailTo,
+    emailSubject,
   } = useReviewFlow();
 
   return (
@@ -29,7 +31,13 @@ export function LivePreviewSidebar() {
               Live preview
             </p>
             <Badge variant="neutral" size="xs" className="normal-case shrink-0">
-              {selectedImageUrl ? 'Image' : 'Text only'}
+              {deliveryChannel === 'gmail'
+                ? selectedImageUrl
+                  ? 'Gmail · image'
+                  : 'Gmail · text'
+                : selectedImageUrl
+                  ? 'Image'
+                  : 'Text only'}
             </Badge>
           </div>
           <Button
@@ -50,6 +58,8 @@ export function LivePreviewSidebar() {
               imageUrl={selectedImageUrl}
               previewChannel={deliveryChannel}
               previewAuthorName={previewAuthorName}
+              gmailTo={emailTo}
+              gmailSubject={emailSubject}
               layout="sidebar"
               selected
               expanded

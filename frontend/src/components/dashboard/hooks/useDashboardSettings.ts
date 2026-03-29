@@ -36,6 +36,10 @@ export function useDashboardSettings({
   const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
   const [savingConfig, setSavingConfig] = useState(false);
   const [telegramBotTokenInput, setTelegramBotTokenInput] = useState('');
+  const [gmailDefaultTo, setGmailDefaultTo] = useState(session.config.gmailDefaultTo || '');
+  const [gmailDefaultCc, setGmailDefaultCc] = useState(session.config.gmailDefaultCc || '');
+  const [gmailDefaultBcc, setGmailDefaultBcc] = useState(session.config.gmailDefaultBcc || '');
+  const [gmailDefaultSubject, setGmailDefaultSubject] = useState(session.config.gmailDefaultSubject || '');
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -98,6 +102,10 @@ export function useDashboardSettings({
         telegramBotToken: telegramBotTokenInput.trim() || undefined,
         telegramRecipients: parseTelegramRecipientsInput(telegramRecipientsInput),
         whatsappRecipients: parseRecipientsInput(whatsappRecipientsInput),
+        gmailDefaultTo: gmailDefaultTo.trim(),
+        gmailDefaultCc: gmailDefaultCc.trim(),
+        gmailDefaultBcc: gmailDefaultBcc.trim(),
+        gmailDefaultSubject: gmailDefaultSubject.trim(),
       });
       setGithubTokenInput('');
       setTelegramBotTokenInput('');
@@ -126,6 +134,14 @@ export function useDashboardSettings({
     savingConfig,
     telegramBotTokenInput,
     setTelegramBotTokenInput,
+    gmailDefaultTo,
+    setGmailDefaultTo,
+    gmailDefaultCc,
+    setGmailDefaultCc,
+    gmailDefaultBcc,
+    setGmailDefaultBcc,
+    gmailDefaultSubject,
+    setGmailDefaultSubject,
     saveSettings,
   };
 }

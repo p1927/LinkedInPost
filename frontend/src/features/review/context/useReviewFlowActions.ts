@@ -12,6 +12,7 @@ export function useReviewFlowActions(
 ) {
   const {
     onApprove,
+    onSaveEmailFields,
     onGenerateQuickChange,
     onGenerateVariants,
     onSaveVariants,
@@ -451,6 +452,30 @@ export function useReviewFlowActions(
     setSelection(nextState.selection);
   };
 
+  const [savingEmailFields, setSavingEmailFields] = useState(false);
+  const saveEmailFieldsInFlight = useRef(false);
+
+  const handleSaveEmailFields = useCallback(async () => {
+    if (saveEmailFieldsInFlight.current) return;
+    saveEmailFieldsInFlight.current = true;
+    setSavingEmailFields(true);
+    try {
+      await onSaveEmailFields(
+        emailTo,
+        emailCc,
+        emailBcc,
+        emailSubject,
+      );
+      void showAlert({ title: 'Saved', description: 'Email settings saved to this topic.' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save email settings.';
+      void showAlert({ title: 'Could not save', description: message });
+    } finally {
+      saveEmailFieldsInFlight.current = false;
+      setSavingEmailFields(false);
+    }
+  }, [onSaveEmailFields, emailTo, emailCc, emailBcc, emailSubject, showAlert]);
+
   const [savingSharedRules, setSavingSharedRules] = useState(false);
   const saveSharedRulesInFlight = useRef(false);
 
@@ -498,5 +523,7 @@ export function useReviewFlowActions(
     handleFormatting,
     handleSaveSharedRules,
     savingSharedRules,
+    handleSaveEmailFields,
+    savingEmailFields,
   };
 }

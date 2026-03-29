@@ -17,4 +17,8 @@ export interface ChannelPreviewProps {
   pickMode?: boolean;
   previewAuthorName?: string;
   onOpenMedia?: () => void;
+  /** Gmail compose-style header: To line (may include multiple addresses). */
+  gmailTo?: string;
+  /** Gmail compose-style header: subject line. */
+  gmailSubject?: string;
 }

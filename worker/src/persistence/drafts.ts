@@ -151,6 +151,66 @@ export class SheetsGateway {
     return updatedRow;
   }
 
+  async saveEmailFields(
+    spreadsheetId: string,
+    row: SheetRow,
+    emailTo: string,
+    emailCc: string,
+    emailBcc: string,
+    emailSubject: string,
+  ): Promise<{ success: true }> {
+    await this.ensureRequiredSheets(spreadsheetId);
+
+    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
+    if (!draftRowIndex) {
+      throw new Error('Draft row not found for this topic.');
+    }
+
+    await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!O${draftRowIndex}:R${draftRowIndex}`, [[emailTo, emailCc, emailBcc, emailSubject]]);
+    return { success: true };
+  }
+
+  async createDraftFromPublished(
+    spreadsheetId: string,
+    sourceRow: SheetRow,
+    selectedText: string,
+    selectedImageId: string,
+    postTime: string,
+    emailTo: string,
+    emailCc: string,
+    emailBcc: string,
+    emailSubject: string,
+  ): Promise<{ success: true }> {
+    await this.ensureRequiredSheets(spreadsheetId);
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, [[sourceRow.topic, today]]);
+
+    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:R`, [[
+      sourceRow.topic,
+      today,
+      'Approved',
+      sourceRow.variant1 || '',
+      sourceRow.variant2 || '',
+      sourceRow.variant3 || '',
+      sourceRow.variant4 || '',
+      sourceRow.imageLink1 || '',
+      sourceRow.imageLink2 || '',
+      sourceRow.imageLink3 || '',
+      sourceRow.imageLink4 || '',
+      selectedText,
+      selectedImageId,
+      postTime,
+      emailTo,
+      emailCc,
+      emailBcc,
+      emailSubject,
+    ]]);
+
+    return { success: true };
+  }
+
   async updatePostSchedule(spreadsheetId: string, row: SheetRow, postTime: string): Promise<{ success: true }> {
     await this.ensureRequiredSheets(spreadsheetId);
 

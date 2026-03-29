@@ -61,6 +61,8 @@ export function ApprovedPostPreview({ row, previewChannel, onClose }: ApprovedPo
                 text={row.selectedText || row.variant1}
                 imageUrl={row.selectedImageId}
                 previewChannel={previewChannel}
+                gmailTo={row.emailTo}
+                gmailSubject={row.emailSubject}
                 selected={true}
                 expanded={true}
                 onSelect={() => undefined}

@@ -117,11 +117,21 @@ export function useDashboardQueue({
     try {
       const normalizedStatus = getNormalizedRowStatus(row.status);
       if (normalizedStatus === 'published') {
-        await api.updatePostSchedule(idToken, row, postTime);
+        await api.createDraftFromPublished(
+          idToken,
+          row,
+          selectedText,
+          selectedImageId,
+          postTime,
+          emailTo || '',
+          emailCc || '',
+          emailBcc || '',
+          emailSubject || '',
+        );
         await loadData(true);
         void showAlert({
-          title: 'Schedule Updated',
-          description: 'The schedule was updated successfully. Use "Republish" from the dashboard to re-queue the post.',
+          title: 'New Draft Created',
+          description: `A new draft of "${row.topic}" was created. The original published post is unchanged.`,
         });
         onAfterApprove?.();
         return;
@@ -132,6 +142,15 @@ export function useDashboardQueue({
       onAfterApprove?.();
     } catch (error) {
       handleFailure(error, 'Failed to approve variant.');
+    }
+  };
+
+  const handleSaveEmailFields = async (row: SheetRow, emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => {
+    try {
+      await api.saveEmailFields(idToken, row, emailTo, emailCc, emailBcc, emailSubject);
+    } catch (error) {
+      handleFailure(error, 'Failed to save email settings.');
+      throw error;
     }
   };
 
@@ -352,6 +371,7 @@ export function useDashboardQueue({
     loadData,
     handleAddTopic,
     handleApproveVariant,
+    handleSaveEmailFields,
     triggerRowGithubAction,
     handleGenerateQuickChange,
     handleGenerateVariantsPreview,

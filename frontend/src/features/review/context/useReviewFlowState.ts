@@ -27,7 +27,7 @@ const getInitialPostTime = (rowPostTime: string | undefined): string => {
 };
 
 export function useReviewFlowState(props: ReviewFlowProviderProps) {
-  const { row, routed, editorStartMediaPanel } = props;
+  const { row, routed, editorStartMediaPanel, globalEmailDefaults } = props;
   const { setChrome } = useWorkspaceChrome();
 
   const [sheetRow, setSheetRow] = useState(row);
@@ -42,10 +42,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [previewVariantSaveByIndex, setPreviewVariantSaveByIndex] = useState<Record<number, 'idle' | 'saving' | 'saved' | 'error'>>({});
   const [previewVariantSaveErrors, setPreviewVariantSaveErrors] = useState<Record<number, string>>({});
   const [postTime, setPostTime] = useState(() => getInitialPostTime(row.postTime));
-  const [emailTo, setEmailTo] = useState(row.emailTo || '');
-  const [emailCc, setEmailCc] = useState(row.emailCc || '');
-  const [emailBcc, setEmailBcc] = useState(row.emailBcc || '');
-  const [emailSubject, setEmailSubject] = useState(row.emailSubject || '');
+  const [emailTo, setEmailTo] = useState(row.emailTo || globalEmailDefaults?.emailTo || '');
+  const [emailCc, setEmailCc] = useState(row.emailCc || globalEmailDefaults?.emailCc || '');
+  const [emailBcc, setEmailBcc] = useState(row.emailBcc || globalEmailDefaults?.emailBcc || '');
+  const [emailSubject, setEmailSubject] = useState(row.emailSubject || globalEmailDefaults?.emailSubject || '');
   const [selectedImageUrl, setSelectedImageUrl] = useState(row.selectedImageId || row.imageLink1 || '');
   const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
   const [uploadedImageOptions, setUploadedImageOptions] = useState<ImageAssetOption[]>([]);
@@ -111,10 +111,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       setEditorText(textForEditor);
       setEditorBaselineText(textForEditor);
       setPostTime(getInitialPostTime(row.postTime));
-      setEmailTo(row.emailTo || '');
-      setEmailCc(row.emailCc || '');
-      setEmailBcc(row.emailBcc || '');
-      setEmailSubject(row.emailSubject || '');
+      setEmailTo(row.emailTo || globalEmailDefaults?.emailTo || '');
+      setEmailCc(row.emailCc || globalEmailDefaults?.emailCc || '');
+      setEmailBcc(row.emailBcc || globalEmailDefaults?.emailBcc || '');
+      setEmailSubject(row.emailSubject || globalEmailDefaults?.emailSubject || '');
       setSelectedImageUrl(
         (sc?.imageUrl?.trim() ? sc.imageUrl : '') || row.selectedImageId || row.imageLink1 || '',
       );
@@ -130,10 +130,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setEditorText(initialText);
     setEditorBaselineText(initialText);
     setPostTime(getInitialPostTime(row.postTime));
-    setEmailTo(row.emailTo || '');
-    setEmailCc(row.emailCc || '');
-    setEmailBcc(row.emailBcc || '');
-    setEmailSubject(row.emailSubject || '');
+    setEmailTo(row.emailTo || globalEmailDefaults?.emailTo || '');
+    setEmailCc(row.emailCc || globalEmailDefaults?.emailCc || '');
+    setEmailBcc(row.emailBcc || globalEmailDefaults?.emailBcc || '');
+    setEmailSubject(row.emailSubject || globalEmailDefaults?.emailSubject || '');
     setSelectedImageUrl(row.selectedImageId || row.imageLink1 || '');
 
     const variants = buildSheetVariants(row);

@@ -71,6 +71,10 @@ interface BotConfig {
   gmailAuthAvailable: boolean;
   gmailEmailAddress: string;
   hasGmailAccessToken: boolean;
+  gmailDefaultTo: string;
+  gmailDefaultCc: string;
+  gmailDefaultBcc: string;
+  gmailDefaultSubject: string;
   hasTelegramBotToken: boolean;
   telegramRecipients: TelegramRecipient[];
   whatsappAuthAvailable: boolean;
@@ -95,6 +99,10 @@ export interface StoredConfig {
   linkedinAccessTokenCiphertext?: string;
   linkedinAccessToken?: string;
   gmailEmailAddress: string;
+  gmailDefaultTo: string;
+  gmailDefaultCc: string;
+  gmailDefaultBcc: string;
+  gmailDefaultSubject: string;
   gmailAccessTokenCiphertext?: string;
   gmailAccessToken?: string;
   gmailRefreshTokenCiphertext?: string;
@@ -121,6 +129,10 @@ interface BotConfigUpdate {
   linkedinPersonUrn?: string;
   linkedinAccessToken?: string;
   gmailEmailAddress?: string;
+  gmailDefaultTo?: string;
+  gmailDefaultCc?: string;
+  gmailDefaultBcc?: string;
+  gmailDefaultSubject?: string;
   gmailAccessToken?: string;
   gmailRefreshToken?: string;
   telegramBotToken?: string;
@@ -563,6 +575,29 @@ async function dispatchAction(
         String(payload.emailBcc || ''),
         String(payload.emailSubject || '')
       );
+    case 'saveEmailFields':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.saveEmailFields(
+        storedConfig.spreadsheetId,
+        coerceSheetRow(payload.row),
+        String(payload.emailTo || ''),
+        String(payload.emailCc || ''),
+        String(payload.emailBcc || ''),
+        String(payload.emailSubject || ''),
+      );
+    case 'createDraftFromPublished':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.createDraftFromPublished(
+        storedConfig.spreadsheetId,
+        coerceSheetRow(payload.row),
+        String(payload.selectedText || ''),
+        String(payload.selectedImageId || ''),
+        String(payload.postTime || ''),
+        String(payload.emailTo || ''),
+        String(payload.emailCc || ''),
+        String(payload.emailBcc || ''),
+        String(payload.emailSubject || ''),
+      );
     case 'updatePostSchedule':
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.updatePostSchedule(
@@ -728,6 +763,10 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     linkedinAccessTokenCiphertext: linkedinDisconnected ? undefined : (config?.linkedinAccessTokenCiphertext || undefined),
     linkedinAccessToken: linkedinDisconnected ? undefined : (String(env.LINKEDIN_ACCESS_TOKEN || '').trim() || undefined),
     gmailEmailAddress: gmailDisconnected ? '' : (config?.gmailEmailAddress || ''),
+    gmailDefaultTo: config?.gmailDefaultTo || '',
+    gmailDefaultCc: config?.gmailDefaultCc || '',
+    gmailDefaultBcc: config?.gmailDefaultBcc || '',
+    gmailDefaultSubject: config?.gmailDefaultSubject || '',
     gmailAccessTokenCiphertext: gmailDisconnected ? undefined : (config?.gmailAccessTokenCiphertext || undefined),
     gmailAccessToken: gmailDisconnected ? undefined : (config?.gmailAccessToken || undefined),
     gmailRefreshTokenCiphertext: gmailDisconnected ? undefined : (config?.gmailRefreshTokenCiphertext || undefined),
@@ -760,6 +799,10 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     gmailAuthAvailable: hasGmailOAuthConfig(env),
     gmailEmailAddress: config.gmailEmailAddress,
     hasGmailAccessToken: Boolean(config.gmailAccessTokenCiphertext || config.gmailAccessToken),
+    gmailDefaultTo: config.gmailDefaultTo || '',
+    gmailDefaultCc: config.gmailDefaultCc || '',
+    gmailDefaultBcc: config.gmailDefaultBcc || '',
+    gmailDefaultSubject: config.gmailDefaultSubject || '',
     hasTelegramBotToken: Boolean(config.telegramBotTokenCiphertext || config.telegramBotToken),
     telegramRecipients: normalizeTelegramRecipients(config.telegramRecipients),
     whatsappAuthAvailable: hasMetaOAuthConfig(env),
@@ -1751,6 +1794,10 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     linkedinPersonUrn: typeof update.linkedinPersonUrn === 'string' ? update.linkedinPersonUrn.trim() : current.linkedinPersonUrn,
     linkedinAccessTokenCiphertext: current.linkedinAccessTokenCiphertext,
     gmailEmailAddress: typeof update.gmailEmailAddress === 'string' ? update.gmailEmailAddress.trim() : current.gmailEmailAddress,
+    gmailDefaultTo: typeof update.gmailDefaultTo === 'string' ? update.gmailDefaultTo.trim() : (current.gmailDefaultTo || ''),
+    gmailDefaultCc: typeof update.gmailDefaultCc === 'string' ? update.gmailDefaultCc.trim() : (current.gmailDefaultCc || ''),
+    gmailDefaultBcc: typeof update.gmailDefaultBcc === 'string' ? update.gmailDefaultBcc.trim() : (current.gmailDefaultBcc || ''),
+    gmailDefaultSubject: typeof update.gmailDefaultSubject === 'string' ? update.gmailDefaultSubject.trim() : (current.gmailDefaultSubject || ''),
     gmailAccessTokenCiphertext: current.gmailAccessTokenCiphertext,
     gmailRefreshTokenCiphertext: current.gmailRefreshTokenCiphertext,
     telegramBotTokenCiphertext: current.telegramBotTokenCiphertext,

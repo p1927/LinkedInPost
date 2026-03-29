@@ -45,7 +45,9 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
         sharedRules={p.sharedRules}
         googleModel={p.googleModel}
         routed={routed}
-        onApprove={(text, img, time) => p.onApprove(row, text, img, time)}
+        onApprove={(text, img, time, emailTo, emailCc, emailBcc, emailSubject) => p.onApprove(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject)}
+        onSaveEmailFields={(emailTo, emailCc, emailBcc, emailSubject) => p.onSaveEmailFields(row, emailTo, emailCc, emailBcc, emailSubject)}
+        globalEmailDefaults={p.globalEmailDefaults}
         onGenerateQuickChange={p.onGenerateQuickChange}
         onGenerateVariants={p.onGenerateVariants}
         onSaveVariants={p.onSaveVariants}

@@ -13,6 +13,8 @@ export function VariantCarousel() {
     handlePickCarouselKeyDown,
     deliveryChannel,
     previewAuthorName,
+    emailTo,
+    emailSubject,
     handleLoadSheetVariant,
     handleOpenMediaFromPickTile,
   } = useReviewFlow();
@@ -79,6 +81,8 @@ export function VariantCarousel() {
                   pickMode
                   previewChannel={deliveryChannel}
                   previewAuthorName={previewAuthorName}
+                  gmailTo={emailTo}
+                  gmailSubject={emailSubject}
                   mode="carousel"
                   className="max-h-full w-full max-w-[min(100%,36rem)] min-h-0 overflow-y-auto overscroll-contain rounded-xl border border-border bg-white shadow-sm"
                   onSelect={() => handleLoadSheetVariant(index)}
