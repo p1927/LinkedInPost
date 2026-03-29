@@ -116,7 +116,7 @@ At minimum, configure these Worker values:
 * `GITHUB_TOKEN_ENCRYPTION_KEY`
 * `CORS_ALLOWED_ORIGINS`
 
-To enable the new admin connect buttons for shared Instagram, LinkedIn, and WhatsApp setup, also configure these Worker values:
+To enable the new admin connect buttons for shared Instagram, LinkedIn, WhatsApp, and Gmail delivery, also configure these Worker values:
 
 * `INSTAGRAM_APP_ID`
 * `INSTAGRAM_APP_SECRET`
@@ -124,6 +124,8 @@ To enable the new admin connect buttons for shared Instagram, LinkedIn, and What
 * `LINKEDIN_CLIENT_SECRET`
 * `META_APP_ID`
 * `META_APP_SECRET`
+* `GMAIL_CLIENT_ID` (often the same Web client ID as `VITE_GOOGLE_CLIENT_ID`; `setup.py` reuses it when `GMAIL_CLIENT_ID` is unset)
+* `GMAIL_CLIENT_SECRET` (Web client secret; stored as a Worker secret, not in the frontend)
 
 Telegram delivery does not need an OAuth app. After the Worker is deployed, an admin can open the dashboard settings, paste a Telegram bot token, and save the destination chat IDs there.
 
@@ -131,6 +133,7 @@ The setup script writes the non-secret Worker vars into [worker/wrangler.jsonc](
 
 Register these callback URLs in the provider dashboards so the Worker can complete the popup flow:
 
+* Gmail (Google Cloud Console → APIs & Services → Credentials → your OAuth Web client → Authorized redirect URIs): `https://<your-worker-domain>/auth/gmail/callback` (and for `wrangler dev`, add `http://127.0.0.1:8787/auth/gmail/callback` or `http://localhost:8787/auth/gmail/callback`). Enable the Gmail API and add OAuth scopes `https://www.googleapis.com/auth/gmail.send` and `email` on the consent screen.
 * LinkedIn redirect URI: `https://<your-worker-domain>/auth/linkedin/callback`
 * Meta redirect URI: `https://<your-worker-domain>/auth/whatsapp/callback`
 * Instagram redirect URI: `https://<your-worker-domain>/auth/instagram/callback`

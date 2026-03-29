@@ -4,12 +4,15 @@ import { useReviewFlow } from '../../review/context/ReviewFlowContext';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { LivePreviewSidebar } from '../components/LivePreviewSidebar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { cn } from '@/lib/cn';
 
 function ResizeHandle() {
   return (
-    <PanelResizeHandle className="relative flex w-2 items-center justify-center bg-transparent group outline-none">
-      <div className="z-10 flex h-8 w-1 items-center justify-center rounded-full bg-violet-200/50 transition-colors group-hover:bg-violet-400 group-active:bg-violet-500" />
+    <PanelResizeHandle className="relative flex w-4 shrink-0 items-center justify-center bg-transparent outline-none group">
+      <div className="z-10 flex h-10 w-1.5 items-center justify-center rounded-full bg-violet-200/50 transition-colors group-hover:bg-violet-400 group-active:bg-violet-500" />
       <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-violet-200/30 transition-colors group-hover:bg-violet-300" />
     </PanelResizeHandle>
   );
@@ -28,6 +31,10 @@ export function EditorScreen() {
     handleFormatting,
     handleApprove,
     submitting,
+    postTime,
+    setPostTime,
+    sheetVariants,
+    previewReadyCount,
   } = useReviewFlow();
 
   const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
@@ -57,19 +64,35 @@ export function EditorScreen() {
   );
 
   return (
-    <>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:min-h-0 xl:overflow-hidden">
         {isDesktop ? (
-          <PanelGroup orientation="horizontal" className="h-full w-full">
-            <Panel defaultSize={27} minSize={20} maxSize={38} className="flex min-h-0 flex-col">
+          <PanelGroup
+            orientation="horizontal"
+            className="min-h-0 w-full flex-1"
+            resizeTargetMinimumSize={{ coarse: 28, fine: 14 }}
+          >
+            <Panel
+              id="review-refine"
+              defaultSize={22}
+              minSize={16}
+              maxSize={48}
+              className="flex min-h-0 flex-col"
+            >
               <EditorSidebar />
             </Panel>
             <ResizeHandle />
-            <Panel defaultSize={44} minSize={30} className="flex min-h-0 flex-col">
+            <Panel id="review-editor" defaultSize={56} minSize={28} className="flex min-h-0 flex-col">
               {editorSection}
             </Panel>
             <ResizeHandle />
-            <Panel defaultSize={29} minSize={20} maxSize={40} className="flex min-h-0 flex-col">
+            <Panel
+              id="review-preview"
+              defaultSize={22}
+              minSize={16}
+              maxSize={48}
+              className="flex min-h-0 flex-col"
+            >
               <LivePreviewSidebar />
             </Panel>
           </PanelGroup>
@@ -82,22 +105,67 @@ export function EditorScreen() {
         )}
       </div>
 
-      <footer className="shrink-0 border-t border-violet-200/35 px-4 py-3.5 sm:px-5">
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
-          <Button
-            type="button"
-            size="sm"
-            variant="primary"
-            onClick={() => void handleApprove()}
-            disabled={submitting}
-            className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[9rem]"
-          >
-            {submitting
-              ? isPublished ? 'Saving…' : 'Approving…'
-              : isPublished ? '✓ Save Schedule' : '✓ Approve & Publish'}
-          </Button>
+      <footer className="shrink-0 border-t border-violet-200/35 bg-canvas/95 px-4 py-3.5 backdrop-blur-sm sm:px-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-muted">Step 2 of 2</span>
+              {sheetVariants.length > 0 ? (
+                <Badge variant="info" size="xs" className="normal-case font-bold shadow-sm">
+                  Editing
+                </Badge>
+              ) : null}
+              {editorDirty ? (
+                <Badge variant="warning" size="xs" className="normal-case font-bold shadow-sm">
+                  Draft edited
+                </Badge>
+              ) : null}
+              {previewReadyCount > 0 ? (
+                <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm">
+                  {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
+                </Badge>
+              ) : null}
+            </div>
+            <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px]">
+              <label
+                htmlFor="review-post-time-input"
+                className="text-[10px] font-bold uppercase tracking-wider text-ink/70"
+              >
+                Schedule <span className="font-normal normal-case tracking-normal text-ink/65">(optional)</span>
+              </label>
+              <Input
+                id="review-post-time-input"
+                type="datetime-local"
+                value={postTime}
+                onChange={(event) => setPostTime(event.target.value)}
+                aria-label="Schedule post time (optional)"
+                className={cn(
+                  'min-h-[44px] w-full min-w-0 rounded-xl border border-violet-200/70 bg-white px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none transition-all duration-200 hover:border-violet-300/80 hover:shadow-md',
+                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/95 sm:w-[220px]',
+                )}
+              />
+            </div>
+          </div>
+          <div className="flex shrink-0 justify-stretch lg:justify-end">
+            <Button
+              type="button"
+              size="sm"
+              variant="primary"
+              onClick={() => void handleApprove()}
+              disabled={submitting}
+              className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none lg:w-auto lg:min-w-[9rem]"
+            >
+              {submitting
+                ? isPublished
+                  ? 'Saving…'
+                  : 'Approving…'
+                : isPublished
+                  ? '✓ Save Schedule'
+                  : '✓ Approve & Publish'}
+            </Button>
+          </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }

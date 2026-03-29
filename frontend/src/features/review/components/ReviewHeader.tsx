@@ -1,7 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '../../../lib/cn';
 import { useReviewFlow } from '../context/ReviewFlowContext';
 
@@ -23,34 +21,7 @@ export function ReviewHeader() {
     handleOpenMediaFromPickTile,
     pickCarouselIndex,
     handleLoadSheetVariant,
-    editorDirty,
-    previewReadyCount,
-    postTime,
-    setPostTime,
   } = useReviewFlow();
-
-  const renderScheduleInput = (className?: string) => (
-    <div className={cn("flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px]", className)}>
-      <label
-        htmlFor="review-post-time-input"
-        className="text-[10px] font-bold uppercase tracking-wider text-ink/70"
-      >
-        Schedule{' '}
-        <span className="font-normal normal-case tracking-normal text-ink/65">(optional)</span>
-      </label>
-      <Input
-        id="review-post-time-input"
-        type="datetime-local"
-        value={postTime}
-        onChange={(event) => setPostTime(event.target.value)}
-        aria-label="Schedule post time (optional)"
-        className={cn(
-          'min-h-[44px] w-full min-w-0 rounded-xl border border-violet-200/70 bg-white px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none transition-all duration-200 hover:border-violet-300/80 hover:shadow-md',
-          'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/95 sm:w-[220px]',
-        )}
-      />
-    </div>
-  );
 
   return (
     <>
@@ -59,7 +30,7 @@ export function ReviewHeader() {
           {sheetRow.topic}
         </h2>
       ) : null}
-      {topicTitleInWorkspaceChrome && showPickPhase ? null : (
+      {topicTitleInWorkspaceChrome ? null : (
         <header className="shrink-0 border-b border-violet-200/35 px-4 py-2.5 sm:py-3">
           {showPickPhase ? (
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -125,30 +96,6 @@ export function ReviewHeader() {
                 </Button>
               </div>
             </div>
-          ) : topicTitleInWorkspaceChrome ? (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
-              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                <div className="text-xs font-semibold text-muted">
-                  Step {showEditorLayout ? 2 : 1} of 2
-                </div>
-                {showEditorLayout && sheetVariants.length > 0 ? (
-                  <Badge variant="info" size="xs" className="normal-case font-bold shadow-sm">
-                    Editing
-                  </Badge>
-                ) : null}
-                {editorDirty ? (
-                  <Badge variant="warning" size="xs" className="normal-case font-bold shadow-sm">
-                    Draft edited
-                  </Badge>
-                ) : null}
-                {previewReadyCount > 0 ? (
-                  <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm">
-                    {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
-                  </Badge>
-                ) : null}
-              </div>
-              {renderScheduleInput("sm:self-end")}
-            </div>
           ) : (
             <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
@@ -192,26 +139,6 @@ export function ReviewHeader() {
                     </Button>
                   ) : null}
                 </div>
-              </div>
-              <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:max-w-[min(100%,20rem)] sm:items-end">
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                  {showEditorLayout && sheetVariants.length > 0 ? (
-                    <Badge variant="info" size="xs" className="normal-case font-bold shadow-sm">
-                      Editing
-                    </Badge>
-                  ) : null}
-                  {editorDirty ? (
-                    <Badge variant="warning" size="xs" className="normal-case font-bold shadow-sm">
-                      Draft edited
-                    </Badge>
-                  ) : null}
-                  {previewReadyCount > 0 ? (
-                    <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm">
-                      {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
-                    </Badge>
-                  ) : null}
-                </div>
-                {renderScheduleInput()}
               </div>
             </div>
           )}

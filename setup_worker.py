@@ -10,6 +10,23 @@ from typing import Any
 from urllib.parse import urlsplit
 
 
+def load_wrangler_jsonc(wrangler_config_path: Path) -> dict[str, Any]:
+    """Parse worker/wrangler.jsonc. Wrangler allows JSONC (trailing commas, comments); stdlib json does not."""
+    raw = wrangler_config_path.read_text()
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+    try:
+        import json5
+    except ImportError as exc:
+        raise RuntimeError(
+            'wrangler.jsonc is not valid strict JSON. Cloudflare allows JSONC (e.g. trailing commas). '
+            'Install json5: pip install -r requirements.txt'
+        ) from exc
+    return json5.loads(raw)
+
+
 @dataclass
 class WorkerBootstrap:
     allowed_emails: str
@@ -30,6 +47,8 @@ class WorkerBootstrap:
     meta_app_id: str
     meta_app_secret: str
     whatsapp_phone_number_id: str
+    gmail_client_id: str
+    gmail_client_secret: str
     kv_namespace_id: str = ''
     kv_preview_id: str = ''
     worker_url: str = ''
@@ -78,7 +97,7 @@ def load_worker_encryption_key(dev_vars_path: Path, generate_encryption_key: Any
 
 
 def read_existing_kv_ids(wrangler_config_path: Path) -> tuple[str, str]:
-    config = json.loads(wrangler_config_path.read_text())
+    config = load_wrangler_jsonc(wrangler_config_path)
     namespaces = config.get('kv_namespaces', [])
     if not namespaces:
         return '', ''
@@ -94,7 +113,7 @@ def read_existing_kv_ids(wrangler_config_path: Path) -> tuple[str, str]:
 
 
 def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerBootstrap) -> None:
-    config = json.loads(wrangler_config_path.read_text())
+    config = load_wrangler_jsonc(wrangler_config_path)
     config['kv_namespaces'] = [
         {
             'binding': 'CONFIG_KV',
@@ -114,6 +133,7 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
         'META_APP_ID': worker_bootstrap.meta_app_id,
         'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
+        'GMAIL_CLIENT_ID': worker_bootstrap.gmail_client_id,
     }
     config['durable_objects'] = {
         'bindings': [
@@ -169,6 +189,8 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'META_APP_ID': worker_bootstrap.meta_app_id,
         'META_APP_SECRET': worker_bootstrap.meta_app_secret,
         'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
+        'GMAIL_CLIENT_ID': worker_bootstrap.gmail_client_id,
+        'GMAIL_CLIENT_SECRET': worker_bootstrap.gmail_client_secret,
         'INSTAGRAM_ACCESS_TOKEN': os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip(),
         'INSTAGRAM_USER_ID': os.environ.get('INSTAGRAM_USER_ID', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
@@ -193,6 +215,7 @@ def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_js
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
         'LINKEDIN_CLIENT_SECRET': worker_bootstrap.linkedin_client_secret,
         'META_APP_SECRET': worker_bootstrap.meta_app_secret,
+        'GMAIL_CLIENT_SECRET': worker_bootstrap.gmail_client_secret,
         'INSTAGRAM_ACCESS_TOKEN': os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
@@ -247,25 +270,38 @@ def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str
     instagram_callback = f'{worker_url}/auth/instagram/callback' if worker_url else 'https://<your-worker-domain>/auth/instagram/callback'
     linkedin_callback = f'{worker_url}/auth/linkedin/callback' if worker_url else 'https://<your-worker-domain>/auth/linkedin/callback'
     whatsapp_callback = f'{worker_url}/auth/whatsapp/callback' if worker_url else 'https://<your-worker-domain>/auth/whatsapp/callback'
+    gmail_callback = f'{worker_url}/auth/gmail/callback' if worker_url else 'https://<your-worker-domain>/auth/gmail/callback'
     vite_worker_url = worker_url or '<set VITE_WORKER_URL after Worker deploy>'
 
-    todos = [
+    prerequisites: list[str] = []
+    if worker_bootstrap:
+        if not worker_bootstrap.gmail_client_id or not worker_bootstrap.gmail_client_secret:
+            prerequisites.append(
+                'Set GMAIL_CLIENT_ID (often the same Web client ID as VITE_GOOGLE_CLIENT_ID) and GMAIL_CLIENT_SECRET; '
+                'for local wrangler dev add authorized redirect http://127.0.0.1:8787/auth/gmail/callback (or http://localhost:8787/auth/gmail/callback).',
+            )
+        if not worker_bootstrap.instagram_app_id:
+            prerequisites.append('Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET before testing Instagram popup auth.')
+        if not worker_bootstrap.linkedin_client_id:
+            prerequisites.append('Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET before testing LinkedIn popup auth.')
+        if not worker_bootstrap.meta_app_id:
+            prerequisites.append('Set META_APP_ID and META_APP_SECRET before testing WhatsApp popup auth.')
+
+    core = [
+        (
+            'Google Cloud Console: APIs & Services → enable Gmail API. OAuth consent screen: add non-sensitive/sensitive scopes '
+            'https://www.googleapis.com/auth/gmail.send and the OpenID scope email (matches the Worker). '
+            f'Credentials → your Web application → Authorized redirect URIs: {gmail_callback}'
+        ),
         f'Register the Instagram redirect URI: {instagram_callback}',
         f'Register the LinkedIn redirect URI: {linkedin_callback}',
         f'Register the Meta redirect URI: {whatsapp_callback}',
         f'Set VITE_WORKER_URL in the frontend build to: {vite_worker_url}',
-        'Open the dashboard as an admin and use Connect Instagram, Connect LinkedIn, and Connect WhatsApp Business to store channel access in the Worker.',
+        'Open the dashboard as an admin and use Connect Instagram, Connect LinkedIn, Connect WhatsApp Business, and Connect Gmail to store channel access in the Worker.',
         'For Telegram, set TELEGRAM_BOT_TOKEN once and save the target chat IDs in dashboard settings.',
     ]
 
-    if worker_bootstrap and not worker_bootstrap.instagram_app_id:
-        todos.insert(0, 'Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET before testing Instagram popup auth.')
-    if worker_bootstrap and not worker_bootstrap.linkedin_client_id:
-        todos.insert(1 if todos else 0, 'Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET before testing LinkedIn popup auth.')
-    if worker_bootstrap and not worker_bootstrap.meta_app_id:
-        todos.insert(2 if todos else 0, 'Set META_APP_ID and META_APP_SECRET before testing WhatsApp popup auth.')
-
-    return todos
+    return prerequisites + core
 
 
 def print_bootstrap_summary(
@@ -302,6 +338,8 @@ def print_bootstrap_summary(
         print(f'TELEGRAM_BOT_TOKEN      = {"<configured>" if worker_bootstrap.telegram_bot_token else "<optional: set this for Telegram delivery>"}')
         print(f'META_APP_ID             = {worker_bootstrap.meta_app_id or "<optional: set this for popup auth>"}')
         print(f'WHATSAPP_PHONE_NUMBER_ID = {worker_bootstrap.whatsapp_phone_number_id or "<set this value>"}')
+        print(f'GMAIL_CLIENT_ID         = {worker_bootstrap.gmail_client_id or "<optional: same Web client as sign-in, for Connect Gmail>"}')
+        print(f'GMAIL_CLIENT_SECRET     = {"<configured>" if worker_bootstrap.gmail_client_secret else "<optional: Worker secret for Gmail OAuth>"}')
         print(f'GITHUB_TOKEN_ENCRYPTION_KEY = {worker_bootstrap.encryption_key}')
         if worker_bootstrap.kv_namespace_id:
             print(f'CONFIG_KV production    = {worker_bootstrap.kv_namespace_id}')

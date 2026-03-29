@@ -13,6 +13,8 @@ Examples:
     python setup.py
     python setup.py --cloudflare
     python setup.py --all
+
+Gmail connect: set GMAIL_CLIENT_SECRET in `.env` (and optionally GMAIL_CLIENT_ID; otherwise the script reuses VITE_GOOGLE_CLIENT_ID). Run `python setup.py --cloudflare` so `worker/.dev.vars` and `wrangler.jsonc` include Gmail vars.
 """
 
 from __future__ import annotations
@@ -171,6 +173,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--meta-app-id', default=os.environ.get('META_APP_ID', '').strip(), help='Meta app ID used for the WhatsApp Business connect flow.')
     parser.add_argument('--meta-app-secret', default=os.environ.get('META_APP_SECRET', '').strip(), help='Meta app secret stored as a Worker secret.')
     parser.add_argument('--whatsapp-phone-number-id', default=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip(), help='Meta WhatsApp phone number ID used by the Worker for direct sending.')
+    parser.add_argument('--gmail-client-id', default=os.environ.get('GMAIL_CLIENT_ID', '').strip(), help='Google OAuth Web client ID for Gmail connect (defaults to --google-client-id / VITE_GOOGLE_CLIENT_ID when unset).')
+    parser.add_argument('--gmail-client-secret', default=os.environ.get('GMAIL_CLIENT_SECRET', '').strip(), help='Google OAuth client secret for Gmail token exchange (Worker secret, not exposed to the browser).')
     parser.add_argument('--all', action='store_true', help='Run Google setup, Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
     return parser.parse_args()
 
@@ -422,6 +426,15 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
     if not google_client_id:
         warn('VITE_GOOGLE_CLIENT_ID', 'not provided. Frontend login and Worker audience checks will remain unconfigured.')
 
+    gmail_client_id = (args.gmail_client_id or google_client_id).strip()
+    if not gmail_client_id:
+        warn(
+            'GMAIL_CLIENT_ID',
+            'not set. Connect Gmail stays disabled until the Worker has GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET (GMAIL_CLIENT_ID defaults to VITE_GOOGLE_CLIENT_ID when that is set).',
+        )
+    if gmail_client_id and not args.gmail_client_secret.strip():
+        warn('GMAIL_CLIENT_SECRET', 'not set. Gmail OAuth token exchange requires the Web application client secret in the Worker.')
+
     return WorkerBootstrap(
         allowed_emails=allowed_emails,
         admin_emails=admin_emails,
@@ -443,6 +456,8 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: GoogleRe
         meta_app_id=args.meta_app_id,
         meta_app_secret=args.meta_app_secret,
         whatsapp_phone_number_id=os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip() or args.whatsapp_phone_number_id,
+        gmail_client_id=gmail_client_id,
+        gmail_client_secret=args.gmail_client_secret.strip(),
     )
 
 

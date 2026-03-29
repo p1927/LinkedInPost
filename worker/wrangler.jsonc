@@ -37,8 +37,8 @@
     "LINKEDIN_CLIENT_ID": "77152yw16gugq6",
     "LINKEDIN_PERSON_URN": "",
     "META_APP_ID": "2059399091272282",
-    "WHATSAPP_PHONE_NUMBER_ID": "1052083514653755",
-    "GMAIL_CLIENT_ID":"718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+    "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
+    "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com"
   },
   "env": {
     "local": {
@@ -53,7 +53,9 @@
       "migrations": [
         {
           "tag": "v1",
-          "new_sqlite_classes": ["ScheduledPublishAlarm"]
+          "new_sqlite_classes": [
+            "ScheduledPublishAlarm"
+          ]
         }
       ],
       "vars": {
@@ -67,7 +69,8 @@
         "LINKEDIN_CLIENT_ID": "77152yw16gugq6",
         "LINKEDIN_PERSON_URN": "",
         "META_APP_ID": "2059399091272282",
-        "WHATSAPP_PHONE_NUMBER_ID": "1052083514653755"
+        "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
+        "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com"
       },
       "kv_namespaces": [
         {

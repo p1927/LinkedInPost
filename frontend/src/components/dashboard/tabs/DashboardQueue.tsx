@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Plus, RefreshCw, RotateCw, Send, Eye, Trash2, Bot, PenLine, FileEdit } from 'lucide-react';
+import { Plus, RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
@@ -17,9 +17,6 @@ const rowActionClass =
 
 const iconBtn =
   'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-40 transition-colors duration-200 focus:ring-2 focus:ring-primary/50 focus:outline-none';
-
-const iconBtnMuted =
-  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-white/60 hover:text-ink disabled:opacity-40 transition-colors duration-200 focus:ring-2 focus:ring-primary/50 focus:outline-none';
 
 export function DashboardQueue({
   handleAddTopic,
@@ -176,9 +173,8 @@ export function DashboardQueue({
                       <span className="w-[100px] text-right">Status</span>
                       <span className="w-[110px] text-right">Date</span>
                       <span className="min-w-[110px] text-right">Action</span>
-                      <div className="flex w-[80px] shrink-0 items-center justify-end gap-1">
-                        <span className="sr-only">Preview and delete</span>
-                        <Eye className="h-4 w-4 text-ink/45" aria-hidden />
+                      <div className="flex w-10 shrink-0 items-center justify-end">
+                        <span className="sr-only">Delete</span>
                         <Trash2 className="h-4 w-4 text-ink/45" aria-hidden />
                       </div>
                     </div>
@@ -195,25 +191,45 @@ export function DashboardQueue({
                         key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
                         role="row"
                         data-queue-row-id={topicRowElementId(row)}
+                        tabIndex={showPreview ? 0 : undefined}
+                        aria-label={showPreview ? `Preview post: ${row.topic}` : undefined}
                         className={cn(
-                          'flex items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0 hover:bg-white/80 cursor-pointer',
+                          'flex items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0',
                           rowIndex % 2 === 1 && 'bg-violet-50/40',
+                          showPreview &&
+                            'cursor-pointer hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset',
                         )}
+                        onClick={
+                          showPreview
+                            ? () => {
+                                setSelectedApprovedRowPreview(row);
+                              }
+                            : undefined
+                        }
+                        onKeyDown={
+                          showPreview
+                            ? (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSelectedApprovedRowPreview(row);
+                                }
+                              }
+                            : undefined
+                        }
                       >
                         <div role="cell" className="min-w-0 flex-1">
-                          {normalizedStatus === 'drafted' || canPreviewPublishedContent(row) ? (
+                          {normalizedStatus === 'drafted' ? (
                             <button
                               type="button"
-                              onClick={() => onTopicNavigate(row)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTopicNavigate(row);
+                              }}
                               className={cn(
                                 'line-clamp-2 w-full text-left font-medium leading-snug text-ink transition-colors duration-200',
                                 'rounded-lg outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40',
                               )}
-                              title={
-                                normalizedStatus === 'drafted'
-                                  ? 'Review draft variants'
-                                  : 'Preview post'
-                              }
+                              title="Review draft variants"
                             >
                               {row.topic}
                             </button>
@@ -243,7 +259,10 @@ export function DashboardQueue({
                               <Button
                                 type="button"
                                 variant="primary"
-                                onClick={() => void triggerRowGithubAction(row, 'draft')}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void triggerRowGithubAction(row, 'draft');
+                                }}
                                 disabled={
                                   actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
                                 }
@@ -263,7 +282,10 @@ export function DashboardQueue({
                               <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={() => onOpenTopicReview(row)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenTopicReview(row);
+                                }}
                                 title="Review draft"
                                 className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
                               >
@@ -277,7 +299,10 @@ export function DashboardQueue({
                               <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={() => onOpenTopicReview(row)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenTopicReview(row);
+                                }}
                                 title="Edit schedule or content"
                                 className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
                               >
@@ -291,7 +316,10 @@ export function DashboardQueue({
                               <Button
                                 type="button"
                                 variant="primary"
-                                onClick={() => void publishRowToSelectedChannel(row)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void publishRowToSelectedChannel(row);
+                                }}
                                 disabled={actionLoading !== null}
                                 title="Publish"
                                 className={rowActionClass}
@@ -309,7 +337,10 @@ export function DashboardQueue({
                               <Button
                                 type="button"
                                 variant="secondary"
-                                onClick={() => void republishRowToSelectedChannel(row)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void republishRowToSelectedChannel(row);
+                                }}
                                 disabled={actionLoading !== null}
                                 title="Republish to channel"
                                 className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
@@ -323,25 +354,14 @@ export function DashboardQueue({
                               </Button>
                             ) : null}
                           </div>
-                          <div className="flex w-[80px] shrink-0 items-center justify-end gap-1">
-                            {showPreview ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setSelectedApprovedRowPreview(row)}
-                                title="Preview"
-                                aria-label="Preview post"
-                                className={iconBtnMuted}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            ) : (
-                              <span className="inline-block h-8 w-8 shrink-0" aria-hidden />
-                            )}
+                          <div className="flex w-10 shrink-0 items-center justify-end">
                             <Button
                               type="button"
                               variant="ghost"
-                              onClick={() => handleDeleteTopic(row)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTopic(row);
+                              }}
                               disabled={deletingRowIndex === row.rowIndex}
                               title="Delete topic"
                               aria-label="Delete topic"
