@@ -419,6 +419,8 @@ export function Dashboard({
   useEffect(() => {
     if (isTopicsMain) {
       window.scrollTo(0, savedScrollY.current);
+    } else {
+      window.scrollTo(0, 0);
     }
   }, [isTopicsMain]);
 

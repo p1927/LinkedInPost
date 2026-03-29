@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
-import { BrowserRouter, useLocation, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, useLocation, Routes, Route, Navigate } from 'react-router-dom'
 import { Share2, Sparkles, TableProperties } from 'lucide-react'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Dashboard } from './components/dashboard'
@@ -71,6 +71,14 @@ function getBackendHostLabel(endpointUrl: string): string {
   } catch {
     return endpointUrl || 'the configured backend URL'
   }
+}
+
+function LoginRedirect() {
+  const location = useLocation()
+  if (location.pathname !== '/' && location.pathname !== '/terms' && location.pathname !== '/privacy-policy') {
+    return <Navigate to="/" replace />
+  }
+  return null
 }
 
 function App() {
@@ -172,7 +180,9 @@ function App() {
                     </p>
                   </div>
                 ) : !idToken ? (
-                  <div className="flex min-h-[calc(100vh-9rem)] flex-1 flex-col items-center justify-center gap-14 lg:flex-row lg:gap-20">
+                  <>
+                    <LoginRedirect />
+                    <div className="flex min-h-[calc(100vh-9rem)] flex-1 flex-col items-center justify-center gap-14 lg:flex-row lg:gap-20">
                     <div className="max-w-xl flex-1 space-y-10 text-left">
                       <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight text-ink lg:text-[2.75rem] lg:leading-[1.12]">
                         One pipeline for drafts, review, and delivery across every channel you use.
@@ -227,7 +237,7 @@ function App() {
                         ) : null}
                       </div>
                     </div>
-                  </div>
+                  </>
                 ) : loading ? (
                   <div className="flex flex-1 items-center justify-center">
                     <div className="flex flex-col items-center gap-3">
