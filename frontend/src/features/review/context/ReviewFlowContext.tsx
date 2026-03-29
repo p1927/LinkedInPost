@@ -20,14 +20,15 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
 
   // We omit `setChrome` from the context value since it's an internal detail of the state hook
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { setChrome, ...restState } = state;
+  const { setChrome, effectiveGenerationRules, ...restState } = state;
 
   const value: ReviewFlowContextValue = {
     // Props
     row: props.row,
     deliveryChannel: props.deliveryChannel,
     previewAuthorName: props.previewAuthorName,
-    sharedRules: props.sharedRules,
+    sharedRules: effectiveGenerationRules,
+    globalGenerationRules: props.globalGenerationRules,
     isAdmin: props.isAdmin,
     googleModel: props.googleModel,
     routed: props.routed,

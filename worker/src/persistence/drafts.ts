@@ -25,7 +25,10 @@ const PIPELINE_HEADERS = [
   'Email Cc',
   'Email Bcc',
   'Email Subject',
+  'Topic rules',
 ];
+
+const PIPELINE_COLS = 19;
 
 interface SpreadsheetMetadataResponse {
   sheets?: SpreadsheetSheetMetadata[];
@@ -63,8 +66,8 @@ export class SheetsGateway {
 
     const [topicRows, draftRows, postRows] = await Promise.all([
       this.getValues(spreadsheetId, `${TOPICS_SHEET}!A2:B`),
-      this.getValues(spreadsheetId, `${DRAFT_SHEET}!A2:R`),
-      this.getValues(spreadsheetId, `${POST_SHEET}!A2:R`),
+      this.getValues(spreadsheetId, `${DRAFT_SHEET}!A2:S`),
+      this.getValues(spreadsheetId, `${POST_SHEET}!A2:S`),
     ]);
 
     const topics = topicRows
@@ -151,6 +154,24 @@ export class SheetsGateway {
     return updatedRow;
   }
 
+  async saveTopicGenerationRules(spreadsheetId: string, row: SheetRow, topicRules: string): Promise<SheetRow> {
+    await this.ensureRequiredSheets(spreadsheetId);
+
+    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
+    if (!draftRowIndex) {
+      throw new Error('Draft row not found for this topic.');
+    }
+
+    await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!S${draftRowIndex}`, [[topicRules]]);
+
+    const updatedRow = await this.getRowByTopicDate(spreadsheetId, row.topic, row.date);
+    if (!updatedRow) {
+      throw new Error('Topic rules were saved, but the updated row could not be reloaded.');
+    }
+
+    return updatedRow;
+  }
+
   async saveEmailFields(
     spreadsheetId: string,
     row: SheetRow,
@@ -187,7 +208,7 @@ export class SheetsGateway {
 
     await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, [[sourceRow.topic, today]]);
 
-    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:R`, [[
+    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:S`, [[
       sourceRow.topic,
       today,
       'Approved',
@@ -206,6 +227,7 @@ export class SheetsGateway {
       emailCc,
       emailBcc,
       emailSubject,
+      sourceRow.topicGenerationRules || '',
     ]]);
 
     return { success: true };
@@ -233,7 +255,7 @@ export class SheetsGateway {
 
     const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
     if (draftRowIndex) {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:R${draftRowIndex}`, [[
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:S${draftRowIndex}`, [[
         row.topic,
         row.date,
         row.status || 'Published',
@@ -252,6 +274,7 @@ export class SheetsGateway {
         row.emailCc || '',
         row.emailBcc || '',
         row.emailSubject || '',
+        row.topicGenerationRules || '',
       ]]);
     }
 
@@ -274,12 +297,13 @@ export class SheetsGateway {
       row.emailCc || '',
       row.emailBcc || '',
       row.emailSubject || '',
+      row.topicGenerationRules || '',
     ]];
 
     if (row.postRowIndex) {
-      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:R${row.postRowIndex}`, postValues);
+      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:S${row.postRowIndex}`, postValues);
     } else {
-      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:R`, postValues);
+      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:S`, postValues);
     }
 
     return { success: true };
@@ -325,7 +349,7 @@ export class SheetsGateway {
   }
 
   private mapDraftOrPostRow(row: string[], index: number, sourceSheet: 'Draft' | 'Post'): SheetRow {
-    const paddedRow = padRow(row, 18);
+    const paddedRow = padRow(row, PIPELINE_COLS);
     return {
       rowIndex: index + 2,
       sourceSheet,
@@ -347,6 +371,7 @@ export class SheetsGateway {
       emailCc: paddedRow[15],
       emailBcc: paddedRow[16],
       emailSubject: paddedRow[17],
+      topicGenerationRules: paddedRow[18],
       draftRowIndex: sourceSheet === 'Draft' ? index + 2 : undefined,
       postRowIndex: sourceSheet === 'Post' ? index + 2 : undefined,
     };
@@ -382,6 +407,7 @@ export class SheetsGateway {
         emailCc: '',
         emailBcc: '',
         emailSubject: '',
+        topicGenerationRules: '',
       });
     }
 

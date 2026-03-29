@@ -22,4 +22,6 @@ export interface SheetRow {
   emailCc?: string;        // P
   emailBcc?: string;       // Q
   emailSubject?: string;   // R
+  /** Column S — non-empty replaces workspace global rules for LLM on this topic. */
+  topicGenerationRules?: string;
 }

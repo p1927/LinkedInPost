@@ -230,6 +230,17 @@ export function useDashboardQueue({
     }
   };
 
+  const handleSaveTopicGenerationRules = async (row: SheetRow, topicRules: string): Promise<SheetRow> => {
+    try {
+      const updatedRow = await api.saveTopicGenerationRules(idToken, row, topicRules);
+      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
+      return updatedRow;
+    } catch (error) {
+      handleFailure(error, 'Failed to save topic rules to the sheet.');
+      throw error;
+    }
+  };
+
   const handleFetchReviewImages = async (row: SheetRow) => {
     const result = await api.fetchDraftImages(idToken, row.topic, 4);
     return result.imageUrls;
@@ -376,6 +387,7 @@ export function useDashboardQueue({
     handleGenerateQuickChange,
     handleGenerateVariantsPreview,
     handleSaveDraftVariants,
+    handleSaveTopicGenerationRules,
     handleFetchReviewImages,
     handleUploadReviewImage,
     handleDownloadReviewImage,

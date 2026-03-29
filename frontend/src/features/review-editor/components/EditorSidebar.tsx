@@ -28,9 +28,9 @@ export function EditorSidebar() {
     handleUploadImageOption,
     onDownloadImage,
     sharedRules,
-    isAdmin,
-    handleSaveSharedRules,
-    savingSharedRules,
+    globalGenerationRules,
+    handleSaveTopicRules,
+    savingTopicRules,
     deliveryChannel,
     emailTo, setEmailTo,
     emailCc, setEmailCc,
@@ -133,11 +133,12 @@ export function EditorSidebar() {
 
         {activeWorkspacePanel === 'rules' ? (
           <RulesPanel
-            sharedRules={sharedRules}
+            globalGenerationRules={globalGenerationRules}
+            topicGenerationRules={sheetRow.topicGenerationRules || ''}
+            effectiveGenerationRules={sharedRules}
             compact
-            isAdmin={isAdmin}
-            onSave={handleSaveSharedRules}
-            saving={savingSharedRules}
+            onSaveTopic={handleSaveTopicRules}
+            savingTopic={savingTopicRules}
           />
         ) : null}
 

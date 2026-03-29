@@ -95,6 +95,17 @@ export interface VariantsPreviewResponse {
   variants: VariantPreviewResult[];
 }
 
+export interface GenerationRulesVersion {
+  savedAt: string;
+  savedBy: string;
+  text: string;
+}
+
+export interface GenerationRulesHistoryResult {
+  versions: GenerationRulesVersion[];
+  current: string;
+}
+
 interface ApiEnvelope<T> {
   ok: boolean;
   data?: T;
@@ -239,6 +250,17 @@ export class BackendApi {
       row,
       variants,
     });
+  }
+
+  async saveTopicGenerationRules(idToken: string, row: SheetRow, topicRules: string): Promise<SheetRow> {
+    return this.post<SheetRow>('saveTopicGenerationRules', idToken, {
+      row,
+      topicRules,
+    });
+  }
+
+  async getGenerationRulesHistory(idToken: string): Promise<GenerationRulesHistoryResult> {
+    return this.post<GenerationRulesHistoryResult>('getGenerationRulesHistory', idToken);
   }
 
   async getGoogleModels(idToken: string): Promise<GoogleModelOption[]> {

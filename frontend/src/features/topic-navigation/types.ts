@@ -10,7 +10,8 @@ export type TopicReviewPagesBaseProps = {
   rows: SheetRow[];
   deliveryChannel: ChannelId;
   previewAuthorName?: string;
-  sharedRules: string;
+  /** Workspace-wide rules; ignored for LLM when this topic has non-empty topic rules. */
+  globalGenerationRules: string;
   googleModel: string;
   onApprove: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
   onSaveEmailFields: (row: SheetRow, emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
@@ -23,8 +24,8 @@ export type TopicReviewPagesBaseProps = {
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   queueLoading: boolean;
   isAdmin: boolean;
-  /** Persists shared generation rules (Worker `saveConfig`; admin-only on the server). */
-  onSaveGenerationRules: (rules: string) => Promise<void>;
+  /** Persists column S “Topic rules” on the draft row (sheet API). */
+  onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

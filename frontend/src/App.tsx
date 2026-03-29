@@ -41,7 +41,9 @@ function WorkspaceSession({
   const location = useLocation()
   const workspacePage: WorkspaceNavPage = location.pathname.startsWith(WORKSPACE_PATHS.settings)
     ? 'settings'
-    : 'topics'
+    : location.pathname.startsWith(WORKSPACE_PATHS.rules)
+      ? 'rules'
+      : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
 
   return (

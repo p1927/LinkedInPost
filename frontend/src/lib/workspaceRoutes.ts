@@ -5,6 +5,7 @@ import { encodeTopicIdForPath, encodeTopicRouteId } from './topicRoute';
 export const WORKSPACE_PATHS = {
   topics: '/topics',
   settings: '/settings',
+  rules: '/rules',
 } as const;
 
 /**
@@ -16,6 +17,7 @@ export const WORKSPACE_ROUTE_PATHS = {
   topicVariants: '/topics/:topicId',
   topics: '/topics',
   settings: '/settings',
+  rules: '/rules',
 } as const;
 
 /** `encodeURIComponent(encodeTopicRouteId(row))` segment for `/topics/:topicId/...`. */

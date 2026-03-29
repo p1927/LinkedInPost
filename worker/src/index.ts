@@ -83,11 +83,19 @@ interface BotConfig {
   whatsappRecipients: WhatsAppRecipient[];
 }
 
+interface GenerationRulesVersion {
+  savedAt: string;
+  savedBy: string;
+  text: string;
+}
+
 export interface StoredConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
   generationRules: string;
+  /** Prior snapshots when global rules change (newest first). */
+  generationRulesHistory?: GenerationRulesVersion[];
   disconnectedAuthProviders?: AuthProvider[];
   githubTokenCiphertext?: string;
   defaultChannel: ChannelId;
@@ -610,7 +618,20 @@ async function dispatchAction(
       return sheets.deleteRow(storedConfig.spreadsheetId, coerceSheetRow(payload.row));
     case 'saveConfig':
       ensureAdmin(session);
-      return saveConfig(env, storedConfig, payload as BotConfigUpdate);
+      return saveConfig(env, storedConfig, payload as BotConfigUpdate, session);
+    case 'getGenerationRulesHistory':
+      ensureAdmin(session);
+      return {
+        versions: storedConfig.generationRulesHistory || [],
+        current: storedConfig.generationRules || '',
+      };
+    case 'saveTopicGenerationRules':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.saveTopicGenerationRules(
+        storedConfig.spreadsheetId,
+        coerceSheetRow(payload.row),
+        String(payload.topicRules ?? ''),
+      );
     case 'startLinkedInAuth':
       ensureAdmin(session);
       return startLinkedInAuth(request, env, session);
@@ -1769,7 +1790,21 @@ function oauthPopupResponse(origin: string | null, message: Record<string, unkno
   );
 }
 
-async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpdate): Promise<BotConfig> {
+async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpdate, session: VerifiedSession): Promise<BotConfig> {
+  let nextHistory = [...(current.generationRulesHistory || [])];
+  if (typeof update.generationRules === 'string') {
+    const trimmedNew = update.generationRules.trim();
+    const trimmedOld = (current.generationRules || '').trim();
+    if (trimmedNew !== trimmedOld) {
+      nextHistory.unshift({
+        savedAt: new Date().toISOString(),
+        savedBy: session.email,
+        text: current.generationRules || '',
+      });
+      nextHistory = nextHistory.slice(0, 50);
+    }
+  }
+
   const nextConfig: StoredConfig = {
     spreadsheetId: typeof update.spreadsheetId === 'string' ? update.spreadsheetId.trim() : current.spreadsheetId,
     githubRepo: typeof update.githubRepo === 'string' ? update.githubRepo.trim() : current.githubRepo,
@@ -1809,6 +1844,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     whatsappRecipients: Array.isArray(update.whatsappRecipients)
       ? normalizeWhatsAppRecipients(update.whatsappRecipients)
       : current.whatsappRecipients,
+    generationRulesHistory: nextHistory,
   };
 
   if (update.githubToken) {

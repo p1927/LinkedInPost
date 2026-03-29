@@ -1,6 +1,7 @@
 import type { Env, StoredConfig } from '../index';
 import { coerceSheetRow } from '../index';
 import { buildQuickChangePrompt, buildVariantsPrompt } from './prompts';
+import { resolveEffectiveGenerationRules } from './rules';
 import {
   applyReplacement,
   coerceSelectionRange,
@@ -85,7 +86,8 @@ export async function generateQuickChangePreview(
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
   const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
-  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, storedConfig.generationRules || '');
+  const effectiveRules = resolveEffectiveGenerationRules(row.topicGenerationRules, storedConfig.generationRules || '');
+  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules);
   const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
 
   if (!replacementText) {
@@ -115,13 +117,14 @@ export async function generateVariantsPreview(
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
   const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
+  const effectiveRules = resolveEffectiveGenerationRules(row.topicGenerationRules, storedConfig.generationRules || '');
   const prompt = buildVariantsPrompt(
     row,
     editorText,
     scope,
     selection,
     String(request.instruction || '').trim(),
-    storedConfig.generationRules || '',
+    effectiveRules,
   );
   const variants = normalizeVariantList(tryParseJson(await callGeminiText(env, model, prompt)));
 

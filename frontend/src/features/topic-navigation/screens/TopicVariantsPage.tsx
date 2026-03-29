@@ -42,7 +42,7 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
         row={row}
         deliveryChannel={p.deliveryChannel}
         previewAuthorName={p.previewAuthorName}
-        sharedRules={p.sharedRules}
+        globalGenerationRules={p.globalGenerationRules}
         googleModel={p.googleModel}
         routed={routed}
         onApprove={(text, img, time, emailTo, emailCc, emailBcc, emailSubject) => p.onApprove(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject)}
@@ -56,7 +56,7 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
         onDownloadImage={p.onDownloadImage}
         onCancel={handleCancel}
         isAdmin={p.isAdmin}
-        onSaveGenerationRules={p.onSaveGenerationRules}
+        onSaveTopicGenerationRules={p.onSaveTopicGenerationRules}
       />
     </div>
   );

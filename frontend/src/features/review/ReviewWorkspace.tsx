@@ -24,7 +24,7 @@ export interface ReviewWorkspaceProps {
   deliveryChannel: ChannelId;
   /** Shown on the feed preview card (e.g. derived from the signed-in user’s email). */
   previewAuthorName?: string;
-  sharedRules: string;
+  globalGenerationRules: string;
   googleModel: string;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
   onSaveEmailFields: (emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
@@ -37,7 +37,7 @@ export interface ReviewWorkspaceProps {
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
   isAdmin: boolean;
-  onSaveGenerationRules: (rules: string) => Promise<void>;
+  onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
   /** URL-driven flow: variants page vs editor page. */
   routed?: ReviewRoutedNavigation;
   /** Set when opening `/topics/.../editor/N?media=1`. */

@@ -26,6 +26,7 @@ export interface ReviewFlowContextValue {
   deliveryChannel: ChannelId;
   previewAuthorName?: string;
   sharedRules: string;
+  globalGenerationRules: string;
   isAdmin: boolean;
   googleModel: string;
   routed?: ReviewRoutedNavigation;
@@ -127,8 +128,8 @@ export interface ReviewFlowContextValue {
   changePickCarouselBy: (direction: -1 | 1) => void;
   handlePickCarouselKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   handleFormatting: (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => void;
-  handleSaveSharedRules: (rules: string) => Promise<void>;
-  savingSharedRules: boolean;
+  handleSaveTopicRules: (rules: string) => Promise<void>;
+  savingTopicRules: boolean;
   handleSaveEmailFields: () => Promise<void>;
   onCancel: () => void;
 }
@@ -138,7 +139,7 @@ export interface ReviewFlowProviderProps {
   row: SheetRow;
   deliveryChannel: ChannelId;
   previewAuthorName?: string;
-  sharedRules: string;
+  globalGenerationRules: string;
   isAdmin: boolean;
   googleModel: string;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
@@ -151,7 +152,7 @@ export interface ReviewFlowProviderProps {
   onUploadImage: (file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
-  onSaveGenerationRules: (rules: string) => Promise<void>;
+  onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel?: boolean;
 }

@@ -24,6 +24,8 @@ export interface SheetRow {
   emailCc?: string;
   emailBcc?: string;
   emailSubject?: string;
+  /** Column S — when non-empty, replaces workspace global generation rules for this topic. */
+  topicGenerationRules?: string;
 }
 
 export type GenerationScope = 'selection' | 'whole-post';

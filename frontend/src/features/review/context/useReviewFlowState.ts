@@ -27,7 +27,7 @@ const getInitialPostTime = (rowPostTime: string | undefined): string => {
 };
 
 export function useReviewFlowState(props: ReviewFlowProviderProps) {
-  const { row, routed, editorStartMediaPanel, globalEmailDefaults } = props;
+  const { row, routed, editorStartMediaPanel, globalEmailDefaults, globalGenerationRules } = props;
   const { setChrome } = useWorkspaceChrome();
 
   const [sheetRow, setSheetRow] = useState(row);
@@ -154,6 +154,11 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
   const sheetVariants = useMemo(() => buildSheetVariants(sheetRow), [sheetRow]);
 
+  const effectiveGenerationRules = useMemo(() => {
+    const local = (sheetRow.topicGenerationRules || '').trim();
+    return local ? sheetRow.topicGenerationRules || '' : globalGenerationRules;
+  }, [sheetRow.topicGenerationRules, globalGenerationRules]);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPickCarouselIndex((index) =>
@@ -266,6 +271,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     hasUnsavedReviewState,
     previewReadyCount,
     topicHeadingRef,
-    setChrome
+    setChrome,
+    effectiveGenerationRules,
   };
 }

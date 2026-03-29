@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   topics: 'Topics',
   settings: 'Settings',
+  rules: 'Global rules',
 };
 
 export function WorkspaceHeader({

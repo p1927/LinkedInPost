@@ -21,7 +21,7 @@ export function useReviewFlowActions(
     onCancel,
     routed,
     googleModel,
-    onSaveGenerationRules,
+    onSaveTopicGenerationRules,
   } = props;
 
   const {
@@ -476,19 +476,20 @@ export function useReviewFlowActions(
     }
   }, [onSaveEmailFields, emailTo, emailCc, emailBcc, emailSubject, showAlert]);
 
-  const [savingSharedRules, setSavingSharedRules] = useState(false);
-  const saveSharedRulesInFlight = useRef(false);
+  const [savingTopicRules, setSavingTopicRules] = useState(false);
+  const saveTopicRulesInFlight = useRef(false);
 
-  const handleSaveSharedRules = useCallback(
+  const handleSaveTopicRules = useCallback(
     async (rules: string) => {
-      if (saveSharedRulesInFlight.current) return;
-      saveSharedRulesInFlight.current = true;
-      setSavingSharedRules(true);
+      if (saveTopicRulesInFlight.current) return;
+      saveTopicRulesInFlight.current = true;
+      setSavingTopicRules(true);
       try {
-        await onSaveGenerationRules(rules);
-        void showAlert({ title: 'Saved', description: 'Shared generation rules were updated.' });
+        const nextRow = await onSaveTopicGenerationRules(sheetRow, rules);
+        setSheetRow(nextRow);
+        void showAlert({ title: 'Saved', description: 'Topic rules were saved to the sheet.' });
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to save shared rules.';
+        const message = error instanceof Error ? error.message : 'Failed to save topic rules.';
         console.error(error);
         if (isAuthErrorMessage(message)) {
           void showAlert({ title: 'Session expired', description: 'Sign in again to continue.' });
@@ -496,11 +497,11 @@ export function useReviewFlowActions(
         }
         void showAlert({ title: 'Could not save', description: message });
       } finally {
-        saveSharedRulesInFlight.current = false;
-        setSavingSharedRules(false);
+        saveTopicRulesInFlight.current = false;
+        setSavingTopicRules(false);
       }
     },
-    [onSaveGenerationRules, showAlert],
+    [onSaveTopicGenerationRules, sheetRow, setSheetRow, showAlert],
   );
 
   return {
@@ -521,8 +522,8 @@ export function useReviewFlowActions(
     changePickCarouselBy,
     handlePickCarouselKeyDown,
     handleFormatting,
-    handleSaveSharedRules,
-    savingSharedRules,
+    handleSaveTopicRules,
+    savingTopicRules,
     handleSaveEmailFields,
     savingEmailFields,
   };

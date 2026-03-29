@@ -1,14 +1,14 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ListOrdered, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListOrdered, ScrollText, Settings } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { Button } from '@/components/ui/button';
 
-export type WorkspaceNavPage = 'topics' | 'settings';
+export type WorkspaceNavPage = 'topics' | 'settings' | 'rules';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -125,7 +125,8 @@ export function AppSidebar({
   const pictureUrl = googleProfile?.picture?.trim() || null;
 
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
-    const to = page === 'topics' ? WORKSPACE_PATHS.topics : WORKSPACE_PATHS.settings;
+    const to =
+      page === 'topics' ? WORKSPACE_PATHS.topics : page === 'rules' ? WORKSPACE_PATHS.rules : WORKSPACE_PATHS.settings;
     return (
       <li key={page}>
         <NavLink
@@ -238,6 +239,7 @@ export function AppSidebar({
           >
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
+            {link('rules', <ScrollText aria-hidden />, 'Rules')}
           </ul>
         </nav>
 

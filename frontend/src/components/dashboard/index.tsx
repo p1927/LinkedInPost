@@ -21,6 +21,7 @@ import { normalizeTelegramChatId, parseTelegramRecipientsInput } from '../../int
 import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { TopicVariantsPage } from '../../features/topic-navigation/screens/TopicVariantsPage';
 import { TopicEditorPage } from '../../features/topic-navigation/screens/TopicEditorPage';
+import { GlobalRulesPage } from '../../pages/GlobalRulesPage';
 import { ApprovedPostPreview } from '../ApprovedPostPreview';
 import { findRowByTopicRouteId, normalizeTopicRouteParam } from '../../features/topic-navigation/utils/topicRoute';
 import {
@@ -225,7 +226,7 @@ export function Dashboard({
     queueLoading: queueHook.loading,
     deliveryChannel: channelsHook.selectedChannel,
     previewAuthorName: previewAuthorDisplayName(session.email),
-    sharedRules: session.config.generationRules,
+    globalGenerationRules: session.config.generationRules,
     googleModel: settingsHook.googleModel,
     onApprove: queueHook.handleApproveVariant,
     onSaveEmailFields: queueHook.handleSaveEmailFields,
@@ -242,9 +243,7 @@ export function Dashboard({
     onUploadImage: queueHook.handleUploadReviewImage,
     onDownloadImage: queueHook.handleDownloadReviewImage,
     isAdmin: session.isAdmin,
-    onSaveGenerationRules: async (rules: string) => {
-      await onSaveConfig({ generationRules: rules.trim() });
-    },
+    onSaveTopicGenerationRules: queueHook.handleSaveTopicGenerationRules,
   };
 
   const topicChromeRow = topicIdFromPath
@@ -483,6 +482,18 @@ export function Dashboard({
         <Route
           path={WORKSPACE_ROUTE_PATHS.settings}
           element={session.isAdmin ? settingsHome : <Navigate to={WORKSPACE_PATHS.topics} replace />}
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.rules}
+          element={
+            <GlobalRulesPage
+              idToken={idToken}
+              session={session}
+              api={api}
+              onSaveConfig={onSaveConfig}
+              onAuthExpired={onAuthExpired}
+            />
+          }
         />
         <Route path="*" element={isTopicsMain ? null : <Navigate to={WORKSPACE_PATHS.topics} replace />} />
       </Routes>

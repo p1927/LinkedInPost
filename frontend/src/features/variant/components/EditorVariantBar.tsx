@@ -42,8 +42,17 @@ export function EditorVariantBar() {
 
   return (
     <div className="shrink-0 border-b border-violet-200/35 bg-canvas/98 backdrop-blur-sm">
-      {/* Tab bar */}
-      <div className="flex items-center gap-2 px-4 py-2">
+      {/* Tab bar — whole row expands when collapsed (variant buttons still load / toggle as before) */}
+      <div
+        role="presentation"
+        className={cn(
+          'flex items-center gap-2 px-4 py-2',
+          !expanded && 'cursor-pointer',
+        )}
+        onClick={() => {
+          if (!expanded) setExpanded(true);
+        }}
+      >
         <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-ink/50">
           Variants
         </span>
