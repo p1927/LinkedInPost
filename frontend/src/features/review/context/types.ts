@@ -72,6 +72,8 @@ export interface ReviewFlowContextValue {
   setActiveWorkspacePanel: React.Dispatch<React.SetStateAction<'refine' | 'media' | 'rules' | 'email'>>;
   reviewPhase: 'pick-variant' | 'edit';
   setReviewPhase: React.Dispatch<React.SetStateAction<'pick-variant' | 'edit'>>;
+  editorVariantIndex: number | null;
+  setEditorVariantIndex: React.Dispatch<React.SetStateAction<number | null>>;
   topicExpanded: boolean;
   setTopicExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   previewCollapsed: boolean;
@@ -108,7 +110,7 @@ export interface ReviewFlowContextValue {
   // Functions
   leaveToTopics: () => void;
   requestNavigateToVariants: () => void;
-  applySheetVariantBase: (variant: { text: string; imageUrl: string }) => void;
+  applySheetVariantBase: (variant: { text: string; imageUrl: string }, variantIndex?: number) => void;
   handleGenerateQuickChange: () => Promise<void>;
   handleGenerateVariants: () => Promise<void>;
   openCompare: (title: string, proposedText: string, resultingText: string) => void;

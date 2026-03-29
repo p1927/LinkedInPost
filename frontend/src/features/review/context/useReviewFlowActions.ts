@@ -50,6 +50,7 @@ export function useReviewFlowActions(
     setSubmitting,
     setActiveWorkspacePanel,
     setReviewPhase,
+    setEditorVariantIndex,
     setPickCarouselIndex,
     sheetVariants,
     showPickPhase,
@@ -133,7 +134,7 @@ export function useReviewFlowActions(
     googleModel,
   });
 
-  const applySheetVariantBase = useCallback((variant: { text: string; imageUrl: string }) => {
+  const applySheetVariantBase = useCallback((variant: { text: string; imageUrl: string }, variantIndex?: number) => {
     setEditorText(variant.text);
     setEditorBaselineText(variant.text);
     setSelection(null);
@@ -146,6 +147,7 @@ export function useReviewFlowActions(
     if (variant.imageUrl) {
       setSelectedImageUrl(variant.imageUrl);
     }
+    setEditorVariantIndex(variantIndex ?? null);
     setReviewPhase('edit');
   }, [
     setEditorText,
@@ -158,6 +160,7 @@ export function useReviewFlowActions(
     setPreviewVariantSaveByIndex,
     setPreviewVariantSaveErrors,
     setSelectedImageUrl,
+    setEditorVariantIndex,
     setReviewPhase
   ]);
 
@@ -340,7 +343,7 @@ export function useReviewFlowActions(
         return;
       }
 
-      applySheetVariantBase(variant);
+      applySheetVariantBase(variant, index);
     },
     [applySheetVariantBase, sheetVariants, routed, hasUnsavedReviewState, setOpenMediaAfterVariantConfirm, setPendingVariantIndex],
   );
@@ -363,7 +366,7 @@ export function useReviewFlowActions(
         return;
       }
 
-      applySheetVariantBase(variant);
+      applySheetVariantBase(variant, index);
       setActiveWorkspacePanel('media');
     },
     [applySheetVariantBase, sheetVariants, routed, hasUnsavedReviewState, setOpenMediaAfterVariantConfirm, setPendingVariantIndex, setActiveWorkspacePanel],

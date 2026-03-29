@@ -57,7 +57,7 @@ export function ReviewDialogs() {
             return;
           }
 
-          applySheetVariantBase(variant);
+          applySheetVariantBase(variant, pendingVariantIndex ?? undefined);
           if (alsoMedia) {
             setActiveWorkspacePanel('media');
           }

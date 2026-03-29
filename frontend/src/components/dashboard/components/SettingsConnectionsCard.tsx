@@ -38,38 +38,43 @@ export function SettingsConnectionsCard({
       <ul className="list-none space-y-2 p-4">
         {CHANNEL_ROWS.map(({ id, label, key }) => {
           const ok = health[key];
-          return (
-            <li
-              key={id}
-              className="glass-inset flex items-center justify-between gap-2 rounded-xl border border-violet-200/45 px-3 py-2"
+          const sectionId = PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID[key];
+          const statusBadge = (
+            <span
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                ok
+                  ? 'border border-success-border bg-success-surface text-success-ink'
+                  : 'border border-dashed border-border-strong bg-white/40 text-muted',
+              )}
             >
+              {ok ? (
+                <Check className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
+              ) : (
+                <Minus className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
+              )}
+              {ok ? 'Connected' : 'Not connected'}
+            </span>
+          );
+
+          return (
+            <li key={id}>
               {onNavigateToSection ? (
                 <button
                   type="button"
-                  className="cursor-pointer text-left text-sm font-medium text-ink underline-offset-2 hover:underline focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  onClick={() => onNavigateToSection(PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID[key])}
+                  className="glass-inset flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-violet-200/45 px-3 py-2 text-left transition-colors hover:bg-white/45 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  onClick={() => onNavigateToSection(sectionId)}
                   aria-label={`Jump to ${label} settings`}
                 >
-                  {label}
+                  <span className="text-sm font-medium text-ink">{label}</span>
+                  {statusBadge}
                 </button>
               ) : (
-                <span className="text-sm font-medium text-ink">{label}</span>
+                <div className="glass-inset flex items-center justify-between gap-2 rounded-xl border border-violet-200/45 px-3 py-2">
+                  <span className="text-sm font-medium text-ink">{label}</span>
+                  {statusBadge}
+                </div>
               )}
-              <span
-                className={cn(
-                  'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                  ok
-                    ? 'border border-success-border bg-success-surface text-success-ink'
-                    : 'border border-dashed border-border-strong bg-white/40 text-muted',
-                )}
-              >
-                {ok ? (
-                  <Check className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
-                ) : (
-                  <Minus className="h-3 w-3 shrink-0" aria-hidden strokeWidth={2.5} />
-                )}
-                {ok ? 'Connected' : 'Not connected'}
-              </span>
             </li>
           );
         })}

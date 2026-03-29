@@ -1340,15 +1340,16 @@ async function refreshGmailAccessToken(env: Env, config: StoredConfig): Promise<
 }
 
 async function fetchGmailProfile(accessToken: string): Promise<{ email: string }> {
-  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+  // Use OAuth userinfo — `gmail.send` does not authorize gmail.googleapis.com/users/me/profile (403).
+  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
   });
 
-  const payload = (await response.json().catch(() => null)) as { emailAddress?: string } | null;
-  const email = String(payload?.emailAddress || '').trim();
-  
+  const payload = (await response.json().catch(() => null)) as { email?: string } | null;
+  const email = String(payload?.email || '').trim();
+
   if (!response.ok || !email) {
     throw new Error(`Gmail profile lookup failed with status ${response.status}.`);
   }
@@ -1705,10 +1706,14 @@ function oauthPopupResponse(origin: string | null, message: Record<string, unkno
   <script>
     const message = ${messageJson};
     const targetOrigin = ${originJson};
-    if (targetOrigin && window.opener && !window.opener.closed) {
-      window.opener.postMessage(message, targetOrigin);
-      window.setTimeout(() => window.close(), 120);
+    if (targetOrigin && window.opener) {
+      try {
+        window.opener.postMessage(message, targetOrigin);
+      } catch (e) {
+        console.error(e);
+      }
     }
+    window.setTimeout(() => { try { window.close(); } catch (e) { console.error(e); } }, 120);
     document.getElementById('status').textContent = ${statusText};
   </script>
 </body>

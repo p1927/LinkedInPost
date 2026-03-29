@@ -56,9 +56,18 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [compareState, setCompareState] = useState<CompareState | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [activeWorkspacePanel, setActiveWorkspacePanel] = useState<'refine' | 'media' | 'rules' | 'email'>('refine');
-  const [reviewPhase, setReviewPhase] = useState<'pick-variant' | 'edit'>(() =>
-    buildSheetVariants(row).length > 0 ? 'pick-variant' : 'edit',
-  );
+  const [reviewPhase, setReviewPhase] = useState<'pick-variant' | 'edit'>(() => {
+    const variants = buildSheetVariants(row);
+    if (variants.length === 0) return 'edit';
+    if (row.selectedText?.trim()) return 'edit';
+    return 'pick-variant';
+  });
+  const [editorVariantIndex, setEditorVariantIndex] = useState<number | null>(() => {
+    const variants = buildSheetVariants(row);
+    if (!row.selectedText?.trim()) return null;
+    const idx = variants.findIndex((v) => v.text?.trim() === row.selectedText!.trim());
+    return idx >= 0 ? idx : null;
+  });
   const [topicExpanded, setTopicExpanded] = useState(false);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [pickCarouselIndex, setPickCarouselIndex] = useState(0);
@@ -94,6 +103,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setTopicExpanded(false);
     setPreviewCollapsed(false);
     setPickCarouselIndex(0);
+    setEditorVariantIndex(null);
 
     if (routed?.screen === 'editor') {
       const sc = getVariantSlotContent(row, routed.editorVariantSlot);
@@ -108,6 +118,9 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       setSelectedImageUrl(
         (sc?.imageUrl?.trim() ? sc.imageUrl : '') || row.selectedImageId || row.imageLink1 || '',
       );
+      const variants = buildSheetVariants(row);
+      const slotIdx = variants.findIndex((v) => v.originalIndex === routed.editorVariantSlot);
+      setEditorVariantIndex(slotIdx >= 0 ? slotIdx : null);
       setReviewPhase('edit');
       setActiveWorkspacePanel(editorStartMediaPanel ? 'media' : 'refine');
       return;
@@ -122,10 +135,17 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setEmailBcc(row.emailBcc || '');
     setEmailSubject(row.emailSubject || '');
     setSelectedImageUrl(row.selectedImageId || row.imageLink1 || '');
+
+    const variants = buildSheetVariants(row);
+    if (row.selectedText?.trim()) {
+      const idx = variants.findIndex((v) => v.text?.trim() === row.selectedText!.trim());
+      setEditorVariantIndex(idx >= 0 ? idx : null);
+    }
+
     setReviewPhase(
       routed?.screen === 'variants'
         ? 'pick-variant'
-        : buildSheetVariants(row).length > 0
+        : variants.length > 0 && !row.selectedText?.trim()
           ? 'pick-variant'
           : 'edit',
     );
@@ -225,6 +245,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     submitting, setSubmitting,
     activeWorkspacePanel, setActiveWorkspacePanel,
     reviewPhase, setReviewPhase,
+    editorVariantIndex, setEditorVariantIndex,
     topicExpanded, setTopicExpanded,
     previewCollapsed, setPreviewCollapsed,
     pickCarouselIndex, setPickCarouselIndex,

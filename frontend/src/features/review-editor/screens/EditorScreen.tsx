@@ -3,6 +3,7 @@ import { DraftEditor } from '../../editor/DraftEditor';
 import { useReviewFlow } from '../../review/context/ReviewFlowContext';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { LivePreviewSidebar } from '../components/LivePreviewSidebar';
+import { EditorVariantBar } from '../../variant/components/EditorVariantBar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +67,7 @@ export function EditorScreen() {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
+        <EditorVariantBar />
         {isDesktop ? (
           <PanelGroup
             orientation="horizontal"

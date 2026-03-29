@@ -105,6 +105,25 @@ export function isOAuthPopupMessage(value: unknown): value is OAuthPopupMessage 
   );
 }
 
+const OAUTH_POPUP_ABANDON_MS = 15 * 60 * 1000;
+
+function tryReadPopupClosed(popup: Window): boolean | null {
+  try {
+    return popup.closed;
+  } catch {
+    // Google (and others) may use COOP so the opener cannot read popup state; rely on postMessage + timeout.
+    return null;
+  }
+}
+
+function tryClosePopup(popup: Window): void {
+  try {
+    popup.close();
+  } catch {
+    // COOP can block parent-driven close; the callback page already calls window.close().
+  }
+}
+
 export async function openOAuthPopup(
   loadAuthUrl: () => Promise<OAuthStartResult>,
   provider: PopupProvider,
@@ -120,16 +139,11 @@ export async function openOAuthPopup(
 
   return new Promise<OAuthPopupMessage>((resolve, reject) => {
     let settled = false;
-    const popupPoll = window.setInterval(() => {
-      if (!popup.closed || settled) {
-        return;
-      }
-
-      cleanup();
-      reject(new Error('The connection popup was closed before the channel finished connecting.'));
-    }, 300);
+    let popupPoll = 0;
+    let abandonTimer = 0;
 
     const handleMessage = (event: MessageEvent) => {
+      if (settled) return;
       if (event.origin !== expectedOrigin || !isOAuthPopupMessage(event.data)) {
         return;
       }
@@ -138,16 +152,33 @@ export async function openOAuthPopup(
         return;
       }
 
-      settled = true;
       cleanup();
-      popup.close();
+      tryClosePopup(popup);
       resolve(event.data);
     };
 
     const cleanup = () => {
+      if (settled) return;
+      settled = true;
       window.clearInterval(popupPoll);
+      window.clearTimeout(abandonTimer);
       window.removeEventListener('message', handleMessage);
     };
+
+    abandonTimer = window.setTimeout(() => {
+      if (settled) return;
+      cleanup();
+      reject(new Error('The connection timed out. Close any stuck popup and try again.'));
+    }, OAUTH_POPUP_ABANDON_MS);
+
+    popupPoll = window.setInterval(() => {
+      if (settled) return;
+      const closed = tryReadPopupClosed(popup);
+      if (closed === true) {
+        cleanup();
+        reject(new Error('The connection popup was closed before the channel finished connecting.'));
+      }
+    }, 300);
 
     window.addEventListener('message', handleMessage);
   });
