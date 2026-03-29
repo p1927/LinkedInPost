@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
 import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
+import { type GoogleModelOption } from '../../../services/configService';
 import { type ChannelId } from '../../../integrations/channels';
 import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '../../../services/backendApi';
 import { type TelegramRecipient } from '../../../integrations/telegram';
@@ -107,6 +108,9 @@ type DashboardSettingsDrawerProps = {
   setWhatsappRecipientsInput: (val: string) => void;
   saveSettings: () => Promise<void>;
   savingConfig: boolean;
+  adminModelCatalog: GoogleModelOption[];
+  allowedGoogleModels: string[];
+  toggleAllowedGoogleModel: (modelId: string, enabled: boolean) => void;
 };
 
 function SettingsSectionCard({
@@ -188,6 +192,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       setWhatsappRecipientsInput,
       saveSettings,
       savingConfig,
+      adminModelCatalog,
+      allowedGoogleModels,
+      toggleAllowedGoogleModel,
     },
     ref,
   ) {
@@ -272,11 +279,6 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               />
               <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
             </div>
-            <p className="rounded-xl border border-border bg-surface-muted/60 px-3 py-2.5 text-xs leading-5 text-muted">
-              Publish target and recipients are on <strong className="font-semibold text-ink">Home</strong>. AI model is there too. Refresh stays in the top bar. The{' '}
-              <strong className="font-semibold text-ink">Connections</strong> card summarizes LinkedIn, Instagram, Telegram, and WhatsApp credential status from your saved
-              config.
-            </p>
           </div>
         </SettingsSectionCard>
 
@@ -306,6 +308,39 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               />
               <p className="mt-1.5 text-xs text-muted">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
             </div>
+
+            {session.isAdmin ? (
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">Allowed Gemini models</label>
+                <p className="mt-1.5 text-xs text-muted">
+                  Only admins can change this list. Everyone else can pick among allowed models on Home (or use the single model when only one is enabled).
+                </p>
+                <div className="mt-3 flex max-h-56 flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-canvas px-3 py-2.5">
+                  {adminModelCatalog.map((m) => {
+                    const checked = allowedGoogleModels.includes(m.value);
+                    const soleChecked = checked && allowedGoogleModels.length <= 1;
+                    return (
+                      <label
+                        key={m.value}
+                        className={cn(
+                          'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm text-ink transition-colors hover:bg-violet-100/40',
+                          soleChecked && 'cursor-default',
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          className="size-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
+                          checked={checked}
+                          disabled={soleChecked}
+                          onChange={(e) => toggleAllowedGoogleModel(m.value, e.target.checked)}
+                        />
+                        <span className="min-w-0 leading-snug">{m.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink">Replace GitHub Personal Access Token</label>

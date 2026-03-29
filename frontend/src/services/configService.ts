@@ -89,6 +89,8 @@ export interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
+  /** Gemini model IDs non-admins may use; admins edit this in Settings. */
+  allowedGoogleModels: string[];
   generationRules: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
@@ -125,10 +127,23 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
       ? 'gmail'
       : 'linkedin';
 
+  const allowedGoogleModels = (() => {
+    const raw = config?.allowedGoogleModels;
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return [DEFAULT_GOOGLE_MODEL];
+    }
+    const ids = [...new Set(raw.map((x) => String(x || '').trim()).filter(Boolean))];
+    return ids.length > 0 ? ids : [DEFAULT_GOOGLE_MODEL];
+  })();
+
+  const googleModelRaw = config?.googleModel || DEFAULT_GOOGLE_MODEL;
+  const googleModel = allowedGoogleModels.includes(googleModelRaw) ? googleModelRaw : allowedGoogleModels[0] || DEFAULT_GOOGLE_MODEL;
+
   return {
     spreadsheetId: config?.spreadsheetId || '',
     githubRepo: config?.githubRepo || '',
-    googleModel: config?.googleModel || DEFAULT_GOOGLE_MODEL,
+    googleModel,
+    allowedGoogleModels,
     generationRules: config?.generationRules || '',
     hasGitHubToken: Boolean(config?.hasGitHubToken),
     defaultChannel,
@@ -159,6 +174,7 @@ export interface BotConfigUpdate {
   spreadsheetId?: string;
   githubRepo?: string;
   googleModel?: string;
+  allowedGoogleModels?: string[];
   generationRules?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;

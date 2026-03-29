@@ -7,11 +7,14 @@ export function DashboardToolbar({
   googleModel,
   setGoogleModel,
   availableModels,
+  modelPickerLocked = false,
   embedded = false,
 }: {
   googleModel: string;
   setGoogleModel: (val: string) => void;
   availableModels: GoogleModelOption[];
+  /** When true, the workspace only allows one model (no switching). */
+  modelPickerLocked?: boolean;
   /** Omit outer glass card when nested inside a parent panel (Topics right rail). */
   embedded?: boolean;
 }) {
@@ -32,12 +35,17 @@ export function DashboardToolbar({
         <span className="text-[11px] leading-relaxed text-muted">
           Powers Quick Change and variant generation during review.
         </span>
+        {modelPickerLocked ? (
+          <p className="mt-1 text-[11px] leading-relaxed text-muted">
+            This workspace is limited to one model. An admin can allow more in Settings → GitHub Actions.
+          </p>
+        ) : null}
         <Select
           value={googleModel}
           onValueChange={(val) => setGoogleModel(val as string)}
           itemToStringLabel={(v) => availableModels.find((m) => m.value === v)?.label ?? String(v ?? '')}
         >
-          <SelectTrigger className="mt-1">
+          <SelectTrigger className="mt-1" disabled={modelPickerLocked}>
             <SelectValue placeholder="Select a model" />
           </SelectTrigger>
           <SelectContent>

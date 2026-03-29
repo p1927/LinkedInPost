@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../services/backendApi';
 import { type BotConfig, type BotConfigUpdate, type GoogleModelOption, AVAILABLE_GOOGLE_MODELS, DEFAULT_GOOGLE_MODEL, loadAvailableGoogleModels, normalizeGoogleModelOptions } from '../../../services/configService';
 import { type ChannelId } from '../../../integrations/channels';
@@ -32,8 +32,9 @@ export function useDashboardSettings({
   const [githubRepo, setGithubRepo] = useState(session.config.githubRepo);
   const [githubTokenInput, setGithubTokenInput] = useState('');
   const [googleModel, setGoogleModel] = useState(session.config.googleModel);
+  const [allowedGoogleModels, setAllowedGoogleModels] = useState<string[]>(() => [...session.config.allowedGoogleModels]);
   const [generationRules, setGenerationRules] = useState(session.config.generationRules);
-  const [availableModels, setAvailableModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
+  const [catalogModels, setCatalogModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
   const [savingConfig, setSavingConfig] = useState(false);
   const [telegramBotTokenInput, setTelegramBotTokenInput] = useState('');
   const [gmailDefaultTo, setGmailDefaultTo] = useState(session.config.gmailDefaultTo || '');
@@ -56,17 +57,27 @@ export function useDashboardSettings({
   }, [session.config.generationRules]);
 
   useEffect(() => {
+    setAllowedGoogleModels([...session.config.allowedGoogleModels]);
+  }, [session.config.allowedGoogleModels]);
+
+  useEffect(() => {
+    if (!session.isAdmin) {
+      setGoogleModel(session.config.googleModel);
+    }
+  }, [session.isAdmin, session.config.googleModel]);
+
+  useEffect(() => {
     let cancelled = false;
     const syncModels = async () => {
       try {
         const models = normalizeGoogleModelOptions(await api.getGoogleModels(idToken), session.config.googleModel);
         if (!cancelled) {
-          setAvailableModels(models);
+          setCatalogModels(models);
         }
       } catch {
         const fallbackModels = await loadAvailableGoogleModels(session.config.googleModel);
         if (!cancelled) {
-          setAvailableModels(fallbackModels);
+          setCatalogModels(fallbackModels);
         }
       }
     };
@@ -74,7 +85,14 @@ export function useDashboardSettings({
     return () => {
       cancelled = true;
     };
-  }, [api, idToken, session.config.googleModel]);
+  }, [api, idToken, session.config.googleModel, session.isAdmin]);
+
+  const effectiveAllowedIds = session.isAdmin ? allowedGoogleModels : session.config.allowedGoogleModels;
+
+  const availableModels = useMemo(() => {
+    const allow = new Set(effectiveAllowedIds.length > 0 ? effectiveAllowedIds : [DEFAULT_GOOGLE_MODEL]);
+    return catalogModels.filter((model) => allow.has(model.value));
+  }, [catalogModels, effectiveAllowedIds]);
 
   useEffect(() => {
     if (availableModels.length === 0) return;
@@ -87,6 +105,18 @@ export function useDashboardSettings({
     }
   }, [availableModels, googleModel, session.config.googleModel]);
 
+  const toggleAllowedGoogleModel = useCallback((modelId: string, enabled: boolean) => {
+    setAllowedGoogleModels((prev) => {
+      if (enabled) {
+        return [...new Set([...prev, modelId])];
+      }
+      if (prev.length <= 1) {
+        return prev;
+      }
+      return prev.filter((id) => id !== modelId);
+    });
+  }, []);
+
   const saveSettings = async () => {
     if (!session.isAdmin) return;
 
@@ -96,6 +126,7 @@ export function useDashboardSettings({
         spreadsheetId: sheetIdInput.trim(),
         githubRepo: githubRepo.trim(),
         googleModel,
+        allowedGoogleModels,
         generationRules: generationRules.trim(),
         githubToken: githubTokenInput.trim() || undefined,
         defaultChannel: selectedChannel,
@@ -128,6 +159,10 @@ export function useDashboardSettings({
     setGithubTokenInput,
     googleModel,
     setGoogleModel,
+    allowedGoogleModels,
+    toggleAllowedGoogleModel,
+    adminModelCatalog: catalogModels,
+    modelPickerLocked: availableModels.length <= 1,
     generationRules,
     setGenerationRules,
     availableModels,

@@ -16,8 +16,7 @@ import type {
   QuickChangePreviewResult,
   VariantsPreviewResponse,
 } from './types';
-
-const GOOGLE_MODEL_DEFAULT = 'gemini-2.5-flash';
+import { resolveEffectiveGoogleModel } from '../google-model-policy';
 
 function requireGeminiApiKey(env: Env): string {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
@@ -85,7 +84,7 @@ export async function generateQuickChangePreview(
   }
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
-  const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
+  const model = resolveEffectiveGoogleModel(storedConfig, request.googleModel);
   const effectiveRules = resolveEffectiveGenerationRules(row.topicGenerationRules, storedConfig.generationRules || '');
   const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules);
   const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
@@ -116,7 +115,7 @@ export async function generateVariantsPreview(
   }
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
-  const model = String(request.googleModel || storedConfig.googleModel || GOOGLE_MODEL_DEFAULT).trim() || GOOGLE_MODEL_DEFAULT;
+  const model = resolveEffectiveGoogleModel(storedConfig, request.googleModel);
   const effectiveRules = resolveEffectiveGenerationRules(row.topicGenerationRules, storedConfig.generationRules || '');
   const prompt = buildVariantsPrompt(
     row,

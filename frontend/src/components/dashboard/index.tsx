@@ -398,6 +398,9 @@ export function Dashboard({
       setWhatsappRecipientsInput={channelsHook.setWhatsappRecipientsInput}
       saveSettings={settingsHook.saveSettings}
       savingConfig={settingsHook.savingConfig}
+      adminModelCatalog={settingsHook.adminModelCatalog}
+      allowedGoogleModels={settingsHook.allowedGoogleModels}
+      toggleAllowedGoogleModel={settingsHook.toggleAllowedGoogleModel}
     />
   );
 
@@ -415,6 +418,7 @@ export function Dashboard({
               googleModel={settingsHook.googleModel}
               setGoogleModel={settingsHook.setGoogleModel}
               availableModels={settingsHook.availableModels}
+              modelPickerLocked={settingsHook.modelPickerLocked}
             />
           </section>
           <div className="my-5 border-t border-violet-200/45" aria-hidden />

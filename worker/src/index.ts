@@ -11,6 +11,7 @@ import { generateQuickChangePreview, generateVariantsPreview } from './generatio
 import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway } from './persistence/drafts';
 import type { SheetRow } from './generation/types';
+import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
 
 
 export { ScheduledPublishAlarm } from './scheduler/ScheduledPublishAlarm';
@@ -58,6 +59,8 @@ interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
+  /** Model IDs users may pick from; only admins can change this list. */
+  allowedGoogleModels: string[];
   generationRules: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
@@ -93,6 +96,8 @@ export interface StoredConfig {
   spreadsheetId: string;
   githubRepo: string;
   googleModel: string;
+  /** When absent, the worker defaults to Gemini 2.5 Flash only. */
+  allowedGoogleModels?: string[];
   generationRules: string;
   /** Prior snapshots when global rules change (newest first). */
   generationRulesHistory?: GenerationRulesVersion[];
@@ -128,6 +133,7 @@ interface BotConfigUpdate {
   spreadsheetId?: string;
   githubRepo?: string;
   googleModel?: string;
+  allowedGoogleModels?: string[];
   generationRules?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
@@ -377,7 +383,6 @@ interface GeminiModelsResponse {
 
 
 const CONFIG_KEY = 'shared-config';
-const GOOGLE_MODEL_DEFAULT = 'gemini-2.5-flash';
 const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be decrypted. This usually means GITHUB_TOKEN_ENCRYPTION_KEY changed after the token was saved. Ask an admin to open Settings and save the GitHub token again.';
 const INSTAGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Instagram access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
@@ -548,8 +553,18 @@ async function dispatchAction(
         isAdmin: session.isAdmin,
         config: toPublicConfig(storedConfig, env),
       } satisfies AppSession;
-    case 'getGoogleModels':
-      return listGoogleModels(env);
+    case 'getGoogleModels': {
+      const full = await listGoogleModels(env);
+      if (session.isAdmin) {
+        return full;
+      }
+      const allow = new Set(resolveAllowedGoogleModelIds(storedConfig));
+      const filtered = full.filter((m) => allow.has(m.value));
+      if (filtered.length > 0) {
+        return filtered;
+      }
+      return AVAILABLE_GOOGLE_MODELS.filter((m) => allow.has(m.value));
+    }
     case 'getRows':
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.getRows(storedConfig.spreadsheetId);
@@ -772,6 +787,7 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     spreadsheetId,
     githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
+    allowedGoogleModels: config?.allowedGoogleModels,
     generationRules: config?.generationRules || '',
     disconnectedAuthProviders,
     githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
@@ -803,10 +819,12 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
 }
 
 function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
+  const allowedGoogleModels = resolveAllowedGoogleModelIds(config);
   return {
     spreadsheetId: config.spreadsheetId,
     githubRepo: config.githubRepo,
-    googleModel: config.googleModel || GOOGLE_MODEL_DEFAULT,
+    googleModel: resolveEffectiveGoogleModel(config, config.googleModel),
+    allowedGoogleModels,
     generationRules: config.generationRules || '',
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
     defaultChannel: config.defaultChannel,
@@ -1790,6 +1808,34 @@ function oauthPopupResponse(origin: string | null, message: Record<string, unkno
   );
 }
 
+async function normalizeAllowedGoogleModelsAgainstCatalog(env: Env, raw: unknown[]): Promise<string[]> {
+  const catalogModels = await listGoogleModels(env);
+  const catalog = new Set<string>();
+  for (const m of catalogModels) {
+    catalog.add(m.value);
+  }
+  for (const m of AVAILABLE_GOOGLE_MODELS) {
+    catalog.add(m.value);
+  }
+  const picked = [...new Set(
+    raw
+      .map((x) => String(x ?? '').trim())
+      .filter(Boolean)
+      .filter((id) => catalog.has(id)),
+  )];
+  if (picked.length === 0) {
+    throw new Error('Choose at least one allowed Gemini model from the catalog.');
+  }
+  return picked;
+}
+
+async function computeNextAllowedGoogleModels(env: Env, current: StoredConfig, update: BotConfigUpdate): Promise<string[]> {
+  if (Array.isArray(update.allowedGoogleModels)) {
+    return normalizeAllowedGoogleModelsAgainstCatalog(env, update.allowedGoogleModels);
+  }
+  return resolveAllowedGoogleModelIds(current);
+}
+
 async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpdate, session: VerifiedSession): Promise<BotConfig> {
   let nextHistory = [...(current.generationRulesHistory || [])];
   if (typeof update.generationRules === 'string') {
@@ -1805,10 +1851,18 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     }
   }
 
+  const nextAllowed = await computeNextAllowedGoogleModels(env, current, update);
+  const candidateGoogleModel = typeof update.googleModel === 'string' && update.googleModel.trim() ? update.googleModel.trim() : current.googleModel;
+  const resolvedGoogleModel = resolveEffectiveGoogleModel(
+    { googleModel: candidateGoogleModel, allowedGoogleModels: nextAllowed },
+    candidateGoogleModel,
+  );
+
   const nextConfig: StoredConfig = {
     spreadsheetId: typeof update.spreadsheetId === 'string' ? update.spreadsheetId.trim() : current.spreadsheetId,
     githubRepo: typeof update.githubRepo === 'string' ? update.githubRepo.trim() : current.githubRepo,
-    googleModel: typeof update.googleModel === 'string' && update.googleModel.trim() ? update.googleModel.trim() : current.googleModel,
+    googleModel: resolvedGoogleModel,
+    allowedGoogleModels: nextAllowed,
     generationRules: typeof update.generationRules === 'string' ? update.generationRules.trim() : current.generationRules,
     disconnectedAuthProviders: current.disconnectedAuthProviders || [],
     githubTokenCiphertext: current.githubTokenCiphertext,
@@ -1907,6 +1961,13 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
     throw error;
   }
 
+  const innerBase =
+    payload.payload && typeof payload.payload === 'object' && !Array.isArray(payload.payload)
+      ? (payload.payload as Record<string, unknown>)
+      : {};
+  const innerPayload = { ...innerBase };
+  innerPayload.google_model = resolveEffectiveGoogleModel(config, String(innerPayload.google_model ?? ''));
+
   const response = await fetch(`https://api.github.com/repos/${config.githubRepo}/dispatches`, {
     method: 'POST',
     headers: {
@@ -1918,7 +1979,7 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
     },
     body: JSON.stringify({
       event_type: eventType,
-      client_payload: payload.payload ?? {},
+      client_payload: innerPayload,
     }),
   });
 
@@ -2175,7 +2236,7 @@ async function publishContent(
       accessToken = String(config.gmailAccessToken || '').trim();
     }
 
-    const gmailRequest = {
+    const gmailRequest: Parameters<typeof sendGmailMessage>[0] = {
       accessToken,
       to: String(payload.emailTo || row.emailTo || ''),
       cc: String(payload.emailCc || row.emailCc || ''),
@@ -2183,6 +2244,10 @@ async function publishContent(
       subject: String(payload.emailSubject || row.emailSubject || row.topic || 'New Message'),
       body: message,
     };
+    if (imageUrl) {
+      const asset = await fetchImageAsset(imageUrl);
+      gmailRequest.inlineImage = { contentType: asset.contentType, bytes: asset.bytes };
+    }
 
     let sendResult: { messageId: string | null };
     try {
@@ -2213,7 +2278,7 @@ async function publishContent(
       recipientId: gmailTo || null,
       messageId: sendResult.messageId,
       deliveryMode: 'sent',
-      mediaMode: 'text',
+      mediaMode: imageUrl ? 'image' : 'text',
     };
   }
 
