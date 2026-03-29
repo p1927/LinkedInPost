@@ -64,11 +64,8 @@ export class SheetsGateway {
   async getRows(spreadsheetId: string): Promise<SheetRow[]> {
     await this.ensureRequiredSheets(spreadsheetId);
 
-    const [topicRows, draftRows, postRows] = await Promise.all([
-      this.getValues(spreadsheetId, `${TOPICS_SHEET}!A2:B`),
-      this.getValues(spreadsheetId, `${DRAFT_SHEET}!A2:S`),
-      this.getValues(spreadsheetId, `${POST_SHEET}!A2:S`),
-    ]);
+    const dataRanges = [`${TOPICS_SHEET}!A2:B`, `${DRAFT_SHEET}!A2:S`, `${POST_SHEET}!A2:S`];
+    const [topicRows, draftRows, postRows] = await this.batchGetValues(spreadsheetId, dataRanges);
 
     const topics = topicRows
       .map((row, index) => {
@@ -146,12 +143,13 @@ export class SheetsGateway {
       variants[3],
     ]]);
 
-    const updatedRow = await this.getRowByTopicDate(spreadsheetId, row.topic, row.date);
-    if (!updatedRow) {
-      throw new Error('Draft variants were saved, but the updated row could not be reloaded.');
-    }
-
-    return updatedRow;
+    return {
+      ...row,
+      variant1: variants[0] ?? '',
+      variant2: variants[1] ?? '',
+      variant3: variants[2] ?? '',
+      variant4: variants[3] ?? '',
+    };
   }
 
   async saveTopicGenerationRules(spreadsheetId: string, row: SheetRow, topicRules: string): Promise<SheetRow> {
@@ -164,12 +162,10 @@ export class SheetsGateway {
 
     await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!S${draftRowIndex}`, [[topicRules]]);
 
-    const updatedRow = await this.getRowByTopicDate(spreadsheetId, row.topic, row.date);
-    if (!updatedRow) {
-      throw new Error('Topic rules were saved, but the updated row could not be reloaded.');
-    }
-
-    return updatedRow;
+    return {
+      ...row,
+      topicGenerationRules: topicRules,
+    };
   }
 
   async saveEmailFields(
@@ -310,15 +306,15 @@ export class SheetsGateway {
   }
 
   async deleteRow(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {
-    await this.ensureRequiredSheets(spreadsheetId);
+    const metadata = await this.ensureRequiredSheets(spreadsheetId);
 
-    const metadata = await this.getSpreadsheetMetadata(spreadsheetId);
     const deletions: Array<{ sheetTitle: ManagedSheetName; rowIndex?: number }> = [
       { sheetTitle: POST_SHEET, rowIndex: row.postRowIndex },
       { sheetTitle: DRAFT_SHEET, rowIndex: row.draftRowIndex },
       { sheetTitle: TOPICS_SHEET, rowIndex: row.topicRowIndex },
     ];
 
+    const requests: Array<Record<string, unknown>> = [];
     for (const deletion of deletions) {
       if (!deletion.rowIndex) {
         continue;
@@ -329,20 +325,20 @@ export class SheetsGateway {
         continue;
       }
 
-      await this.batchUpdate(spreadsheetId, {
-        requests: [
-          {
-            deleteDimension: {
-              range: {
-                sheetId,
-                dimension: 'ROWS',
-                startIndex: deletion.rowIndex - 1,
-                endIndex: deletion.rowIndex,
-              },
-            },
+      requests.push({
+        deleteDimension: {
+          range: {
+            sheetId,
+            dimension: 'ROWS',
+            startIndex: deletion.rowIndex - 1,
+            endIndex: deletion.rowIndex,
           },
-        ],
+        },
       });
+    }
+
+    if (requests.length > 0) {
+      await this.batchUpdate(spreadsheetId, { requests });
     }
 
     return { success: true };
@@ -441,34 +437,41 @@ export class SheetsGateway {
     return Array.from(merged.values());
   }
 
-  private async ensureRequiredSheets(spreadsheetId: string): Promise<void> {
-    await this.ensureSheetExists(spreadsheetId, TOPICS_SHEET, TOPICS_HEADERS);
-    await this.ensureSheetExists(spreadsheetId, DRAFT_SHEET, PIPELINE_HEADERS);
-    await this.ensureSheetExists(spreadsheetId, POST_SHEET, PIPELINE_HEADERS);
-  }
+  /** Ensures Topics, Draft, and Post tabs exist with headers; returns sheet metadata for callers that need sheetId. */
+  private async ensureRequiredSheets(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {
+    const managed: ManagedSheetName[] = [TOPICS_SHEET, DRAFT_SHEET, POST_SHEET];
+    let metadata = await this.getSpreadsheetMetadata(spreadsheetId);
+    const titles = new Set(metadata.map((sheet) => sheet.properties?.title).filter(Boolean));
 
-  private async ensureSheetExists(spreadsheetId: string, sheetTitle: ManagedSheetName, headers: string[]): Promise<void> {
-    const metadata = await this.getSpreadsheetMetadata(spreadsheetId);
-    const existingTitles = new Set(metadata.map((sheet) => sheet.properties?.title).filter(Boolean));
-
-    if (!existingTitles.has(sheetTitle)) {
+    const toAdd = managed.filter((name) => !titles.has(name));
+    if (toAdd.length > 0) {
       await this.batchUpdate(spreadsheetId, {
-        requests: [
-          {
-            addSheet: {
-              properties: {
-                title: sheetTitle,
-              },
-            },
+        requests: toAdd.map((title) => ({
+          addSheet: {
+            properties: { title },
           },
-        ],
+        })),
       });
+      metadata = await this.getSpreadsheetMetadata(spreadsheetId);
     }
 
-    const currentHeaders = await this.getValues(spreadsheetId, `${sheetTitle}!A1`);
-    if (!currentHeaders.length) {
-      await this.updateValues(spreadsheetId, `${sheetTitle}!A1`, [headers]);
+    const headerRanges = [`${TOPICS_SHEET}!A1`, `${DRAFT_SHEET}!A1`, `${POST_SHEET}!A1`];
+    const headerRows = await this.batchGetValues(spreadsheetId, headerRanges);
+
+    const headerSpecs: Array<{ sheet: ManagedSheetName; headers: string[] }> = [
+      { sheet: TOPICS_SHEET, headers: TOPICS_HEADERS },
+      { sheet: DRAFT_SHEET, headers: PIPELINE_HEADERS },
+      { sheet: POST_SHEET, headers: PIPELINE_HEADERS },
+    ];
+
+    for (let i = 0; i < headerSpecs.length; i++) {
+      const rows = headerRows[i];
+      if (!rows?.length) {
+        await this.updateValues(spreadsheetId, `${headerSpecs[i].sheet}!A1`, [headerSpecs[i].headers]);
+      }
     }
+
+    return metadata;
   }
 
   private async getSpreadsheetMetadata(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {
@@ -479,12 +482,16 @@ export class SheetsGateway {
     return response.sheets || [];
   }
 
-  private async getValues(spreadsheetId: string, range: string): Promise<string[][]> {
-    const response = await this.fetchGoogleJson<{ values?: string[][] }>(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+  private async batchGetValues(spreadsheetId: string, ranges: string[]): Promise<string[][][]> {
+    const params = new URLSearchParams();
+    for (const range of ranges) {
+      params.append('ranges', range);
+    }
+    const response = await this.fetchGoogleJson<{ valueRanges?: Array<{ values?: string[][] }> }>(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${params.toString()}`,
     );
-
-    return response.values || [];
+    const valueRanges = response.valueRanges || [];
+    return ranges.map((_, i) => valueRanges[i]?.values ?? []);
   }
 
   private async updateValues(spreadsheetId: string, range: string, values: string[][]): Promise<void> {
