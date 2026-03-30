@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { LoaderCircle, Plus, RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit } from 'lucide-react';
+import { Plus, RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
@@ -102,12 +102,19 @@ export function DashboardQueue({
         aria-label="Add topic"
         className={cn('glass-panel rounded-2xl border border-violet-200/50', hasTopics ? 'p-3' : 'p-5')}
       >
-        <div className="relative overflow-hidden rounded-xl">
+        <div
+          className={cn(
+            'relative overflow-hidden rounded-2xl',
+            'bg-gradient-to-br from-white/95 via-white/80 to-violet-50/35',
+            'shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(91,33,182,0.04)]',
+            'ring-1 ring-violet-200/35',
+          )}
+        >
           <form
             onSubmit={handleAddTopic}
             aria-busy={addingTopic}
             className={cn(
-              'flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3',
+              'relative z-0 flex flex-col gap-2.5 p-1 sm:flex-row sm:items-stretch sm:gap-2 sm:p-1.5',
               hasTopics && 'sm:items-center',
               addingTopic && 'pointer-events-none select-none',
             )}
@@ -116,20 +123,20 @@ export function DashboardQueue({
               type="text"
               value={newTopic}
               onChange={(e) => setNewTopic(e.target.value)}
-              placeholder="Add a topic for research…"
+              placeholder="Add a topic…"
               className={cn(
-                'flex-1 rounded-xl border border-violet-200/55 bg-white/70 px-3.5 py-2 text-sm text-ink outline-none transition-[colors,border-color,background-color,box-shadow] duration-200 placeholder:text-muted hover:border-violet-200/70 hover:bg-white/85 focus:border-primary focus:ring-2 focus:ring-primary/25',
+                'flex-1 rounded-xl border-violet-200/50 bg-white/90 px-3.5 py-2 text-sm text-ink shadow-sm outline-none transition-[colors,border-color,background-color,box-shadow] duration-200 placeholder:text-muted/80 hover:border-violet-300/55 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:shadow-md',
                 hasTopics ? 'min-h-10' : 'min-h-[44px]',
               )}
-              disabled={loading}
+              disabled={loading && !addingTopic}
             />
             <Button
               type="submit"
               variant="primary"
               size={hasTopics ? 'sm' : 'md'}
-              disabled={loading || !newTopic.trim()}
+              disabled={(loading && !addingTopic) || !newTopic.trim()}
               className={cn(
-                'w-full shrink-0 cursor-pointer rounded-xl sm:w-auto',
+                'w-full shrink-0 cursor-pointer rounded-xl sm:w-auto sm:self-center',
                 hasTopics ? 'min-h-10 gap-1.5 px-3 text-xs' : 'min-h-[44px] gap-2',
               )}
             >
@@ -139,20 +146,29 @@ export function DashboardQueue({
           </form>
           {addingTopic ? (
             <div
-              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2.5 rounded-xl border border-violet-200/45 bg-white/72 backdrop-blur-[6px] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
+              className="absolute inset-0 z-10 flex items-center justify-center p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-200"
               role="status"
               aria-live="polite"
             >
-              <LoaderCircle
-                className="h-7 w-7 shrink-0 text-primary motion-safe:animate-spin"
+              <div
+                className="pointer-events-none absolute inset-0 bg-white/80 backdrop-blur-md"
                 aria-hidden
               />
-              <p className="text-center text-xs font-semibold tracking-wide text-ink/90">
-                Adding topic…
-              </p>
-              <p className="max-w-[14rem] text-center text-[11px] leading-snug text-muted">
-                Saving to your sheet and refreshing the queue.
-              </p>
+              <div
+                className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.07] via-transparent to-fuchsia-500/[0.08]"
+                aria-hidden
+              />
+              <div className="relative flex flex-col items-center gap-4">
+                <span className="sr-only">Adding topic</span>
+                <div className="relative flex h-12 w-12 items-center justify-center" aria-hidden>
+                  <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-violet-400/25 to-fuchsia-400/20 blur-md motion-safe:animate-pulse" />
+                  <span className="absolute inset-1 rounded-full border-2 border-violet-100" />
+                  <span className="absolute inset-1 rounded-full border-2 border-transparent border-t-violet-600 border-r-violet-500/45 motion-safe:animate-spin" />
+                </div>
+                <div className="h-1 w-28 overflow-hidden rounded-full bg-violet-100/90" aria-hidden>
+                  <div className="mx-auto h-full w-2/3 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-500 opacity-90 motion-safe:animate-pulse" />
+                </div>
+              </div>
             </div>
           ) : null}
         </div>

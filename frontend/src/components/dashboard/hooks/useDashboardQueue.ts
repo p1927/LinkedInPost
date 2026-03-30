@@ -128,7 +128,6 @@ export function useDashboardQueue({
     if (!newTopic.trim() || !session.config.spreadsheetId) return;
 
     setAddingTopic(true);
-    setLoading(true);
     try {
       await api.addTopic(idToken, newTopic.trim());
       setNewTopic('');

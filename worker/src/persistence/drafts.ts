@@ -279,12 +279,25 @@ export class SheetsGateway {
   async getTopicsInOrder(spreadsheetId: string): Promise<TopicSheetEntry[]> {
     await this.ensureRequiredSheets(spreadsheetId);
     const [topicRows] = await this.batchGetValues(spreadsheetId, [`${TOPICS_SHEET}!A2:C`]);
-    return (topicRows || [])
+    const entries = (topicRows || [])
       .map((row, index) => {
         const padded = padRow(row, 3);
         return { rowIndex: index + 2, topic: padded[0], date: padded[1], topicId: padded[2] || '' };
       })
       .filter((row) => row.topic.trim());
+
+    // Backfill any rows that are missing a Topic Id in column C.
+    const missing = entries.filter((e) => !e.topicId.trim());
+    if (missing.length > 0) {
+      await Promise.all(
+        missing.map((e) => {
+          e.topicId = crypto.randomUUID();
+          return this.updateValues(spreadsheetId, `${TOPICS_SHEET}!C${e.rowIndex}`, [[e.topicId]]);
+        }),
+      );
+    }
+
+    return entries;
   }
 
   /**
@@ -424,22 +437,22 @@ export class SheetsGateway {
       }
     }
 
-    for (const sheet of [DRAFT_SHEET, POST_SHEET] as const) {
-      const [tCell] = await this.batchGetValues(spreadsheetId, [`${sheet}!T1:T1`]);
-      if (!String(tCell?.[0]?.[0] || '').trim()) {
-        await this.updateValues(spreadsheetId, `${sheet}!T1`, [['Image URLs JSON']]);
-      }
-      const [uCell] = await this.batchGetValues(spreadsheetId, [`${sheet}!U1:U1`]);
-      if (!String(uCell?.[0]?.[0] || '').trim()) {
-        await this.updateValues(spreadsheetId, `${sheet}!U1`, [['Generation template id']]);
-      }
-      const [vCell] = await this.batchGetValues(spreadsheetId, [`${sheet}!V1:V1`]);
-      if (!String(vCell?.[0]?.[0] || '').trim()) {
-        await this.updateValues(spreadsheetId, `${sheet}!V1`, [['Topic Id']]);
-      }
-    }
-    // Ensure Topics sheet has the Topic Id column (column C).
-    const [topicsIdCell] = await this.batchGetValues(spreadsheetId, [`${TOPICS_SHEET}!C1:C1`]);
+    // One read for Draft/Post T–V row-1 headers and Topics C1 (was 7 sequential batchGets).
+    const [draftTuv, postTuv, topicsIdCell] = await this.batchGetValues(spreadsheetId, [
+      `${DRAFT_SHEET}!T1:V1`,
+      `${POST_SHEET}!T1:V1`,
+      `${TOPICS_SHEET}!C1:C1`,
+    ]);
+    const ensurePipelineExtraHeaders = async (sheet: string, row: string[][] | undefined) => {
+      const t = String(row?.[0]?.[0] || '').trim();
+      const u = String(row?.[0]?.[1] || '').trim();
+      const v = String(row?.[0]?.[2] || '').trim();
+      if (!t) await this.updateValues(spreadsheetId, `${sheet}!T1`, [['Image URLs JSON']]);
+      if (!u) await this.updateValues(spreadsheetId, `${sheet}!U1`, [['Generation template id']]);
+      if (!v) await this.updateValues(spreadsheetId, `${sheet}!V1`, [['Topic Id']]);
+    };
+    await ensurePipelineExtraHeaders(DRAFT_SHEET, draftTuv);
+    await ensurePipelineExtraHeaders(POST_SHEET, postTuv);
     if (!String(topicsIdCell?.[0]?.[0] || '').trim()) {
       await this.updateValues(spreadsheetId, `${TOPICS_SHEET}!C1`, [['Topic Id']]);
     }
