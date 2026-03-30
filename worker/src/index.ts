@@ -572,10 +572,14 @@ async function dispatchAction(
       return sheets.getRows(storedConfig.spreadsheetId);
     case 'generateQuickChange':
       ensureSpreadsheetConfigured(storedConfig);
-      return generateQuickChangePreview(env, storedConfig, payload);
+      return generateQuickChangePreview(env, storedConfig, payload, (templateId) =>
+        sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
+      );
     case 'generateVariantsPreview':
       ensureSpreadsheetConfigured(storedConfig);
-      return generateVariantsPreview(env, storedConfig, payload);
+      return generateVariantsPreview(env, storedConfig, payload, (templateId) =>
+        sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
+      );
     case 'saveDraftVariants':
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.saveDraftVariants(
@@ -632,9 +636,12 @@ async function dispatchAction(
         coerceSheetRow(payload.row),
         String(payload.postTime || ''),
       );
-    case 'deleteRow':
+    case 'deleteRow': {
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.deleteRow(storedConfig.spreadsheetId, coerceSheetRow(payload.row));
+      const rowToDelete = coerceSheetRow(payload.row);
+      await deleteGcsObjectsForTopicRow(env, rowToDelete);
+      return sheets.deleteRow(storedConfig.spreadsheetId, rowToDelete);
+    }
     case 'saveConfig':
       ensureAdmin(session);
       return saveConfig(env, storedConfig, payload as BotConfigUpdate, session);
@@ -650,6 +657,34 @@ async function dispatchAction(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.topicRules ?? ''),
+      );
+    case 'listPostTemplates':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.listPostTemplates(storedConfig.spreadsheetId);
+    case 'createPostTemplate':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.createPostTemplate(
+        storedConfig.spreadsheetId,
+        String(payload.name || '').trim(),
+        String(payload.rules ?? ''),
+      );
+    case 'updatePostTemplate':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.updatePostTemplate(
+        storedConfig.spreadsheetId,
+        String(payload.templateId || '').trim(),
+        String(payload.name || '').trim(),
+        String(payload.rules ?? ''),
+      );
+    case 'deletePostTemplate':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.deletePostTemplate(storedConfig.spreadsheetId, String(payload.templateId || '').trim());
+    case 'saveGenerationTemplateId':
+      ensureSpreadsheetConfigured(storedConfig);
+      return sheets.saveGenerationTemplateId(
+        storedConfig.spreadsheetId,
+        coerceSheetRow(payload.row),
+        String(payload.generationTemplateId ?? ''),
       );
     case 'startLinkedInAuth':
       ensureAdmin(session);
@@ -2489,6 +2524,63 @@ async function cleanupUnusedGeneratedImages(env: Env, row: SheetRow, selectedIma
     imageLink3: deletedUrls.has(row.imageLink3) ? '' : row.imageLink3,
     imageLink4: deletedUrls.has(row.imageLink4) ? '' : row.imageLink4,
   };
+}
+
+/** Best-effort: remove all row image URLs that live in the configured GCS bucket before sheet rows are deleted. Respects DELETE_UNUSED_GENERATED_IMAGES like publish-time cleanup. */
+async function deleteGcsObjectsForTopicRow(env: Env, row: SheetRow): Promise<void> {
+  const configuredBucket = String(env.GOOGLE_CLOUD_STORAGE_BUCKET || '').trim();
+  if (!configuredBucket || !shouldDeleteUnusedGeneratedImages(env)) {
+    return;
+  }
+
+  const fromSlots = [row.imageLink1, row.imageLink2, row.imageLink3, row.imageLink4]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+  const fromSelected = parseRowImageUrls(row);
+  const seen = new Set<string>();
+  const candidates: string[] = [];
+  for (const u of [...fromSlots, ...fromSelected]) {
+    const t = String(u || '').trim();
+    if (t && !seen.has(t)) {
+      seen.add(t);
+      candidates.push(t);
+    }
+  }
+  if (candidates.length === 0) {
+    return;
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+  } catch (error) {
+    console.warn('deleteGcsObjectsForTopicRow: failed to mint access token', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+
+  for (const candidate of candidates) {
+    const { bucketName, objectName } = parseGcsObjectReference(candidate);
+    if (bucketName !== configuredBucket || !objectName) {
+      continue;
+    }
+
+    const deleteUrl = `https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(bucketName)}/o/${encodeURIComponent(objectName)}`;
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.ok || response.status === 404) {
+      continue;
+    }
+
+    const message = await response.text();
+    console.warn(`Unable to delete GCS object for removed topic (${candidate}): ${message || response.status}`);
+  }
 }
 
 function coerceChannelId(value: unknown): ChannelId {

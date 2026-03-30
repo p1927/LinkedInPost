@@ -115,6 +115,12 @@ export interface VariantsPreviewResponse {
   variants: VariantPreviewResult[];
 }
 
+export interface PostTemplate {
+  id: string;
+  name: string;
+  rules: string;
+}
+
 export interface GenerationRulesVersion {
   savedAt: string;
   savedBy: string;
@@ -283,6 +289,29 @@ export class BackendApi {
     return this.post<SheetRow>('saveTopicGenerationRules', idToken, {
       row,
       topicRules,
+    });
+  }
+
+  async listPostTemplates(idToken: string): Promise<PostTemplate[]> {
+    return this.post<PostTemplate[]>('listPostTemplates', idToken);
+  }
+
+  async createPostTemplate(idToken: string, name: string, rules: string): Promise<PostTemplate> {
+    return this.post<PostTemplate>('createPostTemplate', idToken, { name, rules });
+  }
+
+  async updatePostTemplate(idToken: string, templateId: string, name: string, rules: string): Promise<PostTemplate> {
+    return this.post<PostTemplate>('updatePostTemplate', idToken, { templateId, name, rules });
+  }
+
+  async deletePostTemplate(idToken: string, templateId: string): Promise<void> {
+    await this.post<{ success: true }>('deletePostTemplate', idToken, { templateId });
+  }
+
+  async saveGenerationTemplateId(idToken: string, row: SheetRow, generationTemplateId: string): Promise<SheetRow> {
+    return this.post<SheetRow>('saveGenerationTemplateId', idToken, {
+      row,
+      generationTemplateId,
     });
   }
 

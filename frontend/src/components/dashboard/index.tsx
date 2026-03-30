@@ -247,6 +247,8 @@ export function Dashboard({
     onDownloadImage: queueHook.handleDownloadReviewImage,
     isAdmin: session.isAdmin,
     onSaveTopicGenerationRules: queueHook.handleSaveTopicGenerationRules,
+    loadPostTemplates: queueHook.loadPostTemplates,
+    onSaveGenerationTemplateId: queueHook.handleSaveGenerationTemplateId,
     pendingScheduledPublish: queueHook.pendingScheduledPublish,
     scheduledPublishCancelBusy: queueHook.scheduledPublishCancelBusy,
     onCancelScheduledPublish: () => void queueHook.cancelPendingScheduledPublish(),

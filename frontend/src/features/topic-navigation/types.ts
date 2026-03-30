@@ -1,6 +1,7 @@
 import { type SheetRow } from '../../services/sheets';
 import {
   type GenerationRequest,
+  type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
 } from '../../services/backendApi';
@@ -30,6 +31,10 @@ export type TopicReviewPagesBaseProps = {
   isAdmin: boolean;
   /** Persists column S “Topic rules” on the draft row (sheet API). */
   onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
+  /** Loads reusable post templates from the PostTemplates sheet. */
+  loadPostTemplates: () => Promise<PostTemplate[]>;
+  /** Persists column U “Generation template id” on the draft row. */
+  onSaveGenerationTemplateId: (row: SheetRow, generationTemplateId: string) => Promise<SheetRow>;
   pendingScheduledPublish?: PendingScheduledPublish | null;
   scheduledPublishCancelBusy?: boolean;
   onCancelScheduledPublish?: () => void | Promise<void>;

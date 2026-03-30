@@ -1,13 +1,37 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { type ReviewFlowProviderProps, type CompareState } from './types';
 import { getInitialEditorText, buildSheetVariants, buildGeneratedImages } from './utils';
-import { type GenerationScope, type TextSelectionRange, type QuickChangePreviewResult, type VariantsPreviewResponse } from '../../../services/backendApi';
+import {
+  type GenerationScope,
+  type PostTemplate,
+  type QuickChangePreviewResult,
+  type TextSelectionRange,
+  type VariantsPreviewResponse,
+} from '../../../services/backendApi';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { getVariantSlotContent } from '../../topic-navigation/utils/topicRoute';
 import { getEffectiveScope, getTargetText, isSelectionScopeWaitingForRange } from '@/features/draft-selection-target';
 import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../components/workspace/WorkspaceChromeContext';
 import { parseRowImageUrls } from '../../../services/selectedImageUrls';
 import { topicNeedsTruncation } from '../../../lib/topicDisplay';
+
+function resolveEffectiveGenerationRulesWithTemplate(
+  topicRules: string | undefined,
+  templateId: string | undefined,
+  templates: PostTemplate[],
+  globalRules: string,
+): string {
+  const local = (topicRules || '').trim();
+  if (local) return local;
+  const tid = (templateId || '').trim();
+  if (tid) {
+    const t = templates.find((x) => x.id === tid);
+    if (t && (t.rules || '').trim()) {
+      return t.rules;
+    }
+  }
+  return (globalRules || '').trim();
+}
 
 const formatLocalDateTimeForInput = (d: Date): string => {
   const localY = d.getFullYear();
@@ -33,7 +57,7 @@ const getInitialPostTime = (rowPostTime: string | undefined): string => {
 };
 
 export function useReviewFlowState(props: ReviewFlowProviderProps) {
-  const { row, routed, editorStartMediaPanel, globalEmailDefaults, globalGenerationRules } = props;
+  const { row, routed, editorStartMediaPanel, globalEmailDefaults, globalGenerationRules, loadPostTemplates } = props;
   const { setChrome } = useWorkspaceChrome();
 
   const [sheetRow, setSheetRow] = useState(row);
@@ -83,6 +107,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [topicExpanded, setTopicExpanded] = useState(false);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [pickCarouselIndex, setPickCarouselIndex] = useState(0);
+  const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
 
   const topicHeadingRef = useRef<HTMLHeadingElement>(null);
   const lastInitRef = useRef<string | null>(null);
@@ -174,10 +199,30 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
   const sheetVariants = useMemo(() => buildSheetVariants(sheetRow), [sheetRow]);
 
-  const effectiveGenerationRules = useMemo(() => {
-    const local = (sheetRow.topicGenerationRules || '').trim();
-    return local ? sheetRow.topicGenerationRules || '' : globalGenerationRules;
-  }, [sheetRow.topicGenerationRules, globalGenerationRules]);
+  useEffect(() => {
+    let cancelled = false;
+    void loadPostTemplates()
+      .then((list) => {
+        if (!cancelled) setPostTemplates(list);
+      })
+      .catch(() => {
+        if (!cancelled) setPostTemplates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadPostTemplates, row.topic, row.date]);
+
+  const effectiveGenerationRules = useMemo(
+    () =>
+      resolveEffectiveGenerationRulesWithTemplate(
+        sheetRow.topicGenerationRules,
+        sheetRow.generationTemplateId,
+        postTemplates,
+        globalGenerationRules,
+      ),
+    [sheetRow.topicGenerationRules, sheetRow.generationTemplateId, postTemplates, globalGenerationRules],
+  );
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -308,5 +353,6 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     topicHeadingRef,
     setChrome,
     effectiveGenerationRules,
+    postTemplates,
   };
 }

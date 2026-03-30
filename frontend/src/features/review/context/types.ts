@@ -3,6 +3,7 @@ import { type SheetRow } from '../../../services/sheets';
 import {
   type GenerationRequest,
   type GenerationScope,
+  type PostTemplate,
   type QuickChangePreviewResult,
   type TextSelectionRange,
   type VariantsPreviewResponse,
@@ -142,6 +143,9 @@ export interface ReviewFlowContextValue {
   handleFormatting: (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => void;
   handleSaveTopicRules: (rules: string) => Promise<void>;
   savingTopicRules: boolean;
+  postTemplates: PostTemplate[];
+  handleSaveGenerationTemplateId: (templateId: string) => Promise<void>;
+  savingGenerationTemplateId: boolean;
   handleSaveEmailFields: () => Promise<void>;
   onCancel: () => void;
 }
@@ -168,6 +172,8 @@ export interface ReviewFlowProviderProps {
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
   onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
+  loadPostTemplates: () => Promise<PostTemplate[]>;
+  onSaveGenerationTemplateId: (row: SheetRow, generationTemplateId: string) => Promise<SheetRow>;
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel?: boolean;
   pendingScheduledPublish?: PendingScheduledPublish | null;

@@ -9,10 +9,19 @@ import {
   type AppSession,
   type BackendApi,
   type GenerationRulesVersion,
+  type PostTemplate,
   isAuthErrorMessage,
 } from '@/services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '@/services/configService';
 import { Redo2, Undo2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export function GlobalRulesPage({
   idToken,
@@ -35,6 +44,15 @@ export function GlobalRulesPage({
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [diffLeft, setDiffLeft] = useState<'current' | number>('current');
   const [diffRight, setDiffRight] = useState<'current' | number>(0);
+
+  const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
+  const [postTemplatesLoading, setPostTemplatesLoading] = useState(false);
+  const [postTemplatesError, setPostTemplatesError] = useState<string | null>(null);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [templateFormName, setTemplateFormName] = useState('');
+  const [templateFormRules, setTemplateFormRules] = useState('');
+  const [savingPostTemplate, setSavingPostTemplate] = useState(false);
 
   const dirty = value.trim() !== serverText.trim();
   useRegisterUnsavedChanges(session.isAdmin && dirty);
@@ -66,6 +84,85 @@ export function GlobalRulesPage({
       cancelled = true;
     };
   }, [api, idToken, session.isAdmin, onAuthExpired]);
+
+  const loadPostTemplates = useCallback(async () => {
+    if (!session.isAdmin || !session.config.spreadsheetId?.trim()) {
+      setPostTemplates([]);
+      return;
+    }
+    setPostTemplatesLoading(true);
+    setPostTemplatesError(null);
+    try {
+      const list = await api.listPostTemplates(idToken);
+      setPostTemplates(list);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to load post templates.';
+      setPostTemplatesError(msg);
+      if (isAuthErrorMessage(msg)) onAuthExpired();
+    } finally {
+      setPostTemplatesLoading(false);
+    }
+  }, [session.isAdmin, session.config.spreadsheetId, api, idToken, onAuthExpired]);
+
+  useEffect(() => {
+    void loadPostTemplates();
+  }, [loadPostTemplates]);
+
+  const openNewTemplateDialog = () => {
+    setEditingTemplateId(null);
+    setTemplateFormName('');
+    setTemplateFormRules('');
+    setTemplateDialogOpen(true);
+  };
+
+  const openEditTemplateDialog = (t: PostTemplate) => {
+    setEditingTemplateId(t.id);
+    setTemplateFormName(t.name);
+    setTemplateFormRules(t.rules);
+    setTemplateDialogOpen(true);
+  };
+
+  const handleSavePostTemplate = async () => {
+    if (!session.config.spreadsheetId?.trim() || savingPostTemplate) return;
+    const name = templateFormName.trim();
+    if (!name) {
+      void showAlert({ title: 'Name required', description: 'Enter a name for this template.' });
+      return;
+    }
+    setSavingPostTemplate(true);
+    try {
+      if (editingTemplateId) {
+        await api.updatePostTemplate(idToken, editingTemplateId, name, templateFormRules);
+        void showAlert({ title: 'Saved', description: 'Template updated.' });
+      } else {
+        await api.createPostTemplate(idToken, name, templateFormRules);
+        void showAlert({ title: 'Created', description: 'New post template added to the sheet.' });
+      }
+      setTemplateDialogOpen(false);
+      await loadPostTemplates();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save template.';
+      if (isAuthErrorMessage(message)) onAuthExpired();
+      else void showAlert({ title: 'Could not save', description: message });
+    } finally {
+      setSavingPostTemplate(false);
+    }
+  };
+
+  const handleDeletePostTemplate = async (t: PostTemplate) => {
+    if (!window.confirm(`Delete template “${t.name || t.id}”? Draft rows that still reference this id will fall back to global rules.`)) {
+      return;
+    }
+    try {
+      await api.deletePostTemplate(idToken, t.id);
+      void showAlert({ title: 'Deleted', description: 'Template removed from the sheet.' });
+      await loadPostTemplates();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete template.';
+      if (isAuthErrorMessage(message)) onAuthExpired();
+      else void showAlert({ title: 'Could not delete', description: message });
+    }
+  };
 
   const textForDiff = useCallback(
     (which: 'current' | number): string => {
@@ -121,8 +218,9 @@ export function GlobalRulesPage({
         <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Workspace</p>
         <h2 className="mt-1 font-heading text-xl font-semibold text-ink">Global generation rules</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          These apply to Quick Change and 4-variant previews for every topic, unless a topic has its own non-empty rules
-          in the review sidebar (column <strong className="text-ink">Topic rules</strong> in the Draft sheet).
+          These apply to Quick Change and 4-variant previews for every topic, unless the topic uses a{' '}
+          <strong className="text-ink">post template</strong> or non-empty <strong className="text-ink">Topic rules</strong>{' '}
+          in the review sidebar (Draft sheet columns U and S).
         </p>
 
         {session.isAdmin ? (
@@ -173,6 +271,103 @@ export function GlobalRulesPage({
           </div>
         )}
       </div>
+
+      {session.isAdmin ? (
+        <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
+          <h3 className="font-heading text-lg font-semibold text-ink">Post templates</h3>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Reusable instruction blocks stored in the <strong className="text-ink">PostTemplates</strong> sheet. Assign a
+            template per topic in the review sidebar to switch styles without editing global rules.
+          </p>
+          {!session.config.spreadsheetId?.trim() ? (
+            <p className="mt-3 text-sm text-muted">Connect a spreadsheet in Settings to create templates.</p>
+          ) : postTemplatesError ? (
+            <p className="mt-3 text-sm text-destructive">{postTemplatesError}</p>
+          ) : null}
+          {session.config.spreadsheetId?.trim() ? (
+            <>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button type="button" size="sm" onClick={() => openNewTemplateDialog()}>
+                  New template
+                </Button>
+                <Button type="button" variant="outline" size="sm" disabled={postTemplatesLoading} onClick={() => void loadPostTemplates()}>
+                  {postTemplatesLoading ? 'Refreshing…' : 'Refresh'}
+                </Button>
+              </div>
+              <ul className="mt-4 space-y-3">
+                {postTemplatesLoading && postTemplates.length === 0 ? (
+                  <li className="text-sm text-muted">Loading templates…</li>
+                ) : postTemplates.length === 0 ? (
+                  <li className="text-sm text-muted">No templates yet. Create one to get started.</li>
+                ) : (
+                  postTemplates.map((t) => (
+                    <li
+                      key={t.id}
+                      className="rounded-xl border border-border/80 bg-canvas/50 px-4 py-3 text-sm shadow-sm"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-ink">{t.name || 'Untitled'}</p>
+                          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-muted">{t.rules.trim() || '—'}</p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <Button type="button" variant="outline" size="sm" onClick={() => openEditTemplateDialog(t)}>
+                            Edit
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => void handleDeletePostTemplate(t)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </>
+          ) : null}
+
+          <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+            <DialogContent showCloseButton className="max-h-[min(90vh,640px)] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingTemplateId ? 'Edit template' : 'New template'}</DialogTitle>
+                <DialogDescription>
+                  Rules are sent to the model like global rules when this template is selected on a topic (and topic rules
+                  are empty).
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-3 py-2">
+                <label className="text-xs font-semibold text-ink">
+                  Name
+                  <input
+                    type="text"
+                    value={templateFormName}
+                    onChange={(e) => setTemplateFormName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm font-normal text-ink"
+                    placeholder="e.g. Story-first, Data-heavy"
+                  />
+                </label>
+                <label className="text-xs font-semibold text-ink">
+                  Rules
+                  <Textarea
+                    value={templateFormRules}
+                    onChange={(e) => setTemplateFormRules(e.target.value)}
+                    placeholder="Instructions for tone, structure, length, hashtags…"
+                    className="mt-1 min-h-[200px] w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm leading-6"
+                  />
+                </label>
+              </div>
+              <DialogFooter className="border-t-0 bg-transparent p-0 pt-2 sm:justify-end">
+                <Button type="button" variant="outline" onClick={() => setTemplateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" disabled={savingPostTemplate} onClick={() => void handleSavePostTemplate()}>
+                  {savingPostTemplate ? 'Saving…' : editingTemplateId ? 'Save changes' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      ) : null}
 
       {session.isAdmin ? (
         <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">

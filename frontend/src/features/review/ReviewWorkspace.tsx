@@ -2,6 +2,7 @@ import { type SheetRow } from '../../services/sheets';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
   type GenerationRequest,
+  type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
 } from '../../services/backendApi';
@@ -41,6 +42,8 @@ export interface ReviewWorkspaceProps {
   onCancel: () => void;
   isAdmin: boolean;
   onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
+  loadPostTemplates: () => Promise<PostTemplate[]>;
+  onSaveGenerationTemplateId: (row: SheetRow, generationTemplateId: string) => Promise<SheetRow>;
   /** URL-driven flow: variants page vs editor page. */
   routed?: ReviewRoutedNavigation;
   /** Set when opening `/topics/.../editor/N?media=1`. */

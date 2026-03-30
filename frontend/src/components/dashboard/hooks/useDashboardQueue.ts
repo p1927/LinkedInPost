@@ -292,6 +292,21 @@ export function useDashboardQueue({
     }
   };
 
+  const loadPostTemplates = async () => {
+    return api.listPostTemplates(idToken);
+  };
+
+  const handleSaveGenerationTemplateId = async (row: SheetRow, generationTemplateId: string): Promise<SheetRow> => {
+    try {
+      const updatedRow = await api.saveGenerationTemplateId(idToken, row, generationTemplateId);
+      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
+      return updatedRow;
+    } catch (error) {
+      handleFailure(error, 'Failed to save generation template on the draft row.');
+      throw error;
+    }
+  };
+
   const handleFetchReviewImages = async (row: SheetRow, searchQuery?: string) => {
     const result = await api.fetchDraftImages(idToken, row.topic, DRAFT_IMAGE_SEARCH_CHOICE_COUNT, searchQuery);
     return result.imageUrls;
@@ -599,7 +614,23 @@ export function useDashboardQueue({
     if (!await showConfirm({ title: 'Confirm Delete', description: `Delete "${row.topic}" from the content calendar?` })) return;
     setDeletingRowIndex(row.rowIndex);
     try {
+      if (
+        pendingScheduledPublish
+        && rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, selectedChannel)
+      ) {
+        try {
+          await api.cancelScheduledPublish(idToken, {
+            topic: pendingScheduledPublish.topic,
+            date: pendingScheduledPublish.date,
+            channel: pendingScheduledPublish.channel,
+            scheduledTime: pendingScheduledPublish.scheduledTime,
+          });
+        } catch (cancelError) {
+          console.warn(cancelError);
+        }
+      }
       await api.deleteRow(idToken, row);
+      clearPendingIfMatchesRow(row);
       const viewingId = viewingTopicRouteId ? normalizeTopicRouteParam(viewingTopicRouteId) : '';
       if (viewingTopicRouteId && encodeTopicRouteId(row) === viewingId) {
         onLeaveTopicRoute?.();
@@ -631,6 +662,8 @@ export function useDashboardQueue({
     handleGenerateVariantsPreview,
     handleSaveDraftVariants,
     handleSaveTopicGenerationRules,
+    loadPostTemplates,
+    handleSaveGenerationTemplateId,
     handleFetchReviewImages,
     handlePromoteReviewImage,
     handleUploadReviewImage,

@@ -28,6 +28,14 @@ export interface SheetRow {
   emailSubject?: string;
   /** Column S — when non-empty, replaces workspace global generation rules for this topic. */
   topicGenerationRules?: string;
+  /** Column U — optional PostTemplates sheet row id; used when column S is empty. */
+  generationTemplateId?: string;
+}
+
+export interface PostTemplate {
+  id: string;
+  name: string;
+  rules: string;
 }
 
 export type GenerationScope = 'selection' | 'whole-post';

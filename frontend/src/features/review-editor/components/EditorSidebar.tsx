@@ -34,6 +34,9 @@ export function EditorSidebar() {
     globalGenerationRules,
     handleSaveTopicRules,
     savingTopicRules,
+    postTemplates,
+    handleSaveGenerationTemplateId,
+    savingGenerationTemplateId,
     deliveryChannel,
     emailTo, setEmailTo,
     emailCc, setEmailCc,
@@ -142,10 +145,14 @@ export function EditorSidebar() {
           <RulesPanel
             globalGenerationRules={globalGenerationRules}
             topicGenerationRules={sheetRow.topicGenerationRules || ''}
+            generationTemplateId={sheetRow.generationTemplateId || ''}
             effectiveGenerationRules={sharedRules}
+            postTemplates={postTemplates}
             compact
             onSaveTopic={handleSaveTopicRules}
             savingTopic={savingTopicRules}
+            onSaveGenerationTemplate={handleSaveGenerationTemplateId}
+            savingGenerationTemplate={savingGenerationTemplateId}
           />
         ) : null}
 

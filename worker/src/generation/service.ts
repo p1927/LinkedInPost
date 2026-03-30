@@ -1,7 +1,8 @@
 import type { Env, StoredConfig } from '../index';
 import { coerceSheetRow } from '../index';
 import { buildQuickChangePrompt, buildVariantsPrompt } from './prompts';
-import { resolveEffectiveGenerationRules } from './rules';
+import { resolveEffectiveGenerationRulesWithTemplate } from './rules';
+import type { SheetRow } from './types';
 import {
   applyReplacement,
   coerceSelectionRange,
@@ -66,10 +67,26 @@ export async function callGeminiText(env: Env, model: string, prompt: string): P
   return text;
 }
 
+async function resolveTemplateRulesForRow(
+  row: SheetRow,
+  getPostTemplateRulesById: (templateId: string) => Promise<string | null>,
+): Promise<string | undefined> {
+  if ((row.topicGenerationRules || '').trim()) {
+    return undefined;
+  }
+  const tid = String(row.generationTemplateId || '').trim();
+  if (!tid) {
+    return undefined;
+  }
+  const rules = await getPostTemplateRulesById(tid);
+  return rules === null ? undefined : rules;
+}
+
 export async function generateQuickChangePreview(
   env: Env,
   storedConfig: StoredConfig,
   payload: Record<string, unknown>,
+  getPostTemplateRulesById: (templateId: string) => Promise<string | null>,
 ): Promise<QuickChangePreviewResult> {
   const request = payload as unknown as GenerationRequestPayload;
   const row = coerceSheetRow(request.row);
@@ -85,7 +102,12 @@ export async function generateQuickChangePreview(
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
   const model = resolveEffectiveGoogleModel(storedConfig, request.googleModel);
-  const effectiveRules = resolveEffectiveGenerationRules(row.topicGenerationRules, storedConfig.generationRules || '');
+  const templateRules = await resolveTemplateRulesForRow(row, getPostTemplateRulesById);
+  const effectiveRules = resolveEffectiveGenerationRulesWithTemplate(
+    row.topicGenerationRules,
+    templateRules,
+    storedConfig.generationRules || '',
+  );
   const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules);
   const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
 
@@ -106,6 +128,7 @@ export async function generateVariantsPreview(
   env: Env,
   storedConfig: StoredConfig,
   payload: Record<string, unknown>,
+  getPostTemplateRulesById: (templateId: string) => Promise<string | null>,
 ): Promise<VariantsPreviewResponse> {
   const request = payload as unknown as GenerationRequestPayload;
   const row = coerceSheetRow(request.row);
@@ -116,7 +139,12 @@ export async function generateVariantsPreview(
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
   const model = resolveEffectiveGoogleModel(storedConfig, request.googleModel);
-  const effectiveRules = resolveEffectiveGenerationRules(row.topicGenerationRules, storedConfig.generationRules || '');
+  const templateRules = await resolveTemplateRulesForRow(row, getPostTemplateRulesById);
+  const effectiveRules = resolveEffectiveGenerationRulesWithTemplate(
+    row.topicGenerationRules,
+    templateRules,
+    storedConfig.generationRules || '',
+  );
   const prompt = buildVariantsPrompt(
     row,
     editorText,

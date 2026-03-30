@@ -32,6 +32,7 @@ export function useReviewFlowActions(
     routed,
     googleModel,
     onSaveTopicGenerationRules,
+    onSaveGenerationTemplateId,
     pendingScheduledPublish,
     deliveryChannel,
   } = props;
@@ -697,6 +698,34 @@ export function useReviewFlowActions(
     [onSaveTopicGenerationRules, sheetRow, setSheetRow, showAlert],
   );
 
+  const [savingGenerationTemplateId, setSavingGenerationTemplateId] = useState(false);
+  const saveGenerationTemplateInFlight = useRef(false);
+
+  const handleSaveGenerationTemplateId = useCallback(
+    async (templateId: string) => {
+      if (saveGenerationTemplateInFlight.current) return;
+      saveGenerationTemplateInFlight.current = true;
+      setSavingGenerationTemplateId(true);
+      try {
+        const nextRow = await onSaveGenerationTemplateId(sheetRow, templateId);
+        setSheetRow(nextRow);
+        void showAlert({ title: 'Saved', description: 'Post template selection was saved to the sheet.' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to save template selection.';
+        console.error(error);
+        if (isAuthErrorMessage(message)) {
+          void showAlert({ title: 'Session expired', description: 'Sign in again to continue.' });
+          return;
+        }
+        void showAlert({ title: 'Could not save', description: message });
+      } finally {
+        saveGenerationTemplateInFlight.current = false;
+        setSavingGenerationTemplateId(false);
+      }
+    },
+    [onSaveGenerationTemplateId, sheetRow, setSheetRow, showAlert],
+  );
+
   return {
     leaveToTopics,
     requestNavigateToVariants,
@@ -721,6 +750,8 @@ export function useReviewFlowActions(
     handleFormatting,
     handleSaveTopicRules,
     savingTopicRules,
+    handleSaveGenerationTemplateId,
+    savingGenerationTemplateId,
     handleSaveEmailFields,
     savingEmailFields,
   };

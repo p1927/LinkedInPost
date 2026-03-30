@@ -1,11 +1,13 @@
 import type { Env } from '../index';
 import { mintGoogleAccessToken } from '../index';
-import type { ManagedSheetName, SheetRow } from '../generation/types';
+import type { ManagedSheetName, PostTemplate, SheetRow } from '../generation/types';
 
 const TOPICS_SHEET = 'Topics';
 const DRAFT_SHEET = 'Draft';
 const POST_SHEET = 'Post';
+const POST_TEMPLATES_SHEET = 'PostTemplates';
 const TOPICS_HEADERS = ['Topic', 'Date'];
+const POST_TEMPLATES_HEADERS = ['Template id', 'Name', 'Rules'];
 const PIPELINE_HEADERS = [
   'Topic',
   'Date',
@@ -27,9 +29,10 @@ const PIPELINE_HEADERS = [
   'Email Subject',
   'Topic rules',
   'Image URLs JSON',
+  'Generation template id',
 ];
 
-const PIPELINE_COLS = 20;
+const PIPELINE_COLS = 21;
 
 interface SpreadsheetMetadataResponse {
   sheets?: SpreadsheetSheetMetadata[];
@@ -65,7 +68,7 @@ export class SheetsGateway {
   async getRows(spreadsheetId: string): Promise<SheetRow[]> {
     await this.ensureRequiredSheets(spreadsheetId);
 
-    const dataRanges = [`${TOPICS_SHEET}!A2:B`, `${DRAFT_SHEET}!A2:T`, `${POST_SHEET}!A2:T`];
+    const dataRanges = [`${TOPICS_SHEET}!A2:B`, `${DRAFT_SHEET}!A2:U`, `${POST_SHEET}!A2:U`];
     const [topicRows, draftRows, postRows] = await this.batchGetValues(spreadsheetId, dataRanges);
 
     const topics = topicRows
@@ -208,7 +211,7 @@ export class SheetsGateway {
 
     await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, [[sourceRow.topic, today]]);
 
-    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:T`, [[
+    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:U`, [[
       sourceRow.topic,
       today,
       'Drafted',
@@ -229,6 +232,7 @@ export class SheetsGateway {
       emailSubject,
       sourceRow.topicGenerationRules || '',
       selectedImageUrlsJson,
+      sourceRow.generationTemplateId || '',
     ]]);
 
     return { success: true };
@@ -256,7 +260,7 @@ export class SheetsGateway {
 
     const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
     if (draftRowIndex) {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:T${draftRowIndex}`, [[
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:U${draftRowIndex}`, [[
         row.topic,
         row.date,
         row.status || 'Published',
@@ -277,6 +281,7 @@ export class SheetsGateway {
         row.emailSubject || '',
         row.topicGenerationRules || '',
         row.selectedImageUrlsJson || '',
+        row.generationTemplateId || '',
       ]]);
     }
 
@@ -301,12 +306,13 @@ export class SheetsGateway {
       row.emailSubject || '',
       row.topicGenerationRules || '',
       row.selectedImageUrlsJson || '',
+      row.generationTemplateId || '',
     ]];
 
     if (row.postRowIndex) {
-      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:T${row.postRowIndex}`, postValues);
+      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:U${row.postRowIndex}`, postValues);
     } else {
-      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:T`, postValues);
+      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:U`, postValues);
     }
 
     return { success: true };
@@ -376,6 +382,7 @@ export class SheetsGateway {
       emailSubject: paddedRow[17],
       topicGenerationRules: paddedRow[18],
       selectedImageUrlsJson: paddedRow[19],
+      generationTemplateId: paddedRow[20],
       draftRowIndex: sourceSheet === 'Draft' ? index + 2 : undefined,
       postRowIndex: sourceSheet === 'Post' ? index + 2 : undefined,
     };
@@ -413,6 +420,7 @@ export class SheetsGateway {
         emailSubject: '',
         topicGenerationRules: '',
         selectedImageUrlsJson: '',
+        generationTemplateId: '',
       });
     }
 
@@ -436,6 +444,8 @@ export class SheetsGateway {
       // whenever a draft exists so clears/edits to topic rules are not overwritten by stale Post data.
       const topicRulesFromDraft =
         existing?.sourceSheet === 'Draft' ? (existing.topicGenerationRules ?? '') : undefined;
+      const templateIdFromDraft =
+        existing?.sourceSheet === 'Draft' ? (existing.generationTemplateId ?? '') : undefined;
       merged.set(key, {
         ...(existing ?? ({} as SheetRow)),
         ...postRow,
@@ -446,19 +456,21 @@ export class SheetsGateway {
         postRowIndex: postRow.postRowIndex ?? postRow.rowIndex,
         topicGenerationRules:
           topicRulesFromDraft !== undefined ? topicRulesFromDraft : (postRow.topicGenerationRules ?? ''),
+        generationTemplateId:
+          templateIdFromDraft !== undefined ? templateIdFromDraft : (postRow.generationTemplateId ?? ''),
       });
     }
 
     return Array.from(merged.values());
   }
 
-  /** Ensures Topics, Draft, and Post tabs exist with headers; returns sheet metadata for callers that need sheetId. */
+  /** Ensures Topics, Draft, Post, and PostTemplates tabs exist with headers; returns sheet metadata for callers that need sheetId. */
   private async ensureRequiredSheets(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {
-    const managed: ManagedSheetName[] = [TOPICS_SHEET, DRAFT_SHEET, POST_SHEET];
+    const managedSheets = [TOPICS_SHEET, DRAFT_SHEET, POST_SHEET, POST_TEMPLATES_SHEET] as const;
     let metadata = await this.getSpreadsheetMetadata(spreadsheetId);
     const titles = new Set(metadata.map((sheet) => sheet.properties?.title).filter(Boolean));
 
-    const toAdd = managed.filter((name) => !titles.has(name));
+    const toAdd = managedSheets.filter((name) => !titles.has(name));
     if (toAdd.length > 0) {
       await this.batchUpdate(spreadsheetId, {
         requests: toAdd.map((title) => ({
@@ -470,13 +482,19 @@ export class SheetsGateway {
       metadata = await this.getSpreadsheetMetadata(spreadsheetId);
     }
 
-    const headerRanges = [`${TOPICS_SHEET}!A1`, `${DRAFT_SHEET}!A1`, `${POST_SHEET}!A1`];
+    const headerRanges = [
+      `${TOPICS_SHEET}!A1`,
+      `${DRAFT_SHEET}!A1`,
+      `${POST_SHEET}!A1`,
+      `${POST_TEMPLATES_SHEET}!A1`,
+    ];
     const headerRows = await this.batchGetValues(spreadsheetId, headerRanges);
 
-    const headerSpecs: Array<{ sheet: ManagedSheetName; headers: string[] }> = [
+    const headerSpecs: Array<{ sheet: string; headers: string[] }> = [
       { sheet: TOPICS_SHEET, headers: TOPICS_HEADERS },
       { sheet: DRAFT_SHEET, headers: PIPELINE_HEADERS },
       { sheet: POST_SHEET, headers: PIPELINE_HEADERS },
+      { sheet: POST_TEMPLATES_SHEET, headers: POST_TEMPLATES_HEADERS },
     ];
 
     for (let i = 0; i < headerSpecs.length; i++) {
@@ -491,9 +509,125 @@ export class SheetsGateway {
       if (!String(tCell?.[0]?.[0] || '').trim()) {
         await this.updateValues(spreadsheetId, `${sheet}!T1`, [['Image URLs JSON']]);
       }
+      const [uCell] = await this.batchGetValues(spreadsheetId, [`${sheet}!U1:U1`]);
+      if (!String(uCell?.[0]?.[0] || '').trim()) {
+        await this.updateValues(spreadsheetId, `${sheet}!U1`, [['Generation template id']]);
+      }
     }
 
     return metadata;
+  }
+
+  async listPostTemplates(spreadsheetId: string): Promise<PostTemplate[]> {
+    await this.ensureRequiredSheets(spreadsheetId);
+    const [rows] = await this.batchGetValues(spreadsheetId, [`${POST_TEMPLATES_SHEET}!A2:C`]);
+    const out: PostTemplate[] = [];
+    for (const row of rows || []) {
+      const padded = padRow(row, 3);
+      const id = String(padded[0] || '').trim();
+      if (!id) continue;
+      out.push({
+        id,
+        name: String(padded[1] || '').trim(),
+        rules: String(padded[2] || ''),
+      });
+    }
+    return out;
+  }
+
+  async getPostTemplateRulesById(spreadsheetId: string, templateId: string): Promise<string | null> {
+    const id = String(templateId || '').trim();
+    if (!id) return null;
+    const templates = await this.listPostTemplates(spreadsheetId);
+    const found = templates.find((t) => t.id === id);
+    return found ? found.rules : null;
+  }
+
+  async createPostTemplate(spreadsheetId: string, name: string, rules: string): Promise<PostTemplate> {
+    await this.ensureRequiredSheets(spreadsheetId);
+    const id = crypto.randomUUID();
+    const trimmedName = String(name || '').trim();
+    if (!trimmedName) {
+      throw new Error('Template name is required.');
+    }
+    await this.appendValues(spreadsheetId, `${POST_TEMPLATES_SHEET}!A:C`, [[id, trimmedName, String(rules || '')]]);
+    return { id, name: trimmedName, rules: String(rules || '') };
+  }
+
+  async updatePostTemplate(spreadsheetId: string, templateId: string, name: string, rules: string): Promise<PostTemplate> {
+    await this.ensureRequiredSheets(spreadsheetId);
+    const id = String(templateId || '').trim();
+    if (!id) {
+      throw new Error('Template id is required.');
+    }
+    const rowIndex = await this.findPostTemplateSheetRowIndex(spreadsheetId, id);
+    if (rowIndex === null) {
+      throw new Error('Template not found.');
+    }
+    const trimmedName = String(name || '').trim();
+    if (!trimmedName) {
+      throw new Error('Template name is required.');
+    }
+    const body = String(rules || '');
+    await this.updateValues(spreadsheetId, `${POST_TEMPLATES_SHEET}!A${rowIndex}:C${rowIndex}`, [[id, trimmedName, body]]);
+    return { id, name: trimmedName, rules: body };
+  }
+
+  async deletePostTemplate(spreadsheetId: string, templateId: string): Promise<{ success: true }> {
+    await this.ensureRequiredSheets(spreadsheetId);
+    const id = String(templateId || '').trim();
+    if (!id) {
+      throw new Error('Template id is required.');
+    }
+    const rowIndex = await this.findPostTemplateSheetRowIndex(spreadsheetId, id);
+    if (rowIndex === null) {
+      throw new Error('Template not found.');
+    }
+    const metadata = await this.getSpreadsheetMetadata(spreadsheetId);
+    const sheetId = metadata.find((s) => s.properties?.title === POST_TEMPLATES_SHEET)?.properties?.sheetId;
+    if (sheetId === undefined) {
+      throw new Error('PostTemplates sheet not found.');
+    }
+    await this.batchUpdate(spreadsheetId, {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex - 1,
+              endIndex: rowIndex,
+            },
+          },
+        },
+      ],
+    });
+    return { success: true };
+  }
+
+  async saveGenerationTemplateId(spreadsheetId: string, row: SheetRow, generationTemplateId: string): Promise<SheetRow> {
+    await this.ensureRequiredSheets(spreadsheetId);
+    const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
+    if (!draftRowIndex) {
+      throw new Error('Draft row not found for this topic.');
+    }
+    const value = String(generationTemplateId || '').trim();
+    await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!U${draftRowIndex}`, [[value]]);
+    return {
+      ...row,
+      generationTemplateId: value,
+    };
+  }
+
+  private async findPostTemplateSheetRowIndex(spreadsheetId: string, templateId: string): Promise<number | null> {
+    const [rows] = await this.batchGetValues(spreadsheetId, [`${POST_TEMPLATES_SHEET}!A2:A`]);
+    if (!rows?.length) return null;
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i]?.[0] || '').trim() === templateId) {
+        return i + 2;
+      }
+    }
+    return null;
   }
 
   private async getSpreadsheetMetadata(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {

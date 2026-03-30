@@ -26,4 +26,6 @@ export interface SheetRow {
   emailSubject?: string;   // R
   /** Column S — non-empty replaces workspace global rules for LLM on this topic. */
   topicGenerationRules?: string;
+  /** Column U — optional id of a row in the PostTemplates sheet. */
+  generationTemplateId?: string;
 }
