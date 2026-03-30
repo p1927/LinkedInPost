@@ -294,7 +294,7 @@ export function useDashboardQueue({
     }
   };
 
-  const handleGetNewsResearchSnapshot = async (row: SheetRow, snapshotId: string) => {
+  const handleGetNewsResearchSnapshot = async (_row: SheetRow, snapshotId: string) => {
     try {
       return await api.getNewsResearchSnapshot(idToken, snapshotId);
     } catch (error) {
