@@ -45,6 +45,8 @@ export function useReviewFlowActions(
     emailBcc,
     emailSubject,
     setSelectedImageUrl,
+    suppressAutoImageSelection,
+    setSuppressAutoImageSelection,
     alternateImageOptions, setAlternateImageOptions,
     setUploadedImageOptions,
     pendingVariantIndex, setPendingVariantIndex,
@@ -158,6 +160,7 @@ export function useReviewFlowActions(
     setPreviewVariantSaveByIndex({});
     setPreviewVariantSaveErrors({});
     if (variant.imageUrl) {
+      setSuppressAutoImageSelection(false);
       setSelectedImageUrl(variant.imageUrl);
     }
     setEditorVariantIndex(variantIndex ?? null);
@@ -173,6 +176,7 @@ export function useReviewFlowActions(
     setPreviewVariantSaveByIndex,
     setPreviewVariantSaveErrors,
     setSelectedImageUrl,
+    setSuppressAutoImageSelection,
     setEditorVariantIndex,
     setReviewPhase
   ]);
@@ -300,7 +304,7 @@ export function useReviewFlowActions(
       ...alternateImageOptions.filter((option) => option.kind === 'alternate'),
     ]).slice(0, Math.max(nextOptions.length, 4));
     setAlternateImageOptions(dedupedAlternates);
-    if (dedupedAlternates[0]?.imageUrl) {
+    if (dedupedAlternates[0]?.imageUrl && !suppressAutoImageSelection) {
       setSelectedImageUrl(dedupedAlternates[0].imageUrl);
     }
   };
@@ -315,7 +319,13 @@ export function useReviewFlowActions(
     return gcsUrl;
   };
 
+  const handleClearSelectedImage = useCallback(() => {
+    setSuppressAutoImageSelection(true);
+    setSelectedImageUrl('');
+  }, [setSelectedImageUrl, setSuppressAutoImageSelection]);
+
   const handleSelectImageOption = async (option: ImageAssetOption) => {
+    setSuppressAutoImageSelection(false);
     if (!option.pendingCloudUpload) {
       setSelectedImageUrl(option.imageUrl);
       return;
@@ -361,6 +371,7 @@ export function useReviewFlowActions(
     };
 
     setUploadedImageOptions((current) => mergeUniqueImageOptions([uploadedOption, ...current]).slice(0, 4));
+    setSuppressAutoImageSelection(false);
     setSelectedImageUrl(imageUrl);
   };
 
@@ -625,6 +636,7 @@ export function useReviewFlowActions(
     handleSavePreviewVariantAtIndex,
     handleFetchMoreImageOptions,
     handleSelectImageOption,
+    handleClearSelectedImage,
     imagePromoteOptionId,
     handleUploadImageOption,
     handleApprove,

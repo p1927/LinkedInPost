@@ -38,6 +38,27 @@ export function isSameTopicDate(left: SheetRow, right: SheetRow): boolean {
   return (left.topic || '').trim() === (right.topic || '').trim() && (left.date || '').trim() === (right.date || '').trim();
 }
 
+/** After createDraftFromPublished, pick the newest matching draft row (highest draft sheet index). */
+export function findDraftRowAfterCreateFromPublished(
+  rows: SheetRow[],
+  sourcePublishedRow: SheetRow,
+  selectedText: string,
+): SheetRow | null {
+  const topic = (sourcePublishedRow.topic || '').trim();
+  const msg = selectedText.trim();
+  if (!topic || !msg) return null;
+
+  const candidates = rows.filter(
+    (r) =>
+      (r.topic || '').trim() === topic
+      && getNormalizedRowStatus(r.status) === 'drafted'
+      && (r.selectedText || '').trim() === msg
+      && typeof r.draftRowIndex === 'number',
+  );
+  if (candidates.length === 0) return null;
+  return candidates.reduce((best, r) => ((r.draftRowIndex ?? 0) > (best.draftRowIndex ?? 0) ? r : best));
+}
+
 /** Single-line queue date for compact list rows (ISO yyyy-mm-dd or parseable string). */
 export function formatQueueDate(raw: string): string {
   const t = raw.trim();

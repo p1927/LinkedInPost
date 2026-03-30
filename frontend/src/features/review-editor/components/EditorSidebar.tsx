@@ -26,6 +26,7 @@ export function EditorSidebar() {
     imageOptions,
     selectedImageUrl,
     handleSelectImageOption,
+    handleClearSelectedImage,
     imagePromoteOptionId,
     handleFetchMoreImageOptions,
     handleUploadImageOption,
@@ -132,6 +133,7 @@ export function EditorSidebar() {
               onFetchMoreImages={handleFetchMoreImageOptions}
               onUploadImage={handleUploadImageOption}
               onDownloadImage={onDownloadImage}
+              onClearSelectedImage={handleClearSelectedImage}
               compact
               imagePromoteOptionId={imagePromoteOptionId}
             />

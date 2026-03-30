@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Download, ImagePlus, LoaderCircle, RefreshCw, Upload } from 'lucide-react';
+import { Download, ImagePlus, LoaderCircle, RefreshCw, Upload, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { useAlert } from './AlertProvider';
@@ -24,6 +24,8 @@ interface Props {
   onFetchMoreImages: (searchQuery?: string) => Promise<void>;
   onUploadImage: (file: File) => Promise<void>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
+  /** When set, selected cards show a control to detach the image from the post. */
+  onClearSelectedImage?: () => void;
   /** Narrow sidebar: single column, contained thumbnails, stacked actions. */
   compact?: boolean;
   imagePromoteOptionId?: string;
@@ -54,6 +56,7 @@ export function ImageAssetManager({
   onFetchMoreImages,
   onUploadImage,
   onDownloadImage,
+  onClearSelectedImage,
   compact = false,
   imagePromoteOptionId = '',
 }: Props) {
@@ -209,51 +212,69 @@ export function ImageAssetManager({
                     : 'border-border shadow-card hover:border-border-strong hover:shadow-lift'
                 }`}
               >
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="inline"
-                  disabled={Boolean(promoting)}
-                  onClick={() => void onSelectImage(option)}
-                  className="block w-full rounded-none text-left hover:bg-transparent disabled:opacity-70"
-                >
-                  <div
-                    className={`relative overflow-hidden bg-surface-muted ${
-                      compact
-                        ? 'flex max-h-44 min-h-[7rem] items-center justify-center py-2'
-                        : 'aspect-[4/3]'
-                    }`}
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="inline"
+                    disabled={Boolean(promoting)}
+                    onClick={() => void onSelectImage(option)}
+                    className="block w-full rounded-none text-left hover:bg-transparent disabled:opacity-70"
                   >
-                    <img
-                      src={resolvedImageUrl}
-                      alt={option.label}
-                      referrerPolicy="no-referrer"
-                      className={`max-h-full w-full transition-transform duration-500 ${
-                        compact ? 'max-h-44 object-contain' : 'h-full object-cover'
-                      } ${isSelected ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
-                    />
-                    {badgeLabel ? (
-                      <Badge
-                        variant="neutral"
-                        size="sm"
-                        className="absolute left-3 top-3 border-white/35 bg-ink/88 text-primary-fg shadow-md backdrop-blur-sm normal-case"
-                      >
-                        {badgeLabel}
-                      </Badge>
-                    ) : null}
-                    {isSelected ? (
-                      <Badge variant="primary" size="sm" className="absolute right-3 top-3 shadow-md normal-case">
-                        Selected
-                      </Badge>
-                    ) : null}
-                    {promoting ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
-                        <LoaderCircle className="h-8 w-8 animate-spin text-white" aria-hidden />
-                        <span className="sr-only">Saving image to workspace…</span>
-                      </div>
-                    ) : null}
-                  </div>
-                </Button>
+                    <div
+                      className={`relative overflow-hidden bg-surface-muted ${
+                        compact
+                          ? 'flex max-h-44 min-h-[7rem] items-center justify-center py-2'
+                          : 'aspect-[4/3]'
+                      }`}
+                    >
+                      <img
+                        src={resolvedImageUrl}
+                        alt={option.label}
+                        referrerPolicy="no-referrer"
+                        className={`max-h-full w-full transition-transform duration-500 ${
+                          compact ? 'max-h-44 object-contain' : 'h-full object-cover'
+                        } ${isSelected ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
+                      />
+                      {badgeLabel ? (
+                        <Badge
+                          variant="neutral"
+                          size="sm"
+                          className="absolute left-3 top-3 border-white/35 bg-ink/88 text-primary-fg shadow-md backdrop-blur-sm normal-case"
+                        >
+                          {badgeLabel}
+                        </Badge>
+                      ) : null}
+                      {isSelected ? (
+                        <Badge variant="primary" size="sm" className="absolute bottom-3 left-3 shadow-md normal-case">
+                          Selected
+                        </Badge>
+                      ) : null}
+                      {promoting ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
+                          <LoaderCircle className="h-8 w-8 animate-spin text-white" aria-hidden />
+                          <span className="sr-only">Saving image to workspace…</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  </Button>
+                  {isSelected && onClearSelectedImage && !promoting ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon-lg"
+                      className="absolute right-2 top-2 z-20 size-9 shrink-0 rounded-full border border-border bg-white/95 text-muted shadow-md backdrop-blur-sm hover:bg-white hover:text-destructive"
+                      aria-label="Remove image from post"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onClearSelectedImage();
+                      }}
+                    >
+                      <X className="h-4 w-4" strokeWidth={2.25} />
+                    </Button>
+                  ) : null}
+                </div>
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">

@@ -5,7 +5,7 @@ import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../s
 import { type DeliverySummary } from '../types';
 
 import { type ChannelId, getChannelOption, getChannelLabel } from '../../../integrations/channels';
-import { buildRowActionKey, getNormalizedRowStatus, isSameTopicDate } from '../utils';
+import { buildRowActionKey, findDraftRowAfterCreateFromPublished, getNormalizedRowStatus, isSameTopicDate } from '../utils';
 import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
 import { useAlert } from '../../AlertProvider';
@@ -426,20 +426,41 @@ export function useDashboardQueue({
       return;
     }
 
-    if (getNormalizedRowStatus(row.status) === 'published') {
-      void showAlert({
-        title: 'Notice',
-        description: 'This topic is already published. Save edits as a draft first, then open that draft to publish.',
-      });
-      return;
-    }
-
     const actionKey = buildRowActionKey('publish', row);
     setActionLoading(actionKey);
     try {
+      let rowToPublish: SheetRow = row;
+
+      if (getNormalizedRowStatus(row.status) === 'published') {
+        await api.createDraftFromPublished(
+          idToken,
+          row,
+          message,
+          imageUrl,
+          postTime,
+          emailTo ?? '',
+          emailCc ?? '',
+          emailBcc ?? '',
+          emailSubject ?? '',
+        );
+        const data = await api.getRows(idToken);
+        const nextRows = data.reverse();
+        setRows(nextRows);
+        const found = findDraftRowAfterCreateFromPublished(nextRows, row, message);
+        if (!found) {
+          void showAlert({
+            title: 'Notice',
+            description:
+              'A draft copy was saved, but it could not be selected automatically to publish. Open the new draft from the queue and use Publish there.',
+          });
+          return;
+        }
+        rowToPublish = found;
+      }
+
       await api.updateRowStatus(
         idToken,
-        row,
+        rowToPublish,
         'Approved',
         selectedText,
         selectedImageId,
@@ -451,15 +472,15 @@ export function useDashboardQueue({
       );
 
       const mergedRow: SheetRow = {
-        ...row,
+        ...rowToPublish,
         status: 'Approved',
         selectedText: message,
         selectedImageId: imageUrl,
         postTime,
-        emailTo: emailTo ?? row.emailTo,
-        emailCc: emailCc ?? row.emailCc,
-        emailBcc: emailBcc ?? row.emailBcc,
-        emailSubject: emailSubject ?? row.emailSubject,
+        emailTo: emailTo ?? rowToPublish.emailTo,
+        emailCc: emailCc ?? rowToPublish.emailCc,
+        emailBcc: emailBcc ?? rowToPublish.emailBcc,
+        emailSubject: emailSubject ?? rowToPublish.emailSubject,
       };
 
       const result = await api.publishContent(idToken, {

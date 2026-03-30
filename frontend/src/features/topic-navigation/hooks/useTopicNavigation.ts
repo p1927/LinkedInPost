@@ -26,7 +26,9 @@ export function useTopicNavigation(
       onNavigateToEditor: (slot, opts) => {
         const seg = pathSeg();
         if (!seg) return;
-        navigate(topicEditorPathFromSegment(seg, slot, { openMedia: opts?.openMedia }));
+        // Replace the variant-picker entry so browser back from the editor returns to the topics list,
+        // not the intermediate /topics/:id grid.
+        navigate(topicEditorPathFromSegment(seg, slot, { openMedia: opts?.openMedia }), { replace: true });
       },
     };
   }, [screen, variantSlot, navigate, topicId]);

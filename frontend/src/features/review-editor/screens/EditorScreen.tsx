@@ -46,11 +46,13 @@ export function EditorScreen() {
     previewReadyCount,
     routed,
     editorStartMediaPanel,
+    sheetVariants,
   } = useReviewFlow();
 
   const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}`;
 
   const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
+  const hasSheetVariants = sheetVariants.length > 0;
   const isDesktop = useMediaQuery('(min-width: 1280px)');
   const footerBusy = submitting || publishSubmitting;
   const channelLabel = getChannelLabel(deliveryChannel);
@@ -158,7 +160,7 @@ export function EditorScreen() {
           <div
             className={cn(
               'flex shrink-0 flex-col gap-2 justify-stretch sm:flex-row sm:flex-wrap sm:items-end sm:justify-end sm:gap-3',
-              !isPublished && 'sm:items-center',
+              (!isPublished || (isPublished && hasSheetVariants)) && 'sm:items-center',
             )}
           >
             <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px] sm:shrink-0">
@@ -180,17 +182,45 @@ export function EditorScreen() {
                 )}
               />
             </div>
-            {isPublished ? (
+            {isPublished && !hasSheetVariants ? (
               <Button
                 type="button"
                 size="sm"
                 variant="primary"
                 onClick={() => void handleApprove()}
                 disabled={footerBusy}
+                title="No generated variants on this row yet — save a draft copy first (e.g. after GitHub draft generation)."
                 className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none lg:w-auto lg:min-w-[9rem]"
               >
-                {submitting ? 'Saving…' : '✓ Save as draft'}
+                {submitting ? 'Saving…' : 'Save as draft'}
               </Button>
+            ) : isPublished && hasSheetVariants ? (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void handleApprove()}
+                  disabled={footerBusy}
+                  title="Writes your edits to a new drafted row. The current published post stays until you publish that copy."
+                  className="min-h-[44px] w-full border-primary/25 shadow-sm sm:w-auto sm:min-w-[8.5rem]"
+                >
+                  {submitting ? 'Saving…' : 'Save edits'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => void handlePublishNow()}
+                  disabled={footerBusy}
+                  title={`Save a draft copy with your edits, approve it, and send to ${channelLabel} (same as queue Publish).`}
+                  className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[9rem]"
+                >
+                  {publishSubmitting
+                    ? 'Publishing…'
+                    : `Publish to ${channelLabel}`}
+                </Button>
+              </>
             ) : (
               <>
                 <Button

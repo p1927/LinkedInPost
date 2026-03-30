@@ -64,6 +64,8 @@ export interface ReviewFlowContextValue {
   setSelectedImageUrl: React.Dispatch<React.SetStateAction<string>>;
   /** Select an image; search results are promoted to storage when needed. */
   handleSelectImageOption: (option: ImageAssetOption) => Promise<void>;
+  /** Clear the selected attachment so the post has no image until one is chosen again. */
+  handleClearSelectedImage: () => void;
   imagePromoteOptionId: string;
   alternateImageOptions: ImageAssetOption[];
   uploadedImageOptions: ImageAssetOption[];

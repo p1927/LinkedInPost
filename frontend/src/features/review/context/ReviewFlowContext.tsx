@@ -20,7 +20,10 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
 
   // We omit `setChrome` from the context value since it's an internal detail of the state hook
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { setChrome, effectiveGenerationRules, ...restState } = state;
+  const { setChrome, effectiveGenerationRules, suppressAutoImageSelection, setSuppressAutoImageSelection, ...restState } =
+    state;
+  void suppressAutoImageSelection;
+  void setSuppressAutoImageSelection;
 
   const value: ReviewFlowContextValue = {
     // Props

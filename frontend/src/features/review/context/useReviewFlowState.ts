@@ -51,6 +51,8 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [emailBcc, setEmailBcc] = useState(row.emailBcc || globalEmailDefaults?.emailBcc || '');
   const [emailSubject, setEmailSubject] = useState(row.emailSubject || globalEmailDefaults?.emailSubject || '');
   const [selectedImageUrl, setSelectedImageUrl] = useState(row.selectedImageId || row.imageLink1 || '');
+  /** When true, do not auto-pick the first image after the user clears the selection. */
+  const [suppressAutoImageSelection, setSuppressAutoImageSelection] = useState(false);
   const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
   const [uploadedImageOptions, setUploadedImageOptions] = useState<ImageAssetOption[]>([]);
   const [pendingVariantIndex, setPendingVariantIndex] = useState<number | null>(null);
@@ -101,6 +103,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setPreviewVariantSaveErrors({});
     setAlternateImageOptions([]);
     setUploadedImageOptions([]);
+    setSuppressAutoImageSelection(false);
     setPendingVariantIndex(null);
     setOpenMediaAfterVariantConfirm(false);
     setPendingClose(false);
@@ -200,12 +203,8 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
     const handlePopState = () => {
       window.history.pushState({ trap: true }, '');
-      
-      if (routed?.screen === 'editor' && sheetVariants.length > 0) {
-        setPendingNavigateToVariants(true);
-      } else {
-        setPendingClose(true);
-      }
+      // Browser back should leave toward the topics list, not the variant picker.
+      setPendingClose(true);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -216,13 +215,23 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
         window.history.back();
       }
     };
-  }, [hasUnsavedReviewState, routed?.screen, sheetVariants.length]);
+  }, [hasUnsavedReviewState]);
 
   useEffect(() => {
     topicHeadingRef.current?.focus();
   }, [row]);
 
   useEffect(() => {
+    if (suppressAutoImageSelection) {
+      if (!selectedImageUrl) {
+        return;
+      }
+      if (!imageOptions.some((option) => option.imageUrl === selectedImageUrl)) {
+        setSelectedImageUrl(imageOptions[0]?.imageUrl || '');
+      }
+      return;
+    }
+
     if (!selectedImageUrl && imageOptions[0]?.imageUrl) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedImageUrl(imageOptions[0].imageUrl);
@@ -232,7 +241,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     if (selectedImageUrl && !imageOptions.some((option) => option.imageUrl === selectedImageUrl)) {
       setSelectedImageUrl(imageOptions[0]?.imageUrl || '');
     }
-  }, [imageOptions, selectedImageUrl]);
+  }, [imageOptions, selectedImageUrl, suppressAutoImageSelection]);
 
   return {
     sheetRow, setSheetRow,
@@ -248,6 +257,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     previewVariantSaveErrors, setPreviewVariantSaveErrors,
     postTime, setPostTime,
     selectedImageUrl, setSelectedImageUrl,
+    suppressAutoImageSelection, setSuppressAutoImageSelection,
     alternateImageOptions, setAlternateImageOptions,
     uploadedImageOptions, setUploadedImageOptions,
     pendingVariantIndex, setPendingVariantIndex,
