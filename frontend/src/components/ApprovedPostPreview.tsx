@@ -4,6 +4,7 @@ import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
 import { parseRowImageUrls } from '../services/selectedImageUrls';
 import { Button } from '@/components/ui/button';
+import { topicNeedsFullTooltip, truncateTopicForUi } from '../lib/topicDisplay';
 
 interface ApprovedPostPreviewProps {
   row: SheetRow;
@@ -25,23 +26,32 @@ export function ApprovedPostPreview({ row, previewChannel, onClose }: ApprovedPo
   const emptyImageLabel = isPublished
     ? 'This published post did not include a selected image.'
     : 'No image was selected for this approved post.';
+  const topicTitle = truncateTopicForUi(row.topic || '');
+  const topicTooltip = topicNeedsFullTooltip(row.topic || '') ? (row.topic || '').trim() : undefined;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-deep-purple/35 px-4 py-6 backdrop-blur-md sm:px-6 sm:py-8 font-sans">
       <div className="mx-auto flex min-h-full w-full max-w-[min(100vw-2rem,1240px)] items-center justify-center">
         <div className="glass-panel-strong flex max-h-[calc(100vh-4rem)] w-full flex-col overflow-hidden rounded-2xl">
           <div className="flex items-start justify-between gap-4 border-b border-white/45 px-6 py-5 sm:px-8">
-            <div>
+            <div className="min-w-0 flex-1 pr-2">
               {!isPublished ? (
                 <>
                   <div className="inline-flex items-center gap-2 rounded-full border border-success-border bg-success-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-success-ink">
                     <Eye className="h-3.5 w-3.5" /> Approved Preview
                   </div>
-                  <h2 className="mt-3 font-heading text-xl font-semibold text-ink">{row.topic}</h2>
+                  <h2
+                    className="mt-3 min-w-0 truncate font-heading text-xl font-semibold text-ink"
+                    title={topicTooltip}
+                  >
+                    {topicTitle}
+                  </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{previewDescription}</p>
                 </>
               ) : (
-                <h2 className="font-heading text-xl font-semibold text-ink">{row.topic}</h2>
+                <h2 className="min-w-0 truncate font-heading text-xl font-semibold text-ink" title={topicTooltip}>
+                  {topicTitle}
+                </h2>
               )}
             </div>
             <Button

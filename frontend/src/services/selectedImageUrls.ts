@@ -1,6 +1,9 @@
 /** Max images per post across channels (LinkedIn 20, Telegram album 10, Instagram carousel 10). */
 export const MAX_IMAGES_PER_POST = 20;
 
+/** Image search / topic-based candidates shown in the media picker (worker caps requests to this). */
+export const DRAFT_IMAGE_SEARCH_CHOICE_COUNT = 8;
+
 export function parseRowImageUrls(row: { selectedImageId?: string; selectedImageUrlsJson?: string }): string[] {
   const raw = String(row.selectedImageUrlsJson || '').trim();
   if (raw) {

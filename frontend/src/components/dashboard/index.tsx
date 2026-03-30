@@ -29,6 +29,7 @@ import {
   WORKSPACE_ROUTE_PATHS,
   topicEditorPathForRow,
 } from '../../features/topic-navigation/utils/workspaceRoutes';
+import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 
 function previewAuthorDisplayName(email: string): string {
   const local = email.split('@')[0]?.trim() ?? '';
@@ -255,10 +256,23 @@ export function Dashboard({
     ? findRowByTopicRouteId(queueHook.rows, topicIdFromPath)
     : undefined;
 
-  const headerOverrideTitle = topicChromeRow?.topic?.trim() || (queueHook.loading ? 'Loading topic…' : 'Topic');
+  const topicChromeRaw = topicChromeRow?.topic?.trim() ?? '';
   const headerOverride = useMemo(() => {
-    return topicIdFromPath ? { title: headerOverrideTitle, subtitle: null } : null;
-  }, [topicIdFromPath, headerOverrideTitle]);
+    if (!topicIdFromPath) return null;
+    if (!topicChromeRaw) {
+      return {
+        title: queueHook.loading ? 'Loading topic…' : 'Topic',
+        subtitle: null as string | null,
+        titleTooltip: null as string | null,
+      };
+    }
+    const title = truncateTopicForUi(topicChromeRaw);
+    return {
+      title,
+      subtitle: null,
+      titleTooltip: topicNeedsFullTooltip(topicChromeRaw) ? topicChromeRaw : null,
+    };
+  }, [topicIdFromPath, topicChromeRaw, queueHook.loading]);
 
   useRegisterWorkspaceChrome({
     onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,

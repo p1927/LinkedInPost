@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '../../../lib/cn';
+import { topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
 import { useReviewFlow } from '../context/ReviewFlowContext';
 
 export function ReviewHeader() {
@@ -55,11 +56,12 @@ export function ReviewHeader() {
                     ref={topicHeadingRef}
                     tabIndex={-1}
                     className={cn(
-                      'mt-0.5 font-heading text-lg font-bold leading-snug text-ink outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:text-xl',
-                      !topicExpanded && topicIsLong && 'line-clamp-2',
+                      'mt-0.5 min-w-0 font-heading text-lg font-bold leading-snug text-ink outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:text-xl',
+                      !topicExpanded && topicIsLong ? 'truncate' : 'break-words',
                     )}
+                    title={!topicExpanded && topicNeedsFullTooltip(sheetRow.topic) ? sheetRow.topic.trim() : undefined}
                   >
-                    {sheetRow.topic}
+                    {!topicIsLong || topicExpanded ? sheetRow.topic : truncateTopicForUi(sheetRow.topic)}
                   </h2>
                   {topicIsLong ? (
                     <Button
@@ -122,11 +124,12 @@ export function ReviewHeader() {
                     ref={topicHeadingRef}
                     tabIndex={-1}
                     className={cn(
-                      'mt-0.5 font-heading text-lg font-bold leading-snug text-ink outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:text-xl',
-                      !topicExpanded && topicIsLong && 'line-clamp-2',
+                      'mt-0.5 min-w-0 font-heading text-lg font-bold leading-snug text-ink outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:text-xl',
+                      !topicExpanded && topicIsLong ? 'truncate' : 'break-words',
                     )}
+                    title={!topicExpanded && topicNeedsFullTooltip(sheetRow.topic) ? sheetRow.topic.trim() : undefined}
                   >
-                    {sheetRow.topic}
+                    {!topicIsLong || topicExpanded ? sheetRow.topic : truncateTopicForUi(sheetRow.topic)}
                   </h2>
                   {topicIsLong ? (
                     <Button

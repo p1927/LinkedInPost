@@ -6,7 +6,13 @@ import { applyFormattingAction } from '@/features/draft-selection-target';
 import { rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { mergeUniqueImageOptions } from './utils';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
-import { MAX_IMAGES_PER_POST, serializeRowImageUrls } from '../../../services/selectedImageUrls';
+import { shouldPromoteImageUrlBeforeDelivery } from '../../../services/deliveryImageUrl';
+import {
+  DRAFT_IMAGE_SEARCH_CHOICE_COUNT,
+  MAX_IMAGES_PER_POST,
+  serializeRowImageUrls,
+} from '../../../services/selectedImageUrls';
+import { topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
 
 export function useReviewFlowActions(
   props: ReviewFlowProviderProps,
@@ -78,7 +84,6 @@ export function useReviewFlowActions(
 
   const { showAlert } = useAlert();
   const [publishSubmitting, setPublishSubmitting] = useState(false);
-  const [imagePromoteOptionId, setImagePromoteOptionId] = useState('');
 
   const requestClose = useCallback(() => {
     if (hasUnsavedReviewState) {
@@ -301,27 +306,16 @@ export function useReviewFlowActions(
       label: `Result ${index + 1}`,
       kind: 'alternate' as const,
       originalIndex: index,
-      pendingCloudUpload: true as const,
     }));
 
     const dedupedAlternates = mergeUniqueImageOptions([
       ...nextOptions,
       ...alternateImageOptions.filter((option) => option.kind === 'alternate'),
-    ]).slice(0, Math.max(nextOptions.length, 4));
+    ]).slice(0, Math.max(nextOptions.length, DRAFT_IMAGE_SEARCH_CHOICE_COUNT));
     setAlternateImageOptions(dedupedAlternates);
     if (dedupedAlternates[0]?.imageUrl && !suppressAutoImageSelection && selectedImageUrls.length === 0) {
       setSelectedImageUrls([dedupedAlternates[0].imageUrl]);
     }
-  };
-
-  const promoteAlternateOption = async (option: ImageAssetOption): Promise<string> => {
-    const gcsUrl = await onPromoteRemoteImage(option.imageUrl);
-    setAlternateImageOptions((prev) =>
-      prev.map((o) =>
-        o.id === option.id ? { ...o, imageUrl: gcsUrl, pendingCloudUpload: false } : o,
-      ),
-    );
-    return gcsUrl;
   };
 
   const handleClearSelectedImage = useCallback(() => {
@@ -329,25 +323,9 @@ export function useReviewFlowActions(
     setSelectedImageUrls([]);
   }, [setSelectedImageUrls, setSuppressAutoImageSelection]);
 
-  const handleSelectImageOption = async (option: ImageAssetOption) => {
+  const handleSelectImageOption = (option: ImageAssetOption) => {
     setSuppressAutoImageSelection(false);
-    let url = option.imageUrl;
-    if (option.pendingCloudUpload) {
-      setImagePromoteOptionId(option.id);
-      try {
-        url = await promoteAlternateOption(option);
-      } catch (error) {
-        console.error(error);
-        void showAlert({
-          title: 'Could not save image',
-          description: error instanceof Error ? error.message : 'Failed to copy the image to workspace storage.',
-        });
-        return;
-      } finally {
-        setImagePromoteOptionId('');
-      }
-    }
-
+    const url = option.imageUrl;
     setSelectedImageUrls((prev) => {
       const idx = prev.indexOf(url);
       if (idx >= 0) {
@@ -362,20 +340,61 @@ export function useReviewFlowActions(
 
   const ensureSelectedImagesStored = async (): Promise<string[]> => {
     const urls = [...selectedImageUrls];
-    const next = [...urls];
-    for (let i = 0; i < next.length; i += 1) {
-      const url = next[i]!;
-      const pendingAlt = alternateImageOptions.find((o) => o.imageUrl === url && o.pendingCloudUpload);
-      if (!pendingAlt) {
+    const promotedBySource = new Map<string, string>();
+    const next: string[] = [];
+    const sourceToGcs = new Map<string, string>();
+
+    for (const url of urls) {
+      const trimmed = url.trim();
+      if (!trimmed) {
         continue;
       }
-      setImagePromoteOptionId(pendingAlt.id);
+
+      const already = promotedBySource.get(trimmed);
+      if (already !== undefined) {
+        next.push(already);
+        continue;
+      }
+
+      if (!shouldPromoteImageUrlBeforeDelivery(trimmed)) {
+        promotedBySource.set(trimmed, trimmed);
+        next.push(trimmed);
+        continue;
+      }
+
       try {
-        next[i] = await promoteAlternateOption(pendingAlt);
-      } finally {
-        setImagePromoteOptionId('');
+        const gcsUrl = await onPromoteRemoteImage(trimmed);
+        promotedBySource.set(trimmed, gcsUrl);
+        sourceToGcs.set(trimmed, gcsUrl);
+        next.push(gcsUrl);
+      } catch (error) {
+        console.error(error);
+        const message =
+          error instanceof Error ? error.message : 'Failed to copy the image to workspace storage.';
+        void showAlert({
+          title: 'Could not prepare image',
+          description:
+            'This image must be copied to workspace storage before approve or publish. ' + message,
+        });
+        throw error;
       }
     }
+
+    if (sourceToGcs.size > 0) {
+      setAlternateImageOptions((prev) =>
+        prev.map((o) => {
+          const gcsUrl = sourceToGcs.get(o.imageUrl);
+          return gcsUrl ? { ...o, imageUrl: gcsUrl } : o;
+        }),
+      );
+      setUploadedImageOptions((prev) =>
+        prev.map((o) => {
+          const gcsUrl = sourceToGcs.get(o.imageUrl);
+          return gcsUrl ? { ...o, imageUrl: gcsUrl } : o;
+        }),
+      );
+    }
+
     setSelectedImageUrls(next);
     return next;
   };
@@ -389,7 +408,9 @@ export function useReviewFlowActions(
       kind: 'upload',
     };
 
-    setUploadedImageOptions((current) => mergeUniqueImageOptions([uploadedOption, ...current]).slice(0, 4));
+    setUploadedImageOptions((current) =>
+      mergeUniqueImageOptions([uploadedOption, ...current]).slice(0, DRAFT_IMAGE_SEARCH_CHOICE_COUNT),
+    );
     setSuppressAutoImageSelection(false);
     setSelectedImageUrls((prev) =>
       prev.length >= MAX_IMAGES_PER_POST ? prev : prev.includes(imageUrl) ? prev : [...prev, imageUrl],
@@ -549,7 +570,7 @@ export function useReviewFlowActions(
     }
 
     const t = sheetRow.topic.trim();
-    const topicLabel = t.length > 48 ? `${t.slice(0, 45).trimEnd()}…` : t || 'Topic';
+    const topicLabel = t ? truncateTopicForUi(t) : 'Topic';
 
     setChrome({
       topicReviewHeader: {
@@ -558,7 +579,11 @@ export function useReviewFlowActions(
           showEditorLayout && sheetVariants.length > 0 ? requestNavigateToVariants : undefined,
         crumbs: [
           { key: 'topics', label: 'Topics', onPress: leaveToTopics },
-          { key: 'topic', label: topicLabel },
+          {
+            key: 'topic',
+            label: topicLabel,
+            labelTitle: topicNeedsFullTooltip(sheetRow.topic) ? t : undefined,
+          },
           {
             key: 'phase',
             label: showPickPhase ? 'Choose variant' : 'Refine',
@@ -685,7 +710,6 @@ export function useReviewFlowActions(
     handleFetchMoreImageOptions,
     handleSelectImageOption,
     handleClearSelectedImage,
-    imagePromoteOptionId,
     handleUploadImageOption,
     handleApprove,
     handlePublishNow,

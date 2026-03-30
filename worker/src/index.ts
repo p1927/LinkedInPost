@@ -2982,8 +2982,8 @@ function decodeDataUrl(dataUrl: string): { bytes: ArrayBuffer; contentType: stri
 async function fetchDraftImages(env: Env, payload: Record<string, unknown>): Promise<DraftImageListResult> {
   const topic = String(payload.topic || '').trim();
   const searchQuery = String(payload.searchQuery ?? '').trim();
-  const requestedCount = Number(payload.count || 4);
-  const count = Number.isFinite(requestedCount) ? Math.min(6, Math.max(1, Math.trunc(requestedCount))) : 4;
+  const requestedCount = Number(payload.count || 8);
+  const count = Number.isFinite(requestedCount) ? Math.min(8, Math.max(1, Math.trunc(requestedCount))) : 8;
 
   if (!topic) {
     throw new Error('Topic is required to fetch alternate images.');

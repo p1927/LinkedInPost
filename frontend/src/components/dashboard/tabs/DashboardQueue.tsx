@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { type PendingScheduledPublish, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { type ChannelId } from '@/integrations/channels';
+import { topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
 
 const rowActionClass =
   'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-40 transition-colors duration-200 cursor-pointer';
@@ -238,19 +239,25 @@ export function DashboardQueue({
                                 onTopicNavigate(row);
                               }}
                               className={cn(
-                                'line-clamp-2 w-full text-left font-medium leading-snug text-ink transition-colors duration-200',
+                                'min-w-0 truncate w-full text-left font-medium leading-snug text-ink transition-colors duration-200',
                                 'rounded-lg outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40',
                               )}
-                              title="Open draft editor"
+                              title={
+                                row.topic.trim()
+                                  ? topicNeedsFullTooltip(row.topic)
+                                    ? `${row.topic.trim()} — Open draft editor`
+                                    : 'Open draft editor'
+                                  : 'Open draft editor'
+                              }
                             >
-                              {row.topic}
+                              {truncateTopicForUi(row.topic)}
                             </button>
                           ) : (
                             <p
-                              className="line-clamp-2 font-medium leading-snug text-ink transition-colors duration-200"
-                              title={row.topic.length > 80 ? row.topic : undefined}
+                              className="min-w-0 truncate font-medium leading-snug text-ink transition-colors duration-200"
+                              title={topicNeedsFullTooltip(row.topic) ? row.topic.trim() : undefined}
                             >
-                              {row.topic}
+                              {truncateTopicForUi(row.topic)}
                             </p>
                           )}
                         </div>

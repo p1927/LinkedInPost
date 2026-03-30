@@ -7,6 +7,7 @@ import { getVariantSlotContent } from '../../topic-navigation/utils/topicRoute';
 import { getEffectiveScope, getTargetText, isSelectionScopeWaitingForRange } from '@/features/draft-selection-target';
 import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../components/workspace/WorkspaceChromeContext';
 import { parseRowImageUrls } from '../../../services/selectedImageUrls';
+import { topicNeedsTruncation } from '../../../lib/topicDisplay';
 
 const formatLocalDateTimeForInput = (d: Date): string => {
   const localY = d.getFullYear();
@@ -190,7 +191,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const showEditorLayout =
     sheetVariants.length === 0 || (routed ? routed.screen === 'editor' : reviewPhase === 'edit');
   const topicTitleInWorkspaceChrome = Boolean(routed);
-  const topicIsLong = (sheetRow.topic || '').length > 140 || (sheetRow.topic || '').split('\n').length > 2;
+  const topicIsLong = topicNeedsTruncation(sheetRow.topic || '');
   const generatedImageOptions = useMemo(() => buildGeneratedImages(sheetRow), [sheetRow]);
   const imageOptions = useMemo(
     () => [...uploadedImageOptions, ...generatedImageOptions, ...alternateImageOptions],

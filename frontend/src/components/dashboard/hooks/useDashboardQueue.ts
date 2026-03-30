@@ -10,7 +10,11 @@ import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/
 
 import { useAlert } from '../../AlertProvider';
 import { rowMatchesPendingScheduledPublish, usePendingScheduledPublish } from '@/features/scheduled-publish';
-import { parseRowImageUrls, serializeRowImageUrls } from '@/services/selectedImageUrls';
+import {
+  DRAFT_IMAGE_SEARCH_CHOICE_COUNT,
+  parseRowImageUrls,
+  serializeRowImageUrls,
+} from '@/services/selectedImageUrls';
 
 export function useDashboardQueue({
   idToken,
@@ -285,7 +289,7 @@ export function useDashboardQueue({
   };
 
   const handleFetchReviewImages = async (row: SheetRow, searchQuery?: string) => {
-    const result = await api.fetchDraftImages(idToken, row.topic, 4, searchQuery);
+    const result = await api.fetchDraftImages(idToken, row.topic, DRAFT_IMAGE_SEARCH_CHOICE_COUNT, searchQuery);
     return result.imageUrls;
   };
 

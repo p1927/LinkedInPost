@@ -13,7 +13,7 @@ export interface ImageAssetOption {
   label: string;
   kind: 'generated' | 'alternate' | 'upload';
   originalIndex?: number;
-  /** Search hits are shown from the web first; selecting or approving uploads to workspace storage. */
+  /** @deprecated Search hits no longer use a pending-upload step; kept for typing compatibility. */
   pendingCloudUpload?: boolean;
 }
 
@@ -28,9 +28,8 @@ interface Props {
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   /** When set, selected cards show a control to detach the image from the post. */
   onClearSelectedImage?: () => void;
-  /** Narrow sidebar: single column, contained thumbnails, stacked actions. */
+  /** Narrow sidebar: horizontal image carousel, contained thumbnails, stacked actions. */
   compact?: boolean;
-  imagePromoteOptionId?: string;
 }
 
 function buildDownloadName(topic: string, option: ImageAssetOption): string {
@@ -46,7 +45,7 @@ function buildDownloadName(topic: string, option: ImageAssetOption): string {
 
 function getOptionBadgeLabel(option: ImageAssetOption): string | null {
   if (option.kind === 'upload') return 'Uploaded';
-  if (option.kind === 'alternate') return option.pendingCloudUpload ? 'Preview' : 'Alternate';
+  if (option.kind === 'alternate') return 'Search';
   return null;
 }
 
@@ -60,7 +59,6 @@ export function ImageAssetManager({
   onDownloadImage,
   onClearSelectedImage,
   compact = false,
-  imagePromoteOptionId = '',
 }: Props) {
   const { showAlert } = useAlert();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -125,7 +123,9 @@ export function ImageAssetManager({
           <h4 className="font-heading text-sm font-semibold text-ink">Choose images</h4>
           <p className="mt-1 text-sm leading-6 text-muted">
             {compact
-              ? 'Tap to toggle selection (up to ' + MAX_IMAGES_PER_POST + '). Order follows selection; first image is primary. Search results save to storage when selected.'
+              ? 'Tap to toggle selection (up to ' +
+                MAX_IMAGES_PER_POST +
+                '). Order follows selection; first image is primary. Search previews use the source URL; approve or publish copies those to workspace storage when needed. Uploads go to workspace immediately.'
               : 'Toggle images to attach several to one post (carousel, album, or multi-photo where the channel supports it). First selected is primary.'}
           </p>
         </div>
@@ -192,24 +192,32 @@ export function ImageAssetManager({
           </p>
         </div>
       ) : (
-        <div
-          className={
-            compact
-              ? 'mt-4 grid grid-cols-1 gap-3'
-              : 'mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
-          }
-        >
-          {images.map((option) => {
+        <div className="mt-4">
+          {compact && images.length > 1 ? (
+            <p className="mb-2 text-xs leading-5 text-muted">Scroll sideways to compare options (search loads up to eight).</p>
+          ) : null}
+          <div
+            role="list"
+            aria-label="Image options"
+            className={
+              compact
+                ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 pt-1 [scrollbar-width:thin]'
+                : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
+            }
+          >
+            {images.map((option) => {
             const orderIndex = selectedImageUrls.indexOf(option.imageUrl);
             const isSelected = orderIndex >= 0;
             const resolvedImageUrl = normalizePreviewImageUrl(option.imageUrl);
             const badgeLabel = getOptionBadgeLabel(option);
-            const promoting = imagePromoteOptionId === option.id;
 
             return (
               <div
                 key={option.id}
+                role="listitem"
                 className={`overflow-hidden rounded-3xl border bg-surface transition-colors ${
+                  compact ? 'w-72 max-w-[min(280px,calc(100%-0.5rem))] shrink-0 snap-center' : ''
+                } ${
                   isSelected
                     ? 'border-primary shadow-lg ring-2 ring-primary/15'
                     : 'border-border shadow-card hover:border-border-strong hover:shadow-lift'
@@ -220,9 +228,8 @@ export function ImageAssetManager({
                     type="button"
                     variant="ghost"
                     size="inline"
-                    disabled={Boolean(promoting)}
                     onClick={() => void onSelectImage(option)}
-                    className="block w-full rounded-none text-left hover:bg-transparent disabled:opacity-70"
+                    className="block w-full rounded-none text-left hover:bg-transparent"
                   >
                     <div
                       className={`relative overflow-hidden bg-surface-muted ${
@@ -255,15 +262,9 @@ export function ImageAssetManager({
                           {orderIndex === 0 ? 'Primary' : `#${orderIndex + 1}`}
                         </Badge>
                       ) : null}
-                      {promoting ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
-                          <LoaderCircle className="h-8 w-8 animate-spin text-white" aria-hidden />
-                          <span className="sr-only">Saving image to workspace…</span>
-                        </div>
-                      ) : null}
                     </div>
                   </Button>
-                  {isSelected && !promoting ? (
+                  {isSelected ? (
                     <Button
                       type="button"
                       variant="secondary"
@@ -285,15 +286,11 @@ export function ImageAssetManager({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-ink">{option.label}</p>
                     <p className="mt-1 text-xs leading-5 text-muted">
-                      {option.pendingCloudUpload && isSelected
-                        ? 'Will be saved to workspace when you approve (or now if you re-select after an error).'
-                        : isSelected
-                          ? orderIndex === 0
-                            ? 'Primary attachment — used first for captions where only one is allowed.'
-                            : 'Included in the multi-image post in this order.'
-                          : option.pendingCloudUpload
-                            ? 'Web preview — tap to save a copy and add to the post.'
-                            : 'Tap to add or remove from the post.'}
+                      {isSelected
+                        ? orderIndex === 0
+                          ? 'Primary attachment — used first for captions where only one is allowed.'
+                          : 'Included in the multi-image post in this order.'
+                        : 'Tap to add or remove from the post.'}
                     </p>
                   </div>
 
@@ -312,6 +309,7 @@ export function ImageAssetManager({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 

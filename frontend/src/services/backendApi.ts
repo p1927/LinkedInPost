@@ -426,7 +426,7 @@ export class BackendApi {
   async fetchDraftImages(
     idToken: string,
     topic: string,
-    count = 4,
+    count = 8,
     searchQuery?: string,
   ): Promise<DraftImageListResult> {
     return this.post<DraftImageListResult>('fetchDraftImages', idToken, {

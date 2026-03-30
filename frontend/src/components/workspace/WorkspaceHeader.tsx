@@ -38,6 +38,7 @@ export function WorkspaceHeader({
                   onClick={c.onPress}
                   className="min-w-0 truncate text-left font-medium text-indigo-600 underline-offset-2 transition-colors duration-200 hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 cursor-pointer"
                   aria-label={`Navigate to ${c.label}`}
+                  title={c.labelTitle}
                 >
                   {c.label}
                 </button>
@@ -48,6 +49,7 @@ export function WorkspaceHeader({
                     c.current ? 'font-semibold text-ink/80' : 'text-ink/60',
                   )}
                   aria-current={c.current ? 'page' : undefined}
+                  title={c.labelTitle}
                 >
                   {c.label}
                 </span>
@@ -58,10 +60,10 @@ export function WorkspaceHeader({
       ) : null}
       <h1
         className={clsx(
-          'font-heading font-bold text-ink',
-          headerOverride ? 'text-lg leading-tight sm:text-xl' : 'truncate text-base sm:text-lg',
-          headerOverride ? 'line-clamp-2 break-words' : '',
+          'min-w-0 font-heading font-bold text-ink',
+          headerOverride ? 'truncate text-lg leading-tight sm:text-xl' : 'truncate text-base sm:text-lg',
         )}
+        title={headerOverride?.titleTooltip ?? undefined}
       >
         {headerTitle}
       </h1>

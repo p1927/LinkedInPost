@@ -20,6 +20,8 @@ export type WorkspacePublishingHealth = {
 export type TopicReviewCrumb = {
   key: string;
   label: string;
+  /** Native tooltip when label is truncated. */
+  labelTitle?: string;
   /** Navigable (e.g. Topics). */
   onPress?: () => void;
   /** Current page step. */
@@ -39,7 +41,7 @@ type WorkspaceChromeState = {
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
   /** When set, the workspace header shows this instead of the nav page title. */
-  headerOverride: { title: string; subtitle?: string | null } | null;
+  headerOverride: { title: string; subtitle?: string | null; titleTooltip?: string | null } | null;
   /** Topic draft review: back, breadcrumb, optional pick-phase actions. */
   topicReviewHeader: TopicReviewHeaderChrome | null;
   hasUnsavedChanges: boolean;
@@ -91,7 +93,7 @@ export function useRegisterWorkspaceChrome(config: {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
   health: WorkspacePublishingHealth | null;
-  headerOverride?: { title: string; subtitle?: string | null } | null;
+  headerOverride?: { title: string; subtitle?: string | null; titleTooltip?: string | null } | null;
   clearTopicReviewHeader?: boolean;
 }) {
   const { setChrome } = useWorkspaceChrome();

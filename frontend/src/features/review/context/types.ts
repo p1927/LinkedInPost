@@ -61,11 +61,10 @@ export interface ReviewFlowContextValue {
   setPostTime: React.Dispatch<React.SetStateAction<string>>;
   selectedImageUrls: string[];
   setSelectedImageUrls: React.Dispatch<React.SetStateAction<string[]>>;
-  /** Select an image; search results are promoted to storage when needed. */
-  handleSelectImageOption: (option: ImageAssetOption) => Promise<void>;
+  /** Select an image (search hits keep their source URL until publish). */
+  handleSelectImageOption: (option: ImageAssetOption) => void;
   /** Clear the selected attachment so the post has no image until one is chosen again. */
   handleClearSelectedImage: () => void;
-  imagePromoteOptionId: string;
   alternateImageOptions: ImageAssetOption[];
   uploadedImageOptions: ImageAssetOption[];
   pendingVariantIndex: number | null;
@@ -163,6 +162,7 @@ export interface ReviewFlowProviderProps {
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
   onFetchMoreImages: (searchQuery?: string) => Promise<string[]>;
+  /** Copy a remote image to workspace storage before approve/publish when the URL is not already hosted for delivery. */
   onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
