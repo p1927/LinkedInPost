@@ -227,17 +227,19 @@ export function ImageAssetManager({
                     <div
                       className={`relative overflow-hidden bg-surface-muted ${
                         compact
-                          ? 'flex max-h-44 min-h-[7rem] items-center justify-center py-2'
-                          : 'aspect-[4/3]'
+                          ? 'flex min-h-[7rem] max-h-52 items-center justify-center px-2 py-3'
+                          : 'flex aspect-[4/3] items-center justify-center px-2 py-2'
                       }`}
                     >
                       <img
                         src={resolvedImageUrl}
                         alt={option.label}
                         referrerPolicy="no-referrer"
-                        className={`max-h-full w-full transition-transform duration-500 ${
-                          compact ? 'max-h-44 object-contain' : 'h-full object-cover'
-                        } ${isSelected ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
+                        className={
+                          compact
+                            ? 'mx-auto max-h-48 max-w-full h-auto w-auto object-contain object-center'
+                            : 'mx-auto max-h-full max-w-full h-auto w-auto object-contain object-center'
+                        }
                       />
                       {badgeLabel ? (
                         <Badge
