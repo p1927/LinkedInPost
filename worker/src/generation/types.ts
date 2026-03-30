@@ -6,6 +6,8 @@ export interface SheetRow {
   topicRowIndex?: number;
   draftRowIndex?: number;
   postRowIndex?: number;
+  /** Stable UUID assigned at topic creation time. Used as GCS image path prefix and route identifier. */
+  topicId?: string;
   topic: string;
   date: string;
   status: string;

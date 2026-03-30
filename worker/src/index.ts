@@ -3067,29 +3067,24 @@ function buildPublicGcsUrl(bucketName: string, objectName: string): string {
   return `https://storage.googleapis.com/${bucketName}/${encodedPath}`;
 }
 
-function buildDraftImageObjectName(topic: string, ordinal: number, contentType: string, fileName = ''): string {
+function buildDraftImageObjectName(topicKey: string, ordinal: number, contentType: string, fileName = ''): string {
   const extension = guessFileExtension(contentType, fileName);
   const time = Date.now().toString(36);
   const random = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
   const suffix = `-${time}-${random}-${ordinal}${extension}`;
-  const maxSlug = Math.min(
-    DRAFT_IMAGE_TOPIC_SLUG_MAX,
-    Math.max(1, GCS_OBJECT_NAME_MAX_LENGTH - suffix.length),
-  );
-  const slug = slugifyTopic(topic).slice(0, maxSlug);
-  return `${slug}${suffix}`;
+  return `${topicKey}${suffix}`;
 }
 
 async function uploadBytesToGcs(
   env: Env,
-  topic: string,
+  topicKey: string,
   ordinal: number,
   bytes: ArrayBuffer,
   contentType: string,
   fileName = '',
 ): Promise<string> {
   const bucketName = requireStorageBucket(env);
-  const objectName = buildDraftImageObjectName(topic, ordinal, contentType, fileName);
+  const objectName = buildDraftImageObjectName(topicKey, ordinal, contentType, fileName);
   const accessToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
   const response = await fetch(
     `https://storage.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucketName)}/o?uploadType=media&name=${encodeURIComponent(objectName)}`,
@@ -3155,9 +3150,10 @@ async function fetchDraftImages(env: Env, payload: Record<string, unknown>): Pro
 
 async function promoteDraftImageUrl(env: Env, payload: Record<string, unknown>): Promise<DraftImagePromoteResult> {
   const topic = String(payload.topic || '').trim();
+  const topicId = String(payload.topicId || '').trim();
   const sourceUrl = String(payload.sourceUrl || '').trim();
 
-  if (!topic) {
+  if (!topic && !topicId) {
     throw new Error('Topic is required to save the selected image.');
   }
   if (!sourceUrl) {
@@ -3165,17 +3161,18 @@ async function promoteDraftImageUrl(env: Env, payload: Record<string, unknown>):
   }
 
   const asset = await fetchImageAsset(normalizeDeliveryImageUrl(sourceUrl));
-  const imageUrl = await uploadBytesToGcs(env, topic, 1, asset.bytes, asset.contentType);
+  const imageUrl = await uploadBytesToGcs(env, topicId || topic, 1, asset.bytes, asset.contentType);
   return { imageUrl };
 }
 
 async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Promise<DraftImageUploadResult> {
   const topic = String(payload.topic || '').trim();
+  const topicId = String(payload.topicId || '').trim();
   const fileName = String(payload.fileName || '').trim();
   const fallbackContentType = String(payload.contentType || '').trim() || 'image/jpeg';
   const dataUrl = String(payload.dataUrl || '').trim();
 
-  if (!topic) {
+  if (!topic && !topicId) {
     throw new Error('Topic is required to upload an image.');
   }
 
@@ -3189,7 +3186,7 @@ async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Pro
     throw new Error('Only image uploads are supported.');
   }
 
-  const imageUrl = await uploadBytesToGcs(env, topic, 1, decoded.bytes, contentType, fileName);
+  const imageUrl = await uploadBytesToGcs(env, topicId || topic, 1, decoded.bytes, contentType, fileName);
   return { imageUrl };
 }
 

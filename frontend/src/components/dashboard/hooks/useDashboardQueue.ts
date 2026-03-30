@@ -328,12 +328,12 @@ export function useDashboardQueue({
   };
 
   const handlePromoteReviewImage = async (row: SheetRow, sourceUrl: string) => {
-    const result = await api.promoteDraftImageUrl(idToken, row.topic, sourceUrl);
+    const result = await api.promoteDraftImageUrl(idToken, row.topic, sourceUrl, row.topicId);
     return result.imageUrl;
   };
 
   const handleUploadReviewImage = async (row: SheetRow, file: File) => {
-    const result = await api.uploadDraftImage(idToken, row.topic, file);
+    const result = await api.uploadDraftImage(idToken, row.topic, file, row.topicId);
     return result.imageUrl;
   };
 

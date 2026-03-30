@@ -537,20 +537,22 @@ export class BackendApi {
     });
   }
 
-  async promoteDraftImageUrl(idToken: string, topic: string, sourceUrl: string): Promise<DraftImagePromoteResult> {
+  async promoteDraftImageUrl(idToken: string, topic: string, sourceUrl: string, topicId?: string): Promise<DraftImagePromoteResult> {
     return this.post<DraftImagePromoteResult>('promoteDraftImageUrl', idToken, {
       topic,
       sourceUrl: sourceUrl.trim(),
+      ...(topicId ? { topicId } : {}),
     });
   }
 
-  async uploadDraftImage(idToken: string, topic: string, file: File): Promise<DraftImageUploadResult> {
+  async uploadDraftImage(idToken: string, topic: string, file: File, topicId?: string): Promise<DraftImageUploadResult> {
     const dataUrl = await readFileAsDataUrl(file);
     return this.post<DraftImageUploadResult>('uploadDraftImage', idToken, {
       topic,
       fileName: file.name,
       contentType: file.type,
       dataUrl,
+      ...(topicId ? { topicId } : {}),
     });
   }
 

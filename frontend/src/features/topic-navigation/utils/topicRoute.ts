@@ -1,10 +1,6 @@
 import { type SheetRow } from '../../../services/sheets';
 
-type TopicRoutePayload = {
-  t: string;
-  d: string;
-  s: SheetRow['sourceSheet'];
-};
+type TopicRoutePayload = { id: string };
 
 function utf8BytesToBase64Url(bytes: Uint8Array): string {
   let bin = '';
@@ -24,19 +20,9 @@ function base64UrlToUtf8(id: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-const SOURCE_SHEETS: SheetRow['sourceSheet'][] = ['Topics', 'Draft', 'Post'];
-
-function isSourceSheet(value: unknown): value is SheetRow['sourceSheet'] {
-  return typeof value === 'string' && SOURCE_SHEETS.includes(value as SheetRow['sourceSheet']);
-}
-
-/** Stable URL segment for a sheet row (topic + date + source sheet). No new sheet column required. */
+/** URL segment for a sheet row, encoded from its stable topicId UUID. */
 export function encodeTopicRouteId(row: SheetRow): string {
-  const payload: TopicRoutePayload = {
-    t: row.topic?.trim() || '',
-    d: row.date?.trim() || '',
-    s: row.sourceSheet,
-  };
+  const payload: TopicRoutePayload = { id: row.topicId ?? '' };
   return utf8BytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
 }
 
@@ -57,8 +43,8 @@ export function decodeTopicRoutePayload(id: string): TopicRoutePayload | null {
     const parsed: unknown = JSON.parse(text);
     if (!parsed || typeof parsed !== 'object') return null;
     const o = parsed as Record<string, unknown>;
-    if (typeof o.t !== 'string' || typeof o.d !== 'string' || !isSourceSheet(o.s)) return null;
-    return { t: o.t, d: o.d, s: o.s };
+    if (typeof o.id !== 'string' || !o.id.trim()) return null;
+    return { id: o.id.trim() };
   } catch {
     return null;
   }
@@ -67,9 +53,7 @@ export function decodeTopicRoutePayload(id: string): TopicRoutePayload | null {
 export function findRowByTopicRouteId(rows: SheetRow[], id: string): SheetRow | undefined {
   const key = decodeTopicRoutePayload(normalizeTopicRouteParam(id));
   if (!key) return undefined;
-  return rows.find(
-    (r) => (r.topic?.trim() || '') === key.t && (r.date?.trim() || '') === key.d && r.sourceSheet === key.s,
-  );
+  return rows.find((r) => r.topicId === key.id);
 }
 
 /** DOM / scroll id aligned with topic URLs */

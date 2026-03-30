@@ -8,7 +8,7 @@ const DRAFT_SHEET = 'Draft';
 const POST_SHEET = 'Post';
 const POST_TEMPLATES_SHEET = 'PostTemplates';
 const NEWS_RESEARCH_SHEET = 'NewsResearch';
-const TOPICS_HEADERS = ['Topic', 'Date'];
+const TOPICS_HEADERS = ['Topic', 'Date', 'Topic Id'];
 const POST_TEMPLATES_HEADERS = ['Template id', 'Name', 'Rules'];
 const NEWS_RESEARCH_HEADERS = [
   'TopicKey',
@@ -42,9 +42,10 @@ const PIPELINE_HEADERS = [
   'Topic rules',
   'Image URLs JSON',
   'Generation template id',
+  'Topic Id',
 ];
 
-const PIPELINE_COLS = 21;
+const PIPELINE_COLS = 22;
 
 interface SpreadsheetMetadataResponse {
   sheets?: SpreadsheetSheetMetadata[];
@@ -63,6 +64,7 @@ export function buildTopicKey(topic: string, date: string): string {
 
 /** Normalized row shape for `bulkImportCampaign` (sheet-ready). */
 export interface BulkCampaignSheetPostInput {
+  topicId: string;
   topic: string;
   date: string;
   status: string;
@@ -235,6 +237,7 @@ export function coerceBulkCampaignPostsFromPayload(payload: Record<string, unkno
     }
 
     out.push({
+      topicId: trimStr(o.topicId) || crypto.randomUUID(),
       topic,
       date,
       status,
@@ -273,13 +276,13 @@ export class SheetsGateway {
   async getRows(spreadsheetId: string): Promise<SheetRow[]> {
     await this.ensureRequiredSheets(spreadsheetId);
 
-    const dataRanges = [`${TOPICS_SHEET}!A2:B`, `${DRAFT_SHEET}!A2:U`, `${POST_SHEET}!A2:U`];
+    const dataRanges = [`${TOPICS_SHEET}!A2:C`, `${DRAFT_SHEET}!A2:V`, `${POST_SHEET}!A2:V`];
     const [topicRows, draftRows, postRows] = await this.batchGetValues(spreadsheetId, dataRanges);
 
     const topics = topicRows
       .map((row, index) => {
-        const [topic = '', date = ''] = padRow(row, 2);
-        return { rowIndex: index + 2, topic, date };
+        const padded = padRow(row, 3);
+        return { rowIndex: index + 2, topic: padded[0], date: padded[1], topicId: padded[2] || '' };
       })
       .filter((row) => row.topic.trim());
 
@@ -306,7 +309,8 @@ export class SheetsGateway {
     }
 
     await this.ensureRequiredSheets(spreadsheetId);
-    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, [[topic, new Date().toISOString().slice(0, 10)]]);
+    const topicId = crypto.randomUUID();
+    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:C`, [[topic, new Date().toISOString().slice(0, 10), topicId]]);
     return { success: true };
   }
 
@@ -338,7 +342,7 @@ export class SheetsGateway {
       );
     }
 
-    const topicsValues = posts.map((p) => [p.topic, p.date]);
+    const topicsValues = posts.map((p) => [p.topic, p.date, p.topicId]);
     const draftValues = posts.map((p) => [
       p.topic,
       p.date,
@@ -361,10 +365,11 @@ export class SheetsGateway {
       p.topicGenerationRules,
       p.selectedImageUrlsJson,
       p.generationTemplateId,
+      p.topicId,
     ]);
 
-    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, topicsValues);
-    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:U`, draftValues);
+    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:C`, topicsValues);
+    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:V`, draftValues);
 
     return { success: true, imported: posts.length };
   }
@@ -495,8 +500,10 @@ export class SheetsGateway {
     await this.ensureRequiredSheets(spreadsheetId);
 
     const today = new Date().toISOString().slice(0, 10);
+    // Generate a new topicId for the re-draft so it gets its own image storage folder.
+    const topicId = crypto.randomUUID();
 
-    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, [[sourceRow.topic, today]]);
+    await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:C`, [[sourceRow.topic, today, topicId]]);
 
     const merged = mergePipelineVariantsWithSelection(
       sourceRow.variant1 || '',
@@ -512,7 +519,7 @@ export class SheetsGateway {
       selectedImageUrlsJson,
     );
 
-    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:U`, [[
+    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:V`, [[
       sourceRow.topic,
       today,
       'Drafted',
@@ -534,6 +541,7 @@ export class SheetsGateway {
       sourceRow.topicGenerationRules || '',
       selectedImageUrlsJson,
       sourceRow.generationTemplateId || '',
+      topicId,
     ]]);
 
     return { success: true };
@@ -561,7 +569,7 @@ export class SheetsGateway {
 
     const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
     if (draftRowIndex) {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:U${draftRowIndex}`, [[
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:V${draftRowIndex}`, [[
         row.topic,
         row.date,
         row.status || 'Published',
@@ -583,6 +591,7 @@ export class SheetsGateway {
         row.topicGenerationRules || '',
         row.selectedImageUrlsJson || '',
         row.generationTemplateId || '',
+        row.topicId || '',
       ]]);
     }
 
@@ -608,12 +617,13 @@ export class SheetsGateway {
       row.topicGenerationRules || '',
       row.selectedImageUrlsJson || '',
       row.generationTemplateId || '',
+      row.topicId || '',
     ]];
 
     if (row.postRowIndex) {
-      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:U${row.postRowIndex}`, postValues);
+      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:V${row.postRowIndex}`, postValues);
     } else {
-      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:U`, postValues);
+      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:V`, postValues);
     }
 
     return { success: true };
@@ -663,6 +673,7 @@ export class SheetsGateway {
     return {
       rowIndex: index + 2,
       sourceSheet,
+      topicId: paddedRow[21] || undefined,
       topic: paddedRow[0],
       date: paddedRow[1],
       status: paddedRow[2] || 'Pending',
@@ -690,7 +701,7 @@ export class SheetsGateway {
   }
 
   private mergeRows(
-    topics: Array<{ rowIndex: number; topic: string; date: string }>,
+    topics: Array<{ rowIndex: number; topic: string; date: string; topicId: string }>,
     drafts: SheetRow[],
     posts: SheetRow[],
   ): SheetRow[] {
@@ -701,6 +712,7 @@ export class SheetsGateway {
         rowIndex: topicRow.rowIndex,
         sourceSheet: 'Topics',
         topicRowIndex: topicRow.rowIndex,
+        topicId: topicRow.topicId || undefined,
         topic: topicRow.topic,
         date: topicRow.date,
         status: 'Pending',
@@ -728,9 +740,11 @@ export class SheetsGateway {
     for (const draftRow of drafts) {
       const key = buildTopicKey(draftRow.topic, draftRow.date);
       const existing = merged.get(key);
+      const topicId = draftRow.topicId || existing?.topicId;
       merged.set(key, {
         ...(existing ?? ({} as SheetRow)),
         ...draftRow,
+        topicId,
         sourceSheet: 'Draft',
         rowIndex: draftRow.draftRowIndex ?? draftRow.rowIndex,
         topicRowIndex: existing?.topicRowIndex,
@@ -747,9 +761,11 @@ export class SheetsGateway {
         existing?.sourceSheet === 'Draft' ? (existing.topicGenerationRules ?? '') : undefined;
       const templateIdFromDraft =
         existing?.sourceSheet === 'Draft' ? (existing.generationTemplateId ?? '') : undefined;
+      const topicId = postRow.topicId || existing?.topicId;
       merged.set(key, {
         ...(existing ?? ({} as SheetRow)),
         ...postRow,
+        topicId,
         sourceSheet: 'Post',
         rowIndex: postRow.postRowIndex ?? postRow.rowIndex,
         topicRowIndex: existing?.topicRowIndex,
@@ -816,6 +832,15 @@ export class SheetsGateway {
       if (!String(uCell?.[0]?.[0] || '').trim()) {
         await this.updateValues(spreadsheetId, `${sheet}!U1`, [['Generation template id']]);
       }
+      const [vCell] = await this.batchGetValues(spreadsheetId, [`${sheet}!V1:V1`]);
+      if (!String(vCell?.[0]?.[0] || '').trim()) {
+        await this.updateValues(spreadsheetId, `${sheet}!V1`, [['Topic Id']]);
+      }
+    }
+    // Ensure Topics sheet has the Topic Id column (column C).
+    const [topicsIdCell] = await this.batchGetValues(spreadsheetId, [`${TOPICS_SHEET}!C1:C1`]);
+    if (!String(topicsIdCell?.[0]?.[0] || '').trim()) {
+      await this.updateValues(spreadsheetId, `${TOPICS_SHEET}!C1`, [['Topic Id']]);
     }
 
     return metadata;
