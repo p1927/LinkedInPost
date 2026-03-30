@@ -38,10 +38,19 @@ def _d1_database_name() -> str:
     return m.group(1) if m else "linkedin-pipeline-db"
 
 
-def _run(cmd: list[str], *, cwd: Path | None = None, env: dict | None = None) -> int:
+def _run(
+    cmd: list[str],
+    *,
+    cwd: Path | None = None,
+    env: dict | None = None,
+    stdin_disconnect: bool = False,
+) -> int:
     print(f"\n→ {' '.join(cmd)}\n", flush=True)
+    kw: dict = {}
+    if stdin_disconnect:
+        kw["stdin"] = subprocess.DEVNULL
     try:
-        return subprocess.call(cmd, cwd=cwd or ROOT, env=env)
+        return subprocess.call(cmd, cwd=cwd or ROOT, env=env, **kw)
     except FileNotFoundError as e:
         print(f"Command not found: {e}", file=sys.stderr)
         return 127
@@ -56,89 +65,123 @@ def _which_python() -> str:
 
 
 def menu_setup() -> None:
-    print(
-        """
+    py = _which_python()
+    while True:
+        print(
+            """
 Setup (python3 setup.py)
   1) Default
   2) --cloudflare
   3) --all
-  0) Back
+  0) Back to main menu
 """
-    )
-    c = input("Choice: ").strip()
-    py = _which_python()
-    if c == "1":
-        _run([py, str(SETUP_PY)], cwd=ROOT)
-    elif c == "2":
-        _run([py, str(SETUP_PY), "--cloudflare"], cwd=ROOT)
-    elif c == "3":
-        _run([py, str(SETUP_PY), "--all"], cwd=ROOT)
+        )
+        c = input("Choice: ").strip()
+        if c == "0":
+            return
+        if c == "1":
+            _run([py, str(SETUP_PY)], cwd=ROOT)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        if c == "2":
+            _run([py, str(SETUP_PY), "--cloudflare"], cwd=ROOT)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        if c == "3":
+            _run([py, str(SETUP_PY), "--all"], cwd=ROOT)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        print("Unknown option. Choose 0–3.")
 
 
 def menu_migrations() -> None:
     db = _d1_database_name()
-    print(
-        f"""
-D1 migrations (database: {db})
-  1) Apply --local
-  2) Apply --remote
-  0) Back
-"""
-    )
-    c = input("Choice: ").strip()
     npm = _which_npm()
     if not npm:
         print("npm not found; install Node.js or use: cd worker && npx wrangler d1 migrations apply ...")
+        input("\nPress Enter to return to the main menu… ")
         return
     base = [npm, "exec", "wrangler", "d1", "migrations", "apply", db]
-    if c == "1":
-        _run(base + ["--local"], cwd=WORKER)
-    elif c == "2":
-        confirm = input("Apply to REMOTE D1? Type yes: ").strip().lower()
-        if confirm == "yes":
-            _run(base + ["--remote"], cwd=WORKER)
-        else:
-            print("Cancelled.")
+    while True:
+        print(
+            f"""
+D1 migrations (database: {db})
+  1) Apply --local
+  2) Apply --remote
+  0) Back to main menu
+"""
+        )
+        c = input("Choice: ").strip()
+        if c == "0":
+            return
+        if c == "1":
+            _run(base + ["--local"], cwd=WORKER, stdin_disconnect=True)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        if c == "2":
+            confirm = input("Apply to REMOTE D1? Type yes: ").strip().lower()
+            if confirm == "yes":
+                _run(base + ["--remote"], cwd=WORKER, stdin_disconnect=True)
+            else:
+                print("Cancelled.")
+            input("\nPress Enter to return to the main menu… ")
+            return
+        print("Unknown option. Choose 0–2.")
 
 
 def menu_run_locally() -> None:
     npm = _which_npm()
     if not npm:
         print("npm not found.")
+        input("\nPress Enter to return to the main menu… ")
         return
-    print(
-        """
+    while True:
+        print(
+            """
 Run locally
   1) Worker only (wrangler dev --env local)
   2) Frontend only (Vite)
   3) Worker + Frontend (worker in background, then frontend)
-  0) Back
+  0) Back to main menu
 """
-    )
-    c = input("Choice: ").strip()
-    if c == "1":
-        _run([npm, "run", "dev"], cwd=WORKER)
-    elif c == "2":
-        _run([npm, "run", "dev"], cwd=FRONTEND)
-    elif c == "3":
-        worker_proc: subprocess.Popen | None = None
-        try:
-            worker_proc = subprocess.Popen(
-                [npm, "run", "dev"],
-                cwd=WORKER,
-                start_new_session=True,
-            )
-            print(f"Worker PID {worker_proc.pid}. Starting frontend… (Ctrl+C stops frontend; worker will be terminated)\n")
+        )
+        c = input("Choice: ").strip()
+        if c == "0":
+            return
+        if c == "1":
+            _run([npm, "run", "dev"], cwd=WORKER)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        if c == "2":
             _run([npm, "run", "dev"], cwd=FRONTEND)
-        except KeyboardInterrupt:
-            print("\nInterrupted.")
-        finally:
-            if worker_proc and worker_proc.poll() is None:
-                _terminate_process_tree(worker_proc.pid)
-                try:
-                    worker_proc.wait(timeout=15)
-                except subprocess.TimeoutExpired:
-                    worker_proc.kill()
+            input("\nPress Enter to return to the main menu… ")
+            return
+        if c == "3":
+            worker_proc: subprocess.Popen | None = None
+            try:
+                worker_proc = subprocess.Popen(
+                    [npm, "run", "dev"],
+                    cwd=WORKER,
+                    start_new_session=True,
+                    stdin=subprocess.DEVNULL,
+                )
+                print(
+                    f"Worker PID {worker_proc.pid}. Starting frontend… "
+                    "(Ctrl+C stops frontend; worker will be terminated)\n"
+                )
+                _run([npm, "run", "dev"], cwd=FRONTEND)
+            except KeyboardInterrupt:
+                print("\nInterrupted.")
+            finally:
+                if worker_proc and worker_proc.poll() is None:
+                    _terminate_process_tree(worker_proc.pid)
+                    try:
+                        worker_proc.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        worker_proc.kill()
+            input("\nPress Enter to return to the main menu… ")
+            return
+        print("Unknown option. Choose 0–3.")
 
 
 def _terminate_process_tree(pid: int) -> None:
@@ -160,27 +203,36 @@ def _terminate_process_tree(pid: int) -> None:
 
 
 def menu_features() -> None:
-    print(
-        """
+    py = _which_python()
+    while True:
+        print(
+            """
 Features (features.yaml → generated TypeScript)
   1) Show features.yaml
   2) Regenerate worker + frontend feature flags
-  0) Back
+  0) Back to main menu
 """
-    )
-    c = input("Choice: ").strip()
-    if c == "1":
-        if FEATURES_YAML.is_file():
-            print(f"\n--- {FEATURES_YAML} ---\n")
-            print(FEATURES_YAML.read_text(encoding="utf-8"))
-        else:
-            print(f"Missing {FEATURES_YAML}")
-    elif c == "2":
-        py = _which_python()
-        if not GENERATE_FEATURES.is_file():
-            print(f"Missing {GENERATE_FEATURES}")
+        )
+        c = input("Choice: ").strip()
+        if c == "0":
             return
-        _run([py, str(GENERATE_FEATURES)], cwd=ROOT)
+        if c == "1":
+            if FEATURES_YAML.is_file():
+                print(f"\n--- {FEATURES_YAML} ---\n")
+                print(FEATURES_YAML.read_text(encoding="utf-8"))
+            else:
+                print(f"Missing {FEATURES_YAML}")
+            input("\nPress Enter to return to the main menu… ")
+            return
+        if c == "2":
+            if not GENERATE_FEATURES.is_file():
+                print(f"Missing {GENERATE_FEATURES}")
+                input("\nPress Enter to return to the main menu… ")
+                return
+            _run([py, str(GENERATE_FEATURES)], cwd=ROOT, stdin_disconnect=True)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        print("Unknown option. Choose 0–2.")
 
 
 def main_menu() -> None:
@@ -209,7 +261,7 @@ def main_menu() -> None:
         elif choice == "4":
             menu_features()
         else:
-            print("Unknown option.")
+            print("Unknown option. Choose 0–4.")
 
 
 if __name__ == "__main__":
