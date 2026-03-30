@@ -1,10 +1,9 @@
 /** Raw row from `pipeline_state` (D1). */
 export interface PipelineStateDbRow {
   spreadsheet_id: string;
-  topic_key: string;
+  topic_id: string;
   topic: string;
   date: string;
-  topic_id: string | null;
   status: string;
   variant1: string;
   variant2: string;
@@ -32,7 +31,7 @@ export interface PipelineStateDbRow {
 export interface NewsSnapshotDbRow {
   id: string;
   spreadsheet_id: string;
-  topic_key: string;
+  topic_id: string;
   fetched_at: string;
   window_start: string;
   window_end: string;
@@ -44,7 +43,7 @@ export interface NewsSnapshotDbRow {
 
 export interface NewsSnapshotListItem {
   id: string;
-  topicKey: string;
+  topicId: string;
   fetchedAt: string;
   windowStart: string;
   windowEnd: string;

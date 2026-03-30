@@ -149,47 +149,53 @@ def pad_row(row, width):
     return row + [''] * (width - len(row))
 
 
-def ensure_sheet_exists(sheets_service, title, headers):
-    metadata = sheets_service.spreadsheets().get(spreadsheetId=SHEET_ID).execute()
-    sheets = metadata.get('sheets', [])
-    existing_titles = {sheet.get('properties', {}).get('title') for sheet in sheets}
+def ensure_required_sheets(sheets_service):
+    """Ensure all required sheets exist with correct headers using minimal API calls (2 reads)."""
+    required = [
+        (TOPICS_SHEET, TOPICS_HEADERS),
+        (DRAFT_SHEET, PIPELINE_HEADERS),
+        (POST_SHEET, PIPELINE_HEADERS),
+    ]
 
-    if title not in existing_titles:
+    # 1 read: get all sheet metadata at once
+    metadata = sheets_service.spreadsheets().get(spreadsheetId=SHEET_ID).execute()
+    existing_titles = {
+        sheet.get('properties', {}).get('title')
+        for sheet in metadata.get('sheets', [])
+    }
+
+    # create all missing sheets in one batchUpdate
+    missing_sheets = [title for title, _ in required if title not in existing_titles]
+    if missing_sheets:
         sheets_service.spreadsheets().batchUpdate(
             spreadsheetId=SHEET_ID,
             body={
                 'requests': [
-                    {
-                        'addSheet': {
-                            'properties': {
-                                'title': title,
-                            }
-                        }
-                    }
+                    {'addSheet': {'properties': {'title': title}}}
+                    for title in missing_sheets
                 ]
             }
         ).execute()
 
-    header_range = f"{title}!A1"
-    response = sheets_service.spreadsheets().values().get(
+    # 1 read: check all header rows at once
+    header_ranges = [f"{title}!A1" for title, _ in required]
+    batch_result = sheets_service.spreadsheets().values().batchGet(
         spreadsheetId=SHEET_ID,
-        range=header_range,
+        ranges=header_ranges,
     ).execute()
-    header_values = response.get('values', [])
+    value_ranges = batch_result.get('valueRanges', [])
 
-    if not header_values:
-        sheets_service.spreadsheets().values().update(
+    # write all missing headers in one batchUpdate
+    missing_headers = [
+        {'range': f"{title}!A1", 'values': [headers]}
+        for i, (title, headers) in enumerate(required)
+        if not (value_ranges[i].get('values', []) if i < len(value_ranges) else [])
+    ]
+    if missing_headers:
+        sheets_service.spreadsheets().values().batchUpdate(
             spreadsheetId=SHEET_ID,
-            range=header_range,
-            valueInputOption='RAW',
-            body={'values': [headers]},
+            body={'valueInputOption': 'RAW', 'data': missing_headers},
         ).execute()
-
-
-def ensure_required_sheets(sheets_service):
-    ensure_sheet_exists(sheets_service, TOPICS_SHEET, TOPICS_HEADERS)
-    ensure_sheet_exists(sheets_service, DRAFT_SHEET, PIPELINE_HEADERS)
-    ensure_sheet_exists(sheets_service, POST_SHEET, PIPELINE_HEADERS)
 
 
 def get_sheet_rows(sheets_service, sheet_name, expected_width):
@@ -199,6 +205,23 @@ def get_sheet_rows(sheets_service, sheet_name, expected_width):
         range=sheet_range,
     ).execute()
     return result.get('values', [])
+
+
+def batch_get_sheet_rows(sheets_service, sheets):
+    """Fetch multiple sheet ranges in a single API call.
+
+    sheets: list of (sheet_name, expected_width) tuples
+    Returns: list of row lists in the same order as input
+    """
+    ranges = [
+        f"{name}!A2:{chr(ord('A') + width - 1)}1000"
+        for name, width in sheets
+    ]
+    result = sheets_service.spreadsheets().values().batchGet(
+        spreadsheetId=SHEET_ID,
+        ranges=ranges,
+    ).execute()
+    return [vr.get('values', []) for vr in result.get('valueRanges', [])]
 
 
 def build_existing_row_map(rows, expected_width):
@@ -961,9 +984,11 @@ def log_to_google_doc(docs_service, topic, text):
 def process_drafts(sheets_service, storage_bucket):
     """Reads pending topics, generates content & images, saves drafts to Sheet."""
     ensure_required_sheets(sheets_service)
-    topic_rows = get_sheet_rows(sheets_service, TOPICS_SHEET, 2)
-    draft_rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
-    post_rows = get_sheet_rows(sheets_service, POST_SHEET, 14)
+    topic_rows, draft_rows, post_rows = batch_get_sheet_rows(sheets_service, [
+        (TOPICS_SHEET, 2),
+        (DRAFT_SHEET, 14),
+        (POST_SHEET, 14),
+    ])
 
     existing_drafts = build_existing_row_map(draft_rows, 14)
     existing_posts = build_existing_row_map(post_rows, 14)
@@ -1024,7 +1049,7 @@ def process_drafts(sheets_service, storage_bucket):
 
 def process_refinement(sheets_service, storage_bucket):
     ensure_required_sheets(sheets_service)
-    draft_rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
+    [draft_rows] = batch_get_sheet_rows(sheets_service, [(DRAFT_SHEET, 14)])
     existing_drafts = build_existing_row_map(draft_rows, 14)
     refine_key = build_topic_key(REFINE_TOPIC, REFINE_DATE)
     existing_draft = existing_drafts.get(refine_key)
@@ -1082,8 +1107,10 @@ def process_refinement(sheets_service, storage_bucket):
 def process_publishing(sheets_service, docs_service, storage_bucket):
     """Finds 'Approved' rows whose scheduled time has passed and posts them."""
     ensure_required_sheets(sheets_service)
-    rows = get_sheet_rows(sheets_service, DRAFT_SHEET, 14)
-    post_rows = get_sheet_rows(sheets_service, POST_SHEET, 14)
+    rows, post_rows = batch_get_sheet_rows(sheets_service, [
+        (DRAFT_SHEET, 14),
+        (POST_SHEET, 14),
+    ])
     existing_posts = build_existing_row_map(post_rows, 14)
 
     now = datetime.datetime.now()
@@ -1163,22 +1190,16 @@ def process_publishing(sheets_service, docs_service, storage_bucket):
         raise ValueError(f"Unable to find draft row for topic '{TARGET_TOPIC}' on '{TARGET_DATE}'.")
 
     if draft_updates:
-        for update in draft_updates:
-            sheets_service.spreadsheets().values().update(
-                spreadsheetId=SHEET_ID,
-                range=update['range'],
-                valueInputOption="RAW",
-                body={'values': update['values']}
-            ).execute()
+        sheets_service.spreadsheets().values().batchUpdate(
+            spreadsheetId=SHEET_ID,
+            body={'valueInputOption': 'RAW', 'data': draft_updates},
+        ).execute()
 
     if post_updates:
-        for update in post_updates:
-            sheets_service.spreadsheets().values().update(
-                spreadsheetId=SHEET_ID,
-                range=update['range'],
-                valueInputOption='RAW',
-                body={'values': update['values']}
-            ).execute()
+        sheets_service.spreadsheets().values().batchUpdate(
+            spreadsheetId=SHEET_ID,
+            body={'valueInputOption': 'RAW', 'data': post_updates},
+        ).execute()
 
     if post_appends:
         sheets_service.spreadsheets().values().append(

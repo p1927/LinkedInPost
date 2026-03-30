@@ -174,6 +174,7 @@ export function coerceBulkCampaignPostsFromPayload(payload: Record<string, unkno
 
   const out: BulkCampaignSheetPostInput[] = [];
   const seenKeys = new Set<string>();
+  const seenTopicIds = new Set<string>();
 
   for (let i = 0; i < raw.length; i++) {
     const item = raw[i];
@@ -189,6 +190,15 @@ export function coerceBulkCampaignPostsFromPayload(payload: Record<string, unkno
     if (!ISO_DATE_RE.test(date)) {
       throw new Error(`posts[${i}].date must be YYYY-MM-DD.`);
     }
+
+    const topicId = trimStr(o.topicId);
+    if (!topicId) {
+      throw new Error(`posts[${i}].topicId is required.`);
+    }
+    if (seenTopicIds.has(topicId)) {
+      throw new Error(`Duplicate topicId in import: ${topicId}.`);
+    }
+    seenTopicIds.add(topicId);
 
     const key = buildTopicKey(topic, date);
     if (seenKeys.has(key)) {
@@ -225,7 +235,7 @@ export function coerceBulkCampaignPostsFromPayload(payload: Record<string, unkno
     }
 
     out.push({
-      topicId: trimStr(o.topicId) || crypto.randomUUID(),
+      topicId,
       topic,
       date,
       status,

@@ -30,6 +30,8 @@ export interface ResearchArticle {
 }
 
 export interface NewsResearchSearchPayload {
+  /** Stable row id (Topics column C / D1). */
+  topicId: string;
   topic: string;
   date: string;
   windowStart: string;

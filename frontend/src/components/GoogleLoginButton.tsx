@@ -43,7 +43,7 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
 
   return (
     <div className="flex w-full min-w-[min(100%,280px)] max-w-sm flex-col items-center justify-center gap-2.5 sm:w-auto">
-      <div className="glass-panel w-full max-w-[280px] rounded-full border border-white/55 p-2 shadow-sm ring-1 ring-white/50 transition-all duration-200 hover:shadow-card [&_iframe]:min-h-[44px] [&_iframe]:min-w-[240px] [&_iframe]:max-w-full">
+      <div className="glass-panel flex w-full max-w-[280px] min-h-[56px] items-center justify-center rounded-full border border-white/55 px-2 py-2 shadow-sm ring-1 ring-white/50 transition-all duration-200 hover:shadow-card [&_iframe]:mx-auto [&_iframe]:block [&_iframe]:max-h-none [&_iframe]:max-w-full">
         <GoogleLogin
           onSuccess={(credentialResponse) => {
             const credential = credentialResponse.credential;
@@ -67,6 +67,13 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
           text="signin_with"
           shape="pill"
           theme="outline"
+          size="large"
+          logo_alignment="left"
+          width={264}
+          containerProps={{
+            className: 'flex w-full items-center justify-center overflow-visible',
+            style: { height: 'auto', minHeight: 52 },
+          }}
         />
       </div>
       {loginHint ? (

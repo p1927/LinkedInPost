@@ -22,7 +22,7 @@ function base64UrlToUtf8(id: string): string {
 
 /** URL segment for a sheet row, encoded from its stable topicId UUID. */
 export function encodeTopicRouteId(row: SheetRow): string {
-  const payload: TopicRoutePayload = { id: row.topicId ?? '' };
+  const payload: TopicRoutePayload = { id: row.topicId };
   return utf8BytesToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
 }
 

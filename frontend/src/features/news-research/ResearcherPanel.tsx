@@ -119,6 +119,7 @@ export function ResearcherPanel({
     setWarnings([]);
     try {
       const payload: NewsResearchSearchPayload = {
+        topicId: row.topicId,
         topic: row.topic,
         date: row.date,
         windowStart: datetimeLocalToIso(windowStart),

@@ -1,5 +1,4 @@
 import type { Env } from '../index';
-import { buildTopicKey } from '../persistence/drafts';
 import { insertNewsSnapshotAndPrune } from '../persistence/pipeline-db/news';
 import { PipelineStore } from '../persistence/pipeline-db/pipeline';
 import { collectEnabledRssUrls, normalizeNewsResearchStored } from './config';
@@ -30,11 +29,15 @@ function newsSnapshotMaxPerTopic(env: Env): number {
 }
 
 function parsePayload(payload: Record<string, unknown>): NewsResearchSearchPayload {
+  const topicId = String(payload.topicId || '').trim();
   const topic = String(payload.topic || '').trim();
   const date = String(payload.date || '').trim();
   const windowStart = String(payload.windowStart || '').trim();
   const windowEnd = String(payload.windowEnd || '').trim();
   const customQuery = String(payload.customQuery || '').trim();
+  if (!topicId) {
+    throw new Error('topicId is required for news research.');
+  }
   if (!topic || !date) {
     throw new Error('Topic and date are required for news research.');
   }
@@ -44,7 +47,7 @@ function parsePayload(payload: Record<string, unknown>): NewsResearchSearchPaylo
   if (Number.isNaN(Date.parse(windowStart)) || Number.isNaN(Date.parse(windowEnd))) {
     throw new Error('Invalid news window dates.');
   }
-  return { topic, date, windowStart, windowEnd, customQuery: customQuery || undefined };
+  return { topicId, topic, date, windowStart, windowEnd, customQuery: customQuery || undefined };
 }
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -150,13 +153,12 @@ export async function searchNewsResearch(
     );
   }
 
-  const topicKey = buildTopicKey(p.topic, p.date);
   try {
     const pipeline = new PipelineStore(env.PIPELINE_DB);
     await pipeline.ensureWorkspace(spreadsheetId);
     await insertNewsSnapshotAndPrune(env.PIPELINE_DB, {
       spreadsheetId,
-      topicKey,
+      topicId: p.topicId,
       fetchedAt: new Date().toISOString(),
       windowStart: p.windowStart,
       windowEnd: p.windowEnd,

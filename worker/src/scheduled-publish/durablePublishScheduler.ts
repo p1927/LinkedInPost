@@ -11,7 +11,7 @@ export async function armScheduledPublish(
   task: ScheduledPublishTask,
 ): Promise<Response> {
   const durableObjectId = env.SCHEDULED_LINKEDIN_PUBLISH.idFromName(
-    buildScheduledPublishTaskName(task.topic, task.date, task.channel),
+    buildScheduledPublishTaskName(task.topicId, task.channel),
   );
   const durableObjectStub = env.SCHEDULED_LINKEDIN_PUBLISH.get(durableObjectId);
   return durableObjectStub.fetch('https://scheduled-publish-do/arm', {
@@ -28,7 +28,7 @@ export async function cancelScheduledPublish(
   payload: CancelScheduledPublishPayload,
 ): Promise<Response> {
   const durableObjectId = env.SCHEDULED_LINKEDIN_PUBLISH.idFromName(
-    buildScheduledPublishTaskName(payload.topic, payload.date, payload.channel),
+    buildScheduledPublishTaskName(payload.topicId, payload.channel),
   );
   const durableObjectStub = env.SCHEDULED_LINKEDIN_PUBLISH.get(durableObjectId);
   return durableObjectStub.fetch('https://scheduled-publish-do/cancel', {

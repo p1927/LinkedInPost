@@ -8,9 +8,17 @@ export interface TopicSheetEntry {
   topicId: string;
 }
 
+export function requireTopicId(row: SheetRow): string {
+  const id = String(row.topicId || '').trim();
+  if (!id) {
+    throw new Error('topicId is required. Each Topics row must have a Topic Id (column C).');
+  }
+  return id;
+}
+
 export function pipelineDbRowToFields(row: PipelineStateDbRow): Omit<SheetRow, 'rowIndex' | 'sourceSheet' | 'topicRowIndex' | 'draftRowIndex' | 'postRowIndex'> {
   return {
-    topicId: row.topic_id || undefined,
+    topicId: row.topic_id,
     topic: row.topic,
     date: row.date,
     status: row.status || 'Pending',
@@ -36,17 +44,13 @@ export function pipelineDbRowToFields(row: PipelineStateDbRow): Omit<SheetRow, '
   };
 }
 
-export function sheetRowToPipelineColumns(
-  spreadsheetId: string,
-  topicKey: string,
-  row: SheetRow,
-): Record<string, string | null> {
+export function sheetRowToPipelineColumns(spreadsheetId: string, row: SheetRow): Record<string, string | null> {
+  const topicId = requireTopicId(row);
   return {
     spreadsheet_id: spreadsheetId,
-    topic_key: topicKey,
+    topic_id: topicId,
     topic: row.topic,
     date: row.date,
-    topic_id: row.topicId ?? null,
     status: row.status || 'Pending',
     variant1: row.variant1 ?? '',
     variant2: row.variant2 ?? '',
@@ -75,10 +79,15 @@ export function mergeTopicWithPipeline(
   pipeline: PipelineStateDbRow | undefined,
   legacy: { draftRowIndex?: number; postRowIndex?: number } | undefined,
 ): SheetRow {
+  const sheetTopicId = String(topic.topicId || '').trim();
+  if (!sheetTopicId) {
+    throw new Error('Topics sheet row is missing Topic Id (column C).');
+  }
+
   const baseFields = pipeline
     ? pipelineDbRowToFields(pipeline)
     : {
-        topicId: topic.topicId || undefined,
+        topicId: sheetTopicId,
         topic: topic.topic,
         date: topic.date,
         status: 'Pending',
@@ -113,7 +122,7 @@ export function mergeTopicWithPipeline(
     topicRowIndex: topic.rowIndex,
     draftRowIndex: legacy?.draftRowIndex,
     postRowIndex: legacy?.postRowIndex,
-    topicId: baseFields.topicId || topic.topicId || undefined,
+    topicId: baseFields.topicId,
     topic: baseFields.topic,
     date: baseFields.date,
     status: baseFields.status,

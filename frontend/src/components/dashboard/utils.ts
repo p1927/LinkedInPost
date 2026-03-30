@@ -7,7 +7,7 @@ import { type PopupProvider, type OAuthPopupMessage, type RecipientOption } from
 import { type OAuthStartResult } from '../../services/backendApi';
 
 export function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
-  return `${action}:${(row.topic || '').trim()}::${(row.date || '').trim()}`;
+  return `${action}:${(row.topicId || '').trim()}`;
 }
 
 export function getNormalizedRowStatus(status?: string): string {
@@ -34,29 +34,22 @@ export function canPreviewPublishedContent(row: SheetRow): boolean {
   return status === 'approved' || status === 'published';
 }
 
-export function isSameTopicDate(left: SheetRow, right: SheetRow): boolean {
-  return (left.topic || '').trim() === (right.topic || '').trim() && (left.date || '').trim() === (right.date || '').trim();
+/** Prefer matching pipeline rows by stable topicId (authoritative after D1). */
+export function isSameTopicId(left: SheetRow, right: SheetRow): boolean {
+  const a = (left.topicId || '').trim();
+  const b = (right.topicId || '').trim();
+  return Boolean(a && b && a === b);
 }
 
-/** After createDraftFromPublished, pick the newest matching draft row (highest draft sheet index). */
-export function findDraftRowAfterCreateFromPublished(
-  rows: SheetRow[],
-  sourcePublishedRow: SheetRow,
-  selectedText: string,
-): SheetRow | null {
-  const topic = (sourcePublishedRow.topic || '').trim();
-  const msg = selectedText.trim();
-  if (!topic || !msg) return null;
+export function isSameTopicDate(left: SheetRow, right: SheetRow): boolean {
+  return isSameTopicId(left, right);
+}
 
-  const candidates = rows.filter(
-    (r) =>
-      (r.topic || '').trim() === topic
-      && getNormalizedRowStatus(r.status) === 'drafted'
-      && (r.selectedText || '').trim() === msg
-      && typeof r.draftRowIndex === 'number',
-  );
-  if (candidates.length === 0) return null;
-  return candidates.reduce((best, r) => ((r.draftRowIndex ?? 0) > (best.draftRowIndex ?? 0) ? r : best));
+/** After createDraftFromPublished, select the new row by topicId returned from the API. */
+export function findRowByTopicId(rows: SheetRow[], topicId: string): SheetRow | undefined {
+  const id = topicId.trim();
+  if (!id) return undefined;
+  return rows.find((r) => (r.topicId || '').trim() === id);
 }
 
 /** Single-line queue date for compact list rows (ISO yyyy-mm-dd or parseable string). */

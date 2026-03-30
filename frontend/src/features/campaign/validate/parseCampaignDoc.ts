@@ -74,6 +74,7 @@ function coerceChannels(raw: unknown, path: JSONPath, source: string, root: Node
 
 function postToPayload(p: CampaignPostV1): BulkImportCampaignPostPayload {
   return {
+    topicId: crypto.randomUUID(),
     topic: p.topic,
     date: p.date,
     status: p.status,

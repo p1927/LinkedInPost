@@ -31,8 +31,7 @@ export interface PublishContentResult {
 }
 
 export interface CancelScheduledPublishRequest {
-  topic: string;
-  date: string;
+  topicId: string;
   scheduledTime: string;
   channel?: ChannelId;
 }
@@ -44,6 +43,7 @@ export interface CancelScheduledPublishResult {
 
 /** Payload item for campaign bulk import (worker coerces to sheet rows). */
 export interface BulkImportCampaignPostPayload {
+  topicId: string;
   topic: string;
   date: string;
   status?: string;
@@ -117,6 +117,7 @@ export interface ResearchArticleRef {
 }
 
 export interface NewsResearchSearchPayload {
+  topicId: string;
   topic: string;
   date: string;
   windowStart: string;
@@ -144,7 +145,7 @@ export interface NewsResearchSearchResult {
 
 export interface NewsResearchHistoryItem {
   id: string;
-  topicKey: string;
+  topicId: string;
   fetchedAt: string;
   windowStart: string;
   windowEnd: string;
@@ -156,7 +157,7 @@ export interface NewsResearchHistoryItem {
 
 export interface NewsResearchSnapshotDetail {
   id: string;
-  topicKey: string;
+  topicId: string;
   fetchedAt: string;
   windowStart: string;
   windowEnd: string;
@@ -366,13 +367,8 @@ export class BackendApi {
     return this.post<NewsResearchSearchResult>('searchNewsResearch', idToken, { ...payload });
   }
 
-  async listNewsResearchHistory(
-    idToken: string,
-    topic: string,
-    date: string,
-    limit = 20,
-  ): Promise<NewsResearchHistoryItem[]> {
-    return this.post<NewsResearchHistoryItem[]>('listNewsResearchHistory', idToken, { topic, date, limit });
+  async listNewsResearchHistory(idToken: string, topicId: string, limit = 20): Promise<NewsResearchHistoryItem[]> {
+    return this.post<NewsResearchHistoryItem[]>('listNewsResearchHistory', idToken, { topicId, limit });
   }
 
   async getNewsResearchSnapshot(idToken: string, id: string): Promise<NewsResearchSnapshotDetail> {
@@ -491,8 +487,8 @@ export class BackendApi {
     emailBcc: string,
     emailSubject: string,
     selectedImageUrlsJson = '',
-  ): Promise<void> {
-    await this.post<{ success: true }>('createDraftFromPublished', idToken, {
+  ): Promise<{ success: true; topicId: string }> {
+    return this.post<{ success: true; topicId: string }>('createDraftFromPublished', idToken, {
       row,
       selectedText,
       selectedImageId,
@@ -574,22 +570,20 @@ export class BackendApi {
     });
   }
 
-  async promoteDraftImageUrl(idToken: string, topic: string, sourceUrl: string, topicId?: string): Promise<DraftImagePromoteResult> {
+  async promoteDraftImageUrl(idToken: string, sourceUrl: string, topicId: string): Promise<DraftImagePromoteResult> {
     return this.post<DraftImagePromoteResult>('promoteDraftImageUrl', idToken, {
-      topic,
       sourceUrl: sourceUrl.trim(),
-      ...(topicId ? { topicId } : {}),
+      topicId,
     });
   }
 
-  async uploadDraftImage(idToken: string, topic: string, file: File, topicId?: string): Promise<DraftImageUploadResult> {
+  async uploadDraftImage(idToken: string, file: File, topicId: string): Promise<DraftImageUploadResult> {
     const dataUrl = await readFileAsDataUrl(file);
     return this.post<DraftImageUploadResult>('uploadDraftImage', idToken, {
-      topic,
       fileName: file.name,
       contentType: file.type,
       dataUrl,
-      ...(topicId ? { topicId } : {}),
+      topicId,
     });
   }
 

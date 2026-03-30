@@ -10,24 +10,23 @@ import type { PipelineStateDbRow } from './types';
 
 const UPSERT_SQL = `
 INSERT INTO pipeline_state (
-  spreadsheet_id, topic_key, topic, date, topic_id, status,
+  spreadsheet_id, topic_id, topic, date, status,
   variant1, variant2, variant3, variant4,
   image_link1, image_link2, image_link3, image_link4,
   selected_text, selected_image_id, selected_image_urls_json,
   post_time, email_to, email_cc, email_bcc, email_subject,
   topic_generation_rules, generation_template_id, published_at
 ) VALUES (
-  ?1, ?2, ?3, ?4, ?5, ?6,
-  ?7, ?8, ?9, ?10,
-  ?11, ?12, ?13, ?14,
-  ?15, ?16, ?17,
-  ?18, ?19, ?20, ?21, ?22,
-  ?23, ?24, ?25
+  ?1, ?2, ?3, ?4, ?5,
+  ?6, ?7, ?8, ?9,
+  ?10, ?11, ?12, ?13,
+  ?14, ?15, ?16,
+  ?17, ?18, ?19, ?20, ?21,
+  ?22, ?23, ?24
 )
-ON CONFLICT(spreadsheet_id, topic_key) DO UPDATE SET
+ON CONFLICT(spreadsheet_id, topic_id) DO UPDATE SET
   topic = excluded.topic,
   date = excluded.date,
-  topic_id = excluded.topic_id,
   status = excluded.status,
   variant1 = excluded.variant1,
   variant2 = excluded.variant2,
@@ -51,14 +50,13 @@ ON CONFLICT(spreadsheet_id, topic_key) DO UPDATE SET
   updated_at = datetime('now')
 `;
 
-function bindUpsert(stmt: D1PreparedStatement, spreadsheetId: string, topicKey: string, row: SheetRow): D1PreparedStatement {
-  const c = sheetRowToPipelineColumns(spreadsheetId, topicKey, row);
+function bindUpsert(stmt: D1PreparedStatement, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
+  const c = sheetRowToPipelineColumns(spreadsheetId, row);
   return stmt.bind(
     c.spreadsheet_id,
-    c.topic_key,
+    c.topic_id,
     c.topic,
     c.date,
-    c.topic_id,
     c.status,
     c.variant1,
     c.variant2,
@@ -92,29 +90,35 @@ export class PipelineStore {
       .run();
   }
 
-  async deletePipelineRow(spreadsheetId: string, topicKey: string): Promise<void> {
+  async deletePipelineRow(spreadsheetId: string, topicId: string): Promise<void> {
+    const id = String(topicId || '').trim();
+    if (!id) return;
     await this.db
-      .prepare(`DELETE FROM pipeline_state WHERE spreadsheet_id = ? AND topic_key = ?`)
-      .bind(spreadsheetId, topicKey)
+      .prepare(`DELETE FROM pipeline_state WHERE spreadsheet_id = ? AND topic_id = ?`)
+      .bind(spreadsheetId, id)
       .run();
   }
 
-  private async fetchPipelineMap(spreadsheetId: string, topicKeys: string[]): Promise<Map<string, PipelineStateDbRow>> {
+  private async fetchPipelineMapByTopicIds(
+    spreadsheetId: string,
+    topicIds: string[],
+  ): Promise<Map<string, PipelineStateDbRow>> {
     const map = new Map<string, PipelineStateDbRow>();
-    if (topicKeys.length === 0) {
+    const ids = [...new Set(topicIds.map((t) => String(t || '').trim()).filter(Boolean))];
+    if (ids.length === 0) {
       return map;
     }
     const chunkSize = 80;
-    for (let i = 0; i < topicKeys.length; i += chunkSize) {
-      const chunk = topicKeys.slice(i, i + chunkSize);
+    for (let i = 0; i < ids.length; i += chunkSize) {
+      const chunk = ids.slice(i, i + chunkSize);
       const ph = chunk.map(() => '?').join(',');
       const stmt = this.db.prepare(
-        `SELECT * FROM pipeline_state WHERE spreadsheet_id = ? AND topic_key IN (${ph})`,
+        `SELECT * FROM pipeline_state WHERE spreadsheet_id = ? AND topic_id IN (${ph})`,
       );
       const bound = stmt.bind(spreadsheetId, ...chunk);
       const res = await bound.all<PipelineStateDbRow>();
       for (const r of res.results ?? []) {
-        map.set(r.topic_key, r);
+        map.set(r.topic_id, r);
       }
     }
     return map;
@@ -125,34 +129,39 @@ export class PipelineStore {
     await this.ensureWorkspace(spreadsheetId);
 
     const topics = await sheets.getTopicsInOrder(spreadsheetId);
-    const keys = topics.map((t) => buildTopicKey(t.topic, t.date));
-    const pipelineMap = await this.fetchPipelineMap(spreadsheetId, keys);
+    const topicIds = topics.map((t) => {
+      const id = String(t.topicId || '').trim();
+      if (!id) {
+        throw new Error('Every Topics row must have a Topic Id in column C. Add topics via the app or fill UUIDs.');
+      }
+      return id;
+    });
+    const pipelineMap = await this.fetchPipelineMapByTopicIds(spreadsheetId, topicIds);
     const legacy = await sheets.getLegacyDraftPostRowIndices(spreadsheetId);
 
     return topics.map((t) => {
-      const key = buildTopicKey(t.topic, t.date);
-      const p = pipelineMap.get(key);
-      const leg = legacy.get(key);
+      const id = String(t.topicId || '').trim();
+      const p = pipelineMap.get(id);
+      const leg = legacy.get(buildTopicKey(t.topic, t.date));
       return mergeTopicWithPipeline(t, p, leg);
     });
   }
 
-  async getRowByTopicDate(
+  async getRowByTopicId(
     sheets: SheetsGateway,
     spreadsheetId: string,
-    topic: string,
-    date: string,
+    topicId: string,
   ): Promise<SheetRow | null> {
+    const id = String(topicId || '').trim();
+    if (!id) return null;
     const rows = await this.getMergedRows(sheets, spreadsheetId);
-    const key = buildTopicKey(topic, date);
-    return rows.find((r) => buildTopicKey(r.topic, r.date) === key) ?? null;
+    return rows.find((r) => String(r.topicId || '').trim() === id) ?? null;
   }
 
   async upsertFull(spreadsheetId: string, row: SheetRow): Promise<void> {
     await this.ensureWorkspace(spreadsheetId);
-    const topicKey = buildTopicKey(row.topic, row.date);
     const stmt = this.db.prepare(UPSERT_SQL);
-    await bindUpsert(stmt, spreadsheetId, topicKey, row).run();
+    await bindUpsert(stmt, spreadsheetId, row).run();
   }
 
   async saveDraftVariants(
@@ -276,7 +285,7 @@ export class PipelineStore {
     emailBcc: string,
     emailSubject: string,
     selectedImageUrlsJson = '',
-  ): Promise<{ success: true }> {
+  ): Promise<{ success: true; topicId: string }> {
     await sheets.ensurePipelineSheets(spreadsheetId);
     const today = new Date().toISOString().slice(0, 10);
     const topicId = crypto.randomUUID();
@@ -327,7 +336,7 @@ export class PipelineStore {
 
     await this.ensureWorkspace(spreadsheetId);
     await this.upsertFull(spreadsheetId, newRow);
-    return { success: true };
+    return { success: true, topicId };
   }
 
   async markRowPublished(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {
@@ -351,21 +360,29 @@ export class PipelineStore {
 
     await sheets.ensurePipelineSheets(spreadsheetId);
     const merged = await this.getMergedRows(sheets, spreadsheetId);
-    const existingKeys = new Set(merged.map((r) => buildTopicKey(r.topic, r.date)));
+    const existingTopicIds = new Set(merged.map((r) => String(r.topicId || '').trim()).filter(Boolean));
+    const existingTopicDate = new Set(merged.map((r) => buildTopicKey(r.topic, r.date)));
 
     const conflicts: string[] = [];
+    const seenImportIds = new Set<string>();
     for (const p of posts) {
+      const tid = String(p.topicId || '').trim();
+      if (seenImportIds.has(tid)) {
+        conflicts.push(`duplicate topicId in import: ${tid}`);
+      }
+      seenImportIds.add(tid);
+      if (existingTopicIds.has(tid)) {
+        conflicts.push(`topicId ${tid}`);
+      }
       const k = buildTopicKey(p.topic, p.date);
-      if (existingKeys.has(k)) {
+      if (existingTopicDate.has(k)) {
         conflicts.push(`${p.topic} (${p.date})`);
       }
     }
     if (conflicts.length > 0) {
-      const sample = conflicts.slice(0, 8).join('; ');
+      const sample = [...new Set(conflicts)].slice(0, 8).join('; ');
       const more = conflicts.length > 8 ? ` …and ${conflicts.length - 8} more` : '';
-      throw new Error(
-        `These topic+date rows already exist in the spreadsheet: ${sample}${more}. Remove or change them before importing.`,
-      );
+      throw new Error(`Import conflicts: ${sample}${more}.`);
     }
 
     const topicsValues = posts.map((p) => [p.topic, p.date, p.topicId]);
@@ -400,7 +417,7 @@ export class PipelineStore {
         topicGenerationRules: p.topicGenerationRules,
         generationTemplateId: p.generationTemplateId,
       };
-      return bindUpsert(stmt, spreadsheetId, buildTopicKey(p.topic, p.date), row);
+      return bindUpsert(stmt, spreadsheetId, row);
     });
 
     for (let i = 0; i < batchStmts.length; i += 128) {

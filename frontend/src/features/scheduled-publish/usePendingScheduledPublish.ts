@@ -20,6 +20,7 @@ export function usePendingScheduledPublish({
       return;
     }
     setPending({
+      topicId: row.topicId,
       topic: row.topic,
       date: row.date,
       channel: result.channel,
@@ -30,7 +31,7 @@ export function usePendingScheduledPublish({
   const clearPendingIfMatchesRow = useCallback((row: SheetRow) => {
     setPending((p) => {
       if (!p) return null;
-      if (p.topic.trim() === row.topic.trim() && p.date.trim() === row.date.trim()) {
+      if (p.topicId.trim() === row.topicId.trim()) {
         return null;
       }
       return p;
@@ -42,8 +43,7 @@ export function usePendingScheduledPublish({
     setCancelBusy(true);
     try {
       await api.cancelScheduledPublish(idToken, {
-        topic: pending.topic,
-        date: pending.date,
+        topicId: pending.topicId,
         channel: pending.channel,
         scheduledTime: pending.scheduledTime,
       });

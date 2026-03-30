@@ -58,7 +58,7 @@ export function EditorScreen() {
   const showScheduledBanner =
     pendingScheduledPublish != null
     && rowMatchesPendingScheduledPublish(
-      { topic: sheetRow.topic, date: sheetRow.date, postTime },
+      { topicId: sheetRow.topicId, postTime },
       pendingScheduledPublish,
       deliveryChannel,
     );

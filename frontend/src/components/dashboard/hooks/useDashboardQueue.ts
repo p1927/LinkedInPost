@@ -6,7 +6,7 @@ import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../s
 import { type DeliverySummary } from '../types';
 
 import { type ChannelId, getChannelOption, getChannelLabel } from '../../../integrations/channels';
-import { buildRowActionKey, findDraftRowAfterCreateFromPublished, getNormalizedRowStatus, isSameTopicDate } from '../utils';
+import { buildRowActionKey, findRowByTopicId, getNormalizedRowStatus, isSameTopicId } from '../utils';
 import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
 import { useAlert } from '../../AlertProvider';
@@ -276,6 +276,7 @@ export function useDashboardQueue({
     try {
       return await api.searchNewsResearch(idToken, {
         ...payload,
+        topicId: row.topicId,
         topic: row.topic,
         date: row.date,
       });
@@ -287,7 +288,7 @@ export function useDashboardQueue({
 
   const handleListNewsResearchHistory = async (row: SheetRow) => {
     try {
-      return await api.listNewsResearchHistory(idToken, row.topic, row.date);
+      return await api.listNewsResearchHistory(idToken, row.topicId);
     } catch (error) {
       handleFailure(error, 'Failed to load news search history.');
       throw error;
@@ -306,7 +307,7 @@ export function useDashboardQueue({
   const handleSaveDraftVariants = async (row: SheetRow, variants: string[]): Promise<SheetRow> => {
     try {
       const updatedRow = await api.saveDraftVariants(idToken, row, variants);
-      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
+      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicId(entry, updatedRow) ? updatedRow : entry)));
       return updatedRow;
     } catch (error) {
       handleFailure(error, 'Failed to save preview variants to Sheets.');
@@ -317,7 +318,7 @@ export function useDashboardQueue({
   const handleSaveTopicGenerationRules = async (row: SheetRow, topicRules: string): Promise<SheetRow> => {
     try {
       const updatedRow = await api.saveTopicGenerationRules(idToken, row, topicRules);
-      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
+      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicId(entry, updatedRow) ? updatedRow : entry)));
       return updatedRow;
     } catch (error) {
       handleFailure(error, 'Failed to save topic rules to the sheet.');
@@ -332,7 +333,7 @@ export function useDashboardQueue({
   const handleSaveGenerationTemplateId = async (row: SheetRow, generationTemplateId: string): Promise<SheetRow> => {
     try {
       const updatedRow = await api.saveGenerationTemplateId(idToken, row, generationTemplateId);
-      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicDate(entry, updatedRow) ? updatedRow : entry)));
+      setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicId(entry, updatedRow) ? updatedRow : entry)));
       return updatedRow;
     } catch (error) {
       handleFailure(error, 'Failed to save generation template on the draft row.');
@@ -346,12 +347,12 @@ export function useDashboardQueue({
   };
 
   const handlePromoteReviewImage = async (row: SheetRow, sourceUrl: string) => {
-    const result = await api.promoteDraftImageUrl(idToken, row.topic, sourceUrl, row.topicId);
+    const result = await api.promoteDraftImageUrl(idToken, sourceUrl, row.topicId);
     return result.imageUrl;
   };
 
   const handleUploadReviewImage = async (row: SheetRow, file: File) => {
-    const result = await api.uploadDraftImage(idToken, row.topic, file, row.topicId);
+    const result = await api.uploadDraftImage(idToken, file, row.topicId);
     return result.imageUrl;
   };
 
@@ -506,7 +507,7 @@ export function useDashboardQueue({
 
     if (
       rowMatchesPendingScheduledPublish(
-        { topic: row.topic, date: row.date, postTime },
+        { topicId: row.topicId, postTime },
         pendingScheduledPublish,
         selectedChannel,
       )
@@ -536,7 +537,7 @@ export function useDashboardQueue({
       let rowToPublish: SheetRow = row;
 
       if (getNormalizedRowStatus(row.status) === 'published') {
-        await api.createDraftFromPublished(
+        const created = await api.createDraftFromPublished(
           idToken,
           row,
           message,
@@ -551,7 +552,7 @@ export function useDashboardQueue({
         const data = await api.getRows(idToken);
         const nextRows = data.reverse();
         setRows(nextRows);
-        const found = findDraftRowAfterCreateFromPublished(nextRows, row, message);
+        const found = findRowByTopicId(nextRows, created.topicId);
         if (!found) {
           void showAlert({
             title: 'Notice',
@@ -653,8 +654,7 @@ export function useDashboardQueue({
       ) {
         try {
           await api.cancelScheduledPublish(idToken, {
-            topic: pendingScheduledPublish.topic,
-            date: pendingScheduledPublish.date,
+            topicId: pendingScheduledPublish.topicId,
             channel: pendingScheduledPublish.channel,
             scheduledTime: pendingScheduledPublish.scheduledTime,
           });

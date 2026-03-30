@@ -12,7 +12,7 @@ function parseArticleCount(articlesJson: string): number {
 export function newsSnapshotRowToListItem(row: NewsSnapshotDbRow): NewsSnapshotListItem {
   return {
     id: row.id,
-    topicKey: row.topic_key,
+    topicId: row.topic_id,
     fetchedAt: row.fetched_at,
     windowStart: row.window_start,
     windowEnd: row.window_end,
@@ -27,7 +27,7 @@ export async function insertNewsSnapshotAndPrune(
   db: D1Database,
   input: {
     spreadsheetId: string;
-    topicKey: string;
+    topicId: string;
     fetchedAt: string;
     windowStart: string;
     windowEnd: string;
@@ -42,14 +42,14 @@ export async function insertNewsSnapshotAndPrune(
   const insert = db
     .prepare(
       `INSERT INTO news_snapshots (
-        id, spreadsheet_id, topic_key, fetched_at, window_start, window_end,
+        id, spreadsheet_id, topic_id, fetched_at, window_start, window_end,
         custom_query, providers_summary, articles, dedupe_removed
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       id,
       input.spreadsheetId,
-      input.topicKey,
+      input.topicId,
       input.fetchedAt,
       input.windowStart,
       input.windowEnd,
@@ -59,16 +59,18 @@ export async function insertNewsSnapshotAndPrune(
       input.dedupeRemoved,
     );
 
-  const prune = db.prepare(
-    `WITH ranked AS (
+  const prune = db
+    .prepare(
+      `WITH ranked AS (
       SELECT id,
-        ROW_NUMBER() OVER (PARTITION BY spreadsheet_id, topic_key ORDER BY fetched_at DESC) AS rn
+        ROW_NUMBER() OVER (PARTITION BY spreadsheet_id, topic_id ORDER BY fetched_at DESC) AS rn
       FROM news_snapshots
-      WHERE spreadsheet_id = ?1 AND topic_key = ?2
+      WHERE spreadsheet_id = ?1 AND topic_id = ?2
     )
     DELETE FROM news_snapshots
     WHERE id IN (SELECT id FROM ranked WHERE rn > ?3)`,
-  ).bind(input.spreadsheetId, input.topicKey, input.maxPerTopic);
+    )
+    .bind(input.spreadsheetId, input.topicId, input.maxPerTopic);
 
   await db.batch([insert, prune]);
 }
@@ -76,18 +78,18 @@ export async function insertNewsSnapshotAndPrune(
 export async function listNewsResearchHistory(
   db: D1Database,
   spreadsheetId: string,
-  options: { topicKey?: string; limit: number },
+  options: { topicId?: string; limit: number },
 ): Promise<NewsSnapshotListItem[]> {
   let stmt: D1PreparedStatement;
-  if (options.topicKey) {
+  if (options.topicId) {
     stmt = db
       .prepare(
         `SELECT * FROM news_snapshots
-         WHERE spreadsheet_id = ?1 AND topic_key = ?2
+         WHERE spreadsheet_id = ?1 AND topic_id = ?2
          ORDER BY fetched_at DESC
          LIMIT ?3`,
       )
-      .bind(spreadsheetId, options.topicKey, options.limit);
+      .bind(spreadsheetId, options.topicId, options.limit);
   } else {
     stmt = db
       .prepare(
@@ -129,22 +131,22 @@ export async function pruneOldNewsSnapshots(
   }
 
   const { results = [] } = await db
-    .prepare(`SELECT DISTINCT spreadsheet_id, topic_key FROM news_snapshots`)
-    .all<{ spreadsheet_id: string; topic_key: string }>();
+    .prepare(`SELECT DISTINCT spreadsheet_id, topic_id FROM news_snapshots`)
+    .all<{ spreadsheet_id: string; topic_id: string }>();
 
   const pruneStmts = results.map((t) =>
     db
       .prepare(
         `WITH ranked AS (
           SELECT id,
-            ROW_NUMBER() OVER (PARTITION BY spreadsheet_id, topic_key ORDER BY fetched_at DESC) AS rn
+            ROW_NUMBER() OVER (PARTITION BY spreadsheet_id, topic_id ORDER BY fetched_at DESC) AS rn
           FROM news_snapshots
-          WHERE spreadsheet_id = ?1 AND topic_key = ?2
+          WHERE spreadsheet_id = ?1 AND topic_id = ?2
         )
         DELETE FROM news_snapshots
         WHERE id IN (SELECT id FROM ranked WHERE rn > ?3)`,
       )
-      .bind(t.spreadsheet_id, t.topic_key, maxPerTopic),
+      .bind(t.spreadsheet_id, t.topic_id, maxPerTopic),
   );
 
   for (let i = 0; i < pruneStmts.length; i += 128) {

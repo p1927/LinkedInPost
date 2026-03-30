@@ -473,7 +473,7 @@ export function useReviewFlowActions(
 
     if (
       rowMatchesPendingScheduledPublish(
-        { topic: sheetRow.topic, date: sheetRow.date, postTime },
+        { topicId: sheetRow.topicId, postTime },
         pendingScheduledPublish ?? null,
         deliveryChannel,
       )

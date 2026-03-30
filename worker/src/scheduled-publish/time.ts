@@ -31,6 +31,8 @@ export function parseScheduledTimeToTimestamp(value: string): number | null {
   return Date.UTC(year, month - 1, day, hour, minute, 0, 0);
 }
 
-export function buildScheduledPublishTaskName(topic: string, date: string, channel?: string): string {
-  return `${topic.trim()}::${date.trim()}::${(channel || 'linkedin').trim()}`;
+export function buildScheduledPublishTaskName(topicId: string, channel?: string): string {
+  const id = topicId.trim();
+  const ch = (channel || 'linkedin').trim();
+  return `${id}::${ch}`;
 }

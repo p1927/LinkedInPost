@@ -30,13 +30,14 @@ export class ScheduledPublishAlarm {
   private async handleArm(request: Request): Promise<Response> {
     const task = await request.json<ScheduledPublishTask>();
     const scheduledAt = parseScheduledTimeToTimestamp(task.scheduledTime);
-    if (!task.topic?.trim() || !task.date?.trim() || !scheduledAt) {
+    if (!task.topicId?.trim() || !scheduledAt) {
       return new Response('Invalid scheduled task payload.', { status: 400 });
     }
 
     await this.state.storage.put(TASK_STORAGE_KEY, {
-      topic: task.topic.trim(),
-      date: task.date.trim(),
+      topicId: task.topicId.trim(),
+      topic: String(task.topic || '').trim(),
+      date: String(task.date || '').trim(),
       scheduledTime: task.scheduledTime.trim(),
       intent: task.intent || 'publish',
       channel: task.channel,
@@ -46,18 +47,17 @@ export class ScheduledPublishAlarm {
 
     return Response.json({
       success: true,
-      taskName: buildScheduledPublishTaskName(task.topic, task.date, task.channel),
+      taskName: buildScheduledPublishTaskName(task.topicId, task.channel),
       scheduledTime: task.scheduledTime.trim(),
     });
   }
 
   private async handleCancel(request: Request): Promise<Response> {
     const body = await request.json<CancelScheduledPublishPayload>();
-    const topic = String(body.topic || '').trim();
-    const date = String(body.date || '').trim();
+    const topicId = String(body.topicId || '').trim();
     const scheduledTime = String(body.scheduledTime || '').trim();
-    if (!topic || !date || !scheduledTime) {
-      return Response.json({ success: false, error: 'Missing topic, date, or scheduledTime.' }, { status: 400 });
+    if (!topicId || !scheduledTime) {
+      return Response.json({ success: false, error: 'Missing topicId or scheduledTime.' }, { status: 400 });
     }
 
     const stored = await this.state.storage.get<ScheduledPublishTask>(TASK_STORAGE_KEY);
@@ -73,7 +73,7 @@ export class ScheduledPublishAlarm {
       );
     }
 
-    if (stored.topic.trim() !== topic || stored.date.trim() !== date) {
+    if (stored.topicId.trim() !== topicId) {
       return Response.json({ success: false, error: 'Row identity does not match the armed task.' }, { status: 409 });
     }
 

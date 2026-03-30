@@ -20,6 +20,7 @@ import {
   listNewsResearchHistory,
   pruneOldNewsSnapshots,
 } from './persistence/pipeline-db';
+import { requireTopicId } from './persistence/pipeline-db/mappers';
 import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored } from './researcher/types';
@@ -579,15 +580,22 @@ async function handleScheduledLinkedInPublishRequest(request: Request, env: Env)
   }
 
   const payload = await request.json<ScheduledPublishTask>();
-  const topic = String(payload.topic || '').trim();
-  const date = String(payload.date || '').trim();
+  const topicId = String(payload.topicId || '').trim();
   const scheduledTime = String(payload.scheduledTime || '').trim();
 
-  if (!topic || !date || !scheduledTime) {
-    return Response.json({ ok: false, error: 'Missing scheduling payload.' }, { status: 400 });
+  if (!topicId || !scheduledTime) {
+    return Response.json({ ok: false, error: 'Missing topicId or scheduledTime in scheduling payload.' }, { status: 400 });
   }
 
-  const response = await armScheduledPublish(env, { topic, date, scheduledTime, intent: payload.intent || 'publish', channel: payload.channel, recipientId: payload.recipientId });
+  const response = await armScheduledPublish(env, {
+    topicId,
+    topic: String(payload.topic || '').trim(),
+    date: String(payload.date || '').trim(),
+    scheduledTime,
+    intent: payload.intent || 'publish',
+    channel: payload.channel,
+    recipientId: payload.recipientId,
+  });
   const body = await response.text();
   return new Response(body, {
     status: response.status,
@@ -700,7 +708,7 @@ async function dispatchAction(
       ensureSpreadsheetConfigured(storedConfig);
       const rowToDelete = coerceSheetRow(payload.row);
       await deleteGcsObjectsForTopicRow(env, rowToDelete);
-      await pipeline.deletePipelineRow(storedConfig.spreadsheetId, buildTopicKey(rowToDelete.topic, rowToDelete.date));
+      await pipeline.deletePipelineRow(storedConfig.spreadsheetId, requireTopicId(rowToDelete));
       return sheets.deleteRow(storedConfig.spreadsheetId, rowToDelete);
     }
     case 'saveConfig':
@@ -809,12 +817,13 @@ async function dispatchAction(
         throw new Error('News research is disabled for this deployment.');
       }
       {
-        const topic = String(payload.topic || '').trim();
-        const date = String(payload.date || '').trim();
-        const topicKey = topic && date ? buildTopicKey(topic, date) : undefined;
+        const topicId = String(payload.topicId || '').trim();
         const limitRaw = Number(payload.limit);
         const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(50, Math.floor(limitRaw)) : 20;
-        return listNewsResearchHistory(env.PIPELINE_DB, storedConfig.spreadsheetId, { topicKey, limit });
+        return listNewsResearchHistory(env.PIPELINE_DB, storedConfig.spreadsheetId, {
+          topicId: topicId || undefined,
+          limit,
+        });
       }
     case 'getNewsResearchSnapshot':
       ensureSpreadsheetConfigured(storedConfig);
@@ -839,7 +848,7 @@ async function dispatchAction(
         }
         return {
           id: snap.id,
-          topicKey: snap.topic_key,
+          topicId: snap.topic_id,
           fetchedAt: snap.fetched_at,
           windowStart: snap.window_start,
           windowEnd: snap.window_end,
@@ -2188,7 +2197,11 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
 
   const sheets = new SheetsGateway(env);
   const pipeline = new PipelineStore(env.PIPELINE_DB);
-  const row = await pipeline.getRowByTopicDate(sheets, config.spreadsheetId, task.topic, task.date);
+  const topicId = String(task.topicId || '').trim();
+  if (!topicId) {
+    return;
+  }
+  const row = await pipeline.getRowByTopicId(sheets, config.spreadsheetId, topicId);
   if (!row) {
     return;
   }
@@ -2295,6 +2308,7 @@ async function publishContent(
   if (!payload.isScheduledExecution && scheduledAt && scheduledAt > Date.now() + 60000) {
     const intent = String(row.status || '').trim().toLowerCase() === 'published' ? 'republish' : 'publish';
     await armScheduledPublish(env, {
+      topicId: requireTopicId(row),
       topic: row.topic,
       date: row.date,
       scheduledTime: row.postTime!,
@@ -3138,17 +3152,10 @@ function guessFileExtension(contentType: string, fileName = ''): string {
   return explicitExtension || '.jpg';
 }
 
-function slugifyTopic(topic: string): string {
-  return topic
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'image';
+function gcsObjectPrefixFromTopicId(topicId: string): string {
+  const s = topicId.replace(/-/g, '').slice(0, 40);
+  return s || 'img';
 }
-
-/** GCS object names must be at most 1024 UTF-8 characters (see storage object name limits). */
-const GCS_OBJECT_NAME_MAX_LENGTH = 1024;
-/** Keep keys short: topic hint + millis (base36) + random hex; uniqueness does not rely on full topic. */
-const DRAFT_IMAGE_TOPIC_SLUG_MAX = 48;
 
 function buildPublicGcsUrl(bucketName: string, objectName: string): string {
   const encodedPath = objectName
@@ -3240,31 +3247,29 @@ async function fetchDraftImages(env: Env, payload: Record<string, unknown>): Pro
 }
 
 async function promoteDraftImageUrl(env: Env, payload: Record<string, unknown>): Promise<DraftImagePromoteResult> {
-  const topic = String(payload.topic || '').trim();
   const topicId = String(payload.topicId || '').trim();
   const sourceUrl = String(payload.sourceUrl || '').trim();
 
-  if (!topic && !topicId) {
-    throw new Error('Topic is required to save the selected image.');
+  if (!topicId) {
+    throw new Error('topicId is required to save the selected image.');
   }
   if (!sourceUrl) {
     throw new Error('Image URL is required.');
   }
 
   const asset = await fetchImageAsset(normalizeDeliveryImageUrl(sourceUrl));
-  const imageUrl = await uploadBytesToGcs(env, topicId || topic, 1, asset.bytes, asset.contentType);
+  const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, asset.bytes, asset.contentType);
   return { imageUrl };
 }
 
 async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Promise<DraftImageUploadResult> {
-  const topic = String(payload.topic || '').trim();
   const topicId = String(payload.topicId || '').trim();
   const fileName = String(payload.fileName || '').trim();
   const fallbackContentType = String(payload.contentType || '').trim() || 'image/jpeg';
   const dataUrl = String(payload.dataUrl || '').trim();
 
-  if (!topic && !topicId) {
-    throw new Error('Topic is required to upload an image.');
+  if (!topicId) {
+    throw new Error('topicId is required to upload an image.');
   }
 
   if (!dataUrl) {
@@ -3277,7 +3282,7 @@ async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Pro
     throw new Error('Only image uploads are supported.');
   }
 
-  const imageUrl = await uploadBytesToGcs(env, topicId || topic, 1, decoded.bytes, contentType, fileName);
+  const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, decoded.bytes, contentType, fileName);
   return { imageUrl };
 }
 
@@ -3385,12 +3390,6 @@ async function signJwt(
   const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, textEncoder.encode(signingInput));
   return `${signingInput}.${base64UrlEncode(signature)}`;
 }
-
-function buildTopicKey(topic: string, date: string): string {
-  return `${topic.trim()}::${date.trim()}`;
-}
-
-
 
 function buildCorsHeaders(request: Request, env: Env): Headers {
   const origin = request.headers.get('Origin');
