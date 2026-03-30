@@ -59,8 +59,8 @@ export interface ReviewFlowContextValue {
   previewVariantSaveErrors: Record<number, string>;
   postTime: string;
   setPostTime: React.Dispatch<React.SetStateAction<string>>;
-  selectedImageUrl: string;
-  setSelectedImageUrl: React.Dispatch<React.SetStateAction<string>>;
+  selectedImageUrls: string[];
+  setSelectedImageUrls: React.Dispatch<React.SetStateAction<string[]>>;
   /** Select an image; search results are promoted to storage when needed. */
   handleSelectImageOption: (option: ImageAssetOption) => Promise<void>;
   /** Clear the selected attachment so the post has no image until one is chosen again. */
@@ -155,8 +155,8 @@ export interface ReviewFlowProviderProps {
   globalGenerationRules: string;
   isAdmin: boolean;
   googleModel: string;
-  onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
-  onPublishNow: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
+  onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
+  onPublishNow: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   onSaveEmailFields: (emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
   globalEmailDefaults?: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;

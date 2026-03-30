@@ -19,6 +19,8 @@ export interface SheetRow {
   imageLink4: string;
   selectedText: string;
   selectedImageId: string;
+  /** Column T — JSON array of all selected image URLs when more than one; empty when single image (legacy: column M only). */
+  selectedImageUrlsJson?: string;
   postTime: string;
   emailTo?: string;
   emailCc?: string;

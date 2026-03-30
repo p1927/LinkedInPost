@@ -2,6 +2,7 @@ import { CalendarClock, Eye, X } from 'lucide-react';
 import type { ChannelId } from '../integrations/channels';
 import type { SheetRow } from '../services/sheets';
 import { LinkedInPostPreview } from './LinkedInPostPreview';
+import { parseRowImageUrls } from '../services/selectedImageUrls';
 import { Button } from '@/components/ui/button';
 
 interface ApprovedPostPreviewProps {
@@ -12,6 +13,7 @@ interface ApprovedPostPreviewProps {
 }
 
 export function ApprovedPostPreview({ row, previewChannel, onClose }: ApprovedPostPreviewProps) {
+  const previewUrls = parseRowImageUrls(row);
   const normalizedStatus = (row.status || '').trim().toLowerCase() || 'approved';
   const isPublished = normalizedStatus === 'published';
   const previewDescription =
@@ -59,7 +61,8 @@ export function ApprovedPostPreview({ row, previewChannel, onClose }: ApprovedPo
               <LinkedInPostPreview
                 optionNumber={1}
                 text={row.selectedText || row.variant1}
-                imageUrl={row.selectedImageId}
+                imageUrl={previewUrls[0]}
+                imageUrls={previewUrls.length > 1 ? previewUrls : undefined}
                 previewChannel={previewChannel}
                 gmailTo={row.emailTo}
                 gmailSubject={row.emailSubject}

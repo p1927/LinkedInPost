@@ -26,9 +26,10 @@ const PIPELINE_HEADERS = [
   'Email Bcc',
   'Email Subject',
   'Topic rules',
+  'Image URLs JSON',
 ];
 
-const PIPELINE_COLS = 19;
+const PIPELINE_COLS = 20;
 
 interface SpreadsheetMetadataResponse {
   sheets?: SpreadsheetSheetMetadata[];
@@ -64,7 +65,7 @@ export class SheetsGateway {
   async getRows(spreadsheetId: string): Promise<SheetRow[]> {
     await this.ensureRequiredSheets(spreadsheetId);
 
-    const dataRanges = [`${TOPICS_SHEET}!A2:B`, `${DRAFT_SHEET}!A2:S`, `${POST_SHEET}!A2:S`];
+    const dataRanges = [`${TOPICS_SHEET}!A2:B`, `${DRAFT_SHEET}!A2:T`, `${POST_SHEET}!A2:T`];
     const [topicRows, draftRows, postRows] = await this.batchGetValues(spreadsheetId, dataRanges);
 
     const topics = topicRows
@@ -112,6 +113,7 @@ export class SheetsGateway {
     emailCc = '',
     emailBcc = '',
     emailSubject = '',
+    selectedImageUrlsJson = '',
   ): Promise<{ success: true }> {
     await this.ensureRequiredSheets(spreadsheetId);
 
@@ -123,6 +125,7 @@ export class SheetsGateway {
     await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!C${draftRowIndex}`, [[status || 'Pending']]);
     if (status === 'Approved') {
       await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!L${draftRowIndex}:R${draftRowIndex}`, [[selectedText, selectedImageId, postTime, emailTo, emailCc, emailBcc, emailSubject]]);
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!T${draftRowIndex}`, [[selectedImageUrlsJson]]);
     }
 
     return { success: true };
@@ -197,6 +200,7 @@ export class SheetsGateway {
     emailCc: string,
     emailBcc: string,
     emailSubject: string,
+    selectedImageUrlsJson = '',
   ): Promise<{ success: true }> {
     await this.ensureRequiredSheets(spreadsheetId);
 
@@ -204,7 +208,7 @@ export class SheetsGateway {
 
     await this.appendValues(spreadsheetId, `${TOPICS_SHEET}!A:B`, [[sourceRow.topic, today]]);
 
-    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:S`, [[
+    await this.appendValues(spreadsheetId, `${DRAFT_SHEET}!A:T`, [[
       sourceRow.topic,
       today,
       'Drafted',
@@ -224,6 +228,7 @@ export class SheetsGateway {
       emailBcc,
       emailSubject,
       sourceRow.topicGenerationRules || '',
+      selectedImageUrlsJson,
     ]]);
 
     return { success: true };
@@ -251,7 +256,7 @@ export class SheetsGateway {
 
     const draftRowIndex = row.draftRowIndex ?? row.rowIndex;
     if (draftRowIndex) {
-      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:S${draftRowIndex}`, [[
+      await this.updateValues(spreadsheetId, `${DRAFT_SHEET}!A${draftRowIndex}:T${draftRowIndex}`, [[
         row.topic,
         row.date,
         row.status || 'Published',
@@ -271,6 +276,7 @@ export class SheetsGateway {
         row.emailBcc || '',
         row.emailSubject || '',
         row.topicGenerationRules || '',
+        row.selectedImageUrlsJson || '',
       ]]);
     }
 
@@ -294,12 +300,13 @@ export class SheetsGateway {
       row.emailBcc || '',
       row.emailSubject || '',
       row.topicGenerationRules || '',
+      row.selectedImageUrlsJson || '',
     ]];
 
     if (row.postRowIndex) {
-      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:S${row.postRowIndex}`, postValues);
+      await this.updateValues(spreadsheetId, `${POST_SHEET}!A${row.postRowIndex}:T${row.postRowIndex}`, postValues);
     } else {
-      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:S`, postValues);
+      await this.appendValues(spreadsheetId, `${POST_SHEET}!A:T`, postValues);
     }
 
     return { success: true };
@@ -368,6 +375,7 @@ export class SheetsGateway {
       emailBcc: paddedRow[16],
       emailSubject: paddedRow[17],
       topicGenerationRules: paddedRow[18],
+      selectedImageUrlsJson: paddedRow[19],
       draftRowIndex: sourceSheet === 'Draft' ? index + 2 : undefined,
       postRowIndex: sourceSheet === 'Post' ? index + 2 : undefined,
     };
@@ -404,6 +412,7 @@ export class SheetsGateway {
         emailBcc: '',
         emailSubject: '',
         topicGenerationRules: '',
+        selectedImageUrlsJson: '',
       });
     }
 
@@ -474,6 +483,13 @@ export class SheetsGateway {
       const rows = headerRows[i];
       if (!rows?.length) {
         await this.updateValues(spreadsheetId, `${headerSpecs[i].sheet}!A1`, [headerSpecs[i].headers]);
+      }
+    }
+
+    for (const sheet of [DRAFT_SHEET, POST_SHEET] as const) {
+      const [tCell] = await this.batchGetValues(spreadsheetId, [`${sheet}!T1:T1`]);
+      if (!String(tCell?.[0]?.[0] || '').trim()) {
+        await this.updateValues(spreadsheetId, `${sheet}!T1`, [['Image URLs JSON']]);
       }
     }
 

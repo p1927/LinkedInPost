@@ -15,6 +15,8 @@ export interface PublishContentRequest {
   recipientId?: string;
   message: string;
   imageUrl?: string;
+  /** When set, takes precedence over single `imageUrl` / row columns for publishing. */
+  imageUrls?: string[];
 }
 
 export interface PublishContentResult {
@@ -307,6 +309,7 @@ export class BackendApi {
     emailCc = '',
     emailBcc = '',
     emailSubject = '',
+    selectedImageUrlsJson = '',
   ): Promise<void> {
     await this.post<{ success: true }>('updateRowStatus', idToken, {
       row,
@@ -318,6 +321,7 @@ export class BackendApi {
       emailCc,
       emailBcc,
       emailSubject,
+      selectedImageUrlsJson,
     });
   }
 
@@ -348,6 +352,7 @@ export class BackendApi {
     emailCc: string,
     emailBcc: string,
     emailSubject: string,
+    selectedImageUrlsJson = '',
   ): Promise<void> {
     await this.post<{ success: true }>('createDraftFromPublished', idToken, {
       row,
@@ -358,6 +363,7 @@ export class BackendApi {
       emailCc,
       emailBcc,
       emailSubject,
+      selectedImageUrlsJson,
     });
   }
 

@@ -23,6 +23,11 @@ export interface GmailSendRequest {
     contentType: string;
     bytes: ArrayBuffer;
   };
+  /** Multiple images (preferred when more than one). Each is inlined if small enough, else attached. */
+  inlineImages?: Array<{
+    contentType: string;
+    bytes: ArrayBuffer;
+  }>;
 }
 
 interface GmailSendResponse {
@@ -91,10 +96,38 @@ function buildHtmlBodyWithInline(plainBody: string, contentId: string): string {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;line-height:1.5;color:#222;"><p><img src="cid:${contentId}" alt="" style="max-width:100%;height:auto;display:block;" /></p><div>${escaped}</div></body></html>`;
 }
 
+function buildHtmlBodyMultiInline(plainBody: string, contentIds: string[]): string {
+  const escaped = escapeHtml(plainBody).replace(/\r\n|\n|\r/g, '<br/>');
+  const imgs = contentIds
+    .map(
+      (id) =>
+        `<p><img src="cid:${id.replace(/"/g, '')}" alt="" style="max-width:100%;height:auto;display:block;margin:0 0 0.75em 0;" /></p>`,
+    )
+    .join('');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;line-height:1.5;color:#222;">${imgs}<div>${escaped}</div></body></html>`;
+}
+
+function buildHtmlBodyMultiAttachmentNote(plainBody: string, filenames: string[]): string {
+  const escaped = escapeHtml(plainBody).replace(/\r\n|\n|\r/g, '<br/>');
+  const list = filenames.map((f) => escapeHtml(f)).join(', ');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;line-height:1.5;color:#222;"><div>${escaped}</div><p style="color:#666;font-size:0.9em;">Images attached: ${list}</p></body></html>`;
+}
+
 function buildHtmlBodyWithAttachmentNote(plainBody: string, filename: string): string {
   const escaped = escapeHtml(plainBody).replace(/\r\n|\n|\r/g, '<br/>');
   const fn = escapeHtml(filename);
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;line-height:1.5;color:#222;"><div>${escaped}</div><p style="color:#666;font-size:0.9em;">Image attached: ${fn}</p></body></html>`;
+}
+
+function collectGmailImageParts(request: GmailSendRequest): Array<{ contentType: string; bytes: ArrayBuffer }> {
+  const fromMany = (request.inlineImages || []).filter((i) => i.bytes.byteLength > 0);
+  if (fromMany.length > 0) {
+    return fromMany;
+  }
+  if (request.inlineImage && request.inlineImage.bytes.byteLength > 0) {
+    return [request.inlineImage];
+  }
+  return [];
 }
 
 /**
@@ -102,8 +135,7 @@ function buildHtmlBodyWithAttachmentNote(plainBody: string, filename: string): s
  * Large images: multipart/mixed (text + attachment) so clients do not embed huge blobs in HTML.
  */
 function constructMimeMessage(request: GmailSendRequest): string {
-  const inline = request.inlineImage;
-  const hasImage = Boolean(inline && inline.bytes.byteLength > 0);
+  const images = collectGmailImageParts(request);
 
   const headersBase = [`To: ${request.to}`];
   if (request.cc) headersBase.push(`Cc: ${request.cc}`);
@@ -111,7 +143,7 @@ function constructMimeMessage(request: GmailSendRequest): string {
   headersBase.push(`Subject: ${request.subject || 'New Message'}`);
   headersBase.push('MIME-Version: 1.0');
 
-  if (!hasImage || !inline) {
+  if (images.length === 0) {
     const boundary = mimeBoundary('Alt');
     headersBase.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
     const rawMessage = [
@@ -126,82 +158,104 @@ function constructMimeMessage(request: GmailSendRequest): string {
     return base64UrlEncode(rawMessage);
   }
 
-  const imageB64 = wrapBase64(uint8ArrayToBase64(new Uint8Array(inline.bytes)));
-  const filename = inlineFilenameForContentType(inline.contentType);
-  const useAttachment = inline.bytes.byteLength > INLINE_IMAGE_MAX_BYTES;
+  const allSmall = images.every((img) => img.bytes.byteLength <= INLINE_IMAGE_MAX_BYTES);
 
-  if (useAttachment) {
-    const mixedBoundary = mimeBoundary('Mixed');
+  if (allSmall) {
+    const relatedBoundary = mimeBoundary('Related');
     const altBoundary = mimeBoundary('Alt');
-    headersBase.push(`Content-Type: multipart/mixed; boundary="${mixedBoundary}"`);
-    const plainNote = `${request.body}\r\n\r\n[Image attached: ${filename}]`;
-    const htmlBody = buildHtmlBodyWithAttachmentNote(request.body, filename);
+    headersBase.push(
+      `Content-Type: multipart/related; boundary="${relatedBoundary}"; type="multipart/alternative"`,
+    );
 
-    const rawMessage = [
+    const contentIds = images.map((_, i) => `draft-inline-img-${i}`);
+    const htmlBody = buildHtmlBodyMultiInline(request.body, contentIds);
+
+    const parts: string[] = [
       ...headersBase,
       '',
-      `--${mixedBoundary}`,
+      `--${relatedBoundary}`,
       `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
       '',
       `--${altBoundary}`,
       'Content-Type: text/plain; charset="UTF-8"',
       '',
-      plainNote,
+      request.body,
       `--${altBoundary}`,
       'Content-Type: text/html; charset="UTF-8"',
       '',
       htmlBody,
       `--${altBoundary}--`,
-      '',
-      `--${mixedBoundary}`,
-      `Content-Type: ${inline.contentType}`,
-      'Content-Transfer-Encoding: base64',
-      `Content-Disposition: attachment; filename="${filename}"`,
-      '',
-      imageB64,
-      `--${mixedBoundary}--`,
-    ].join('\r\n');
+    ];
 
-    return base64UrlEncode(rawMessage);
+    for (let i = 0; i < images.length; i += 1) {
+      const img = images[i]!;
+      const imageB64 = wrapBase64(uint8ArrayToBase64(new Uint8Array(img.bytes)));
+      const filename = inlineFilenameForContentType(img.contentType);
+      const contentId = contentIds[i]!;
+      parts.push(
+        '',
+        `--${relatedBoundary}`,
+        `Content-Type: ${img.contentType}`,
+        'Content-Transfer-Encoding: base64',
+        `Content-ID: <${contentId}>`,
+        `Content-Disposition: inline; filename="${filename}"`,
+        '',
+        imageB64,
+      );
+    }
+
+    parts.push('', `--${relatedBoundary}--`);
+    return base64UrlEncode(parts.join('\r\n'));
   }
 
-  const relatedBoundary = mimeBoundary('Related');
+  const mixedBoundary = mimeBoundary('Mixed');
   const altBoundary = mimeBoundary('Alt');
-  const contentId = 'draft-inline-img';
+  headersBase.push(`Content-Type: multipart/mixed; boundary="${mixedBoundary}"`);
 
-  headersBase.push(
-    `Content-Type: multipart/related; boundary="${relatedBoundary}"; type="multipart/alternative"`,
-  );
+  const filenames = images.map((img, i) => {
+    const base = inlineFilenameForContentType(img.contentType);
+    const dot = base.lastIndexOf('.');
+    const stem = dot > 0 ? base.slice(0, dot) : base;
+    const ext = dot > 0 ? base.slice(dot) : '';
+    return `${stem}-${i + 1}${ext}`;
+  });
+  const plainNote = `${request.body}\r\n\r\n[Images attached: ${filenames.join(', ')}]`;
+  const htmlBody = buildHtmlBodyMultiAttachmentNote(request.body, filenames);
 
-  const htmlBody = buildHtmlBodyWithInline(request.body, contentId);
-
-  const rawMessage = [
+  const parts: string[] = [
     ...headersBase,
     '',
-    `--${relatedBoundary}`,
+    `--${mixedBoundary}`,
     `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
     '',
     `--${altBoundary}`,
     'Content-Type: text/plain; charset="UTF-8"',
     '',
-    request.body,
+    plainNote,
     `--${altBoundary}`,
     'Content-Type: text/html; charset="UTF-8"',
     '',
     htmlBody,
     `--${altBoundary}--`,
-    '',
-    `--${relatedBoundary}`,
-    `Content-Type: ${inline.contentType}`,
-    'Content-Transfer-Encoding: base64',
-    `Content-ID: <${contentId}>`,
-    `Content-Disposition: inline; filename="${filename}"`,
-    '',
-    imageB64,
-    `--${relatedBoundary}--`,
-  ].join('\r\n');
+  ];
 
-  return base64UrlEncode(rawMessage);
+  for (let i = 0; i < images.length; i += 1) {
+    const img = images[i]!;
+    const imageB64 = wrapBase64(uint8ArrayToBase64(new Uint8Array(img.bytes)));
+    const filename = filenames[i]!;
+    parts.push(
+      '',
+      `--${mixedBoundary}`,
+      `Content-Type: ${img.contentType}`,
+      'Content-Transfer-Encoding: base64',
+      `Content-Disposition: attachment; filename="${filename}"`,
+      '',
+      imageB64,
+    );
+  }
+
+  parts.push('', `--${mixedBoundary}--`);
+  return base64UrlEncode(parts.join('\r\n'));
 }
 
 /**

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '../../lib/cn';
 import type { ChannelPreviewProps } from './types';
 import { GM } from './platformTokens';
-import { previewAuthorInitials, renderTaggedText } from './shared';
+import { previewAuthorInitials, renderTaggedText, resolvePreviewImageUrls } from './shared';
 
 function truncateLine(s: string, max: number): string {
   const t = s.trim();
@@ -18,6 +18,7 @@ export function GmailChannelPreview({
   optionNumber,
   text,
   imageUrl,
+  imageUrls,
   selected,
   expanded,
   onSelect,
@@ -38,7 +39,8 @@ export function GmailChannelPreview({
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [imageRetryKey, setImageRetryKey] = useState(0);
   const [pickBodyExpanded, setPickBodyExpanded] = useState(false);
-  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
+  const urls = resolvePreviewImageUrls(imageUrl, imageUrls);
+  const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 360 || text.split('\n').length > 8);
@@ -55,7 +57,7 @@ export function GmailChannelPreview({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadFailed(false);
-  }, [resolvedImageUrl]);
+  }, [resolvedImageUrl, urls.join('|')]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -194,7 +196,30 @@ export function GmailChannelPreview({
             </div>
           </div>
 
-          {resolvedImageUrl && !imageLoadFailed ? (
+          {urls.length > 1 && !imageLoadFailed ? (
+            <div className="border-b px-2.5 py-2 sm:px-3" style={{ borderColor: GM.border }}>
+              <div className="flex items-center gap-2 text-[0.65rem] font-medium" style={{ color: GM.muted }}>
+                <Paperclip className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span>Inline images ({urls.length})</span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {urls.map((u, i) => (
+                  <div
+                    key={`${u}-${i}`}
+                    className="overflow-hidden rounded-lg border"
+                    style={{ borderColor: GM.border, maxWidth: isSidebar ? '5rem' : '6.5rem' }}
+                  >
+                    <img
+                      src={normalizePreviewImageUrl(u)}
+                      alt=""
+                      className="h-20 w-full object-cover object-center sm:h-24"
+                      onError={() => setImageLoadFailed(true)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : resolvedImageUrl && !imageLoadFailed ? (
             <div className="border-b px-2.5 py-2 sm:px-3" style={{ borderColor: GM.border }}>
               <div className="flex items-center gap-2 text-[0.65rem] font-medium" style={{ color: GM.muted }}>
                 <Paperclip className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -210,7 +235,7 @@ export function GmailChannelPreview({
                 />
               </div>
             </div>
-          ) : imageUrl ? (
+          ) : urls.length ? (
             <div className="border-b px-2.5 py-2 sm:px-3" style={{ borderColor: GM.border }}>
               <div
                 className="flex items-center gap-2 rounded-lg border border-dashed px-2 py-2"

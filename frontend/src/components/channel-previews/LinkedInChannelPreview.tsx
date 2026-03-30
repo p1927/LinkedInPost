@@ -17,7 +17,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/colla
 import { cn } from '../../lib/cn';
 import type { ChannelPreviewProps } from './types';
 import { LI } from './platformTokens';
-import { linkedInFeedCardWidthClass, previewAuthorInitials, renderTaggedText } from './shared';
+import { linkedInFeedCardWidthClass, previewAuthorInitials, renderTaggedText, resolvePreviewImageUrls } from './shared';
 
 const SOCIAL_PROOF = [
   { reactions: 42, comments: 8, reposts: 2 },
@@ -38,6 +38,7 @@ export function LinkedInChannelPreview({
   optionNumber,
   text,
   imageUrl,
+  imageUrls,
   selected,
   expanded,
   onSelect,
@@ -59,7 +60,8 @@ export function LinkedInChannelPreview({
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [imageRetryKey, setImageRetryKey] = useState(0);
   const [pickBodyExpanded, setPickBodyExpanded] = useState(false);
-  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
+  const urls = resolvePreviewImageUrls(imageUrl, imageUrls);
+  const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 280 || text.split('\n').length > 5);
@@ -72,7 +74,7 @@ export function LinkedInChannelPreview({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on prop-derived URL
     setImageLoadFailed(false);
-  }, [resolvedImageUrl]);
+  }, [resolvedImageUrl, urls.join('|')]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -284,7 +286,27 @@ export function LinkedInChannelPreview({
             </div>
           </div>
 
-          {resolvedImageUrl && !imageLoadFailed ? (
+          {urls.length > 1 && !imageLoadFailed ? (
+            <div className="border-t border-[color:var(--li-line)] bg-[#F8F9FA]" style={{ '--li-line': LI.border } as CSSProperties}>
+              <div className="grid grid-cols-2 gap-px bg-neutral-300 p-px">
+                {urls.slice(0, 4).map((u, i) => (
+                  <div key={`${u}-${i}`} className="relative aspect-square overflow-hidden bg-[#F8F9FA]">
+                    <img
+                      src={normalizePreviewImageUrl(u)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      onError={() => setImageLoadFailed(true)}
+                    />
+                    {i === 3 && urls.length > 4 ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-lg font-bold text-white">
+                        +{urls.length - 4}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : resolvedImageUrl && !imageLoadFailed ? (
             <div className="border-t border-[color:var(--li-line)] bg-[#F8F9FA]" style={{ '--li-line': LI.border } as CSSProperties}>
               <div
                 className={cn(
@@ -306,7 +328,7 @@ export function LinkedInChannelPreview({
                     if (import.meta.env.DEV) {
                       console.info('Preview image loaded', {
                         optionNumber,
-                        originalUrl: imageUrl,
+                        originalUrl: urls[0],
                         resolvedImageUrl,
                       });
                     }
@@ -315,7 +337,7 @@ export function LinkedInChannelPreview({
                     if (import.meta.env.DEV) {
                       console.warn('Preview image failed to load', {
                         optionNumber,
-                        originalUrl: imageUrl,
+                        originalUrl: urls[0],
                         resolvedImageUrl,
                       });
                     }
@@ -324,7 +346,7 @@ export function LinkedInChannelPreview({
                 />
               </div>
             </div>
-          ) : imageUrl ? (
+          ) : urls.length ? (
             <div
               className="border-t border-[color:var(--li-line)] bg-[#FAFAFA] px-4 py-6 text-center"
               role="status"
@@ -373,8 +395,8 @@ export function LinkedInChannelPreview({
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <p className="mt-1 break-all font-mono text-[0.6rem] text-neutral-400">
-                      {imageUrl}
-                      {resolvedImageUrl !== imageUrl ? (
+                      {urls.join(' | ')}
+                      {resolvedImageUrl !== urls[0] ? (
                         <>
                           <br />
                           <span className="text-neutral-600">Resolved: </span>

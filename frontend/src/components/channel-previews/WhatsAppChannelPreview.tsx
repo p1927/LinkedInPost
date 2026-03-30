@@ -9,12 +9,14 @@ import {
   messagingBubbleMaxClass,
   messagingChatPanelWidthClass,
   renderTaggedText,
+  resolvePreviewImageUrls,
 } from './shared';
 
 export function WhatsAppChannelPreview({
   optionNumber,
   text,
   imageUrl,
+  imageUrls,
   selected,
   expanded,
   onSelect,
@@ -33,7 +35,8 @@ export function WhatsAppChannelPreview({
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [imageRetryKey, setImageRetryKey] = useState(0);
   const [pickBodyExpanded, setPickBodyExpanded] = useState(false);
-  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
+  const urls = resolvePreviewImageUrls(imageUrl, imageUrls);
+  const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 320 || text.split('\n').length > 6);
@@ -46,7 +49,7 @@ export function WhatsAppChannelPreview({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadFailed(false);
-  }, [resolvedImageUrl]);
+  }, [resolvedImageUrl, urls.join('|')]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -122,7 +125,26 @@ export function WhatsAppChannelPreview({
             }}
           >
             <div className={cn('px-2 pt-1.5', isSidebar ? 'pb-1' : 'pb-1 sm:px-2.5 sm:pt-2')}>
-              {resolvedImageUrl && !imageLoadFailed ? (
+              {urls.length > 1 && !imageLoadFailed ? (
+                <div className="mb-1 flex flex-col gap-1">
+                  {urls.map((u, i) => (
+                    <div key={`${u}-${i}`} className="overflow-hidden rounded-md">
+                      <img
+                        src={normalizePreviewImageUrl(u)}
+                        alt=""
+                        className={cn(
+                          'w-full object-cover object-center',
+                          isSidebar ? 'max-h-24' : 'max-h-28 sm:max-h-32',
+                        )}
+                        onError={() => setImageLoadFailed(true)}
+                      />
+                    </div>
+                  ))}
+                  <p className="text-[0.65rem] opacity-70" style={{ color: WA.text }}>
+                    Separate messages (caption on first only)
+                  </p>
+                </div>
+              ) : resolvedImageUrl && !imageLoadFailed ? (
                 <div className="mb-1 overflow-hidden rounded-md">
                   <img
                     key={`${resolvedImageUrl}-${imageRetryKey}`}
@@ -135,7 +157,7 @@ export function WhatsAppChannelPreview({
                     onError={() => setImageLoadFailed(true)}
                   />
                 </div>
-              ) : imageUrl ? (
+              ) : urls.length ? (
                 <div className="mb-1 flex items-center gap-2 rounded-md border border-dashed border-black/15 bg-white/40 px-2 py-2">
                   <ImageOff className="h-4 w-4 shrink-0 opacity-50" />
                   <div className="min-w-0 flex-1">

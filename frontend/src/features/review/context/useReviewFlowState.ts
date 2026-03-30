@@ -6,6 +6,7 @@ import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { getVariantSlotContent } from '../../topic-navigation/utils/topicRoute';
 import { getEffectiveScope, getTargetText, isSelectionScopeWaitingForRange } from '@/features/draft-selection-target';
 import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../components/workspace/WorkspaceChromeContext';
+import { parseRowImageUrls } from '../../../services/selectedImageUrls';
 
 const formatLocalDateTimeForInput = (d: Date): string => {
   const localY = d.getFullYear();
@@ -50,7 +51,11 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [emailCc, setEmailCc] = useState(row.emailCc || globalEmailDefaults?.emailCc || '');
   const [emailBcc, setEmailBcc] = useState(row.emailBcc || globalEmailDefaults?.emailBcc || '');
   const [emailSubject, setEmailSubject] = useState(row.emailSubject || globalEmailDefaults?.emailSubject || '');
-  const [selectedImageUrl, setSelectedImageUrl] = useState(row.selectedImageId || row.imageLink1 || '');
+  const [selectedImageUrls, setSelectedImageUrls] = useState<string[]>(() => {
+    const fromRow = parseRowImageUrls(row);
+    if (fromRow.length > 0) return fromRow;
+    return row.imageLink1 ? [row.imageLink1] : [];
+  });
   /** When true, do not auto-pick the first image after the user clears the selection. */
   const [suppressAutoImageSelection, setSuppressAutoImageSelection] = useState(false);
   const [alternateImageOptions, setAlternateImageOptions] = useState<ImageAssetOption[]>([]);
@@ -124,9 +129,11 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       setEmailCc(row.emailCc || globalEmailDefaults?.emailCc || '');
       setEmailBcc(row.emailBcc || globalEmailDefaults?.emailBcc || '');
       setEmailSubject(row.emailSubject || globalEmailDefaults?.emailSubject || '');
-      setSelectedImageUrl(
-        (sc?.imageUrl?.trim() ? sc.imageUrl : '') || row.selectedImageId || row.imageLink1 || '',
-      );
+      {
+        const fromVariant = sc?.imageUrl?.trim() ? [sc.imageUrl] : [];
+        const fromRow = parseRowImageUrls(row);
+        setSelectedImageUrls(fromVariant.length > 0 ? fromVariant : fromRow.length > 0 ? fromRow : row.imageLink1 ? [row.imageLink1] : []);
+      }
       const variants = buildSheetVariants(row);
       const slotIdx = variants.findIndex((v) => v.originalIndex === routed.editorVariantSlot);
       setEditorVariantIndex(slotIdx >= 0 ? slotIdx : null);
@@ -143,7 +150,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setEmailCc(row.emailCc || globalEmailDefaults?.emailCc || '');
     setEmailBcc(row.emailBcc || globalEmailDefaults?.emailBcc || '');
     setEmailSubject(row.emailSubject || globalEmailDefaults?.emailSubject || '');
-    setSelectedImageUrl(row.selectedImageId || row.imageLink1 || '');
+    {
+      const fromRow = parseRowImageUrls(row);
+      setSelectedImageUrls(fromRow.length > 0 ? fromRow : row.imageLink1 ? [row.imageLink1] : []);
+    }
 
     const variants = buildSheetVariants(row);
     if (row.selectedText?.trim()) {
@@ -223,25 +233,29 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
   useEffect(() => {
     if (suppressAutoImageSelection) {
-      if (!selectedImageUrl) {
+      if (selectedImageUrls.length === 0) {
         return;
       }
-      if (!imageOptions.some((option) => option.imageUrl === selectedImageUrl)) {
-        setSelectedImageUrl(imageOptions[0]?.imageUrl || '');
+      const filtered = selectedImageUrls.filter((u) => imageOptions.some((option) => option.imageUrl === u));
+      if (filtered.length !== selectedImageUrls.length) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedImageUrls(filtered.length > 0 ? filtered : imageOptions[0]?.imageUrl ? [imageOptions[0].imageUrl] : []);
       }
       return;
     }
 
-    if (!selectedImageUrl && imageOptions[0]?.imageUrl) {
+    if (selectedImageUrls.length === 0 && imageOptions[0]?.imageUrl) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedImageUrl(imageOptions[0].imageUrl);
+      setSelectedImageUrls([imageOptions[0].imageUrl]);
       return;
     }
 
-    if (selectedImageUrl && !imageOptions.some((option) => option.imageUrl === selectedImageUrl)) {
-      setSelectedImageUrl(imageOptions[0]?.imageUrl || '');
+    const first = selectedImageUrls[0];
+    if (first && !imageOptions.some((option) => option.imageUrl === first)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedImageUrls(imageOptions[0]?.imageUrl ? [imageOptions[0].imageUrl] : []);
     }
-  }, [imageOptions, selectedImageUrl, suppressAutoImageSelection]);
+  }, [imageOptions, selectedImageUrls, suppressAutoImageSelection]);
 
   return {
     sheetRow, setSheetRow,
@@ -256,7 +270,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     previewVariantSaveByIndex, setPreviewVariantSaveByIndex,
     previewVariantSaveErrors, setPreviewVariantSaveErrors,
     postTime, setPostTime,
-    selectedImageUrl, setSelectedImageUrl,
+    selectedImageUrls, setSelectedImageUrls,
     suppressAutoImageSelection, setSuppressAutoImageSelection,
     alternateImageOptions, setAlternateImageOptions,
     uploadedImageOptions, setUploadedImageOptions,

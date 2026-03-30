@@ -5,6 +5,8 @@ export interface TelegramSendRequest {
   chatId: string;
   text: string;
   imageUrl?: string;
+  /** 2–10 photos sent as an album via `sendMediaGroup` (caption on first only). */
+  imageUrls?: string[];
 }
 
 export interface TelegramChatVerificationRequest {
@@ -24,7 +26,7 @@ interface TelegramApiResponse {
   description?: string;
   result?: {
     message_id?: number;
-  };
+  } | Array<{ message_id?: number }>;
 }
 
 interface TelegramGetChatResult {
@@ -55,28 +57,69 @@ function formatTelegramApiError(description: string | undefined, chatId: string,
   return message || `Telegram ${action} failed with status ${fallbackStatus}.`;
 }
 
-export async function sendTelegramMessage(request: TelegramSendRequest): Promise<{ messageId: string | null }> {
-  const normalizedImageUrl = request.imageUrl ? normalizeDeliveryImageUrl(request.imageUrl) : undefined;
-  const endpoint = normalizedImageUrl ? 'sendPhoto' : 'sendMessage';
+function resolveTelegramPhotoUrls(request: TelegramSendRequest): string[] {
+  const fromList = (request.imageUrls || [])
+    .map((u) => normalizeDeliveryImageUrl(String(u || '').trim()))
+    .filter((u): u is string => Boolean(u));
+  if (fromList.length > 0) {
+    return fromList.slice(0, 10);
+  }
+  const one = request.imageUrl ? normalizeDeliveryImageUrl(request.imageUrl) : undefined;
+  return one ? [one] : [];
+}
 
-  const response = await fetch(`https://api.telegram.org/bot${request.botToken}/${endpoint}`, {
+export async function sendTelegramMessage(request: TelegramSendRequest): Promise<{ messageId: string | null }> {
+  const urls = resolveTelegramPhotoUrls(request);
+
+  if (urls.length === 0) {
+    const response = await fetch(`https://api.telegram.org/bot${request.botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: request.chatId,
+        text: request.text,
+        disable_web_page_preview: false,
+      }),
+    });
+    const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
+    if (!response.ok || !payload?.ok) {
+      throw new Error(formatTelegramApiError(payload?.description, request.chatId, response.status, 'delivery'));
+    }
+    const r = payload.result as { message_id?: number } | undefined;
+    return { messageId: r?.message_id ? String(r.message_id) : null };
+  }
+
+  if (urls.length === 1) {
+    const response = await fetch(`https://api.telegram.org/bot${request.botToken}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: request.chatId,
+        photo: urls[0],
+        caption: request.text,
+      }),
+    });
+    const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
+    if (!response.ok || !payload?.ok) {
+      throw new Error(formatTelegramApiError(payload?.description, request.chatId, response.status, 'delivery'));
+    }
+    const r = payload.result as { message_id?: number } | undefined;
+    return { messageId: r?.message_id ? String(r.message_id) : null };
+  }
+
+  const media = urls.map((url, index) =>
+    index === 0
+      ? { type: 'photo' as const, media: url, caption: request.text }
+      : { type: 'photo' as const, media: url },
+  );
+
+  const response = await fetch(`https://api.telegram.org/bot${request.botToken}/sendMediaGroup`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(
-      normalizedImageUrl
-        ? {
-            chat_id: request.chatId,
-            photo: normalizedImageUrl,
-            caption: request.text,
-          }
-        : {
-            chat_id: request.chatId,
-            text: request.text,
-            disable_web_page_preview: false,
-          },
-    ),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: request.chatId,
+      media,
+    }),
   });
 
   const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
@@ -84,8 +127,10 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
     throw new Error(formatTelegramApiError(payload?.description, request.chatId, response.status, 'delivery'));
   }
 
+  const results = payload.result;
+  const firstId = Array.isArray(results) ? results[0]?.message_id : results?.message_id;
   return {
-    messageId: payload.result?.message_id ? String(payload.result.message_id) : null,
+    messageId: firstId != null ? String(firstId) : null,
   };
 }
 

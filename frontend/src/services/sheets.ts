@@ -17,6 +17,8 @@ export interface SheetRow {
   imageLink4: string;      // K
   selectedText: string;    // L
   selectedImageId: string; // M
+  /** Column T — JSON array of image URLs when multiple; omit or empty for a single image. */
+  selectedImageUrlsJson?: string;
   postTime: string;        // N
   emailTo?: string;        // O
   emailCc?: string;        // P

@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { cn } from '../../lib/cn';
 import type { ChannelPreviewProps } from './types';
 import { IG } from './platformTokens';
-import { instagramPhoneCardWidthClass, previewAuthorInitials, renderTaggedText } from './shared';
+import { instagramPhoneCardWidthClass, previewAuthorInitials, renderTaggedText, resolvePreviewImageUrls } from './shared';
 
 export function InstagramChannelPreview({
   optionNumber,
   text,
   imageUrl,
+  imageUrls,
   selected,
   expanded,
   onSelect,
@@ -32,7 +33,8 @@ export function InstagramChannelPreview({
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [imageRetryKey, setImageRetryKey] = useState(0);
   const [pickBodyExpanded, setPickBodyExpanded] = useState(false);
-  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
+  const urls = resolvePreviewImageUrls(imageUrl, imageUrls);
+  const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 220 || text.split('\n').length > 4);
@@ -45,7 +47,7 @@ export function InstagramChannelPreview({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadFailed(false);
-  }, [resolvedImageUrl]);
+  }, [resolvedImageUrl, urls.join('|')]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -148,7 +150,27 @@ export function InstagramChannelPreview({
           />
         </div>
 
-        {resolvedImageUrl && !imageLoadFailed ? (
+        {urls.length > 1 && !imageLoadFailed ? (
+          <div className="w-full bg-black">
+            <div className="flex aspect-square w-full snap-x snap-mandatory overflow-x-auto scroll-smooth">
+              {urls.map((u, i) => (
+                <div key={`${u}-${i}`} className="h-full w-full shrink-0 snap-center">
+                  <img
+                    src={normalizePreviewImageUrl(u)}
+                    alt=""
+                    className="h-full w-full object-cover object-center"
+                    onError={() => setImageLoadFailed(true)}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-center gap-1 py-1.5">
+              {urls.map((_, i) => (
+                <span key={i} className="h-1 w-1 rounded-full bg-white/45" aria-hidden />
+              ))}
+            </div>
+          </div>
+        ) : resolvedImageUrl && !imageLoadFailed ? (
           <div className="w-full bg-black">
             <div className="group/image relative aspect-square w-full overflow-hidden">
               <img
@@ -160,7 +182,7 @@ export function InstagramChannelPreview({
               />
             </div>
           </div>
-        ) : imageUrl ? (
+        ) : urls.length ? (
           <div
             className={cn(
               'flex flex-col items-center justify-center gap-2 border-y border-[color:var(--ig-border)] bg-[#FAFAFA] px-3 py-5',
@@ -203,7 +225,7 @@ export function InstagramChannelPreview({
               <Collapsible className="w-full max-w-xs text-left">
                 <CollapsibleTrigger className="text-[0.6rem] text-muted">URL (dev)</CollapsibleTrigger>
                 <CollapsibleContent>
-                  <p className="mt-1 break-all font-mono text-[0.55rem] text-muted">{imageUrl}</p>
+                  <p className="mt-1 break-all font-mono text-[0.55rem] text-muted">{urls.join(' | ')}</p>
                 </CollapsibleContent>
               </Collapsible>
             ) : null}

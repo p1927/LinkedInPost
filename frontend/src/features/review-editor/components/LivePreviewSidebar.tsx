@@ -5,7 +5,7 @@ import { useReviewFlow } from '../../review/context/ReviewFlowContext';
 
 export function LivePreviewSidebar() {
   const {
-    selectedImageUrl,
+    selectedImageUrls,
     previewCollapsed,
     setPreviewCollapsed,
     editorText,
@@ -32,12 +32,16 @@ export function LivePreviewSidebar() {
             </p>
             <Badge variant="neutral" size="xs" className="normal-case shrink-0">
               {deliveryChannel === 'gmail'
-                ? selectedImageUrl
-                  ? 'Gmail · image'
-                  : 'Gmail · text'
-                : selectedImageUrl
-                  ? 'Image'
-                  : 'Text only'}
+                ? selectedImageUrls.length > 1
+                  ? `Gmail · ${selectedImageUrls.length} images`
+                  : selectedImageUrls.length === 1
+                    ? 'Gmail · image'
+                    : 'Gmail · text'
+                : selectedImageUrls.length > 1
+                  ? `${selectedImageUrls.length} images`
+                  : selectedImageUrls.length === 1
+                    ? 'Image'
+                    : 'Text only'}
             </Badge>
           </div>
           <Button
@@ -55,7 +59,8 @@ export function LivePreviewSidebar() {
             <LinkedInPostPreview
               optionNumber={1}
               text={editorText}
-              imageUrl={selectedImageUrl}
+              imageUrl={selectedImageUrls[0]}
+              imageUrls={selectedImageUrls.length > 1 ? selectedImageUrls : undefined}
               previewChannel={deliveryChannel}
               previewAuthorName={previewAuthorName}
               gmailTo={emailTo}

@@ -60,9 +60,11 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         googleModel={p.googleModel}
         routed={routed}
         editorStartMediaPanel={editorStartMediaPanel}
-        onApprove={(text, img, time, emailTo, emailCc, emailBcc, emailSubject) => p.onApprove(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject)}
-        onPublishNow={(text, img, time, emailTo, emailCc, emailBcc, emailSubject) =>
-          p.onPublishNow(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject)
+        onApprove={(text, img, time, emailTo, emailCc, emailBcc, emailSubject, imgJson) =>
+          p.onApprove(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject, imgJson)
+        }
+        onPublishNow={(text, img, time, emailTo, emailCc, emailBcc, emailSubject, imgJson) =>
+          p.onPublishNow(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject, imgJson)
         }
         onSaveEmailFields={(emailTo, emailCc, emailBcc, emailSubject) => p.onSaveEmailFields(row, emailTo, emailCc, emailBcc, emailSubject)}
         globalEmailDefaults={p.globalEmailDefaults}

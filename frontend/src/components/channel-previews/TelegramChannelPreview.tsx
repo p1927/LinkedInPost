@@ -9,12 +9,14 @@ import {
   messagingBubbleMaxClass,
   messagingChatPanelWidthClass,
   renderTaggedText,
+  resolvePreviewImageUrls,
 } from './shared';
 
 export function TelegramChannelPreview({
   optionNumber,
   text,
   imageUrl,
+  imageUrls,
   selected,
   expanded,
   onSelect,
@@ -33,7 +35,8 @@ export function TelegramChannelPreview({
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [imageRetryKey, setImageRetryKey] = useState(0);
   const [pickBodyExpanded, setPickBodyExpanded] = useState(false);
-  const resolvedImageUrl = normalizePreviewImageUrl(imageUrl);
+  const urls = resolvePreviewImageUrls(imageUrl, imageUrls);
+  const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 320 || text.split('\n').length > 6);
@@ -46,7 +49,7 @@ export function TelegramChannelPreview({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadFailed(false);
-  }, [resolvedImageUrl]);
+  }, [resolvedImageUrl, urls.join('|')]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -129,7 +132,25 @@ export function TelegramChannelPreview({
             }}
           >
             <div className={cn('px-2.5 pt-2', isSidebar ? 'pb-1' : 'pb-1.5 sm:px-3 sm:pt-2.5')}>
-              {resolvedImageUrl && !imageLoadFailed ? (
+              {urls.length > 1 && !imageLoadFailed ? (
+                <div className="mb-1.5 grid grid-cols-2 gap-0.5 overflow-hidden rounded-lg">
+                  {urls.slice(0, 4).map((u, i) => (
+                    <div key={`${u}-${i}`} className="relative aspect-square overflow-hidden bg-black/5">
+                      <img
+                        src={normalizePreviewImageUrl(u)}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={() => setImageLoadFailed(true)}
+                      />
+                      {i === 3 && urls.length > 4 ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-xs font-bold text-white">
+                          +{urls.length - 4}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : resolvedImageUrl && !imageLoadFailed ? (
                 <div className="mb-1.5 overflow-hidden rounded-lg">
                   <img
                     key={`${resolvedImageUrl}-${imageRetryKey}`}
@@ -142,7 +163,7 @@ export function TelegramChannelPreview({
                     onError={() => setImageLoadFailed(true)}
                   />
                 </div>
-              ) : imageUrl ? (
+              ) : urls.length ? (
                 <div className="mb-1.5 flex items-center gap-2 rounded-lg border border-dashed px-2 py-2" style={{ borderColor: TG.bubbleBorder }}>
                   <ImageOff className="h-4 w-4 shrink-0 opacity-60" />
                   <div className="min-w-0 flex-1">

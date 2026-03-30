@@ -1,15 +1,22 @@
 import { fetchImageAsset } from '../media';
 
+/** Pinned LinkedIn REST API product version (required for `rest/posts` MultiImage). See Microsoft Learn versioning. */
+export const LINKEDIN_REST_API_VERSION = '202502';
+
 export interface LinkedInPublishRequest {
   accessToken: string;
   personUrn: string;
   text: string;
+  /** Single image (legacy) — prefer {@link imageUrls} when multiple. */
   imageUrl?: string;
+  /** Multiple images: uses Posts API `multiImage` (2–20). Single image still uses `ugcPosts`. */
+  imageUrls?: string[];
 }
 
 interface LinkedInPublishResponse {
   id?: string;
   message?: string;
+  errors?: Array<{ message?: string }>;
 }
 
 interface LinkedInRegisterUploadResponse {
@@ -24,10 +31,69 @@ interface LinkedInRegisterUploadResponse {
   message?: string;
 }
 
+function normalizeImageList(imageUrl: string | undefined, imageUrls: string[] | undefined): string[] {
+  const fromArray = (imageUrls || []).map((u) => String(u || '').trim()).filter(Boolean);
+  if (fromArray.length > 0) {
+    return fromArray;
+  }
+  const single = String(imageUrl || '').trim();
+  return single ? [single] : [];
+}
+
 export async function publishLinkedInPost(request: LinkedInPublishRequest): Promise<{ postId: string | null }> {
-  const media = request.imageUrl
-    ? await uploadLinkedInImage(request.accessToken, request.personUrn, request.imageUrl)
-    : null;
+  const urls = normalizeImageList(request.imageUrl, request.imageUrls);
+
+  if (urls.length > 1) {
+    const assets = await Promise.all(
+      urls.map((url) => uploadLinkedInImage(request.accessToken, request.personUrn, url)),
+    );
+
+    const response = await fetch('https://api.linkedin.com/rest/posts', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${request.accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Linkedin-Version': LINKEDIN_REST_API_VERSION,
+      },
+      body: JSON.stringify({
+        author: request.personUrn,
+        commentary: request.text,
+        visibility: 'PUBLIC',
+        distribution: {
+          feedDistribution: 'MAIN_FEED',
+          targetEntities: [],
+          thirdPartyDistributionChannels: [],
+        },
+        lifecycleState: 'PUBLISHED',
+        isReshareDisabledByAuthor: false,
+        content: {
+          multiImage: {
+            images: assets.map((a) => ({
+              id: a.asset,
+              altText: request.text.slice(0, 120),
+            })),
+          },
+        },
+      }),
+    });
+
+    const postIdHeader = response.headers.get('x-restli-id');
+    const payload = (await response.json().catch(() => null)) as LinkedInPublishResponse | null;
+    if (!response.ok) {
+      const message =
+        payload?.message ||
+        payload?.errors?.[0]?.message ||
+        response.statusText ||
+        String(response.status);
+      throw new Error(`LinkedIn publish failed: ${message}`);
+    }
+
+    const postId = postIdHeader ? decodeURIComponent(postIdHeader.trim()) : payload?.id || null;
+    return { postId: postId || null };
+  }
+
+  const media = urls.length === 1 ? await uploadLinkedInImage(request.accessToken, request.personUrn, urls[0]!) : null;
 
   const response = await fetch('https://api.linkedin.com/v2/ugcPosts', {
     method: 'POST',

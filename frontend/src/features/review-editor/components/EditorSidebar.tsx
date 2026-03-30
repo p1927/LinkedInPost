@@ -24,7 +24,7 @@ export function EditorSidebar() {
     aiRefineBlockedReason,
     sheetRow,
     imageOptions,
-    selectedImageUrl,
+    selectedImageUrls,
     handleSelectImageOption,
     handleClearSelectedImage,
     imagePromoteOptionId,
@@ -128,7 +128,7 @@ export function EditorSidebar() {
             <ImageAssetManager
               topic={sheetRow.topic}
               images={imageOptions}
-              selectedImageUrl={selectedImageUrl}
+              selectedImageUrls={selectedImageUrls}
               onSelectImage={handleSelectImageOption}
               onFetchMoreImages={handleFetchMoreImageOptions}
               onUploadImage={handleUploadImageOption}

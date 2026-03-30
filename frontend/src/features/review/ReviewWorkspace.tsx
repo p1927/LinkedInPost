@@ -27,8 +27,8 @@ export interface ReviewWorkspaceProps {
   previewAuthorName?: string;
   globalGenerationRules: string;
   googleModel: string;
-  onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
-  onPublishNow: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => Promise<void>;
+  onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
+  onPublishNow: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   onSaveEmailFields: (emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
   globalEmailDefaults?: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;

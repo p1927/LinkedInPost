@@ -44,6 +44,20 @@ export function messagingChatPanelWidthClass(sidebar: boolean): string {
   return cn('mx-auto w-full', 'max-w-[min(100%,21rem)]', 'sm:max-w-[20rem]', 'md:max-w-[19rem]');
 }
 
+export function resolvePreviewImageUrls(imageUrl?: string, imageUrls?: string[]): string[] {
+  const raw = imageUrls && imageUrls.length > 0 ? imageUrls : imageUrl?.trim() ? [imageUrl] : [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const u of raw) {
+    const t = String(u || '').trim();
+    if (t && !seen.has(t)) {
+      seen.add(t);
+      out.push(t);
+    }
+  }
+  return out;
+}
+
 export const TAG_CLASS_BY_CHANNEL: Record<ChannelId, string> = {
   linkedin: 'font-medium text-[#0a66c2]',
   instagram: 'font-medium text-[#d62976]',

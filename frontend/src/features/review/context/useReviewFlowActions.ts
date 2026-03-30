@@ -6,6 +6,7 @@ import { applyFormattingAction } from '@/features/draft-selection-target';
 import { rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { mergeUniqueImageOptions } from './utils';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
+import { MAX_IMAGES_PER_POST, serializeRowImageUrls } from '../../../services/selectedImageUrls';
 
 export function useReviewFlowActions(
   props: ReviewFlowProviderProps,
@@ -47,7 +48,8 @@ export function useReviewFlowActions(
     emailCc,
     emailBcc,
     emailSubject,
-    setSelectedImageUrl,
+    selectedImageUrls,
+    setSelectedImageUrls,
     suppressAutoImageSelection,
     setSuppressAutoImageSelection,
     alternateImageOptions, setAlternateImageOptions,
@@ -164,7 +166,7 @@ export function useReviewFlowActions(
     setPreviewVariantSaveErrors({});
     if (variant.imageUrl) {
       setSuppressAutoImageSelection(false);
-      setSelectedImageUrl(variant.imageUrl);
+      setSelectedImageUrls([variant.imageUrl]);
     }
     setEditorVariantIndex(variantIndex ?? null);
     setReviewPhase('edit');
@@ -178,7 +180,7 @@ export function useReviewFlowActions(
     setVariantsPreview,
     setPreviewVariantSaveByIndex,
     setPreviewVariantSaveErrors,
-    setSelectedImageUrl,
+    setSelectedImageUrls,
     setSuppressAutoImageSelection,
     setEditorVariantIndex,
     setReviewPhase
@@ -307,8 +309,8 @@ export function useReviewFlowActions(
       ...alternateImageOptions.filter((option) => option.kind === 'alternate'),
     ]).slice(0, Math.max(nextOptions.length, 4));
     setAlternateImageOptions(dedupedAlternates);
-    if (dedupedAlternates[0]?.imageUrl && !suppressAutoImageSelection) {
-      setSelectedImageUrl(dedupedAlternates[0].imageUrl);
+    if (dedupedAlternates[0]?.imageUrl && !suppressAutoImageSelection && selectedImageUrls.length === 0) {
+      setSelectedImageUrls([dedupedAlternates[0].imageUrl]);
     }
   };
 
@@ -324,44 +326,58 @@ export function useReviewFlowActions(
 
   const handleClearSelectedImage = useCallback(() => {
     setSuppressAutoImageSelection(true);
-    setSelectedImageUrl('');
-  }, [setSelectedImageUrl, setSuppressAutoImageSelection]);
+    setSelectedImageUrls([]);
+  }, [setSelectedImageUrls, setSuppressAutoImageSelection]);
 
   const handleSelectImageOption = async (option: ImageAssetOption) => {
     setSuppressAutoImageSelection(false);
-    if (!option.pendingCloudUpload) {
-      setSelectedImageUrl(option.imageUrl);
-      return;
+    let url = option.imageUrl;
+    if (option.pendingCloudUpload) {
+      setImagePromoteOptionId(option.id);
+      try {
+        url = await promoteAlternateOption(option);
+      } catch (error) {
+        console.error(error);
+        void showAlert({
+          title: 'Could not save image',
+          description: error instanceof Error ? error.message : 'Failed to copy the image to workspace storage.',
+        });
+        return;
+      } finally {
+        setImagePromoteOptionId('');
+      }
     }
-    setImagePromoteOptionId(option.id);
-    try {
-      const gcsUrl = await promoteAlternateOption(option);
-      setSelectedImageUrl(gcsUrl);
-    } catch (error) {
-      console.error(error);
-      void showAlert({
-        title: 'Could not save image',
-        description: error instanceof Error ? error.message : 'Failed to copy the image to workspace storage.',
-      });
-    } finally {
-      setImagePromoteOptionId('');
-    }
+
+    setSelectedImageUrls((prev) => {
+      const idx = prev.indexOf(url);
+      if (idx >= 0) {
+        return prev.filter((_, i) => i !== idx);
+      }
+      if (prev.length >= MAX_IMAGES_PER_POST) {
+        return prev;
+      }
+      return [...prev, url];
+    });
   };
 
-  const ensureSelectedImageStored = async (): Promise<string> => {
-    const url = state.selectedImageUrl;
-    const pendingAlt = alternateImageOptions.find((o) => o.imageUrl === url && o.pendingCloudUpload);
-    if (!pendingAlt) {
-      return url;
+  const ensureSelectedImagesStored = async (): Promise<string[]> => {
+    const urls = [...selectedImageUrls];
+    const next = [...urls];
+    for (let i = 0; i < next.length; i += 1) {
+      const url = next[i]!;
+      const pendingAlt = alternateImageOptions.find((o) => o.imageUrl === url && o.pendingCloudUpload);
+      if (!pendingAlt) {
+        continue;
+      }
+      setImagePromoteOptionId(pendingAlt.id);
+      try {
+        next[i] = await promoteAlternateOption(pendingAlt);
+      } finally {
+        setImagePromoteOptionId('');
+      }
     }
-    setImagePromoteOptionId(pendingAlt.id);
-    try {
-      const gcsUrl = await promoteAlternateOption(pendingAlt);
-      setSelectedImageUrl(gcsUrl);
-      return gcsUrl;
-    } finally {
-      setImagePromoteOptionId('');
-    }
+    setSelectedImageUrls(next);
+    return next;
   };
 
   const handleUploadImageOption = async (file: File) => {
@@ -375,7 +391,9 @@ export function useReviewFlowActions(
 
     setUploadedImageOptions((current) => mergeUniqueImageOptions([uploadedOption, ...current]).slice(0, 4));
     setSuppressAutoImageSelection(false);
-    setSelectedImageUrl(imageUrl);
+    setSelectedImageUrls((prev) =>
+      prev.length >= MAX_IMAGES_PER_POST ? prev : prev.includes(imageUrl) ? prev : [...prev, imageUrl],
+    );
   };
 
   const handleApprove = async () => {
@@ -397,8 +415,18 @@ export function useReviewFlowActions(
         formattedTime = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
       }
 
-      const imageUrlForSheet = await ensureSelectedImageStored();
-      await onApprove(editorText.trim(), imageUrlForSheet, formattedTime, emailTo, emailCc, emailBcc, emailSubject);
+      const urlsForSheet = await ensureSelectedImagesStored();
+      const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(urlsForSheet);
+      await onApprove(
+        editorText.trim(),
+        selectedImageId,
+        formattedTime,
+        emailTo,
+        emailCc,
+        emailBcc,
+        emailSubject,
+        selectedImageUrlsJson,
+      );
     } catch (error) {
       console.error('Approval failed:', error);
       void showAlert({
@@ -444,15 +472,17 @@ export function useReviewFlowActions(
         formattedTime = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
       }
 
-      const imageUrlForPublish = await ensureSelectedImageStored();
+      const urlsForPublish = await ensureSelectedImagesStored();
+      const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(urlsForPublish);
       await onPublishNow(
         editorText.trim(),
-        imageUrlForPublish,
+        selectedImageId,
         formattedTime,
         emailTo,
         emailCc,
         emailBcc,
         emailSubject,
+        selectedImageUrlsJson,
       );
     } catch (error) {
       console.error('Publish failed:', error);

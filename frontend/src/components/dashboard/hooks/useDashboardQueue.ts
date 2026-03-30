@@ -10,6 +10,7 @@ import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/
 
 import { useAlert } from '../../AlertProvider';
 import { rowMatchesPendingScheduledPublish, usePendingScheduledPublish } from '@/features/scheduled-publish';
+import { parseRowImageUrls, serializeRowImageUrls } from '@/services/selectedImageUrls';
 
 export function useDashboardQueue({
   idToken,
@@ -131,9 +132,20 @@ export function useDashboardQueue({
     }
   };
 
-  const handleApproveVariant = async (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string) => {
+  const handleApproveVariant = async (
+    row: SheetRow,
+    selectedText: string,
+    selectedImageId: string,
+    postTime: string,
+    emailTo?: string,
+    emailCc?: string,
+    emailBcc?: string,
+    emailSubject?: string,
+    selectedImageUrlsJson?: string,
+  ) => {
     try {
       const normalizedStatus = getNormalizedRowStatus(row.status);
+      const urlsJson = selectedImageUrlsJson ?? '';
       if (normalizedStatus === 'published') {
         await api.createDraftFromPublished(
           idToken,
@@ -145,6 +157,7 @@ export function useDashboardQueue({
           emailCc || '',
           emailBcc || '',
           emailSubject || '',
+          urlsJson,
         );
         await loadData(true);
         void showAlert({
@@ -155,7 +168,19 @@ export function useDashboardQueue({
         return;
       }
 
-      await api.updateRowStatus(idToken, row, 'Approved', selectedText, selectedImageId, postTime, emailTo, emailCc, emailBcc, emailSubject);
+      await api.updateRowStatus(
+        idToken,
+        row,
+        'Approved',
+        selectedText,
+        selectedImageId,
+        postTime,
+        emailTo,
+        emailCc,
+        emailBcc,
+        emailSubject,
+        urlsJson,
+      );
       await loadData(true);
       onAfterApprove?.();
     } catch (error) {
@@ -288,7 +313,7 @@ export function useDashboardQueue({
 
   const describePublishPrerequisiteFailure = useMemo(
     () =>
-      (message: string, imageUrl: string, emailToForGmail: string, emptyTextHint: 'queue' | 'editor'): string | null => {
+      (message: string, rowForImages: SheetRow, emailToForGmail: string, emptyTextHint: 'queue' | 'editor'): string | null => {
         if (selectedChannel === 'telegram' && !telegramConfigured) {
           return session.isAdmin
             ? 'Complete the Telegram delivery settings in the workspace drawer first.'
@@ -324,7 +349,7 @@ export function useDashboardQueue({
             ? 'This row does not have approved text yet. Review and approve a draft first.'
             : 'Post text is empty. Write or select content before publishing.';
         }
-        if (selectedChannel === 'instagram' && !imageUrl.trim()) {
+        if (selectedChannel === 'instagram' && parseRowImageUrls(rowForImages).length === 0) {
           return 'Instagram requires a selected image. Choose an image in the Media panel before publishing.';
         }
         if (selectedChannel === 'gmail' && !emailToForGmail.trim()) {
@@ -360,12 +385,7 @@ export function useDashboardQueue({
     }
 
     const message = (row.selectedText || row.variant1 || '').trim();
-    const fail = describePublishPrerequisiteFailure(
-      message,
-      (row.selectedImageId || '').trim(),
-      (row.emailTo || '').trim(),
-      'queue',
-    );
+    const fail = describePublishPrerequisiteFailure(message, row, (row.emailTo || '').trim(), 'queue');
     if (fail) {
       void showAlert({ title: 'Notice', description: fail });
       return;
@@ -374,12 +394,15 @@ export function useDashboardQueue({
     const actionKey = buildRowActionKey('publish', row);
     setActionLoading(actionKey);
     try {
+      const imageUrls = parseRowImageUrls(row);
+      const { selectedImageId: primaryId } = serializeRowImageUrls(imageUrls);
       const result = await api.publishContent(idToken, {
         row,
         channel: selectedChannel,
         recipientId: selectedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
         message,
-        imageUrl: (row.selectedImageId || '').trim() || undefined,
+        imageUrl: primaryId || undefined,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       });
 
       if (result.deliveryMode === 'sent') {
@@ -421,6 +444,7 @@ export function useDashboardQueue({
     emailCc?: string,
     emailBcc?: string,
     emailSubject?: string,
+    selectedImageUrlsJson?: string,
   ) => {
     if (actionLoading !== null) return;
 
@@ -440,10 +464,11 @@ export function useDashboardQueue({
     }
 
     const message = selectedText.trim();
-    const imageUrl = (selectedImageId || '').trim();
+    const urlsJson = selectedImageUrlsJson ?? '';
     const emailToResolved = (emailTo ?? row.emailTo ?? '').trim();
 
-    const fail = describePublishPrerequisiteFailure(message, imageUrl, emailToResolved, 'editor');
+    const rowPreview: SheetRow = { ...row, selectedImageId, selectedImageUrlsJson: urlsJson };
+    const fail = describePublishPrerequisiteFailure(message, rowPreview, emailToResolved, 'editor');
     if (fail) {
       void showAlert({ title: 'Notice', description: fail });
       return;
@@ -459,12 +484,13 @@ export function useDashboardQueue({
           idToken,
           row,
           message,
-          imageUrl,
+          selectedImageId,
           postTime,
           emailTo ?? '',
           emailCc ?? '',
           emailBcc ?? '',
           emailSubject ?? '',
+          urlsJson,
         );
         const data = await api.getRows(idToken);
         const nextRows = data.reverse();
@@ -492,13 +518,15 @@ export function useDashboardQueue({
         emailCc ?? '',
         emailBcc ?? '',
         emailSubject ?? '',
+        urlsJson,
       );
 
       const mergedRow: SheetRow = {
         ...rowToPublish,
         status: 'Approved',
         selectedText: message,
-        selectedImageId: imageUrl,
+        selectedImageId,
+        selectedImageUrlsJson: urlsJson,
         postTime,
         emailTo: emailTo ?? rowToPublish.emailTo,
         emailCc: emailCc ?? rowToPublish.emailCc,
@@ -506,12 +534,16 @@ export function useDashboardQueue({
         emailSubject: emailSubject ?? rowToPublish.emailSubject,
       };
 
+      const imageUrls = parseRowImageUrls(mergedRow);
+      const { selectedImageId: primaryId } = serializeRowImageUrls(imageUrls);
+
       const result = await api.publishContent(idToken, {
         row: mergedRow,
         channel: selectedChannel,
         recipientId: selectedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
         message,
-        imageUrl: imageUrl || undefined,
+        imageUrl: primaryId || undefined,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       });
 
       if (result.deliveryMode === 'sent') {

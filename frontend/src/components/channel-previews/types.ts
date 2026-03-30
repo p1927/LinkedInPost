@@ -5,6 +5,8 @@ export interface ChannelPreviewProps {
   optionNumber: number;
   text: string;
   imageUrl?: string;
+  /** When set (2+ typical), previews show multi-image layouts for the channel. */
+  imageUrls?: string[];
   selected: boolean;
   expanded: boolean;
   onSelect: () => void;

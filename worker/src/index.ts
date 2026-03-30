@@ -15,6 +15,7 @@ import { generateQuickChangePreview, generateVariantsPreview } from './generatio
 import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway } from './persistence/drafts';
 import type { SheetRow } from './generation/types';
+import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
 
@@ -597,7 +598,8 @@ async function dispatchAction(
         String(payload.emailTo || ''),
         String(payload.emailCc || ''),
         String(payload.emailBcc || ''),
-        String(payload.emailSubject || '')
+        String(payload.emailSubject || ''),
+        String(payload.selectedImageUrlsJson ?? ''),
       );
     case 'saveEmailFields':
       ensureSpreadsheetConfigured(storedConfig);
@@ -621,6 +623,7 @@ async function dispatchAction(
         String(payload.emailCc || ''),
         String(payload.emailBcc || ''),
         String(payload.emailSubject || ''),
+        String(payload.selectedImageUrlsJson ?? ''),
       );
     case 'updatePostSchedule':
       ensureSpreadsheetConfigured(storedConfig);
@@ -2038,11 +2041,33 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
       channel: task.channel || 'linkedin',
       recipientId: task.recipientId,
       message: row.selectedText,
-      imageUrl: row.selectedImageId,
       isScheduledExecution: true,
     },
     sheets,
   );
+}
+
+function resolvePublishImageUrls(payload: Record<string, unknown>, row: SheetRow): string[] {
+  const raw = payload.imageUrls;
+  if (Array.isArray(raw) && raw.length > 0) {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const x of raw) {
+      const u = String(x || '').trim();
+      if (u && !seen.has(u)) {
+        seen.add(u);
+        out.push(u);
+      }
+    }
+    if (out.length > 0) {
+      return out.slice(0, MAX_IMAGES_PER_POST);
+    }
+  }
+  const one = String(payload.imageUrl || '').trim();
+  if (one) {
+    return [one];
+  }
+  return parseRowImageUrls(row);
 }
 
 async function publishContent(
@@ -2066,16 +2091,18 @@ async function publishContent(
     ? normalizeTelegramChatId(rawRecipientId)
     : normalizePhoneNumber(rawRecipientId);
   const message = String(payload.message || row.selectedText || '').trim();
-  const imageUrl = String(payload.imageUrl || row.selectedImageId || '').trim();
+  const imageUrls = resolvePublishImageUrls(payload, row);
   const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
   async function markPublishedForChannel(): Promise<void> {
-    const cleanedRow = await cleanupUnusedGeneratedImages(env, row, imageUrl);
+    const cleanedRow = await cleanupUnusedGeneratedImages(env, row, imageUrls);
+    const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(imageUrls);
     await sheets.markRowPublished(config.spreadsheetId, {
       ...cleanedRow,
       status: 'Published',
       selectedText: message,
-      selectedImageId: imageUrl,
+      selectedImageId,
+      selectedImageUrlsJson,
       postTime: publishedAt,
     });
   }
@@ -2101,13 +2128,13 @@ async function publishContent(
       recipientId: recipientId || null,
       messageId: null,
       deliveryMode: 'queued',
-      mediaMode: imageUrl ? 'image' : 'text',
+      mediaMode: imageUrls.length > 0 ? 'image' : 'text',
       scheduledTime: row.postTime!.trim(),
     };
   }
 
   if (channel === 'instagram') {
-    if (!imageUrl) {
+    if (imageUrls.length === 0) {
       throw new Error('Instagram publishing requires a selected image.');
     }
 
@@ -2141,7 +2168,7 @@ async function publishContent(
       accessToken: instagramAccessToken,
       instagramUserId: config.instagramUserId,
       caption: message,
-      imageUrl,
+      imageUrls,
       altText: row.topic,
     });
 
@@ -2188,7 +2215,8 @@ async function publishContent(
       accessToken: linkedinAccessToken,
       personUrn: config.linkedinPersonUrn,
       text: message,
-      imageUrl: imageUrl || undefined,
+      imageUrl: imageUrls.length === 1 ? imageUrls[0] : undefined,
+      imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
     });
 
     await markPublishedForChannel();
@@ -2199,7 +2227,7 @@ async function publishContent(
       recipientId: null,
       messageId: publishResult.postId,
       deliveryMode: 'sent',
-      mediaMode: imageUrl ? 'image' : 'text',
+      mediaMode: imageUrls.length > 0 ? 'image' : 'text',
     };
   }
 
@@ -2214,7 +2242,8 @@ async function publishContent(
       botToken,
       chatId: recipientId,
       text: message,
-      imageUrl: imageUrl || undefined,
+      imageUrl: imageUrls.length === 1 ? imageUrls[0] : undefined,
+      imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
     });
 
     await markPublishedForChannel();
@@ -2225,7 +2254,7 @@ async function publishContent(
       recipientId,
       messageId: sendResult.messageId,
       deliveryMode: 'sent',
-      mediaMode: imageUrl ? 'image' : 'text',
+      mediaMode: imageUrls.length > 0 ? 'image' : 'text',
     };
   }
 
@@ -2264,9 +2293,9 @@ async function publishContent(
       subject: String(payload.emailSubject || row.emailSubject || row.topic || 'New Message'),
       body: message,
     };
-    if (imageUrl) {
-      const asset = await fetchImageAsset(imageUrl);
-      gmailRequest.inlineImage = { contentType: asset.contentType, bytes: asset.bytes };
+    if (imageUrls.length > 0) {
+      const assets = await Promise.all(imageUrls.map((u) => fetchImageAsset(u)));
+      gmailRequest.inlineImages = assets.map((a) => ({ contentType: a.contentType, bytes: a.bytes }));
     }
 
     let sendResult: { messageId: string | null };
@@ -2298,7 +2327,7 @@ async function publishContent(
       recipientId: gmailTo || null,
       messageId: sendResult.messageId,
       deliveryMode: 'sent',
-      mediaMode: imageUrl ? 'image' : 'text',
+      mediaMode: imageUrls.length > 0 ? 'image' : 'text',
     };
   }
 
@@ -2337,7 +2366,8 @@ async function publishContent(
     phoneNumberId: config.whatsappPhoneNumberId,
     to: recipientId,
     text: message,
-    imageUrl: imageUrl || undefined,
+    imageUrl: imageUrls.length === 1 ? imageUrls[0] : undefined,
+    imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
   });
 
   await markPublishedForChannel();
@@ -2348,7 +2378,7 @@ async function publishContent(
     recipientId,
     messageId: sendResult.messageId,
     deliveryMode: 'sent',
-    mediaMode: imageUrl ? 'image' : 'text',
+    mediaMode: imageUrls.length > 0 ? 'image' : 'text',
   };
 }
 
@@ -2404,7 +2434,7 @@ function parseGcsObjectReference(url: string): { bucketName: string; objectName:
   return { bucketName: '', objectName: '' };
 }
 
-async function cleanupUnusedGeneratedImages(env: Env, row: SheetRow, selectedImageUrl: string): Promise<SheetRow> {
+async function cleanupUnusedGeneratedImages(env: Env, row: SheetRow, selectedImageUrls: string[]): Promise<SheetRow> {
   const configuredBucket = String(env.GOOGLE_CLOUD_STORAGE_BUCKET || '').trim();
   if (!configuredBucket || !shouldDeleteUnusedGeneratedImages(env)) {
     return row;
@@ -2417,12 +2447,12 @@ async function cleanupUnusedGeneratedImages(env: Env, row: SheetRow, selectedIma
     return row;
   }
 
-  const selected = String(selectedImageUrl || '').trim();
+  const keep = new Set(selectedImageUrls.map((u) => u.trim()).filter(Boolean));
   const accessToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
   const deletedUrls = new Set<string>();
 
   for (const candidate of candidateUrls) {
-    if (candidate === selected) {
+    if (keep.has(candidate)) {
       continue;
     }
 
@@ -2642,6 +2672,76 @@ function firstNonEmpty(...values: unknown[]): string {
   return '';
 }
 
+/** Hosts whose image URLs usually fail in browser <img> (hotlink / tracking / auth) or spam the console. */
+const SERP_IMAGE_HOTLINK_BLOCKED_HOST_SUFFIXES = [
+  'tiktok.com',
+  'tiktokcdn.com',
+  'tiktokv.com',
+  'instagram.com',
+  'cdninstagram.com',
+  'facebook.com',
+  'fb.com',
+] as const;
+
+function isSerpImageHotlinkBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return SERP_IMAGE_HOTLINK_BLOCKED_HOST_SUFFIXES.some((suff) => h === suff || h.endsWith(`.${suff}`));
+}
+
+function isLikelyBrowserHotlinkableImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url.trim());
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return false;
+    }
+    const host = u.hostname.toLowerCase();
+    if (isSerpImageHotlinkBlockedHost(host)) {
+      return false;
+    }
+    if ((host === 'www.google.com' || host === 'google.com') && u.pathname.startsWith('/url')) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Prefer thumbnail first (often Google's cached copy on gstatic), then original, then link —
+ * so topic-based search does not surface TikTok originals that break in the media panel.
+ */
+function pickHotlinkFriendlySerpImageUrl(item: SerpApiImageResult): string | null {
+  const candidates = [item.thumbnail, item.original, item.link];
+  for (const raw of candidates) {
+    if (typeof raw !== 'string') {
+      continue;
+    }
+    const trimmed = raw.trim();
+    if (isLikelyBrowserHotlinkableImageUrl(trimmed)) {
+      return trimmed;
+    }
+  }
+  return null;
+}
+
+function collectHotlinkFriendlySerpImageUrls(results: SerpApiImageResult[] | undefined, maxUrls: number): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  for (const item of results || []) {
+    if (urls.length >= maxUrls) {
+      break;
+    }
+    const url = pickHotlinkFriendlySerpImageUrl(item);
+    if (!url || seen.has(url)) {
+      continue;
+    }
+    seen.add(url);
+    urls.push(url);
+  }
+  return urls;
+}
+
 function normalizeSearchText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
@@ -2754,27 +2854,29 @@ async function runSerpApiSearch(env: Env, query: string, numResults: number, ima
 }
 
 async function fetchCandidateImageUrls(env: Env, topic: string, count: number): Promise<string[]> {
+  const collected: string[] = [];
+  const seen = new Set<string>();
+
   for (const query of buildSearchQueries(topic, true)) {
-    const payload = await runSerpApiSearch(env, query, Math.max(count * 3, count), true);
-    const urls: string[] = [];
-    const seen = new Set<string>();
-
-    for (const item of payload.images_results || []) {
-      const candidate = firstNonEmpty(item.original, item.thumbnail, item.link);
-      if (!candidate || seen.has(candidate)) {
-        continue;
-      }
-
-      seen.add(candidate);
-      urls.push(candidate);
+    if (collected.length >= count) {
+      break;
     }
 
-    if (urls.length > 0) {
-      return urls;
+    const payload = await runSerpApiSearch(env, query, Math.max(count * 12, 36), true);
+    const batch = collectHotlinkFriendlySerpImageUrls(payload.images_results, Number.MAX_SAFE_INTEGER);
+    for (const url of batch) {
+      if (seen.has(url)) {
+        continue;
+      }
+      seen.add(url);
+      collected.push(url);
+      if (collected.length >= count) {
+        break;
+      }
     }
   }
 
-  return [];
+  return collected;
 }
 
 function guessFileExtension(contentType: string, fileName = ''): string {
@@ -2879,17 +2981,8 @@ async function fetchDraftImages(env: Env, payload: Record<string, unknown>): Pro
   let candidates: string[];
 
   if (searchQuery) {
-    const serpPayload = await runSerpApiSearch(env, searchQuery, Math.max(count * 3, count), true);
-    candidates = [];
-    const seen = new Set<string>();
-    for (const item of serpPayload.images_results || []) {
-      const candidate = firstNonEmpty(item.original, item.thumbnail, item.link);
-      if (!candidate || seen.has(candidate)) {
-        continue;
-      }
-      seen.add(candidate);
-      candidates.push(candidate);
-    }
+    const serpPayload = await runSerpApiSearch(env, searchQuery, Math.max(count * 12, 36), true);
+    candidates = collectHotlinkFriendlySerpImageUrls(serpPayload.images_results, count);
     if (candidates.length === 0) {
       throw new Error(`No images found for "${searchQuery}".`);
     }
