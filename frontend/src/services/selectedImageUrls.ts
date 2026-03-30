@@ -45,8 +45,5 @@ export function serializeRowImageUrls(urls: string[]): { selectedImageId: string
   if (cleaned.length === 0) {
     return { selectedImageId: '', selectedImageUrlsJson: '' };
   }
-  if (cleaned.length === 1) {
-    return { selectedImageId: cleaned[0], selectedImageUrlsJson: '' };
-  }
   return { selectedImageId: cleaned[0], selectedImageUrlsJson: JSON.stringify(cleaned) };
 }

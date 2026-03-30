@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode } from 'react';
 import {
   Dialog as ShadcnDialog,
   DialogContent,
@@ -30,21 +30,6 @@ export function Dialog({
   onCancel,
   children,
 }: DialogProps) {
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onCancel();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onCancel, open]);
-
   return (
     <ShadcnDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent showCloseButton={true} className="glass-panel-strong sm:max-w-md bg-white/90 border-white/60 p-6 shadow-lift backdrop-blur-2xl">

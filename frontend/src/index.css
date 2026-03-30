@@ -9,6 +9,8 @@
 @layer base {
   html {
     @apply scroll-smooth font-sans;
+    /* Avoid layout jump when modal dialogs remove body scroll (e.g. discard confirmation). */
+    scrollbar-gutter: stable;
   }
 
   body {

@@ -107,7 +107,7 @@ export function InstagramChannelPreview({
 
       <div
         className={cn(
-          'overflow-hidden bg-[color:var(--ig-bg)] font-sans shadow-sm ring-1 ring-black/[0.08]',
+          'min-w-0 overflow-hidden bg-[color:var(--ig-bg)] font-sans shadow-sm ring-1 ring-black/[0.08]',
           instagramPhoneCardWidthClass(isSidebar, isCarousel),
           isSidebar ? 'rounded-md' : 'rounded-sm',
         )}
@@ -151,10 +151,13 @@ export function InstagramChannelPreview({
         </div>
 
         {urls.length > 1 && !imageLoadFailed ? (
-          <div className="w-full bg-black">
-            <div className="flex aspect-square w-full snap-x snap-mandatory overflow-x-auto scroll-smooth">
+          <div className="min-w-0 w-full bg-black">
+            <div className="flex min-h-0 min-w-0 aspect-square w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain scroll-smooth touch-pan-x">
               {urls.map((u, i) => (
-                <div key={`${u}-${i}`} className="h-full w-full shrink-0 snap-center">
+                <div
+                  key={`${u}-${i}`}
+                  className="h-full min-w-full shrink-0 grow-0 basis-full snap-center snap-always"
+                >
                   <img
                     src={normalizePreviewImageUrl(u)}
                     alt=""

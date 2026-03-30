@@ -150,15 +150,30 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
   const topicHeadingRef = useRef<HTMLHeadingElement>(null);
   const lastInitRef = useRef<string | null>(null);
+  const lastRowImageFingerprintRef = useRef<string | null>(null);
+
+  const rowPersistedImageFingerprint = `${String(row.selectedImageId ?? '').trim()}|${String(row.selectedImageUrlsJson ?? '').trim()}`;
 
   useEffect(() => {
     const initKey = `${row.topic}:${routed?.screen}:${routed?.editorVariantSlot}:${editorStartMediaPanel}`;
     if (lastInitRef.current === initKey) {
       // Same topic/screen/slot: do not reset sheetRow from props — parent row can lag or (after a sheet
       // merge) carry stale "Topic rules" from the Post tab, which would undo clears/saves from the Draft row.
+      // Still merge persisted image columns when the server row updates (e.g. after approve + refresh).
+      if (rowPersistedImageFingerprint !== lastRowImageFingerprintRef.current) {
+        lastRowImageFingerprintRef.current = rowPersistedImageFingerprint;
+        const fromRow = parseRowImageUrls(row);
+        setSelectedImageUrls(fromRow);
+        setSheetRow((prev) => ({
+          ...prev,
+          selectedImageId: row.selectedImageId,
+          selectedImageUrlsJson: row.selectedImageUrlsJson,
+        }));
+      }
       return;
     }
     lastInitRef.current = initKey;
+    lastRowImageFingerprintRef.current = rowPersistedImageFingerprint;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSheetRow(row);
@@ -338,9 +353,20 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     }
 
     const baseOnly = [...uploadedImageOptions, ...generatedImageOptions, ...alternateImageOptions];
-    if (selectedImageUrls.length === 0 && baseOnly[0]?.imageUrl?.trim()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedImageUrls([baseOnly[0].imageUrl.trim()]);
+    if (selectedImageUrls.length === 0) {
+      const persisted = parseRowImageUrls(row);
+      if (persisted.length > 0) {
+        // Prefer sheet-backed URLs over the first thumbnail so we do not race init/hydration and
+        // replace an approved upload with a variant-column image (suppressAutoImageSelection blocks
+        // this path after an explicit clear-all).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedImageUrls(persisted);
+        return;
+      }
+      if (baseOnly[0]?.imageUrl?.trim()) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedImageUrls([baseOnly[0].imageUrl.trim()]);
+      }
       return;
     }
 
@@ -356,6 +382,8 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     uploadedImageOptions,
     generatedImageOptions,
     alternateImageOptions,
+    row.selectedImageId,
+    row.selectedImageUrlsJson,
   ]);
 
   return {
