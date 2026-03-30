@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import json5
 import datetime
 import mimetypes
 import re
@@ -36,6 +37,8 @@ if GEMINI_API_KEY:
 # Search configuration
 SERPAPI_API_KEY = os.environ.get('SERPAPI_API_KEY', '').strip()
 SERPAPI_BASE_URL = 'https://serpapi.com/search.json'
+SERPAPI_QUERY_MAX_LEN = max(80, int(os.environ.get('SERPAPI_QUERY_MAX_LEN', '400')))
+IMAGE_SEARCH_QUERY_MAX_CHARS = max(40, int(os.environ.get('IMAGE_SEARCH_QUERY_MAX_CHARS', '120')))
 DRAFT_MODE = os.environ.get('DRAFT_MODE', '').strip().lower()
 TARGET_TOPIC = os.environ.get('TARGET_TOPIC', '').strip()
 TARGET_DATE = os.environ.get('TARGET_DATE', '').strip()
@@ -333,6 +336,14 @@ def get_serpapi_fix_hints(status_code, message=''):
     return hints
 
 
+def cap_serpapi_query(query):
+    """Keep SerpApi GET URLs within practical limits for very long topics."""
+    q = normalize_search_text(query)
+    if len(q) <= SERPAPI_QUERY_MAX_LEN:
+        return q
+    return q[:SERPAPI_QUERY_MAX_LEN].rstrip()
+
+
 def log_serpapi_failure(feature_name, topic, response):
     details = extract_api_error(response)
     message = details['message']
@@ -348,7 +359,7 @@ def log_serpapi_failure(feature_name, topic, response):
 def run_serpapi_search(topic, num_results, image_search=False):
     params = {
         'api_key': SERPAPI_API_KEY,
-        'q': topic,
+        'q': cap_serpapi_query(topic),
         'num': max(1, num_results),
         'safe': 'active',
         'hl': 'en',
@@ -537,6 +548,117 @@ def normalize_generated_variants(content):
     return normalized
 
 
+VARIANTS_JSON_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'variant1': {'type': 'string'},
+        'variant2': {'type': 'string'},
+        'variant3': {'type': 'string'},
+        'variant4': {'type': 'string'},
+        'imageSearchQuery1': {'type': 'string'},
+        'imageSearchQuery2': {'type': 'string'},
+        'imageSearchQuery3': {'type': 'string'},
+    },
+    'required': [
+        'variant1',
+        'variant2',
+        'variant3',
+        'variant4',
+        'imageSearchQuery1',
+        'imageSearchQuery2',
+        'imageSearchQuery3',
+    ],
+}
+
+
+def strip_json_code_fences(text):
+    if not text:
+        return text
+    stripped = text.strip()
+    if stripped.startswith('```'):
+        stripped = re.sub(r'^```(?:json)?\s*', '', stripped, flags=re.IGNORECASE)
+        stripped = re.sub(r'\s*```\s*$', '', stripped)
+    return stripped.strip()
+
+
+def parse_gemini_variants_json(raw_text):
+    """Parse JSON object with variant1–4 and imageSearchQuery1–3; tolerate markdown fences and lax JSON."""
+    text = strip_json_code_fences(raw_text or '')
+    if not text:
+        raise ValueError('Empty Gemini response when parsing variants JSON.')
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as json_err:
+        try:
+            return json5.loads(text)
+        except Exception as json5_err:
+            raise ValueError(
+                f'Invalid variants JSON (json: {json_err}; json5: {json5_err})'
+            ) from json5_err
+
+
+def generate_variants_content(model, prompt, generation_config):
+    response = model.generate_content(prompt, generation_config=generation_config)
+    raw = (response.text or '').strip()
+    if not raw:
+        raise ValueError('Empty text in Gemini generate_content response.')
+    return parse_gemini_variants_json(raw)
+
+
+def normalize_llm_image_query(text):
+    """Short, SerpApi-friendly image search phrase (no hashtags, length-capped)."""
+    if not isinstance(text, str):
+        return ''
+    without_tags = re.sub(r'#\w+', ' ', text)
+    s = normalize_search_text(without_tags)
+    if len(s) > IMAGE_SEARCH_QUERY_MAX_CHARS:
+        s = s[:IMAGE_SEARCH_QUERY_MAX_CHARS].rstrip()
+    return s
+
+
+def normalize_llm_image_queries(content):
+    """Extract three deduplicated LLM image queries from the generation payload."""
+    if not isinstance(content, dict):
+        return []
+    seen = set()
+    out = []
+    for key in ('imageSearchQuery1', 'imageSearchQuery2', 'imageSearchQuery3'):
+        q = normalize_llm_image_query(content.get(key, '') or '')
+        if not q:
+            continue
+        low = q.lower()
+        if low in seen:
+            continue
+        seen.add(low)
+        out.append(q)
+    return out
+
+
+def build_image_serp_queries(topic, preferred_queries=None):
+    """Ordered SerpApi image queries: LLM phrases first, then topic-derived fallbacks."""
+    candidates = []
+    seen_lower = set()
+
+    def add_query(raw):
+        q = normalize_search_text(raw or '')
+        if not q:
+            return
+        q = cap_serpapi_query(q)
+        low = q.lower()
+        if low in seen_lower:
+            return
+        seen_lower.add(low)
+        candidates.append(q)
+
+    for q in preferred_queries or []:
+        add_query(q)
+
+    for q in build_search_queries(topic, image_search=True):
+        add_query(q)
+
+    return candidates
+
+
 # ==========================================
 # 1. RESEARCH & GENERATE (GEMINI)
 # ==========================================
@@ -574,7 +696,7 @@ def fetch_web_research(topic, num_results=3):
     return ""
 
 def research_and_generate(topic, base_text='', refinement_instructions=''):
-    """Uses LLM to write 4 variants of a LinkedIn post based on the topic."""
+    """Uses LLM to write 4 variants plus compact image-search phrases. Returns (variants_dict, image_queries)."""
     print(f"Generating variants with model: {GOOGLE_MODEL}")
     # Read the recipe
     recipe_content = ""
@@ -615,32 +737,58 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
     {word_limit_instruction}
     Do NOT include hashtags in the text block itself, but keep them at the end.
     Every variant value must be a plain JSON string. Do not return nested JSON objects, arrays, or metadata for any variant.
+
+    Also provide exactly three short English image search phrases for finding relevant stock or illustration-style images
+    (imageSearchQuery1, imageSearchQuery2, imageSearchQuery3). Each phrase must be at most {IMAGE_SEARCH_QUERY_MAX_CHARS}
+    characters, no hashtags, no full sentences—only concrete visual keywords (e.g. themes, metaphors, settings, mood).
+    Phrases must differ from each other (e.g. literal topic, metaphor, people/workplace angle).
     
     Output JSON format ONLY:
     {{
         "variant1": "...",
         "variant2": "...",
         "variant3": "...",
-        "variant4": "..."
+        "variant4": "...",
+        "imageSearchQuery1": "...",
+        "imageSearchQuery2": "...",
+        "imageSearchQuery3": "..."
     }}
     """
-    
-    model = genai.GenerativeModel(GOOGLE_MODEL)
-    response = model.generate_content(
-        prompt,
-        generation_config={"response_mime_type": "application/json"}
+    generation_config = genai.GenerationConfig(
+        response_mime_type='application/json',
+        response_schema=VARIANTS_JSON_SCHEMA,
     )
-    
-    content = json.loads(response.text)
-    return normalize_generated_variants(content)
+    model = genai.GenerativeModel(GOOGLE_MODEL)
+
+    try:
+        content = generate_variants_content(model, prompt, generation_config)
+    except ValueError as err:
+        msg = str(err)
+        if 'Empty Gemini response' in msg or 'Empty text in Gemini' in msg:
+            raise
+        print(f'Failed to parse Gemini variants JSON on first attempt: {err}')
+        repair_suffix = (
+            '\n\nYour previous output was not valid JSON. Respond again with ONLY a single JSON object '
+            'with keys variant1, variant2, variant3, variant4, imageSearchQuery1, imageSearchQuery2, '
+            'imageSearchQuery3. variant1–4 are full post strings; imageSearchQuery1–3 are short image '
+            'search phrases (max '
+            f'{IMAGE_SEARCH_QUERY_MAX_CHARS} chars each, no hashtags). Escape every double-quote and line break '
+            'inside strings using JSON rules. No markdown, no code fences.'
+        )
+        content = generate_variants_content(model, prompt + repair_suffix, generation_config)
+
+    image_queries = normalize_llm_image_queries(content)
+    return normalize_generated_variants(content), image_queries
 
 # ==========================================
 # 2. IMAGE SEARCH & UPLOAD
 # ==========================================
-def fetch_images(topic, num_images=4):
+def fetch_images(topic, num_images=4, preferred_queries=None):
     print(f"Searching for images on: {topic}")
+    if preferred_queries:
+        print(f"Using {len(preferred_queries)} LLM image search queries before topic-derived fallbacks.")
 
-    for query in build_search_queries(topic, image_search=True):
+    for query in build_image_serp_queries(topic, preferred_queries):
         try:
             print(f"Trying SerpApi image query: {query}")
             results = run_serpapi_search(query, num_images, image_search=True)
@@ -651,6 +799,8 @@ def fetch_images(topic, num_images=4):
         image_urls = []
         seen_urls = set()
         for item in results.get('images_results', []):
+            if len(image_urls) >= num_images:
+                break
             image_url = first_non_empty(item.get('original', ''), item.get('thumbnail', ''), item.get('link', ''))
             if image_url:
                 normalized = image_url.strip()
@@ -698,8 +848,9 @@ def upload_image_to_gcs(storage_bucket, image_url, topic, index):
         return "", ""
 
 
-def fetch_and_upload_images(storage_bucket, topic, num_images=4):
-    image_urls = fetch_images(topic, num_images=num_images * 3)
+def fetch_and_upload_images(storage_bucket, topic, num_images=4, image_queries=None):
+    # Request only num_images from SerpApi per successful query (sheet supports four slots).
+    image_urls = fetch_images(topic, num_images=num_images, preferred_queries=image_queries)
     if not image_urls:
         print(f"No image URLs found for '{topic}'.")
         return [''] * num_images
@@ -836,8 +987,10 @@ def process_drafts(sheets_service, storage_bucket):
             continue
 
         print(f"Drafting for topic: {topic}")
-        variants = research_and_generate(topic)
-        drive_links = fetch_and_upload_images(storage_bucket, topic, num_images=4)
+        variants, image_queries = research_and_generate(topic)
+        drive_links = fetch_and_upload_images(
+            storage_bucket, topic, num_images=4, image_queries=image_queries
+        )
         new_rows.append([
             topic,
             date_str,
@@ -888,14 +1041,18 @@ def process_refinement(sheets_service, storage_bucket):
     date_str = existing_row[1]
     print(f"Refining draft row {row_index} for topic '{topic}' dated '{date_str}'.")
 
-    variants = research_and_generate(topic, base_text=REFINE_BASE_TEXT, refinement_instructions=REFINE_INSTRUCTIONS)
+    variants, image_queries = research_and_generate(
+        topic, base_text=REFINE_BASE_TEXT, refinement_instructions=REFINE_INSTRUCTIONS
+    )
     image_links = existing_row[7:11]
 
     if any(link.strip() for link in image_links):
         print(f"Reusing existing image links for '{topic}': {image_links}")
     else:
         print(f"No existing image links found for '{topic}'. Fetching a fresh set during refinement.")
-        image_links = fetch_and_upload_images(storage_bucket, topic, num_images=4)
+        image_links = fetch_and_upload_images(
+            storage_bucket, topic, num_images=4, image_queries=image_queries
+        )
 
     updated_row = [
         topic,
