@@ -62,7 +62,9 @@ function WorkspaceSession({
     ? 'settings'
     : location.pathname.startsWith(WORKSPACE_PATHS.rules)
       ? 'rules'
-      : 'topics'
+      : location.pathname.startsWith(WORKSPACE_PATHS.campaign)
+        ? 'campaign'
+        : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
 
   return (

@@ -29,7 +29,8 @@ import {
   WORKSPACE_ROUTE_PATHS,
   topicEditorPathForRow,
 } from '../../features/topic-navigation/utils/workspaceRoutes';
-import { FEATURE_NEWS_RESEARCH } from '../../generated/features';
+import { FEATURE_CAMPAIGN, FEATURE_NEWS_RESEARCH } from '../../generated/features';
+import { CampaignPage } from '../../features/campaign';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 
 function previewAuthorDisplayName(email: string): string {
@@ -296,6 +297,26 @@ export function Dashboard({
     }
   }, [channelsHook.telegramRecipientsInput]);
 
+  const isTopicsMain = location.pathname === WORKSPACE_PATHS.topics;
+  const savedScrollY = useRef(0);
+
+  useEffect(() => {
+    if (!isTopicsMain) return;
+    const handleScroll = () => {
+      savedScrollY.current = window.scrollY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isTopicsMain]);
+
+  useEffect(() => {
+    if (isTopicsMain) {
+      window.scrollTo(0, savedScrollY.current);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [isTopicsMain]);
+
   if (!session.config.spreadsheetId && !session.isAdmin) {
     return (
       <div className="glass-panel mx-auto mt-8 max-w-xl rounded-2xl p-8 text-left shadow-card">
@@ -477,26 +498,6 @@ export function Dashboard({
     </div>
   );
 
-  const isTopicsMain = location.pathname === WORKSPACE_PATHS.topics;
-  const savedScrollY = useRef(0);
-
-  useEffect(() => {
-    if (!isTopicsMain) return;
-    const handleScroll = () => {
-      savedScrollY.current = window.scrollY;
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isTopicsMain]);
-
-  useEffect(() => {
-    if (isTopicsMain) {
-      window.scrollTo(0, savedScrollY.current);
-    } else {
-      window.scrollTo(0, 0);
-    }
-  }, [isTopicsMain]);
-
   const isReviewRoute = location.pathname.includes('/topics/') && location.pathname !== WORKSPACE_PATHS.topics;
 
   return (
@@ -530,6 +531,22 @@ export function Dashboard({
               onSaveConfig={onSaveConfig}
               onAuthExpired={onAuthExpired}
             />
+          }
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.campaign}
+          element={
+            FEATURE_CAMPAIGN ? (
+              <CampaignPage
+                idToken={idToken}
+                session={session}
+                api={api}
+                onSaveConfig={onSaveConfig}
+                onAuthExpired={onAuthExpired}
+              />
+            ) : (
+              <Navigate to={WORKSPACE_PATHS.topics} replace />
+            )
           }
         />
         <Route path="*" element={isTopicsMain ? null : <Navigate to={WORKSPACE_PATHS.topics} replace />} />

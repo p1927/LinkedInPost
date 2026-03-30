@@ -13,7 +13,7 @@ import {
 
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
 import { coerceVariantList } from './generation/normalize';
-import { SheetsGateway } from './persistence/drafts';
+import { SheetsGateway, coerceBulkCampaignPostsFromPayload } from './persistence/drafts';
 import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored } from './researcher/types';
@@ -21,7 +21,7 @@ import type { SheetRow } from './generation/types';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
-import { FEATURE_NEWS_RESEARCH } from './generated/features';
+import { FEATURE_CAMPAIGN, FEATURE_NEWS_RESEARCH } from './generated/features';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -751,6 +751,15 @@ async function dispatchAction(
         payload,
         sheets,
         storedConfig.spreadsheetId,
+      );
+    case 'bulkImportCampaign':
+      ensureSpreadsheetConfigured(storedConfig);
+      if (!FEATURE_CAMPAIGN) {
+        throw new Error('Campaign import is disabled for this deployment.');
+      }
+      return sheets.bulkImportCampaign(
+        storedConfig.spreadsheetId,
+        coerceBulkCampaignPostsFromPayload(payload),
       );
     default:
       throw new Error(`Unknown action: ${action}`);

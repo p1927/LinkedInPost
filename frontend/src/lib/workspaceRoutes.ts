@@ -6,6 +6,7 @@ export const WORKSPACE_PATHS = {
   topics: '/topics',
   settings: '/settings',
   rules: '/rules',
+  campaign: '/campaign',
 } as const;
 
 /**
@@ -18,6 +19,7 @@ export const WORKSPACE_ROUTE_PATHS = {
   topics: '/topics',
   settings: '/settings',
   rules: '/rules',
+  campaign: '/campaign',
 } as const;
 
 /** `encodeURIComponent(encodeTopicRouteId(row))` segment for `/topics/:topicId/...`. */

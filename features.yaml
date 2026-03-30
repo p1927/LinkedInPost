@@ -6,3 +6,5 @@
 # ignores related client payloads.
 
 newsResearch: true
+# Bulk campaign import (Topics + Draft rows, Claude JSON paste).
+campaign: true

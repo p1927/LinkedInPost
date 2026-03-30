@@ -172,7 +172,10 @@ export function useReviewFlowActions(
     setVariantsPreview(null);
     setPreviewVariantSaveByIndex({});
     setPreviewVariantSaveErrors({});
-    if (variant.imageUrl) {
+    if (variant.imageUrls?.length) {
+      setSuppressAutoImageSelection(false);
+      setSelectedImageUrls(variant.imageUrls);
+    } else if (variant.imageUrl) {
       setSuppressAutoImageSelection(false);
       setSelectedImageUrls([variant.imageUrl]);
     }

@@ -42,6 +42,30 @@ export interface CancelScheduledPublishResult {
   cancelled: boolean;
 }
 
+/** Payload item for campaign bulk import (worker coerces to sheet rows). */
+export interface BulkImportCampaignPostPayload {
+  topic: string;
+  date: string;
+  status?: string;
+  variant1?: string;
+  variant2?: string;
+  variant3?: string;
+  variant4?: string;
+  body?: string;
+  variants?: string[];
+  postTime?: string;
+  topicGenerationRules?: string;
+  generationTemplateId?: string;
+  selectedText?: string;
+  selectedImageId?: string;
+  selectedImageUrlsJson?: string;
+}
+
+export interface BulkImportCampaignResult {
+  success: true;
+  imported: number;
+}
+
 export interface OAuthStartResult {
   authorizationUrl: string;
   callbackOrigin: string;
@@ -365,6 +389,14 @@ export class BackendApi {
 
   async addTopic(idToken: string, topic: string): Promise<void> {
     await this.post<{ success: true }>('addTopic', idToken, { topic });
+  }
+
+  /** One field per post; optional fields omitted when empty. Sent to `bulkImportCampaign`. */
+  async bulkImportCampaign(
+    idToken: string,
+    posts: BulkImportCampaignPostPayload[],
+  ): Promise<BulkImportCampaignResult> {
+    return this.post<BulkImportCampaignResult>('bulkImportCampaign', idToken, { posts });
   }
 
   async updateRowStatus(

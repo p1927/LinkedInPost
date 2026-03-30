@@ -16,6 +16,7 @@ import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
 import { type ChannelId } from '../../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import type { NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
+import { type SheetVariantForReview } from './utils';
 
 export interface CompareState {
   scope: GenerationScope;
@@ -110,7 +111,7 @@ export interface ReviewFlowContextValue {
   savingEmailFields: boolean;
 
   // Computed
-  sheetVariants: { text: string; imageUrl: string; originalIndex: number }[];
+  sheetVariants: SheetVariantForReview[];
   showPickPhase: boolean;
   showEditorLayout: boolean;
   topicTitleInWorkspaceChrome: boolean;
@@ -131,7 +132,7 @@ export interface ReviewFlowContextValue {
   // Functions
   leaveToTopics: () => void;
   requestNavigateToVariants: () => void;
-  applySheetVariantBase: (variant: { text: string; imageUrl: string }, variantIndex?: number) => void;
+  applySheetVariantBase: (variant: SheetVariantForReview, variantIndex?: number) => void;
   handleGenerateQuickChange: () => Promise<void>;
   handleGenerateVariants: () => Promise<void>;
   openCompare: (title: string, proposedText: string, resultingText: string) => void;

@@ -1,15 +1,16 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ListOrdered, ScrollText, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListOrdered, Megaphone, ScrollText, Settings } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
+import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'settings' | 'rules';
+export type WorkspaceNavPage = 'topics' | 'settings' | 'rules' | 'campaign';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -128,7 +129,13 @@ export function AppSidebar({
 
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
     const to =
-      page === 'topics' ? WORKSPACE_PATHS.topics : page === 'rules' ? WORKSPACE_PATHS.rules : WORKSPACE_PATHS.settings;
+      page === 'topics'
+        ? WORKSPACE_PATHS.topics
+        : page === 'rules'
+          ? WORKSPACE_PATHS.rules
+          : page === 'campaign'
+            ? WORKSPACE_PATHS.campaign
+            : WORKSPACE_PATHS.settings;
     return (
       <li key={page}>
         <NavLink
@@ -240,6 +247,7 @@ export function AppSidebar({
             className="custom-scrollbar shrink-0 list-none flex flex-col gap-1.5 overflow-y-auto p-2"
           >
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
+            {FEATURE_CAMPAIGN ? link('campaign', <Megaphone aria-hidden />, 'Campaign') : null}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
             {link('rules', <ScrollText aria-hidden />, 'Rules')}
           </ul>

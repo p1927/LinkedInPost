@@ -76,6 +76,7 @@ export function VariantCarousel() {
                   optionNumber={index + 1}
                   text={variant.text}
                   imageUrl={variant.imageUrl || undefined}
+                  imageUrls={variant.imageUrls}
                   selected={index === pickCarouselIndex}
                   expanded={false}
                   pickMode

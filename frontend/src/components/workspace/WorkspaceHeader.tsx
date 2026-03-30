@@ -8,6 +8,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   topics: 'Topics',
   settings: 'Settings',
   rules: 'Global rules',
+  campaign: 'Campaign',
 };
 
 export function WorkspaceHeader({

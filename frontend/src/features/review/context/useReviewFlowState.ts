@@ -195,9 +195,17 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       setEmailBcc(row.emailBcc || globalEmailDefaults?.emailBcc || '');
       setEmailSubject(row.emailSubject || globalEmailDefaults?.emailSubject || '');
       {
-        const fromVariant = sc?.imageUrl?.trim() ? [sc.imageUrl] : [];
         const fromRow = parseRowImageUrls(row);
-        setSelectedImageUrls(fromVariant.length > 0 ? fromVariant : fromRow.length > 0 ? fromRow : row.imageLink1 ? [row.imageLink1] : []);
+        const fromVariant = sc?.imageUrl?.trim() ? [sc.imageUrl] : [];
+        setSelectedImageUrls(
+          fromRow.length > 0
+            ? fromRow
+            : fromVariant.length > 0
+              ? fromVariant
+              : row.imageLink1
+                ? [row.imageLink1]
+                : [],
+        );
       }
       const variants = buildSheetVariants(row);
       const slotIdx = variants.findIndex((v) => v.originalIndex === routed.editorVariantSlot);
