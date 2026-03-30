@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { WorkspaceChromeProvider } from './WorkspaceChromeContext';
 import { AppSidebar, readSidebarCollapsed, writeSidebarCollapsed, type WorkspaceNavPage } from './AppSidebar';
@@ -31,19 +31,17 @@ export function WorkspaceShell({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   /** On the editor route, user may expand the rail via toggle; otherwise we keep it collapsed for width. */
   const [editorSidebarExpanded, setEditorSidebarExpanded] = useState(false);
+  const [prevAutoCollapseMainSidebar, setPrevAutoCollapseMainSidebar] = useState(autoCollapseMainSidebar);
 
-  const prevAutoCollapseRef = useRef<boolean | null>(null);
-  if (prevAutoCollapseRef.current === null) {
-    prevAutoCollapseRef.current = autoCollapseMainSidebar;
-  } else if (autoCollapseMainSidebar !== prevAutoCollapseRef.current) {
-    prevAutoCollapseRef.current = autoCollapseMainSidebar;
+  if (autoCollapseMainSidebar !== prevAutoCollapseMainSidebar) {
+    setPrevAutoCollapseMainSidebar(autoCollapseMainSidebar);
     if (autoCollapseMainSidebar) {
-      setMobileSidebarOpen(false);
       setEditorSidebarExpanded(false);
     }
   }
 
   const sidebarRailCollapsed = autoCollapseMainSidebar ? !editorSidebarExpanded : sidebarCollapsed;
+  const effectiveMobileSidebarOpen = autoCollapseMainSidebar ? false : mobileSidebarOpen;
 
   const toggleCollapsed = () => {
     if (autoCollapseMainSidebar) {
@@ -81,7 +79,7 @@ export function WorkspaceShell({
           onToggleCollapsed={toggleCollapsed}
           session={session}
           googleProfile={googleProfile ?? null}
-          mobileOpen={mobileSidebarOpen}
+          mobileOpen={effectiveMobileSidebarOpen}
           onMobileOpenChange={setMobileSidebarOpen}
         />
 

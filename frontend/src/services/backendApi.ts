@@ -239,6 +239,32 @@ function formatBackendConnectionError(endpointUrl: string): string {
   return `Failed to reach the backend at ${host}. The URL may point to a static site instead of the Cloudflare Worker, or the Worker CORS allowlist may not include this site.`;
 }
 
+/** Explains fetch() rejection (network, mixed content, extensions) — CORS is only one possibility. */
+function formatFetchNetworkFailure(endpointUrl: string, reason: unknown): string {
+  const base = formatBackendConnectionError(endpointUrl);
+  const bits: string[] = [base];
+  if (reason instanceof Error && reason.message) {
+    bits.push(`Browser reported: ${reason.message}`);
+  }
+  try {
+    const pageHttps =
+      typeof globalThis !== 'undefined' &&
+      'location' in globalThis &&
+      globalThis.location?.protocol === 'https:';
+    const u = new URL(endpointUrl);
+    const local = /^(localhost|127\.0\.0\.1)$/i.test(u.hostname);
+    if (pageHttps && u.protocol === 'http:' && !local) {
+      bits.push(
+        'This page is HTTPS but the worker URL uses http:// — mixed content is blocked. Set VITE_WORKER_URL to https://… and rebuild.',
+      );
+    }
+  } catch {
+    /* ignore */
+  }
+  bits.push('If the worker URL is correct, check ad blockers, privacy extensions, and VPN/firewall rules for *.workers.dev.');
+  return bits.join(' ');
+}
+
 export function isAuthErrorMessage(message: string): boolean {
   return AUTH_ERROR_PATTERN.test(message);
 }
@@ -290,8 +316,8 @@ export class BackendApi {
           payload,
         }),
       });
-    } catch {
-      throw new Error(formatBackendConnectionError(this.endpointUrl));
+    } catch (reason) {
+      throw new Error(formatFetchNetworkFailure(this.endpointUrl, reason));
     }
 
     let parsed: ApiEnvelope<T>;
@@ -328,8 +354,8 @@ export class BackendApi {
           payload,
         }),
       });
-    } catch {
-      throw new Error(formatBackendConnectionError(this.endpointUrl));
+    } catch (reason) {
+      throw new Error(formatFetchNetworkFailure(this.endpointUrl, reason));
     }
 
     if (!response.ok) {

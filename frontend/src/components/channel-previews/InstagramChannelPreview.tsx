@@ -1,5 +1,5 @@
 import { Bookmark, Heart, ImageOff, MessageCircle, MoreHorizontal, Send } from 'lucide-react';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { normalizePreviewImageUrl } from '../../services/imageUrls';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,10 @@ export function InstagramChannelPreview({
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [imageRetryKey, setImageRetryKey] = useState(0);
   const [pickBodyExpanded, setPickBodyExpanded] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const carouselViewportRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const skipNextCarouselClickRef = useRef(false);
   const urls = resolvePreviewImageUrls(imageUrl, imageUrls);
   const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
   const shouldClamp =
@@ -48,6 +52,81 @@ export function InstagramChannelPreview({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadFailed(false);
   }, [resolvedImageUrl, urls.join('|')]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCarouselIndex(0);
+  }, [urls.join('|')]);
+
+  const goCarouselPrev = useCallback(() => {
+    setCarouselIndex((i) => Math.max(0, i - 1));
+  }, []);
+
+  const goCarouselNext = useCallback(() => {
+    setCarouselIndex((i) => Math.min(urls.length - 1, i + 1));
+  }, [urls.length]);
+
+  const markCarouselNavigatedByTouch = useCallback(() => {
+    skipNextCarouselClickRef.current = true;
+    window.setTimeout(() => {
+      skipNextCarouselClickRef.current = false;
+    }, 400);
+  }, []);
+
+  const onCarouselTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  }, []);
+
+  const onCarouselTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const start = touchStartRef.current;
+      touchStartRef.current = null;
+      if (!start || urls.length < 2) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      const el = carouselViewportRef.current;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
+        if (dx < 0) {
+          goCarouselNext();
+          markCarouselNavigatedByTouch();
+        } else {
+          goCarouselPrev();
+          markCarouselNavigatedByTouch();
+        }
+        return;
+      }
+      if (Math.abs(dx) < 14 && Math.abs(dy) < 14 && el) {
+        const rect = el.getBoundingClientRect();
+        const rx = (t.clientX - rect.left) / rect.width;
+        if (rx < 0.32) {
+          goCarouselPrev();
+          markCarouselNavigatedByTouch();
+        } else if (rx > 0.68) {
+          goCarouselNext();
+          markCarouselNavigatedByTouch();
+        }
+      }
+    },
+    [goCarouselNext, goCarouselPrev, markCarouselNavigatedByTouch, urls.length],
+  );
+
+  const onCarouselKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (urls.length < 2) return;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        e.stopPropagation();
+        goCarouselPrev();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        e.stopPropagation();
+        goCarouselNext();
+      }
+    },
+    [goCarouselNext, goCarouselPrev, urls.length],
+  );
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -151,26 +230,79 @@ export function InstagramChannelPreview({
         </div>
 
         {urls.length > 1 && !imageLoadFailed ? (
-          <div className="min-w-0 w-full bg-black">
-            <div className="flex min-h-0 min-w-0 aspect-square w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain scroll-smooth touch-pan-x">
-              {urls.map((u, i) => (
-                <div
-                  key={`${u}-${i}`}
-                  className="flex h-full min-w-full shrink-0 grow-0 basis-full snap-center snap-always items-center justify-center bg-black"
-                >
-                  <img
-                    src={normalizePreviewImageUrl(u)}
-                    alt=""
-                    className="h-full w-full object-contain object-center"
-                    onError={() => setImageLoadFailed(true)}
+          <div
+            className="min-w-0 w-full bg-black"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <div
+              ref={carouselViewportRef}
+              role="group"
+              aria-roledescription="carousel"
+              aria-label={`Post images, ${carouselIndex + 1} of ${urls.length}`}
+              tabIndex={0}
+              className="relative aspect-square w-full overflow-hidden bg-black outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              onKeyDown={onCarouselKeyDown}
+              onTouchStart={onCarouselTouchStart}
+              onTouchEnd={onCarouselTouchEnd}
+            >
+              <div
+                className="flex h-full transition-transform duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+                style={{
+                  width: `${urls.length * 100}%`,
+                  transform: `translateX(-${(100 / urls.length) * carouselIndex}%)`,
+                }}
+              >
+                {urls.map((u, i) => (
+                  <div
+                    key={`${u}-${i}`}
+                    className="flex h-full shrink-0 items-center justify-center bg-black"
+                    style={{ width: `${100 / urls.length}%` }}
+                  >
+                    <img
+                      src={normalizePreviewImageUrl(u)}
+                      alt=""
+                      draggable={false}
+                      className="h-full w-full select-none object-contain object-center"
+                      onError={() => setImageLoadFailed(true)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center gap-0.5 px-2"
+                aria-hidden
+              >
+                {urls.map((_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      'h-0.5 rounded-full transition-all duration-200',
+                      i === carouselIndex ? 'w-1.5 bg-white' : 'w-0.5 bg-white/40',
+                    )}
                   />
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center gap-1 py-1.5">
-              {urls.map((_, i) => (
-                <span key={i} className="h-1 w-1 rounded-full bg-white/45" aria-hidden />
-              ))}
+                ))}
+              </div>
+              <button
+                type="button"
+                aria-label="Previous image"
+                className="absolute inset-y-0 left-0 z-[1] w-[32%] cursor-w-resize bg-transparent opacity-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (skipNextCarouselClickRef.current) return;
+                  goCarouselPrev();
+                }}
+              />
+              <button
+                type="button"
+                aria-label="Next image"
+                className="absolute inset-y-0 right-0 z-[1] w-[32%] cursor-e-resize bg-transparent opacity-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (skipNextCarouselClickRef.current) return;
+                  goCarouselNext();
+                }}
+              />
             </div>
           </div>
         ) : resolvedImageUrl && !imageLoadFailed ? (
