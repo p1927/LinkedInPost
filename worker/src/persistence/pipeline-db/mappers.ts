@@ -1,6 +1,74 @@
 import type { SheetRow } from '../../generation/types';
 import type { PipelineStateDbRow } from './types';
 
+/** Must match `GOOGLE_PIPELINE_SHEET_WIDTH` / PIPELINE_HEADERS width (A–V) in `drafts.ts`. */
+const GOOGLE_PIPELINE_ROW_COL_COUNT = 22;
+
+function padGooglePipelineRow(row: unknown[], width: number): string[] {
+  const padded = row.map((c) => (typeof c === 'string' ? c : String(c ?? '')));
+  while (padded.length < width) {
+    padded.push('');
+  }
+  return padded;
+}
+
+/**
+ * Parses a Google Draft/Post row (PIPELINE_HEADERS, A–V) into pipeline fields.
+ * `topicId` always comes from the Topics sheet (column C), not column V on the row.
+ */
+export function pipelineFieldsFromGooglePipelineRow(
+  values: string[],
+  topicId: string,
+  topicFallback: string,
+  dateFallback: string,
+): Omit<SheetRow, 'rowIndex' | 'sourceSheet' | 'topicRowIndex'> | null {
+  const p = padGooglePipelineRow(values, GOOGLE_PIPELINE_ROW_COL_COUNT);
+  const topicCol = String(p[0] || '').trim();
+  if (!topicCol) {
+    return null;
+  }
+  const status = String(p[2] || '').trim();
+  const variants = [p[3], p[4], p[5], p[6]].map((s) => String(s || '').trim());
+  const hasContent =
+    Boolean(status) ||
+    variants.some(Boolean) ||
+    String(p[11] || '').trim().length > 0;
+  if (!hasContent) {
+    return null;
+  }
+
+  const id = String(topicId || '').trim();
+  if (!id) {
+    return null;
+  }
+
+  return {
+    topicId: id,
+    topic: topicCol || topicFallback,
+    date: String(p[1] || '').trim() || dateFallback,
+    status: status || 'Pending',
+    variant1: p[3] ?? '',
+    variant2: p[4] ?? '',
+    variant3: p[5] ?? '',
+    variant4: p[6] ?? '',
+    imageLink1: p[7] ?? '',
+    imageLink2: p[8] ?? '',
+    imageLink3: p[9] ?? '',
+    imageLink4: p[10] ?? '',
+    selectedText: p[11] ?? '',
+    selectedImageId: p[12] ?? '',
+    postTime: p[13] ?? '',
+    emailTo: p[14] ?? '',
+    emailCc: p[15] ?? '',
+    emailBcc: p[16] ?? '',
+    emailSubject: p[17] ?? '',
+    topicGenerationRules: p[18] ?? '',
+    selectedImageUrlsJson: p[19] ?? '',
+    generationTemplateId: p[20] ?? '',
+    publishedAt: undefined,
+  };
+}
+
 export interface TopicSheetEntry {
   rowIndex: number;
   topic: string;
@@ -16,7 +84,7 @@ export function requireTopicId(row: SheetRow): string {
   return id;
 }
 
-export function pipelineDbRowToFields(row: PipelineStateDbRow): Omit<SheetRow, 'rowIndex' | 'sourceSheet' | 'topicRowIndex' | 'draftRowIndex' | 'postRowIndex'> {
+export function pipelineDbRowToFields(row: PipelineStateDbRow): Omit<SheetRow, 'rowIndex' | 'sourceSheet' | 'topicRowIndex'> {
   return {
     topicId: row.topic_id,
     topic: row.topic,
@@ -74,11 +142,7 @@ export function sheetRowToPipelineColumns(spreadsheetId: string, row: SheetRow):
   };
 }
 
-export function mergeTopicWithPipeline(
-  topic: TopicSheetEntry,
-  pipeline: PipelineStateDbRow | undefined,
-  legacy: { draftRowIndex?: number; postRowIndex?: number } | undefined,
-): SheetRow {
+export function mergeTopicWithPipeline(topic: TopicSheetEntry, pipeline: PipelineStateDbRow | undefined): SheetRow {
   const sheetTopicId = String(topic.topicId || '').trim();
   if (!sheetTopicId) {
     throw new Error('Topics sheet row is missing Topic Id (column C).');
@@ -120,8 +184,6 @@ export function mergeTopicWithPipeline(
     rowIndex: topic.rowIndex,
     sourceSheet,
     topicRowIndex: topic.rowIndex,
-    draftRowIndex: legacy?.draftRowIndex,
-    postRowIndex: legacy?.postRowIndex,
     topicId: baseFields.topicId,
     topic: baseFields.topic,
     date: baseFields.date,

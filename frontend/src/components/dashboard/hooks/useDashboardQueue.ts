@@ -211,14 +211,14 @@ export function useDashboardQueue({
     payload: Record<string, unknown>,
     successMessage: string,
     loadingKey: string = action,
-  ) => {
+  ): Promise<boolean> => {
     if (!session.config.githubRepo || !session.config.hasGitHubToken) {
       if (session.isAdmin) {
         void showAlert({ title: 'Notice', description: 'Complete the GitHub settings in the workspace drawer first.' });
       } else {
         void showAlert({ title: 'Notice', description: 'A workspace admin still needs to configure GitHub dispatch settings.' });
       }
-      return;
+      return false;
     }
 
     setActionLoading(loadingKey);
@@ -228,6 +228,7 @@ export function useDashboardQueue({
         ...payload,
       });
       void showAlert({ title: 'Success', description: successMessage });
+      return true;
     } catch (error) {
       handleFailure(error, 'Failed to trigger the GitHub Action.');
       throw error;
@@ -238,7 +239,7 @@ export function useDashboardQueue({
 
   const triggerRowGithubAction = async (row: SheetRow, action: 'draft' | 'publish') => {
     const actionKey = buildRowActionKey(action, row);
-    await dispatchGithubAction(
+    const ok = await dispatchGithubAction(
       action,
       action === 'draft' ? 'trigger-draft' : 'trigger-publish',
       {
@@ -246,10 +247,13 @@ export function useDashboardQueue({
         target_date: row.date,
       },
       action === 'draft'
-        ? `Requested post generation for "${row.topic}" using ${googleModel}. Refresh the dashboard in a minute to review the new draft.`
-        : `Requested publishing for "${row.topic}". Refresh the dashboard in a minute to confirm the updated status.`,
+        ? `Requested post generation for "${row.topic}" using ${googleModel}. The queue will refresh from the sheet — if a draft already existed, you should see Drafted and Edit right away.`
+        : `Requested publishing for "${row.topic}". The queue will refresh from the sheet shortly.`,
       actionKey,
     );
+    if (ok) {
+      await loadData(true);
+    }
   };
 
   const handleGenerateQuickChange = async (request: GenerationRequest): Promise<QuickChangePreviewResult> => {

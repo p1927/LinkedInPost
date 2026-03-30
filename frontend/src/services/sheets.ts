@@ -2,8 +2,6 @@ export interface SheetRow {
   rowIndex: number;
   sourceSheet: 'Topics' | 'Draft' | 'Post';
   topicRowIndex?: number;
-  draftRowIndex?: number;
-  postRowIndex?: number;
   /** Stable UUID (Topics column C / D1). Required for routes, images, and pipeline identity. */
   topicId: string;
   topic: string;           // A

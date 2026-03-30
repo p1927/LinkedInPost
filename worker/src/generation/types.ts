@@ -4,8 +4,6 @@ export interface SheetRow {
   rowIndex: number;
   sourceSheet: ManagedSheetName;
   topicRowIndex?: number;
-  draftRowIndex?: number;
-  postRowIndex?: number;
   /** Stable UUID assigned at topic creation time. Used as GCS image path prefix, routes, and D1 primary key. */
   topicId: string;
   topic: string;

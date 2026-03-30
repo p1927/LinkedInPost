@@ -12,7 +12,7 @@ the Cloudflare Worker and GitHub configuration needed by the shared dashboard.
 The Worker stores pipeline state (variants, images, status, email fields, news
 search history) in Cloudflare D1 (`PIPELINE_DB`), not in Draft/Post cells. The
 spreadsheet still holds the topic queue (Topics), post templates (PostTemplates),
-and optional Draft/Post tabs used for headers and legacy row cleanup. Apply D1
+and optional Draft/Post tabs (headers + bot/import hydration into D1). Apply D1
 schema with: ``cd worker && npx wrangler d1 migrations apply linkedin-pipeline-db --local``
 (local) or ``... --remote`` after you set a real ``database_id`` in ``wrangler.jsonc``.
 

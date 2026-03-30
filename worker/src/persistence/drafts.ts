@@ -50,6 +50,14 @@ export function buildTopicKey(topic: string, date: string): string {
   return `${topic.trim()}::${date.trim()}`;
 }
 
+/** Width of Draft/Post rows (PIPELINE_HEADERS, columns A–V). Used to hydrate D1 from Sheets. */
+export const GOOGLE_PIPELINE_SHEET_WIDTH = 22;
+
+export interface GooglePipelineSheetMaps {
+  draftByTopicKey: Map<string, string[]>;
+  postByTopicKey: Map<string, string[]>;
+}
+
 /** Normalized row shape for `bulkImportCampaign` (sheet-ready). */
 export interface BulkCampaignSheetPostInput {
   topicId: string;
@@ -301,42 +309,65 @@ export class SheetsGateway {
   }
 
   /**
-   * Legacy Draft/Post rows (topic+date in A:B) so deleteRow can still remove old sheet lines
-   * after pipeline data moved to D1.
+   * Resolves Draft/Post sheet row numbers (1-based) by topic+date for `deleteRow`.
+   * Pipeline state is in D1; sheet lines are optional duplicates from bots or older flows.
    */
-  async getLegacyDraftPostRowIndices(
+  async findDraftPostRowIndicesForTopicDate(
     spreadsheetId: string,
-  ): Promise<Map<string, { draftRowIndex?: number; postRowIndex?: number }>> {
+    topic: string,
+    date: string,
+  ): Promise<{ draftRowIndex?: number; postRowIndex?: number }> {
     await this.ensureRequiredSheets(spreadsheetId);
+    const key = buildTopicKey(topic, date);
     const [draftPairs, postPairs] = await this.batchGetValues(spreadsheetId, [
       `${DRAFT_SHEET}!A2:B`,
       `${POST_SHEET}!A2:B`,
     ]);
-    const map = new Map<string, { draftRowIndex?: number; postRowIndex?: number }>();
-
+    let draftRowIndex: number | undefined;
+    let postRowIndex: number | undefined;
     (draftPairs || []).forEach((row, index) => {
       const padded = padRow(row, 2);
-      const topic = String(padded[0] || '').trim();
-      const date = String(padded[1] || '').trim();
-      if (!topic) return;
-      const key = buildTopicKey(topic, date);
-      const cur = map.get(key) || {};
-      cur.draftRowIndex = index + 2;
-      map.set(key, cur);
+      if (buildTopicKey(padded[0], padded[1]) === key) {
+        draftRowIndex = index + 2;
+      }
     });
-
     (postPairs || []).forEach((row, index) => {
       const padded = padRow(row, 2);
+      if (buildTopicKey(padded[0], padded[1]) === key) {
+        postRowIndex = index + 2;
+      }
+    });
+    return { draftRowIndex, postRowIndex };
+  }
+
+  /** Full Draft/Post rows (A2:V) keyed by topic+date — used only to upsert into D1. */
+  async getGooglePipelineSheetMaps(spreadsheetId: string): Promise<GooglePipelineSheetMaps> {
+    await this.ensureRequiredSheets(spreadsheetId);
+    const range = `A2:V`;
+    const [draftRows, postRows] = await this.batchGetValues(spreadsheetId, [
+      `${DRAFT_SHEET}!${range}`,
+      `${POST_SHEET}!${range}`,
+    ]);
+    const draftByTopicKey = new Map<string, string[]>();
+    const postByTopicKey = new Map<string, string[]>();
+
+    (draftRows || []).forEach((row) => {
+      const padded = padRow(row, GOOGLE_PIPELINE_SHEET_WIDTH);
       const topic = String(padded[0] || '').trim();
       const date = String(padded[1] || '').trim();
       if (!topic) return;
-      const key = buildTopicKey(topic, date);
-      const cur = map.get(key) || {};
-      cur.postRowIndex = index + 2;
-      map.set(key, cur);
+      draftByTopicKey.set(buildTopicKey(topic, date), padded);
     });
 
-    return map;
+    (postRows || []).forEach((row) => {
+      const padded = padRow(row, GOOGLE_PIPELINE_SHEET_WIDTH);
+      const topic = String(padded[0] || '').trim();
+      const date = String(padded[1] || '').trim();
+      if (!topic) return;
+      postByTopicKey.set(buildTopicKey(topic, date), padded);
+    });
+
+    return { draftByTopicKey, postByTopicKey };
   }
 
   async appendTopicRows(spreadsheetId: string, values: string[][]): Promise<void> {
@@ -361,9 +392,15 @@ export class SheetsGateway {
   async deleteRow(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {
     const metadata = await this.ensureRequiredSheets(spreadsheetId);
 
+    const { draftRowIndex, postRowIndex } = await this.findDraftPostRowIndicesForTopicDate(
+      spreadsheetId,
+      row.topic,
+      row.date,
+    );
+
     const deletions: Array<{ sheetTitle: ManagedSheetName; rowIndex?: number }> = [
-      { sheetTitle: POST_SHEET, rowIndex: row.postRowIndex },
-      { sheetTitle: DRAFT_SHEET, rowIndex: row.draftRowIndex },
+      { sheetTitle: POST_SHEET, rowIndex: postRowIndex },
+      { sheetTitle: DRAFT_SHEET, rowIndex: draftRowIndex },
       { sheetTitle: TOPICS_SHEET, rowIndex: row.topicRowIndex },
     ];
 

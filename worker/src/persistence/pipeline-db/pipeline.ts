@@ -1,11 +1,7 @@
 import type { SheetRow } from '../../generation/types';
-import {
-  buildTopicKey,
-  mergePipelineVariantsWithSelection,
-  type BulkCampaignSheetPostInput,
-} from '../drafts';
+import { buildTopicKey, mergePipelineVariantsWithSelection, type BulkCampaignSheetPostInput } from '../drafts';
 import type { SheetsGateway } from '../drafts';
-import { mergeTopicWithPipeline, sheetRowToPipelineColumns, type TopicSheetEntry } from './mappers';
+import { mergeTopicWithPipeline, pipelineFieldsFromGooglePipelineRow, sheetRowToPipelineColumns } from './mappers';
 import type { PipelineStateDbRow } from './types';
 
 const UPSERT_SQL = `
@@ -49,6 +45,43 @@ ON CONFLICT(spreadsheet_id, topic_id) DO UPDATE SET
   published_at = excluded.published_at,
   updated_at = datetime('now')
 `;
+
+function normalizeStatus(value: string | null | undefined): string {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function pipelineDbRowIsDisplayEmpty(p: PipelineStateDbRow): boolean {
+  const st = normalizeStatus(p.status);
+  if (st && st !== 'pending') {
+    return false;
+  }
+  const variants = [p.variant1, p.variant2, p.variant3, p.variant4].map((v) => String(v ?? '').trim());
+  if (variants.some(Boolean)) {
+    return false;
+  }
+  if (String(p.selected_text ?? '').trim()) {
+    return false;
+  }
+  return true;
+}
+
+function pickGoogleSheetFieldsForD1(
+  draftValues: string[] | undefined,
+  postValues: string[] | undefined,
+  topicId: string,
+  topic: string,
+  date: string,
+): ReturnType<typeof pipelineFieldsFromGooglePipelineRow> | null {
+  const postF = postValues ? pipelineFieldsFromGooglePipelineRow(postValues, topicId, topic, date) : null;
+  const draftF = draftValues ? pipelineFieldsFromGooglePipelineRow(draftValues, topicId, topic, date) : null;
+  if (postF && normalizeStatus(postF.status) === 'published') {
+    return postF;
+  }
+  if (draftF) {
+    return draftF;
+  }
+  return postF;
+}
 
 function bindUpsert(stmt: D1PreparedStatement, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
   const c = sheetRowToPipelineColumns(spreadsheetId, row);
@@ -136,14 +169,43 @@ export class PipelineStore {
       }
       return id;
     });
-    const pipelineMap = await this.fetchPipelineMapByTopicIds(spreadsheetId, topicIds);
-    const legacy = await sheets.getLegacyDraftPostRowIndices(spreadsheetId);
+    let pipelineMap = await this.fetchPipelineMapByTopicIds(spreadsheetId, topicIds);
+    const { draftByTopicKey, postByTopicKey } = await sheets.getGooglePipelineSheetMaps(spreadsheetId);
+
+    const hydrateUpserts: SheetRow[] = [];
+    for (const t of topics) {
+      const id = String(t.topicId || '').trim();
+      const key = buildTopicKey(t.topic, t.date);
+      const p = pipelineMap.get(id);
+      const draftVals = draftByTopicKey.get(key);
+      const postVals = postByTopicKey.get(key);
+      const fields = pickGoogleSheetFieldsForD1(draftVals, postVals, id, t.topic, t.date);
+      if (!fields) {
+        continue;
+      }
+      const needsHydrate = !p || pipelineDbRowIsDisplayEmpty(p);
+      if (!needsHydrate) {
+        continue;
+      }
+      const sourceSheet: SheetRow['sourceSheet'] =
+        normalizeStatus(fields.status) === 'published' ? 'Post' : 'Draft';
+      hydrateUpserts.push({
+        rowIndex: t.rowIndex,
+        sourceSheet,
+        topicRowIndex: t.rowIndex,
+        ...fields,
+      });
+    }
+
+    if (hydrateUpserts.length > 0) {
+      await Promise.all(hydrateUpserts.map((row) => this.upsertFull(spreadsheetId, row)));
+      pipelineMap = await this.fetchPipelineMapByTopicIds(spreadsheetId, topicIds);
+    }
 
     return topics.map((t) => {
       const id = String(t.topicId || '').trim();
       const p = pipelineMap.get(id);
-      const leg = legacy.get(buildTopicKey(t.topic, t.date));
-      return mergeTopicWithPipeline(t, p, leg);
+      return mergeTopicWithPipeline(t, p);
     });
   }
 
