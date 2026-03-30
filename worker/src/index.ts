@@ -21,6 +21,7 @@ import type { SheetRow } from './generation/types';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
+import { FEATURE_NEWS_RESEARCH } from './generated/features';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -102,9 +103,9 @@ interface BotConfig {
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
   whatsappRecipients: WhatsAppRecipient[];
-  /** News researcher settings (admin-editable); API keys are Worker secrets only. */
-  newsResearch: NewsResearchStored;
-  newsProviderKeys: {
+  /** News researcher settings (admin-editable); API keys are Worker secrets only. Omitted when FEATURE_NEWS_RESEARCH is false. */
+  newsResearch?: NewsResearchStored;
+  newsProviderKeys?: {
     newsapi: boolean;
     gnews: boolean;
     newsdata: boolean;
@@ -741,6 +742,9 @@ async function dispatchAction(
       return handleCancelScheduledPublishDispatch(env, payload);
     case 'searchNewsResearch':
       ensureSpreadsheetConfigured(storedConfig);
+      if (!FEATURE_NEWS_RESEARCH) {
+        throw new Error('News research is disabled for this deployment.');
+      }
       return searchNewsResearch(
         env,
         normalizeNewsResearchStored(storedConfig.newsResearch),
@@ -898,7 +902,7 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
 
 function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
   const allowedGoogleModels = resolveAllowedGoogleModelIds(config);
-  return {
+  const base: BotConfig = {
     spreadsheetId: config.spreadsheetId,
     githubRepo: config.githubRepo,
     googleModel: resolveEffectiveGoogleModel(config, config.googleModel),
@@ -926,6 +930,12 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     whatsappPhoneNumberId: config.whatsappPhoneNumberId,
     hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext || config.whatsappAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
+  };
+  if (!FEATURE_NEWS_RESEARCH) {
+    return base;
+  }
+  return {
+    ...base,
     newsResearch: normalizeNewsResearchStored(config.newsResearch),
     newsProviderKeys: getNewsProviderKeyStatus(env),
   };
@@ -1980,7 +1990,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
       : current.whatsappRecipients,
     generationRulesHistory: nextHistory,
     newsResearch:
-      update.newsResearch !== undefined
+      FEATURE_NEWS_RESEARCH && update.newsResearch !== undefined
         ? normalizeNewsResearchStored(update.newsResearch)
         : normalizeNewsResearchStored(current.newsResearch),
   };

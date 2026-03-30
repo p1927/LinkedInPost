@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/generate-google-models.mjs",
+    "prebuild": "python3 ../scripts/generate_features.py && node scripts/generate-google-models.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

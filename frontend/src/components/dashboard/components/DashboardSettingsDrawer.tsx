@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -23,8 +24,9 @@ import { Button } from '@/components/ui/button';
 import { type WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeContext';
 import { NewsResearchSettingsSection } from '../../../features/news-research';
 import type { NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
+import { FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 
-const SETTINGS_SECTIONS = [
+const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
   { id: 'settings-github-actions', label: 'GitHub Actions' },
   { id: 'settings-instagram', label: 'Instagram' },
@@ -35,14 +37,16 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-news', label: 'News' },
 ] as const;
 
+export type SettingsSectionId = (typeof ALL_SETTINGS_SECTIONS)[number]['id'];
+
 export type DashboardSettingsDrawerHandle = {
-  scrollToSection: (id: (typeof SETTINGS_SECTIONS)[number]['id']) => void;
+  scrollToSection: (id: SettingsSectionId) => void;
 };
 
 /** Maps Connections card rows to settings section ids (Jump to nav / scroll targets). */
 export const PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID: Record<
   keyof WorkspacePublishingHealth,
-  (typeof SETTINGS_SECTIONS)[number]['id']
+  SettingsSectionId
 > = {
   linkedin: 'settings-linkedin',
   instagram: 'settings-instagram',
@@ -115,9 +119,9 @@ type DashboardSettingsDrawerProps = {
   adminModelCatalog: GoogleModelOption[];
   allowedGoogleModels: string[];
   toggleAllowedGoogleModel: (modelId: string, enabled: boolean) => void;
-  newsResearch: NewsResearchStored;
-  setNewsResearch: (next: NewsResearchStored) => void;
-  newsProviderKeys: NewsProviderKeys;
+  newsResearch?: NewsResearchStored;
+  setNewsResearch?: (next: NewsResearchStored) => void;
+  newsProviderKeys?: NewsProviderKeys;
 };
 
 function SettingsSectionCard({
@@ -207,10 +211,18 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
     },
     ref,
   ) {
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [activeSectionId, setActiveSectionId] = useState<string>(SETTINGS_SECTIONS[0].id);
+    const settingsSections = useMemo(
+      () =>
+        FEATURE_NEWS_RESEARCH
+          ? [...ALL_SETTINGS_SECTIONS]
+          : ALL_SETTINGS_SECTIONS.filter((s) => s.id !== 'settings-news'),
+      [],
+    );
 
-    const scrollToSection = useCallback((id: (typeof SETTINGS_SECTIONS)[number]['id']) => {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [activeSectionId, setActiveSectionId] = useState<string>(settingsSections[0]?.id ?? ALL_SETTINGS_SECTIONS[0].id);
+
+    const scrollToSection = useCallback((id: SettingsSectionId) => {
       setActiveSectionId(id);
       const root = scrollRef.current;
       const el = (root?.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)) as HTMLElement | null;
@@ -223,7 +235,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
     const root = scrollRef.current;
     if (!root) return;
 
-    const elements = SETTINGS_SECTIONS.map(({ id }) => root.querySelector(`#${CSS.escape(id)}`)).filter(
+    const elements = settingsSections.map(({ id }) => root.querySelector(`#${CSS.escape(id)}`)).filter(
       (n): n is Element => Boolean(n),
     );
     if (elements.length === 0) return;
@@ -241,7 +253,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [settingsSections]);
 
   const saveEnabled = session.isAdmin && hasUnsavedSettingsChanges && !savingConfig;
 
@@ -253,7 +265,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           aria-label="Settings sections"
         >
           <p className="mb-2 hidden text-xs font-bold uppercase tracking-[0.14em] text-muted lg:block">Jump to</p>
-          {SETTINGS_SECTIONS.map(({ id, label }) => (
+          {settingsSections.map(({ id, label }) => (
             <Button
               key={id}
               type="button"
@@ -822,13 +834,15 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           </div>
         </SettingsSectionCard>
 
-        <SettingsSectionCard id="settings-news" title="News">
-          <NewsResearchSettingsSection
-            value={newsResearch}
-            onChange={setNewsResearch}
-            newsProviderKeys={newsProviderKeys}
-          />
-        </SettingsSectionCard>
+        {FEATURE_NEWS_RESEARCH && newsResearch && setNewsResearch && newsProviderKeys ? (
+          <SettingsSectionCard id="settings-news" title="News">
+            <NewsResearchSettingsSection
+              value={newsResearch}
+              onChange={setNewsResearch}
+              newsProviderKeys={newsProviderKeys}
+            />
+          </SettingsSectionCard>
+        ) : null}
       </div>
     </div>
   );

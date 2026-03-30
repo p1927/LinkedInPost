@@ -18,8 +18,8 @@ export type TopicReviewPagesBaseProps = {
   /** Workspace-wide rules; ignored for LLM when this topic has non-empty topic rules. */
   globalGenerationRules: string;
   googleModel: string;
-  newsResearch: NewsResearchStored;
-  newsProviderKeys: NewsProviderKeys;
+  newsResearch?: NewsResearchStored;
+  newsProviderKeys?: NewsProviderKeys;
   onApprove: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   /** Approve current editor content and send immediately to the workspace delivery channel (skips the queue Publish click). */
   onPublishNow: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;

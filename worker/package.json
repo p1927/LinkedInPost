@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "pretypecheck": "python3 ../scripts/generate_features.py",
     "dev": "wrangler dev --env local",
     "dev:default": "wrangler dev",
     "dev:remote": "wrangler dev --env local --remote",

@@ -1,0 +1,8 @@
+# Feature toggles for this deployment. After editing, run:
+#   python3 scripts/generate_features.py
+# or `python3 setup.py` (regenerates TypeScript for worker + frontend).
+#
+# When a feature is false, related UI and Worker RPCs are disabled; generation
+# ignores related client payloads.
+
+newsResearch: true

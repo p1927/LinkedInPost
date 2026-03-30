@@ -19,6 +19,7 @@ import type {
   VariantsPreviewResponse,
 } from './types';
 import { resolveEffectiveGoogleModel } from '../google-model-policy';
+import { FEATURE_NEWS_RESEARCH } from '../generated/features';
 import { trimForPrompt } from '../researcher/trim';
 import type { ResearchArticle } from '../researcher/types';
 
@@ -144,7 +145,7 @@ export async function generateQuickChangePreview(
     templateRules,
     storedConfig.generationRules || '',
   );
-  const researchRefs = coerceResearchArticles(request.researchArticles);
+  const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
   const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, researchRefs);
   const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
 
@@ -182,7 +183,7 @@ export async function generateVariantsPreview(
     templateRules,
     storedConfig.generationRules || '',
   );
-  const researchRefs = coerceResearchArticles(request.researchArticles);
+  const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
   const prompt = buildVariantsPrompt(
     row,
     editorText,

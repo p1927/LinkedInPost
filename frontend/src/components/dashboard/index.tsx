@@ -29,6 +29,7 @@ import {
   WORKSPACE_ROUTE_PATHS,
   topicEditorPathForRow,
 } from '../../features/topic-navigation/utils/workspaceRoutes';
+import { FEATURE_NEWS_RESEARCH } from '../../generated/features';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 
 function previewAuthorDisplayName(email: string): string {
@@ -252,9 +253,9 @@ export function Dashboard({
     pendingScheduledPublish: queueHook.pendingScheduledPublish,
     scheduledPublishCancelBusy: queueHook.scheduledPublishCancelBusy,
     onCancelScheduledPublish: () => void queueHook.cancelPendingScheduledPublish(),
-    newsResearch: session.config.newsResearch,
-    newsProviderKeys: session.config.newsProviderKeys,
-    onSearchNewsResearch: queueHook.handleSearchNewsResearch,
+    newsResearch: FEATURE_NEWS_RESEARCH ? session.config.newsResearch : undefined,
+    newsProviderKeys: FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined,
+    onSearchNewsResearch: FEATURE_NEWS_RESEARCH ? queueHook.handleSearchNewsResearch : undefined,
   };
 
   const topicChromeRow = topicIdFromPath
@@ -430,9 +431,9 @@ export function Dashboard({
       adminModelCatalog={settingsHook.adminModelCatalog}
       allowedGoogleModels={settingsHook.allowedGoogleModels}
       toggleAllowedGoogleModel={settingsHook.toggleAllowedGoogleModel}
-      newsResearch={settingsHook.newsResearch}
-      setNewsResearch={settingsHook.setNewsResearch}
-      newsProviderKeys={session.config.newsProviderKeys}
+      newsResearch={FEATURE_NEWS_RESEARCH ? settingsHook.newsResearch : undefined}
+      setNewsResearch={FEATURE_NEWS_RESEARCH ? settingsHook.setNewsResearch : undefined}
+      newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
     />
   );
 

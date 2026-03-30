@@ -11,6 +11,7 @@ import {
   normalizeGoogleModelOptions,
   type NewsResearchStored,
 } from '../../../services/configService';
+import { FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { type ChannelId } from '../../../integrations/channels';
 import { formatTelegramRecipientsInput, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
 import { formatRecipientsInput, parseRecipientsInput, type WhatsAppRecipient } from '../../../integrations/whatsapp';
@@ -65,7 +66,9 @@ export function useDashboardSettings({
   const [gmailDefaultCc, setGmailDefaultCc] = useState(session.config.gmailDefaultCc || '');
   const [gmailDefaultBcc, setGmailDefaultBcc] = useState(session.config.gmailDefaultBcc || '');
   const [gmailDefaultSubject, setGmailDefaultSubject] = useState(session.config.gmailDefaultSubject || '');
-  const [newsResearch, setNewsResearch] = useState<NewsResearchStored>(() => session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG);
+  const [newsResearch, setNewsResearch] = useState<NewsResearchStored>(() =>
+    session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG,
+  );
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -82,6 +85,7 @@ export function useDashboardSettings({
   }, [session.config.allowedGoogleModels]);
 
   useEffect(() => {
+    if (!FEATURE_NEWS_RESEARCH) return;
     setNewsResearch(session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG);
   }, [session.config.newsResearch]);
 
@@ -167,7 +171,12 @@ export function useDashboardSettings({
     if (gmailDefaultCc.trim() !== (c.gmailDefaultCc || '').trim()) return true;
     if (gmailDefaultBcc.trim() !== (c.gmailDefaultBcc || '').trim()) return true;
     if (gmailDefaultSubject.trim() !== (c.gmailDefaultSubject || '').trim()) return true;
-    if (JSON.stringify(newsResearch) !== JSON.stringify(c.newsResearch)) return true;
+    if (
+      FEATURE_NEWS_RESEARCH
+      && JSON.stringify(newsResearch) !== JSON.stringify(c.newsResearch ?? DEFAULT_NEWS_RESEARCH_CONFIG)
+    ) {
+      return true;
+    }
     return false;
   }, [
     session.config,
@@ -207,7 +216,7 @@ export function useDashboardSettings({
         gmailDefaultCc: gmailDefaultCc.trim(),
         gmailDefaultBcc: gmailDefaultBcc.trim(),
         gmailDefaultSubject: gmailDefaultSubject.trim(),
-        newsResearch,
+        ...(FEATURE_NEWS_RESEARCH ? { newsResearch } : {}),
       });
       setGithubTokenInput('');
       setTelegramBotTokenInput('');

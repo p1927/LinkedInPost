@@ -26,6 +26,10 @@ Install the Python dependencies locally:
 pip install -r requirements.txt
 ```
 
+## Feature toggles
+
+Optional product modules are controlled by [`features.yaml`](features.yaml) at the repo root (for example `newsResearch: false` to remove news settings, search, and related generation context). Editing that file and running `python3 scripts/generate_features.py` (or any `python setup.py` run) regenerates `frontend/src/generated/features.ts` and `worker/src/generated/features.ts` before you build the dashboard or Worker.
+
 ## Step 1: Create the Google resources
 
 Create a Google Cloud project, enable the APIs below, and create a service account:

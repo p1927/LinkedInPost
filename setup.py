@@ -9,6 +9,9 @@ this file. If you update either side, update the other in the same change.
 The script can provision Google resources and, when requested, prepare most of
 the Cloudflare Worker and GitHub configuration needed by the shared dashboard.
 
+Optional modules are toggled in `features.yaml` at the repo root; each run
+regenerates `frontend/src/generated/features.ts` and `worker/src/generated/features.ts`.
+
 Examples:
     python setup.py
     python setup.py --cloudflare
@@ -74,6 +77,34 @@ ROOT = Path(__file__).resolve().parent
 WORKER_DIR = ROOT / 'worker'
 WORKER_WRANGLER_CONFIG = WORKER_DIR / 'wrangler.jsonc'
 WORKER_DEV_VARS = WORKER_DIR / '.dev.vars'
+FEATURES_YAML = ROOT / 'features.yaml'
+
+
+def load_features_map() -> dict[str, bool]:
+    defaults: dict[str, bool] = {'newsResearch': True}
+    if not FEATURES_YAML.is_file():
+        return defaults
+    try:
+        import yaml
+        raw = yaml.safe_load(FEATURES_YAML.read_text()) or {}
+    except Exception:
+        return defaults
+    if not isinstance(raw, dict):
+        return defaults
+    out = dict(defaults)
+    if 'newsResearch' in raw and isinstance(raw['newsResearch'], bool):
+        out['newsResearch'] = raw['newsResearch']
+    return out
+
+
+def run_generate_features_script() -> None:
+    script = ROOT / 'scripts' / 'generate_features.py'
+    if not script.is_file():
+        return
+    try:
+        subprocess.run([sys.executable, str(script)], cwd=str(ROOT), check=True)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        warn('generate_features.py', f'could not refresh feature flags: {exc}')
 
 
 @dataclass
@@ -181,6 +212,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    run_generate_features_script()
     if args.all:
         args.install_worker_deps = True
         args.cloudflare = True
@@ -218,6 +250,13 @@ def main() -> None:
         sync_github_secrets(worker_bootstrap, google_resources)
 
     print_bootstrap_summary(args, google_resources, worker_bootstrap, WORKER_DEV_VARS, WORKER_WRANGLER_CONFIG)
+
+    if not load_features_map().get('newsResearch', True):
+        print(
+            '  [features] newsResearch is false in features.yaml — Settings → News and the news search RPC '
+            'are disabled; optional NEWSAPI_KEY, GNEWS_API_KEY, NEWSDATA_API_KEY, and RESEARCHER_RSS_FEEDS '
+            'are not required.',
+        )
 
 
 def create_google_resources(shared_email: str) -> GoogleResources:

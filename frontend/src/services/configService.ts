@@ -1,4 +1,5 @@
 import type { ChannelId } from '../integrations/channels';
+import { FEATURE_NEWS_RESEARCH } from '../generated/features';
 import { normalizeTelegramRecipients, type TelegramRecipient } from '../integrations/telegram';
 import { normalizeWhatsAppRecipients, type WhatsAppRecipient } from '../integrations/whatsapp';
 
@@ -154,8 +155,9 @@ export interface BotConfig {
   gmailDefaultCc: string;
   gmailDefaultBcc: string;
   gmailDefaultSubject: string;
-  newsResearch: NewsResearchStored;
-  newsProviderKeys: NewsProviderKeys;
+  /** Omitted when news research is disabled in features.yaml. */
+  newsResearch?: NewsResearchStored;
+  newsProviderKeys?: NewsProviderKeys;
 }
 
 function normalizeNewsResearchConfig(raw: unknown): NewsResearchStored {
@@ -216,7 +218,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
   const googleModelRaw = config?.googleModel || DEFAULT_GOOGLE_MODEL;
   const googleModel = allowedGoogleModels.includes(googleModelRaw) ? googleModelRaw : allowedGoogleModels[0] || DEFAULT_GOOGLE_MODEL;
 
-  return {
+  const base: BotConfig = {
     spreadsheetId: config?.spreadsheetId || '',
     githubRepo: config?.githubRepo || '',
     googleModel,
@@ -244,6 +246,12 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     gmailDefaultCc: config?.gmailDefaultCc || '',
     gmailDefaultBcc: config?.gmailDefaultBcc || '',
     gmailDefaultSubject: config?.gmailDefaultSubject || '',
+  };
+  if (!FEATURE_NEWS_RESEARCH) {
+    return base;
+  }
+  return {
+    ...base,
     newsResearch: normalizeNewsResearchConfig(config?.newsResearch),
     newsProviderKeys: {
       newsapi: Boolean(config?.newsProviderKeys?.newsapi),

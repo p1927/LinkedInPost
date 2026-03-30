@@ -16,6 +16,43 @@ import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../componen
 import { parseRowImageUrls } from '../../../services/selectedImageUrls';
 import { topicNeedsTruncation } from '../../../lib/topicDisplay';
 
+function imageOptionMatchesUrl(option: ImageAssetOption, url: string): boolean {
+  const u = url.trim();
+  if (!u) return false;
+  return (option.imageUrl || '').trim() === u;
+}
+
+function urlAppearsInImageOptions(url: string, options: ImageAssetOption[]): boolean {
+  return options.some((o) => imageOptionMatchesUrl(o, url));
+}
+
+/** Sheet-backed selections are not always present in variant columns or search hits; include them so sync logic does not drop valid URLs. */
+function mergePersistedSelectionOptions(
+  base: ImageAssetOption[],
+  selectedUrls: string[],
+): ImageAssetOption[] {
+  const seen = new Set<string>();
+  for (const o of base) {
+    const k = (o.imageUrl || '').trim();
+    if (k) seen.add(k);
+  }
+  const extras: ImageAssetOption[] = [];
+  let extraIdx = 0;
+  for (const u of selectedUrls) {
+    const t = u.trim();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    extras.push({
+      id: `saved-selection-${extraIdx}`,
+      imageUrl: u.trim(),
+      label: 'Saved image',
+      kind: 'generated',
+    });
+    extraIdx += 1;
+  }
+  return [...base, ...extras];
+}
+
 function resolveEffectiveGenerationRulesWithTemplate(
   topicRules: string | undefined,
   templateId: string | undefined,
@@ -240,10 +277,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const topicTitleInWorkspaceChrome = Boolean(routed);
   const topicIsLong = topicNeedsTruncation(sheetRow.topic || '');
   const generatedImageOptions = useMemo(() => buildGeneratedImages(sheetRow), [sheetRow]);
-  const imageOptions = useMemo(
-    () => [...uploadedImageOptions, ...generatedImageOptions, ...alternateImageOptions],
-    [alternateImageOptions, generatedImageOptions, uploadedImageOptions],
-  );
+  const imageOptions = useMemo(() => {
+    const base = [...uploadedImageOptions, ...generatedImageOptions, ...alternateImageOptions];
+    return mergePersistedSelectionOptions(base, selectedImageUrls);
+  }, [alternateImageOptions, generatedImageOptions, uploadedImageOptions, selectedImageUrls]);
   const effectiveScope = getEffectiveScope(scope, selection);
   const aiRefineBlocked = isSelectionScopeWaitingForRange(scope, selection);
   const aiRefineBlockedReason = 'Select part of the draft in the editor before running Quick Change or 4 Variants.';
@@ -284,26 +321,34 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       if (selectedImageUrls.length === 0) {
         return;
       }
-      const filtered = selectedImageUrls.filter((u) => imageOptions.some((option) => option.imageUrl === u));
+      const filtered = selectedImageUrls.filter((u) => urlAppearsInImageOptions(u, imageOptions));
       if (filtered.length !== selectedImageUrls.length) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSelectedImageUrls(filtered.length > 0 ? filtered : imageOptions[0]?.imageUrl ? [imageOptions[0].imageUrl] : []);
+        setSelectedImageUrls(filtered.length > 0 ? filtered : imageOptions[0]?.imageUrl ? [imageOptions[0].imageUrl.trim()] : []);
       }
       return;
     }
 
-    if (selectedImageUrls.length === 0 && imageOptions[0]?.imageUrl) {
+    const baseOnly = [...uploadedImageOptions, ...generatedImageOptions, ...alternateImageOptions];
+    if (selectedImageUrls.length === 0 && baseOnly[0]?.imageUrl?.trim()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedImageUrls([imageOptions[0].imageUrl]);
+      setSelectedImageUrls([baseOnly[0].imageUrl.trim()]);
       return;
     }
 
     const first = selectedImageUrls[0];
-    if (first && !imageOptions.some((option) => option.imageUrl === first)) {
+    if (first?.trim() && !urlAppearsInImageOptions(first, imageOptions)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedImageUrls(imageOptions[0]?.imageUrl ? [imageOptions[0].imageUrl] : []);
+      setSelectedImageUrls(baseOnly[0]?.imageUrl?.trim() ? [baseOnly[0].imageUrl.trim()] : []);
     }
-  }, [imageOptions, selectedImageUrls, suppressAutoImageSelection]);
+  }, [
+    imageOptions,
+    selectedImageUrls,
+    suppressAutoImageSelection,
+    uploadedImageOptions,
+    generatedImageOptions,
+    alternateImageOptions,
+  ]);
 
   return {
     sheetRow, setSheetRow,
