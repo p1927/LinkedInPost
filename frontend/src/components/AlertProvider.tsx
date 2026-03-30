@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { Dialog } from './Dialog';
 
 export interface AlertOptions {
@@ -35,7 +35,7 @@ export function AlertProvider({ children }: { children: ReactNode }) {
     isConfirm: boolean;
   } | null>(null);
 
-  const showAlert = (options: AlertOptions): Promise<void> => {
+  const showAlert = useCallback((options: AlertOptions): Promise<void> => {
     return new Promise((resolve) => {
       setAlertState({
         open: true,
@@ -47,9 +47,9 @@ export function AlertProvider({ children }: { children: ReactNode }) {
         isConfirm: false,
       });
     });
-  };
+  }, []);
 
-  const showConfirm = (options: ConfirmOptions): Promise<boolean> => {
+  const showConfirm = useCallback((options: ConfirmOptions): Promise<boolean> => {
     return new Promise((resolve) => {
       setAlertState({
         open: true,
@@ -62,7 +62,15 @@ export function AlertProvider({ children }: { children: ReactNode }) {
         isConfirm: true,
       });
     });
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      showAlert,
+      showConfirm,
+    }),
+    [showAlert, showConfirm],
+  );
 
   const handleConfirm = () => {
     if (alertState) {
@@ -79,7 +87,7 @@ export function AlertProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AlertContext.Provider value={{ showAlert, showConfirm }}>
+    <AlertContext.Provider value={contextValue}>
       {children}
       {alertState && (
         <Dialog

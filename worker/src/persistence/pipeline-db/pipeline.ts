@@ -4,7 +4,8 @@ import type { SheetsGateway } from '../drafts';
 import { mergeTopicWithPipeline, pipelineFieldsFromGooglePipelineRow, sheetRowToPipelineColumns } from './mappers';
 import type { PipelineStateDbRow } from './types';
 
-const UPSERT_SQL = `
+/** Plain insert; pair with DELETE BY spreadsheet_id + topic_id so upsert works without ON CONFLICT (legacy D1 PK was topic_key). */
+const INSERT_PIPELINE_ROW_SQL = `
 INSERT INTO pipeline_state (
   spreadsheet_id, topic_id, topic, date, status,
   variant1, variant2, variant3, variant4,
@@ -20,31 +21,9 @@ INSERT INTO pipeline_state (
   ?17, ?18, ?19, ?20, ?21,
   ?22, ?23, ?24
 )
-ON CONFLICT(spreadsheet_id, topic_id) DO UPDATE SET
-  topic = excluded.topic,
-  date = excluded.date,
-  status = excluded.status,
-  variant1 = excluded.variant1,
-  variant2 = excluded.variant2,
-  variant3 = excluded.variant3,
-  variant4 = excluded.variant4,
-  image_link1 = excluded.image_link1,
-  image_link2 = excluded.image_link2,
-  image_link3 = excluded.image_link3,
-  image_link4 = excluded.image_link4,
-  selected_text = excluded.selected_text,
-  selected_image_id = excluded.selected_image_id,
-  selected_image_urls_json = excluded.selected_image_urls_json,
-  post_time = excluded.post_time,
-  email_to = excluded.email_to,
-  email_cc = excluded.email_cc,
-  email_bcc = excluded.email_bcc,
-  email_subject = excluded.email_subject,
-  topic_generation_rules = excluded.topic_generation_rules,
-  generation_template_id = excluded.generation_template_id,
-  published_at = excluded.published_at,
-  updated_at = datetime('now')
 `;
+
+const DELETE_PIPELINE_BY_TOPIC_SQL = `DELETE FROM pipeline_state WHERE spreadsheet_id = ?1 AND topic_id = ?2`;
 
 function normalizeStatus(value: string | null | undefined): string {
   return String(value ?? '').trim().toLowerCase();
@@ -83,7 +62,7 @@ function pickGoogleSheetFieldsForD1(
   return postF;
 }
 
-function bindUpsert(stmt: D1PreparedStatement, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
+function bindPipelineInsert(stmt: D1PreparedStatement, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
   const c = sheetRowToPipelineColumns(spreadsheetId, row);
   return stmt.bind(
     c.spreadsheet_id,
@@ -111,6 +90,17 @@ function bindUpsert(stmt: D1PreparedStatement, spreadsheetId: string, row: Sheet
     c.generation_template_id,
     c.published_at,
   );
+}
+
+function pipelineUpsertStatements(
+  db: D1Database,
+  spreadsheetId: string,
+  row: SheetRow,
+): [D1PreparedStatement, D1PreparedStatement] {
+  const c = sheetRowToPipelineColumns(spreadsheetId, row);
+  const del = db.prepare(DELETE_PIPELINE_BY_TOPIC_SQL).bind(c.spreadsheet_id, c.topic_id);
+  const ins = bindPipelineInsert(db.prepare(INSERT_PIPELINE_ROW_SQL), spreadsheetId, row);
+  return [del, ins];
 }
 
 export class PipelineStore {
@@ -161,7 +151,7 @@ export class PipelineStore {
     await sheets.ensurePipelineSheets(spreadsheetId);
     await this.ensureWorkspace(spreadsheetId);
 
-    const topics = await sheets.getTopicsInOrder(spreadsheetId);
+    const topics = await sheets.getTopicsInOrder(spreadsheetId, { skipEnsure: true });
     const topicIds = topics.map((t) => {
       const id = String(t.topicId || '').trim();
       if (!id) {
@@ -170,7 +160,9 @@ export class PipelineStore {
       return id;
     });
     let pipelineMap = await this.fetchPipelineMapByTopicIds(spreadsheetId, topicIds);
-    const { draftByTopicKey, postByTopicKey } = await sheets.getGooglePipelineSheetMaps(spreadsheetId);
+    const { draftByTopicKey, postByTopicKey } = await sheets.getGooglePipelineSheetMaps(spreadsheetId, {
+      skipEnsure: true,
+    });
 
     const hydrateUpserts: SheetRow[] = [];
     for (const t of topics) {
@@ -222,8 +214,7 @@ export class PipelineStore {
 
   async upsertFull(spreadsheetId: string, row: SheetRow): Promise<void> {
     await this.ensureWorkspace(spreadsheetId);
-    const stmt = this.db.prepare(UPSERT_SQL);
-    await bindUpsert(stmt, spreadsheetId, row).run();
+    await this.db.batch(pipelineUpsertStatements(this.db, spreadsheetId, row));
   }
 
   async saveDraftVariants(
@@ -451,8 +442,8 @@ export class PipelineStore {
     await sheets.appendTopicRows(spreadsheetId, topicsValues);
 
     await this.ensureWorkspace(spreadsheetId);
-    const stmt = this.db.prepare(UPSERT_SQL);
-    const batchStmts: D1PreparedStatement[] = posts.map((p) => {
+    const pairs: D1PreparedStatement[] = [];
+    for (const p of posts) {
       const row: SheetRow = {
         rowIndex: 0,
         sourceSheet: 'Draft',
@@ -479,11 +470,12 @@ export class PipelineStore {
         topicGenerationRules: p.topicGenerationRules,
         generationTemplateId: p.generationTemplateId,
       };
-      return bindUpsert(stmt, spreadsheetId, row);
-    });
+      const [del, ins] = pipelineUpsertStatements(this.db, spreadsheetId, row);
+      pairs.push(del, ins);
+    }
 
-    for (let i = 0; i < batchStmts.length; i += 128) {
-      await this.db.batch(batchStmts.slice(i, i + 128));
+    for (let i = 0; i < pairs.length; i += 128) {
+      await this.db.batch(pairs.slice(i, i + 128));
     }
 
     return { success: true, imported: posts.length };

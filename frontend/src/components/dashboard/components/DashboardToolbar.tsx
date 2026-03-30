@@ -39,12 +39,12 @@ export function DashboardToolbar({
         <span className="text-[11px] leading-relaxed text-muted">
           Powers Quick Change and variant generation during review.
           {FEATURE_MULTI_PROVIDER_LLM && providerLabel ? (
-            <span className="mt-0.5 block font-medium text-ink/80">Provider: {providerLabel}</span>
+            <span className="mt-0.5 block font-medium leading-snug text-ink/80">Provider: {providerLabel}</span>
           ) : null}
         </span>
         {modelPickerLocked ? (
           <p className="mt-1 text-[11px] leading-relaxed text-muted">
-            This workspace is limited to one model. An admin can allow more in Settings → GitHub Actions.
+            This workspace is limited to one model. An admin can allow more in Settings → AI / LLM.
           </p>
         ) : null}
         <Select
@@ -52,13 +52,16 @@ export function DashboardToolbar({
           onValueChange={(val) => setGoogleModel(val as string)}
           itemToStringLabel={(v) => availableModels.find((m) => m.value === v)?.label ?? String(v ?? '')}
         >
-          <SelectTrigger className="mt-1" disabled={modelPickerLocked}>
+          <SelectTrigger
+            className={cn('mt-1 h-auto min-h-10 py-2.5 font-medium', embedded && 'text-left')}
+            disabled={modelPickerLocked}
+          >
             <SelectValue placeholder="Select a model" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
             {availableModels.map((model) => (
-              <SelectItem key={model.value} value={model.value}>
-                {model.label}
+              <SelectItem key={model.value} value={model.value} className="items-start py-2.5">
+                <span className="whitespace-normal leading-snug">{model.label}</span>
               </SelectItem>
             ))}
           </SelectContent>

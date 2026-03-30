@@ -284,8 +284,13 @@ export class SheetsGateway {
     return this.ensureRequiredSheets(spreadsheetId);
   }
 
-  async getTopicsInOrder(spreadsheetId: string): Promise<TopicSheetEntry[]> {
-    await this.ensureRequiredSheets(spreadsheetId);
+  async getTopicsInOrder(
+    spreadsheetId: string,
+    options?: { skipEnsure?: boolean },
+  ): Promise<TopicSheetEntry[]> {
+    if (!options?.skipEnsure) {
+      await this.ensureRequiredSheets(spreadsheetId);
+    }
     const [topicRows] = await this.batchGetValues(spreadsheetId, [`${TOPICS_SHEET}!A2:C`]);
     const entries = (topicRows || [])
       .map((row, index) => {
@@ -303,14 +308,17 @@ export class SheetsGateway {
       })
       .filter((row) => row.topic.length > 0);
 
-    // Backfill any rows that are missing a Topic Id in column C.
     const missing = entries.filter((e) => !e.topicId.trim());
     if (missing.length > 0) {
-      await Promise.all(
-        missing.map((e) => {
-          e.topicId = crypto.randomUUID();
-          return this.updateValues(spreadsheetId, `${TOPICS_SHEET}!C${e.rowIndex}`, [[e.topicId]]);
-        }),
+      for (const e of missing) {
+        e.topicId = crypto.randomUUID();
+      }
+      await this.batchUpdateValueRanges(
+        spreadsheetId,
+        missing.map((e) => ({
+          range: `${TOPICS_SHEET}!C${e.rowIndex}`,
+          values: [[e.topicId]],
+        })),
       );
     }
 
@@ -350,8 +358,13 @@ export class SheetsGateway {
   }
 
   /** Full Draft/Post rows (A2:V) keyed by topic+date — used only to upsert into D1. */
-  async getGooglePipelineSheetMaps(spreadsheetId: string): Promise<GooglePipelineSheetMaps> {
-    await this.ensureRequiredSheets(spreadsheetId);
+  async getGooglePipelineSheetMaps(
+    spreadsheetId: string,
+    options?: { skipEnsure?: boolean },
+  ): Promise<GooglePipelineSheetMaps> {
+    if (!options?.skipEnsure) {
+      await this.ensureRequiredSheets(spreadsheetId);
+    }
     const range = `A2:V`;
     const [draftRows, postRows] = await this.batchGetValues(spreadsheetId, [
       `${DRAFT_SHEET}!${range}`,
@@ -511,11 +524,18 @@ export class SheetsGateway {
       { sheet: POST_TEMPLATES_SHEET, headers: POST_TEMPLATES_HEADERS },
     ];
 
+    const missingHeaderWrites: Array<{ range: string; values: string[][] }> = [];
     for (let i = 0; i < headerSpecs.length; i++) {
       const rows = headerRows[i];
       if (!rows?.length) {
-        await this.updateValues(spreadsheetId, `${headerSpecs[i].sheet}!A1`, [headerSpecs[i].headers]);
+        missingHeaderWrites.push({
+          range: `${headerSpecs[i].sheet}!A1`,
+          values: [headerSpecs[i].headers],
+        });
       }
+    }
+    if (missingHeaderWrites.length > 0) {
+      await this.batchUpdateValueRanges(spreadsheetId, missingHeaderWrites);
     }
 
     // One read for Draft/Post T–V row-1 headers and Topics C1 (was 7 sequential batchGets).
@@ -524,18 +544,22 @@ export class SheetsGateway {
       `${POST_SHEET}!T1:V1`,
       `${TOPICS_SHEET}!C1:C1`,
     ]);
-    const ensurePipelineExtraHeaders = async (sheet: string, row: string[][] | undefined) => {
+    const extraHeaderWrites: Array<{ range: string; values: string[][] }> = [];
+    const collectPipelineExtraHeaders = (sheet: string, row: string[][] | undefined) => {
       const t = String(row?.[0]?.[0] || '').trim();
       const u = String(row?.[0]?.[1] || '').trim();
       const v = String(row?.[0]?.[2] || '').trim();
-      if (!t) await this.updateValues(spreadsheetId, `${sheet}!T1`, [['Image URLs JSON']]);
-      if (!u) await this.updateValues(spreadsheetId, `${sheet}!U1`, [['Generation template id']]);
-      if (!v) await this.updateValues(spreadsheetId, `${sheet}!V1`, [['Topic Id']]);
+      if (!t) extraHeaderWrites.push({ range: `${sheet}!T1`, values: [['Image URLs JSON']] });
+      if (!u) extraHeaderWrites.push({ range: `${sheet}!U1`, values: [['Generation template id']] });
+      if (!v) extraHeaderWrites.push({ range: `${sheet}!V1`, values: [['Topic Id']] });
     };
-    await ensurePipelineExtraHeaders(DRAFT_SHEET, draftTuv);
-    await ensurePipelineExtraHeaders(POST_SHEET, postTuv);
+    collectPipelineExtraHeaders(DRAFT_SHEET, draftTuv);
+    collectPipelineExtraHeaders(POST_SHEET, postTuv);
     if (!String(topicsIdCell?.[0]?.[0] || '').trim()) {
-      await this.updateValues(spreadsheetId, `${TOPICS_SHEET}!C1`, [['Topic Id']]);
+      extraHeaderWrites.push({ range: `${TOPICS_SHEET}!C1`, values: [['Topic Id']] });
+    }
+    if (extraHeaderWrites.length > 0) {
+      await this.batchUpdateValueRanges(spreadsheetId, extraHeaderWrites);
     }
 
     return metadata;
@@ -657,6 +681,26 @@ export class SheetsGateway {
     );
     const valueRanges = response.valueRanges || [];
     return ranges.map((_, i) => valueRanges[i]?.values ?? []);
+  }
+
+  /** Several ranges in one `values:batchUpdate` (fewer quota units than N separate PUTs). */
+  private async batchUpdateValueRanges(
+    spreadsheetId: string,
+    data: Array<{ range: string; values: string[][] }>,
+  ): Promise<void> {
+    if (data.length === 0) {
+      return;
+    }
+    await this.fetchGoogleJson(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          valueInputOption: 'USER_ENTERED',
+          data,
+        }),
+      },
+    );
   }
 
   private async updateValues(spreadsheetId: string, range: string, values: string[][]): Promise<void> {
