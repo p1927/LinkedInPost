@@ -2908,6 +2908,11 @@ function slugifyTopic(topic: string): string {
     .replace(/^-+|-+$/g, '') || 'image';
 }
 
+/** GCS object names must be at most 1024 UTF-8 characters (see storage object name limits). */
+const GCS_OBJECT_NAME_MAX_LENGTH = 1024;
+/** Keep keys short: topic hint + millis (base36) + random hex; uniqueness does not rely on full topic. */
+const DRAFT_IMAGE_TOPIC_SLUG_MAX = 48;
+
 function buildPublicGcsUrl(bucketName: string, objectName: string): string {
   const encodedPath = objectName
     .split('/')
@@ -2917,10 +2922,16 @@ function buildPublicGcsUrl(bucketName: string, objectName: string): string {
 }
 
 function buildDraftImageObjectName(topic: string, ordinal: number, contentType: string, fileName = ''): string {
-  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, '');
-  const random = crypto.randomUUID().split('-')[0];
   const extension = guessFileExtension(contentType, fileName);
-  return `${slugifyTopic(topic)}-${timestamp}-${random}-${ordinal}${extension}`;
+  const time = Date.now().toString(36);
+  const random = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+  const suffix = `-${time}-${random}-${ordinal}${extension}`;
+  const maxSlug = Math.min(
+    DRAFT_IMAGE_TOPIC_SLUG_MAX,
+    Math.max(1, GCS_OBJECT_NAME_MAX_LENGTH - suffix.length),
+  );
+  const slug = slugifyTopic(topic).slice(0, maxSlug);
+  return `${slug}${suffix}`;
 }
 
 async function uploadBytesToGcs(
