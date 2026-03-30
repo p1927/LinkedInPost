@@ -119,14 +119,14 @@ export function CompareDialog({
   const { beforeSegments, afterSegments } = buildDiff(currentText, proposedText);
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/25 px-4 py-6 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-slate-900/25 px-4 py-6 backdrop-blur-xl">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="compare-dialog-title"
-        className="glass-panel-strong w-full max-w-6xl rounded-3xl shadow-2xl ring-1 ring-white/30 overflow-hidden bg-gradient-to-br from-white/95 to-indigo-50/80 backdrop-blur-xl"
+        className="glass-panel-strong my-auto flex w-full max-h-[min(92dvh,calc(100dvh-3rem))] max-w-6xl flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-white/95 to-indigo-50/80 shadow-2xl ring-1 ring-white/30 backdrop-blur-xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-indigo-200/30 px-8 py-6 bg-gradient-to-r from-indigo-50/50 to-white/50 backdrop-blur-sm">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-indigo-200/30 bg-gradient-to-r from-indigo-50/50 to-white/50 px-8 py-6 backdrop-blur-sm">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-600/80">Compare before apply</p>
             <h3 id="compare-dialog-title" className="mt-3 font-heading text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-indigo-700">{title}</h3>
@@ -148,32 +148,34 @@ export function CompareDialog({
           </Button>
         </div>
 
-        <div className="grid gap-6 px-8 py-6 lg:grid-cols-2">
-          <section className="rounded-2xl p-6 border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-700/90">Current target</p>
-            <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900 max-h-[300px] overflow-y-auto">
-              {renderSegments(beforeSegments)}
-            </div>
-          </section>
+        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-700/90">Current target</p>
+              <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900">
+                {renderSegments(beforeSegments)}
+              </div>
+            </section>
 
-          <section className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white/70 p-6 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-700/90">Proposed target</p>
-            <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900 max-h-[300px] overflow-y-auto">
-              {renderSegments(afterSegments)}
-            </div>
-          </section>
+            <section className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-700/90">Proposed target</p>
+              <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900">
+                {renderSegments(afterSegments)}
+              </div>
+            </section>
+          </div>
+
+          <div className="mt-6">
+            <section className="glass-panel rounded-2xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50/70 to-white/60 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-700/90">Resulting editor draft</p>
+              <div className="mt-4 whitespace-pre-wrap break-words rounded-xl border border-indigo-200/40 bg-white/70 px-5 py-4 text-sm leading-7 text-slate-900 backdrop-blur-sm transition-all duration-200 hover:border-indigo-200/60">
+                {resultingText}
+              </div>
+            </section>
+          </div>
         </div>
 
-        <div className="px-8 pb-4">
-          <section className="glass-panel rounded-2xl p-6 border border-indigo-200/50 bg-gradient-to-br from-indigo-50/70 to-white/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-700/90">Resulting editor draft</p>
-            <div className="mt-4 max-h-[240px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl px-5 py-4 text-sm leading-7 text-slate-900 border border-indigo-200/40 bg-white/70 backdrop-blur-sm transition-all duration-200 hover:border-indigo-200/60">
-              {resultingText}
-            </div>
-          </section>
-        </div>
-
-        <div className="flex flex-col-reverse gap-3 px-8 py-6 sm:flex-row sm:justify-end border-t border-indigo-200/30 bg-gradient-to-r from-indigo-50/30 to-white/30 backdrop-blur-sm">
+        <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-indigo-200/30 bg-gradient-to-r from-indigo-50/30 to-white/30 px-8 py-6 backdrop-blur-sm sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" size="md" onClick={onCancel} className="rounded-xl">
             Cancel
           </Button>

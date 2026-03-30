@@ -9,7 +9,11 @@ import { AlertProvider } from './components/AlertProvider'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
-import { workspaceRouterBasename, WORKSPACE_PATHS } from './features/topic-navigation/utils/workspaceRoutes'
+import {
+  workspaceRouterBasename,
+  WORKSPACE_PATHS,
+  isTopicEditorWorkspacePath,
+} from './features/topic-navigation/utils/workspaceRoutes'
 
 function isWorkspaceTopicReviewPath(pathname: string): boolean {
   return pathname.includes(`${WORKSPACE_PATHS.topics}/`) && pathname !== WORKSPACE_PATHS.topics
@@ -67,6 +71,7 @@ function WorkspaceSession({
         ? 'campaign'
         : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
+  const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
 
   return (
     <WorkspaceShell
@@ -74,6 +79,7 @@ function WorkspaceSession({
       googleProfile={googleProfile}
       workspacePage={workspacePage}
       lockMainScroll={lockMainScroll}
+      autoCollapseMainSidebar={autoCollapseMainSidebar}
       onLogoutComplete={() => {
         setIdToken(null)
         setSession(null)

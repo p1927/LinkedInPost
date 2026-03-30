@@ -156,12 +156,12 @@ export function InstagramChannelPreview({
               {urls.map((u, i) => (
                 <div
                   key={`${u}-${i}`}
-                  className="h-full min-w-full shrink-0 grow-0 basis-full snap-center snap-always"
+                  className="flex h-full min-w-full shrink-0 grow-0 basis-full snap-center snap-always items-center justify-center bg-black"
                 >
                   <img
                     src={normalizePreviewImageUrl(u)}
                     alt=""
-                    className="h-full w-full object-cover object-center"
+                    className="h-full w-full object-contain object-center"
                     onError={() => setImageLoadFailed(true)}
                   />
                 </div>
@@ -175,12 +175,12 @@ export function InstagramChannelPreview({
           </div>
         ) : resolvedImageUrl && !imageLoadFailed ? (
           <div className="w-full bg-black">
-            <div className="group/image relative aspect-square w-full overflow-hidden">
+            <div className="group/image relative flex aspect-square w-full items-center justify-center overflow-hidden">
               <img
                 key={`${resolvedImageUrl}-${imageRetryKey}`}
                 src={resolvedImageUrl}
                 alt=""
-                className="h-full w-full object-cover object-center transition-transform duration-500 group-hover/image:scale-[1.02]"
+                className="h-full w-full object-contain object-center transition-transform duration-500 group-hover/image:scale-[1.02]"
                 onError={() => setImageLoadFailed(true)}
               />
             </div>

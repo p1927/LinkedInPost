@@ -270,10 +270,20 @@ export function ImageAssetManager({
                       variant="secondary"
                       size="icon-lg"
                       className="absolute right-2 top-2 z-20 size-9 shrink-0 rounded-full border border-border bg-white/95 text-muted shadow-md backdrop-blur-sm hover:bg-white hover:text-destructive"
-                      aria-label={orderIndex === 0 ? 'Remove image from post' : 'Remove this image from selection'}
+                      aria-label={
+                        selectedImageUrls.length === 1
+                          ? 'Remove image from post'
+                          : orderIndex === 0
+                            ? 'Remove primary image from selection'
+                            : 'Remove this image from selection'
+                      }
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        if (selectedImageUrls.length === 1 && onClearSelectedImage) {
+                          onClearSelectedImage();
+                          return;
+                        }
                         void onSelectImage(option);
                       }}
                     >

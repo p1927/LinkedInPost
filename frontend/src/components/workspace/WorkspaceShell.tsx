@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { WorkspaceChromeProvider } from './WorkspaceChromeContext';
 import { AppSidebar, readSidebarCollapsed, writeSidebarCollapsed, type WorkspaceNavPage } from './AppSidebar';
@@ -15,6 +15,8 @@ export function WorkspaceShell({
   onLogoutComplete,
   /** When true, main does not scroll; children own scroll (e.g. topic review fills viewport). */
   lockMainScroll = false,
+  /** Topic draft editor route: collapse the app sidebar for more editor width (restore when leaving if we auto-collapsed). */
+  autoCollapseMainSidebar = false,
   children,
 }: {
   session: AppSession;
@@ -22,12 +24,32 @@ export function WorkspaceShell({
   workspacePage: WorkspaceNavPage;
   onLogoutComplete: () => void;
   lockMainScroll?: boolean;
+  autoCollapseMainSidebar?: boolean;
   children: ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => readSidebarCollapsed());
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  /** On the editor route, user may expand the rail via toggle; otherwise we keep it collapsed for width. */
+  const [editorSidebarExpanded, setEditorSidebarExpanded] = useState(false);
+
+  const prevAutoCollapseRef = useRef<boolean | null>(null);
+  if (prevAutoCollapseRef.current === null) {
+    prevAutoCollapseRef.current = autoCollapseMainSidebar;
+  } else if (autoCollapseMainSidebar !== prevAutoCollapseRef.current) {
+    prevAutoCollapseRef.current = autoCollapseMainSidebar;
+    if (autoCollapseMainSidebar) {
+      setMobileSidebarOpen(false);
+      setEditorSidebarExpanded(false);
+    }
+  }
+
+  const sidebarRailCollapsed = autoCollapseMainSidebar ? !editorSidebarExpanded : sidebarCollapsed;
 
   const toggleCollapsed = () => {
+    if (autoCollapseMainSidebar) {
+      setEditorSidebarExpanded((prev) => !prev);
+      return;
+    }
     setSidebarCollapsed((prev) => {
       const next = !prev;
       writeSidebarCollapsed(next);
@@ -55,7 +77,7 @@ export function WorkspaceShell({
       </a>
       <div className="flex min-h-screen w-full items-stretch bg-transparent">
         <AppSidebar
-          collapsed={sidebarCollapsed}
+          collapsed={sidebarRailCollapsed}
           onToggleCollapsed={toggleCollapsed}
           session={session}
           googleProfile={googleProfile ?? null}

@@ -342,12 +342,18 @@ export function useReviewFlowActions(
   }, [setSelectedImageUrls, setSuppressAutoImageSelection]);
 
   const handleSelectImageOption = (option: ImageAssetOption) => {
-    setSuppressAutoImageSelection(false);
     const url = option.imageUrl;
+    const idx = selectedImageUrls.indexOf(url);
+    if (idx >= 0 && selectedImageUrls.length === 1) {
+      setSuppressAutoImageSelection(true);
+      setSelectedImageUrls([]);
+      return;
+    }
+    setSuppressAutoImageSelection(false);
     setSelectedImageUrls((prev) => {
-      const idx = prev.indexOf(url);
-      if (idx >= 0) {
-        return prev.filter((_, i) => i !== idx);
+      const i = prev.indexOf(url);
+      if (i >= 0) {
+        return prev.filter((_, j) => j !== i);
       }
       if (prev.length >= MAX_IMAGES_PER_POST) {
         return prev;

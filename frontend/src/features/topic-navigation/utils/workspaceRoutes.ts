@@ -1,3 +1,4 @@
+import { matchPath } from 'react-router-dom';
 import { type SheetRow } from '../../../services/sheets';
 import { encodeTopicIdForPath, encodeTopicRouteId } from './topicRoute';
 
@@ -21,6 +22,11 @@ export const WORKSPACE_ROUTE_PATHS = {
   rules: '/rules',
   campaign: '/campaign',
 } as const;
+
+/** True when the URL is the draft editor (`/topics/…/editor/…`), for layout (e.g. collapse app sidebar). */
+export function isTopicEditorWorkspacePath(pathname: string): boolean {
+  return Boolean(matchPath({ path: WORKSPACE_ROUTE_PATHS.topicEditor, end: true }, pathname));
+}
 
 /** `encodeURIComponent(encodeTopicRouteId(row))` segment for `/topics/:topicId/...`. */
 export function topicUrlSegmentForRow(row: SheetRow): string {
