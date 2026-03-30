@@ -32,6 +32,8 @@ export interface SheetRow {
   topicGenerationRules?: string;
   /** Column U — optional PostTemplates sheet row id; used when column S is empty. */
   generationTemplateId?: string;
+  /** Set when status is Published (D1); ISO timestamp. */
+  publishedAt?: string;
 }
 
 export interface PostTemplate {

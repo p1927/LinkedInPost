@@ -257,6 +257,8 @@ export function Dashboard({
     newsResearch: FEATURE_NEWS_RESEARCH ? session.config.newsResearch : undefined,
     newsProviderKeys: FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined,
     onSearchNewsResearch: FEATURE_NEWS_RESEARCH ? queueHook.handleSearchNewsResearch : undefined,
+    onListNewsResearchHistory: FEATURE_NEWS_RESEARCH ? queueHook.handleListNewsResearchHistory : undefined,
+    onGetNewsResearchSnapshot: FEATURE_NEWS_RESEARCH ? queueHook.handleGetNewsResearchSnapshot : undefined,
   };
 
   const topicChromeRow = topicIdFromPath

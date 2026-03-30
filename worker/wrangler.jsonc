@@ -3,6 +3,18 @@
   "name": "linkedin-bot-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-03-25",
+  // Replace database_id with the id from: npx wrangler d1 create linkedin-pipeline-db
+  "d1_databases": [
+    {
+      "binding": "PIPELINE_DB",
+      "database_name": "linkedin-pipeline-db",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  },
   "kv_namespaces": [
     {
       "binding": "CONFIG_KV",
@@ -38,10 +50,19 @@
     "LINKEDIN_PERSON_URN": "",
     "META_APP_ID": "2059399091272282",
     "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
-    "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com"
+    "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+    "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10"
   },
   "env": {
     "local": {
+      "d1_databases": [
+        {
+          "binding": "PIPELINE_DB",
+          "database_name": "linkedin-pipeline-db",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations"
+        }
+      ],
       "durable_objects": {
         "bindings": [
           {
@@ -70,7 +91,8 @@
         "LINKEDIN_PERSON_URN": "",
         "META_APP_ID": "2059399091272282",
         "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
-        "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com"
+        "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+        "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10"
       },
       "kv_namespaces": [
         {

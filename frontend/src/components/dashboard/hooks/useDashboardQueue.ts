@@ -285,6 +285,24 @@ export function useDashboardQueue({
     }
   };
 
+  const handleListNewsResearchHistory = async (row: SheetRow) => {
+    try {
+      return await api.listNewsResearchHistory(idToken, row.topic, row.date);
+    } catch (error) {
+      handleFailure(error, 'Failed to load news search history.');
+      throw error;
+    }
+  };
+
+  const handleGetNewsResearchSnapshot = async (row: SheetRow, snapshotId: string) => {
+    try {
+      return await api.getNewsResearchSnapshot(idToken, snapshotId);
+    } catch (error) {
+      handleFailure(error, 'Failed to load news snapshot.');
+      throw error;
+    }
+  };
+
   const handleSaveDraftVariants = async (row: SheetRow, variants: string[]): Promise<SheetRow> => {
     try {
       const updatedRow = await api.saveDraftVariants(idToken, row, variants);
@@ -691,5 +709,7 @@ export function useDashboardQueue({
     scheduledPublishCancelBusy,
     cancelPendingScheduledPublish,
     handleSearchNewsResearch,
+    handleListNewsResearchHistory,
+    handleGetNewsResearchSnapshot,
   };
 }

@@ -3,8 +3,10 @@ import type { NewsResearchStored, NewsProviderKeys } from '../../services/config
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
   type GenerationRequest,
+  type NewsResearchHistoryItem,
   type NewsResearchSearchPayload,
   type NewsResearchSearchResult,
+  type NewsResearchSnapshotDetail,
   type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
@@ -57,6 +59,8 @@ export interface ReviewWorkspaceProps {
   newsResearch?: NewsResearchStored;
   newsProviderKeys?: NewsProviderKeys;
   onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
+  onListNewsResearchHistory?: () => Promise<NewsResearchHistoryItem[]>;
+  onGetNewsResearchSnapshot?: (id: string) => Promise<NewsResearchSnapshotDetail>;
 }
 
 function ReviewWorkspaceLayout() {

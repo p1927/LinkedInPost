@@ -14,6 +14,12 @@ import {
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
 import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway, coerceBulkCampaignPostsFromPayload } from './persistence/drafts';
+import {
+  PipelineStore,
+  getNewsResearchSnapshotById,
+  listNewsResearchHistory,
+  pruneOldNewsSnapshots,
+} from './persistence/pipeline-db';
 import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored } from './researcher/types';
@@ -33,6 +39,7 @@ type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp' | 'gmail';
 
 export interface Env {
   CONFIG_KV: KVNamespace;
+  PIPELINE_DB: D1Database;
   SCHEDULED_LINKEDIN_PUBLISH: DurableObjectNamespace;
   ALLOWED_EMAILS: string;
   ADMIN_EMAILS?: string;
@@ -72,6 +79,10 @@ export interface Env {
   DEV_GOOGLE_AUTH_BYPASS_SECRET?: string;
   /** Optional synthetic email for bypass session (default dev-bypass@local.invalid) */
   DEV_GOOGLE_AUTH_BYPASS_EMAIL?: string;
+  /** Max stored news research runs per topic+spreadsheet (D1); default 10 */
+  NEWS_SNAPSHOT_MAX_PER_TOPIC?: string;
+  /** Optional: delete news_snapshots older than this many days (cron + insert prune) */
+  NEWS_SNAPSHOT_MAX_AGE_DAYS?: string;
 }
 
 interface BotConfig {
@@ -462,6 +473,24 @@ const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
 ];
 
+function newsSnapshotMaxPerTopicFromEnv(env: Env): number {
+  const raw = String(env.NEWS_SNAPSHOT_MAX_PER_TOPIC ?? '').trim();
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 1) {
+    return Math.min(500, Math.floor(n));
+  }
+  return 10;
+}
+
+function newsSnapshotMaxAgeDaysFromEnv(env: Env): number | undefined {
+  const raw = String(env.NEWS_SNAPSHOT_MAX_AGE_DAYS ?? '').trim();
+  const n = Number(raw);
+  if (Number.isFinite(n) && n > 0) {
+    return Math.floor(n);
+  }
+  return undefined;
+}
+
 export default {
   async fetch(request, env): Promise<Response> {
     const corsHeaders = buildCorsHeaders(request, env);
@@ -517,12 +546,22 @@ export default {
 
       const storedConfig = await loadStoredConfig(env);
       const sheets = new SheetsGateway(env);
-      const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, request);
+      const pipeline = new PipelineStore(env.PIPELINE_DB);
+      const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, pipeline, request);
       return jsonResponse({ ok: true, data }, 200, corsHeaders);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unexpected backend error.';
       return jsonResponse({ ok: false, error: message }, 400, corsHeaders);
     }
+  },
+  scheduled(_event, env, ctx) {
+    ctx.waitUntil(
+      pruneOldNewsSnapshots(
+        env.PIPELINE_DB,
+        newsSnapshotMaxPerTopicFromEnv(env),
+        newsSnapshotMaxAgeDaysFromEnv(env),
+      ).catch(() => undefined),
+    );
   },
 } satisfies ExportedHandler<Env>;
 
@@ -565,6 +604,7 @@ async function dispatchAction(
   storedConfig: StoredConfig,
   env: Env,
   sheets: SheetsGateway,
+  pipeline: PipelineStore,
   request: Request,
 ): Promise<unknown> {
   switch (action) {
@@ -588,7 +628,7 @@ async function dispatchAction(
     }
     case 'getRows':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.getRows(storedConfig.spreadsheetId);
+      return pipeline.getMergedRows(sheets, storedConfig.spreadsheetId);
     case 'generateQuickChange':
       ensureSpreadsheetConfigured(storedConfig);
       return generateQuickChangePreview(env, storedConfig, payload, (templateId) =>
@@ -601,7 +641,7 @@ async function dispatchAction(
       );
     case 'saveDraftVariants':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.saveDraftVariants(
+      return pipeline.saveDraftVariants(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         coerceVariantList(payload.variants),
@@ -611,7 +651,7 @@ async function dispatchAction(
       return sheets.addTopic(storedConfig.spreadsheetId, String(payload.topic || '').trim());
     case 'updateRowStatus':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.updateRowStatus(
+      return pipeline.updateRowStatus(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.status || ''),
@@ -626,7 +666,7 @@ async function dispatchAction(
       );
     case 'saveEmailFields':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.saveEmailFields(
+      return pipeline.saveEmailFields(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.emailTo || ''),
@@ -636,7 +676,8 @@ async function dispatchAction(
       );
     case 'createDraftFromPublished':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.createDraftFromPublished(
+      return pipeline.createDraftFromPublished(
+        sheets,
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.selectedText || ''),
@@ -650,7 +691,7 @@ async function dispatchAction(
       );
     case 'updatePostSchedule':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.updatePostSchedule(
+      return pipeline.updatePostSchedule(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.postTime || ''),
@@ -659,6 +700,7 @@ async function dispatchAction(
       ensureSpreadsheetConfigured(storedConfig);
       const rowToDelete = coerceSheetRow(payload.row);
       await deleteGcsObjectsForTopicRow(env, rowToDelete);
+      await pipeline.deletePipelineRow(storedConfig.spreadsheetId, buildTopicKey(rowToDelete.topic, rowToDelete.date));
       return sheets.deleteRow(storedConfig.spreadsheetId, rowToDelete);
     }
     case 'saveConfig':
@@ -672,7 +714,7 @@ async function dispatchAction(
       };
     case 'saveTopicGenerationRules':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.saveTopicGenerationRules(
+      return pipeline.saveTopicGenerationRules(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.topicRules ?? ''),
@@ -700,7 +742,7 @@ async function dispatchAction(
       return sheets.deletePostTemplate(storedConfig.spreadsheetId, String(payload.templateId || '').trim());
     case 'saveGenerationTemplateId':
       ensureSpreadsheetConfigured(storedConfig);
-      return sheets.saveGenerationTemplateId(
+      return pipeline.saveGenerationTemplateId(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.generationTemplateId ?? ''),
@@ -736,7 +778,7 @@ async function dispatchAction(
       return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
       ensureSpreadsheetConfigured(storedConfig);
-      return publishContent(env, storedConfig, payload, sheets);
+      return publishContent(env, storedConfig, payload, sheets, pipeline);
     case 'cancelScheduledPublish':
       ensureSpreadsheetConfigured(storedConfig);
       return handleCancelScheduledPublishDispatch(env, payload);
@@ -749,7 +791,6 @@ async function dispatchAction(
         env,
         normalizeNewsResearchStored(storedConfig.newsResearch),
         payload,
-        sheets,
         storedConfig.spreadsheetId,
       );
     case 'bulkImportCampaign':
@@ -757,10 +798,57 @@ async function dispatchAction(
       if (!FEATURE_CAMPAIGN) {
         throw new Error('Campaign import is disabled for this deployment.');
       }
-      return sheets.bulkImportCampaign(
+      return pipeline.bulkImportCampaign(
+        sheets,
         storedConfig.spreadsheetId,
         coerceBulkCampaignPostsFromPayload(payload),
       );
+    case 'listNewsResearchHistory':
+      ensureSpreadsheetConfigured(storedConfig);
+      if (!FEATURE_NEWS_RESEARCH) {
+        throw new Error('News research is disabled for this deployment.');
+      }
+      {
+        const topic = String(payload.topic || '').trim();
+        const date = String(payload.date || '').trim();
+        const topicKey = topic && date ? buildTopicKey(topic, date) : undefined;
+        const limitRaw = Number(payload.limit);
+        const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(50, Math.floor(limitRaw)) : 20;
+        return listNewsResearchHistory(env.PIPELINE_DB, storedConfig.spreadsheetId, { topicKey, limit });
+      }
+    case 'getNewsResearchSnapshot':
+      ensureSpreadsheetConfigured(storedConfig);
+      if (!FEATURE_NEWS_RESEARCH) {
+        throw new Error('News research is disabled for this deployment.');
+      }
+      {
+        const id = String(payload.id || '').trim();
+        if (!id) {
+          throw new Error('Snapshot id is required.');
+        }
+        const snap = await getNewsResearchSnapshotById(env.PIPELINE_DB, storedConfig.spreadsheetId, id);
+        if (!snap) {
+          throw new Error('Snapshot not found.');
+        }
+        let articles: unknown[] = [];
+        try {
+          const parsed = JSON.parse(snap.articles) as unknown;
+          articles = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          articles = [];
+        }
+        return {
+          id: snap.id,
+          topicKey: snap.topic_key,
+          fetchedAt: snap.fetched_at,
+          windowStart: snap.window_start,
+          windowEnd: snap.window_end,
+          customQuery: snap.custom_query,
+          providersSummary: snap.providers_summary,
+          dedupeRemoved: snap.dedupe_removed,
+          articles,
+        };
+      }
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -2099,7 +2187,8 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
   ensureSpreadsheetConfigured(config);
 
   const sheets = new SheetsGateway(env);
-  const row = await sheets.getRowByTopicDate(config.spreadsheetId, task.topic, task.date);
+  const pipeline = new PipelineStore(env.PIPELINE_DB);
+  const row = await pipeline.getRowByTopicDate(sheets, config.spreadsheetId, task.topic, task.date);
   if (!row) {
     return;
   }
@@ -2133,6 +2222,7 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
       isScheduledExecution: true,
     },
     sheets,
+    pipeline,
   );
 }
 
@@ -2164,6 +2254,7 @@ async function publishContent(
   config: StoredConfig,
   payload: Record<string, unknown>,
   sheets: SheetsGateway,
+  pipeline: PipelineStore,
 ): Promise<{
   success: true;
   channel: ChannelId;
@@ -2186,7 +2277,7 @@ async function publishContent(
   async function markPublishedForChannel(): Promise<void> {
     const cleanedRow = await cleanupUnusedGeneratedImages(env, row, imageUrls);
     const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(imageUrls);
-    await sheets.markRowPublished(config.spreadsheetId, {
+    await pipeline.markRowPublished(config.spreadsheetId, {
       ...cleanedRow,
       status: 'Published',
       selectedText: message,

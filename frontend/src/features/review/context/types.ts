@@ -3,8 +3,10 @@ import { type SheetRow } from '../../../services/sheets';
 import {
   type GenerationRequest,
   type GenerationScope,
+  type NewsResearchHistoryItem,
   type NewsResearchSearchPayload,
   type NewsResearchSearchResult,
+  type NewsResearchSnapshotDetail,
   type PostTemplate,
   type QuickChangePreviewResult,
   type ResearchArticleRef,
@@ -45,6 +47,8 @@ export interface ReviewFlowContextValue {
   newsResearch: NewsResearchStored;
   newsProviderKeys: NewsProviderKeys;
   onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
+  onListNewsResearchHistory?: () => Promise<NewsResearchHistoryItem[]>;
+  onGetNewsResearchSnapshot?: (id: string) => Promise<NewsResearchSnapshotDetail>;
 
   // State
   sheetRow: SheetRow;
@@ -192,4 +196,6 @@ export interface ReviewFlowProviderProps {
   newsResearch?: NewsResearchStored;
   newsProviderKeys?: NewsProviderKeys;
   onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
+  onListNewsResearchHistory?: () => Promise<NewsResearchHistoryItem[]>;
+  onGetNewsResearchSnapshot?: (id: string) => Promise<NewsResearchSnapshotDetail>;
 }

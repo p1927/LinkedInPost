@@ -30,4 +30,6 @@ export interface SheetRow {
   topicGenerationRules?: string;
   /** Column U — optional id of a row in the PostTemplates sheet. */
   generationTemplateId?: string;
+  /** When the row was marked published (worker / D1). */
+  publishedAt?: string;
 }

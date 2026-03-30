@@ -4,11 +4,37 @@ import { Input } from '@/components/ui/input';
 import type { SheetRow } from '../../services/sheets';
 import type { NewsResearchStored } from '../../services/configService';
 import type {
+  NewsApiProviderId,
+  NewsResearchHistoryItem,
   NewsResearchSearchPayload,
   NewsResearchSearchResult,
+  NewsResearchSnapshotDetail,
   ResearchArticleHit,
   ResearchArticleRef,
 } from '../../services/backendApi';
+
+function normalizeSnapshotArticles(raw: unknown[]): ResearchArticleHit[] {
+  const out: ResearchArticleHit[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== 'object') continue;
+    const o = x as Record<string, unknown>;
+    const url = String(o.url || '').trim();
+    if (!url) continue;
+    const providerRaw = String(o.provider || 'rss').trim();
+    const provider = (['rss', 'newsapi', 'gnews', 'newsdata', 'serpapi_news'].includes(providerRaw)
+      ? providerRaw
+      : 'rss') as NewsApiProviderId;
+    out.push({
+      title: String(o.title || ''),
+      url,
+      source: String(o.source || ''),
+      publishedAt: String(o.publishedAt || ''),
+      snippet: String(o.snippet || ''),
+      provider,
+    });
+  }
+  return out;
+}
 
 function isoToDatetimeLocalValue(iso: string): string {
   const d = new Date(iso);
@@ -37,12 +63,16 @@ export function ResearcherPanel({
   row,
   newsResearch,
   onSearch,
+  onListHistory,
+  onLoadSnapshot,
   selectedRefs,
   onSelectedRefsChange,
 }: {
   row: SheetRow;
   newsResearch: NewsResearchStored;
   onSearch: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
+  onListHistory?: () => Promise<NewsResearchHistoryItem[]>;
+  onLoadSnapshot?: (id: string) => Promise<NewsResearchSnapshotDetail>;
   selectedRefs: ResearchArticleRef[];
   onSelectedRefsChange: (refs: ResearchArticleRef[]) => void;
 }) {
@@ -54,6 +84,10 @@ export function ResearcherPanel({
   const [results, setResults] = useState<ResearchArticleHit[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(() => new Set());
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItems, setHistoryItems] = useState<NewsResearchHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [snapshotLoadingId, setSnapshotLoadingId] = useState<string | null>(null);
 
   if (!newsResearch.enabled) {
     return (
@@ -101,6 +135,34 @@ export function ResearcherPanel({
     }
   };
 
+  const handleToggleHistory = async () => {
+    const next = !historyOpen;
+    setHistoryOpen(next);
+    if (next && onListHistory && historyItems.length === 0 && !historyLoading) {
+      setHistoryLoading(true);
+      try {
+        setHistoryItems(await onListHistory());
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+  };
+
+  const handleLoadSnapshot = async (id: string) => {
+    if (!onLoadSnapshot) return;
+    setSnapshotLoadingId(id);
+    setWarnings([]);
+    try {
+      const snap = await onLoadSnapshot(id);
+      const hits = normalizeSnapshotArticles(snap.articles);
+      setResults(hits.slice(0, 60));
+      setSelectedUrls(new Set());
+      onSelectedRefsChange([]);
+    } finally {
+      setSnapshotLoadingId(null);
+    }
+  };
+
   return (
     <section className="rounded-xl border border-border bg-white p-3 shadow-sm space-y-3" aria-label="News research">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/80">News research</h3>
@@ -129,6 +191,47 @@ export function ResearcherPanel({
       <Button type="button" size="sm" variant="outline" className="w-full text-xs font-semibold" disabled={loading} onClick={() => void handleSearch()}>
         {loading ? 'Searching…' : 'Search news'}
       </Button>
+      {onListHistory ? (
+        <div className="space-y-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-7 w-full text-[0.65rem] font-semibold text-muted"
+            disabled={historyLoading}
+            onClick={() => void handleToggleHistory()}
+          >
+            {historyLoading ? 'Loading history…' : historyOpen ? 'Hide past searches' : 'Past searches'}
+          </Button>
+          {historyOpen ? (
+            historyItems.length === 0 && !historyLoading ? (
+              <p className="text-[0.65rem] text-muted">No saved runs for this topic yet.</p>
+            ) : (
+              <ul className="max-h-32 space-y-1 overflow-y-auto text-[0.65rem]">
+                {historyItems.map((h) => (
+                  <li key={h.id} className="flex items-center justify-between gap-2 rounded border border-border/60 bg-white/80 px-2 py-1">
+                    <span className="min-w-0 truncate text-muted">
+                      {new Date(h.fetchedAt).toLocaleString()} · {h.articleCount} articles
+                    </span>
+                    {onLoadSnapshot ? (
+                      <Button
+                        type="button"
+                        size="inline"
+                        variant="outline"
+                        className="h-6 shrink-0 px-2 text-[0.6rem]"
+                        disabled={snapshotLoadingId === h.id}
+                        onClick={() => void handleLoadSnapshot(h.id)}
+                      >
+                        {snapshotLoadingId === h.id ? '…' : 'Load'}
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : null}
+        </div>
+      ) : null}
       {warnings.length > 0 ? (
         <ul className="list-disc space-y-1 pl-4 text-[0.65rem] text-amber-900/90">
           {warnings.map((w) => (

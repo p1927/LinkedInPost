@@ -49,6 +49,8 @@ export function EditorSidebar() {
     researchContextArticles,
     setResearchContextArticles,
     onSearchNewsResearch,
+    onListNewsResearchHistory,
+    onGetNewsResearchSnapshot,
   } = useReviewFlow();
 
   return (
@@ -135,6 +137,8 @@ export function EditorSidebar() {
             row={sheetRow}
             newsResearch={newsResearch}
             onSearch={onSearchNewsResearch}
+            onListHistory={onListNewsResearchHistory}
+            onLoadSnapshot={onGetNewsResearchSnapshot}
             selectedRefs={researchContextArticles}
             onSelectedRefsChange={setResearchContextArticles}
           />

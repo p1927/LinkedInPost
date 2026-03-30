@@ -9,6 +9,13 @@ this file. If you update either side, update the other in the same change.
 The script can provision Google resources and, when requested, prepare most of
 the Cloudflare Worker and GitHub configuration needed by the shared dashboard.
 
+The Worker stores pipeline state (variants, images, status, email fields, news
+search history) in Cloudflare D1 (`PIPELINE_DB`), not in Draft/Post cells. The
+spreadsheet still holds the topic queue (Topics), post templates (PostTemplates),
+and optional Draft/Post tabs used for headers and legacy row cleanup. Apply D1
+schema with: ``cd worker && npx wrangler d1 migrations apply linkedin-pipeline-db --local``
+(local) or ``... --remote`` after you set a real ``database_id`` in ``wrangler.jsonc``.
+
 Optional modules are toggled in `features.yaml` at the repo root; each run
 regenerates `frontend/src/generated/features.ts` and `worker/src/generated/features.ts`.
 
@@ -66,13 +73,34 @@ SCOPES = [
     'https://www.googleapis.com/auth/documents',
 ]
 
-SHEET_HEADERS = [
-    'Topic', 'Date', 'Status',
-    'Variant 1', 'Variant 2', 'Variant 3', 'Variant 4',
-    'Image Link 1', 'Image Link 2', 'Image Link 3', 'Image Link 4',
-    'Selected Text', 'Selected Image ID', 'Post Time',
+# Must match `PIPELINE_HEADERS` in `worker/src/persistence/drafts.ts`. Pipeline
+# data is persisted in D1; Draft/Post rows are not the source of truth for the app.
+PIPELINE_TAB_HEADERS = [
+    'Topic',
+    'Date',
+    'Status',
+    'Variant 1',
+    'Variant 2',
+    'Variant 3',
+    'Variant 4',
+    'Image Link 1',
+    'Image Link 2',
+    'Image Link 3',
+    'Image Link 4',
+    'Selected Text',
+    'Selected Image ID',
+    'Post Time',
+    'Email To',
+    'Email Cc',
+    'Email Bcc',
+    'Email Subject',
+    'Topic rules',
+    'Image URLs JSON',
+    'Generation template id',
+    'Topic Id',
 ]
-TOPICS_HEADERS = ['Topic', 'Date']
+TOPICS_HEADERS = ['Topic', 'Date', 'Topic Id']
+POST_TEMPLATES_HEADERS = ['Template id', 'Name', 'Rules']
 ROOT = Path(__file__).resolve().parent
 WORKER_DIR = ROOT / 'worker'
 WORKER_WRANGLER_CONFIG = WORKER_DIR / 'wrangler.jsonc'
@@ -240,6 +268,7 @@ def main() -> None:
 
     if args.cloudflare:
         create_cloudflare_kv_namespaces(worker_bootstrap)
+        provision_d1_database()
         update_worker_wrangler_config(worker_bootstrap)
         write_worker_dev_vars(worker_bootstrap, google_resources)
 
@@ -255,7 +284,7 @@ def main() -> None:
         print(
             '  [features] newsResearch is false in features.yaml — Settings → News and the news search RPC '
             'are disabled; optional NEWSAPI_KEY, GNEWS_API_KEY, NEWSDATA_API_KEY, and RESEARCHER_RSS_FEEDS '
-            'are not required.',
+            'are not required. When enabled, search history is stored in D1, not in a Google sheet.',
         )
 
 
@@ -374,9 +403,14 @@ def create_google_resources(shared_email: str) -> GoogleResources:
 
     try:
         ensure_sheet_tab(sheets, sheet_id, 'Topics', TOPICS_HEADERS)
-        ensure_sheet_tab(sheets, sheet_id, 'Draft', SHEET_HEADERS)
-        ensure_sheet_tab(sheets, sheet_id, 'Post', SHEET_HEADERS)
-        ok('Google Sheet tabs', 'Topics, Draft, Post')
+        ensure_sheet_tab(sheets, sheet_id, 'Draft', PIPELINE_TAB_HEADERS)
+        ensure_sheet_tab(sheets, sheet_id, 'Post', PIPELINE_TAB_HEADERS)
+        ensure_sheet_tab(sheets, sheet_id, 'PostTemplates', POST_TEMPLATES_HEADERS)
+        ok('Google Sheet tabs', 'Topics, Draft, Post, PostTemplates')
+        print(
+            '  [info] Pipeline content (drafts, news runs) lives in Worker D1; apply migrations from '
+            '`worker/` (see module docstring). No NewsResearch sheet is created.',
+        )
     except Exception as error:
         warn('Google Sheet tabs', str(error))
 
@@ -515,6 +549,104 @@ def create_cloudflare_kv_namespaces(worker_bootstrap: WorkerBootstrap) -> None:
     worker_bootstrap.kv_preview_id = create_kv_namespace(preview=True)
     ok('Cloudflare KV namespace', worker_bootstrap.kv_namespace_id)
     ok('Cloudflare KV preview namespace', worker_bootstrap.kv_preview_id)
+
+
+def provision_d1_database() -> None:
+    """Create the D1 database if not yet provisioned and patch database_id into wrangler.jsonc."""
+    ensure_command('npx', 'Install Node.js so setup.py can call Wrangler.')
+
+    # Check whether a real ID is already present.
+    try:
+        import json5
+        raw = WORKER_WRANGLER_CONFIG.read_text()
+        config = json5.loads(raw) if not _is_strict_json(raw) else json.loads(raw)
+    except Exception:
+        config = {}
+
+    existing_d1 = config.get('d1_databases', [])
+    current_id = str(existing_d1[0].get('database_id', '') if existing_d1 else '').strip()
+    is_placeholder = not current_id or current_id.startswith('REPLACE_WITH_') or current_id == '00000000-0000-0000-0000-000000000001'
+
+    if not is_placeholder:
+        ok('D1 database ID', current_id)
+        _apply_d1_migrations(remote=True)
+        return
+
+    print('\n[D1] Creating D1 database linkedin-pipeline-db...')
+    try:
+        result = run_command(
+            ['npx', 'wrangler', 'd1', 'create', 'linkedin-pipeline-db', '--json'],
+            cwd=WORKER_DIR,
+            capture_output=True,
+        )
+        stdout = result.stdout.strip()
+    except RuntimeError:
+        # --json flag unsupported on older wrangler; retry without it
+        result = run_command(
+            ['npx', 'wrangler', 'd1', 'create', 'linkedin-pipeline-db'],
+            cwd=WORKER_DIR,
+            capture_output=True,
+        )
+        stdout = result.stdout.strip()
+
+    database_id = _extract_d1_database_id(stdout)
+    if not database_id:
+        warn('D1 database', 'Could not parse database_id from wrangler output. Patch wrangler.jsonc manually.')
+        warn('D1 database output', stdout[:400])
+        return
+
+    # Patch the real ID into wrangler.jsonc (update_wrangler_config will preserve it on next run).
+    _patch_d1_database_id(database_id)
+    ok('D1 database ID', database_id)
+    _apply_d1_migrations(remote=True)
+
+
+def _is_strict_json(text: str) -> bool:
+    try:
+        json.loads(text)
+        return True
+    except json.JSONDecodeError:
+        return False
+
+
+def _extract_d1_database_id(output: str) -> str:
+    try:
+        parsed = json.loads(output)
+        if isinstance(parsed, dict):
+            return str(parsed.get('uuid', '') or parsed.get('id', '')).strip()
+    except json.JSONDecodeError:
+        pass
+    match = re.search(r'"uuid"\s*:\s*"([^"]+)"', output)
+    if match:
+        return match.group(1)
+    match = re.search(r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', output, re.IGNORECASE)
+    return match.group(1) if match else ''
+
+
+def _patch_d1_database_id(database_id: str) -> None:
+    text = WORKER_WRANGLER_CONFIG.read_text()
+    patched = re.sub(
+        r'("database_id"\s*:\s*)"[^"]*"',
+        lambda m: f'{m.group(1)}"{database_id}"',
+        text,
+    )
+    if patched != text:
+        WORKER_WRANGLER_CONFIG.write_text(patched)
+        ok('wrangler.jsonc patched', f'database_id = {database_id}')
+
+
+def _apply_d1_migrations(remote: bool = False) -> None:
+    flag = '--remote' if remote else '--local'
+    print(f'\n[D1] Applying migrations ({flag})...')
+    try:
+        run_command(
+            ['npx', 'wrangler', 'd1', 'migrations', 'apply', 'linkedin-pipeline-db', flag],
+            cwd=WORKER_DIR,
+            capture_output=True,
+        )
+        ok('D1 migrations', f'applied {flag}')
+    except RuntimeError as error:
+        warn('D1 migrations', str(error)[:300])
 
 
 def create_kv_namespace(preview: bool) -> str:

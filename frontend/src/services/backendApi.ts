@@ -142,6 +142,30 @@ export interface NewsResearchSearchResult {
   warnings: string[];
 }
 
+export interface NewsResearchHistoryItem {
+  id: string;
+  topicKey: string;
+  fetchedAt: string;
+  windowStart: string;
+  windowEnd: string;
+  customQuery: string;
+  providersSummary: string;
+  articleCount: number;
+  dedupeRemoved: string;
+}
+
+export interface NewsResearchSnapshotDetail {
+  id: string;
+  topicKey: string;
+  fetchedAt: string;
+  windowStart: string;
+  windowEnd: string;
+  customQuery: string;
+  providersSummary: string;
+  dedupeRemoved: string;
+  articles: unknown[];
+}
+
 export interface GenerationRequest {
   row: SheetRow;
   editorText: string;
@@ -340,6 +364,19 @@ export class BackendApi {
 
   async searchNewsResearch(idToken: string, payload: NewsResearchSearchPayload): Promise<NewsResearchSearchResult> {
     return this.post<NewsResearchSearchResult>('searchNewsResearch', idToken, { ...payload });
+  }
+
+  async listNewsResearchHistory(
+    idToken: string,
+    topic: string,
+    date: string,
+    limit = 20,
+  ): Promise<NewsResearchHistoryItem[]> {
+    return this.post<NewsResearchHistoryItem[]>('listNewsResearchHistory', idToken, { topic, date, limit });
+  }
+
+  async getNewsResearchSnapshot(idToken: string, id: string): Promise<NewsResearchSnapshotDetail> {
+    return this.post<NewsResearchSnapshotDetail>('getNewsResearchSnapshot', idToken, { id });
   }
 
   async saveDraftVariants(idToken: string, row: SheetRow, variants: string[]): Promise<SheetRow> {

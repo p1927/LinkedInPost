@@ -71,6 +71,10 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
         newsResearch={p.newsResearch}
         newsProviderKeys={p.newsProviderKeys}
         onSearchNewsResearch={p.onSearchNewsResearch ? (payload) => p.onSearchNewsResearch!(row, payload) : undefined}
+        onListNewsResearchHistory={p.onListNewsResearchHistory ? () => p.onListNewsResearchHistory!(row) : undefined}
+        onGetNewsResearchSnapshot={
+          p.onGetNewsResearchSnapshot ? (id) => p.onGetNewsResearchSnapshot!(row, id) : undefined
+        }
       />
     </div>
   );

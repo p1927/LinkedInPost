@@ -50,6 +50,8 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
       serpapi: false,
     },
     onSearchNewsResearch: props.onSearchNewsResearch,
+    onListNewsResearchHistory: props.onListNewsResearchHistory,
+    onGetNewsResearchSnapshot: props.onGetNewsResearchSnapshot,
 
     ...restState,
     ...actions,

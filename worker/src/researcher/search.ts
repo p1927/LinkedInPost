@@ -1,6 +1,7 @@
 import type { Env } from '../index';
-import type { SheetsGateway } from '../persistence/drafts';
 import { buildTopicKey } from '../persistence/drafts';
+import { insertNewsSnapshotAndPrune } from '../persistence/pipeline-db/news';
+import { PipelineStore } from '../persistence/pipeline-db/pipeline';
 import { collectEnabledRssUrls, normalizeNewsResearchStored } from './config';
 import { dedupeArticles } from './dedupe';
 import { trimArticleSnippet } from './trim';
@@ -18,6 +19,15 @@ import {
   fetchNewsDataIo,
   fetchSerpApiGoogleNews,
 } from './providers/newsApis';
+
+function newsSnapshotMaxPerTopic(env: Env): number {
+  const raw = String(env.NEWS_SNAPSHOT_MAX_PER_TOPIC ?? '').trim();
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 1) {
+    return Math.min(500, Math.floor(n));
+  }
+  return 10;
+}
 
 function parsePayload(payload: Record<string, unknown>): NewsResearchSearchPayload {
   const topic = String(payload.topic || '').trim();
@@ -51,7 +61,6 @@ export async function searchNewsResearch(
   env: Env,
   stored: NewsResearchStored,
   payload: Record<string, unknown>,
-  sheets: SheetsGateway,
   spreadsheetId: string,
 ): Promise<NewsResearchSearchResult> {
   const p = parsePayload(payload);
@@ -143,18 +152,22 @@ export async function searchNewsResearch(
 
   const topicKey = buildTopicKey(p.topic, p.date);
   try {
-    await sheets.appendNewsResearchSnapshot(spreadsheetId, {
+    const pipeline = new PipelineStore(env.PIPELINE_DB);
+    await pipeline.ensureWorkspace(spreadsheetId);
+    await insertNewsSnapshotAndPrune(env.PIPELINE_DB, {
+      spreadsheetId,
       topicKey,
       fetchedAt: new Date().toISOString(),
       windowStart: p.windowStart,
       windowEnd: p.windowEnd,
       customQuery: p.customQuery || '',
       providersSummary: [...providersUsed].join(','),
-      articlesJson: JSON.stringify(deduped.slice(0, 40)),
+      articlesJson: JSON.stringify(deduped.slice(0, 60)),
       dedupeRemoved: String(removed),
+      maxPerTopic: newsSnapshotMaxPerTopic(env),
     });
   } catch (e) {
-    warnings.push(`Sheet log: ${e instanceof Error ? e.message : 'failed'}`);
+    warnings.push(`News snapshot: ${e instanceof Error ? e.message : 'failed'}`);
   }
 
   return {

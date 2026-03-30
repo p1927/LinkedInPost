@@ -1,8 +1,10 @@
 import { type SheetRow } from '../../services/sheets';
 import {
   type GenerationRequest,
+  type NewsResearchHistoryItem,
   type NewsResearchSearchPayload,
   type NewsResearchSearchResult,
+  type NewsResearchSnapshotDetail,
   type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
@@ -45,6 +47,8 @@ export type TopicReviewPagesBaseProps = {
   onCancelScheduledPublish?: () => void | Promise<void>;
   /** Optional news search for the editor researcher panel. */
   onSearchNewsResearch?: (row: SheetRow, payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
+  onListNewsResearchHistory?: (row: SheetRow) => Promise<NewsResearchHistoryItem[]>;
+  onGetNewsResearchSnapshot?: (row: SheetRow, id: string) => Promise<NewsResearchSnapshotDetail>;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

@@ -114,6 +114,26 @@ def read_existing_kv_ids(wrangler_config_path: Path) -> tuple[str, str]:
 
 def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerBootstrap) -> None:
     config = load_wrangler_jsonc(wrangler_config_path)
+
+    # Preserve existing D1 binding so the database_id placeholder (or real ID) is not lost.
+    existing_d1 = config.get('d1_databases', [])
+    if not existing_d1:
+        existing_d1 = [
+            {
+                'binding': 'PIPELINE_DB',
+                'database_name': 'linkedin-pipeline-db',
+                'database_id': 'REPLACE_WITH_D1_DATABASE_ID',
+                'migrations_dir': 'migrations',
+            }
+        ]
+    config['d1_databases'] = existing_d1
+
+    # Preserve existing cron triggers (news-snapshot pruning runs daily).
+    existing_triggers = config.get('triggers', {})
+    if not existing_triggers.get('crons'):
+        existing_triggers['crons'] = ['0 3 * * *']
+    config['triggers'] = existing_triggers
+
     config['kv_namespaces'] = [
         {
             'binding': 'CONFIG_KV',
@@ -121,6 +141,7 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
             'preview_id': worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID',
         }
     ]
+    news_snapshot_max = _read_existing_var(config, 'NEWS_SNAPSHOT_MAX_PER_TOPIC') or '10'
     config['vars'] = {
         'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
@@ -134,6 +155,7 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'META_APP_ID': worker_bootstrap.meta_app_id,
         'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
         'GMAIL_CLIENT_ID': worker_bootstrap.gmail_client_id,
+        'NEWS_SNAPSHOT_MAX_PER_TOPIC': news_snapshot_max,
     }
     config['durable_objects'] = {
         'bindings': [
@@ -150,6 +172,7 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         }
     ]
     preview_binding_id = worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID'
+    local_d1 = copy.deepcopy(existing_d1)
     config['env'] = {
         'local': {
             'durable_objects': copy.deepcopy(config['durable_objects']),
@@ -162,9 +185,15 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
                     'preview_id': preview_binding_id,
                 }
             ],
+            'd1_databases': local_d1,
         }
     }
     wrangler_config_path.write_text(json.dumps(config, indent=2) + '\n')
+
+
+def _read_existing_var(config: dict[str, Any], name: str) -> str:
+    """Return the current value of a top-level vars entry, or '' if absent."""
+    return str(config.get('vars', {}).get(name, '') or '').strip()
 
 
 def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json: str) -> dict[str, str]:
@@ -299,6 +328,12 @@ def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str
         f'Set VITE_WORKER_URL in the frontend build to: {vite_worker_url}',
         'Open the dashboard as an admin and use Connect Instagram, Connect LinkedIn, Connect WhatsApp Business, and Connect Gmail to store channel access in the Worker.',
         'For Telegram, set TELEGRAM_BOT_TOKEN once and save the target chat IDs in dashboard settings.',
+        (
+            'D1 database: if setup.py --cloudflare did not provision D1 automatically, run: '
+            'cd worker && npx wrangler d1 create linkedin-pipeline-db  '
+            'then patch the returned database_id into wrangler.jsonc d1_databases[0].database_id, '
+            'then apply migrations: npx wrangler d1 migrations apply linkedin-pipeline-db --remote'
+        ),
     ]
 
     return prerequisites + core
@@ -345,6 +380,17 @@ def print_bootstrap_summary(
             print(f'CONFIG_KV production    = {worker_bootstrap.kv_namespace_id}')
         if worker_bootstrap.kv_preview_id:
             print(f'CONFIG_KV preview       = {worker_bootstrap.kv_preview_id}')
+        # D1 — read current database_id from wrangler.jsonc for display
+        try:
+            _cfg = load_wrangler_jsonc(wrangler_config_path)
+            _d1 = _cfg.get('d1_databases', [])
+            _d1_id = str(_d1[0].get('database_id', '') if _d1 else '').strip()
+            if _d1_id and not _d1_id.startswith('REPLACE_WITH_') and _d1_id != '00000000-0000-0000-0000-000000000001':
+                print(f'PIPELINE_DB (D1)        = {_d1_id}')
+            else:
+                print('PIPELINE_DB (D1)        = <not yet provisioned — run setup.py --cloudflare or wrangler d1 create>')
+        except Exception:
+            pass
     if resolved_worker_url:
         print(f'VITE_WORKER_URL         = {resolved_worker_url}')
 
