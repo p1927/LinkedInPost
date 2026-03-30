@@ -57,6 +57,8 @@ export function useDashboardQueue({
   const [rows, setRows] = useState<SheetRow[]>([]);
   /** Start true when a sheet is configured so first paint does not run “loaded” logic before loadData runs. */
   const [loading, setLoading] = useState(() => Boolean(session.config.spreadsheetId));
+  /** True only while add-topic API + follow-up refresh run (not general queue loads). */
+  const [addingTopic, setAddingTopic] = useState(false);
   const [newTopic, setNewTopic] = useState('');
   const [selectedApprovedRowPreview, setSelectedApprovedRowPreview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -123,7 +125,8 @@ export function useDashboardQueue({
   const handleAddTopic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTopic.trim() || !session.config.spreadsheetId) return;
-    
+
+    setAddingTopic(true);
     setLoading(true);
     try {
       await api.addTopic(idToken, newTopic.trim());
@@ -133,6 +136,7 @@ export function useDashboardQueue({
       handleFailure(error, 'Failed to add topic.');
     } finally {
       setLoading(false);
+      setAddingTopic(false);
     }
   };
 
@@ -611,6 +615,7 @@ export function useDashboardQueue({
   return {
     rows,
     loading,
+    addingTopic,
     newTopic,
     setNewTopic,
     selectedApprovedRowPreview,

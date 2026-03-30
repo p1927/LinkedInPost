@@ -312,6 +312,7 @@ export function Dashboard({
       newTopic={queueHook.newTopic}
       setNewTopic={queueHook.setNewTopic}
       loading={queueHook.loading}
+      addingTopic={queueHook.addingTopic}
       setStatusFilter={setStatusFilter}
       statusFilter={statusFilter}
       queueCounts={queueCounts}
