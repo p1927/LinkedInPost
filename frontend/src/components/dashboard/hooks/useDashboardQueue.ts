@@ -120,7 +120,8 @@ export function useDashboardQueue({
       setLoading(false);
       return;
     }
-    void loadData(true);
+    // Use quiet=false so API/Sheets failures surface instead of leaving an empty queue with no explanation.
+    void loadData(false);
   }, [idToken, session.config.spreadsheetId, loadData]);
 
   const handleAddTopic = async (e: React.FormEvent) => {

@@ -289,10 +289,19 @@ export class SheetsGateway {
     const [topicRows] = await this.batchGetValues(spreadsheetId, [`${TOPICS_SHEET}!A2:C`]);
     const entries = (topicRows || [])
       .map((row, index) => {
-        const padded = padRow(row, 3);
-        return { rowIndex: index + 2, topic: padded[0], date: padded[1], topicId: padded[2] || '' };
+        const cells = Array.isArray(row) ? row : [];
+        const padded = padRow(
+          cells.map((c) => String(c ?? '')),
+          3,
+        );
+        return {
+          rowIndex: index + 2,
+          topic: padded[0].trim(),
+          date: padded[1].trim(),
+          topicId: padded[2].trim(),
+        };
       })
-      .filter((row) => row.topic.trim());
+      .filter((row) => row.topic.length > 0);
 
     // Backfill any rows that are missing a Topic Id in column C.
     const missing = entries.filter((e) => !e.topicId.trim());
@@ -434,10 +443,45 @@ export class SheetsGateway {
     return { success: true };
   }
 
+  /**
+   * Renames tabs that differ only by casing (e.g. "topics" → "Topics") so we read the sheet that already has data
+   * instead of creating an empty duplicate "Topics" tab.
+   */
+  private async ensureCanonicalManagedSheetTitles(
+    spreadsheetId: string,
+    metadata: SpreadsheetSheetMetadata[],
+  ): Promise<SpreadsheetSheetMetadata[]> {
+    const managedSheets = [TOPICS_SHEET, DRAFT_SHEET, POST_SHEET, POST_TEMPLATES_SHEET] as const;
+    const titles = new Set(metadata.map((sheet) => sheet.properties?.title).filter(Boolean));
+    const renameRequests: Array<Record<string, unknown>> = [];
+    for (const canonical of managedSheets) {
+      if (titles.has(canonical)) continue;
+      const match = metadata.find(
+        (s) => (s.properties?.title || '').toLowerCase() === canonical.toLowerCase(),
+      );
+      const sheetId = match?.properties?.sheetId;
+      const currentTitle = match?.properties?.title;
+      if (sheetId !== undefined && currentTitle && currentTitle !== canonical) {
+        renameRequests.push({
+          updateSheetProperties: {
+            properties: { sheetId, title: canonical },
+            fields: 'title',
+          },
+        });
+      }
+    }
+    if (renameRequests.length === 0) {
+      return metadata;
+    }
+    await this.batchUpdate(spreadsheetId, { requests: renameRequests });
+    return this.getSpreadsheetMetadata(spreadsheetId);
+  }
+
   /** Ensures Topics, Draft, Post, and PostTemplates tabs exist (pipeline columns unused — data is in D1). */
   private async ensureRequiredSheets(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {
     const managedSheets = [TOPICS_SHEET, DRAFT_SHEET, POST_SHEET, POST_TEMPLATES_SHEET] as const;
     let metadata = await this.getSpreadsheetMetadata(spreadsheetId);
+    metadata = await this.ensureCanonicalManagedSheetTitles(spreadsheetId, metadata);
     const titles = new Set(metadata.map((sheet) => sheet.properties?.title).filter(Boolean));
 
     const toAdd = managedSheets.filter((name) => !titles.has(name));
