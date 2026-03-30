@@ -14,6 +14,9 @@ import {
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
 import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway } from './persistence/drafts';
+import { searchNewsResearch } from './researcher/search';
+import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
+import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
@@ -38,6 +41,11 @@ export interface Env {
   DELETE_UNUSED_GENERATED_IMAGES?: string;
   GEMINI_API_KEY?: string;
   SERPAPI_API_KEY?: string;
+  NEWSAPI_KEY?: string;
+  GNEWS_API_KEY?: string;
+  NEWSDATA_API_KEY?: string;
+  /** Comma/newline-separated RSS URLs or JSON array string; merged with Settings feeds. */
+  RESEARCHER_RSS_FEEDS?: string;
   GITHUB_TOKEN_ENCRYPTION_KEY?: string;
   CORS_ALLOWED_ORIGINS?: string;
   INSTAGRAM_APP_ID?: string;
@@ -94,6 +102,14 @@ interface BotConfig {
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
   whatsappRecipients: WhatsAppRecipient[];
+  /** News researcher settings (admin-editable); API keys are Worker secrets only. */
+  newsResearch: NewsResearchStored;
+  newsProviderKeys: {
+    newsapi: boolean;
+    gnews: boolean;
+    newsdata: boolean;
+    serpapi: boolean;
+  };
 }
 
 interface GenerationRulesVersion {
@@ -137,6 +153,7 @@ export interface StoredConfig {
   whatsappAccessTokenCiphertext?: string;
   whatsappAccessToken?: string;
   whatsappRecipients: WhatsAppRecipient[];
+  newsResearch?: NewsResearchStored;
 }
 
 interface BotConfigUpdate {
@@ -164,6 +181,7 @@ interface BotConfigUpdate {
   whatsappPhoneNumberId?: string;
   whatsappAccessToken?: string;
   whatsappRecipients?: WhatsAppRecipient[];
+  newsResearch?: NewsResearchStored;
 }
 
 function normalizeDisconnectedAuthProviders(value: unknown): AuthProvider[] {
@@ -721,6 +739,15 @@ async function dispatchAction(
     case 'cancelScheduledPublish':
       ensureSpreadsheetConfigured(storedConfig);
       return handleCancelScheduledPublishDispatch(env, payload);
+    case 'searchNewsResearch':
+      ensureSpreadsheetConfigured(storedConfig);
+      return searchNewsResearch(
+        env,
+        normalizeNewsResearchStored(storedConfig.newsResearch),
+        payload,
+        sheets,
+        storedConfig.spreadsheetId,
+      );
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -864,6 +891,8 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     whatsappAccessTokenCiphertext: whatsappDisconnected ? undefined : (config?.whatsappAccessTokenCiphertext || undefined),
     whatsappAccessToken: whatsappDisconnected ? undefined : (String(env.WHATSAPP_ACCESS_TOKEN || '').trim() || undefined),
     whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
+    generationRulesHistory: config?.generationRulesHistory || [],
+    newsResearch: normalizeNewsResearchStored(config?.newsResearch),
   };
 }
 
@@ -897,6 +926,8 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     whatsappPhoneNumberId: config.whatsappPhoneNumberId,
     hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext || config.whatsappAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
+    newsResearch: normalizeNewsResearchStored(config.newsResearch),
+    newsProviderKeys: getNewsProviderKeyStatus(env),
   };
 }
 
@@ -1948,6 +1979,10 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
       ? normalizeWhatsAppRecipients(update.whatsappRecipients)
       : current.whatsappRecipients,
     generationRulesHistory: nextHistory,
+    newsResearch:
+      update.newsResearch !== undefined
+        ? normalizeNewsResearchStored(update.newsResearch)
+        : normalizeNewsResearchStored(current.newsResearch),
   };
 
   if (update.githubToken) {

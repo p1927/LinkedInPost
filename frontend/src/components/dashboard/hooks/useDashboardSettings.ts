@@ -6,8 +6,10 @@ import {
   type GoogleModelOption,
   AVAILABLE_GOOGLE_MODELS,
   DEFAULT_GOOGLE_MODEL,
+  DEFAULT_NEWS_RESEARCH_CONFIG,
   loadAvailableGoogleModels,
   normalizeGoogleModelOptions,
+  type NewsResearchStored,
 } from '../../../services/configService';
 import { type ChannelId } from '../../../integrations/channels';
 import { formatTelegramRecipientsInput, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
@@ -63,6 +65,7 @@ export function useDashboardSettings({
   const [gmailDefaultCc, setGmailDefaultCc] = useState(session.config.gmailDefaultCc || '');
   const [gmailDefaultBcc, setGmailDefaultBcc] = useState(session.config.gmailDefaultBcc || '');
   const [gmailDefaultSubject, setGmailDefaultSubject] = useState(session.config.gmailDefaultSubject || '');
+  const [newsResearch, setNewsResearch] = useState<NewsResearchStored>(() => session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG);
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -77,6 +80,10 @@ export function useDashboardSettings({
   useEffect(() => {
     setAllowedGoogleModels([...session.config.allowedGoogleModels]);
   }, [session.config.allowedGoogleModels]);
+
+  useEffect(() => {
+    setNewsResearch(session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG);
+  }, [session.config.newsResearch]);
 
   useEffect(() => {
     if (!session.isAdmin) {
@@ -160,6 +167,7 @@ export function useDashboardSettings({
     if (gmailDefaultCc.trim() !== (c.gmailDefaultCc || '').trim()) return true;
     if (gmailDefaultBcc.trim() !== (c.gmailDefaultBcc || '').trim()) return true;
     if (gmailDefaultSubject.trim() !== (c.gmailDefaultSubject || '').trim()) return true;
+    if (JSON.stringify(newsResearch) !== JSON.stringify(c.newsResearch)) return true;
     return false;
   }, [
     session.config,
@@ -176,6 +184,7 @@ export function useDashboardSettings({
     gmailDefaultCc,
     gmailDefaultBcc,
     gmailDefaultSubject,
+    newsResearch,
   ]);
 
   const saveSettings = async () => {
@@ -198,6 +207,7 @@ export function useDashboardSettings({
         gmailDefaultCc: gmailDefaultCc.trim(),
         gmailDefaultBcc: gmailDefaultBcc.trim(),
         gmailDefaultSubject: gmailDefaultSubject.trim(),
+        newsResearch,
       });
       setGithubTokenInput('');
       setTelegramBotTokenInput('');
@@ -236,6 +246,8 @@ export function useDashboardSettings({
     setGmailDefaultBcc,
     gmailDefaultSubject,
     setGmailDefaultSubject,
+    newsResearch,
+    setNewsResearch,
     saveSettings,
     hasUnsavedSettingsChanges,
   };

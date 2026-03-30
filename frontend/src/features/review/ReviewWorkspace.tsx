@@ -1,7 +1,10 @@
 import { type SheetRow } from '../../services/sheets';
+import type { NewsResearchStored, NewsProviderKeys } from '../../services/configService';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
   type GenerationRequest,
+  type NewsResearchSearchPayload,
+  type NewsResearchSearchResult,
   type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
@@ -51,6 +54,9 @@ export interface ReviewWorkspaceProps {
   pendingScheduledPublish?: PendingScheduledPublish | null;
   scheduledPublishCancelBusy?: boolean;
   onCancelScheduledPublish?: () => void | Promise<void>;
+  newsResearch?: NewsResearchStored;
+  newsProviderKeys?: NewsProviderKeys;
+  onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
 }
 
 function ReviewWorkspaceLayout() {

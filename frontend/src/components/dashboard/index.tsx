@@ -252,6 +252,9 @@ export function Dashboard({
     pendingScheduledPublish: queueHook.pendingScheduledPublish,
     scheduledPublishCancelBusy: queueHook.scheduledPublishCancelBusy,
     onCancelScheduledPublish: () => void queueHook.cancelPendingScheduledPublish(),
+    newsResearch: session.config.newsResearch,
+    newsProviderKeys: session.config.newsProviderKeys,
+    onSearchNewsResearch: queueHook.handleSearchNewsResearch,
   };
 
   const topicChromeRow = topicIdFromPath
@@ -427,6 +430,9 @@ export function Dashboard({
       adminModelCatalog={settingsHook.adminModelCatalog}
       allowedGoogleModels={settingsHook.allowedGoogleModels}
       toggleAllowedGoogleModel={settingsHook.toggleAllowedGoogleModel}
+      newsResearch={settingsHook.newsResearch}
+      setNewsResearch={settingsHook.setNewsResearch}
+      newsProviderKeys={session.config.newsProviderKeys}
     />
   );
 

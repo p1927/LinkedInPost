@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { type SheetRow } from '../../../services/sheets';
+import type { NewsResearchSearchPayload, NewsResearchSearchResult } from '../../../services/backendApi';
 import { type GenerationRequest, type QuickChangePreviewResult, type VariantsPreviewResponse } from '../../../services/backendApi';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../services/backendApi';
 import { type DeliverySummary } from '../types';
@@ -266,6 +267,20 @@ export function useDashboardQueue({
       return await api.generateVariantsPreview(idToken, request);
     } catch (error) {
       handleFailure(error, 'Failed to generate preview variants.');
+      throw error;
+    }
+  };
+
+
+  const handleSearchNewsResearch = async (row: SheetRow, payload: NewsResearchSearchPayload): Promise<NewsResearchSearchResult> => {
+    try {
+      return await api.searchNewsResearch(idToken, {
+        ...payload,
+        topic: row.topic,
+        date: row.date,
+      });
+    } catch (error) {
+      handleFailure(error, 'News search failed.');
       throw error;
     }
   };
@@ -675,5 +690,6 @@ export function useDashboardQueue({
     pendingScheduledPublish,
     scheduledPublishCancelBusy,
     cancelPendingScheduledPublish,
+    handleSearchNewsResearch,
   };
 }

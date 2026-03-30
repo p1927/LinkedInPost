@@ -6,8 +6,19 @@ const TOPICS_SHEET = 'Topics';
 const DRAFT_SHEET = 'Draft';
 const POST_SHEET = 'Post';
 const POST_TEMPLATES_SHEET = 'PostTemplates';
+const NEWS_RESEARCH_SHEET = 'NewsResearch';
 const TOPICS_HEADERS = ['Topic', 'Date'];
 const POST_TEMPLATES_HEADERS = ['Template id', 'Name', 'Rules'];
+const NEWS_RESEARCH_HEADERS = [
+  'TopicKey',
+  'FetchedAt',
+  'WindowStart',
+  'WindowEnd',
+  'CustomQuery',
+  'ProvidersSummary',
+  'ArticlesJson',
+  'DedupeRemoved',
+];
 const PIPELINE_HEADERS = [
   'Topic',
   'Date',
@@ -466,7 +477,7 @@ export class SheetsGateway {
 
   /** Ensures Topics, Draft, Post, and PostTemplates tabs exist with headers; returns sheet metadata for callers that need sheetId. */
   private async ensureRequiredSheets(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {
-    const managedSheets = [TOPICS_SHEET, DRAFT_SHEET, POST_SHEET, POST_TEMPLATES_SHEET] as const;
+    const managedSheets = [TOPICS_SHEET, DRAFT_SHEET, POST_SHEET, POST_TEMPLATES_SHEET, NEWS_RESEARCH_SHEET] as const;
     let metadata = await this.getSpreadsheetMetadata(spreadsheetId);
     const titles = new Set(metadata.map((sheet) => sheet.properties?.title).filter(Boolean));
 
@@ -487,6 +498,7 @@ export class SheetsGateway {
       `${DRAFT_SHEET}!A1`,
       `${POST_SHEET}!A1`,
       `${POST_TEMPLATES_SHEET}!A1`,
+      `${NEWS_RESEARCH_SHEET}!A1`,
     ];
     const headerRows = await this.batchGetValues(spreadsheetId, headerRanges);
 
@@ -495,6 +507,7 @@ export class SheetsGateway {
       { sheet: DRAFT_SHEET, headers: PIPELINE_HEADERS },
       { sheet: POST_SHEET, headers: PIPELINE_HEADERS },
       { sheet: POST_TEMPLATES_SHEET, headers: POST_TEMPLATES_HEADERS },
+      { sheet: NEWS_RESEARCH_SHEET, headers: NEWS_RESEARCH_HEADERS },
     ];
 
     for (let i = 0; i < headerSpecs.length; i++) {
@@ -628,6 +641,34 @@ export class SheetsGateway {
       }
     }
     return null;
+  }
+
+
+  async appendNewsResearchSnapshot(
+    spreadsheetId: string,
+    row: {
+      topicKey: string;
+      fetchedAt: string;
+      windowStart: string;
+      windowEnd: string;
+      customQuery: string;
+      providersSummary: string;
+      articlesJson: string;
+      dedupeRemoved: string;
+    },
+  ): Promise<{ success: true }> {
+    await this.ensureRequiredSheets(spreadsheetId);
+    await this.appendValues(spreadsheetId, `${NEWS_RESEARCH_SHEET}!A:H`, [[
+      row.topicKey,
+      row.fetchedAt,
+      row.windowStart,
+      row.windowEnd,
+      row.customQuery,
+      row.providersSummary,
+      row.articlesJson,
+      row.dedupeRemoved,
+    ]]);
+    return { success: true };
   }
 
   private async getSpreadsheetMetadata(spreadsheetId: string): Promise<SpreadsheetSheetMetadata[]> {

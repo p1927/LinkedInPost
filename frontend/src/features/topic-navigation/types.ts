@@ -1,12 +1,15 @@
 import { type SheetRow } from '../../services/sheets';
 import {
   type GenerationRequest,
+  type NewsResearchSearchPayload,
+  type NewsResearchSearchResult,
   type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
 } from '../../services/backendApi';
 import { type ChannelId } from '../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
+import type { NewsResearchStored, NewsProviderKeys } from '../../services/configService';
 
 export type TopicReviewPagesBaseProps = {
   rows: SheetRow[];
@@ -15,6 +18,8 @@ export type TopicReviewPagesBaseProps = {
   /** Workspace-wide rules; ignored for LLM when this topic has non-empty topic rules. */
   globalGenerationRules: string;
   googleModel: string;
+  newsResearch: NewsResearchStored;
+  newsProviderKeys: NewsProviderKeys;
   onApprove: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   /** Approve current editor content and send immediately to the workspace delivery channel (skips the queue Publish click). */
   onPublishNow: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
@@ -38,6 +43,8 @@ export type TopicReviewPagesBaseProps = {
   pendingScheduledPublish?: PendingScheduledPublish | null;
   scheduledPublishCancelBusy?: boolean;
   onCancelScheduledPublish?: () => void | Promise<void>;
+  /** Optional news search for the editor researcher panel. */
+  onSearchNewsResearch?: (row: SheetRow, payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

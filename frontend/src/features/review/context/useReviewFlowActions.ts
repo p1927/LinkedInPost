@@ -80,7 +80,8 @@ export function useReviewFlowActions(
     currentTargetText,
     hasUnsavedReviewState,
     pickCarouselIndex,
-    setChrome
+    setChrome,
+    researchContextArticles,
   } = state;
 
   const { showAlert } = useAlert();
@@ -158,6 +159,7 @@ export function useReviewFlowActions(
     selection: effectiveScope === 'selection' ? selection : null,
     instruction,
     googleModel,
+    ...(researchContextArticles.length > 0 ? { researchArticles: researchContextArticles } : {}),
   });
 
   const applySheetVariantBase = useCallback((variant: { text: string; imageUrl: string }, variantIndex?: number) => {

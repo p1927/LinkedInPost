@@ -84,6 +84,40 @@ export interface TextSelectionRange {
   text: string;
 }
 
+export interface ResearchArticleRef {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt?: string;
+  snippet: string;
+}
+
+export interface NewsResearchSearchPayload {
+  topic: string;
+  date: string;
+  windowStart: string;
+  windowEnd: string;
+  customQuery?: string;
+}
+
+export type NewsApiProviderId = 'rss' | 'newsapi' | 'gnews' | 'newsdata' | 'serpapi_news';
+
+export interface ResearchArticleHit {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string;
+  snippet: string;
+  provider: NewsApiProviderId;
+}
+
+export interface NewsResearchSearchResult {
+  articles: ResearchArticleHit[];
+  dedupedCount: number;
+  providersUsed: NewsApiProviderId[];
+  warnings: string[];
+}
+
 export interface GenerationRequest {
   row: SheetRow;
   editorText: string;
@@ -91,6 +125,7 @@ export interface GenerationRequest {
   selection: TextSelectionRange | null;
   instruction?: string;
   googleModel?: string;
+  researchArticles?: ResearchArticleRef[];
 }
 
 export interface QuickChangePreviewResult {
@@ -276,6 +311,11 @@ export class BackendApi {
 
   async generateVariantsPreview(idToken: string, request: GenerationRequest): Promise<VariantsPreviewResponse> {
     return this.post<VariantsPreviewResponse>('generateVariantsPreview', idToken, { ...request });
+  }
+
+
+  async searchNewsResearch(idToken: string, payload: NewsResearchSearchPayload): Promise<NewsResearchSearchResult> {
+    return this.post<NewsResearchSearchResult>('searchNewsResearch', idToken, { ...payload });
   }
 
   async saveDraftVariants(idToken: string, row: SheetRow, variants: string[]): Promise<SheetRow> {

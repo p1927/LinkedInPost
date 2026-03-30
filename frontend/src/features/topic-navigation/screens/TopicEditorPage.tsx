@@ -83,6 +83,9 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         pendingScheduledPublish={p.pendingScheduledPublish}
         scheduledPublishCancelBusy={p.scheduledPublishCancelBusy}
         onCancelScheduledPublish={p.onCancelScheduledPublish}
+        newsResearch={p.newsResearch}
+        newsProviderKeys={p.newsProviderKeys}
+        onSearchNewsResearch={p.onSearchNewsResearch ? (payload) => p.onSearchNewsResearch!(row, payload) : undefined}
       />
     </div>
   );

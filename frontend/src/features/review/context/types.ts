@@ -3,8 +3,11 @@ import { type SheetRow } from '../../../services/sheets';
 import {
   type GenerationRequest,
   type GenerationScope,
+  type NewsResearchSearchPayload,
+  type NewsResearchSearchResult,
   type PostTemplate,
   type QuickChangePreviewResult,
+  type ResearchArticleRef,
   type TextSelectionRange,
   type VariantsPreviewResponse,
 } from '../../../services/backendApi';
@@ -12,6 +15,7 @@ import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
 import { type ChannelId } from '../../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
+import type { NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
 
 export interface CompareState {
   scope: GenerationScope;
@@ -37,6 +41,9 @@ export interface ReviewFlowContextValue {
   pendingScheduledPublish: PendingScheduledPublish | null;
   scheduledPublishCancelBusy: boolean;
   onCancelScheduledPublish: () => void | Promise<void>;
+  newsResearch: NewsResearchStored;
+  newsProviderKeys: NewsProviderKeys;
+  onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
 
   // State
   sheetRow: SheetRow;
@@ -148,6 +155,8 @@ export interface ReviewFlowContextValue {
   savingGenerationTemplateId: boolean;
   handleSaveEmailFields: () => Promise<void>;
   onCancel: () => void;
+  researchContextArticles: ResearchArticleRef[];
+  setResearchContextArticles: React.Dispatch<React.SetStateAction<ResearchArticleRef[]>>;
 }
 
 export interface ReviewFlowProviderProps {
@@ -179,4 +188,7 @@ export interface ReviewFlowProviderProps {
   pendingScheduledPublish?: PendingScheduledPublish | null;
   scheduledPublishCancelBusy?: boolean;
   onCancelScheduledPublish?: () => void | Promise<void>;
+  newsResearch?: NewsResearchStored;
+  newsProviderKeys?: NewsProviderKeys;
+  onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
 }

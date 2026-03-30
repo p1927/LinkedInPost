@@ -1,5 +1,28 @@
 import { buildRulesPrefix } from './rules';
-import type { GenerationScope, SheetRow, TextSelectionRange } from './types';
+import type { GenerationScope, ResearchArticleRef, SheetRow, TextSelectionRange } from './types';
+
+function buildResearchContextAppendix(articles: ResearchArticleRef[] | undefined): string {
+  if (!articles || articles.length === 0) {
+    return '';
+  }
+  const lines = [
+    '',
+    'External news context (use only these sources; do not invent facts). If you cite a claim, add a short "Sources:" line at the end of the post with the URLs you used.',
+    '',
+  ];
+  for (let i = 0; i < articles.length; i++) {
+    const a = articles[i];
+    lines.push(`Source ${i + 1}: ${a.title}`);
+    lines.push(`URL: ${a.url}`);
+    lines.push(`Publisher: ${a.source}`);
+    if (a.publishedAt) {
+      lines.push(`Published: ${a.publishedAt}`);
+    }
+    lines.push(`Summary: ${a.snippet}`);
+    lines.push('');
+  }
+  return lines.join('\n');
+}
 
 export function buildQuickChangePrompt(
   row: SheetRow,
@@ -8,8 +31,10 @@ export function buildQuickChangePrompt(
   selection: TextSelectionRange | null,
   instruction: string,
   sharedRules: string,
+  researchArticles?: ResearchArticleRef[],
 ): string {
   const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
+  const researchBlock = buildResearchContextAppendix(researchArticles);
   if (scope === 'selection' && selection) {
     return [
       'You are editing a LinkedIn draft.',
@@ -25,6 +50,7 @@ export function buildQuickChangePrompt(
       '',
       'Selected segment:',
       selection.text,
+      researchBlock,
     ].join('\n');
   }
 
@@ -39,6 +65,7 @@ export function buildQuickChangePrompt(
     '',
     'Draft:',
     editorText,
+    researchBlock,
   ].join('\n');
 }
 
@@ -49,8 +76,10 @@ export function buildVariantsPrompt(
   selection: TextSelectionRange | null,
   instruction: string,
   sharedRules: string,
+  researchArticles?: ResearchArticleRef[],
 ): string {
   const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
+  const researchBlock = buildResearchContextAppendix(researchArticles);
   const promptLines = [
     'You are generating four distinct LinkedIn draft options.',
     rulesPrefix,
@@ -71,6 +100,7 @@ export function buildVariantsPrompt(
       '',
       'Selected segment:',
       selection.text,
+      researchBlock,
     ].join('\n');
   }
 
@@ -79,5 +109,6 @@ export function buildVariantsPrompt(
     'Rewrite the full draft. Each variant must contain the full revised post text.',
     'Draft:',
     editorText,
+    researchBlock,
   ].join('\n');
 }

@@ -85,6 +85,46 @@ export async function loadAvailableGoogleModels(selectedModel?: string): Promise
   }
 }
 
+
+
+export interface NewsResearchFeedEntry {
+  id: string;
+  url: string;
+  label?: string;
+  enabled: boolean;
+}
+
+export interface NewsResearchApis {
+  newsapi: boolean;
+  gnews: boolean;
+  newsdata: boolean;
+  serpapiNews: boolean;
+}
+
+export interface NewsResearchStored {
+  enabled: boolean;
+  apis: NewsResearchApis;
+  rssFeeds: NewsResearchFeedEntry[];
+}
+
+export interface NewsProviderKeys {
+  newsapi: boolean;
+  gnews: boolean;
+  newsdata: boolean;
+  serpapi: boolean;
+}
+
+export const DEFAULT_NEWS_RESEARCH_CONFIG: NewsResearchStored = {
+  enabled: false,
+  apis: {
+    newsapi: false,
+    gnews: false,
+    newsdata: false,
+    serpapiNews: false,
+  },
+  rssFeeds: [],
+};
+
 export interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
@@ -114,6 +154,43 @@ export interface BotConfig {
   gmailDefaultCc: string;
   gmailDefaultBcc: string;
   gmailDefaultSubject: string;
+  newsResearch: NewsResearchStored;
+  newsProviderKeys: NewsProviderKeys;
+}
+
+function normalizeNewsResearchConfig(raw: unknown): NewsResearchStored {
+  if (!raw || typeof raw !== 'object') {
+    return { ...DEFAULT_NEWS_RESEARCH_CONFIG, rssFeeds: [] };
+  }
+  const o = raw as Record<string, unknown>;
+  const apisRaw = o.apis as Record<string, unknown> | undefined;
+  const apis = {
+    newsapi: Boolean(apisRaw?.newsapi),
+    gnews: Boolean(apisRaw?.gnews),
+    newsdata: Boolean(apisRaw?.newsdata),
+    serpapiNews: Boolean(apisRaw?.serpapiNews),
+  };
+  const feedsIn = Array.isArray(o.rssFeeds) ? o.rssFeeds : [];
+  const rssFeeds: NewsResearchFeedEntry[] = [];
+  for (const entry of feedsIn) {
+    if (rssFeeds.length >= 40) break;
+    if (!entry || typeof entry !== 'object') continue;
+    const e = entry as Record<string, unknown>;
+    const id = String(e.id || '').trim();
+    const url = String(e.url || '').trim();
+    if (!id || !url) continue;
+    rssFeeds.push({
+      id,
+      url,
+      label: String(e.label || '').trim() || undefined,
+      enabled: e.enabled !== false,
+    });
+  }
+  return {
+    enabled: o.enabled === true,
+    apis,
+    rssFeeds,
+  };
 }
 
 export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined): BotConfig {
@@ -167,6 +244,13 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     gmailDefaultCc: config?.gmailDefaultCc || '',
     gmailDefaultBcc: config?.gmailDefaultBcc || '',
     gmailDefaultSubject: config?.gmailDefaultSubject || '',
+    newsResearch: normalizeNewsResearchConfig(config?.newsResearch),
+    newsProviderKeys: {
+      newsapi: Boolean(config?.newsProviderKeys?.newsapi),
+      gnews: Boolean(config?.newsProviderKeys?.gnews),
+      newsdata: Boolean(config?.newsProviderKeys?.newsdata),
+      serpapi: Boolean(config?.newsProviderKeys?.serpapi),
+    },
   };
 }
 
@@ -195,4 +279,5 @@ export interface BotConfigUpdate {
   gmailDefaultSubject?: string;
   gmailAccessToken?: string;
   gmailRefreshToken?: string;
+  newsResearch?: NewsResearchStored;
 }

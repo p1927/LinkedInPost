@@ -46,6 +46,14 @@ export interface TextSelectionRange {
   text: string;
 }
 
+export interface ResearchArticleRef {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt?: string;
+  snippet: string;
+}
+
 export interface GenerationRequestPayload {
   row: SheetRow;
   editorText: string;
@@ -53,6 +61,8 @@ export interface GenerationRequestPayload {
   selection?: TextSelectionRange | null;
   instruction?: string;
   googleModel?: string;
+  /** Optional news context from researcher (snippets + URLs). */
+  researchArticles?: ResearchArticleRef[];
 }
 
 export interface QuickChangePreviewResult {

@@ -21,6 +21,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { type WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeContext';
+import { NewsResearchSettingsSection } from '../../../features/news-research';
+import type { NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
 
 const SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
@@ -30,6 +32,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-telegram', label: 'Telegram' },
   { id: 'settings-whatsapp', label: 'WhatsApp' },
   { id: 'settings-gmail', label: 'Gmail' },
+  { id: 'settings-news', label: 'News' },
 ] as const;
 
 export type DashboardSettingsDrawerHandle = {
@@ -112,6 +115,9 @@ type DashboardSettingsDrawerProps = {
   adminModelCatalog: GoogleModelOption[];
   allowedGoogleModels: string[];
   toggleAllowedGoogleModel: (modelId: string, enabled: boolean) => void;
+  newsResearch: NewsResearchStored;
+  setNewsResearch: (next: NewsResearchStored) => void;
+  newsProviderKeys: NewsProviderKeys;
 };
 
 function SettingsSectionCard({
@@ -195,6 +201,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       adminModelCatalog,
       allowedGoogleModels,
       toggleAllowedGoogleModel,
+      newsResearch,
+      setNewsResearch,
+      newsProviderKeys,
     },
     ref,
   ) {
@@ -811,6 +820,14 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               </div>
             </div>
           </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-news" title="News">
+          <NewsResearchSettingsSection
+            value={newsResearch}
+            onChange={setNewsResearch}
+            newsProviderKeys={newsProviderKeys}
+          />
         </SettingsSectionCard>
       </div>
     </div>

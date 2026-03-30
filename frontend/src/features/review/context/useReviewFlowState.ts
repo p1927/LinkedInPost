@@ -5,6 +5,7 @@ import {
   type GenerationScope,
   type PostTemplate,
   type QuickChangePreviewResult,
+  type ResearchArticleRef,
   type TextSelectionRange,
   type VariantsPreviewResponse,
 } from '../../../services/backendApi';
@@ -108,6 +109,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [pickCarouselIndex, setPickCarouselIndex] = useState(0);
   const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
+  const [researchContextArticles, setResearchContextArticles] = useState<ResearchArticleRef[]>([]);
 
   const topicHeadingRef = useRef<HTMLHeadingElement>(null);
   const lastInitRef = useRef<string | null>(null);
@@ -354,5 +356,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setChrome,
     effectiveGenerationRules,
     postTemplates,
+    researchContextArticles,
+    setResearchContextArticles,
   };
 }

@@ -15,9 +15,12 @@ import type {
   GeminiGenerateResponse,
   GenerationRequestPayload,
   QuickChangePreviewResult,
+  ResearchArticleRef,
   VariantsPreviewResponse,
 } from './types';
 import { resolveEffectiveGoogleModel } from '../google-model-policy';
+import { trimForPrompt } from '../researcher/trim';
+import type { ResearchArticle } from '../researcher/types';
 
 function requireGeminiApiKey(env: Env): string {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
@@ -67,6 +70,39 @@ export async function callGeminiText(env: Env, model: string, prompt: string): P
   return text;
 }
 
+
+
+function coerceResearchArticles(raw: unknown): ResearchArticleRef[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return undefined;
+  }
+  const asArticles: ResearchArticle[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const o = entry as Record<string, unknown>;
+    const title = String(o.title || '').trim();
+    const url = String(o.url || '').trim();
+    const source = String(o.source || '').trim() || 'Unknown';
+    let snippet = String(o.snippet || '').trim();
+    if (!snippet) {
+      snippet = '(No description or summary was provided for this source.)';
+    }
+    if (!title || !url) continue;
+    asArticles.push({
+      title,
+      url,
+      source,
+      publishedAt: String(o.publishedAt || '').trim() || new Date().toISOString(),
+      snippet,
+      provider: 'rss',
+    });
+  }
+  if (asArticles.length === 0) {
+    return undefined;
+  }
+  return trimForPrompt(asArticles);
+}
+
 async function resolveTemplateRulesForRow(
   row: SheetRow,
   getPostTemplateRulesById: (templateId: string) => Promise<string | null>,
@@ -108,7 +144,8 @@ export async function generateQuickChangePreview(
     templateRules,
     storedConfig.generationRules || '',
   );
-  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules);
+  const researchRefs = coerceResearchArticles(request.researchArticles);
+  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, researchRefs);
   const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
 
   if (!replacementText) {
@@ -145,6 +182,7 @@ export async function generateVariantsPreview(
     templateRules,
     storedConfig.generationRules || '',
   );
+  const researchRefs = coerceResearchArticles(request.researchArticles);
   const prompt = buildVariantsPrompt(
     row,
     editorText,
@@ -152,6 +190,7 @@ export async function generateVariantsPreview(
     selection,
     String(request.instruction || '').trim(),
     effectiveRules,
+    researchRefs,
   );
   const variants = normalizeVariantList(tryParseJson(await callGeminiText(env, model, prompt)));
 

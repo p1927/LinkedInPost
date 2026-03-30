@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import { DEFAULT_NEWS_RESEARCH_CONFIG } from '../../../services/configService';
 import { type ReviewFlowContextValue, type ReviewFlowProviderProps } from './types';
 import { useReviewFlowState } from './useReviewFlowState';
 import { useReviewFlowActions } from './useReviewFlowActions';
@@ -41,8 +42,15 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     pendingScheduledPublish: props.pendingScheduledPublish ?? null,
     scheduledPublishCancelBusy: props.scheduledPublishCancelBusy ?? false,
     onCancelScheduledPublish: props.onCancelScheduledPublish ?? (() => {}),
+    newsResearch: props.newsResearch ?? DEFAULT_NEWS_RESEARCH_CONFIG,
+    newsProviderKeys: props.newsProviderKeys ?? {
+      newsapi: false,
+      gnews: false,
+      newsdata: false,
+      serpapi: false,
+    },
+    onSearchNewsResearch: props.onSearchNewsResearch,
 
-    // State & Actions
     ...restState,
     ...actions,
   };

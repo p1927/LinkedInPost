@@ -3,6 +3,7 @@ import { GenerationPanel } from '../../generation/GenerationPanel';
 import { RulesPanel } from '../../rules/RulesPanel';
 import { ImageAssetManager } from '../../../components/ImageAssetManager';
 import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { ResearcherPanel } from '../../news-research';
 
 export function EditorSidebar() {
   const {
@@ -44,6 +45,10 @@ export function EditorSidebar() {
     emailSubject, setEmailSubject,
     handleSaveEmailFields,
     savingEmailFields,
+    newsResearch,
+    researchContextArticles,
+    setResearchContextArticles,
+    onSearchNewsResearch,
   } = useReviewFlow();
 
   return (
@@ -122,6 +127,16 @@ export function EditorSidebar() {
             previewVariantSaveByIndex={previewVariantSaveByIndex}
             previewVariantSaveErrors={previewVariantSaveErrors}
             onSavePreviewVariant={(index) => void handleSavePreviewVariantAtIndex(index)}
+          />
+        ) : null}
+
+        {activeWorkspacePanel === 'refine' && onSearchNewsResearch ? (
+          <ResearcherPanel
+            row={sheetRow}
+            newsResearch={newsResearch}
+            onSearch={onSearchNewsResearch}
+            selectedRefs={researchContextArticles}
+            onSelectedRefsChange={setResearchContextArticles}
           />
         ) : null}
 
