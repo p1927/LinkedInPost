@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/cn';
 import { getChannelLabel } from '@/integrations/channels';
-import { ScheduledPublishBanner } from '@/features/scheduled-publish';
+import { ScheduledPublishBanner, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 
 function ResizeHandle() {
   return (
@@ -40,7 +40,6 @@ export function EditorScreen() {
     pendingScheduledPublish,
     scheduledPublishCancelBusy,
     onCancelScheduledPublish,
-    onDismissScheduledPublish,
     postTime,
     setPostTime,
     previewReadyCount,
@@ -58,8 +57,11 @@ export function EditorScreen() {
   const channelLabel = getChannelLabel(deliveryChannel);
   const showScheduledBanner =
     pendingScheduledPublish != null
-    && pendingScheduledPublish.topic.trim() === sheetRow.topic.trim()
-    && pendingScheduledPublish.date.trim() === sheetRow.date.trim();
+    && rowMatchesPendingScheduledPublish(
+      { topic: sheetRow.topic, date: sheetRow.date, postTime },
+      pendingScheduledPublish,
+      deliveryChannel,
+    );
 
   const editorSection = (
     <section
@@ -140,7 +142,6 @@ export function EditorScreen() {
               pending={pendingScheduledPublish}
               onCancel={() => void onCancelScheduledPublish()}
               cancelBusy={scheduledPublishCancelBusy}
-              onDismiss={onDismissScheduledPublish}
             />
           </div>
         ) : null}
@@ -212,8 +213,12 @@ export function EditorScreen() {
                   size="sm"
                   variant="primary"
                   onClick={() => void handlePublishNow()}
-                  disabled={footerBusy}
-                  title={`Save a draft copy with your edits, approve it, and send to ${channelLabel} (same as queue Publish).`}
+                  disabled={footerBusy || showScheduledBanner}
+                  title={
+                    showScheduledBanner
+                      ? 'Already scheduled for this time — cancel above or change the schedule.'
+                      : `Save a draft copy with your edits, approve it, and send to ${channelLabel} (same as queue Publish).`
+                  }
                   className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[9rem]"
                 >
                   {publishSubmitting
@@ -239,8 +244,12 @@ export function EditorScreen() {
                   size="sm"
                   variant="primary"
                   onClick={() => void handlePublishNow()}
-                  disabled={footerBusy}
-                  title={`Approve and send immediately to ${channelLabel} (same as queue Publish).`}
+                  disabled={footerBusy || showScheduledBanner}
+                  title={
+                    showScheduledBanner
+                      ? 'Already scheduled for this time — cancel above or change the schedule.'
+                      : `Approve and send immediately to ${channelLabel} (same as queue Publish).`
+                  }
                   className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[9rem]"
                 >
                   {publishSubmitting

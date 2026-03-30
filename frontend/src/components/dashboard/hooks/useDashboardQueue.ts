@@ -9,7 +9,7 @@ import { buildRowActionKey, findDraftRowAfterCreateFromPublished, getNormalizedR
 import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
 import { useAlert } from '../../AlertProvider';
-import { usePendingScheduledPublish } from '@/features/scheduled-publish';
+import { rowMatchesPendingScheduledPublish, usePendingScheduledPublish } from '@/features/scheduled-publish';
 
 export function useDashboardQueue({
   idToken,
@@ -75,7 +75,6 @@ export function useDashboardQueue({
     pendingScheduledPublish,
     scheduledPublishCancelBusy,
     applyQueuedPublishResult,
-    dismissPendingScheduledPublish,
     cancelPendingScheduledPublish,
     clearPendingIfMatchesRow,
   } = usePendingScheduledPublish({
@@ -351,6 +350,15 @@ export function useDashboardQueue({
   const publishRowToSelectedChannel = async (row: SheetRow) => {
     if (actionLoading !== null) return;
 
+    if (rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, selectedChannel)) {
+      void showAlert({
+        title: 'Notice',
+        description:
+          'This topic is already queued for that scheduled time on the selected channel. Cancel it in the delivery panel first, or open Edit and change the schedule before publishing again.',
+      });
+      return;
+    }
+
     const message = (row.selectedText || row.variant1 || '').trim();
     const fail = describePublishPrerequisiteFailure(
       message,
@@ -415,6 +423,21 @@ export function useDashboardQueue({
     emailSubject?: string,
   ) => {
     if (actionLoading !== null) return;
+
+    if (
+      rowMatchesPendingScheduledPublish(
+        { topic: row.topic, date: row.date, postTime },
+        pendingScheduledPublish,
+        selectedChannel,
+      )
+    ) {
+      void showAlert({
+        title: 'Notice',
+        description:
+          'This topic is already queued for that scheduled time on the selected channel. Cancel it in the delivery panel first, or change the schedule above before publishing again.',
+      });
+      return;
+    }
 
     const message = selectedText.trim();
     const imageUrl = (selectedImageId || '').trim();
@@ -578,6 +601,5 @@ export function useDashboardQueue({
     pendingScheduledPublish,
     scheduledPublishCancelBusy,
     cancelPendingScheduledPublish,
-    dismissPendingScheduledPublish,
   };
 }

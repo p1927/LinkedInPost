@@ -3,6 +3,7 @@ import { type ReviewFlowProviderProps } from './types';
 import { type GenerationRequest, isAuthErrorMessage } from '../../../services/backendApi';
 import { useAlert } from '../../../components/AlertProvider';
 import { applyFormattingAction } from '@/features/draft-selection-target';
+import { rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { mergeUniqueImageOptions } from './utils';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 
@@ -24,6 +25,8 @@ export function useReviewFlowActions(
     routed,
     googleModel,
     onSaveTopicGenerationRules,
+    pendingScheduledPublish,
+    deliveryChannel,
   } = props;
 
   const {
@@ -410,6 +413,21 @@ export function useReviewFlowActions(
   const handlePublishNow = async () => {
     if (!(editorText || '').trim()) {
       void showAlert({ title: 'Notice', description: 'Post text cannot be empty.' });
+      return;
+    }
+
+    if (
+      rowMatchesPendingScheduledPublish(
+        { topic: sheetRow.topic, date: sheetRow.date, postTime },
+        pendingScheduledPublish ?? null,
+        deliveryChannel,
+      )
+    ) {
+      void showAlert({
+        title: 'Notice',
+        description:
+          'This topic is already queued for that scheduled time. Cancel in the banner or delivery panel, or change the schedule before publishing again.',
+      });
       return;
     }
 

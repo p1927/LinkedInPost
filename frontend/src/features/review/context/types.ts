@@ -36,7 +36,6 @@ export interface ReviewFlowContextValue {
   pendingScheduledPublish: PendingScheduledPublish | null;
   scheduledPublishCancelBusy: boolean;
   onCancelScheduledPublish: () => void | Promise<void>;
-  onDismissScheduledPublish: () => void;
 
   // State
   sheetRow: SheetRow;
@@ -174,5 +173,4 @@ export interface ReviewFlowProviderProps {
   pendingScheduledPublish?: PendingScheduledPublish | null;
   scheduledPublishCancelBusy?: boolean;
   onCancelScheduledPublish?: () => void | Promise<void>;
-  onDismissScheduledPublish?: () => void;
 }

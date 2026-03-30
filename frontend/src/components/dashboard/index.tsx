@@ -249,7 +249,6 @@ export function Dashboard({
     pendingScheduledPublish: queueHook.pendingScheduledPublish,
     scheduledPublishCancelBusy: queueHook.scheduledPublishCancelBusy,
     onCancelScheduledPublish: () => void queueHook.cancelPendingScheduledPublish(),
-    onDismissScheduledPublish: queueHook.dismissPendingScheduledPublish,
   };
 
   const topicChromeRow = topicIdFromPath
@@ -326,6 +325,8 @@ export function Dashboard({
       deletingRowIndex={queueHook.deletingRowIndex}
       scrollTargetId={queueScrollTargetId}
       onScrollTargetHandled={handleScrollTargetHandled}
+      pendingScheduledPublish={queueHook.pendingScheduledPublish}
+      selectedChannel={channelsHook.selectedChannel}
     />
   );
 
@@ -346,7 +347,6 @@ export function Dashboard({
       pendingScheduledPublish={queueHook.pendingScheduledPublish}
       scheduledPublishCancelBusy={queueHook.scheduledPublishCancelBusy}
       onCancelScheduledPublish={() => void queueHook.cancelPendingScheduledPublish()}
-      onDismissScheduledPublish={queueHook.dismissPendingScheduledPublish}
       embedded
       channelCredentialsConfigured={selectedChannelCredentialsConfigured}
       isAdmin={session.isAdmin}

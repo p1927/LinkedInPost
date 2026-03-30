@@ -27,10 +27,6 @@ export function usePendingScheduledPublish({
     });
   }, []);
 
-  const dismissPendingScheduledPublish = useCallback(() => {
-    setPending(null);
-  }, []);
-
   const clearPendingIfMatchesRow = useCallback((row: SheetRow) => {
     setPending((p) => {
       if (!p) return null;
@@ -64,7 +60,6 @@ export function usePendingScheduledPublish({
     pendingScheduledPublish: pending,
     scheduledPublishCancelBusy: cancelBusy,
     applyQueuedPublishResult,
-    dismissPendingScheduledPublish,
     cancelPendingScheduledPublish,
     clearPendingIfMatchesRow,
   };

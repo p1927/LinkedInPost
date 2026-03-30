@@ -48,7 +48,6 @@ export interface ReviewWorkspaceProps {
   pendingScheduledPublish?: PendingScheduledPublish | null;
   scheduledPublishCancelBusy?: boolean;
   onCancelScheduledPublish?: () => void | Promise<void>;
-  onDismissScheduledPublish?: () => void;
 }
 
 function ReviewWorkspaceLayout() {

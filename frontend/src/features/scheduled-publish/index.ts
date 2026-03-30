@@ -5,3 +5,4 @@
 export type { PendingScheduledPublish } from './types';
 export { usePendingScheduledPublish } from './usePendingScheduledPublish';
 export { ScheduledPublishBanner } from './ScheduledPublishBanner';
+export { normalizeScheduledTimeForCompare, rowMatchesPendingScheduledPublish } from './matchPending';

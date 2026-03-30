@@ -11,6 +11,8 @@ import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { type PendingScheduledPublish, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
+import { type ChannelId } from '@/integrations/channels';
 
 const rowActionClass =
   'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-40 transition-colors duration-200 cursor-pointer';
@@ -41,6 +43,8 @@ export function DashboardQueue({
   deletingRowIndex,
   scrollTargetId,
   onScrollTargetHandled,
+  pendingScheduledPublish,
+  selectedChannel,
 }: {
   handleAddTopic: (e: React.FormEvent) => Promise<void>;
   newTopic: string;
@@ -65,6 +69,8 @@ export function DashboardQueue({
   deletingRowIndex: number | null;
   scrollTargetId: string | null;
   onScrollTargetHandled: () => void;
+  pendingScheduledPublish: PendingScheduledPublish | null;
+  selectedChannel: ChannelId;
 }) {
   useEffect(() => {
     if (!scrollTargetId) return;
@@ -82,6 +88,9 @@ export function DashboardQueue({
   }, [scrollTargetId, filteredRows, onScrollTargetHandled]);
 
   const hasTopics = rows.length > 0;
+
+  const rowHasActiveScheduledPublish = (row: SheetRow) =>
+    rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, selectedChannel);
 
   return (
     <div className="flex flex-col gap-5">
@@ -304,8 +313,12 @@ export function DashboardQueue({
                                     e.stopPropagation();
                                     void publishRowToSelectedChannel(row);
                                   }}
-                                  disabled={actionLoading !== null}
-                                  title="Publish to the selected channel (approve in the editor first if you have not yet)"
+                                  disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
+                                  title={
+                                    rowHasActiveScheduledPublish(row)
+                                      ? 'Already scheduled for this time — cancel in the delivery panel or change the schedule in Edit.'
+                                      : 'Publish to the selected channel (approve in the editor first if you have not yet)'
+                                  }
                                   className={rowActionClass}
                                 >
                                   {actionLoading === buildRowActionKey('publish', row) ? (
@@ -343,8 +356,12 @@ export function DashboardQueue({
                                   e.stopPropagation();
                                   void publishRowToSelectedChannel(row);
                                 }}
-                                disabled={actionLoading !== null}
-                                title="Publish"
+                                disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
+                                title={
+                                  rowHasActiveScheduledPublish(row)
+                                    ? 'Already scheduled for this time — cancel in the delivery panel or change the schedule in Edit.'
+                                    : 'Publish'
+                                }
                                 className={rowActionClass}
                               >
                                 {actionLoading === buildRowActionKey('publish', row) ? (

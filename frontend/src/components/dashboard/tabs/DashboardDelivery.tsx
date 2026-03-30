@@ -28,7 +28,6 @@ export function DashboardDelivery({
   pendingScheduledPublish = null,
   scheduledPublishCancelBusy = false,
   onCancelScheduledPublish,
-  onDismissScheduledPublish,
   embedded = false,
   channelCredentialsConfigured = true,
   isAdmin = false,
@@ -49,7 +48,6 @@ export function DashboardDelivery({
   pendingScheduledPublish?: PendingScheduledPublish | null;
   scheduledPublishCancelBusy?: boolean;
   onCancelScheduledPublish?: () => void | Promise<void>;
-  onDismissScheduledPublish?: () => void;
   /** Flatten chrome when nested in the Topics right rail. */
   embedded?: boolean;
   /** False when the selected channel has no API credentials in workspace config. */
@@ -92,7 +90,6 @@ export function DashboardDelivery({
           pending={pendingScheduledPublish ?? null}
           onCancel={onCancelScheduledPublish}
           cancelBusy={scheduledPublishCancelBusy}
-          onDismiss={onDismissScheduledPublish}
         />
       ) : null}
 

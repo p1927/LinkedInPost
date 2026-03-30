@@ -64,7 +64,6 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
         pendingScheduledPublish={p.pendingScheduledPublish}
         scheduledPublishCancelBusy={p.scheduledPublishCancelBusy}
         onCancelScheduledPublish={p.onCancelScheduledPublish}
-        onDismissScheduledPublish={p.onDismissScheduledPublish}
       />
     </div>
   );
