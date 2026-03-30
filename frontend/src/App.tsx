@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { BrowserRouter, useLocation, Routes, Route, Navigate } from 'react-router-dom'
 import { LogOut, Share2, Sparkles, TableProperties } from 'lucide-react'
+import { googleLogout } from '@react-oauth/google'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Button } from '@/components/ui/button'
 import { Dashboard } from './components/dashboard'
@@ -144,6 +145,7 @@ function App() {
         setErrorMessage(message)
 
         if (isAuthErrorMessage(message)) {
+          googleLogout()
           localStorage.removeItem(STORED_ID_TOKEN_KEY)
           setIdToken(null)
           setSession(null)
@@ -161,6 +163,7 @@ function App() {
 
   const handleAuthExpired = () => {
     localStorage.removeItem(STORED_ID_TOKEN_KEY)
+    googleLogout()
     setIdToken(null)
     setSession(null)
     setErrorMessage('Your Google session expired. Sign in again to continue.')
@@ -205,7 +208,7 @@ function App() {
                             Log out
                           </Button>
                         ) : (
-                          <GoogleLoginButton onLogin={handleLogin} />
+                          <GoogleLoginButton onLogin={handleLogin} onSignInIntent={() => setErrorMessage('')} />
                         )
                       ) : null}
                     </div>
@@ -285,7 +288,7 @@ function App() {
                             </p>
                           </div>
                           <div className="flex justify-center pt-2">
-                            <GoogleLoginButton onLogin={handleLogin} />
+                            <GoogleLoginButton onLogin={handleLogin} onSignInIntent={() => setErrorMessage('')} />
                           </div>
                           {isDevGoogleAuthBypassEnabled() && getDevGoogleAuthBypassToken() ? (
                             <div className="flex flex-col items-center gap-2 border-t border-border/60 pt-4">

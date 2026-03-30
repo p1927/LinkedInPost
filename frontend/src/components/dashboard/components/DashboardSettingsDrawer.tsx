@@ -488,7 +488,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                   {llmFallback ? (
                     <Select
                       value={llmFallback.model}
-                      onValueChange={(v) => setLlmFallback({ ...llmFallback!, model: v })}
+                      onValueChange={(v) =>
+                        setLlmFallback({ ...llmFallback!, model: v ?? llmFallback!.model })
+                      }
                     >
                       <SelectTrigger className="w-full flex-1 rounded-xl">
                         <SelectValue />

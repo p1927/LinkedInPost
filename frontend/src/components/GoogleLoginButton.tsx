@@ -5,7 +5,14 @@ import { Button } from '@/components/ui/button';
 
 const STORED_ID_TOKEN_KEY = 'google_id_token';
 
-export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => void }) {
+export function GoogleLoginButton({
+  onLogin,
+  onSignInIntent,
+}: {
+  onLogin: (token: string) => void
+  /** Clears stale UI errors as soon as the user starts the Google flow (click or credential return). */
+  onSignInIntent?: () => void
+}) {
   const [idToken, setIdToken] = useState<string | null>(null);
   const [loginHint, setLoginHint] = useState<string | null>(null);
 
@@ -45,12 +52,16 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
     <div className="flex w-full min-w-[min(100%,280px)] max-w-sm flex-col items-center justify-center gap-2.5 sm:w-auto">
       <div className="glass-panel flex w-full max-w-[280px] min-h-[56px] items-center justify-center rounded-full border border-white/55 px-2 py-2 shadow-sm ring-1 ring-white/50 transition-all duration-200 hover:shadow-card [&_iframe]:mx-auto [&_iframe]:block [&_iframe]:max-h-none [&_iframe]:max-w-full">
         <GoogleLogin
+          click_listener={() => {
+            onSignInIntent?.()
+          }}
           onSuccess={(credentialResponse) => {
             const credential = credentialResponse.credential;
             if (!credential) {
               return;
             }
 
+            onSignInIntent?.()
             setLoginHint(null);
             localStorage.setItem(STORED_ID_TOKEN_KEY, credential);
             setIdToken(credential);
@@ -63,7 +74,6 @@ export function GoogleLoginButton({ onLogin }: { onLogin: (token: string) => voi
             );
           }}
           useOneTap={false}
-          use_fedcm_for_button
           text="signin_with"
           shape="pill"
           theme="outline"
