@@ -1,4 +1,4 @@
-import type { BotConfig, BotConfigUpdate, GoogleModelOption } from './configService';
+import type { BotConfig, BotConfigUpdate, GoogleModelOption, LlmProviderId } from './configService';
 import { normalizeBotConfig } from './configService';
 import type { ChannelId } from '../integrations/channels';
 import type { SheetRow } from './sheets';
@@ -174,12 +174,14 @@ export interface GenerationRequest {
   selection: TextSelectionRange | null;
   instruction?: string;
   googleModel?: string;
+  llm?: { provider: LlmProviderId; model: string };
   researchArticles?: ResearchArticleRef[];
 }
 
 export interface QuickChangePreviewResult {
   scope: GenerationScope;
   model: string;
+  llmProvider?: LlmProviderId;
   selection: TextSelectionRange | null;
   replacementText: string;
   fullText: string;
@@ -195,6 +197,7 @@ export interface VariantPreviewResult {
 export interface VariantsPreviewResponse {
   scope: GenerationScope;
   model: string;
+  llmProvider?: LlmProviderId;
   selection: TextSelectionRange | null;
   variants: VariantPreviewResult[];
 }
@@ -418,6 +421,10 @@ export class BackendApi {
 
   async getGoogleModels(idToken: string): Promise<GoogleModelOption[]> {
     return this.post<GoogleModelOption[]>('getGoogleModels', idToken);
+  }
+
+  async listLlmModels(idToken: string, provider: LlmProviderId): Promise<GoogleModelOption[]> {
+    return this.post<GoogleModelOption[]>('listLlmModels', idToken, { provider });
   }
 
   async addTopic(idToken: string, topic: string): Promise<void> {

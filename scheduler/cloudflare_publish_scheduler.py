@@ -50,6 +50,7 @@ def schedule_linkedin_publish_with_worker(
     topic: str,
     date_str: str,
     scheduled_time: str,
+    topic_id: str | None = None,
 ) -> None:
     if not worker_url:
         raise RuntimeError('VITE_WORKER_URL is required to schedule minute-level Cloudflare publish tasks.')
@@ -57,17 +58,22 @@ def schedule_linkedin_publish_with_worker(
         raise RuntimeError('WORKER_SCHEDULER_SECRET is required to schedule minute-level Cloudflare publish tasks.')
 
     endpoint = f'{worker_url.rstrip("/")}/internal/schedule-linkedin-publish'
+    payload: dict[str, str] = {
+        'topic': topic,
+        'date': date_str,
+        'scheduledTime': scheduled_time,
+    }
+    tid = (topic_id or '').strip()
+    if tid:
+        payload['topicId'] = tid
+
     response = requests.post(
         endpoint,
         headers={
             'Content-Type': 'application/json',
             'X-Scheduler-Secret': scheduler_secret,
         },
-        json={
-            'topic': topic,
-            'date': date_str,
-            'scheduledTime': scheduled_time,
-        },
+        json=payload,
         timeout=30,
     )
     if not response.ok:

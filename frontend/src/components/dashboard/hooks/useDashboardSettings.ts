@@ -4,6 +4,8 @@ import {
   type BotConfig,
   type BotConfigUpdate,
   type GoogleModelOption,
+  type LlmProviderId,
+  type LlmRef,
   AVAILABLE_GOOGLE_MODELS,
   DEFAULT_GOOGLE_MODEL,
   DEFAULT_NEWS_RESEARCH_CONFIG,
@@ -11,7 +13,7 @@ import {
   normalizeGoogleModelOptions,
   type NewsResearchStored,
 } from '../../../services/configService';
-import { FEATURE_NEWS_RESEARCH } from '../../../generated/features';
+import { FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { type ChannelId } from '../../../integrations/channels';
 import { formatTelegramRecipientsInput, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
 import { formatRecipientsInput, parseRecipientsInput, type WhatsAppRecipient } from '../../../integrations/whatsapp';
@@ -30,6 +32,16 @@ function recipientsInputMatchesSaved<T extends TelegramRecipient | WhatsAppRecip
   } catch {
     return false;
   }
+}
+
+function normalizeGrokOptions(models: GoogleModelOption[], selected?: string): GoogleModelOption[] {
+  const deduped = Array.from(
+    new Map(models.filter((m) => m.value.trim() && m.label.trim()).map((m) => [m.value.trim(), m])).values(),
+  );
+  if (selected && !deduped.some((m) => m.value === selected)) {
+    deduped.unshift({ value: selected, label: selected });
+  }
+  return deduped;
 }
 
 export function useDashboardSettings({
@@ -57,9 +69,25 @@ export function useDashboardSettings({
   const [sheetIdInput, setSheetIdInput] = useState(session.config.spreadsheetId);
   const [githubRepo, setGithubRepo] = useState(session.config.githubRepo);
   const [githubTokenInput, setGithubTokenInput] = useState('');
-  const [googleModel, setGoogleModel] = useState(session.config.googleModel);
+  const [llmPrimaryProvider, setLlmPrimaryProvider] = useState<LlmProviderId>(() =>
+    FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.primary ? session.config.llm.primary.provider : 'gemini',
+  );
+  const [googleModel, setGoogleModel] = useState(() =>
+    FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.primary
+      ? session.config.llm.primary.model
+      : session.config.googleModel,
+  );
+  const [llmFallback, setLlmFallback] = useState<LlmRef | null>(() =>
+    FEATURE_MULTI_PROVIDER_LLM ? (session.config.llm?.fallback ?? null) : null,
+  );
   const [allowedGoogleModels, setAllowedGoogleModels] = useState<string[]>(() => [...session.config.allowedGoogleModels]);
+  const [allowedGrokModels, setAllowedGrokModels] = useState<string[]>(() =>
+    FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedGrokModels?.length
+      ? [...session.config.llm.allowedGrokModels]
+      : [],
+  );
   const [catalogModels, setCatalogModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
+  const [grokCatalogModels, setGrokCatalogModels] = useState<GoogleModelOption[]>([]);
   const [savingConfig, setSavingConfig] = useState(false);
   const [telegramBotTokenInput, setTelegramBotTokenInput] = useState('');
   const [gmailDefaultTo, setGmailDefaultTo] = useState(session.config.gmailDefaultTo || '');
@@ -80,20 +108,41 @@ export function useDashboardSettings({
     void showAlert({ title: 'Notice', description: message || fallbackMessage });
   }, [onAuthExpired, showAlert]);
 
+  const refreshGrokModels = useCallback(async () => {
+    if (!FEATURE_MULTI_PROVIDER_LLM) return;
+    try {
+      const models = normalizeGrokOptions(await api.listLlmModels(idToken, 'grok'), googleModel);
+      setGrokCatalogModels(models);
+    } catch (error) {
+      handleFailure(error, 'Failed to load Grok models.');
+    }
+  }, [api, idToken, googleModel, handleFailure]);
+
   useEffect(() => {
     setAllowedGoogleModels([...session.config.allowedGoogleModels]);
-  }, [session.config.allowedGoogleModels]);
+    if (FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedGrokModels?.length) {
+      setAllowedGrokModels([...session.config.llm.allowedGrokModels]);
+    }
+  }, [session.config.allowedGoogleModels, session.config.llm?.allowedGrokModels]);
+
+  const llmSnapshot = JSON.stringify(session.config.llm ?? null);
+  useEffect(() => {
+    if (!FEATURE_MULTI_PROVIDER_LLM) return;
+    const p = session.config.llm?.primary;
+    if (p) {
+      setLlmPrimaryProvider(p.provider);
+      setGoogleModel(p.model);
+    } else {
+      setLlmPrimaryProvider('gemini');
+      setGoogleModel(session.config.googleModel);
+    }
+    setLlmFallback(session.config.llm?.fallback ?? null);
+  }, [llmSnapshot, session.config.googleModel, session.config.llm?.fallback, session.config.llm?.primary]);
 
   useEffect(() => {
     if (!FEATURE_NEWS_RESEARCH) return;
     setNewsResearch(session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG);
   }, [session.config.newsResearch]);
-
-  useEffect(() => {
-    if (!session.isAdmin) {
-      setGoogleModel(session.config.googleModel);
-    }
-  }, [session.isAdmin, session.config.googleModel]);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,23 +165,67 @@ export function useDashboardSettings({
     };
   }, [api, idToken, session.config.googleModel, session.isAdmin]);
 
-  const effectiveAllowedIds = session.isAdmin ? allowedGoogleModels : session.config.allowedGoogleModels;
+  useEffect(() => {
+    if (!FEATURE_MULTI_PROVIDER_LLM) return;
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const models = normalizeGrokOptions(await api.listLlmModels(idToken, 'grok'));
+        if (!cancelled) setGrokCatalogModels(models);
+      } catch {
+        if (!cancelled) setGrokCatalogModels([]);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, idToken]);
+
+  useEffect(() => {
+    if (!FEATURE_MULTI_PROVIDER_LLM || !session.isAdmin) return;
+    if (allowedGrokModels.length > 0) return;
+    if (grokCatalogModels.length === 0) return;
+    setAllowedGrokModels(grokCatalogModels.map((m) => m.value));
+  }, [session.isAdmin, grokCatalogModels, allowedGrokModels.length]);
+
+  const effectiveAllowedGemini = session.isAdmin ? allowedGoogleModels : session.config.allowedGoogleModels;
+  const effectiveAllowedGrok = session.isAdmin
+    ? allowedGrokModels
+    : session.config.llm?.allowedGrokModels || [];
 
   const availableModels = useMemo(() => {
-    const allow = new Set(effectiveAllowedIds.length > 0 ? effectiveAllowedIds : [DEFAULT_GOOGLE_MODEL]);
+    if (FEATURE_MULTI_PROVIDER_LLM && llmPrimaryProvider === 'grok') {
+      const catalog = grokCatalogModels.length > 0 ? grokCatalogModels : normalizeGrokOptions([], googleModel);
+      const allow = new Set(effectiveAllowedGrok.length > 0 ? effectiveAllowedGrok : catalog.map((m) => m.value));
+      return catalog.filter((model) => allow.has(model.value));
+    }
+    const allow = new Set(effectiveAllowedGemini.length > 0 ? effectiveAllowedGemini : [DEFAULT_GOOGLE_MODEL]);
     return catalogModels.filter((model) => allow.has(model.value));
-  }, [catalogModels, effectiveAllowedIds]);
+  }, [
+    llmPrimaryProvider,
+    grokCatalogModels,
+    catalogModels,
+    effectiveAllowedGemini,
+    effectiveAllowedGrok,
+    googleModel,
+  ]);
 
   useEffect(() => {
     if (availableModels.length === 0) return;
     if (availableModels.some((model) => model.value === googleModel)) return;
-    const fallbackModel = availableModels.find((model) => model.value === session.config.googleModel)?.value
+    const serverModel =
+      FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.primary
+        ? session.config.llm.primary.model
+        : session.config.googleModel;
+    const fallbackModel =
+      availableModels.find((model) => model.value === serverModel)?.value
       || availableModels[0]?.value
-      || DEFAULT_GOOGLE_MODEL;
+      || (llmPrimaryProvider === 'grok' ? googleModel : DEFAULT_GOOGLE_MODEL);
     if (fallbackModel !== googleModel) {
       setGoogleModel(fallbackModel);
     }
-  }, [availableModels, googleModel, session.config.googleModel]);
+  }, [availableModels, googleModel, session.config.googleModel, session.config.llm?.primary, llmPrimaryProvider]);
 
   const toggleAllowedGoogleModel = useCallback((modelId: string, enabled: boolean) => {
     setAllowedGoogleModels((prev) => {
@@ -146,14 +239,41 @@ export function useDashboardSettings({
     });
   }, []);
 
+  const toggleAllowedGrokModel = useCallback((modelId: string, enabled: boolean) => {
+    setAllowedGrokModels((prev) => {
+      if (enabled) {
+        return [...new Set([...prev, modelId])];
+      }
+      if (prev.length <= 1) {
+        return prev;
+      }
+      return prev.filter((id) => id !== modelId);
+    });
+  }, []);
+
+  const serverToolbarModel =
+    FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.primary
+      ? session.config.llm.primary.model
+      : session.config.googleModel;
+  const serverToolbarProvider: LlmProviderId =
+    FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.primary ? session.config.llm.primary.provider : 'gemini';
+  const serverFallbackKey = JSON.stringify(session.config.llm?.fallback ?? null);
+  const draftFallbackKey = JSON.stringify(llmFallback);
+
   const hasUnsavedSettingsChanges = useMemo(() => {
     const c = session.config;
     if (sheetIdInput.trim() !== c.spreadsheetId) return true;
     if (githubRepo.trim() !== c.githubRepo) return true;
-    if (googleModel !== c.googleModel) return true;
+    if (googleModel !== serverToolbarModel || llmPrimaryProvider !== serverToolbarProvider) return true;
+    if (FEATURE_MULTI_PROVIDER_LLM && draftFallbackKey !== serverFallbackKey) return true;
     const a = [...allowedGoogleModels].sort();
     const b = [...c.allowedGoogleModels].sort();
     if (a.length !== b.length || a.some((id, i) => id !== b[i])) return true;
+    if (FEATURE_MULTI_PROVIDER_LLM) {
+      const ag = [...allowedGrokModels].sort();
+      const bg = [...(c.llm?.allowedGrokModels || [])].sort();
+      if (ag.length !== bg.length || ag.some((id, i) => id !== bg[i])) return true;
+    }
     if (githubTokenInput.trim() !== '') return true;
     if (telegramBotTokenInput.trim() !== '') return true;
     if (selectedChannel !== c.defaultChannel) return true;
@@ -183,7 +303,13 @@ export function useDashboardSettings({
     sheetIdInput,
     githubRepo,
     googleModel,
+    serverToolbarModel,
+    llmPrimaryProvider,
+    serverToolbarProvider,
+    draftFallbackKey,
+    serverFallbackKey,
     allowedGoogleModels,
+    allowedGrokModels,
     githubTokenInput,
     telegramBotTokenInput,
     selectedChannel,
@@ -194,6 +320,7 @@ export function useDashboardSettings({
     gmailDefaultBcc,
     gmailDefaultSubject,
     newsResearch,
+    llmFallback,
   ]);
 
   const saveSettings = async () => {
@@ -204,7 +331,7 @@ export function useDashboardSettings({
       await onSaveConfig({
         spreadsheetId: sheetIdInput.trim(),
         githubRepo: githubRepo.trim(),
-        googleModel,
+        googleModel: llmPrimaryProvider === 'gemini' ? googleModel : session.config.googleModel,
         allowedGoogleModels,
         generationRules: session.config.generationRules.trim(),
         githubToken: githubTokenInput.trim() || undefined,
@@ -217,6 +344,15 @@ export function useDashboardSettings({
         gmailDefaultBcc: gmailDefaultBcc.trim(),
         gmailDefaultSubject: gmailDefaultSubject.trim(),
         ...(FEATURE_NEWS_RESEARCH ? { newsResearch } : {}),
+        ...(FEATURE_MULTI_PROVIDER_LLM
+          ? {
+              llm: {
+                primary: { provider: llmPrimaryProvider, model: googleModel },
+                fallback: llmFallback,
+                allowedGrokModels,
+              },
+            }
+          : {}),
       });
       setGithubTokenInput('');
       setTelegramBotTokenInput('');
@@ -230,6 +366,9 @@ export function useDashboardSettings({
     }
   };
 
+  const generationLlm: LlmRef | undefined =
+    FEATURE_MULTI_PROVIDER_LLM ? { provider: llmPrimaryProvider, model: googleModel } : undefined;
+
   return {
     sheetIdInput,
     setSheetIdInput,
@@ -237,6 +376,14 @@ export function useDashboardSettings({
     setGithubRepo,
     githubTokenInput,
     setGithubTokenInput,
+    llmPrimaryProvider,
+    setLlmPrimaryProvider,
+    llmFallback,
+    setLlmFallback,
+    allowedGrokModels,
+    toggleAllowedGrokModel,
+    refreshGrokModels,
+    grokAdminCatalog: grokCatalogModels.length > 0 ? grokCatalogModels : normalizeGrokOptions([], googleModel),
     googleModel,
     setGoogleModel,
     allowedGoogleModels,
@@ -259,5 +406,6 @@ export function useDashboardSettings({
     setNewsResearch,
     saveSettings,
     hasUnsavedSettingsChanges,
+    generationLlm,
   };
 }

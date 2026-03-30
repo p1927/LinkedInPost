@@ -146,10 +146,11 @@ export function DashboardQueue({
           </form>
           {addingTopic ? (
             <div
-              className="absolute inset-0 z-10 flex items-center justify-center p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-200"
+              className="absolute inset-0 z-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200"
               role="status"
               aria-live="polite"
             >
+              <span className="sr-only">Adding topic</span>
               <div
                 className="pointer-events-none absolute inset-0 bg-white/80 backdrop-blur-md"
                 aria-hidden
@@ -158,15 +159,22 @@ export function DashboardQueue({
                 className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.07] via-transparent to-fuchsia-500/[0.08]"
                 aria-hidden
               />
-              <div className="relative flex flex-col items-center gap-4">
-                <span className="sr-only">Adding topic</span>
-                <div className="relative flex h-12 w-12 items-center justify-center" aria-hidden>
-                  <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-violet-400/25 to-fuchsia-400/20 blur-md motion-safe:animate-pulse" />
-                  <span className="absolute inset-1 rounded-full border-2 border-violet-100" />
-                  <span className="absolute inset-1 rounded-full border-2 border-transparent border-t-violet-600 border-r-violet-500/45 motion-safe:animate-spin" />
-                </div>
-                <div className="h-1 w-28 overflow-hidden rounded-full bg-violet-100/90" aria-hidden>
-                  <div className="mx-auto h-full w-2/3 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-500 opacity-90 motion-safe:animate-pulse" />
+              <div className="absolute inset-0 flex items-center justify-center p-3">
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <div
+                    className="relative box-border flex size-12 shrink-0 items-center justify-center"
+                    aria-hidden
+                  >
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-violet-400/25 to-fuchsia-400/20 blur-md motion-safe:animate-pulse" />
+                    <span className="absolute inset-[3px] box-border rounded-full border-2 border-violet-100" />
+                    <span className="absolute inset-[3px] box-border rounded-full border-2 border-transparent border-t-violet-600 border-r-violet-500/45 motion-safe:animate-spin" />
+                  </div>
+                  <div
+                    className="flex h-1 w-28 shrink-0 justify-center overflow-hidden rounded-full bg-violet-100/90"
+                    aria-hidden
+                  >
+                    <div className="h-full w-2/3 shrink-0 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-500 opacity-90 motion-safe:animate-pulse" />
+                  </div>
                 </div>
               </div>
             </div>

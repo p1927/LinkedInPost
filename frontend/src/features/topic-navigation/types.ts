@@ -11,7 +11,7 @@ import {
 } from '../../services/backendApi';
 import { type ChannelId } from '../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
-import type { NewsResearchStored, NewsProviderKeys } from '../../services/configService';
+import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../services/configService';
 
 export type TopicReviewPagesBaseProps = {
   rows: SheetRow[];
@@ -20,6 +20,7 @@ export type TopicReviewPagesBaseProps = {
   /** Workspace-wide rules; ignored for LLM when this topic has non-empty topic rules. */
   globalGenerationRules: string;
   googleModel: string;
+  generationLlm?: LlmRef;
   newsResearch?: NewsResearchStored;
   newsProviderKeys?: NewsProviderKeys;
   onApprove: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;

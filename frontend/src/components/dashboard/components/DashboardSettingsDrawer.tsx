@@ -23,12 +23,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { type WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeContext';
 import { NewsResearchSettingsSection } from '../../../features/news-research';
-import type { NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
-import { FEATURE_NEWS_RESEARCH } from '../../../generated/features';
+import type { LlmProviderId, LlmRef, NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
+import { FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 
 const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
   { id: 'settings-github-actions', label: 'GitHub Actions' },
+  { id: 'settings-llm', label: 'AI / LLM' },
   { id: 'settings-instagram', label: 'Instagram' },
   { id: 'settings-linkedin', label: 'LinkedIn' },
   { id: 'settings-telegram', label: 'Telegram' },
@@ -122,6 +123,16 @@ type DashboardSettingsDrawerProps = {
   newsResearch?: NewsResearchStored;
   setNewsResearch?: (next: NewsResearchStored) => void;
   newsProviderKeys?: NewsProviderKeys;
+  llmPrimaryProvider?: LlmProviderId;
+  setLlmPrimaryProvider?: (v: LlmProviderId) => void;
+  llmModelId?: string;
+  setLlmModelId?: (v: string) => void;
+  llmFallback?: LlmRef | null;
+  setLlmFallback?: (v: LlmRef | null) => void;
+  grokAdminCatalog?: GoogleModelOption[];
+  allowedGrokModels?: string[];
+  toggleAllowedGrokModel?: (modelId: string, enabled: boolean) => void;
+  refreshGrokModels?: () => void;
 };
 
 function SettingsSectionCard({
@@ -208,16 +219,29 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       newsResearch,
       setNewsResearch,
       newsProviderKeys,
+      llmPrimaryProvider,
+      setLlmPrimaryProvider,
+      llmModelId,
+      setLlmModelId,
+      llmFallback,
+      setLlmFallback,
+      grokAdminCatalog,
+      allowedGrokModels,
+      toggleAllowedGrokModel,
+      refreshGrokModels,
     },
     ref,
   ) {
-    const settingsSections = useMemo(
-      () =>
-        FEATURE_NEWS_RESEARCH
-          ? [...ALL_SETTINGS_SECTIONS]
-          : ALL_SETTINGS_SECTIONS.filter((s) => s.id !== 'settings-news'),
-      [],
-    );
+    const settingsSections = useMemo(() => {
+      let s = [...ALL_SETTINGS_SECTIONS];
+      if (!FEATURE_NEWS_RESEARCH) {
+        s = s.filter((sec) => sec.id !== 'settings-news');
+      }
+      if (!FEATURE_MULTI_PROVIDER_LLM || !session.isAdmin) {
+        s = s.filter((sec) => sec.id !== 'settings-llm');
+      }
+      return s;
+    }, [session.isAdmin]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const [activeSectionId, setActiveSectionId] = useState<string>(settingsSections[0]?.id ?? ALL_SETTINGS_SECTIONS[0].id);
@@ -390,6 +414,127 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             </div>
           </div>
         </SettingsSectionCard>
+
+        {FEATURE_MULTI_PROVIDER_LLM && session.isAdmin && llmPrimaryProvider && setLlmPrimaryProvider && llmModelId !== undefined && setLlmModelId && llmFallback !== undefined && setLlmFallback && grokAdminCatalog && allowedGrokModels && toggleAllowedGrokModel && refreshGrokModels ? (
+          <SettingsSectionCard id="settings-llm" title="AI / LLM" variant="canvas">
+            <p className="text-xs leading-5 text-muted">
+              Preview generation uses the Worker. Set <code className="rounded bg-border/40 px-1">GEMINI_API_KEY</code> and optional{' '}
+              <code className="rounded bg-border/40 px-1">XAI_API_KEY</code> in the Worker. GitHub Actions draft jobs stay Gemini-only; the worker picks a valid Gemini model for dispatch when your primary is Grok.
+            </p>
+            <div className="mt-4 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => refreshGrokModels()}>
+                  <RefreshCw className="mr-1.5 size-4" aria-hidden />
+                  Refresh Grok models
+                </Button>
+                <span className="text-xs text-muted">
+                  Gemini: {session.config.llmProviderKeys?.gemini ? 'key present' : 'no key'} · Grok:{' '}
+                  {session.config.llmProviderKeys?.grok ? 'key present' : 'no key'}
+                </span>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">Primary provider</label>
+                <Select value={llmPrimaryProvider} onValueChange={(v) => setLlmPrimaryProvider(v as LlmProviderId)}>
+                  <SelectTrigger className="w-full max-w-xs rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini">Gemini</SelectItem>
+                    <SelectItem value="grok">Grok (xAI)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">Primary model</label>
+                <Select value={llmModelId} onValueChange={(v) => setLlmModelId(v as string)}>
+                  <SelectTrigger className="w-full rounded-xl">
+                    <SelectValue placeholder="Select model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(llmPrimaryProvider === 'grok' ? grokAdminCatalog : adminModelCatalog).map((m) => (
+                      <SelectItem key={m.value} value={m.value}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">Fallback (optional)</label>
+                <p className="mb-2 text-xs text-muted">Used when the primary call fails with a retryable error (e.g. rate limit).</p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Select
+                    value={llmFallback ? llmFallback.provider : 'none'}
+                    onValueChange={(v) => {
+                      if (v === 'none') {
+                        setLlmFallback(null);
+                        return;
+                      }
+                      const prov = v as LlmProviderId;
+                      const catalog = prov === 'grok' ? grokAdminCatalog : adminModelCatalog;
+                      const first = catalog[0]?.value ?? '';
+                      setLlmFallback({ provider: prov, model: llmFallback?.provider === prov ? llmFallback.model : first });
+                    }}
+                  >
+                    <SelectTrigger className="w-full rounded-xl sm:max-w-[10rem]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="gemini">Gemini</SelectItem>
+                      <SelectItem value="grok">Grok</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {llmFallback ? (
+                    <Select
+                      value={llmFallback.model}
+                      onValueChange={(v) => setLlmFallback({ ...llmFallback!, model: v })}
+                    >
+                      <SelectTrigger className="w-full flex-1 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(llmFallback.provider === 'grok' ? grokAdminCatalog : adminModelCatalog).map((m) => (
+                          <SelectItem key={m.value} value={m.value}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">Allowed Grok models</label>
+                <p className="mt-1.5 text-xs text-muted">Non-admins only see models you enable here when Grok is primary.</p>
+                <div className="mt-3 flex max-h-56 flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-canvas px-3 py-2.5">
+                  {grokAdminCatalog.map((m) => {
+                    const checked = allowedGrokModels.includes(m.value);
+                    const soleChecked = checked && allowedGrokModels.length <= 1;
+                    return (
+                      <label
+                        key={m.value}
+                        className={cn(
+                          'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm text-ink transition-colors hover:bg-violet-100/40',
+                          soleChecked && 'cursor-default',
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          className="size-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
+                          checked={checked}
+                          disabled={soleChecked}
+                          onChange={(e) => toggleAllowedGrokModel(m.value, e.target.checked)}
+                        />
+                        <span className="min-w-0 leading-snug">{m.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </SettingsSectionCard>
+        ) : null}
 
         <SettingsSectionCard id="settings-instagram" title="Instagram Publishing">
           <p className="text-xs leading-5 text-muted">

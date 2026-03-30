@@ -1,5 +1,5 @@
 import { type SheetRow } from '../../services/sheets';
-import type { NewsResearchStored, NewsProviderKeys } from '../../services/configService';
+import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../services/configService';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
   type GenerationRequest,
@@ -33,6 +33,7 @@ export interface ReviewWorkspaceProps {
   previewAuthorName?: string;
   globalGenerationRules: string;
   googleModel: string;
+  generationLlm?: LlmRef;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   onPublishNow: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   onSaveEmailFields: (emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;

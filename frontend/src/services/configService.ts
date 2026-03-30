@@ -1,11 +1,18 @@
 import type { ChannelId } from '../integrations/channels';
-import { FEATURE_NEWS_RESEARCH } from '../generated/features';
+import { FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../generated/features';
 import { normalizeTelegramRecipients, type TelegramRecipient } from '../integrations/telegram';
 import { normalizeWhatsAppRecipients, type WhatsAppRecipient } from '../integrations/whatsapp';
 
 export interface GoogleModelOption {
   value: string;
   label: string;
+}
+
+export type LlmProviderId = 'gemini' | 'grok';
+
+export interface LlmRef {
+  provider: LlmProviderId;
+  model: string;
 }
 
 export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
@@ -158,6 +165,16 @@ export interface BotConfig {
   /** Omitted when news research is disabled in features.yaml. */
   newsResearch?: NewsResearchStored;
   newsProviderKeys?: NewsProviderKeys;
+  /** Omitted when multiProviderLlm is false in features.yaml. */
+  llm?: {
+    primary: LlmRef;
+    fallback?: LlmRef;
+    allowedGrokModels: string[];
+  };
+  llmProviderKeys?: {
+    gemini: boolean;
+    grok: boolean;
+  };
 }
 
 function normalizeNewsResearchConfig(raw: unknown): NewsResearchStored {
@@ -247,17 +264,32 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     gmailDefaultBcc: config?.gmailDefaultBcc || '',
     gmailDefaultSubject: config?.gmailDefaultSubject || '',
   };
-  if (!FEATURE_NEWS_RESEARCH) {
-    return base;
+  let withNews = base;
+  if (FEATURE_NEWS_RESEARCH) {
+    withNews = {
+      ...base,
+      newsResearch: normalizeNewsResearchConfig(config?.newsResearch),
+      newsProviderKeys: {
+        newsapi: Boolean(config?.newsProviderKeys?.newsapi),
+        gnews: Boolean(config?.newsProviderKeys?.gnews),
+        newsdata: Boolean(config?.newsProviderKeys?.newsdata),
+        serpapi: Boolean(config?.newsProviderKeys?.serpapi),
+      },
+    };
+  }
+  if (!FEATURE_MULTI_PROVIDER_LLM || !config?.llm) {
+    return withNews;
   }
   return {
-    ...base,
-    newsResearch: normalizeNewsResearchConfig(config?.newsResearch),
-    newsProviderKeys: {
-      newsapi: Boolean(config?.newsProviderKeys?.newsapi),
-      gnews: Boolean(config?.newsProviderKeys?.gnews),
-      newsdata: Boolean(config?.newsProviderKeys?.newsdata),
-      serpapi: Boolean(config?.newsProviderKeys?.serpapi),
+    ...withNews,
+    llm: {
+      primary: config.llm.primary,
+      fallback: config.llm.fallback,
+      allowedGrokModels: [...(config.llm.allowedGrokModels || [])],
+    },
+    llmProviderKeys: {
+      gemini: Boolean(config.llmProviderKeys?.gemini),
+      grok: Boolean(config.llmProviderKeys?.grok),
     },
   };
 }
@@ -288,4 +320,9 @@ export interface BotConfigUpdate {
   gmailAccessToken?: string;
   gmailRefreshToken?: string;
   newsResearch?: NewsResearchStored;
+  llm?: {
+    primary?: LlmRef;
+    fallback?: LlmRef | null;
+    allowedGrokModels?: string[];
+  };
 }

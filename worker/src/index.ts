@@ -28,7 +28,20 @@ import type { SheetRow } from './generation/types';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
-import { FEATURE_CAMPAIGN, FEATURE_NEWS_RESEARCH } from './generated/features';
+import {
+  listGeminiModels,
+  listGrokModels,
+  STATIC_GEMINI_MODELS,
+  STATIC_GROK_MODELS,
+  resolveAllowedGrokModelIds,
+  resolveGithubAutomationGeminiModel,
+  resolveStoredFallback,
+  resolveStoredPrimary,
+  workspaceConfigFromStored,
+  type LlmRef,
+} from './llm';
+import type { LlmModelOption as GoogleModelOption } from './llm';
+import { FEATURE_CAMPAIGN, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -49,6 +62,8 @@ export interface Env {
   GOOGLE_CLOUD_STORAGE_BUCKET?: string;
   DELETE_UNUSED_GENERATED_IMAGES?: string;
   GEMINI_API_KEY?: string;
+  /** xAI Grok API key (optional; multi-provider LLM). */
+  XAI_API_KEY?: string;
   SERPAPI_API_KEY?: string;
   NEWSAPI_KEY?: string;
   GNEWS_API_KEY?: string;
@@ -92,6 +107,16 @@ interface BotConfig {
   googleModel: string;
   /** Model IDs users may pick from; only admins can change this list. */
   allowedGoogleModels: string[];
+  /** When FEATURE_MULTI_PROVIDER_LLM is true. */
+  llm?: {
+    primary: LlmRef;
+    fallback?: LlmRef;
+    allowedGrokModels: string[];
+  };
+  llmProviderKeys?: {
+    gemini: boolean;
+    grok: boolean;
+  };
   generationRules: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
@@ -167,6 +192,11 @@ export interface StoredConfig {
   whatsappAccessToken?: string;
   whatsappRecipients: WhatsAppRecipient[];
   newsResearch?: NewsResearchStored;
+  llm?: {
+    primary?: LlmRef;
+    fallback?: LlmRef;
+    allowedGrokModels?: string[];
+  };
 }
 
 interface BotConfigUpdate {
@@ -195,6 +225,11 @@ interface BotConfigUpdate {
   whatsappAccessToken?: string;
   whatsappRecipients?: WhatsAppRecipient[];
   newsResearch?: NewsResearchStored;
+  llm?: {
+    primary?: LlmRef;
+    fallback?: LlmRef | null;
+    allowedGrokModels?: string[];
+  };
 }
 
 function normalizeDisconnectedAuthProviders(value: unknown): AuthProvider[] {
@@ -388,13 +423,6 @@ interface GmailTokenResponse {
 
 
 
-
-
-interface GoogleModelOption {
-  value: string;
-  label: string;
-}
-
 interface DraftImageListResult {
   imageUrls: string[];
 }
@@ -417,15 +445,6 @@ interface SerpApiSearchResponse {
   images_results?: SerpApiImageResult[];
   error?: string;
 }
-
-interface GeminiModelsResponse {
-  models?: Array<{
-    name?: string;
-    supportedGenerationMethods?: string[];
-  }>;
-}
-
-
 
 const CONFIG_KEY = 'shared-config';
 const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be decrypted. This usually means GITHUB_TOKEN_ENCRYPTION_KEY changed after the token was saved. Ask an admin to open Settings and save the GitHub token again.';
@@ -461,18 +480,6 @@ const GMAIL_OAUTH_SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
   'email',
 ].join(' ');
-
-
-
-
-
-const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
-  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-];
 
 function newsSnapshotMaxPerTopicFromEnv(env: Env): number {
   const raw = String(env.NEWS_SNAPSHOT_MAX_PER_TOPIC ?? '').trim();
@@ -533,6 +540,14 @@ export default {
       return handleScheduledLinkedInPublishRequest(request, env);
     }
 
+    if (url.pathname === '/internal/merged-rows') {
+      return handleInternalMergedRowsRequest(request, env);
+    }
+
+    if (url.pathname === '/internal/pipeline-upsert') {
+      return handleInternalPipelineUpsertRequest(request, env);
+    }
+
     try {
       const { action, idToken, payload } = await parseRequest(request);
       if (!action) {
@@ -566,11 +581,19 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-async function handleScheduledLinkedInPublishRequest(request: Request, env: Env): Promise<Response> {
+async function verifySchedulerSecret(request: Request, env: Env): Promise<Response | null> {
   const providedSecret = String(request.headers.get('X-Scheduler-Secret') || '').trim();
   const expectedSecret = String(env.WORKER_SCHEDULER_SECRET || '').trim();
   if (!expectedSecret || providedSecret !== expectedSecret) {
     return Response.json({ ok: false, error: 'Unauthorized scheduler request.' }, { status: 401 });
+  }
+  return null;
+}
+
+async function handleScheduledLinkedInPublishRequest(request: Request, env: Env): Promise<Response> {
+  const authError = await verifySchedulerSecret(request, env);
+  if (authError) {
+    return authError;
   }
 
   const config = await loadStoredConfig(env);
@@ -579,18 +602,35 @@ async function handleScheduledLinkedInPublishRequest(request: Request, env: Env)
     return Response.json({ ok: false, error: 'LinkedIn publishing is not configured in the Worker.' }, { status: 400 });
   }
 
-  const payload = await request.json<ScheduledPublishTask>();
-  const topicId = String(payload.topicId || '').trim();
+  const payload = await request.json<ScheduledPublishTask & { topic?: string; date?: string }>();
+  let topicId = String(payload.topicId || '').trim();
   const scheduledTime = String(payload.scheduledTime || '').trim();
+  const topic = String(payload.topic || '').trim();
+  const date = String(payload.date || '').trim();
 
-  if (!topicId || !scheduledTime) {
-    return Response.json({ ok: false, error: 'Missing topicId or scheduledTime in scheduling payload.' }, { status: 400 });
+  if (!scheduledTime) {
+    return Response.json({ ok: false, error: 'Missing scheduledTime in scheduling payload.' }, { status: 400 });
+  }
+
+  if (!topicId && topic && date) {
+    const sheets = new SheetsGateway(env);
+    const pipeline = new PipelineStore(env.PIPELINE_DB);
+    const rows = await pipeline.getMergedRows(sheets, config.spreadsheetId);
+    const match = rows.find((r) => r.topic.trim() === topic && r.date.trim() === date);
+    topicId = String(match?.topicId || '').trim();
+  }
+
+  if (!topicId) {
+    return Response.json(
+      { ok: false, error: 'Missing topicId (or topic + date so the Worker can resolve it).' },
+      { status: 400 },
+    );
   }
 
   const response = await armScheduledPublish(env, {
     topicId,
-    topic: String(payload.topic || '').trim(),
-    date: String(payload.date || '').trim(),
+    topic,
+    date,
     scheduledTime,
     intent: payload.intent || 'publish',
     channel: payload.channel,
@@ -603,6 +643,35 @@ async function handleScheduledLinkedInPublishRequest(request: Request, env: Env)
       'Content-Type': response.headers.get('Content-Type') || 'application/json',
     },
   });
+}
+
+async function handleInternalMergedRowsRequest(request: Request, env: Env): Promise<Response> {
+  const authError = await verifySchedulerSecret(request, env);
+  if (authError) {
+    return authError;
+  }
+
+  const config = await loadStoredConfig(env);
+  ensureSpreadsheetConfigured(config);
+  const sheets = new SheetsGateway(env);
+  const pipeline = new PipelineStore(env.PIPELINE_DB);
+  const rows = await pipeline.getMergedRows(sheets, config.spreadsheetId);
+  return Response.json({ ok: true, data: rows });
+}
+
+async function handleInternalPipelineUpsertRequest(request: Request, env: Env): Promise<Response> {
+  const authError = await verifySchedulerSecret(request, env);
+  if (authError) {
+    return authError;
+  }
+
+  const config = await loadStoredConfig(env);
+  ensureSpreadsheetConfigured(config);
+  const body = (await request.json()) as { row?: unknown };
+  const row = coerceSheetRow(body.row);
+  const pipeline = new PipelineStore(env.PIPELINE_DB);
+  await pipeline.upsertFull(config.spreadsheetId, row);
+  return Response.json({ ok: true });
 }
 
 async function dispatchAction(
@@ -623,7 +692,7 @@ async function dispatchAction(
         config: toPublicConfig(storedConfig, env),
       } satisfies AppSession;
     case 'getGoogleModels': {
-      const full = await listGoogleModels(env);
+      const full = await listGeminiModels(env);
       if (session.isAdmin) {
         return full;
       }
@@ -632,7 +701,33 @@ async function dispatchAction(
       if (filtered.length > 0) {
         return filtered;
       }
-      return AVAILABLE_GOOGLE_MODELS.filter((m) => allow.has(m.value));
+      return STATIC_GEMINI_MODELS.filter((m) => allow.has(m.value));
+    }
+    case 'listLlmModels': {
+      if (!FEATURE_MULTI_PROVIDER_LLM) {
+        throw new Error('Multi-provider LLM is disabled for this deployment.');
+      }
+      const provider = String(payload.provider || '').trim();
+      if (provider === 'gemini') {
+        const full = await listGeminiModels(env);
+        if (session.isAdmin) {
+          return full;
+        }
+        const allow = new Set(resolveAllowedGoogleModelIds(storedConfig));
+        const filtered = full.filter((m) => allow.has(m.value));
+        return filtered.length > 0 ? filtered : STATIC_GEMINI_MODELS.filter((m) => allow.has(m.value));
+      }
+      if (provider === 'grok') {
+        const full = await listGrokModels(env);
+        if (session.isAdmin) {
+          return full;
+        }
+        const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+        const allow = new Set(resolveAllowedGrokModelIds(ws));
+        const filtered = full.filter((m) => allow.has(m.value));
+        return filtered.length > 0 ? filtered : full.filter((m) => allow.has(m.value));
+      }
+      throw new Error('Unknown LLM provider.');
     }
     case 'getRows':
       ensureSpreadsheetConfigured(storedConfig);
@@ -1003,12 +1098,13 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     whatsappRecipients: normalizeWhatsAppRecipients(config?.whatsappRecipients),
     generationRulesHistory: config?.generationRulesHistory || [],
     newsResearch: normalizeNewsResearchStored(config?.newsResearch),
+    llm: config?.llm,
   };
 }
 
 function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
   const allowedGoogleModels = resolveAllowedGoogleModelIds(config);
-  const base: BotConfig = {
+  let base: BotConfig = {
     spreadsheetId: config.spreadsheetId,
     githubRepo: config.githubRepo,
     googleModel: resolveEffectiveGoogleModel(config, config.googleModel),
@@ -1037,6 +1133,21 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext || config.whatsappAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
   };
+  if (FEATURE_MULTI_PROVIDER_LLM) {
+    const ws = workspaceConfigFromStored(config.googleModel, config.allowedGoogleModels, config.llm);
+    base = {
+      ...base,
+      llm: {
+        primary: resolveStoredPrimary(ws, true),
+        fallback: resolveStoredFallback(ws, true),
+        allowedGrokModels: resolveAllowedGrokModelIds(ws),
+      },
+      llmProviderKeys: {
+        gemini: Boolean(String(env.GEMINI_API_KEY || '').trim()),
+        grok: Boolean(String(env.XAI_API_KEY || '').trim()),
+      },
+    };
+  }
   if (!FEATURE_NEWS_RESEARCH) {
     return base;
   }
@@ -2004,13 +2115,34 @@ function oauthPopupResponse(origin: string | null, message: Record<string, unkno
   );
 }
 
-async function normalizeAllowedGoogleModelsAgainstCatalog(env: Env, raw: unknown[]): Promise<string[]> {
-  const catalogModels = await listGoogleModels(env);
+async function normalizeAllowedGrokModelsAgainstCatalog(env: Env, raw: unknown[]): Promise<string[]> {
+  const catalogModels = await listGrokModels(env);
   const catalog = new Set<string>();
   for (const m of catalogModels) {
     catalog.add(m.value);
   }
-  for (const m of AVAILABLE_GOOGLE_MODELS) {
+  for (const m of STATIC_GROK_MODELS) {
+    catalog.add(m.value);
+  }
+  const picked = [...new Set(
+    raw
+      .map((x) => String(x ?? '').trim())
+      .filter(Boolean)
+      .filter((id) => catalog.has(id)),
+  )];
+  if (picked.length === 0) {
+    throw new Error('Choose at least one allowed Grok model from the catalog.');
+  }
+  return picked;
+}
+
+async function normalizeAllowedGoogleModelsAgainstCatalog(env: Env, raw: unknown[]): Promise<string[]> {
+  const catalogModels = await listGeminiModels(env);
+  const catalog = new Set<string>();
+  for (const m of catalogModels) {
+    catalog.add(m.value);
+  }
+  for (const m of STATIC_GEMINI_MODELS) {
     catalog.add(m.value);
   }
   const picked = [...new Set(
@@ -2030,6 +2162,73 @@ async function computeNextAllowedGoogleModels(env: Env, current: StoredConfig, u
     return normalizeAllowedGoogleModelsAgainstCatalog(env, update.allowedGoogleModels);
   }
   return resolveAllowedGoogleModelIds(current);
+}
+
+async function computeNextAllowedGrokModels(
+  env: Env,
+  current: StoredConfig,
+  update: BotConfigUpdate,
+  nextAllowedGoogle: string[],
+  resolvedGoogleModel: string,
+): Promise<string[]> {
+  if (!FEATURE_MULTI_PROVIDER_LLM) {
+    return resolveAllowedGrokModelIds(
+      workspaceConfigFromStored(resolvedGoogleModel, nextAllowedGoogle, current.llm),
+    );
+  }
+  if (Array.isArray(update.llm?.allowedGrokModels) && update.llm.allowedGrokModels.length > 0) {
+    return normalizeAllowedGrokModelsAgainstCatalog(env, update.llm.allowedGrokModels);
+  }
+  return resolveAllowedGrokModelIds(
+    workspaceConfigFromStored(resolvedGoogleModel, nextAllowedGoogle, current.llm),
+  );
+}
+
+async function computeNextLlmStored(
+  env: Env,
+  current: StoredConfig,
+  update: BotConfigUpdate,
+  nextAllowedGoogle: string[],
+  resolvedGoogleModel: string,
+): Promise<StoredConfig['llm'] | undefined> {
+  if (!FEATURE_MULTI_PROVIDER_LLM) {
+    return undefined;
+  }
+  const grokAllowed = await computeNextAllowedGrokModels(env, current, update, nextAllowedGoogle, resolvedGoogleModel);
+  const geminiPolicy = { googleModel: resolvedGoogleModel, allowedGoogleModels: nextAllowedGoogle };
+  const ws = workspaceConfigFromStored(resolvedGoogleModel, nextAllowedGoogle, {
+    ...current.llm,
+    allowedGrokModels: grokAllowed,
+  });
+
+  let primary: LlmRef = update.llm?.primary ?? current.llm?.primary ?? resolveStoredPrimary(ws, true);
+  if (primary.provider === 'grok' && !grokAllowed.includes(primary.model)) {
+    primary = resolveStoredPrimary(ws, true);
+  }
+  if (primary.provider === 'gemini') {
+    primary = {
+      provider: 'gemini',
+      model: resolveEffectiveGoogleModel(geminiPolicy, primary.model),
+    };
+  }
+
+  let fallback: LlmRef | undefined =
+    update.llm?.fallback === null ? undefined : (update.llm?.fallback ?? current.llm?.fallback);
+  if (fallback) {
+    if (fallback.provider === 'grok' && !grokAllowed.includes(fallback.model)) {
+      fallback = undefined;
+    } else if (fallback.provider === 'gemini') {
+      fallback = {
+        provider: 'gemini',
+        model: resolveEffectiveGoogleModel(geminiPolicy, fallback.model),
+      };
+    }
+    if (fallback && fallback.provider === primary.provider && fallback.model === primary.model) {
+      fallback = undefined;
+    }
+  }
+
+  return { primary, fallback, allowedGrokModels: grokAllowed };
 }
 
 async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpdate, session: VerifiedSession): Promise<BotConfig> {
@@ -2053,6 +2252,8 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     { googleModel: candidateGoogleModel, allowedGoogleModels: nextAllowed },
     candidateGoogleModel,
   );
+
+  const nextLlm = await computeNextLlmStored(env, current, update, nextAllowed, resolvedGoogleModel);
 
   const nextConfig: StoredConfig = {
     spreadsheetId: typeof update.spreadsheetId === 'string' ? update.spreadsheetId.trim() : current.spreadsheetId,
@@ -2099,6 +2300,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
       FEATURE_NEWS_RESEARCH && update.newsResearch !== undefined
         ? normalizeNewsResearchStored(update.newsResearch)
         : normalizeNewsResearchStored(current.newsResearch),
+    llm: nextLlm,
   };
 
   if (update.githubToken) {
@@ -2166,7 +2368,15 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
       ? (payload.payload as Record<string, unknown>)
       : {};
   const innerPayload = { ...innerBase };
-  innerPayload.google_model = resolveEffectiveGoogleModel(config, String(innerPayload.google_model ?? ''));
+  const ws = workspaceConfigFromStored(config.googleModel, config.allowedGoogleModels, config.llm);
+  const automationGemini = resolveGithubAutomationGeminiModel(ws, FEATURE_MULTI_PROVIDER_LLM);
+  const requested = String(innerPayload.google_model ?? '').trim();
+  innerPayload.google_model = requested
+    ? resolveEffectiveGoogleModel(
+        { googleModel: config.googleModel, allowedGoogleModels: config.allowedGoogleModels },
+        requested,
+      )
+    : automationGemini;
 
   const response = await fetch(`https://api.github.com/repos/${config.githubRepo}/dispatches`, {
     method: 'POST',
@@ -2817,14 +3027,6 @@ function requireSecretEncryptionKey(env: Env): string {
   return env.GITHUB_TOKEN_ENCRYPTION_KEY;
 }
 
-function requireGeminiApiKey(env: Env): string {
-  const apiKey = String(env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) {
-    throw new Error('Missing GEMINI_API_KEY in the Worker environment. Add it before using preview generation.');
-  }
-
-  return apiKey;
-}
 
 
 
@@ -2850,68 +3052,6 @@ function requireGeminiApiKey(env: Env): string {
 
 
 
-
-
-
-
-async function listGoogleModels(env: Env): Promise<GoogleModelOption[]> {
-  const apiKey = String(env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) {
-    return AVAILABLE_GOOGLE_MODELS;
-  }
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
-    );
-
-    if (!response.ok) {
-      throw new Error(`Gemini model discovery failed with status ${response.status}`);
-    }
-
-    const payload = (await response.json()) as GeminiModelsResponse;
-    return normalizeGoogleModels(payload.models ?? []);
-  } catch {
-    return AVAILABLE_GOOGLE_MODELS;
-  }
-}
-
-function normalizeGoogleModels(models: GeminiModelsResponse['models']): GoogleModelOption[] {
-  const filtered = (models ?? [])
-    .filter((model) => typeof model?.name === 'string')
-    .filter((model) => model.name?.startsWith('models/gemini'))
-    .filter((model) => Array.isArray(model.supportedGenerationMethods))
-    .filter((model) => model.supportedGenerationMethods?.includes('generateContent'))
-    .map((model) => {
-      const value = String(model.name).replace(/^models\//, '');
-      return {
-        value,
-        label: formatGoogleModelLabel(value),
-      };
-    });
-
-  const deduped = Array.from(new Map(filtered.map((model) => [model.value, model])).values());
-  return deduped.length > 0 ? deduped : AVAILABLE_GOOGLE_MODELS;
-}
-
-function formatGoogleModelLabel(modelName: string): string {
-  return modelName
-    .split('-')
-    .map((part) => {
-      if (!part) {
-        return part;
-      }
-
-      if (/^\d/.test(part)) {
-        return part;
-      }
-
-      return part.charAt(0).toUpperCase() + part.slice(1);
-    })
-    .join(' ')
-    .replace(/\bLive\b/g, 'Live')
-    .replace(/\bTts\b/g, 'TTS');
-}
 
 function firstNonEmpty(...values: unknown[]): string {
   for (const value of values) {

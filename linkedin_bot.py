@@ -16,6 +16,8 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from scheduler.cloudflare_publish_scheduler import decide_publish_timing, schedule_linkedin_publish_with_worker
 
+import linkedin_d1
+
 # ==========================================
 # CONFIGURATION
 # ==========================================
@@ -56,7 +58,7 @@ WORKER_SCHEDULER_SECRET = os.environ.get('WORKER_SCHEDULER_SECRET', '').strip()
 TOPICS_SHEET = 'Topics'
 DRAFT_SHEET = 'Draft'
 POST_SHEET = 'Post'
-TOPICS_HEADERS = ['Topic', 'Date']
+TOPICS_HEADERS = ['Topic', 'Date', 'Topic Id']
 PIPELINE_HEADERS = [
     'Topic', 'Date', 'Status',
     'Variant 1', 'Variant 2', 'Variant 3', 'Variant 4',
@@ -86,6 +88,8 @@ def validate_environment(action):
         ],
     }
 
+    worker_env = ('VITE_WORKER_URL', 'WORKER_SCHEDULER_SECRET')
+
     if action == 'draft':
         missing = [
             name for name in ['GOOGLE_SHEET_ID', 'GOOGLE_CLOUD_STORAGE_BUCKET', 'GOOGLE_CREDENTIALS_JSON', 'GEMINI_API_KEY']
@@ -93,8 +97,15 @@ def validate_environment(action):
         ]
         if not SERPAPI_API_KEY:
             missing.append('SERPAPI_API_KEY')
+        for name in worker_env:
+            if not os.environ.get(name, '').strip():
+                missing.append(name)
     else:
         missing = [name for name in required.get(action, []) if not os.environ.get(name)]
+        if action == 'publish':
+            for name in worker_env:
+                if not os.environ.get(name, '').strip():
+                    missing.append(name)
 
     if not missing:
         return
@@ -149,13 +160,16 @@ def pad_row(row, width):
     return row + [''] * (width - len(row))
 
 
-def ensure_required_sheets(sheets_service):
-    """Ensure all required sheets exist with correct headers using minimal API calls (2 reads)."""
+def ensure_required_sheets(sheets_service, include_draft_post_tabs=True):
+    """Ensure Topics (and optionally Draft/Post) exist with correct headers using minimal API calls (2 reads)."""
     required = [
         (TOPICS_SHEET, TOPICS_HEADERS),
-        (DRAFT_SHEET, PIPELINE_HEADERS),
-        (POST_SHEET, PIPELINE_HEADERS),
     ]
+    if include_draft_post_tabs:
+        required.extend([
+            (DRAFT_SHEET, PIPELINE_HEADERS),
+            (POST_SHEET, PIPELINE_HEADERS),
+        ])
 
     # 1 read: get all sheet metadata at once
     metadata = sheets_service.spreadsheets().get(spreadsheetId=SHEET_ID).execute()
@@ -186,11 +200,15 @@ def ensure_required_sheets(sheets_service):
     value_ranges = batch_result.get('valueRanges', [])
 
     # write all missing headers in one batchUpdate
-    missing_headers = [
-        {'range': f"{title}!A1", 'values': [headers]}
-        for i, (title, headers) in enumerate(required)
-        if not (value_ranges[i].get('values', []) if i < len(value_ranges) else [])
-    ]
+    missing_headers = []
+    for i, (title, headers) in enumerate(required):
+        vr = value_ranges[i].get('values', []) if i < len(value_ranges) else []
+        first = vr[0] if vr else []
+        if not first:
+            missing_headers.append({'range': f'{title}!A1', 'values': [headers]})
+            continue
+        if title == TOPICS_SHEET and len(first) < len(TOPICS_HEADERS):
+            missing_headers.append({'range': f'{title}!A1', 'values': [headers]})
     if missing_headers:
         sheets_service.spreadsheets().values().batchUpdate(
             spreadsheetId=SHEET_ID,
@@ -237,6 +255,75 @@ def build_existing_row_map(rows, expected_width):
             'row': padded,
         }
     return existing
+
+
+def ensure_topic_ids_in_topics_sheet(sheets_service):
+    """Backfill column C (Topic Id) so D1 / Worker rows align with the Topics sheet."""
+    [topic_rows] = batch_get_sheet_rows(sheets_service, [(TOPICS_SHEET, 3)])
+    updates = []
+    for index, row in enumerate(topic_rows, start=2):
+        padded = pad_row(row, 3)
+        if not padded[0].strip():
+            continue
+        if padded[2].strip():
+            continue
+        new_id = str(uuid.uuid4())
+        updates.append({'range': f'{TOPICS_SHEET}!C{index}', 'values': [[new_id]]})
+    if updates:
+        sheets_service.spreadsheets().values().batchUpdate(
+            spreadsheetId=SHEET_ID,
+            body={'valueInputOption': 'RAW', 'data': updates},
+        ).execute()
+
+
+def find_sheet_row_index_for_topic_date(sheets_service, sheet_name, topic, date_str):
+    """1-based sheet row index for topic+date in column A:B, or None."""
+    [rows] = batch_get_sheet_rows(sheets_service, [(sheet_name, 2)])
+    key = build_topic_key(topic, date_str)
+    for index, row in enumerate(rows, start=2):
+        padded = pad_row(row, 2)
+        if build_topic_key(padded[0], padded[1]) == key:
+            return index
+    return None
+
+
+def read_topics_with_ids(sheets_service):
+    """Topics rows with stable ids (column C)."""
+    ensure_topic_ids_in_topics_sheet(sheets_service)
+    [topic_rows] = batch_get_sheet_rows(sheets_service, [(TOPICS_SHEET, 3)])
+    entries = []
+    for index, row in enumerate(topic_rows, start=2):
+        padded = pad_row(row, 3)
+        if not padded[0].strip():
+            continue
+        tid = padded[2].strip()
+        if not tid:
+            continue
+        entries.append({
+            'row_index': index,
+            'topic': padded[0].strip(),
+            'date': padded[1].strip(),
+            'topic_id': tid,
+        })
+    return entries
+
+
+def topic_id_for_topic_date(sheets_service, topic, date_str):
+    key = build_topic_key(topic, date_str)
+    for entry in read_topics_with_ids(sheets_service):
+        if build_topic_key(entry['topic'], entry['date']) == key:
+            return entry['topic_id']
+    return ''
+
+
+def resolve_topic_row_index_from_merge(sheets_service, merged_row, key):
+    tri = int(merged_row.get('topicRowIndex') or merged_row.get('rowIndex') or 0)
+    if tri > 0:
+        return tri
+    for entry in read_topics_with_ids(sheets_service):
+        if build_topic_key(entry['topic'], entry['date']) == key:
+            return entry['row_index']
+    return 0
 
 
 def build_gcs_public_url(bucket_name, object_name):
@@ -979,36 +1066,33 @@ def log_to_google_doc(docs_service, topic, text):
         print(f"Error logging to Google Doc: {e}")
 
 # ==========================================
-# MAIN WORKFLOW (DRAFT OR PUBLISH)
+# MAIN WORKFLOW (DRAFT OR PUBLISH) — D1 via Worker
 # ==========================================
 def process_drafts(sheets_service, storage_bucket):
-    """Reads pending topics, generates content & images, saves drafts to Sheet."""
-    ensure_required_sheets(sheets_service)
-    topic_rows, draft_rows, post_rows = batch_get_sheet_rows(sheets_service, [
-        (TOPICS_SHEET, 2),
-        (DRAFT_SHEET, 14),
-        (POST_SHEET, 14),
-    ])
+    """Generate drafts and upsert Cloudflare D1 via Worker; optionally mirror rows to the Draft sheet."""
+    mirror = linkedin_d1.mirror_sheet_enabled()
+    ensure_required_sheets(sheets_service, include_draft_post_tabs=mirror)
+    ensure_topic_ids_in_topics_sheet(sheets_service)
+    topics = read_topics_with_ids(sheets_service)
+    merged = linkedin_d1.worker_get_merged_rows()
+    merged_by_key = {build_topic_key(r.get('topic', ''), r.get('date', '')): r for r in merged}
 
-    existing_drafts = build_existing_row_map(draft_rows, 14)
-    existing_posts = build_existing_row_map(post_rows, 14)
-
-    new_rows = []
+    new_mirror_rows = []
     target_found = False
-    for row in topic_rows:
-        padded = pad_row(row, 2)
-        topic, date_str = padded[0].strip(), padded[1].strip()
-        if not topic:
-            continue
+    for entry in topics:
+        topic = entry['topic']
+        date_str = entry['date']
+        topic_id = entry['topic_id']
+        row_index = entry['row_index']
 
         if not should_process_target(topic, date_str):
             continue
 
         target_found = True
-
         key = build_topic_key(topic, date_str)
-        if key in existing_drafts or key in existing_posts:
-            print(f"Skipping topic '{topic}' on '{date_str}' because it already has a draft or published row.")
+        existing = merged_by_key.get(key)
+        if existing and linkedin_d1.merged_row_blocks_new_draft(existing):
+            print(f"Skipping topic '{topic}' on '{date_str}' because it already has pipeline content in D1.")
             continue
 
         print(f"Drafting for topic: {topic}")
@@ -1016,60 +1100,102 @@ def process_drafts(sheets_service, storage_bucket):
         drive_links = fetch_and_upload_images(
             storage_bucket, topic, num_images=4, image_queries=image_queries
         )
-        new_rows.append([
-            topic,
-            date_str,
-            'Drafted',
-            variants.get('variant1', ''),
-            variants.get('variant2', ''),
-            variants.get('variant3', ''),
-            variants.get('variant4', ''),
-            drive_links[0],
-            drive_links[1],
-            drive_links[2],
-            drive_links[3],
-            '',
-            '',
-            '',
-        ])
+        carry = existing if isinstance(existing, dict) else None
+        payload = linkedin_d1.build_worker_sheet_row(
+            topic_row_index=row_index,
+            topic_id=topic_id,
+            topic=topic,
+            date=date_str,
+            status='Drafted',
+            variant1=variants.get('variant1', ''),
+            variant2=variants.get('variant2', ''),
+            variant3=variants.get('variant3', ''),
+            variant4=variants.get('variant4', ''),
+            image_link1=drive_links[0],
+            image_link2=drive_links[1],
+            image_link3=drive_links[2],
+            image_link4=drive_links[3],
+            carry_from=carry,
+        )
+        linkedin_d1.worker_pipeline_upsert(payload)
+        print(f"Saved draft for '{topic}' to D1 via Worker.")
+
+        if mirror:
+            new_mirror_rows.append([
+                topic,
+                date_str,
+                'Drafted',
+                variants.get('variant1', ''),
+                variants.get('variant2', ''),
+                variants.get('variant3', ''),
+                variants.get('variant4', ''),
+                drive_links[0],
+                drive_links[1],
+                drive_links[2],
+                drive_links[3],
+                '',
+                '',
+                '',
+            ])
 
     if (TARGET_TOPIC or TARGET_DATE) and not target_found:
         raise ValueError(f"Unable to find topic '{TARGET_TOPIC}' on '{TARGET_DATE}'.")
 
-    if new_rows:
+    if mirror and new_mirror_rows:
         sheets_service.spreadsheets().values().append(
             spreadsheetId=SHEET_ID,
             range=f"{DRAFT_SHEET}!A:N",
             valueInputOption='RAW',
             insertDataOption='INSERT_ROWS',
-            body={'values': new_rows},
+            body={'values': new_mirror_rows},
         ).execute()
-        print("Saved generated drafts in the Draft sheet.")
+        print("Mirrored new drafts to the Draft sheet.")
 
 
 def process_refinement(sheets_service, storage_bucket):
-    ensure_required_sheets(sheets_service)
-    [draft_rows] = batch_get_sheet_rows(sheets_service, [(DRAFT_SHEET, 14)])
-    existing_drafts = build_existing_row_map(draft_rows, 14)
-    refine_key = build_topic_key(REFINE_TOPIC, REFINE_DATE)
-    existing_draft = existing_drafts.get(refine_key)
+    mirror = linkedin_d1.mirror_sheet_enabled()
+    ensure_required_sheets(sheets_service, include_draft_post_tabs=mirror)
+    ensure_topic_ids_in_topics_sheet(sheets_service)
 
     if not REFINE_TOPIC or not REFINE_DATE:
         raise ValueError('REFINE_TOPIC and REFINE_DATE are required for refine mode.')
 
-    if not existing_draft:
-        raise ValueError(f"Unable to find draft row for topic '{REFINE_TOPIC}' on '{REFINE_DATE}'.")
+    merged = linkedin_d1.worker_get_merged_rows()
+    refine_key = build_topic_key(REFINE_TOPIC, REFINE_DATE)
+    match = None
+    for r in merged:
+        if build_topic_key(r.get('topic', ''), r.get('date', '')) == refine_key:
+            match = r
+            break
 
-    row_index = existing_draft['row_index']
-    existing_row = existing_draft['row']
-    topic = existing_row[0]
-    date_str = existing_row[1]
-    print(f"Refining draft row {row_index} for topic '{topic}' dated '{date_str}'.")
+    if not match:
+        raise ValueError(f"Unable to find pipeline row for topic '{REFINE_TOPIC}' on '{REFINE_DATE}' in D1.")
+
+    topic = match.get('topic') or REFINE_TOPIC
+    date_str = match.get('date') or REFINE_DATE
+    topic_id = (match.get('topicId') or '').strip()
+    topic_row_index = int(match.get('topicRowIndex') or match.get('rowIndex') or 0)
+    if not topic_id or topic_row_index <= 0:
+        entries = read_topics_with_ids(sheets_service)
+        for e in entries:
+            if build_topic_key(e['topic'], e['date']) == refine_key:
+                topic_id = e['topic_id']
+                topic_row_index = e['row_index']
+                break
+    if not topic_id:
+        raise ValueError(f"Missing Topic Id for '{REFINE_TOPIC}' on '{REFINE_DATE}'.")
+
+    print(f"Refining draft in D1 for topic '{topic}' dated '{date_str}'.")
 
     variants, image_queries = research_and_generate(
         topic, base_text=REFINE_BASE_TEXT, refinement_instructions=REFINE_INSTRUCTIONS
     )
-    image_links = existing_row[7:11]
+    image_links = [
+        match.get('imageLink1') or '',
+        match.get('imageLink2') or '',
+        match.get('imageLink3') or '',
+        match.get('imageLink4') or '',
+    ]
 
     if any(link.strip() for link in image_links):
         print(f"Reusing existing image links for '{topic}': {image_links}")
@@ -1079,49 +1205,86 @@ def process_refinement(sheets_service, storage_bucket):
             storage_bucket, topic, num_images=4, image_queries=image_queries
         )
 
-    updated_row = [
-        topic,
-        date_str,
-        'Drafted',
-        variants.get('variant1', ''),
-        variants.get('variant2', ''),
-        variants.get('variant3', ''),
-        variants.get('variant4', ''),
-        image_links[0],
-        image_links[1],
-        image_links[2],
-        image_links[3],
-        '',
-        '',
-        '',
-    ]
+    payload = linkedin_d1.build_worker_sheet_row(
+        topic_row_index=topic_row_index,
+        topic_id=topic_id,
+        topic=topic,
+        date=date_str,
+        status='Drafted',
+        variant1=variants.get('variant1', ''),
+        variant2=variants.get('variant2', ''),
+        variant3=variants.get('variant3', ''),
+        variant4=variants.get('variant4', ''),
+        image_link1=image_links[0],
+        image_link2=image_links[1],
+        image_link3=image_links[2],
+        image_link4=image_links[3],
+        selected_text=match.get('selectedText') or '',
+        selected_image_id=match.get('selectedImageId') or '',
+        post_time=match.get('postTime') or '',
+        carry_from=match,
+    )
+    linkedin_d1.worker_pipeline_upsert(payload)
+    print(f"Saved refined variants for '{topic}' to D1.")
 
-    sheets_service.spreadsheets().values().update(
-        spreadsheetId=SHEET_ID,
-        range=f"{DRAFT_SHEET}!A{row_index}:N{row_index}",
-        valueInputOption='RAW',
-        body={'values': [updated_row]},
-    ).execute()
-    print(f"Saved refined variants for '{topic}' to row {row_index}.")
+    if mirror:
+        draft_idx = find_sheet_row_index_for_topic_date(sheets_service, DRAFT_SHEET, topic, date_str)
+        updated_row = [
+            topic,
+            date_str,
+            'Drafted',
+            variants.get('variant1', ''),
+            variants.get('variant2', ''),
+            variants.get('variant3', ''),
+            variants.get('variant4', ''),
+            image_links[0],
+            image_links[1],
+            image_links[2],
+            image_links[3],
+            match.get('selectedText') or '',
+            match.get('selectedImageId') or '',
+            match.get('postTime') or '',
+        ]
+        if draft_idx:
+            sheets_service.spreadsheets().values().update(
+                spreadsheetId=SHEET_ID,
+                range=f"{DRAFT_SHEET}!A{draft_idx}:N{draft_idx}",
+                valueInputOption='RAW',
+                body={'values': [updated_row]},
+            ).execute()
+            print(f"Mirrored refined draft to Draft sheet row {draft_idx}.")
+        else:
+            sheets_service.spreadsheets().values().append(
+                spreadsheetId=SHEET_ID,
+                range=f"{DRAFT_SHEET}!A:N",
+                valueInputOption='RAW',
+                insertDataOption='INSERT_ROWS',
+                body={'values': [updated_row]},
+            ).execute()
+            print("Appended refined draft to Draft sheet (no existing row to update).")
+
 
 def process_publishing(sheets_service, docs_service, storage_bucket):
-    """Finds 'Approved' rows whose scheduled time has passed and posts them."""
-    ensure_required_sheets(sheets_service)
-    rows, post_rows = batch_get_sheet_rows(sheets_service, [
-        (DRAFT_SHEET, 14),
-        (POST_SHEET, 14),
-    ])
-    existing_posts = build_existing_row_map(post_rows, 14)
+    """Publish from D1-backed merged rows; optionally mirror Draft/Post sheet updates."""
+    mirror = linkedin_d1.mirror_sheet_enabled()
+    ensure_required_sheets(sheets_service, include_draft_post_tabs=mirror)
+    ensure_topic_ids_in_topics_sheet(sheets_service)
+
+    merged = linkedin_d1.worker_get_merged_rows()
+    post_by_key = {}
+    if mirror:
+        [post_rows] = batch_get_sheet_rows(sheets_service, [(POST_SHEET, 14)])
+        post_by_key = build_existing_row_map(post_rows, 14)
 
     now = datetime.datetime.now()
     draft_updates = []
     post_appends = []
     post_updates = []
     target_found = False
-    
-    for i, row in enumerate(rows):
-        row = pad_row(row, 14)
-        topic, date_str, status = row[0], row[1], row[2]
+
+    for row in merged:
+        topic = (row.get('topic') or '').strip()
+        date_str = (row.get('date') or '').strip()
         if not topic:
             continue
 
@@ -1129,30 +1292,42 @@ def process_publishing(sheets_service, docs_service, storage_bucket):
             continue
 
         target_found = True
-        selected_text = row[11] # Col L
-        selected_image_id = row[12] # Col M
-        post_time_str = row[13] # Col N - expect format "YYYY-MM-DD HH:MM"
+        status = (row.get('status') or '').strip()
+        status_l = status.lower()
+        selected_text = (row.get('selectedText') or '').strip()
+        selected_image_id = (row.get('selectedImageId') or '').strip()
+        post_time_str = (row.get('postTime') or '').strip()
+        topic_id = (row.get('topicId') or '').strip()
         key = build_topic_key(topic, date_str)
-        existing_post = existing_posts.get(key)
+
+        existing_post = post_by_key.get(key) if mirror else None
         existing_post_status = existing_post['row'][2].lower() if existing_post else ''
 
         if existing_post_status == 'published':
-            draft_updates.append({
-                'range': f"{DRAFT_SHEET}!C{i + 2}",
-                'values': [['Published']]
-            })
+            if mirror:
+                d_idx = find_sheet_row_index_for_topic_date(sheets_service, DRAFT_SHEET, topic, date_str)
+                if d_idx:
+                    draft_updates.append({
+                        'range': f"{DRAFT_SHEET}!C{d_idx}",
+                        'values': [['Published']],
+                    })
             continue
-        
-        if status.lower() == 'approved' and selected_text:
+
+        if status_l == 'published':
+            continue
+
+        if status_l == 'approved' and selected_text:
             try:
                 timing = decide_publish_timing(now, post_time_str)
                 if timing.should_schedule_with_worker and timing.scheduled_time is not None:
+                    tid = topic_id or topic_id_for_topic_date(sheets_service, topic, date_str)
                     schedule_linkedin_publish_with_worker(
                         WORKER_URL,
                         WORKER_SCHEDULER_SECRET,
                         topic,
                         date_str,
                         post_time_str,
+                        topic_id=tid or None,
                     )
                     print(f"Scheduled Cloudflare minute-level publish for topic '{topic}' at {post_time_str}.")
                     continue
@@ -1161,57 +1336,83 @@ def process_publishing(sheets_service, docs_service, storage_bucket):
                 if should_post:
                     print(f"Time to post topic: {topic}")
                     success = post_to_linkedin(selected_text, selected_image_id)
-                    
+
                     if success:
                         log_to_google_doc(docs_service, topic, selected_text)
 
-                        deleted_urls = delete_unused_gcs_images(storage_bucket, row[7:11], selected_image_id)
+                        image_urls = [
+                            row.get('imageLink1') or '',
+                            row.get('imageLink2') or '',
+                            row.get('imageLink3') or '',
+                            row.get('imageLink4') or '',
+                        ]
+                        deleted_urls = delete_unused_gcs_images(storage_bucket, image_urls, selected_image_id)
 
-                        row_index = i + 2
-                        published_row = clear_deleted_image_slots(row, deleted_urls)
+                        row_list = linkedin_d1.merged_dict_to_sheet_row_14(row)
+                        published_row = clear_deleted_image_slots(row_list, deleted_urls)
                         published_row[2] = 'Published'
-                        draft_updates.append({
-                            'range': f"{DRAFT_SHEET}!A{row_index}:N{row_index}",
-                            'values': [published_row]
-                        })
 
-                        if key in existing_posts:
-                            post_row_index = existing_posts[key]['row_index']
-                            post_updates.append({
-                                'range': f"{POST_SHEET}!A{post_row_index}:N{post_row_index}",
-                                'values': [published_row]
-                            })
-                        else:
-                            post_appends.append(published_row)
-            except ValueError:
-                print(f"Invalid date format in row {i+2}: {post_time_str}")
+                        topic_row_index = resolve_topic_row_index_from_merge(sheets_service, row, key)
+                        if topic_row_index <= 0:
+                            raise ValueError(f"Unable to resolve Topics row index for '{topic}' on '{date_str}'.")
+
+                        pub_at = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%SZ')
+                        tid_final = topic_id or topic_id_for_topic_date(sheets_service, topic, date_str)
+                        if not tid_final:
+                            raise ValueError(f"Missing topicId for '{topic}' on '{date_str}'.")
+
+                        base_for_publish = {**row, 'topicId': tid_final}
+                        upsert_payload = linkedin_d1.upsert_row_after_publish(
+                            base_for_publish, published_row, topic_row_index, pub_at
+                        )
+                        linkedin_d1.worker_pipeline_upsert(upsert_payload)
+                        print(f"Marked '{topic}' as Published in D1.")
+
+                        if mirror:
+                            d_idx = find_sheet_row_index_for_topic_date(sheets_service, DRAFT_SHEET, topic, date_str)
+                            if d_idx:
+                                draft_updates.append({
+                                    'range': f"{DRAFT_SHEET}!A{d_idx}:N{d_idx}",
+                                    'values': [published_row],
+                                })
+                            if key in post_by_key:
+                                pri = post_by_key[key]['row_index']
+                                post_updates.append({
+                                    'range': f"{POST_SHEET}!A{pri}:N{pri}",
+                                    'values': [published_row],
+                                })
+                            else:
+                                post_appends.append(published_row)
+            except ValueError as err:
+                print(f"Publish step error for '{topic}': {err}")
 
     if (TARGET_TOPIC or TARGET_DATE) and not target_found:
         raise ValueError(f"Unable to find draft row for topic '{TARGET_TOPIC}' on '{TARGET_DATE}'.")
 
-    if draft_updates:
-        sheets_service.spreadsheets().values().batchUpdate(
-            spreadsheetId=SHEET_ID,
-            body={'valueInputOption': 'RAW', 'data': draft_updates},
-        ).execute()
+    if mirror:
+        if draft_updates:
+            sheets_service.spreadsheets().values().batchUpdate(
+                spreadsheetId=SHEET_ID,
+                body={'valueInputOption': 'RAW', 'data': draft_updates},
+            ).execute()
 
-    if post_updates:
-        sheets_service.spreadsheets().values().batchUpdate(
-            spreadsheetId=SHEET_ID,
-            body={'valueInputOption': 'RAW', 'data': post_updates},
-        ).execute()
+        if post_updates:
+            sheets_service.spreadsheets().values().batchUpdate(
+                spreadsheetId=SHEET_ID,
+                body={'valueInputOption': 'RAW', 'data': post_updates},
+            ).execute()
 
-    if post_appends:
-        sheets_service.spreadsheets().values().append(
-            spreadsheetId=SHEET_ID,
-            range=f"{POST_SHEET}!A:N",
-            valueInputOption='RAW',
-            insertDataOption='INSERT_ROWS',
-            body={'values': post_appends},
-        ).execute()
+        if post_appends:
+            sheets_service.spreadsheets().values().append(
+                spreadsheetId=SHEET_ID,
+                range=f"{POST_SHEET}!A:N",
+                valueInputOption='RAW',
+                insertDataOption='INSERT_ROWS',
+                body={'values': post_appends},
+            ).execute()
 
-    if draft_updates or post_updates or post_appends:
-        print("Updated published posts in the Draft and Post sheets.")
+        if draft_updates or post_updates or post_appends:
+            print("Mirrored published posts to Draft/Post sheets.")
 
 
 if __name__ == "__main__":

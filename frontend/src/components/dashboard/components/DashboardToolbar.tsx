@@ -2,6 +2,7 @@ import { Bot } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type GoogleModelOption } from '../../../services/configService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FEATURE_MULTI_PROVIDER_LLM } from '../../../generated/features';
 
 export function DashboardToolbar({
   googleModel,
@@ -9,6 +10,7 @@ export function DashboardToolbar({
   availableModels,
   modelPickerLocked = false,
   embedded = false,
+  providerLabel,
 }: {
   googleModel: string;
   setGoogleModel: (val: string) => void;
@@ -17,6 +19,8 @@ export function DashboardToolbar({
   modelPickerLocked?: boolean;
   /** Omit outer glass card when nested inside a parent panel (Topics right rail). */
   embedded?: boolean;
+  /** Shown next to the picker when multi-provider LLM is enabled. */
+  providerLabel?: string;
 }) {
   return (
     <div
@@ -34,6 +38,9 @@ export function DashboardToolbar({
         ) : null}
         <span className="text-[11px] leading-relaxed text-muted">
           Powers Quick Change and variant generation during review.
+          {FEATURE_MULTI_PROVIDER_LLM && providerLabel ? (
+            <span className="mt-0.5 block font-medium text-ink/80">Provider: {providerLabel}</span>
+          ) : null}
         </span>
         {modelPickerLocked ? (
           <p className="mt-1 text-[11px] leading-relaxed text-muted">

@@ -29,7 +29,7 @@ import {
   WORKSPACE_ROUTE_PATHS,
   topicEditorPathForRow,
 } from '../../features/topic-navigation/utils/workspaceRoutes';
-import { FEATURE_CAMPAIGN, FEATURE_NEWS_RESEARCH } from '../../generated/features';
+import { FEATURE_CAMPAIGN, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../generated/features';
 import { CampaignPage } from '../../features/campaign';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 
@@ -231,6 +231,7 @@ export function Dashboard({
     previewAuthorName: previewAuthorDisplayName(session.email),
     globalGenerationRules: session.config.generationRules,
     googleModel: settingsHook.googleModel,
+    generationLlm: settingsHook.generationLlm,
     onApprove: queueHook.handleApproveVariant,
     onPublishNow: queueHook.publishFromReviewEditor,
     onSaveEmailFields: queueHook.handleSaveEmailFields,
@@ -457,6 +458,20 @@ export function Dashboard({
       newsResearch={FEATURE_NEWS_RESEARCH ? settingsHook.newsResearch : undefined}
       setNewsResearch={FEATURE_NEWS_RESEARCH ? settingsHook.setNewsResearch : undefined}
       newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
+      {...(FEATURE_MULTI_PROVIDER_LLM
+        ? {
+            llmPrimaryProvider: settingsHook.llmPrimaryProvider,
+            setLlmPrimaryProvider: settingsHook.setLlmPrimaryProvider,
+            llmModelId: settingsHook.googleModel,
+            setLlmModelId: settingsHook.setGoogleModel,
+            llmFallback: settingsHook.llmFallback,
+            setLlmFallback: settingsHook.setLlmFallback,
+            grokAdminCatalog: settingsHook.grokAdminCatalog,
+            allowedGrokModels: settingsHook.allowedGrokModels,
+            toggleAllowedGrokModel: settingsHook.toggleAllowedGrokModel,
+            refreshGrokModels: settingsHook.refreshGrokModels,
+          }
+        : {})}
     />
   );
 
@@ -475,6 +490,9 @@ export function Dashboard({
               setGoogleModel={settingsHook.setGoogleModel}
               availableModels={settingsHook.availableModels}
               modelPickerLocked={settingsHook.modelPickerLocked}
+              providerLabel={
+                settingsHook.llmPrimaryProvider === 'grok' ? 'Grok (xAI)' : 'Google Gemini'
+              }
             />
           </section>
           <div className="my-5 border-t border-violet-200/45" aria-hidden />

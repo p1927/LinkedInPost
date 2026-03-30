@@ -2,4 +2,5 @@
 // Source: features.yaml
 
 export const FEATURE_CAMPAIGN = true as const;
+export const FEATURE_MULTI_PROVIDER_LLM = true as const;
 export const FEATURE_NEWS_RESEARCH = true as const;

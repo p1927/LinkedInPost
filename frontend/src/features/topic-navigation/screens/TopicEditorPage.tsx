@@ -58,6 +58,7 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         previewAuthorName={p.previewAuthorName}
         globalGenerationRules={p.globalGenerationRules}
         googleModel={p.googleModel}
+        generationLlm={p.generationLlm}
         routed={routed}
         editorStartMediaPanel={editorStartMediaPanel}
         onApprove={(text, img, time, emailTo, emailCc, emailBcc, emailSubject, imgJson) =>

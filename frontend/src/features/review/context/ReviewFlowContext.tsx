@@ -35,6 +35,7 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     globalGenerationRules: props.globalGenerationRules,
     isAdmin: props.isAdmin,
     googleModel: props.googleModel,
+    generationLlm: props.generationLlm,
     routed: props.routed,
     editorStartMediaPanel: props.editorStartMediaPanel ?? false,
     onDownloadImage: props.onDownloadImage,

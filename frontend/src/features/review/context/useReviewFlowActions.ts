@@ -13,6 +13,7 @@ import {
   serializeRowImageUrls,
 } from '../../../services/selectedImageUrls';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
+import { FEATURE_MULTI_PROVIDER_LLM } from '../../../generated/features';
 
 export function useReviewFlowActions(
   props: ReviewFlowProviderProps,
@@ -31,6 +32,7 @@ export function useReviewFlowActions(
     onCancel,
     routed,
     googleModel,
+    generationLlm,
     onSaveTopicGenerationRules,
     onSaveGenerationTemplateId,
     pendingScheduledPublish,
@@ -152,15 +154,25 @@ export function useReviewFlowActions(
     sheetVariants.length,
   ]);
 
-  const buildGenerationRequest = (): GenerationRequest => ({
-    row: sheetRow,
-    editorText,
-    scope: effectiveScope,
-    selection: effectiveScope === 'selection' ? selection : null,
-    instruction,
-    googleModel,
-    ...(researchContextArticles.length > 0 ? { researchArticles: researchContextArticles } : {}),
-  });
+  const buildGenerationRequest = (): GenerationRequest => {
+    const base: GenerationRequest = {
+      row: sheetRow,
+      editorText,
+      scope: effectiveScope,
+      selection: effectiveScope === 'selection' ? selection : null,
+      instruction,
+      ...(researchContextArticles.length > 0 ? { researchArticles: researchContextArticles } : {}),
+    };
+    if (FEATURE_MULTI_PROVIDER_LLM && generationLlm) {
+      base.llm = { provider: generationLlm.provider, model: generationLlm.model };
+      if (generationLlm.provider === 'gemini') {
+        base.googleModel = generationLlm.model;
+      }
+    } else {
+      base.googleModel = googleModel;
+    }
+    return base;
+  };
 
   const applySheetVariantBase = useCallback((variant: SheetVariantForReview, variantIndex?: number) => {
     setEditorText(variant.text);

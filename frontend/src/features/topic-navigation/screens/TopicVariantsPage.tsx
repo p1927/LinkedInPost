@@ -44,6 +44,7 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
         previewAuthorName={p.previewAuthorName}
         globalGenerationRules={p.globalGenerationRules}
         googleModel={p.googleModel}
+        generationLlm={p.generationLlm}
         routed={routed}
         onApprove={(text, img, time, emailTo, emailCc, emailBcc, emailSubject, imgJson) =>
           p.onApprove(row, text, img, time, emailTo, emailCc, emailBcc, emailSubject, imgJson)

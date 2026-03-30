@@ -17,7 +17,7 @@ import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
 import { type ChannelId } from '../../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
-import type { NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
+import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
 import { type SheetVariantForReview } from './utils';
 
 export interface CompareState {
@@ -38,6 +38,7 @@ export interface ReviewFlowContextValue {
   globalGenerationRules: string;
   isAdmin: boolean;
   googleModel: string;
+  generationLlm?: LlmRef;
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel: boolean;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
@@ -172,6 +173,7 @@ export interface ReviewFlowProviderProps {
   globalGenerationRules: string;
   isAdmin: boolean;
   googleModel: string;
+  generationLlm?: LlmRef;
   onApprove: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   onPublishNow: (selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   onSaveEmailFields: (emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;

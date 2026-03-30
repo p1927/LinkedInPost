@@ -44,6 +44,9 @@ jobs:
           REFINE_DATE: ${{ github.event.client_payload.refine_date || '' }}
           REFINE_BASE_TEXT: ${{ github.event.client_payload.refine_base_text || '' }}
           REFINE_INSTRUCTIONS: ${{ github.event.client_payload.refine_instructions || '' }}
+          VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || secrets.VITE_WORKER_URL }}
+          WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET || vars.WORKER_SCHEDULER_SECRET }}
+          LINKEDIN_BOT_MIRROR_SHEET: ${{ vars.LINKEDIN_BOT_MIRROR_SHEET || secrets.LINKEDIN_BOT_MIRROR_SHEET || 'true' }}
         run: python linkedin_bot.py draft
 
   publish-posts:
@@ -77,6 +80,7 @@ jobs:
           GOOGLE_DOC_ID: ${{ vars.GOOGLE_DOC_ID || secrets.GOOGLE_DOC_ID }}
           VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || secrets.VITE_WORKER_URL }}
           WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET || vars.WORKER_SCHEDULER_SECRET }}
+          LINKEDIN_BOT_MIRROR_SHEET: ${{ vars.LINKEDIN_BOT_MIRROR_SHEET || secrets.LINKEDIN_BOT_MIRROR_SHEET || 'true' }}
           TARGET_TOPIC: ${{ github.event.client_payload.target_topic || '' }}
           TARGET_DATE: ${{ github.event.client_payload.target_date || '' }}
         run: python linkedin_bot.py publish

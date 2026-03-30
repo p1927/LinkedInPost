@@ -8,3 +8,5 @@
 newsResearch: true
 # Bulk campaign import (Topics + Draft rows, Claude JSON paste).
 campaign: true
+# Gemini + Grok (xAI) workspace LLM gateway and Settings → AI / LLM. Set false to hide UI and RPCs.
+multiProviderLlm: true

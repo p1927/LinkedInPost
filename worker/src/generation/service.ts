@@ -12,66 +12,20 @@ import {
   tryParseJson,
 } from './normalize';
 import type {
-  GeminiGenerateResponse,
   GenerationRequestPayload,
   QuickChangePreviewResult,
   ResearchArticleRef,
   VariantsPreviewResponse,
 } from './types';
-import { resolveEffectiveGoogleModel } from '../google-model-policy';
-import { FEATURE_NEWS_RESEARCH } from '../generated/features';
+import { FEATURE_NEWS_RESEARCH, FEATURE_MULTI_PROVIDER_LLM } from '../generated/features';
 import { trimForPrompt } from '../researcher/trim';
 import type { ResearchArticle } from '../researcher/types';
-
-function requireGeminiApiKey(env: Env): string {
-  const apiKey = String(env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) {
-    throw new Error('Missing GEMINI_API_KEY in the Worker environment. Add it before using preview generation.');
-  }
-
-  return apiKey;
-}
-
-export async function callGeminiText(env: Env, model: string, prompt: string): Promise<string> {
-  const apiKey = requireGeminiApiKey(env);
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          role: 'user',
-          parts: [{ text: prompt }],
-        }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-        },
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`Gemini generation failed with status ${response.status}. ${message.slice(0, 280)}`.trim());
-  }
-
-  const payload = (await response.json()) as GeminiGenerateResponse;
-  if (payload.promptFeedback?.blockReason) {
-    throw new Error(`Gemini blocked the generation request: ${payload.promptFeedback.blockReason}.`);
-  }
-
-  const text = payload.candidates?.[0]?.content?.parts?.map((part) => String(part.text || '')).join('\n').trim() || '';
-  if (!text) {
-    throw new Error('Gemini returned an empty generation response.');
-  }
-
-  return text;
-}
-
-
+import {
+  generateTextJsonWithFallback,
+  resolveFallbackForGeneration,
+  resolveGenerationRef,
+  workspaceConfigFromStored,
+} from '../llm';
 
 function coerceResearchArticles(raw: unknown): ResearchArticleRef[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) {
@@ -119,6 +73,10 @@ async function resolveTemplateRulesForRow(
   return rules === null ? undefined : rules;
 }
 
+function llmWorkspace(storedConfig: StoredConfig) {
+  return workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+}
+
 export async function generateQuickChangePreview(
   env: Env,
   storedConfig: StoredConfig,
@@ -138,7 +96,9 @@ export async function generateQuickChangePreview(
   }
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
-  const model = resolveEffectiveGoogleModel(storedConfig, request.googleModel);
+  const ws = llmWorkspace(storedConfig);
+  const primary = resolveGenerationRef(ws, request, FEATURE_MULTI_PROVIDER_LLM);
+  const fallback = resolveFallbackForGeneration(ws, primary, FEATURE_MULTI_PROVIDER_LLM);
   const templateRules = await resolveTemplateRulesForRow(row, getPostTemplateRulesById);
   const effectiveRules = resolveEffectiveGenerationRulesWithTemplate(
     row.topicGenerationRules,
@@ -147,7 +107,8 @@ export async function generateQuickChangePreview(
   );
   const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
   const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, researchRefs);
-  const replacementText = normalizePlainTextValue(tryParseJson(await callGeminiText(env, model, prompt)));
+  const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+  const replacementText = normalizePlainTextValue(tryParseJson(text));
 
   if (!replacementText) {
     throw new Error('Quick Change returned empty preview text.');
@@ -155,7 +116,8 @@ export async function generateQuickChangePreview(
 
   return {
     scope,
-    model,
+    model: used.model,
+    llmProvider: used.provider,
     selection,
     replacementText,
     fullText: applyReplacement(editorText, scope, selection, replacementText),
@@ -176,7 +138,9 @@ export async function generateVariantsPreview(
   }
 
   const { scope, selection } = resolveGenerationTarget(editorText, request.scope, coerceSelectionRange(request.selection));
-  const model = resolveEffectiveGoogleModel(storedConfig, request.googleModel);
+  const ws = llmWorkspace(storedConfig);
+  const primary = resolveGenerationRef(ws, request, FEATURE_MULTI_PROVIDER_LLM);
+  const fallback = resolveFallbackForGeneration(ws, primary, FEATURE_MULTI_PROVIDER_LLM);
   const templateRules = await resolveTemplateRulesForRow(row, getPostTemplateRulesById);
   const effectiveRules = resolveEffectiveGenerationRulesWithTemplate(
     row.topicGenerationRules,
@@ -193,15 +157,17 @@ export async function generateVariantsPreview(
     effectiveRules,
     researchRefs,
   );
-  const variants = normalizeVariantList(tryParseJson(await callGeminiText(env, model, prompt)));
+  const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+  const variants = normalizeVariantList(tryParseJson(text));
 
   if (variants.length !== 4) {
-    throw new Error('Gemini did not return four valid preview variants.');
+    throw new Error('The model did not return four valid preview variants.');
   }
 
   return {
     scope,
-    model,
+    model: used.model,
+    llmProvider: used.provider,
     selection,
     variants: variants.map((replacementText, index) => ({
       id: `preview-${index + 1}`,

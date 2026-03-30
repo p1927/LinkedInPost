@@ -63,6 +63,8 @@ export interface GenerationRequestPayload {
   selection?: TextSelectionRange | null;
   instruction?: string;
   googleModel?: string;
+  /** Optional override; used when multi-provider LLM is enabled. */
+  llm?: { provider?: string; model?: string };
   /** Optional news context from researcher (snippets + URLs). */
   researchArticles?: ResearchArticleRef[];
 }
@@ -70,6 +72,8 @@ export interface GenerationRequestPayload {
 export interface QuickChangePreviewResult {
   scope: GenerationScope;
   model: string;
+  /** Provider used for this preview (default gemini). */
+  llmProvider?: 'gemini' | 'grok';
   selection: TextSelectionRange | null;
   replacementText: string;
   fullText: string;
@@ -85,6 +89,7 @@ export interface VariantPreviewResult {
 export interface VariantsPreviewResponse {
   scope: GenerationScope;
   model: string;
+  llmProvider?: 'gemini' | 'grok';
   selection: TextSelectionRange | null;
   variants: VariantPreviewResult[];
 }
