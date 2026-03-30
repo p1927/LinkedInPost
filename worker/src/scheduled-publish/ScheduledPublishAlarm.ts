@@ -1,6 +1,6 @@
 import { executeScheduledPublish, type Env } from '../index';
 import { buildScheduledPublishTaskName, parseScheduledTimeToTimestamp } from './time';
-import type { ScheduledPublishTask } from './types';
+import type { CancelScheduledPublishPayload, ScheduledPublishTask } from './types';
 
 const TASK_STORAGE_KEY = 'scheduled-linkedin-task';
 
@@ -15,10 +15,19 @@ export class ScheduledPublishAlarm {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (request.method !== 'POST' || url.pathname !== '/arm') {
+    if (request.method !== 'POST') {
       return new Response('Not found', { status: 404 });
     }
+    if (url.pathname === '/arm') {
+      return this.handleArm(request);
+    }
+    if (url.pathname === '/cancel') {
+      return this.handleCancel(request);
+    }
+    return new Response('Not found', { status: 404 });
+  }
 
+  private async handleArm(request: Request): Promise<Response> {
     const task = await request.json<ScheduledPublishTask>();
     const scheduledAt = parseScheduledTimeToTimestamp(task.scheduledTime);
     if (!task.topic?.trim() || !task.date?.trim() || !scheduledAt) {
@@ -40,6 +49,37 @@ export class ScheduledPublishAlarm {
       taskName: buildScheduledPublishTaskName(task.topic, task.date, task.channel),
       scheduledTime: task.scheduledTime.trim(),
     });
+  }
+
+  private async handleCancel(request: Request): Promise<Response> {
+    const body = await request.json<CancelScheduledPublishPayload>();
+    const topic = String(body.topic || '').trim();
+    const date = String(body.date || '').trim();
+    const scheduledTime = String(body.scheduledTime || '').trim();
+    if (!topic || !date || !scheduledTime) {
+      return Response.json({ success: false, error: 'Missing topic, date, or scheduledTime.' }, { status: 400 });
+    }
+
+    const stored = await this.state.storage.get<ScheduledPublishTask>(TASK_STORAGE_KEY);
+    if (!stored) {
+      await this.state.storage.deleteAlarm();
+      return Response.json({ success: true, cancelled: false });
+    }
+
+    if (stored.scheduledTime.trim() !== scheduledTime) {
+      return Response.json(
+        { success: false, error: 'Scheduled time does not match the armed task. Refresh and try again.' },
+        { status: 409 },
+      );
+    }
+
+    if (stored.topic.trim() !== topic || stored.date.trim() !== date) {
+      return Response.json({ success: false, error: 'Row identity does not match the armed task.' }, { status: 409 });
+    }
+
+    await this.state.storage.delete(TASK_STORAGE_KEY);
+    await this.state.storage.deleteAlarm();
+    return Response.json({ success: true, cancelled: true });
   }
 
   async alarm(): Promise<void> {

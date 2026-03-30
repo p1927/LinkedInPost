@@ -5,6 +5,7 @@ import {
   type VariantsPreviewResponse,
 } from '../../services/backendApi';
 import { type ChannelId } from '../../integrations/channels';
+import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 
 export type TopicReviewPagesBaseProps = {
   rows: SheetRow[];
@@ -28,6 +29,10 @@ export type TopicReviewPagesBaseProps = {
   isAdmin: boolean;
   /** Persists column S “Topic rules” on the draft row (sheet API). */
   onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
+  pendingScheduledPublish?: PendingScheduledPublish | null;
+  scheduledPublishCancelBusy?: boolean;
+  onCancelScheduledPublish?: () => void | Promise<void>;
+  onDismissScheduledPublish?: () => void;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

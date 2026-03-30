@@ -10,6 +10,7 @@ import {
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
 import { type ChannelId } from '../../../integrations/channels';
+import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 
 export interface CompareState {
   scope: GenerationScope;
@@ -32,6 +33,10 @@ export interface ReviewFlowContextValue {
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel: boolean;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
+  pendingScheduledPublish: PendingScheduledPublish | null;
+  scheduledPublishCancelBusy: boolean;
+  onCancelScheduledPublish: () => void | Promise<void>;
+  onDismissScheduledPublish: () => void;
 
   // State
   sheetRow: SheetRow;
@@ -158,4 +163,8 @@ export interface ReviewFlowProviderProps {
   onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel?: boolean;
+  pendingScheduledPublish?: PendingScheduledPublish | null;
+  scheduledPublishCancelBusy?: boolean;
+  onCancelScheduledPublish?: () => void | Promise<void>;
+  onDismissScheduledPublish?: () => void;
 }

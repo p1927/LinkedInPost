@@ -1,4 +1,5 @@
 import { type SheetRow } from '../../services/sheets';
+import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
   type GenerationRequest,
   type QuickChangePreviewResult,
@@ -43,6 +44,10 @@ export interface ReviewWorkspaceProps {
   routed?: ReviewRoutedNavigation;
   /** Set when opening `/topics/.../editor/N?media=1`. */
   editorStartMediaPanel?: boolean;
+  pendingScheduledPublish?: PendingScheduledPublish | null;
+  scheduledPublishCancelBusy?: boolean;
+  onCancelScheduledPublish?: () => void | Promise<void>;
+  onDismissScheduledPublish?: () => void;
 }
 
 function ReviewWorkspaceLayout() {

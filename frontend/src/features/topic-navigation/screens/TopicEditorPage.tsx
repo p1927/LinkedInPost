@@ -75,6 +75,10 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         onCancel={handleCancel}
         isAdmin={p.isAdmin}
         onSaveTopicGenerationRules={p.onSaveTopicGenerationRules}
+        pendingScheduledPublish={p.pendingScheduledPublish}
+        scheduledPublishCancelBusy={p.scheduledPublishCancelBusy}
+        onCancelScheduledPublish={p.onCancelScheduledPublish}
+        onDismissScheduledPublish={p.onDismissScheduledPublish}
       />
     </div>
   );

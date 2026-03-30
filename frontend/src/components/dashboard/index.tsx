@@ -245,6 +245,10 @@ export function Dashboard({
     onDownloadImage: queueHook.handleDownloadReviewImage,
     isAdmin: session.isAdmin,
     onSaveTopicGenerationRules: queueHook.handleSaveTopicGenerationRules,
+    pendingScheduledPublish: queueHook.pendingScheduledPublish,
+    scheduledPublishCancelBusy: queueHook.scheduledPublishCancelBusy,
+    onCancelScheduledPublish: () => void queueHook.cancelPendingScheduledPublish(),
+    onDismissScheduledPublish: queueHook.dismissPendingScheduledPublish,
   };
 
   const topicChromeRow = topicIdFromPath
@@ -338,6 +342,10 @@ export function Dashboard({
       manualRecipientId={channelsHook.manualRecipientId}
       setManualRecipientId={channelsHook.setManualRecipientId}
       lastDeliverySummary={lastDeliverySummary}
+      pendingScheduledPublish={queueHook.pendingScheduledPublish}
+      scheduledPublishCancelBusy={queueHook.scheduledPublishCancelBusy}
+      onCancelScheduledPublish={() => void queueHook.cancelPendingScheduledPublish()}
+      onDismissScheduledPublish={queueHook.dismissPendingScheduledPublish}
       embedded
       channelCredentialsConfigured={selectedChannelCredentialsConfigured}
       isAdmin={session.isAdmin}

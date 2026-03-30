@@ -35,6 +35,10 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     editorStartMediaPanel: props.editorStartMediaPanel ?? false,
     onDownloadImage: props.onDownloadImage,
     onCancel: props.onCancel,
+    pendingScheduledPublish: props.pendingScheduledPublish ?? null,
+    scheduledPublishCancelBusy: props.scheduledPublishCancelBusy ?? false,
+    onCancelScheduledPublish: props.onCancelScheduledPublish ?? (() => {}),
+    onDismissScheduledPublish: props.onDismissScheduledPublish ?? (() => {}),
 
     // State & Actions
     ...restState,

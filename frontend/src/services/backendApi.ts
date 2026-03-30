@@ -24,6 +24,20 @@ export interface PublishContentResult {
   messageId: string | null;
   deliveryMode: 'queued' | 'sent';
   mediaMode: 'image' | 'text';
+  /** Present when `deliveryMode === 'queued'` (future `postTime` armed on the worker). */
+  scheduledTime?: string;
+}
+
+export interface CancelScheduledPublishRequest {
+  topic: string;
+  date: string;
+  scheduledTime: string;
+  channel?: ChannelId;
+}
+
+export interface CancelScheduledPublishResult {
+  success: true;
+  cancelled: boolean;
 }
 
 export interface OAuthStartResult {
@@ -438,6 +452,13 @@ export class BackendApi {
 
   async publishContent(idToken: string, request: PublishContentRequest): Promise<PublishContentResult> {
     return this.post<PublishContentResult>('publishContent', idToken, { ...request });
+  }
+
+  async cancelScheduledPublish(
+    idToken: string,
+    request: CancelScheduledPublishRequest,
+  ): Promise<CancelScheduledPublishResult> {
+    return this.post<CancelScheduledPublishResult>('cancelScheduledPublish', idToken, { ...request });
   }
 }
 

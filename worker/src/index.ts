@@ -4,8 +4,12 @@ import { fetchImageAsset, normalizeDeliveryImageUrl } from './integrations/media
 import { sendTelegramMessage, verifyTelegramChat as verifyTelegramChatRequest } from './integrations/telegram';
 import { sendWhatsAppMessage } from './integrations/whatsapp';
 import { sendGmailMessage, GmailAuthError } from './integrations/gmail';
-import { buildScheduledPublishTaskName, parseScheduledTimeToTimestamp } from './scheduler/time';
-import type { ScheduledPublishTask } from './scheduler/types';
+import {
+  armScheduledPublish,
+  handleCancelScheduledPublishDispatch,
+  parseScheduledTimeToTimestamp,
+  type ScheduledPublishTask,
+} from './scheduled-publish';
 
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
 import { coerceVariantList } from './generation/normalize';
@@ -15,7 +19,7 @@ import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
 
 
-export { ScheduledPublishAlarm } from './scheduler/ScheduledPublishAlarm';
+export { ScheduledPublishAlarm } from './scheduled-publish';
 
 
 
@@ -498,18 +502,6 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-async function armScheduledPublish(env: Env, task: ScheduledPublishTask): Promise<Response> {
-  const durableObjectId = env.SCHEDULED_LINKEDIN_PUBLISH.idFromName(buildScheduledPublishTaskName(task.topic, task.date, task.channel));
-  const durableObjectStub = env.SCHEDULED_LINKEDIN_PUBLISH.get(durableObjectId);
-  return durableObjectStub.fetch('https://scheduler/arm', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(task),
-  });
-}
-
 async function handleScheduledLinkedInPublishRequest(request: Request, env: Env): Promise<Response> {
   const providedSecret = String(request.headers.get('X-Scheduler-Secret') || '').trim();
   const expectedSecret = String(env.WORKER_SCHEDULER_SECRET || '').trim();
@@ -682,6 +674,9 @@ async function dispatchAction(
     case 'publishContent':
       ensureSpreadsheetConfigured(storedConfig);
       return publishContent(env, storedConfig, payload, sheets);
+    case 'cancelScheduledPublish':
+      ensureSpreadsheetConfigured(storedConfig);
+      return handleCancelScheduledPublishDispatch(env, payload);
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -2049,7 +2044,15 @@ async function publishContent(
   config: StoredConfig,
   payload: Record<string, unknown>,
   sheets: SheetsGateway,
-): Promise<{ success: true; channel: ChannelId; recipientId: string | null; messageId: string | null; deliveryMode: 'queued' | 'sent'; mediaMode: 'image' | 'text' }> {
+): Promise<{
+  success: true;
+  channel: ChannelId;
+  recipientId: string | null;
+  messageId: string | null;
+  deliveryMode: 'queued' | 'sent';
+  mediaMode: 'image' | 'text';
+  scheduledTime?: string;
+}> {
   const row = coerceSheetRow(payload.row);
   const channel = coerceChannelId(payload.channel);
   const rawRecipientId = String(payload.recipientId || payload.recipientPhoneNumber || '').trim();
@@ -2093,6 +2096,7 @@ async function publishContent(
       messageId: null,
       deliveryMode: 'queued',
       mediaMode: imageUrl ? 'image' : 'text',
+      scheduledTime: row.postTime!.trim(),
     };
   }
 

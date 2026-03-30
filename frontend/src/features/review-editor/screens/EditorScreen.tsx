@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/cn';
 import { getChannelLabel } from '@/integrations/channels';
+import { ScheduledPublishBanner } from '@/features/scheduled-publish';
 
 function ResizeHandle() {
   return (
@@ -36,6 +37,10 @@ export function EditorScreen() {
     publishSubmitting,
     submitting,
     deliveryChannel,
+    pendingScheduledPublish,
+    scheduledPublishCancelBusy,
+    onCancelScheduledPublish,
+    onDismissScheduledPublish,
     postTime,
     setPostTime,
     sheetVariants,
@@ -46,6 +51,10 @@ export function EditorScreen() {
   const isDesktop = useMediaQuery('(min-width: 1280px)');
   const footerBusy = submitting || publishSubmitting;
   const channelLabel = getChannelLabel(deliveryChannel);
+  const showScheduledBanner =
+    pendingScheduledPublish != null
+    && pendingScheduledPublish.topic.trim() === sheetRow.topic.trim()
+    && pendingScheduledPublish.date.trim() === sheetRow.date.trim();
 
   const editorSection = (
     <section
@@ -119,6 +128,16 @@ export function EditorScreen() {
       </div>
 
       <footer className="shrink-0 border-t border-violet-200/35 bg-canvas/95 px-4 py-3 backdrop-blur-sm">
+        {showScheduledBanner && pendingScheduledPublish ? (
+          <div className="mb-3">
+            <ScheduledPublishBanner
+              pending={pendingScheduledPublish}
+              onCancel={() => void onCancelScheduledPublish()}
+              cancelBusy={scheduledPublishCancelBusy}
+              onDismiss={onDismissScheduledPublish}
+            />
+          </div>
+        ) : null}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
             <div className="flex flex-wrap items-center gap-2">

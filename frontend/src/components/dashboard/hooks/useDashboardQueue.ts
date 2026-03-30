@@ -9,6 +9,7 @@ import { buildRowActionKey, getNormalizedRowStatus, isSameTopicDate } from '../u
 import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
 import { useAlert } from '../../AlertProvider';
+import { usePendingScheduledPublish } from '@/features/scheduled-publish';
 
 export function useDashboardQueue({
   idToken,
@@ -69,6 +70,24 @@ export function useDashboardQueue({
     }
     void showAlert({ title: 'Notice', description: message || fallbackMessage });
   }, [onAuthExpired, showAlert]);
+
+  const {
+    pendingScheduledPublish,
+    scheduledPublishCancelBusy,
+    applyQueuedPublishResult,
+    dismissPendingScheduledPublish,
+    cancelPendingScheduledPublish,
+    clearPendingIfMatchesRow,
+  } = usePendingScheduledPublish({
+    idToken,
+    api,
+    onError: useCallback(
+      (message: string) => {
+        void showAlert({ title: 'Notice', description: message });
+      },
+      [showAlert],
+    ),
+  });
 
   const loadData = useCallback(async (quiet = false) => {
     if (!session.config.spreadsheetId) return;
@@ -351,6 +370,7 @@ export function useDashboardQueue({
       });
 
       if (result.deliveryMode === 'sent') {
+        clearPendingIfMatchesRow(row);
         setLastDeliverySummary({
           topic: row.topic,
           channel: selectedChannel,
@@ -366,7 +386,11 @@ export function useDashboardQueue({
         await loadData(true);
         void showAlert({ title: 'Success', description: selectedChannelOption.requiresRecipient ? `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.` : `Published "${row.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.` });
       } else {
-        void showAlert({ title: 'Notice', description: `Queued "${row.topic}" for ${getChannelLabel(selectedChannel)} publishing. Refresh the dashboard in a minute to confirm the updated status.` });
+        applyQueuedPublishResult(result, row);
+        void showAlert({
+          title: 'Scheduled',
+          description: `Publishing for "${row.topic}" is queued for ${getChannelLabel(selectedChannel)} at ${result.scheduledTime || row.postTime}. You can cancel from the delivery panel until then.`,
+        });
       }
     } catch (error) {
       handleFailure(error, `Failed to send the approved message to ${getChannelLabel(selectedChannel)}.`);
@@ -442,6 +466,7 @@ export function useDashboardQueue({
       });
 
       if (result.deliveryMode === 'sent') {
+        clearPendingIfMatchesRow(mergedRow);
         setLastDeliverySummary({
           topic: mergedRow.topic,
           channel: selectedChannel,
@@ -462,9 +487,10 @@ export function useDashboardQueue({
             : `Published "${mergedRow.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`,
         });
       } else {
+        applyQueuedPublishResult(result, mergedRow);
         void showAlert({
-          title: 'Notice',
-          description: `Queued "${mergedRow.topic}" for ${getChannelLabel(selectedChannel)} publishing. Refresh the dashboard in a minute to confirm the updated status.`,
+          title: 'Scheduled',
+          description: `Publishing for "${mergedRow.topic}" is queued for ${getChannelLabel(selectedChannel)} at ${result.scheduledTime || mergedRow.postTime}. You can cancel from the editor or delivery panel until then.`,
         });
       }
       onAfterApprove?.();
@@ -522,5 +548,9 @@ export function useDashboardQueue({
     publishFromReviewEditor,
     republishRowToSelectedChannel,
     handleDeleteTopic,
+    pendingScheduledPublish,
+    scheduledPublishCancelBusy,
+    cancelPendingScheduledPublish,
+    dismissPendingScheduledPublish,
   };
 }

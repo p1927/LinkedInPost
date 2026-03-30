@@ -10,6 +10,8 @@ import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../../.
 import { getGmailDeliveryDescription, getGmailDeliveryHint } from '../../../integrations/gmail';
 import { type DeliverySummary } from '../types';
 import { Button } from '@/components/ui/button';
+import { ScheduledPublishBanner, type PendingScheduledPublish } from '@/features/scheduled-publish';
+
 export function DashboardDelivery({
   selectedChannel,
   setSelectedChannel,
@@ -23,6 +25,10 @@ export function DashboardDelivery({
   manualRecipientId,
   setManualRecipientId,
   lastDeliverySummary,
+  pendingScheduledPublish = null,
+  scheduledPublishCancelBusy = false,
+  onCancelScheduledPublish,
+  onDismissScheduledPublish,
   embedded = false,
   channelCredentialsConfigured = true,
   isAdmin = false,
@@ -40,6 +46,10 @@ export function DashboardDelivery({
   manualRecipientId: string;
   setManualRecipientId: (val: string) => void;
   lastDeliverySummary: DeliverySummary | null;
+  pendingScheduledPublish?: PendingScheduledPublish | null;
+  scheduledPublishCancelBusy?: boolean;
+  onCancelScheduledPublish?: () => void | Promise<void>;
+  onDismissScheduledPublish?: () => void;
   /** Flatten chrome when nested in the Topics right rail. */
   embedded?: boolean;
   /** False when the selected channel has no API credentials in workspace config. */
@@ -75,6 +85,15 @@ export function DashboardDelivery({
             <p className="mt-1 text-amber-900/90">Ask an admin to connect this channel in Settings.</p>
           )}
         </div>
+      ) : null}
+
+      {onCancelScheduledPublish ? (
+        <ScheduledPublishBanner
+          pending={pendingScheduledPublish ?? null}
+          onCancel={onCancelScheduledPublish}
+          cancelBusy={scheduledPublishCancelBusy}
+          onDismiss={onDismissScheduledPublish}
+        />
       ) : null}
 
       <div className={targetBlockClass}>
