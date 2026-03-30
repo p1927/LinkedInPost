@@ -4,7 +4,7 @@ import { type GenerationRequest, isAuthErrorMessage } from '../../../services/ba
 import { useAlert } from '../../../components/AlertProvider';
 import { applyFormattingAction } from '@/features/draft-selection-target';
 import { rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
-import { mergeUniqueImageOptions } from './utils';
+import { mergeUniqueImageOptions, type SheetVariantForReview } from './utils';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { shouldPromoteImageUrlBeforeDelivery } from '../../../services/deliveryImageUrl';
 import {
@@ -162,7 +162,7 @@ export function useReviewFlowActions(
     ...(researchContextArticles.length > 0 ? { researchArticles: researchContextArticles } : {}),
   });
 
-  const applySheetVariantBase = useCallback((variant: { text: string; imageUrl: string }, variantIndex?: number) => {
+  const applySheetVariantBase = useCallback((variant: SheetVariantForReview, variantIndex?: number) => {
     setEditorText(variant.text);
     setEditorBaselineText(variant.text);
     setSelection(null);
