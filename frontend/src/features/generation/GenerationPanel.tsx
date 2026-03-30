@@ -17,6 +17,9 @@ interface GenerationPanelProps {
   onApplyQuickChange: () => void;
   onApplyVariant: (index: number) => void;
   compact?: boolean;
+  /** When true, Quick Change and 4 Variants are disabled (e.g. Selection mode without a range). */
+  aiGenerateDisabled?: boolean;
+  aiGenerateDisabledReason?: string;
   previewVariantSaveByIndex?: Record<number, VariantSaveStatus>;
   previewVariantSaveErrors?: Record<number, string>;
   onSavePreviewVariant?: (index: number) => void;
@@ -33,6 +36,8 @@ export function GenerationPanel({
   onApplyQuickChange,
   onApplyVariant,
   compact = false,
+  aiGenerateDisabled = false,
+  aiGenerateDisabledReason,
   previewVariantSaveByIndex = {},
   previewVariantSaveErrors = {},
   onSavePreviewVariant,
@@ -90,29 +95,36 @@ export function GenerationPanel({
         placeholder="Examples: make the hook stronger, sound more founder-like, keep it concise, add one sharper example."
       />
 
-      <div className={`mt-4 flex flex-wrap ${compact ? 'gap-2.5' : 'gap-3'}`}>
-        <Button
-          type="button"
-          variant="ink"
-          size={compact ? 'sm' : 'md'}
-          onClick={onGenerateVariants}
-          disabled={loadingAction !== null}
-          className={`${btn} transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm font-bold`}
-        >
-          <Sparkles className={icon} />
-          {loadingAction === 'variants' ? 'Generating…' : '4 Variants'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size={compact ? 'sm' : 'md'}
-          onClick={onGenerateQuickChange}
-          disabled={loadingAction !== null}
-          className={`${btn} transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm font-bold`}
-        >
-          <WandSparkles className={icon} />
-          {loadingAction === 'quick-change' ? 'Generating…' : 'Quick Change'}
-        </Button>
+      <div className={`mt-4 flex flex-col ${compact ? 'gap-2' : 'gap-2.5'}`}>
+        <div className={`flex flex-wrap ${compact ? 'gap-2.5' : 'gap-3'}`}>
+          <Button
+            type="button"
+            variant="ink"
+            size={compact ? 'sm' : 'md'}
+            onClick={onGenerateVariants}
+            disabled={loadingAction !== null || aiGenerateDisabled}
+            className={`${btn} transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm font-bold`}
+          >
+            <Sparkles className={icon} />
+            {loadingAction === 'variants' ? 'Generating…' : '4 Variants'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size={compact ? 'sm' : 'md'}
+            onClick={onGenerateQuickChange}
+            disabled={loadingAction !== null || aiGenerateDisabled}
+            className={`${btn} transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm font-bold`}
+          >
+            <WandSparkles className={icon} />
+            {loadingAction === 'quick-change' ? 'Generating…' : 'Quick Change'}
+          </Button>
+        </div>
+        {aiGenerateDisabled && aiGenerateDisabledReason ? (
+          <p className={`text-amber-800/90 ${compact ? 'text-[0.65rem] leading-snug' : 'text-xs leading-snug'}`}>
+            {aiGenerateDisabledReason}
+          </p>
+        ) : null}
       </div>
 
       {quickChangePreview ? (

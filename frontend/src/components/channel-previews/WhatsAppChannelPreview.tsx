@@ -39,6 +39,7 @@ export function WhatsAppChannelPreview({
     (isPickCarousel || text.length > 320 || text.split('\n').length > 6);
   const bodyExpanded = forceExpanded || expanded || (isPickCarousel && pickBodyExpanded);
   const isSidebar = layout === 'sidebar';
+  const showAsSelected = !isSidebar && selected;
   const compact = isCarousel || isSidebar;
   const lineClampLines = isSidebar ? 10 : isPickCarousel ? 6 : 8;
 
@@ -61,7 +62,7 @@ export function WhatsAppChannelPreview({
           onSelect();
         }
       }}
-      tabIndex={0}
+      tabIndex={isSidebar ? -1 : 0}
       role="region"
       aria-label={
         isPickCarousel
@@ -69,34 +70,38 @@ export function WhatsAppChannelPreview({
           : `Preview draft ${optionNumber}`
       }
       className={cn(
-        'group relative w-full cursor-pointer text-left outline-none transition-colors duration-200',
+        'group relative w-full text-left outline-none transition-colors duration-200',
+        isSidebar ? 'cursor-default' : 'cursor-pointer',
         isSidebar ? 'rounded-xl p-2' : isCarousel ? 'h-full min-h-0 rounded-3xl p-3' : 'rounded-2xl p-3 sm:p-4',
-        selected
+        showAsSelected
           ? 'border-2 border-[#128C7E] bg-[#e8f5e9] shadow-lg ring-4 ring-[#128C7E]/20'
-          : 'border-2 border-border bg-canvas hover:border-[#128C7E]/40 hover:bg-surface hover:shadow-card focus-visible:ring-4 focus-visible:ring-[#128C7E]/25',
+          : cn(
+              'border-2 border-border bg-canvas focus-visible:ring-4 focus-visible:ring-[#128C7E]/25',
+              !isSidebar && 'hover:border-[#128C7E]/40 hover:bg-surface hover:shadow-card',
+            ),
         className,
       )}
     >
-      <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-3'}`}>
-        <div>
-          <p className={cn('font-heading font-bold uppercase tracking-widest text-muted', isSidebar ? 'text-[0.65rem]' : 'text-xs')}>
-            Draft {optionNumber}
-          </p>
-          <p className={cn('mt-0.5 text-ink/80', isSidebar ? 'text-[0.7rem]' : 'text-sm')}>
-            {isPickCarousel ? 'Select to open in editor' : 'WhatsApp (outgoing message)'}
-          </p>
+      {!isSidebar && (
+        <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-3'}`}>
+          <div>
+            <p className="font-heading text-xs font-bold uppercase tracking-widest text-muted">Draft {optionNumber}</p>
+            <p className="mt-0.5 text-sm text-ink/80">
+              {isPickCarousel ? 'Select to open in editor' : 'WhatsApp (outgoing message)'}
+            </p>
+          </div>
+          <div
+            className={cn(
+              'flex min-w-10 items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition-colors',
+              selected
+                ? 'bg-[#128C7E] text-white shadow-md'
+                : 'border border-[#128C7E]/35 bg-white text-[#128C7E] group-hover:bg-[#e8f5e9]',
+            )}
+          >
+            {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
+          </div>
         </div>
-        <div
-          className={cn(
-            'flex min-w-10 items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition-colors',
-            selected
-              ? 'bg-[#128C7E] text-white shadow-md'
-              : 'border border-[#128C7E]/35 bg-white text-[#128C7E] group-hover:bg-[#e8f5e9]',
-          )}
-        >
-          {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
-        </div>
-      </div>
+      )}
 
       <div
         className={cn('overflow-hidden rounded-2xl', messagingChatPanelWidthClass(isSidebar), isSidebar ? 'p-2' : 'p-3 sm:p-4')}

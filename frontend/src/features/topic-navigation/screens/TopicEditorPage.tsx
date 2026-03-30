@@ -69,7 +69,8 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         onGenerateQuickChange={p.onGenerateQuickChange}
         onGenerateVariants={p.onGenerateVariants}
         onSaveVariants={p.onSaveVariants}
-        onFetchMoreImages={() => p.onFetchMoreImages(row)}
+        onFetchMoreImages={(searchQuery) => p.onFetchMoreImages(row, searchQuery)}
+        onPromoteRemoteImage={(sourceUrl) => p.onPromoteRemoteImage(row, sourceUrl)}
         onUploadImage={(file) => p.onUploadImage(row, file)}
         onDownloadImage={p.onDownloadImage}
         onCancel={handleCancel}

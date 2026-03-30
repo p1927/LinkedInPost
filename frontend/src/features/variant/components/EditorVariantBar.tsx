@@ -16,6 +16,7 @@ export function EditorVariantBar() {
 
   const [expanded, setExpanded] = useState(false);
   const prevVariantIndexRef = useRef(editorVariantIndex);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const highlightedVariantIndex = expanded
     ? pickCarouselIndex
@@ -38,20 +39,26 @@ export function EditorVariantBar() {
     }
   }, [expanded, editorVariantIndex, setPickCarouselIndex]);
 
+  useEffect(() => {
+    if (!expanded) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const el = rootRef.current;
+      if (!el || el.contains(event.target as Node)) return;
+      setExpanded(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [expanded]);
+
   if (sheetVariants.length === 0) return null;
 
   return (
-    <div className="shrink-0 border-b border-violet-200/35 bg-canvas/98 backdrop-blur-sm">
+    <div ref={rootRef} className="shrink-0 border-b border-violet-200/35 bg-canvas/98 backdrop-blur-sm">
       {/* Tab bar — whole row expands when collapsed (variant buttons still load / toggle as before) */}
       <div
         role="presentation"
-        className={cn(
-          'flex items-center gap-2 px-4 py-2',
-          !expanded && 'cursor-pointer',
-        )}
-        onClick={() => {
-          if (!expanded) setExpanded(true);
-        }}
+        className={cn('flex cursor-pointer items-center gap-2 px-4 py-2')}
+        onClick={() => setExpanded((v) => !v)}
       >
         <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-ink/50">
           Variants
@@ -64,8 +71,9 @@ export function EditorVariantBar() {
               <button
                 key={index}
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
                   if (expanded) {
+                    e.stopPropagation();
                     if (index === pickCarouselIndex) {
                       setExpanded(false);
                     } else {
@@ -74,7 +82,8 @@ export function EditorVariantBar() {
                     return;
                   }
                   if (index === editorVariantIndex) {
-                    setExpanded((e) => !e);
+                    e.stopPropagation();
+                    setExpanded((x) => !x);
                     return;
                   }
                   handleLoadSheetVariant(index);
@@ -97,7 +106,10 @@ export function EditorVariantBar() {
           type="button"
           variant="ghost"
           size="icon-sm"
-          onClick={() => setExpanded((e) => !e)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((x) => !x);
+          }}
           className="ml-auto shrink-0 size-7 min-h-0 min-w-0 rounded-lg text-ink/50 hover:text-ink/80"
           aria-label={expanded ? 'Collapse variants' : 'Expand variants'}
           aria-expanded={expanded}

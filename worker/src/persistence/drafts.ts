@@ -423,6 +423,10 @@ export class SheetsGateway {
     for (const postRow of posts) {
       const key = buildTopicKey(postRow.topic, postRow.date);
       const existing = merged.get(key);
+      // Column S is written on the Draft sheet; Post rows often keep an older copy. Prefer Draft rules
+      // whenever a draft exists so clears/edits to topic rules are not overwritten by stale Post data.
+      const topicRulesFromDraft =
+        existing?.sourceSheet === 'Draft' ? (existing.topicGenerationRules ?? '') : undefined;
       merged.set(key, {
         ...(existing ?? ({} as SheetRow)),
         ...postRow,
@@ -431,6 +435,8 @@ export class SheetsGateway {
         topicRowIndex: existing?.topicRowIndex,
         draftRowIndex: existing?.draftRowIndex,
         postRowIndex: postRow.postRowIndex ?? postRow.rowIndex,
+        topicGenerationRules:
+          topicRulesFromDraft !== undefined ? topicRulesFromDraft : (postRow.topicGenerationRules ?? ''),
       });
     }
 

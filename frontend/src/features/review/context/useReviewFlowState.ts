@@ -4,26 +4,30 @@ import { getInitialEditorText, buildSheetVariants, buildGeneratedImages } from '
 import { type GenerationScope, type TextSelectionRange, type QuickChangePreviewResult, type VariantsPreviewResponse } from '../../../services/backendApi';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { getVariantSlotContent } from '../../topic-navigation/utils/topicRoute';
-import { getEffectiveScope, getTargetText } from '../../editor/selection';
+import { getEffectiveScope, getTargetText, isSelectionScopeWaitingForRange } from '@/features/draft-selection-target';
 import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../components/workspace/WorkspaceChromeContext';
 
-const getInitialPostTime = (rowPostTime: string | undefined): string => {
-  if (!rowPostTime?.trim()) return '';
-  const match = rowPostTime.trim().match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
-  if (!match) return '';
-  const yyyy = match[1];
-  const mm = match[2];
-  const dd = match[3];
-  const hh = match[4];
-  const min = match[5];
-  const d = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min)));
-  if (isNaN(d.getTime())) return '';
+const formatLocalDateTimeForInput = (d: Date): string => {
   const localY = d.getFullYear();
   const localM = String(d.getMonth() + 1).padStart(2, '0');
   const localD = String(d.getDate()).padStart(2, '0');
   const localH = String(d.getHours()).padStart(2, '0');
   const localMin = String(d.getMinutes()).padStart(2, '0');
   return `${localY}-${localM}-${localD}T${localH}:${localMin}`;
+};
+
+const getInitialPostTime = (rowPostTime: string | undefined): string => {
+  if (!rowPostTime?.trim()) return formatLocalDateTimeForInput(new Date());
+  const match = rowPostTime.trim().match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+  if (!match) return formatLocalDateTimeForInput(new Date());
+  const yyyy = match[1];
+  const mm = match[2];
+  const dd = match[3];
+  const hh = match[4];
+  const min = match[5];
+  const d = new Date(Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min)));
+  if (isNaN(d.getTime())) return formatLocalDateTimeForInput(new Date());
+  return formatLocalDateTimeForInput(d);
 };
 
 export function useReviewFlowState(props: ReviewFlowProviderProps) {
@@ -76,14 +80,16 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const lastInitRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSheetRow(row);
-
     const initKey = `${row.topic}:${routed?.screen}:${routed?.editorVariantSlot}:${editorStartMediaPanel}`;
     if (lastInitRef.current === initKey) {
+      // Same topic/screen/slot: do not reset sheetRow from props — parent row can lag or (after a sheet
+      // merge) carry stale "Topic rules" from the Post tab, which would undo clears/saves from the Draft row.
       return;
     }
     lastInitRef.current = initKey;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSheetRow(row);
 
     setSelection(null);
     setScope('whole-post');
@@ -178,6 +184,8 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     [alternateImageOptions, generatedImageOptions, uploadedImageOptions],
   );
   const effectiveScope = getEffectiveScope(scope, selection);
+  const aiRefineBlocked = isSelectionScopeWaitingForRange(scope, selection);
+  const aiRefineBlockedReason = 'Select part of the draft in the editor before running Quick Change or 4 Variants.';
   const currentTargetText = getTargetText(editorText, effectiveScope, selection);
   const editorDirty = editorText !== editorBaselineText;
   const hasUnsavedReviewState = editorDirty || instruction.trim().length > 0 || Boolean(quickChangePreview) || Boolean(variantsPreview?.variants.length);
@@ -266,6 +274,8 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     generatedImageOptions,
     imageOptions,
     effectiveScope,
+    aiRefineBlocked,
+    aiRefineBlockedReason,
     currentTargetText,
     editorDirty,
     hasUnsavedReviewState,

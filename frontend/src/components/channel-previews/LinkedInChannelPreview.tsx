@@ -65,6 +65,7 @@ export function LinkedInChannelPreview({
     (isPickCarousel || text.length > 280 || text.split('\n').length > 5);
   const bodyExpanded = forceExpanded || expanded || (isPickCarousel && pickBodyExpanded);
   const isSidebar = layout === 'sidebar';
+  const showAsSelected = !isSidebar && selected;
   const compact = isCarousel || isSidebar;
   const heroLift = !isSidebar && !isCarousel;
 
@@ -89,7 +90,7 @@ export function LinkedInChannelPreview({
           onSelect();
         }
       }}
-      tabIndex={0}
+      tabIndex={isSidebar ? -1 : 0}
       role="region"
       aria-label={
         isPickCarousel
@@ -97,10 +98,11 @@ export function LinkedInChannelPreview({
           : `Preview draft ${optionNumber}`
       }
       className={cn(
-        'group relative w-full cursor-pointer text-left outline-none',
+        'group relative w-full text-left outline-none',
+        isSidebar ? 'cursor-default' : 'cursor-pointer',
         heroLift ? 'transition-all duration-300' : 'transition-colors duration-200',
         isSidebar ? 'rounded-xl p-2' : isCarousel ? 'h-full min-h-0 rounded-3xl p-3' : 'rounded-[28px] p-3 sm:rounded-[32px] sm:p-4',
-        selected
+        showAsSelected
           ? 'border-2 border-primary bg-white/90 shadow-xl ring-4 ring-primary/10'
           : cn(
               'border-2 border-white/90 bg-white/45 shadow-sm',
@@ -111,41 +113,36 @@ export function LinkedInChannelPreview({
         className,
       )}
     >
-      <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-4'}`}>
-        <div>
-          <p
+      {!isSidebar && (
+        <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-4'}`}>
+          <div>
+            <p className="font-heading text-xs font-bold uppercase tracking-widest text-slate-500">Draft {optionNumber}</p>
+            <p
+              className={cn(
+                'mt-0.5 text-slate-600',
+                isCarousel ? 'text-[0.8rem]' : 'text-sm',
+              )}
+            >
+              {isPickCarousel
+                ? 'Select to open in editor'
+                : isCarousel
+                  ? 'Feed preview'
+                  : 'LinkedIn-style preview'}
+            </p>
+          </div>
+          <div
+            title={isPickCarousel ? 'Open this draft in the editor' : undefined}
             className={cn(
-              'font-heading font-bold uppercase tracking-widest text-slate-500',
-              isSidebar ? 'text-[0.65rem]' : 'text-xs',
+              'flex min-w-10 items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition-colors duration-300',
+              selected
+                ? 'bg-primary text-primary-fg shadow-md'
+                : 'border border-slate-200 bg-white/85 text-slate-500 shadow-sm group-hover:border-primary/25 group-hover:bg-white group-hover:text-primary',
             )}
           >
-            Draft {optionNumber}
-          </p>
-          <p
-            className={cn(
-              'mt-0.5 text-slate-600',
-              isSidebar ? 'text-[0.7rem]' : isCarousel ? 'text-[0.8rem]' : 'text-sm',
-            )}
-          >
-            {isPickCarousel
-              ? 'Select to open in editor'
-              : isCarousel
-                ? 'Feed preview'
-                : 'LinkedIn-style preview'}
-          </p>
+            {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
+          </div>
         </div>
-        <div
-          title={isPickCarousel ? 'Open this draft in the editor' : undefined}
-          className={cn(
-            'flex min-w-10 items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition-colors duration-300',
-            selected
-              ? 'bg-primary text-primary-fg shadow-md'
-              : 'border border-slate-200 bg-white/85 text-slate-500 shadow-sm group-hover:border-primary/25 group-hover:bg-white group-hover:text-primary',
-          )}
-        >
-          {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
-        </div>
-      </div>
+      )}
 
       <div
         className={cn(

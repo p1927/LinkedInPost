@@ -27,7 +27,7 @@ import { findRowByTopicRouteId, normalizeTopicRouteParam } from '../../features/
 import {
   WORKSPACE_PATHS,
   WORKSPACE_ROUTE_PATHS,
-  topicVariantsPathForRow,
+  topicEditorPathForRow,
 } from '../../features/topic-navigation/utils/workspaceRoutes';
 
 function previewAuthorDisplayName(email: string): string {
@@ -241,6 +241,7 @@ export function Dashboard({
     onGenerateVariants: queueHook.handleGenerateVariantsPreview,
     onSaveVariants: queueHook.handleSaveDraftVariants,
     onFetchMoreImages: queueHook.handleFetchReviewImages,
+    onPromoteRemoteImage: queueHook.handlePromoteReviewImage,
     onUploadImage: queueHook.handleUploadReviewImage,
     onDownloadImage: queueHook.handleDownloadReviewImage,
     isAdmin: session.isAdmin,
@@ -307,7 +308,7 @@ export function Dashboard({
       triggerRowGithubAction={queueHook.triggerRowGithubAction}
       actionLoading={queueHook.actionLoading}
       session={session}
-      onOpenTopicReview={(row) => navigate(topicVariantsPathForRow(row))}
+      onOpenTopicReview={(row) => navigate(topicEditorPathForRow(row))}
       onTopicNavigate={(row) => {
         const st = getNormalizedRowStatus(row.status);
         if (canPreviewPublishedContent(row)) {
@@ -315,7 +316,7 @@ export function Dashboard({
           return;
         }
         if (st === 'drafted') {
-          navigate(topicVariantsPathForRow(row));
+          navigate(topicEditorPathForRow(row));
         }
       }}
       publishRowToSelectedChannel={queueHook.publishRowToSelectedChannel}
@@ -362,8 +363,6 @@ export function Dashboard({
       selectedChannel={channelsHook.selectedChannel}
       githubRepo={settingsHook.githubRepo}
       setGithubRepo={settingsHook.setGithubRepo}
-      generationRules={settingsHook.generationRules}
-      setGenerationRules={settingsHook.setGenerationRules}
       githubTokenInput={settingsHook.githubTokenInput}
       setGithubTokenInput={settingsHook.setGithubTokenInput}
       telegramBotTokenInput={settingsHook.telegramBotTokenInput}
@@ -407,6 +406,7 @@ export function Dashboard({
       setWhatsappRecipientsInput={channelsHook.setWhatsappRecipientsInput}
       saveSettings={settingsHook.saveSettings}
       savingConfig={settingsHook.savingConfig}
+      hasUnsavedSettingsChanges={settingsHook.hasUnsavedSettingsChanges}
       adminModelCatalog={settingsHook.adminModelCatalog}
       allowedGoogleModels={settingsHook.allowedGoogleModels}
       toggleAllowedGoogleModel={settingsHook.toggleAllowedGoogleModel}

@@ -22,7 +22,9 @@ export type TopicReviewPagesBaseProps = {
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
-  onFetchMoreImages: (row: SheetRow) => Promise<string[]>;
+  onFetchMoreImages: (row: SheetRow, searchQuery?: string) => Promise<string[]>;
+  /** Persist a search-result image to workspace storage (required before approve). */
+  onPromoteRemoteImage: (row: SheetRow, sourceUrl: string) => Promise<string>;
   onUploadImage: (row: SheetRow, file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   queueLoading: boolean;

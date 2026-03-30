@@ -6,7 +6,7 @@
   "scripts": {
     "prebuild": "node scripts/generate-google-models.mjs",
     "dev": "vite",
-    "build": "tsc -b && vite build && node -e \"require('fs').copyFileSync('dist/index.html', 'dist/404.html')\"",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

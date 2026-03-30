@@ -44,7 +44,7 @@ export function GmailChannelPreview({
     (isPickCarousel || text.length > 360 || text.split('\n').length > 8);
   const bodyExpanded = forceExpanded || expanded || (isPickCarousel && pickBodyExpanded);
   const isSidebar = layout === 'sidebar';
-  const compact = isCarousel || isSidebar;
+  const showAsSelected = !isSidebar && selected;
   const lineClampLines = isSidebar ? 10 : isPickCarousel ? 6 : 8;
 
   const fromLabel = previewAuthorName?.trim() || 'Your name';
@@ -71,7 +71,7 @@ export function GmailChannelPreview({
           onSelect();
         }
       }}
-      tabIndex={0}
+      tabIndex={isSidebar ? -1 : 0}
       role="region"
       aria-label={
         isPickCarousel
@@ -79,12 +79,18 @@ export function GmailChannelPreview({
           : `Preview draft ${optionNumber}`
       }
       className={cn(
-        'group relative w-full cursor-pointer text-left outline-none transition-colors duration-200',
-        isSidebar ? 'rounded-xl p-2' : isCarousel ? 'h-full min-h-0 rounded-3xl p-3' : 'rounded-2xl p-3 sm:p-4',
-        selected
+        'group relative w-full text-left outline-none transition-colors duration-200',
+        isSidebar
+          ? 'cursor-default rounded-xl p-2'
+          : isCarousel
+            ? 'h-full min-h-0 cursor-pointer rounded-3xl p-3'
+            : 'cursor-pointer rounded-2xl p-3 sm:p-4',
+        showAsSelected
           ? 'border-2 border-[color:var(--gm-ring)] bg-white shadow-lg ring-4 ring-[color:var(--gm-ring-soft)]'
           : cn(
-              'border-2 border-border bg-canvas hover:border-[color:var(--gm-ring)]/40 hover:bg-surface hover:shadow-card focus-visible:ring-4 focus-visible:ring-[color:var(--gm-ring)]/25',
+              'border-2 border-border bg-canvas focus-visible:ring-4 focus-visible:ring-[color:var(--gm-ring)]/25',
+              !isSidebar &&
+                'hover:border-[color:var(--gm-ring)]/40 hover:bg-surface hover:shadow-card',
             ),
         className,
       )}
@@ -95,29 +101,29 @@ export function GmailChannelPreview({
         } as CSSProperties
       }
     >
-      <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-3'}`}>
-        <div>
-          <p className={cn('font-heading font-bold uppercase tracking-widest text-muted', isSidebar ? 'text-[0.65rem]' : 'text-xs')}>
-            Draft {optionNumber}
-          </p>
-          <p className={cn('mt-0.5 text-ink/80', isSidebar ? 'text-[0.7rem]' : 'text-sm')}>
-            {isPickCarousel ? 'Select to open in editor' : 'Gmail (compose)'}
-          </p>
+      {!isSidebar && (
+        <div className={`flex items-center justify-between gap-3 px-1 ${isCarousel ? 'mb-2' : 'mb-3'}`}>
+          <div>
+            <p className="font-heading text-xs font-bold uppercase tracking-widest text-muted">Draft {optionNumber}</p>
+            <p className="mt-0.5 text-sm text-ink/80">
+              {isPickCarousel ? 'Select to open in editor' : 'Gmail (compose)'}
+            </p>
+          </div>
+          <div
+            className={cn(
+              'flex min-w-10 items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition-colors',
+              selected ? 'text-white shadow-md' : 'border bg-white group-hover:bg-[color:var(--gm-shell)]',
+            )}
+            style={
+              selected
+                ? { backgroundColor: GM.blue }
+                : { borderColor: GM.border, color: GM.blue }
+            }
+          >
+            {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
+          </div>
         </div>
-        <div
-          className={cn(
-            'flex min-w-10 items-center justify-center rounded-full px-3 py-1 text-xs font-bold transition-colors',
-            selected ? 'text-white shadow-md' : 'border bg-white group-hover:bg-[color:var(--gm-shell)]',
-          )}
-          style={
-            selected
-              ? { backgroundColor: GM.blue }
-              : { borderColor: GM.border, color: GM.blue }
-          }
-        >
-          {selected ? (isCarousel ? 'Active' : 'Selected') : isPickCarousel ? 'Open' : `Pick ${optionNumber}`}
-        </div>
-      </div>
+      )}
 
       <div
         className={cn(

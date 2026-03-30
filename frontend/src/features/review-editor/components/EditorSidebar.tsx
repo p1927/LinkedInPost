@@ -20,10 +20,13 @@ export function EditorSidebar() {
     previewVariantSaveByIndex,
     previewVariantSaveErrors,
     handleSavePreviewVariantAtIndex,
+    aiRefineBlocked,
+    aiRefineBlockedReason,
     sheetRow,
     imageOptions,
     selectedImageUrl,
-    setSelectedImageUrl,
+    handleSelectImageOption,
+    imagePromoteOptionId,
     handleFetchMoreImageOptions,
     handleUploadImageOption,
     onDownloadImage,
@@ -110,6 +113,8 @@ export function EditorSidebar() {
             onGenerateVariants={() => void handleGenerateVariants()}
             onApplyQuickChange={handleApplyQuickChange}
             onApplyVariant={handleApplyVariant}
+            aiGenerateDisabled={aiRefineBlocked}
+            aiGenerateDisabledReason={aiRefineBlockedReason}
             compact
             previewVariantSaveByIndex={previewVariantSaveByIndex}
             previewVariantSaveErrors={previewVariantSaveErrors}
@@ -123,10 +128,12 @@ export function EditorSidebar() {
               topic={sheetRow.topic}
               images={imageOptions}
               selectedImageUrl={selectedImageUrl}
-              onSelectImage={setSelectedImageUrl}
+              onSelectImage={handleSelectImageOption}
               onFetchMoreImages={handleFetchMoreImageOptions}
               onUploadImage={handleUploadImageOption}
               onDownloadImage={onDownloadImage}
+              compact
+              imagePromoteOptionId={imagePromoteOptionId}
             />
           </section>
         ) : null}

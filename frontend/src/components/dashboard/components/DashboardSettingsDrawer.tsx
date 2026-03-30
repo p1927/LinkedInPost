@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
 import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
 import { type GoogleModelOption } from '../../../services/configService';
@@ -14,6 +15,7 @@ import { type ChannelId } from '../../../integrations/channels';
 import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '../../../services/backendApi';
 import { type TelegramRecipient } from '../../../integrations/telegram';
 import { cn } from '../../../lib/cn';
+import { WORKSPACE_PATHS } from '../../../lib/workspaceRoutes';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -53,8 +55,6 @@ type DashboardSettingsDrawerProps = {
   selectedChannel: ChannelId;
   githubRepo: string;
   setGithubRepo: (val: string) => void;
-  generationRules: string;
-  setGenerationRules: (val: string) => void;
   githubTokenInput: string;
   setGithubTokenInput: (val: string) => void;
   telegramBotTokenInput: string;
@@ -108,6 +108,7 @@ type DashboardSettingsDrawerProps = {
   setWhatsappRecipientsInput: (val: string) => void;
   saveSettings: () => Promise<void>;
   savingConfig: boolean;
+  hasUnsavedSettingsChanges: boolean;
   adminModelCatalog: GoogleModelOption[];
   allowedGoogleModels: string[];
   toggleAllowedGoogleModel: (modelId: string, enabled: boolean) => void;
@@ -147,8 +148,6 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       selectedChannel,
       githubRepo,
       setGithubRepo,
-      generationRules,
-      setGenerationRules,
       githubTokenInput,
       setGithubTokenInput,
       telegramBotTokenInput,
@@ -192,6 +191,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       setWhatsappRecipientsInput,
       saveSettings,
       savingConfig,
+      hasUnsavedSettingsChanges,
       adminModelCatalog,
       allowedGoogleModels,
       toggleAllowedGoogleModel,
@@ -234,9 +234,11 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
     return () => observer.disconnect();
   }, []);
 
+  const saveEnabled = session.isAdmin && hasUnsavedSettingsChanges && !savingConfig;
+
   return (
     <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-      <aside className="shrink-0 lg:sticky lg:top-4 lg:w-52 lg:max-w-[13rem] lg:self-start">
+      <aside className="sticky top-4 z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:self-start">
         <nav
           className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:pr-1"
           aria-label="Settings sections"
@@ -260,6 +262,21 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             </Button>
           ))}
         </nav>
+        <div className="mt-3 border-t border-border pt-3">
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={() => void saveSettings()}
+            disabled={!saveEnabled}
+            className="w-full rounded-xl font-semibold disabled:opacity-50"
+          >
+            {savingConfig ? 'Saving...' : 'Save settings'}
+          </Button>
+          {!session.isAdmin ? (
+            <p className="mt-2 text-center text-[11px] leading-snug text-muted">Only workspace admins can save shared settings.</p>
+          ) : null}
+        </div>
       </aside>
 
       <div
@@ -284,7 +301,11 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
         <SettingsSectionCard id="settings-github-actions" title="GitHub Actions">
           <p className="text-xs leading-5 text-muted">
-            GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and shared rules below.
+            GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and workspace generation rules from the{' '}
+            <Link to={WORKSPACE_PATHS.rules} className="font-semibold text-primary underline-offset-2 hover:underline">
+              Rules
+            </Link>{' '}
+            page.
           </p>
           <div className="mt-4 space-y-4">
             <div>
@@ -296,17 +317,6 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 placeholder="e.g. username/repo-name"
                 className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-ink">Shared Generation Rules</label>
-              <Textarea
-                value={generationRules}
-                onChange={(e) => setGenerationRules(e.target.value)}
-                placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words, always end with one clear takeaway."
-                className="min-h-[120px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-              <p className="mt-1.5 text-xs text-muted">Applied by the Worker to Quick Change and 4-variant preview runs.</p>
             </div>
 
             {session.isAdmin ? (
@@ -802,19 +812,6 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             </div>
           </div>
         </SettingsSectionCard>
-
-        <div className="border-t border-border pt-4">
-          <Button
-            type="button"
-            variant="primary"
-            size="md"
-            onClick={saveSettings}
-            disabled={savingConfig}
-            className="w-full rounded-xl font-semibold disabled:opacity-50"
-          >
-            {savingConfig ? 'Saving...' : 'Save settings'}
-          </Button>
-        </div>
       </div>
     </div>
   );

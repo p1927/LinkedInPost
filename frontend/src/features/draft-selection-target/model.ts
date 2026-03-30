@@ -1,4 +1,4 @@
-import type { GenerationScope, TextSelectionRange } from '../../services/backendApi';
+import type { GenerationScope, TextSelectionRange } from '@/services/backendApi';
 
 export type FormattingAction = 'tighten-spacing' | 'bulletize' | 'emphasize';
 
@@ -27,6 +27,11 @@ export function normalizeSelection(value: string, start: number, end: number): T
 
 export function getEffectiveScope(scope: GenerationScope, selection: TextSelectionRange | null): GenerationScope {
   return scope === 'selection' && selection?.text.trim() ? 'selection' : 'whole-post';
+}
+
+/** User chose Selection mode but has not selected non-whitespace text yet — AI should not fall back to whole draft silently. */
+export function isSelectionScopeWaitingForRange(scope: GenerationScope, selection: TextSelectionRange | null): boolean {
+  return scope === 'selection' && !selection?.text.trim();
 }
 
 export function getTargetText(value: string, scope: GenerationScope, selection: TextSelectionRange | null): string {
@@ -106,4 +111,17 @@ export function applyFormattingAction(
     value: formatTarget(value, action),
     selection: null,
   };
+}
+
+/** Clamped range for highlight overlay when `value` length changed. */
+export function getClampedSelectionForHighlight(
+  value: string,
+  selection: TextSelectionRange | null,
+): { start: number; end: number } | null {
+  if (!selection || !selection.text.trim()) return null;
+  const len = value.length;
+  const start = Math.max(0, Math.min(selection.start, len));
+  const end = Math.max(start, Math.min(selection.end, len));
+  if (end <= start) return null;
+  return { start, end };
 }

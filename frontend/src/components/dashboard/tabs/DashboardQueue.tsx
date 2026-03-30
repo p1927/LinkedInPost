@@ -170,13 +170,16 @@ export function DashboardQueue({
                       role="columnheader"
                       className="flex shrink-0 items-center justify-end gap-3 text-ink/60"
                     >
-                      <span className="w-[100px] text-right">Status</span>
-                      <span className="w-[110px] text-right">Date</span>
-                      <span className="min-w-[110px] text-right">Action</span>
-                      <div className="flex w-10 shrink-0 items-center justify-end">
-                        <span className="sr-only">Delete</span>
-                        <Trash2 className="h-4 w-4 text-ink/45" aria-hidden />
+                      <div className="flex w-[100px] shrink-0 justify-end">
+                        <span>Status</span>
                       </div>
+                      <div className="w-[110px] shrink-0 text-right">
+                        <span>Date</span>
+                      </div>
+                      <div className="flex min-w-[110px] shrink-0 items-center justify-end gap-2">
+                        <span className="text-right">Action</span>
+                      </div>
+                      <div className="w-10 shrink-0" aria-hidden />
                     </div>
                   </div>
                 </div>
@@ -229,7 +232,7 @@ export function DashboardQueue({
                                 'line-clamp-2 w-full text-left font-medium leading-snug text-ink transition-colors duration-200',
                                 'rounded-lg outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40',
                               )}
-                              title="Review draft variants"
+                              title="Open draft editor"
                             >
                               {row.topic}
                             </button>

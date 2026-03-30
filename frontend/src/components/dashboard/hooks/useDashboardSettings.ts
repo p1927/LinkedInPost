@@ -1,10 +1,33 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../services/backendApi';
-import { type BotConfig, type BotConfigUpdate, type GoogleModelOption, AVAILABLE_GOOGLE_MODELS, DEFAULT_GOOGLE_MODEL, loadAvailableGoogleModels, normalizeGoogleModelOptions } from '../../../services/configService';
+import {
+  type BotConfig,
+  type BotConfigUpdate,
+  type GoogleModelOption,
+  AVAILABLE_GOOGLE_MODELS,
+  DEFAULT_GOOGLE_MODEL,
+  loadAvailableGoogleModels,
+  normalizeGoogleModelOptions,
+} from '../../../services/configService';
 import { type ChannelId } from '../../../integrations/channels';
-import { parseTelegramRecipientsInput } from '../../../integrations/telegram';
-import { parseRecipientsInput } from '../../../integrations/whatsapp';
+import { formatTelegramRecipientsInput, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
+import { formatRecipientsInput, parseRecipientsInput, type WhatsAppRecipient } from '../../../integrations/whatsapp';
 import { useAlert } from '../../AlertProvider';
+
+function recipientsInputMatchesSaved<T extends TelegramRecipient | WhatsAppRecipient>(
+  input: string,
+  saved: T[],
+  parse: (raw: string) => T[],
+  format: (list: T[]) => string,
+): boolean {
+  const canonical = format(saved);
+  if (input.trim() === canonical.trim()) return true;
+  try {
+    return format(parse(input)) === canonical;
+  } catch {
+    return false;
+  }
+}
 
 export function useDashboardSettings({
   idToken,
@@ -33,7 +56,6 @@ export function useDashboardSettings({
   const [githubTokenInput, setGithubTokenInput] = useState('');
   const [googleModel, setGoogleModel] = useState(session.config.googleModel);
   const [allowedGoogleModels, setAllowedGoogleModels] = useState<string[]>(() => [...session.config.allowedGoogleModels]);
-  const [generationRules, setGenerationRules] = useState(session.config.generationRules);
   const [catalogModels, setCatalogModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
   const [savingConfig, setSavingConfig] = useState(false);
   const [telegramBotTokenInput, setTelegramBotTokenInput] = useState('');
@@ -51,10 +73,6 @@ export function useDashboardSettings({
     }
     void showAlert({ title: 'Notice', description: message || fallbackMessage });
   }, [onAuthExpired, showAlert]);
-
-  useEffect(() => {
-    setGenerationRules(session.config.generationRules);
-  }, [session.config.generationRules]);
 
   useEffect(() => {
     setAllowedGoogleModels([...session.config.allowedGoogleModels]);
@@ -117,6 +135,49 @@ export function useDashboardSettings({
     });
   }, []);
 
+  const hasUnsavedSettingsChanges = useMemo(() => {
+    const c = session.config;
+    if (sheetIdInput.trim() !== c.spreadsheetId) return true;
+    if (githubRepo.trim() !== c.githubRepo) return true;
+    if (googleModel !== c.googleModel) return true;
+    const a = [...allowedGoogleModels].sort();
+    const b = [...c.allowedGoogleModels].sort();
+    if (a.length !== b.length || a.some((id, i) => id !== b[i])) return true;
+    if (githubTokenInput.trim() !== '') return true;
+    if (telegramBotTokenInput.trim() !== '') return true;
+    if (selectedChannel !== c.defaultChannel) return true;
+    if (
+      !recipientsInputMatchesSaved(telegramRecipientsInput, c.telegramRecipients, parseTelegramRecipientsInput, formatTelegramRecipientsInput)
+    ) {
+      return true;
+    }
+    if (
+      !recipientsInputMatchesSaved(whatsappRecipientsInput, c.whatsappRecipients, parseRecipientsInput, formatRecipientsInput)
+    ) {
+      return true;
+    }
+    if (gmailDefaultTo.trim() !== (c.gmailDefaultTo || '').trim()) return true;
+    if (gmailDefaultCc.trim() !== (c.gmailDefaultCc || '').trim()) return true;
+    if (gmailDefaultBcc.trim() !== (c.gmailDefaultBcc || '').trim()) return true;
+    if (gmailDefaultSubject.trim() !== (c.gmailDefaultSubject || '').trim()) return true;
+    return false;
+  }, [
+    session.config,
+    sheetIdInput,
+    githubRepo,
+    googleModel,
+    allowedGoogleModels,
+    githubTokenInput,
+    telegramBotTokenInput,
+    selectedChannel,
+    telegramRecipientsInput,
+    whatsappRecipientsInput,
+    gmailDefaultTo,
+    gmailDefaultCc,
+    gmailDefaultBcc,
+    gmailDefaultSubject,
+  ]);
+
   const saveSettings = async () => {
     if (!session.isAdmin) return;
 
@@ -127,7 +188,7 @@ export function useDashboardSettings({
         githubRepo: githubRepo.trim(),
         googleModel,
         allowedGoogleModels,
-        generationRules: generationRules.trim(),
+        generationRules: session.config.generationRules.trim(),
         githubToken: githubTokenInput.trim() || undefined,
         defaultChannel: selectedChannel,
         telegramBotToken: telegramBotTokenInput.trim() || undefined,
@@ -163,8 +224,6 @@ export function useDashboardSettings({
     toggleAllowedGoogleModel,
     adminModelCatalog: catalogModels,
     modelPickerLocked: availableModels.length <= 1,
-    generationRules,
-    setGenerationRules,
     availableModels,
     savingConfig,
     telegramBotTokenInput,
@@ -178,5 +237,6 @@ export function useDashboardSettings({
     gmailDefaultSubject,
     setGmailDefaultSubject,
     saveSettings,
+    hasUnsavedSettingsChanges,
   };
 }

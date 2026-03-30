@@ -1,8 +1,32 @@
 import { execSync } from 'node:child_process'
+import fs from 'node:fs'
 import path from 'path'
 import { defineConfig } from 'vite'
+import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+
+/**
+ * GitHub Pages has no server fallback for client-side routes. Copying the built
+ * `index.html` to `404.html` lets deep links and refreshes on `/topics`, etc. load the SPA.
+ */
+function spaGithubPages404(): Plugin {
+  let outDir = 'dist'
+  return {
+    name: 'spa-github-pages-404',
+    apply: 'build',
+    configResolved(config) {
+      outDir = config.build.outDir
+    },
+    closeBundle() {
+      const indexHtml = path.resolve(process.cwd(), outDir, 'index.html')
+      const notFoundHtml = path.resolve(process.cwd(), outDir, '404.html')
+      if (fs.existsSync(indexHtml)) {
+        fs.copyFileSync(indexHtml, notFoundHtml)
+      }
+    },
+  }
+}
 
 function gitShortSha(): string {
   try {
@@ -28,7 +52,7 @@ export default defineConfig({
   define: {
     __APP_BUILD_LABEL__: JSON.stringify(appBuildLabel()),
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), spaGithubPages404()],
   server: {
     port: 5174,
     /** Fail fast so the URL always matches Google Cloud “Authorized JavaScript origins” (e.g. http://localhost:5174). */

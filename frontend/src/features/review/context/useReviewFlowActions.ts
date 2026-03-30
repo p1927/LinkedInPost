@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ReviewFlowProviderProps } from './types';
 import { type GenerationRequest, isAuthErrorMessage } from '../../../services/backendApi';
 import { useAlert } from '../../../components/AlertProvider';
-import { applyFormattingAction } from '../../editor/selection';
+import { applyFormattingAction } from '@/features/draft-selection-target';
 import { mergeUniqueImageOptions } from './utils';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 
@@ -18,6 +18,7 @@ export function useReviewFlowActions(
     onGenerateVariants,
     onSaveVariants,
     onFetchMoreImages,
+    onPromoteRemoteImage,
     onUploadImage,
     onCancel,
     routed,
@@ -60,6 +61,8 @@ export function useReviewFlowActions(
     showPickPhase,
     showEditorLayout,
     effectiveScope,
+    aiRefineBlocked,
+    aiRefineBlockedReason,
     currentTargetText,
     hasUnsavedReviewState,
     pickCarouselIndex,
@@ -68,6 +71,7 @@ export function useReviewFlowActions(
 
   const { showAlert } = useAlert();
   const [publishSubmitting, setPublishSubmitting] = useState(false);
+  const [imagePromoteOptionId, setImagePromoteOptionId] = useState('');
 
   const requestClose = useCallback(() => {
     if (hasUnsavedReviewState) {
@@ -174,6 +178,11 @@ export function useReviewFlowActions(
   ]);
 
   const handleGenerateQuickChange = async () => {
+    if (aiRefineBlocked) {
+      void showAlert({ title: 'Notice', description: aiRefineBlockedReason });
+      return;
+    }
+
     if (!(editorText || '').trim()) {
       void showAlert({ title: 'Notice', description: 'Add or keep some draft text before generating a quick change.' });
       return;
@@ -194,6 +203,11 @@ export function useReviewFlowActions(
   };
 
   const handleGenerateVariants = async () => {
+    if (aiRefineBlocked) {
+      void showAlert({ title: 'Notice', description: aiRefineBlockedReason });
+      return;
+    }
+
     if (!(editorText || '').trim()) {
       void showAlert({ title: 'Notice', description: 'Add or keep some draft text before generating variants.' });
       return;
@@ -270,14 +284,15 @@ export function useReviewFlowActions(
     }
   };
 
-  const handleFetchMoreImageOptions = async () => {
-    const nextImageUrls = await onFetchMoreImages();
+  const handleFetchMoreImageOptions = async (searchQuery?: string) => {
+    const nextImageUrls = await onFetchMoreImages(searchQuery);
     const nextOptions = nextImageUrls.map((imageUrl, index) => ({
       id: `alternate-${Date.now()}-${index}`,
       imageUrl,
-      label: `Alternative ${index + 1}`,
+      label: `Result ${index + 1}`,
       kind: 'alternate' as const,
       originalIndex: index,
+      pendingCloudUpload: true as const,
     }));
 
     const dedupedAlternates = mergeUniqueImageOptions([
@@ -287,6 +302,52 @@ export function useReviewFlowActions(
     setAlternateImageOptions(dedupedAlternates);
     if (dedupedAlternates[0]?.imageUrl) {
       setSelectedImageUrl(dedupedAlternates[0].imageUrl);
+    }
+  };
+
+  const promoteAlternateOption = async (option: ImageAssetOption): Promise<string> => {
+    const gcsUrl = await onPromoteRemoteImage(option.imageUrl);
+    setAlternateImageOptions((prev) =>
+      prev.map((o) =>
+        o.id === option.id ? { ...o, imageUrl: gcsUrl, pendingCloudUpload: false } : o,
+      ),
+    );
+    return gcsUrl;
+  };
+
+  const handleSelectImageOption = async (option: ImageAssetOption) => {
+    if (!option.pendingCloudUpload) {
+      setSelectedImageUrl(option.imageUrl);
+      return;
+    }
+    setImagePromoteOptionId(option.id);
+    try {
+      const gcsUrl = await promoteAlternateOption(option);
+      setSelectedImageUrl(gcsUrl);
+    } catch (error) {
+      console.error(error);
+      void showAlert({
+        title: 'Could not save image',
+        description: error instanceof Error ? error.message : 'Failed to copy the image to workspace storage.',
+      });
+    } finally {
+      setImagePromoteOptionId('');
+    }
+  };
+
+  const ensureSelectedImageStored = async (): Promise<string> => {
+    const url = state.selectedImageUrl;
+    const pendingAlt = alternateImageOptions.find((o) => o.imageUrl === url && o.pendingCloudUpload);
+    if (!pendingAlt) {
+      return url;
+    }
+    setImagePromoteOptionId(pendingAlt.id);
+    try {
+      const gcsUrl = await promoteAlternateOption(pendingAlt);
+      setSelectedImageUrl(gcsUrl);
+      return gcsUrl;
+    } finally {
+      setImagePromoteOptionId('');
     }
   };
 
@@ -322,7 +383,8 @@ export function useReviewFlowActions(
         formattedTime = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
       }
 
-      await onApprove(editorText.trim(), state.selectedImageUrl, formattedTime, emailTo, emailCc, emailBcc, emailSubject);
+      const imageUrlForSheet = await ensureSelectedImageStored();
+      await onApprove(editorText.trim(), imageUrlForSheet, formattedTime, emailTo, emailCc, emailBcc, emailSubject);
     } catch (error) {
       console.error('Approval failed:', error);
       void showAlert({
@@ -353,9 +415,10 @@ export function useReviewFlowActions(
         formattedTime = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
       }
 
+      const imageUrlForPublish = await ensureSelectedImageStored();
       await onPublishNow(
         editorText.trim(),
-        state.selectedImageUrl,
+        imageUrlForPublish,
         formattedTime,
         emailTo,
         emailCc,
@@ -561,6 +624,8 @@ export function useReviewFlowActions(
     handleApplyVariant,
     handleSavePreviewVariantAtIndex,
     handleFetchMoreImageOptions,
+    handleSelectImageOption,
+    imagePromoteOptionId,
     handleUploadImageOption,
     handleApprove,
     handlePublishNow,

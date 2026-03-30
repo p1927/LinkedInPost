@@ -1,11 +1,22 @@
 import { Highlighter, List, Redo2, ScanSearch, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, type ChangeEvent, type KeyboardEvent } from 'react';
 import type { GenerationScope, TextSelectionRange } from '../../services/backendApi';
-import { cn } from '../../lib/cn';
-import { type FormattingAction, getEffectiveScope, normalizeSelection } from './selection';
-import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/cn';
+import {
+  DraftTextareaWithHighlight,
+  ScopeModeToolbar,
+  type FormattingAction,
+  normalizeSelection,
+} from '@/features/draft-selection-target';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+
+function cursorFromSelection(sel: TextSelectionRange | null, len: number): { start: number; end: number } {
+  if (sel != null && sel.start >= 0 && sel.end >= 0 && sel.start <= sel.end && sel.end <= len) {
+    return { start: sel.start, end: sel.end };
+  }
+  return { start: len, end: len };
+}
 
 interface DraftEditorProps {
   value: string;
@@ -16,6 +27,8 @@ interface DraftEditorProps {
   onSelectionChange: (selection: TextSelectionRange | null) => void;
   onScopeChange: (scope: GenerationScope) => void;
   onFormatting: (action: FormattingAction) => void;
+  /** When this changes, undo history is cleared (e.g. new sheet row or editor route). */
+  historyResetKey?: string;
   /** Tighter toolbar and editor for multi-column review layout. */
   compact?: boolean;
   className?: string;
@@ -39,6 +52,7 @@ export function DraftEditor({
   onSelectionChange,
   onScopeChange,
   onFormatting,
+  historyResetKey = '',
   compact = false,
   className,
 }: DraftEditorProps) {
@@ -47,6 +61,7 @@ export function DraftEditor({
   const historyIndexRef = useRef(0);
   const applyingHistoryRef = useRef(false);
   const pendingSelectionRef = useRef<{ start: number; end: number } | null>(null);
+  const lastHistoryResetKeyRef = useRef(historyResetKey);
   const [, bumpHistoryUi] = useReducer((n: number) => n + 1, 0);
 
   if (historyRef.current === null) {
@@ -54,30 +69,43 @@ export function DraftEditor({
     historyIndexRef.current = 0;
   }
 
-  const effectiveScope = getEffectiveScope(preferredScope, selection);
-  const selectionSummary = selection?.text?.trim()
-    ? `${selection.text.trim().slice(0, 72)}${selection.text.trim().length > 72 ? '...' : ''}`
-    : 'No text selected';
-
-  useEffect(() => {
-    if (preferredScope === 'selection' && !selection?.text?.trim()) {
-      onScopeChange('whole-post');
+  const pushHistoryEntry = (nextValue: string, start: number, end: number) => {
+    const hist = historyRef.current ?? [];
+    const idx = historyIndexRef.current;
+    const next = [...hist.slice(0, idx + 1), { value: nextValue, start, end }];
+    if (next.length > MAX_EDITOR_HISTORY) {
+      const overflow = next.length - MAX_EDITOR_HISTORY;
+      next.splice(0, overflow);
+      historyIndexRef.current = next.length - 1;
+    } else {
+      historyIndexRef.current = next.length - 1;
     }
-  }, [onScopeChange, preferredScope, selection]);
+    historyRef.current = next;
+    bumpHistoryUi();
+  };
 
   useEffect(() => {
     if (applyingHistoryRef.current) {
       applyingHistoryRef.current = false;
       return;
     }
-    const hist = historyRef.current;
-    if (!hist?.length) return;
+    const hist = historyRef.current ?? [];
     const idx = historyIndexRef.current;
+
+    if (historyResetKey !== lastHistoryResetKeyRef.current) {
+      lastHistoryResetKeyRef.current = historyResetKey;
+      const c = cursorFromSelection(selection, value.length);
+      historyRef.current = [{ value, start: c.start, end: c.end }];
+      historyIndexRef.current = 0;
+      bumpHistoryUi();
+      return;
+    }
+
     if (value === hist[idx]?.value) return;
-    historyRef.current = [{ value, start: value.length, end: value.length }];
-    historyIndexRef.current = 0;
-    bumpHistoryUi();
-  }, [value]);
+
+    const c = cursorFromSelection(selection, value.length);
+    pushHistoryEntry(value, c.start, c.end);
+  }, [value, selection, historyResetKey]);
 
   const syncSelection = () => {
     const element = textareaRef.current;
@@ -106,18 +134,7 @@ export function DraftEditor({
     const newValue = el.value;
     const start = el.selectionStart ?? newValue.length;
     const end = el.selectionEnd ?? newValue.length;
-    const hist = historyRef.current ?? [];
-    const idx = historyIndexRef.current;
-    const next = [...hist.slice(0, idx + 1), { value: newValue, start, end }];
-    if (next.length > MAX_EDITOR_HISTORY) {
-      const overflow = next.length - MAX_EDITOR_HISTORY;
-      next.splice(0, overflow);
-      historyIndexRef.current = next.length - 1;
-    } else {
-      historyIndexRef.current = next.length - 1;
-    }
-    historyRef.current = next;
-    bumpHistoryUi();
+    pushHistoryEntry(newValue, start, end);
     onChange(newValue);
   };
 
@@ -159,188 +176,169 @@ export function DraftEditor({
   const canUndo = hist.length > 0 && historyIndexRef.current > 0;
   const canRedo = hist.length > 0 && historyIndexRef.current < hist.length - 1;
 
-  const tBtn = compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm';
   const taMin = compact
     ? 'min-h-[140px] max-h-[min(72dvh,34rem)] overflow-y-auto'
-    : 'min-h-[320px]';
+    : 'min-h-[320px] flex-1 min-h-0 overflow-y-auto';
   const taText = compact ? 'px-3 py-3 text-sm leading-6' : 'px-5 py-4 text-base leading-7';
   const fmtIcon = compact ? 'h-3.5 w-3.5' : 'h-4 w-4';
   const fmtBtn = compact ? 'p-1.5' : 'p-2';
 
+  const undoRedoCompact = (
+    <div className="flex shrink-0 items-center gap-0.5" role="group" aria-label="Undo and redo">
+      <Button
+        type="button"
+        variant="ghost"
+        size="inline"
+        title="Undo"
+        aria-label="Undo"
+        disabled={!canUndo}
+        onClick={() => undo()}
+        className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-40 ${fmtBtn}`}
+      >
+        <Undo2 className={fmtIcon} aria-hidden />
+        <span className="sr-only">Undo</span>
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="inline"
+        title="Redo"
+        aria-label="Redo"
+        disabled={!canRedo}
+        onClick={() => redo()}
+        className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-40 ${fmtBtn}`}
+      >
+        <Redo2 className={fmtIcon} aria-hidden />
+        <span className="sr-only">Redo</span>
+      </Button>
+    </div>
+  );
+
+  const formatToolbarCompact = (
+    <div className="flex shrink-0 items-center gap-0.5" role="toolbar" aria-label="Formatting">
+      {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
+        <Button
+          key={id}
+          type="button"
+          variant="ghost"
+          size="inline"
+          title={label}
+          onClick={() => onFormatting(id)}
+          className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${fmtBtn}`}
+        >
+          <Icon className={fmtIcon} aria-hidden />
+          <span className="sr-only">{label}</span>
+        </Button>
+      ))}
+    </div>
+  );
+
+  const undoRedoWide = (
+    <div className="flex shrink-0 items-center gap-1" role="group" aria-label="Undo and redo">
+      <Button
+        type="button"
+        variant="ghost"
+        size="inline"
+        title="Undo"
+        aria-label="Undo"
+        disabled={!canUndo}
+        onClick={() => undo()}
+        className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border bg-surface p-2 font-semibold text-ink transition-colors hover:bg-canvas disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Undo2 className="h-4 w-4" aria-hidden />
+        <span className="sr-only">Undo</span>
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="inline"
+        title="Redo"
+        aria-label="Redo"
+        disabled={!canRedo}
+        onClick={() => redo()}
+        className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border bg-surface p-2 font-semibold text-ink transition-colors hover:bg-canvas disabled:pointer-events-none disabled:opacity-40"
+      >
+        <Redo2 className="h-4 w-4" aria-hidden />
+        <span className="sr-only">Redo</span>
+      </Button>
+    </div>
+  );
+
+  const formatMenuWide = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            type="button"
+            className="inline-flex cursor-pointer rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            Formatting actions
+          </Button>
+        }
+      />
+      <DropdownMenuContent
+        align="end"
+        sideOffset={6}
+        className="mt-1 grid min-w-[220px] max-w-[min(100vw-2rem,280px)] gap-0.5"
+      >
+        {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
+          <DropdownMenuItem key={id} onClick={() => onFormatting(id)}>
+            <Icon className="h-4 w-4" />
+            {label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <div className={cn('flex min-h-0 flex-col', !compact && 'flex-1', className)}>
       {compact ? (
-        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200/60 bg-white/70 px-2 py-1.5 backdrop-blur-sm">
-          <div className="inline-flex shrink-0 rounded-full border border-violet-200/50 bg-white/80 p-0.5 backdrop-blur-sm">
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              onClick={() => onScopeChange('whole-post')}
-              className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg shadow-sm hover:bg-ink/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
-            >
-              Whole post
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              onClick={() => onScopeChange('selection')}
-              disabled={!selection?.text?.trim()}
-              className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70 disabled:cursor-not-allowed disabled:text-muted/40'}`}
-            >
-              Selection
-            </Button>
-          </div>
-          <p className="min-w-0 max-w-full flex-[1_1_12rem] text-xs text-muted sm:flex-[1_1_16rem]">
-            <span className="font-semibold text-ink">Target: </span>
-            <span className="break-words">{effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}</span>
-          </p>
-          <div className="flex shrink-0 items-center gap-0.5" role="group" aria-label="Undo and redo">
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              title="Undo"
-              aria-label="Undo"
-              disabled={!canUndo}
-              onClick={() => undo()}
-              className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-40 ${fmtBtn}`}
-            >
-              <Undo2 className={fmtIcon} aria-hidden />
-              <span className="sr-only">Undo</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              title="Redo"
-              aria-label="Redo"
-              disabled={!canRedo}
-              onClick={() => redo()}
-              className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-40 ${fmtBtn}`}
-            >
-              <Redo2 className={fmtIcon} aria-hidden />
-              <span className="sr-only">Redo</span>
-            </Button>
-          </div>
-          <div className="flex shrink-0 items-center gap-0.5" role="toolbar" aria-label="Formatting">
-            {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
-              <Button
-                key={id}
-                type="button"
-                variant="ghost"
-                size="inline"
-                title={label}
-                onClick={() => onFormatting(id)}
-                className={`inline-flex cursor-pointer items-center justify-center rounded-lg font-semibold text-ink transition-all duration-200 hover:bg-violet-100/50 hover:text-primary hover:shadow-md active:scale-95 active:shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${fmtBtn}`}
-              >
-                <Icon className={fmtIcon} aria-hidden />
-                <span className="sr-only">{label}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
+        <ScopeModeToolbar
+          compact
+          preferredScope={preferredScope}
+          selection={selection}
+          onScopeChange={onScopeChange}
+          trailing={
+            <>
+              {undoRedoCompact}
+              {formatToolbarCompact}
+            </>
+          }
+        />
       ) : (
-        /* Non-compact: original single-row toolbar with dropdown */
-        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200/60 bg-white/70 backdrop-blur-sm transition-all duration-200 px-3 py-2">
-          <div className="inline-flex rounded-full border border-violet-200/50 bg-white/80 backdrop-blur-sm transition-all duration-200 p-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              onClick={() => onScopeChange('whole-post')}
-              className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'whole-post' ? 'bg-ink text-primary-fg shadow-sm hover:bg-ink/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
-            >
-              Whole post
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              onClick={() => onScopeChange('selection')}
-              disabled={!selection?.text?.trim()}
-              className={`cursor-pointer rounded-full font-semibold transition-all duration-200 ${tBtn} ${effectiveScope === 'selection' ? 'bg-primary text-primary-fg shadow-sm hover:bg-primary/90 hover:text-primary-fg' : 'text-muted hover:bg-white/60 hover:text-ink/70 disabled:cursor-not-allowed disabled:text-muted/40'}`}
-            >
-              Selection
-            </Button>
-          </div>
-          <div className="min-w-0 flex-1 rounded-2xl border border-border bg-surface px-2.5 py-1 text-sm text-muted">
-            <span className="font-semibold text-ink">Target:</span>{' '}
-            {effectiveScope === 'selection' ? selectionSummary : 'Entire draft'}
-            <span className="mt-0.5 block text-[0.65rem] font-normal text-muted/90">
-              Quick Change and 4 Variants use this target.
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-1" role="group" aria-label="Undo and redo">
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              title="Undo"
-              aria-label="Undo"
-              disabled={!canUndo}
-              onClick={() => undo()}
-              className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border bg-surface p-2 font-semibold text-ink transition-colors hover:bg-canvas disabled:pointer-events-none disabled:opacity-40"
-            >
-              <Undo2 className="h-4 w-4" aria-hidden />
-              <span className="sr-only">Undo</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              title="Redo"
-              aria-label="Redo"
-              disabled={!canRedo}
-              onClick={() => redo()}
-              className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-border bg-surface p-2 font-semibold text-ink transition-colors hover:bg-canvas disabled:pointer-events-none disabled:opacity-40"
-            >
-              <Redo2 className="h-4 w-4" aria-hidden />
-              <span className="sr-only">Redo</span>
-            </Button>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button
-                variant="ghost"
-                type="button"
-                className="inline-flex cursor-pointer rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              >
-                Formatting actions
-              </Button>} />
-            <DropdownMenuContent
-              align="end"
-              sideOffset={6}
-              className="mt-1 grid min-w-[220px] max-w-[min(100vw-2rem,280px)] gap-0.5"
-            >
-              {FORMATTING_ACTIONS.map(({ id, label, icon: Icon }) => (
-                <DropdownMenuItem key={id} onClick={() => onFormatting(id)}>
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <ScopeModeToolbar
+          preferredScope={preferredScope}
+          selection={selection}
+          onScopeChange={onScopeChange}
+          trailing={
+            <div className="flex shrink-0 flex-wrap items-center gap-1">
+              {undoRedoWide}
+              {formatMenuWide}
+            </div>
+          }
+        />
       )}
 
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={handleTextChange}
-        onKeyDown={handleEditorKeyDown}
-        onSelect={syncSelection}
-        onKeyUp={syncSelection}
-        onMouseUp={syncSelection}
-        spellCheck={false}
-        className={cn(
-          'w-full resize-none rounded-xl border border-violet-200/60 bg-white/85 text-ink outline-none transition-all duration-200 hover:border-violet-300/70 hover:bg-white/95 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/35 focus:ring-offset-0 focus:shadow-lg',
-          !compact && 'flex-1',
-          taMin,
-          taText,
-        )}
-        placeholder="Edit the draft here. Select a sentence to target only that part with Quick Change or 4 Variants."
-      />
+      <div className={cn('flex min-h-0 flex-col', !compact && 'min-h-0 flex-1')}>
+        <DraftTextareaWithHighlight
+          ref={textareaRef}
+          value={value}
+          preferredScope={preferredScope}
+          selection={selection}
+          editorTypographyClassName={taText}
+          editorContainerClassName={taMin}
+          onChange={handleTextChange}
+          onKeyDown={handleEditorKeyDown}
+          onSelect={syncSelection}
+          onKeyUp={syncSelection}
+          onMouseUp={syncSelection}
+          spellCheck={false}
+          className={cn(!compact && 'min-h-0 flex-1')}
+          placeholder="Edit the draft here. Choose Selection, then highlight the part to change with Quick Change or 4 Variants."
+        />
+      </div>
     </div>
   );
 }

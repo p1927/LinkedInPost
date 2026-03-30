@@ -70,6 +70,10 @@ export interface DraftImageUploadResult {
   imageUrl: string;
 }
 
+export interface DraftImagePromoteResult {
+  imageUrl: string;
+}
+
 export type GenerationScope = 'selection' | 'whole-post';
 
 export interface TextSelectionRange {
@@ -413,10 +417,23 @@ export class BackendApi {
     });
   }
 
-  async fetchDraftImages(idToken: string, topic: string, count = 4): Promise<DraftImageListResult> {
+  async fetchDraftImages(
+    idToken: string,
+    topic: string,
+    count = 4,
+    searchQuery?: string,
+  ): Promise<DraftImageListResult> {
     return this.post<DraftImageListResult>('fetchDraftImages', idToken, {
       topic,
       count,
+      ...(searchQuery?.trim() ? { searchQuery: searchQuery.trim() } : {}),
+    });
+  }
+
+  async promoteDraftImageUrl(idToken: string, topic: string, sourceUrl: string): Promise<DraftImagePromoteResult> {
+    return this.post<DraftImagePromoteResult>('promoteDraftImageUrl', idToken, {
+      topic,
+      sourceUrl: sourceUrl.trim(),
     });
   }
 

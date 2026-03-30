@@ -12,16 +12,21 @@ export interface ImageAssetOption {
   label: string;
   kind: 'generated' | 'alternate' | 'upload';
   originalIndex?: number;
+  /** Search hits are shown from the web first; selecting or approving uploads to workspace storage. */
+  pendingCloudUpload?: boolean;
 }
 
 interface Props {
   topic: string;
   images: ImageAssetOption[];
   selectedImageUrl: string;
-  onSelectImage: (imageUrl: string) => void;
-  onFetchMoreImages: () => Promise<void>;
+  onSelectImage: (option: ImageAssetOption) => void | Promise<void>;
+  onFetchMoreImages: (searchQuery?: string) => Promise<void>;
   onUploadImage: (file: File) => Promise<void>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
+  /** Narrow sidebar: single column, contained thumbnails, stacked actions. */
+  compact?: boolean;
+  imagePromoteOptionId?: string;
 }
 
 function buildDownloadName(topic: string, option: ImageAssetOption): string {
@@ -35,10 +40,10 @@ function buildDownloadName(topic: string, option: ImageAssetOption): string {
   return `${baseTopic}-${suffix}.jpg`;
 }
 
-function getOptionBadgeLabel(option: ImageAssetOption): string {
+function getOptionBadgeLabel(option: ImageAssetOption): string | null {
   if (option.kind === 'upload') return 'Uploaded';
-  if (option.kind === 'alternate') return 'Alternate';
-  return 'Generated';
+  if (option.kind === 'alternate') return option.pendingCloudUpload ? 'Preview' : 'Alternate';
+  return null;
 }
 
 export function ImageAssetManager({
@@ -49,17 +54,21 @@ export function ImageAssetManager({
   onFetchMoreImages,
   onUploadImage,
   onDownloadImage,
+  compact = false,
+  imagePromoteOptionId = '',
 }: Props) {
   const { showAlert } = useAlert();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [fetching, setFetching] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [downloadingId, setDownloadingId] = useState('');
+  const [imageSearchQuery, setImageSearchQuery] = useState('');
 
   const handleFetchMore = async () => {
     setFetching(true);
     try {
-      await onFetchMoreImages();
+      const q = imageSearchQuery.trim();
+      await onFetchMoreImages(q || undefined);
     } catch (error) {
       console.error(error);
       void showAlert({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to fetch alternate images.' });
@@ -106,37 +115,57 @@ export function ImageAssetManager({
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <div className={compact ? 'space-y-3' : 'flex flex-wrap items-start justify-between gap-4'}>
+        <div className="min-w-0">
           <h4 className="font-heading text-sm font-semibold text-ink">Choose the image</h4>
-          <p className="mt-1 max-w-xl text-sm leading-6 text-muted">
-            Keep the generated options, pull fresh alternatives, or upload a custom asset for this post before approval.
+          <p className="mt-1 text-sm leading-6 text-muted">
+            {compact
+              ? 'Search the web, keep sheet images, or upload. Search results save to storage when you select or approve.'
+              : 'Keep the generated options, search for images, or upload a custom asset for this post before approval.'}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            onClick={handleFetchMore}
+        <div className={compact ? 'flex flex-col gap-2' : 'flex flex-wrap gap-2'}>
+          <Input
+            value={imageSearchQuery}
+            onChange={(e) => setImageSearchQuery(e.target.value)}
+            placeholder="Image search (optional)"
             disabled={fetching || uploading}
-            className="gap-2 rounded-xl"
-          >
-            {fetching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            {fetching ? 'Fetching...' : 'Fetch other images'}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="md"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading || fetching}
-            className="gap-2 rounded-xl"
-          >
-            {uploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            {uploading ? 'Uploading...' : 'Upload image'}
-          </Button>
+            className="h-10 rounded-xl border-border bg-canvas text-sm"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !fetching && !uploading) {
+                e.preventDefault();
+                void handleFetchMore();
+              }
+            }}
+          />
+          <p className="text-xs leading-5 text-muted">
+            Leave search empty to use your topic. Press Enter or Search to load previews.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => void handleFetchMore()}
+              disabled={fetching || uploading}
+              className="gap-2 rounded-xl"
+            >
+              {fetching ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {fetching ? 'Searching…' : 'Search images'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="md"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading || fetching}
+              className="gap-2 rounded-xl"
+            >
+              {uploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {uploading ? 'Uploading...' : 'Upload image'}
+            </Button>
+          </div>
           <Input
             ref={inputRef}
             type="file"
@@ -158,10 +187,18 @@ export function ImageAssetManager({
           </p>
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div
+          className={
+            compact
+              ? 'mt-4 grid grid-cols-1 gap-3'
+              : 'mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
+          }
+        >
           {images.map((option) => {
             const isSelected = selectedImageUrl === option.imageUrl;
             const resolvedImageUrl = normalizePreviewImageUrl(option.imageUrl);
+            const badgeLabel = getOptionBadgeLabel(option);
+            const promoting = imagePromoteOptionId === option.id;
 
             return (
               <div
@@ -176,28 +213,44 @@ export function ImageAssetManager({
                   type="button"
                   variant="ghost"
                   size="inline"
-                  onClick={() => onSelectImage(option.imageUrl)}
-                  className="block w-full rounded-none text-left hover:bg-transparent"
+                  disabled={Boolean(promoting)}
+                  onClick={() => void onSelectImage(option)}
+                  className="block w-full rounded-none text-left hover:bg-transparent disabled:opacity-70"
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-surface-muted">
+                  <div
+                    className={`relative overflow-hidden bg-surface-muted ${
+                      compact
+                        ? 'flex max-h-44 min-h-[7rem] items-center justify-center py-2'
+                        : 'aspect-[4/3]'
+                    }`}
+                  >
                     <img
                       src={resolvedImageUrl}
                       alt={option.label}
-                      className={`h-full w-full object-cover transition-transform duration-500 ${
-                        isSelected ? 'scale-[1.03]' : 'hover:scale-[1.03]'
-                      }`}
+                      referrerPolicy="no-referrer"
+                      className={`max-h-full w-full transition-transform duration-500 ${
+                        compact ? 'max-h-44 object-contain' : 'h-full object-cover'
+                      } ${isSelected ? 'scale-[1.02]' : 'hover:scale-[1.02]'}`}
                     />
-                    <Badge
-                      variant="neutral"
-                      size="sm"
-                      className="absolute left-3 top-3 border-white/35 bg-ink/88 text-primary-fg shadow-md backdrop-blur-sm normal-case"
-                    >
-                      {getOptionBadgeLabel(option)}
-                    </Badge>
+                    {badgeLabel ? (
+                      <Badge
+                        variant="neutral"
+                        size="sm"
+                        className="absolute left-3 top-3 border-white/35 bg-ink/88 text-primary-fg shadow-md backdrop-blur-sm normal-case"
+                      >
+                        {badgeLabel}
+                      </Badge>
+                    ) : null}
                     {isSelected ? (
                       <Badge variant="primary" size="sm" className="absolute right-3 top-3 shadow-md normal-case">
                         Selected
                       </Badge>
+                    ) : null}
+                    {promoting ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-ink/40 backdrop-blur-[2px]">
+                        <LoaderCircle className="h-8 w-8 animate-spin text-white" aria-hidden />
+                        <span className="sr-only">Saving image to workspace…</span>
+                      </div>
                     ) : null}
                   </div>
                 </Button>
@@ -206,7 +259,13 @@ export function ImageAssetManager({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-ink">{option.label}</p>
                     <p className="mt-1 text-xs leading-5 text-muted">
-                      {isSelected ? 'This image will be attached on approval.' : 'Select this image for the approved post.'}
+                      {option.pendingCloudUpload && isSelected
+                        ? 'Will be saved to workspace when you approve (or now if you re-select after an error).'
+                        : isSelected
+                          ? 'This image will be attached on approval.'
+                          : option.pendingCloudUpload
+                            ? 'Web preview — select to save a copy for publishing.'
+                            : 'Select this image for the approved post.'}
                     </p>
                   </div>
 

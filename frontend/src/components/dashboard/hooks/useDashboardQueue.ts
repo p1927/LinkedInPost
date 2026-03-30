@@ -260,9 +260,14 @@ export function useDashboardQueue({
     }
   };
 
-  const handleFetchReviewImages = async (row: SheetRow) => {
-    const result = await api.fetchDraftImages(idToken, row.topic, 4);
+  const handleFetchReviewImages = async (row: SheetRow, searchQuery?: string) => {
+    const result = await api.fetchDraftImages(idToken, row.topic, 4, searchQuery);
     return result.imageUrls;
+  };
+
+  const handlePromoteReviewImage = async (row: SheetRow, sourceUrl: string) => {
+    const result = await api.promoteDraftImageUrl(idToken, row.topic, sourceUrl);
+    return result.imageUrl;
   };
 
   const handleUploadReviewImage = async (row: SheetRow, file: File) => {
@@ -542,6 +547,7 @@ export function useDashboardQueue({
     handleSaveDraftVariants,
     handleSaveTopicGenerationRules,
     handleFetchReviewImages,
+    handlePromoteReviewImage,
     handleUploadReviewImage,
     handleDownloadReviewImage,
     publishRowToSelectedChannel,

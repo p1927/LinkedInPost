@@ -62,6 +62,9 @@ export interface ReviewFlowContextValue {
   setPostTime: React.Dispatch<React.SetStateAction<string>>;
   selectedImageUrl: string;
   setSelectedImageUrl: React.Dispatch<React.SetStateAction<string>>;
+  /** Select an image; search results are promoted to storage when needed. */
+  handleSelectImageOption: (option: ImageAssetOption) => Promise<void>;
+  imagePromoteOptionId: string;
   alternateImageOptions: ImageAssetOption[];
   uploadedImageOptions: ImageAssetOption[];
   pendingVariantIndex: number | null;
@@ -107,6 +110,8 @@ export interface ReviewFlowContextValue {
   generatedImageOptions: ImageAssetOption[];
   imageOptions: ImageAssetOption[];
   effectiveScope: GenerationScope;
+  aiRefineBlocked: boolean;
+  aiRefineBlockedReason: string;
   currentTargetText: string;
   editorDirty: boolean;
   hasUnsavedReviewState: boolean;
@@ -125,7 +130,7 @@ export interface ReviewFlowContextValue {
   handleApplyQuickChange: () => void;
   handleApplyVariant: (index: number) => void;
   handleSavePreviewVariantAtIndex: (index: number) => Promise<void>;
-  handleFetchMoreImageOptions: () => Promise<void>;
+  handleFetchMoreImageOptions: (searchQuery?: string) => Promise<void>;
   handleUploadImageOption: (file: File) => Promise<void>;
   handleApprove: () => Promise<void>;
   handlePublishNow: () => Promise<void>;
@@ -156,7 +161,8 @@ export interface ReviewFlowProviderProps {
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
-  onFetchMoreImages: () => Promise<string[]>;
+  onFetchMoreImages: (searchQuery?: string) => Promise<string[]>;
+  onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;

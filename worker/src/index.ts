@@ -371,6 +371,10 @@ interface DraftImageUploadResult {
   imageUrl: string;
 }
 
+interface DraftImagePromoteResult {
+  imageUrl: string;
+}
+
 interface SerpApiImageResult {
   original?: string;
   thumbnail?: string;
@@ -667,6 +671,8 @@ async function dispatchAction(
       return verifyTelegramChat(env, storedConfig, payload);
     case 'fetchDraftImages':
       return fetchDraftImages(env, payload);
+    case 'promoteDraftImageUrl':
+      return promoteDraftImageUrl(env, payload);
     case 'uploadDraftImage':
       return uploadDraftImage(env, payload);
     case 'triggerGithubAction':
@@ -2862,6 +2868,7 @@ function decodeDataUrl(dataUrl: string): { bytes: ArrayBuffer; contentType: stri
 
 async function fetchDraftImages(env: Env, payload: Record<string, unknown>): Promise<DraftImageListResult> {
   const topic = String(payload.topic || '').trim();
+  const searchQuery = String(payload.searchQuery ?? '').trim();
   const requestedCount = Number(payload.count || 4);
   const count = Number.isFinite(requestedCount) ? Math.min(6, Math.max(1, Math.trunc(requestedCount))) : 4;
 
@@ -2869,35 +2876,47 @@ async function fetchDraftImages(env: Env, payload: Record<string, unknown>): Pro
     throw new Error('Topic is required to fetch alternate images.');
   }
 
-  const candidates = await fetchCandidateImageUrls(env, topic, count);
-  if (candidates.length === 0) {
-    throw new Error(`No alternate images were found for "${topic}".`);
-  }
+  let candidates: string[];
 
-  const uploadedUrls: string[] = [];
-  for (const candidate of candidates) {
-    if (uploadedUrls.length >= count) {
-      break;
+  if (searchQuery) {
+    const serpPayload = await runSerpApiSearch(env, searchQuery, Math.max(count * 3, count), true);
+    candidates = [];
+    const seen = new Set<string>();
+    for (const item of serpPayload.images_results || []) {
+      const candidate = firstNonEmpty(item.original, item.thumbnail, item.link);
+      if (!candidate || seen.has(candidate)) {
+        continue;
+      }
+      seen.add(candidate);
+      candidates.push(candidate);
     }
-
-    try {
-      const asset = await fetchImageAsset(candidate);
-      const uploadedUrl = await uploadBytesToGcs(env, topic, uploadedUrls.length + 1, asset.bytes, asset.contentType);
-      uploadedUrls.push(uploadedUrl);
-    } catch (error) {
-      console.warn('Skipping alternate image candidate', {
-        topic,
-        candidate,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    if (candidates.length === 0) {
+      throw new Error(`No images found for "${searchQuery}".`);
+    }
+  } else {
+    candidates = await fetchCandidateImageUrls(env, topic, count);
+    if (candidates.length === 0) {
+      throw new Error(`No alternate images were found for "${topic}".`);
     }
   }
 
-  if (uploadedUrls.length === 0) {
-    throw new Error(`Alternate images were found for "${topic}", but none could be prepared for preview.`);
+  return { imageUrls: candidates.slice(0, count) };
+}
+
+async function promoteDraftImageUrl(env: Env, payload: Record<string, unknown>): Promise<DraftImagePromoteResult> {
+  const topic = String(payload.topic || '').trim();
+  const sourceUrl = String(payload.sourceUrl || '').trim();
+
+  if (!topic) {
+    throw new Error('Topic is required to save the selected image.');
+  }
+  if (!sourceUrl) {
+    throw new Error('Image URL is required.');
   }
 
-  return { imageUrls: uploadedUrls };
+  const asset = await fetchImageAsset(normalizeDeliveryImageUrl(sourceUrl));
+  const imageUrl = await uploadBytesToGcs(env, topic, 1, asset.bytes, asset.contentType);
+  return { imageUrl };
 }
 
 async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Promise<DraftImageUploadResult> {

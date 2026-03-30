@@ -43,9 +43,12 @@ export function EditorScreen() {
     onDismissScheduledPublish,
     postTime,
     setPostTime,
-    sheetVariants,
     previewReadyCount,
+    routed,
+    editorStartMediaPanel,
   } = useReviewFlow();
+
+  const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}`;
 
   const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
   const isDesktop = useMediaQuery('(min-width: 1280px)');
@@ -73,6 +76,7 @@ export function EditorScreen() {
         onSelectionChange={setSelection}
         onScopeChange={setScope}
         onFormatting={handleFormatting}
+        historyResetKey={editorHistoryResetKey}
         compact
         className="min-h-0 xl:flex-none"
       />
@@ -139,51 +143,43 @@ export function EditorScreen() {
           </div>
         ) : null}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
-          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-muted">Step 2 of 2</span>
-              {sheetVariants.length > 0 ? (
-                <Badge variant="info" size="xs" className="normal-case font-bold shadow-sm">
-                  Editing
-                </Badge>
-              ) : null}
-              {editorDirty ? (
-                <Badge variant="warning" size="xs" className="normal-case font-bold shadow-sm">
-                  Draft edited
-                </Badge>
-              ) : null}
-              {previewReadyCount > 0 ? (
-                <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm">
-                  {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
-                </Badge>
-              ) : null}
-            </div>
-            <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px]">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            {editorDirty ? (
+              <Badge variant="warning" size="xs" className="normal-case font-bold shadow-sm">
+                Draft edited
+              </Badge>
+            ) : null}
+            {previewReadyCount > 0 ? (
+              <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm">
+                {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
+              </Badge>
+            ) : null}
+          </div>
+          <div
+            className={cn(
+              'flex shrink-0 flex-col gap-2 justify-stretch sm:flex-row sm:flex-wrap sm:items-end sm:justify-end sm:gap-3',
+              !isPublished && 'sm:items-center',
+            )}
+          >
+            <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px] sm:shrink-0">
               <label
                 htmlFor="review-post-time-input"
                 className="text-[10px] font-bold uppercase tracking-wider text-ink/70"
               >
-                Schedule <span className="font-normal normal-case tracking-normal text-ink/65">(optional)</span>
+                Schedule
               </label>
               <Input
                 id="review-post-time-input"
                 type="datetime-local"
                 value={postTime}
                 onChange={(event) => setPostTime(event.target.value)}
-                aria-label="Schedule post time (optional)"
+                aria-label="Schedule post time"
                 className={cn(
                   'min-h-[44px] w-full min-w-0 rounded-xl border border-violet-200/70 bg-white px-3 py-2 text-xs font-semibold text-ink shadow-sm outline-none transition-all duration-200 hover:border-violet-300/80 hover:shadow-md',
                   'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white/95 sm:w-[220px]',
                 )}
               />
             </div>
-          </div>
-          <div
-            className={cn(
-              'flex shrink-0 flex-col gap-2 justify-stretch sm:flex-row sm:flex-wrap sm:justify-end',
-              !isPublished && 'sm:items-center',
-            )}
-          >
             {isPublished ? (
               <Button
                 type="button"

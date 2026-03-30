@@ -34,7 +34,8 @@ export interface ReviewWorkspaceProps {
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
-  onFetchMoreImages: () => Promise<string[]>;
+  onFetchMoreImages: (searchQuery?: string) => Promise<string[]>;
+  onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
