@@ -395,7 +395,7 @@ export class PipelineStore {
   async markRowPublished(spreadsheetId: string, row: SheetRow): Promise<{ success: true }> {
     const next: SheetRow = {
       ...row,
-      status: row.status || 'Published',
+      status: 'Published',
       publishedAt: new Date().toISOString(),
     };
     await this.upsertFull(spreadsheetId, next);

@@ -118,7 +118,18 @@ export function mergePipelineVariantsWithSelection(
   if (st) {
     slot = vTrim.findIndex((vt) => vt.length > 0 && vt === st);
     if (slot < 0) {
-      slot = vTrim.findIndex((vt) => vt.length > 0 && (st.startsWith(vt) || vt.startsWith(st)));
+      // Prefer the variant with the longest matching prefix to avoid short variants
+      // incorrectly matching when a longer variant is a better fit (e.g. "Hello" vs "Hello World").
+      let bestLen = 0;
+      for (let i = 0; i < vTrim.length; i++) {
+        const vt = vTrim[i]!;
+        if (vt.length > 0 && (st.startsWith(vt) || vt.startsWith(st))) {
+          if (vt.length > bestLen) {
+            bestLen = vt.length;
+            slot = i;
+          }
+        }
+      }
     }
   }
 

@@ -25,6 +25,8 @@ Examples:
     python setup.py --all
 
 Gmail connect: set GMAIL_CLIENT_SECRET in `.env` (and optionally GMAIL_CLIENT_ID; otherwise the script reuses VITE_GOOGLE_CLIENT_ID). Run `python setup.py --cloudflare` so `worker/.dev.vars` and `wrangler.jsonc` include Gmail vars.
+
+Optional LLM and news research: when set in `.env`, `XAI_API_KEY`, `NEWSAPI_KEY`, `GNEWS_API_KEY`, `NEWSDATA_API_KEY`, and `RESEARCHER_RSS_FEEDS` are copied into `worker/.dev.vars`, included in Worker deploy secrets when non-empty, and synced to GitHub Actions secrets with `--sync-github-secrets`.
 """
 
 from __future__ import annotations
@@ -876,7 +878,12 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: Goo
         'GOOGLE_DOC_ID': google_resources.doc_id if google_resources else os.environ.get('GOOGLE_DOC_ID', '').strip(),
         'DELETE_UNUSED_GENERATED_IMAGES': os.environ.get('DELETE_UNUSED_GENERATED_IMAGES', 'true').strip(),
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
+        'XAI_API_KEY': os.environ.get('XAI_API_KEY', '').strip(),
         'SERPAPI_API_KEY': os.environ.get('SERPAPI_API_KEY', '').strip(),
+        'NEWSAPI_KEY': os.environ.get('NEWSAPI_KEY', '').strip(),
+        'GNEWS_API_KEY': os.environ.get('GNEWS_API_KEY', '').strip(),
+        'NEWSDATA_API_KEY': os.environ.get('NEWSDATA_API_KEY', '').strip(),
+        'RESEARCHER_RSS_FEEDS': os.environ.get('RESEARCHER_RSS_FEEDS', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'LINKEDIN_PERSON_URN': google_resources.linkedin_person_urn if google_resources else os.environ.get('LINKEDIN_PERSON_URN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),

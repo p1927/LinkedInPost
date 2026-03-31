@@ -289,7 +289,7 @@ export function useReviewFlowActions(
 
   const handleSavePreviewVariantAtIndex = async (index: number) => {
     const variant = variantsPreview?.variants[index];
-    if (!variant || variantsPreview.variants.length !== 4) {
+    if (!variant) {
       return;
     }
 

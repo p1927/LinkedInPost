@@ -16,6 +16,7 @@ import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway, coerceBulkCampaignPostsFromPayload } from './persistence/drafts';
 import {
   PipelineStore,
+  deleteNewsSnapshotsByTopicId,
   getNewsResearchSnapshotById,
   listNewsResearchHistory,
   pruneOldNewsSnapshots,
@@ -802,8 +803,12 @@ async function dispatchAction(
     case 'deleteRow': {
       ensureSpreadsheetConfigured(storedConfig);
       const rowToDelete = coerceSheetRow(payload.row);
+      const topicIdToDelete = requireTopicId(rowToDelete);
       await deleteGcsObjectsForTopicRow(env, rowToDelete);
-      await pipeline.deletePipelineRow(storedConfig.spreadsheetId, requireTopicId(rowToDelete));
+      await Promise.all([
+        pipeline.deletePipelineRow(storedConfig.spreadsheetId, topicIdToDelete),
+        deleteNewsSnapshotsByTopicId(env.PIPELINE_DB, storedConfig.spreadsheetId, topicIdToDelete),
+      ]);
       return sheets.deleteRow(storedConfig.spreadsheetId, rowToDelete);
     }
     case 'saveConfig':
@@ -974,7 +979,16 @@ export function coerceSheetRow(value: unknown): SheetRow {
   if (!value || typeof value !== 'object') {
     throw new Error('Missing row payload.');
   }
-
+  const obj = value as Record<string, unknown>;
+  if (typeof obj['topic'] !== 'string') {
+    throw new Error('Row payload is missing required field: topic');
+  }
+  if (typeof obj['date'] !== 'string') {
+    throw new Error('Row payload is missing required field: date');
+  }
+  if (typeof obj['topicId'] !== 'string') {
+    throw new Error('Row payload is missing required field: topicId');
+  }
   return value as SheetRow;
 }
 

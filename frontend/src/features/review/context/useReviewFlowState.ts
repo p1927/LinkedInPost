@@ -379,9 +379,9 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     imageOptions,
     selectedImageUrls,
     suppressAutoImageSelection,
-    uploadedImageOptions,
-    generatedImageOptions,
-    alternateImageOptions,
+    // uploadedImageOptions, generatedImageOptions, alternateImageOptions are omitted here because
+    // imageOptions is already memoized on all three — they will always change together with imageOptions,
+    // so including them separately is redundant and causes the effect to fire on intermediate renders.
     row.selectedImageId,
     row.selectedImageUrlsJson,
   ]);

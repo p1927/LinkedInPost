@@ -49,43 +49,42 @@ export function GoogleLoginButton({
   }
 
   return (
-    <div className="flex w-full min-w-[min(100%,280px)] max-w-sm flex-col items-center justify-center gap-2.5 sm:w-auto">
-      <div className="glass-panel flex w-full max-w-[280px] min-h-[56px] items-center justify-center rounded-full border border-white/55 px-2 py-2 shadow-sm ring-1 ring-white/50 transition-all duration-200 hover:shadow-card [&_iframe]:mx-auto [&_iframe]:block [&_iframe]:max-h-none [&_iframe]:max-w-full">
-        <GoogleLogin
-          click_listener={() => {
-            onSignInIntent?.()
-          }}
-          onSuccess={(credentialResponse) => {
-            const credential = credentialResponse.credential;
-            if (!credential) {
-              return;
-            }
+    <div className="flex w-full min-w-0 max-w-sm flex-col items-center justify-center gap-2.5 sm:w-auto">
+      <GoogleLogin
+        click_listener={() => {
+          onSignInIntent?.()
+        }}
+        onSuccess={(credentialResponse) => {
+          const credential = credentialResponse.credential;
+          if (!credential) {
+            return;
+          }
 
-            onSignInIntent?.()
-            setLoginHint(null);
-            localStorage.setItem(STORED_ID_TOKEN_KEY, credential);
-            setIdToken(credential);
-            onLogin(credential);
-          }}
-          onError={() => {
-            console.error('Google sign-in failed.');
-            setLoginHint(
-              'Sign-in did not complete. Allow pop-ups for localhost, try again, and confirm this exact URL (including port) is an Authorized JavaScript origin for your OAuth client.',
-            );
-          }}
-          useOneTap={false}
-          text="signin_with"
-          shape="pill"
-          theme="outline"
-          size="large"
-          logo_alignment="left"
-          width={264}
-          containerProps={{
-            className: 'flex w-full items-center justify-center overflow-visible',
-            style: { height: 'auto', minHeight: 52 },
-          }}
-        />
-      </div>
+          onSignInIntent?.()
+          setLoginHint(null);
+          localStorage.setItem(STORED_ID_TOKEN_KEY, credential);
+          setIdToken(credential);
+          onLogin(credential);
+        }}
+        onError={() => {
+          console.error('Google sign-in failed.');
+          setLoginHint(
+            'Sign-in did not complete. Allow pop-ups for localhost, try again, and confirm this exact URL (including port) is an Authorized JavaScript origin for your OAuth client.',
+          );
+        }}
+        useOneTap={false}
+        text="signin_with"
+        shape="rectangular"
+        theme="outline"
+        size="large"
+        logo_alignment="left"
+        width={384}
+        containerProps={{
+          className:
+            'flex w-full max-w-full items-center justify-center overflow-visible [&_iframe]:mx-auto [&_iframe]:block [&_iframe]:max-h-none [&_iframe]:max-w-full',
+          style: { height: 'auto', minHeight: 52 },
+        }}
+      />
       {loginHint ? (
         <p role="alert" className="max-w-[min(100%,22rem)] text-center text-xs leading-relaxed text-amber-900">
           {loginHint}

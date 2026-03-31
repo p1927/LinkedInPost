@@ -153,3 +153,17 @@ export async function pruneOldNewsSnapshots(
     await db.batch(pruneStmts.slice(i, i + 128));
   }
 }
+
+/** Delete all news snapshots for a specific topic (called when a topic is deleted). */
+export async function deleteNewsSnapshotsByTopicId(
+  db: D1Database,
+  spreadsheetId: string,
+  topicId: string,
+): Promise<void> {
+  const id = String(topicId || '').trim();
+  if (!id) return;
+  await db
+    .prepare(`DELETE FROM news_snapshots WHERE spreadsheet_id = ? AND topic_id = ?`)
+    .bind(spreadsheetId, id)
+    .run();
+}

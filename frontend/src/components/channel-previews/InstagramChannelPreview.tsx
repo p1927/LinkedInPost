@@ -1,5 +1,5 @@
 import { Bookmark, Heart, ImageOff, MessageCircle, MoreHorizontal, Send } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { normalizePreviewImageUrl } from '../../services/imageUrls';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -37,8 +37,12 @@ export function InstagramChannelPreview({
   const carouselViewportRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const skipNextCarouselClickRef = useRef(false);
-  const urls = resolvePreviewImageUrls(imageUrl, imageUrls);
+  // Memoize urls so array identity is stable when imageUrl/imageUrls content hasn't changed
+  const urls = useMemo(() => resolvePreviewImageUrls(imageUrl, imageUrls), [imageUrl, imageUrls]);
   const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
+  // Keep urls.length in a ref so carousel callbacks don't need it as a dependency
+  const urlsLengthRef = useRef(urls.length);
+  urlsLengthRef.current = urls.length;
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 220 || text.split('\n').length > 4);
@@ -51,20 +55,21 @@ export function InstagramChannelPreview({
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadFailed(false);
-  }, [resolvedImageUrl, urls.join('|')]);
+  }, [resolvedImageUrl, urls]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCarouselIndex(0);
-  }, [urls.join('|')]);
+  }, [urls]);
 
   const goCarouselPrev = useCallback(() => {
     setCarouselIndex((i) => Math.max(0, i - 1));
   }, []);
 
+  // Reads urlsLengthRef at call time — no need for urls.length in deps
   const goCarouselNext = useCallback(() => {
-    setCarouselIndex((i) => Math.min(urls.length - 1, i + 1));
-  }, [urls.length]);
+    setCarouselIndex((i) => Math.min(urlsLengthRef.current - 1, i + 1));
+  }, []);
 
   const markCarouselNavigatedByTouch = useCallback(() => {
     skipNextCarouselClickRef.current = true;
@@ -82,7 +87,7 @@ export function InstagramChannelPreview({
     (e: React.TouchEvent) => {
       const start = touchStartRef.current;
       touchStartRef.current = null;
-      if (!start || urls.length < 2) return;
+      if (!start || urlsLengthRef.current < 2) return;
       const t = e.changedTouches[0];
       const dx = t.clientX - start.x;
       const dy = t.clientY - start.y;
@@ -109,12 +114,12 @@ export function InstagramChannelPreview({
         }
       }
     },
-    [goCarouselNext, goCarouselPrev, markCarouselNavigatedByTouch, urls.length],
+    [goCarouselNext, goCarouselPrev, markCarouselNavigatedByTouch],
   );
 
   const onCarouselKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (urls.length < 2) return;
+      if (urlsLengthRef.current < 2) return;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         e.stopPropagation();
@@ -125,7 +130,7 @@ export function InstagramChannelPreview({
         goCarouselNext();
       }
     },
-    [goCarouselNext, goCarouselPrev, urls.length],
+    [goCarouselNext, goCarouselPrev],
   );
 
   useEffect(() => {

@@ -102,7 +102,7 @@ export function useDashboardQueue({
     setLoading(true);
     try {
       const data = await api.getRows(idToken);
-      setRows(data.reverse());
+      setRows([...data].reverse());
     } catch (error) {
       if (!quiet) {
         handleFailure(error, 'Failed to load data. Verify the backend deployment and spreadsheet configuration.');
@@ -554,7 +554,7 @@ export function useDashboardQueue({
           urlsJson,
         );
         const data = await api.getRows(idToken);
-        const nextRows = data.reverse();
+        const nextRows = [...data].reverse();
         setRows(nextRows);
         const found = findRowByTopicId(nextRows, created.topicId);
         if (!found) {
