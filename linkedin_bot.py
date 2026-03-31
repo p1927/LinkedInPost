@@ -894,11 +894,21 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
 # 2. IMAGE SEARCH & UPLOAD
 # ==========================================
 def fetch_images(topic, num_images=4, preferred_queries=None):
+    """Collect up to ``num_images`` distinct image URLs, trying each Serp query until full or exhausted.
+
+    Previously this returned on the first query that returned *any* images, so SerpApi only yielding
+    e.g. two results left variant 3–4 with empty image links. We now merge results across queries.
+    """
     print(f"Searching for images on: {topic}")
     if preferred_queries:
         print(f"Using {len(preferred_queries)} LLM image search queries before topic-derived fallbacks.")
 
+    accumulated = []
+    seen_urls = set()
+
     for query in build_image_serp_queries(topic, preferred_queries):
+        if len(accumulated) >= num_images:
+            break
         try:
             print(f"Trying SerpApi image query: {query}")
             results = run_serpapi_search(query, num_images, image_search=True)
@@ -906,10 +916,9 @@ def fetch_images(topic, num_images=4, preferred_queries=None):
             print(f"SerpApi image request failed for '{query}': {e}")
             continue
 
-        image_urls = []
-        seen_urls = set()
-        for item in results.get('images_results', []):
-            if len(image_urls) >= num_images:
+        batch_added = 0
+        for item in results.get('images_results', []) or []:
+            if len(accumulated) >= num_images:
                 break
             image_url = first_non_empty(item.get('original', ''), item.get('thumbnail', ''), item.get('link', ''))
             if image_url:
@@ -917,16 +926,15 @@ def fetch_images(topic, num_images=4, preferred_queries=None):
                 if normalized in seen_urls:
                     continue
                 seen_urls.add(normalized)
-                image_urls.append(image_url)
+                accumulated.append(image_url)
+                batch_added += 1
+                q_preview = query if len(query) <= 72 else query[:72] + '…'
+                print(f"SerpApi image result {len(accumulated)} (query '{q_preview}'): {image_url}")
 
-        if image_urls:
-            for index, image_url in enumerate(image_urls, start=1):
-                print(f"SerpApi image result {index} for '{query}': {image_url}")
-            return image_urls[:num_images]
+        if batch_added == 0:
+            print(f"No SerpApi image items returned for query '{query}'. Raw response: {json.dumps(results)[:1000]}")
 
-        print(f"No SerpApi image items returned for query '{query}'. Raw response: {json.dumps(results)[:1000]}")
-
-    return []
+    return accumulated[:num_images]
 
 def upload_image_to_gcs(storage_bucket, image_url, topic, index):
     try:
