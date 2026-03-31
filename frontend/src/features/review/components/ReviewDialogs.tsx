@@ -14,6 +14,7 @@ export function ReviewDialogs() {
     setActiveWorkspacePanel,
     pendingClose,
     setPendingClose,
+    navigationBlocker,
     onCancel,
     pendingNavigateToVariants,
     setPendingNavigateToVariants,
@@ -72,9 +73,17 @@ export function ReviewDialogs() {
         title="Discard current editor changes?"
         description="Going back will remove the current local editor state and preview context. Sheet drafts will remain unchanged."
         confirmLabel="Discard and go back"
-        onCancel={() => setPendingClose(false)}
+        onCancel={() => {
+          setPendingClose(false);
+          if (navigationBlocker.state === 'blocked') {
+            navigationBlocker.reset();
+          }
+        }}
         onConfirm={() => {
           setPendingClose(false);
+          if (navigationBlocker.state === 'blocked') {
+            navigationBlocker.reset();
+          }
           onCancel();
         }}
       />

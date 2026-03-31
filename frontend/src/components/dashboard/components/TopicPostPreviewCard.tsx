@@ -1,7 +1,7 @@
 import { CalendarClock } from 'lucide-react';
 import type { ChannelId } from '@/integrations/channels';
 import type { SheetRow } from '@/services/sheets';
-import { LinkedInPostPreview } from '@/components/LinkedInPostPreview';
+import { ChannelPostPreview } from '@/components/channel-previews/ChannelPostPreview';
 import { parseRowImageUrls } from '@/services/selectedImageUrls';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '@/lib/topicDisplay';
 import { getNormalizedRowStatus } from '@/components/dashboard/utils';
@@ -61,7 +61,7 @@ export function TopicPostPreviewCard({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-white/50 bg-white/40 shadow-sm">
-        <LinkedInPostPreview
+        <ChannelPostPreview
           optionNumber={1}
           text={row.selectedText || row.variant1}
           imageUrl={previewUrls[0]}

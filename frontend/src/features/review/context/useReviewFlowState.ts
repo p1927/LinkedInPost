@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useReducer } from 'react';
+import { useState, useMemo, useEffect, useRef, useReducer, useCallback } from 'react';
+import { useBlocker, type BlockerFunction } from 'react-router-dom';
 import { type ReviewFlowProviderProps, type CompareState } from './types';
 import { getInitialEditorText, buildSheetVariants, buildGeneratedImages } from './utils';
 import {
@@ -439,26 +440,17 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
   useRegisterUnsavedChanges(hasUnsavedReviewState);
 
+  /** Only block history POP — in-app links stay on window.confirm in the sidebar / review UI. */
+  const blockBrowserBackWhenDirty = useCallback<BlockerFunction>(
+    ({ historyAction }) => hasUnsavedReviewState && historyAction === 'POP',
+    [hasUnsavedReviewState],
+  );
+  const navigationBlocker = useBlocker(blockBrowserBackWhenDirty);
+
   useEffect(() => {
-    if (!hasUnsavedReviewState) return;
-
-    window.history.pushState({ trap: true }, '');
-
-    const handlePopState = () => {
-      window.history.pushState({ trap: true }, '');
-      // Browser back should leave toward the topics list, not the variant picker.
-      setters.setPendingClose(true);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      if (window.history.state?.trap) {
-        window.history.back();
-      }
-    };
-  }, [hasUnsavedReviewState, setters]);
+    if (navigationBlocker.state !== 'blocked') return;
+    setters.setPendingClose(true);
+  }, [navigationBlocker.state, setters]);
 
   useEffect(() => {
     topicHeadingRef.current?.focus();
@@ -543,5 +535,6 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     postTemplates,
     researchContextArticles,
     setResearchContextArticles,
+    navigationBlocker,
   };
 }

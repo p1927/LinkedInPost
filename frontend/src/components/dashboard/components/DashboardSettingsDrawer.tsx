@@ -16,7 +16,7 @@ import { type ChannelId } from '../../../integrations/channels';
 import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '../../../services/backendApi';
 import { type TelegramRecipient } from '../../../integrations/telegram';
 import { cn } from '../../../lib/cn';
-import { WORKSPACE_PATHS } from '../../../lib/workspaceRoutes';
+import { WORKSPACE_PATHS } from '../../../features/topic-navigation/utils/workspaceRoutes';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

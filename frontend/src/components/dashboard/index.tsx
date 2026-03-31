@@ -27,6 +27,7 @@ import { findRowByTopicRouteId, normalizeTopicRouteParam } from '../../features/
 import {
   WORKSPACE_PATHS,
   WORKSPACE_ROUTE_PATHS,
+  normalizeWorkspacePathname,
   topicEditorPathForRow,
 } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { FEATURE_CAMPAIGN, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../generated/features';
@@ -57,9 +58,9 @@ export function Dashboard({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const pathNorm = normalizeWorkspacePathname(location.pathname);
   const topicIdFromPathRaw =
-    location.pathname.match(new RegExp(`^${WORKSPACE_PATHS.topics.replace(/\//g, '\\/')}/([^/]+)`))?.[1] ??
-    null;
+    pathNorm.match(new RegExp(`^${WORKSPACE_PATHS.topics.replace(/\//g, '\\/')}/([^/]+)`))?.[1] ?? null;
   const topicIdFromPath = topicIdFromPathRaw ? normalizeTopicRouteParam(topicIdFromPathRaw) : null;
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
@@ -336,7 +337,7 @@ export function Dashboard({
     }
   }, [channelsHook.telegramRecipientsInput]);
 
-  const isTopicsMain = location.pathname === WORKSPACE_PATHS.topics;
+  const isTopicsMain = pathNorm === WORKSPACE_PATHS.topics;
   const savedScrollY = useRef(0);
 
   useEffect(() => {
@@ -536,16 +537,13 @@ export function Dashboard({
     </div>
   );
 
-  const isReviewRoute = location.pathname.includes('/topics/') && location.pathname !== WORKSPACE_PATHS.topics;
+  const isReviewRoute =
+    pathNorm.startsWith(`${WORKSPACE_PATHS.topics}/`) && pathNorm !== WORKSPACE_PATHS.topics;
 
   return (
     <div
       className={`flex w-full flex-1 flex-col ${isReviewRoute ? 'min-h-0' : ''} ${isReviewRoute ? '' : 'pb-12'}`}
     >
-      <div style={{ display: isTopicsMain ? 'block' : 'none' }}>
-        {topicsHome}
-      </div>
-
       <Routes>
         <Route
           path={WORKSPACE_ROUTE_PATHS.topicEditor}
@@ -555,6 +553,8 @@ export function Dashboard({
           path={WORKSPACE_ROUTE_PATHS.topicVariants}
           element={<TopicVariantsPage {...topicReviewBase} />}
         />
+        <Route path={WORKSPACE_ROUTE_PATHS.topics} element={topicsHome} />
+        <Route path={`${WORKSPACE_PATHS.topics}/`} element={topicsHome} />
         <Route
           path={WORKSPACE_ROUTE_PATHS.settings}
           element={session.isAdmin ? settingsHome : <Navigate to={WORKSPACE_PATHS.topics} replace />}
@@ -587,7 +587,7 @@ export function Dashboard({
             )
           }
         />
-        <Route path="*" element={isTopicsMain ? null : <Navigate to={WORKSPACE_PATHS.topics} replace />} />
+        <Route path="*" element={<Navigate to={WORKSPACE_PATHS.topics} replace />} />
       </Routes>
 
     </div>

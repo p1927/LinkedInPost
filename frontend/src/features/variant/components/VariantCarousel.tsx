@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '../../../lib/cn';
-import { LinkedInPostPreview } from '../../../components/LinkedInPostPreview';
+import { ChannelPostPreview } from '../../../components/channel-previews/ChannelPostPreview';
 import { useReviewFlow } from '../../review/context/ReviewFlowContext';
 
 export function VariantCarousel() {
@@ -72,7 +72,7 @@ export function VariantCarousel() {
                 style={{ width: `${100 / sheetVariants.length}%` }}
                 aria-hidden={index !== pickCarouselIndex}
               >
-                <LinkedInPostPreview
+                <ChannelPostPreview
                   optionNumber={index + 1}
                   text={variant.text}
                   imageUrl={variant.imageUrl || undefined}

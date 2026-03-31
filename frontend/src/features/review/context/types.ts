@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { type Blocker } from 'react-router-dom';
 import { type SheetRow } from '../../../services/sheets';
 import {
   type GenerationRequest,
@@ -118,6 +119,8 @@ export interface ReviewFlowContextValue {
   setOpenMediaAfterVariantConfirm: React.Dispatch<React.SetStateAction<boolean>>;
   pendingClose: boolean;
   setPendingClose: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Present when review flow registers a React Router blocker (browser back with unsaved edits). */
+  navigationBlocker: Blocker;
   pendingNavigateToVariants: boolean;
   setPendingNavigateToVariants: React.Dispatch<React.SetStateAction<boolean>>;
   submitting: boolean;

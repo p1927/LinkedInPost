@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LinkedInPostPreview } from '../../../components/LinkedInPostPreview';
+import { ChannelPostPreview } from '../../../components/channel-previews/ChannelPostPreview';
 import { useReviewFlow } from '../../review/context/ReviewFlowContext';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 
@@ -57,7 +57,7 @@ export function LivePreviewSidebar() {
         </div>
         {!previewCollapsed ? (
           <div className="flex w-full min-w-0 justify-center px-0.5 pb-1">
-            <LinkedInPostPreview
+            <ChannelPostPreview
               optionNumber={1}
               text={editorText}
               imageUrl={selectedImageUrls[0]}

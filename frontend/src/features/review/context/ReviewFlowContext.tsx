@@ -21,10 +21,29 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
   const actions = useReviewFlowActions(props, state);
 
   // Internal-only fields stripped from context
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { setChrome, effectiveGenerationRules, suppressAutoImageSelection, setSuppressAutoImageSelection, setGenerationLoading, setAlternateImageOptions, setUploadedImageOptions, setSubmitting, setPreviewVariantSaveByIndex, setPreviewVariantSaveErrors, ...restState } = state;
+  const {
+    setChrome,
+    effectiveGenerationRules,
+    suppressAutoImageSelection,
+    setSuppressAutoImageSelection,
+    setGenerationLoading,
+    setAlternateImageOptions,
+    setUploadedImageOptions,
+    setSubmitting,
+    setPreviewVariantSaveByIndex,
+    setPreviewVariantSaveErrors,
+    navigationBlocker,
+    ...restState
+  } = state;
   void suppressAutoImageSelection;
   void setSuppressAutoImageSelection;
+  void setChrome;
+  void setGenerationLoading;
+  void setAlternateImageOptions;
+  void setUploadedImageOptions;
+  void setSubmitting;
+  void setPreviewVariantSaveByIndex;
+  void setPreviewVariantSaveErrors;
 
   // Editor-sensitive context (re-renders on every keystroke / generation change)
   const editorValue: ReviewFlowEditorContextValue = {
@@ -107,6 +126,7 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     setOpenMediaAfterVariantConfirm: restState.setOpenMediaAfterVariantConfirm,
     pendingClose: restState.pendingClose,
     setPendingClose: restState.setPendingClose,
+    navigationBlocker,
     pendingNavigateToVariants: restState.pendingNavigateToVariants,
     setPendingNavigateToVariants: restState.setPendingNavigateToVariants,
     submitting: restState.submitting,

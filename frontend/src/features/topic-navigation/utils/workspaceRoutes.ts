@@ -10,6 +10,14 @@ export const WORKSPACE_PATHS = {
   campaign: '/campaign',
 } as const;
 
+/** GitHub Pages may 301 `/topics` → `/topics/`; normalize so list/editor matching stays stable. */
+export function normalizeWorkspacePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.replace(/\/+$/, '');
+  }
+  return pathname;
+}
+
 /**
  * React Router `<Route path>` patterns — keep in sync: editor before topic detail before topics list.
  * Use with `Routes` inside `BrowserRouter basename={…}`.
@@ -25,7 +33,8 @@ export const WORKSPACE_ROUTE_PATHS = {
 
 /** True when the URL is the draft editor (`/topics/…/editor/…`), for layout (e.g. collapse app sidebar). */
 export function isTopicEditorWorkspacePath(pathname: string): boolean {
-  return Boolean(matchPath({ path: WORKSPACE_ROUTE_PATHS.topicEditor, end: true }, pathname));
+  const p = normalizeWorkspacePathname(pathname);
+  return Boolean(matchPath({ path: WORKSPACE_ROUTE_PATHS.topicEditor, end: true }, p));
 }
 
 /** `encodeURIComponent(encodeTopicRouteId(row))` segment for `/topics/:topicId/...`. */

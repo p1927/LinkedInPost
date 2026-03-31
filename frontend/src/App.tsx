@@ -13,10 +13,12 @@ import {
   workspaceRouterBasename,
   WORKSPACE_PATHS,
   isTopicEditorWorkspacePath,
+  normalizeWorkspacePathname,
 } from './features/topic-navigation/utils/workspaceRoutes'
 
 function isWorkspaceTopicReviewPath(pathname: string): boolean {
-  return pathname.includes(`${WORKSPACE_PATHS.topics}/`) && pathname !== WORKSPACE_PATHS.topics
+  const p = normalizeWorkspacePathname(pathname)
+  return p.startsWith(`${WORKSPACE_PATHS.topics}/`) && p !== WORKSPACE_PATHS.topics
 }
 import { parseGoogleIdTokenProfile, type GoogleIdTokenProfile } from './utils/googleIdTokenProfile'
 import {
@@ -67,11 +69,12 @@ function WorkspaceSession({
   onAuthExpired: () => void
 }) {
   const location = useLocation()
-  const workspacePage: WorkspaceNavPage = location.pathname.startsWith(WORKSPACE_PATHS.settings)
+  const path = normalizeWorkspacePathname(location.pathname)
+  const workspacePage: WorkspaceNavPage = path.startsWith(WORKSPACE_PATHS.settings)
     ? 'settings'
-    : location.pathname.startsWith(WORKSPACE_PATHS.rules)
+    : path.startsWith(WORKSPACE_PATHS.rules)
       ? 'rules'
-      : location.pathname.startsWith(WORKSPACE_PATHS.campaign)
+      : path.startsWith(WORKSPACE_PATHS.campaign)
         ? 'campaign'
         : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
