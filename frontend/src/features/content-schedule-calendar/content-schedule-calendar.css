@@ -4,8 +4,8 @@
    ============================================================ */
 
 .csc-wrapper {
-  --sx-color-primary: #7c3aed;
-  --sx-color-primary-container: #ede9fe;
+  --sx-color-primary: #6366F1;
+  --sx-color-primary-container: #EEF2FF;
   --sx-color-on-primary: #fff;
   --sx-color-surface: rgba(255, 255, 255, 0.9);
   --sx-color-surface-container: rgba(255, 255, 255, 0.75);
@@ -14,12 +14,13 @@
   --sx-border-radius: 0.75rem;
   width: 100%;
   min-height: 480px;
+  font-size: 0.8125rem;
 }
 
 /* Make the calendar fill its wrapper */
 .csc-wrapper .sx__calendar {
   border-radius: 0.75rem;
-  border: 1px solid rgba(167, 139, 250, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.2);
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(8px);
   min-height: 480px;
@@ -28,8 +29,8 @@
 
 /* Header bar */
 .csc-wrapper .sx__calendar-header {
-  background: rgba(255, 255, 255, 0.6);
-  border-bottom: 1px solid rgba(167, 139, 250, 0.2);
+  background: #EEF2FF;
+  border-bottom: 1px solid #C7D2FE;
   border-radius: 0.75rem 0.75rem 0 0;
 }
 
@@ -41,7 +42,7 @@
 }
 
 .csc-wrapper .sx__view-selection-item.is-selected {
-  background: #7c3aed;
+  background: #6366F1;
   color: #fff;
 }
 
@@ -55,7 +56,7 @@
 }
 
 .csc-wrapper .sx__event:hover {
-  filter: brightness(0.92);
+  filter: brightness(1.08);
 }
 
 /* Month grid cell numbers */
@@ -67,7 +68,7 @@
 /* Today highlight */
 .csc-wrapper .sx__month-grid-day--today .sx__month-grid-day__header-date,
 .csc-wrapper .sx__week-grid__date-number--today {
-  background: #7c3aed;
+  background: #6366F1;
   color: #fff;
   border-radius: 50%;
   width: 1.5rem;
@@ -89,15 +90,18 @@
 
 /* Full-width layout for standalone calendar page */
 .csc-wrapper.csc-fullwidth {
-  min-height: 90vh;
+  /* Mobile default: 384px minimum */
+  min-height: 24rem;
+  max-height: 90dvh;
+  overflow-y: auto;
   width: 100%;
   padding: 0;
   margin: 0;
 }
 
 .csc-wrapper.csc-fullwidth .sx__calendar {
-  min-height: 90vh;
-  height: 90vh;
+  min-height: 24rem;
+  height: 100%;
   font-size: 0.875rem;
 }
 
@@ -116,13 +120,13 @@
 /* Responsive: mobile (≤ 480px) */
 @media (max-width: 480px) {
   .csc-wrapper.csc-fullwidth {
-    min-height: 90vh;
+    min-height: 24rem;
     padding: 0;
   }
 
   .csc-wrapper.csc-fullwidth .sx__calendar {
-    min-height: 90vh;
-    height: 90vh;
+    min-height: 24rem;
+    height: 100%;
     font-size: 0.75rem;
     border-radius: 0;
   }
@@ -141,6 +145,17 @@
   }
 }
 
+/* Responsive: tablet (641px+) — full dynamic viewport height */
+@media (min-width: 641px) {
+  .csc-wrapper.csc-fullwidth {
+    min-height: 100dvh;
+  }
+
+  .csc-wrapper.csc-fullwidth .sx__calendar {
+    min-height: 100dvh;
+  }
+}
+
 /* Responsive: tablet (481px – 1023px) */
 @media (min-width: 481px) and (max-width: 1023px) {
   .csc-wrapper.csc-fullwidth .sx__calendar {
@@ -154,7 +169,12 @@
 
 /* Responsive: desktop (≥ 1024px) */
 @media (min-width: 1024px) {
+  .csc-wrapper.csc-fullwidth {
+    min-height: 600px;
+  }
+
   .csc-wrapper.csc-fullwidth .sx__calendar {
+    min-height: 600px;
     font-size: 0.875rem;
   }
 }

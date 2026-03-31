@@ -16,22 +16,22 @@ export function statusToCalendarId(status?: string): string {
   }
 }
 
-/** Colors aligned with the app's glass/ink palette. */
+/** Colors aligned with the app's indigo/emerald palette. */
 export const STATUS_CALENDARS: Record<string, CalendarColorConfig> = {
   pending: {
     colorName: 'pending',
-    lightColors: { main: '#7c3aed', container: '#ede9fe', onContainer: '#4c1d95' },
+    lightColors: { main: '#6366F1', container: '#EEF2FF', onContainer: '#3730A3' },
   },
   drafted: {
     colorName: 'drafted',
-    lightColors: { main: '#2563eb', container: '#dbeafe', onContainer: '#1e3a8a' },
+    lightColors: { main: '#F97316', container: '#FFF7ED', onContainer: '#9A3412' },
   },
   approved: {
     colorName: 'approved',
-    lightColors: { main: '#059669', container: '#d1fae5', onContainer: '#064e3b' },
+    lightColors: { main: '#22C55E', container: '#F0FDF4', onContainer: '#14532D' },
   },
   published: {
     colorName: 'published',
-    lightColors: { main: '#6b7280', container: '#f3f4f6', onContainer: '#374151' },
+    lightColors: { main: '#94A3B8', container: '#F8FAFC', onContainer: '#334155' },
   },
 };
