@@ -2,7 +2,7 @@ import { CalendarClock } from 'lucide-react';
 import type { ChannelId } from '@/integrations/channels';
 import type { SheetRow } from '@/services/sheets';
 import { ChannelPostPreview } from '@/components/channel-previews/ChannelPostPreview';
-import { parseRowImageUrls } from '@/services/selectedImageUrls';
+import { getTopicPreviewImageUrls } from '@/services/selectedImageUrls';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '@/lib/topicDisplay';
 import { getNormalizedRowStatus } from '@/components/dashboard/utils';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ export function TopicPostPreviewCard({
   compact?: boolean;
   onOpenEditor?: () => void;
 }) {
-  const previewUrls = parseRowImageUrls(row);
+  const previewUrls = getTopicPreviewImageUrls(row);
   const body = (row.selectedText || row.variant1 || '').trim();
   const normalizedStatus = getNormalizedRowStatus(row.status);
   const isPublished = normalizedStatus === 'published';

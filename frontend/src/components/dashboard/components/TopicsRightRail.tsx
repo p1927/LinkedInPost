@@ -119,6 +119,21 @@ export function TopicsRightRail({
     return o ?? WORKSPACE_DEFAULT_CHANNEL;
   }, [selectedRow]);
 
+  const workspaceDefaultModelCaption = useMemo(() => {
+    const modelLabel =
+      availableModels.find((m) => m.value === workspaceLlm.model)?.label ??
+      (workspaceLlm.model?.trim() || 'workspace model');
+    if (FEATURE_MULTI_PROVIDER_LLM && providerLabel?.trim()) {
+      return `Default - ${providerLabel.trim()}: ${modelLabel}`;
+    }
+    return `Default - ${modelLabel}`;
+  }, [availableModels, workspaceLlm.model, providerLabel]);
+
+  const workspaceDefaultChannelCaption = useMemo(
+    () => `Default - ${getChannelLabel(workspaceChannel)}`,
+    [workspaceChannel],
+  );
+
   const aiModelInfoTooltip = useMemo(() => {
     let t = 'Override the workspace model for Quick Change and variants on this topic only.';
     if (FEATURE_MULTI_PROVIDER_LLM && providerLabel) {
@@ -259,7 +274,7 @@ export function TopicsRightRail({
                         scheduleModelSave(selectedRow, val);
                       }}
                       itemToStringLabel={(v) => {
-                        if (v === WORKSPACE_DEFAULT_MODEL) return 'Workspace default';
+                        if (v === WORKSPACE_DEFAULT_MODEL) return workspaceDefaultModelCaption;
                         if (FEATURE_MULTI_PROVIDER_LLM && String(v).startsWith('{')) {
                           try {
                             const o = JSON.parse(String(v)) as { model?: string };
@@ -276,7 +291,7 @@ export function TopicsRightRail({
                         <SelectValue placeholder="Model" />
                       </SelectTrigger>
                       <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
-                        <SelectItem value={WORKSPACE_DEFAULT_MODEL}>Workspace default</SelectItem>
+                        <SelectItem value={WORKSPACE_DEFAULT_MODEL}>{workspaceDefaultModelCaption}</SelectItem>
                         {availableModels.map((m) => (
                           <SelectItem
                             key={m.value}
@@ -322,7 +337,7 @@ export function TopicsRightRail({
                       void persist(selectedRow, { topicDeliveryChannel });
                     }}
                     itemToStringLabel={(v) => {
-                      if (v === WORKSPACE_DEFAULT_CHANNEL) return 'Workspace default';
+                      if (v === WORKSPACE_DEFAULT_CHANNEL) return workspaceDefaultChannelCaption;
                       return getChannelLabel(v as ChannelId);
                     }}
                   >
@@ -330,7 +345,7 @@ export function TopicsRightRail({
                       <SelectValue placeholder="Channel" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>Workspace default</SelectItem>
+                      <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>{workspaceDefaultChannelCaption}</SelectItem>
                       {CHANNEL_OPTIONS.map((c) => (
                         <SelectItem key={c.value} value={c.value}>
                           {c.label}
