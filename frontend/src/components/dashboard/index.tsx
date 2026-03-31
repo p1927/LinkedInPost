@@ -543,6 +543,7 @@ export function Dashboard({
       onBulkSetSchedule={handleBulkSetSchedule}
       onUpdatePostSchedule={handleUpdatePostSchedule}
       onCalendarRescheduleCommit={handleCalendarRescheduleCommit}
+      contentPatterns={queueHook.postTemplates}
     />
   );
 

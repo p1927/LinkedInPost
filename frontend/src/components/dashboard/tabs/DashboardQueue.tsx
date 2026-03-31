@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit, LayoutList, CalendarDays } from 'lucide-react';
 import { cn } from '../../../lib/cn';
-import { type AppSession, type GenWorkerGenerateRequest } from '../../../services/backendApi';
-import { Textarea } from '@/components/ui/textarea';
+import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import { getNormalizedRowStatus, buildRowActionKey, formatQueueDate, formatQueuePostTime } from '../utils';
@@ -27,6 +26,15 @@ import {
   type CalendarTopic,
   type TopicRescheduleCommitPayload,
 } from '@/features/content-schedule-calendar';
+import { GenWorkerDraftField } from '@/features/ai-draft/GenWorkerDraftField';
+import {
+  getAudienceSuggestions,
+  getConstraintsSuggestions,
+  getCtaSuggestions,
+  getToneSuggestions,
+  mergeCommaParts,
+  mergeConstraintParts,
+} from '@/features/ai-draft/genWorkerDraftSuggestions';
 
 const rowActionClass =
   'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-50 transition-colors duration-200 cursor-pointer';
@@ -64,6 +72,8 @@ export function DashboardQueue({
   onUpdatePostSchedule,
   onCalendarRescheduleCommit,
   onGenerationWorkerDraft,
+  /** Patterns for the row’s generation template — used to tailor AI Draft quick picks. */
+  contentPatterns = [],
 }: {
   setStatusFilter: (filter: QueueFilter) => void;
   statusFilter: QueueFilter;
@@ -95,6 +105,7 @@ export function DashboardQueue({
   onUpdatePostSchedule: (row: SheetRow, postTime: string) => Promise<void>;
   onCalendarRescheduleCommit: (payload: TopicRescheduleCommitPayload) => Promise<void>;
   onGenerationWorkerDraft?: (row: SheetRow, request: GenWorkerGenerateRequest) => Promise<void>;
+  contentPatterns?: ContentPattern[];
 }) {
   useEffect(() => {
     if (!scrollTargetId) return;
@@ -132,31 +143,86 @@ export function DashboardQueue({
   const [gwTone, setGwTone] = useState('');
   const [gwCta, setGwCta] = useState('');
   const [gwConstraints, setGwConstraints] = useState('');
+  const [gwAudienceChips, setGwAudienceChips] = useState<string[]>([]);
+  const [gwToneChips, setGwToneChips] = useState<string[]>([]);
+  const [gwCtaChips, setGwCtaChips] = useState<string[]>([]);
+  const [gwConstraintsChips, setGwConstraintsChips] = useState<string[]>([]);
   const [gwFactual, setGwFactual] = useState(false);
+
+  const resetGenWorkerForm = useCallback(() => {
+    setGwAudienceChips([]);
+    setGwToneChips([]);
+    setGwCtaChips([]);
+    setGwConstraintsChips([]);
+    setGwAudience('');
+    setGwTone('');
+    setGwCta('');
+    setGwConstraints('');
+    setGwFactual(false);
+  }, []);
+
+  const genWorkerSuggestionCtx = useMemo(() => {
+    if (!genWorkerDialogRow) return null;
+    const channel = effectiveChannel(genWorkerDialogRow, selectedChannel);
+    const tid = (genWorkerDialogRow.generationTemplateId ?? '').trim();
+    const pattern = tid ? contentPatterns.find((p) => p.id === tid) ?? null : null;
+    return { channel, pattern };
+  }, [genWorkerDialogRow, selectedChannel, contentPatterns]);
+
+  const audienceSuggestions = useMemo(
+    () => (genWorkerSuggestionCtx ? getAudienceSuggestions(genWorkerSuggestionCtx) : []),
+    [genWorkerSuggestionCtx],
+  );
+  const toneSuggestions = useMemo(
+    () => (genWorkerSuggestionCtx ? getToneSuggestions(genWorkerSuggestionCtx) : []),
+    [genWorkerSuggestionCtx],
+  );
+  const ctaSuggestions = useMemo(
+    () => (genWorkerSuggestionCtx ? getCtaSuggestions(genWorkerSuggestionCtx) : []),
+    [genWorkerSuggestionCtx],
+  );
+  const constraintsSuggestions = useMemo(
+    () => (genWorkerSuggestionCtx ? getConstraintsSuggestions(genWorkerSuggestionCtx) : []),
+    [genWorkerSuggestionCtx],
+  );
 
   const handleGenWorkerSubmit = useCallback(async () => {
     if (!genWorkerDialogRow || !onGenerationWorkerDraft) return;
+    const audienceMerged = mergeCommaParts(gwAudienceChips, gwAudience);
+    const toneMerged = mergeCommaParts(gwToneChips, gwTone);
+    const ctaMerged = mergeCommaParts(gwCtaChips, gwCta);
+    const constraintsMerged = mergeConstraintParts(gwConstraintsChips, gwConstraints);
     setGenWorkerBusy(true);
     try {
       await onGenerationWorkerDraft(genWorkerDialogRow, {
         topic: genWorkerDialogRow.topic,
         channel: effectiveChannel(genWorkerDialogRow, selectedChannel),
-        ...(gwAudience.trim() ? { audience: gwAudience.trim() } : {}),
-        ...(gwTone.trim() ? { tone: gwTone.trim() } : {}),
-        ...(gwCta.trim() ? { cta: gwCta.trim() } : {}),
-        ...(gwConstraints.trim() ? { constraints: gwConstraints.trim() } : {}),
+        ...(audienceMerged ? { audience: audienceMerged } : {}),
+        ...(toneMerged ? { tone: toneMerged } : {}),
+        ...(ctaMerged ? { cta: ctaMerged } : {}),
+        ...(constraintsMerged ? { constraints: constraintsMerged } : {}),
         ...(gwFactual ? { factual: true } : {}),
       });
       setGenWorkerDialogRow(null);
-      setGwAudience('');
-      setGwTone('');
-      setGwCta('');
-      setGwConstraints('');
-      setGwFactual(false);
+      resetGenWorkerForm();
     } finally {
       setGenWorkerBusy(false);
     }
-  }, [genWorkerDialogRow, onGenerationWorkerDraft, selectedChannel, gwAudience, gwTone, gwCta, gwConstraints, gwFactual]);
+  }, [
+    genWorkerDialogRow,
+    onGenerationWorkerDraft,
+    selectedChannel,
+    gwAudience,
+    gwTone,
+    gwCta,
+    gwConstraints,
+    gwAudienceChips,
+    gwToneChips,
+    gwCtaChips,
+    gwConstraintsChips,
+    gwFactual,
+    resetGenWorkerForm,
+  ]);
 
   const getTopicId = (row: SheetRow) => String(row.topicId).trim();
   const selectedRows = filteredRows.filter((r) => selectedTopicIds.has(getTopicId(r)));
@@ -547,6 +613,7 @@ export function DashboardQueue({
                             variant="primary"
                             onClick={(e) => {
                               e.stopPropagation();
+                              resetGenWorkerForm();
                               setGenWorkerDialogRow(row);
                             }}
                             disabled={actionLoading !== null || genWorkerBusy}
@@ -848,51 +915,70 @@ export function DashboardQueue({
       </Dialog>
 
       {/* Generation worker draft dialog */}
-      <Dialog open={genWorkerDialogRow !== null} onOpenChange={(open) => { if (!open && !genWorkerBusy) setGenWorkerDialogRow(null); }}>
-        <DialogContent className="max-w-md">
+      <Dialog
+        open={genWorkerDialogRow !== null}
+        onOpenChange={(open) => {
+          if (!open && !genWorkerBusy) {
+            resetGenWorkerForm();
+            setGenWorkerDialogRow(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[min(90vh,720px)] max-w-md overflow-y-auto">
           <DialogHeader>
             <DialogTitle>AI Draft — {genWorkerDialogRow?.topic ?? ''}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3 py-1">
-            <p className="text-sm text-muted-foreground">All fields are optional. Leave blank to use workspace defaults.</p>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium">Audience</label>
-              <Input
-                placeholder="e.g. senior engineers, startup founders"
-                value={gwAudience}
-                onChange={(e) => setGwAudience(e.target.value)}
-                disabled={genWorkerBusy}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium">Tone</label>
-              <Input
-                placeholder="e.g. conversational, authoritative, witty"
-                value={gwTone}
-                onChange={(e) => setGwTone(e.target.value)}
-                disabled={genWorkerBusy}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium">Call to action</label>
-              <Input
-                placeholder="e.g. follow for more, share your thoughts"
-                value={gwCta}
-                onChange={(e) => setGwCta(e.target.value)}
-                disabled={genWorkerBusy}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium">Additional constraints</label>
-              <Textarea
-                placeholder="e.g. keep under 300 words, include a statistic"
-                value={gwConstraints}
-                onChange={(e) => setGwConstraints(e.target.value)}
-                disabled={genWorkerBusy}
-                rows={2}
-                className="resize-none"
-              />
-            </div>
+            <p className="text-sm text-muted-foreground">
+              All fields are optional. Use quick-add chips (tailored to this topic’s channel and content pattern) or type your
+              own. Leave everything blank to use workspace defaults.
+            </p>
+            <GenWorkerDraftField
+              label="Audience"
+              placeholder="e.g. senior engineers, startup founders"
+              chips={gwAudienceChips}
+              onAddChip={(v) => setGwAudienceChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+              onRemoveChip={(v) => setGwAudienceChips((prev) => prev.filter((x) => x !== v))}
+              freeValue={gwAudience}
+              onFreeChange={setGwAudience}
+              suggestions={audienceSuggestions}
+              disabled={genWorkerBusy}
+            />
+            <GenWorkerDraftField
+              label="Tone"
+              placeholder="e.g. conversational, authoritative, witty"
+              chips={gwToneChips}
+              onAddChip={(v) => setGwToneChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+              onRemoveChip={(v) => setGwToneChips((prev) => prev.filter((x) => x !== v))}
+              freeValue={gwTone}
+              onFreeChange={setGwTone}
+              suggestions={toneSuggestions}
+              disabled={genWorkerBusy}
+            />
+            <GenWorkerDraftField
+              label="Call to action"
+              placeholder="e.g. follow for more, share your thoughts"
+              chips={gwCtaChips}
+              onAddChip={(v) => setGwCtaChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+              onRemoveChip={(v) => setGwCtaChips((prev) => prev.filter((x) => x !== v))}
+              freeValue={gwCta}
+              onFreeChange={setGwCta}
+              suggestions={ctaSuggestions}
+              disabled={genWorkerBusy}
+            />
+            <GenWorkerDraftField
+              label="Additional constraints"
+              placeholder="e.g. keep under 300 words, include a statistic"
+              chips={gwConstraintsChips}
+              onAddChip={(v) => setGwConstraintsChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+              onRemoveChip={(v) => setGwConstraintsChips((prev) => prev.filter((x) => x !== v))}
+              freeValue={gwConstraints}
+              onFreeChange={setGwConstraints}
+              suggestions={constraintsSuggestions}
+              disabled={genWorkerBusy}
+              multiline
+              freeRows={2}
+            />
             <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -905,7 +991,16 @@ export function DashboardQueue({
             </label>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setGenWorkerDialogRow(null)} disabled={genWorkerBusy}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                resetGenWorkerForm();
+                setGenWorkerDialogRow(null);
+              }}
+              disabled={genWorkerBusy}
+            >
+              Cancel
+            </Button>
             <Button
               variant="primary"
               disabled={genWorkerBusy}

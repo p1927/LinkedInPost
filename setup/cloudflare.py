@@ -433,9 +433,16 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: ob
     else:
         warn('Worker deploy output', 'completed, but setup.py could not parse the deployment URL')
 
+    # IMPORTANT: .dev.vars is for LOCAL development only — always use http://127.0.0.1:8788
+    # Production URL is set in wrangler.jsonc vars above. This prevents breaking local dev when
+    # deploying to production.
     if worker_bootstrap.generation_worker_url:
+        # Temporarily reset to local dev URL for .dev.vars
+        original_gen_url = worker_bootstrap.generation_worker_url
+        worker_bootstrap.generation_worker_url = ''  # Force generation_worker_url_for_dev() to use local default
         creds = credentials_json
         values = build_worker_dev_values(worker_bootstrap, creds)
+        worker_bootstrap.generation_worker_url = original_gen_url  # Restore for logging
         lines = [f'{key}={value}' for key, value in values.items() if value]
         WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
-        ok('Worker local env file', f'{WORKER_DEV_VARS} (GENERATION_WORKER_URL updated)')
+        ok('Worker local env file', f'{WORKER_DEV_VARS} (uses local http://127.0.0.1:8788 for dev)')
