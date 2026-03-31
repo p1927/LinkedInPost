@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAlert } from '@/components/useAlert';
@@ -8,7 +8,9 @@ import { type BotConfig, type BotConfigUpdate } from '@/services/configService';
 import { buildCampaignClaudePrompt } from './prompt/defaultPrompt';
 import { parseCampaignPaste } from './validate/parseCampaignDoc';
 import { CampaignPostList } from './views/CampaignPostList';
-import { CampaignCalendar } from './views/CampaignCalendar';
+import { ContentScheduleCalendar, campaignPostsToCalendarTopics, applyCalendarPatchToPost } from '@/features/content-schedule-calendar';
+import type { CalendarTopic, TopicScheduleChange } from '@/features/content-schedule-calendar';
+import type { CampaignPostV1 } from './schema/types';
 import clsx from 'clsx';
 import { Copy, LayoutList, CalendarDays, Loader2 } from 'lucide-react';
 
@@ -31,6 +33,48 @@ export function CampaignPage(props: {
 
   const promptText = useMemo(() => buildCampaignClaudePrompt(topicsIdeas), [topicsIdeas]);
   const parseResult = useMemo(() => parseCampaignPaste(pasteText), [pasteText]);
+
+  /**
+   * Lifted posts state — mirrors parseResult.doc.posts when the paste text changes,
+   * but allows in-calendar edits (topic patch / schedule change) to persist without
+   * re-parsing the JSON textarea each time.
+   */
+  const [editedPosts, setEditedPosts] = useState<CampaignPostV1[]>([]);
+
+  useEffect(() => {
+    if (parseResult.ok) setEditedPosts(parseResult.doc.posts);
+  }, [parseResult]);
+
+  const calendarTopics = useMemo(
+    () => campaignPostsToCalendarTopics(editedPosts),
+    [editedPosts],
+  );
+
+  const handleTopicPatch = useCallback((id: string, patch: Partial<CalendarTopic>) => {
+    const idx = parseInt(id, 10);
+    if (isNaN(idx)) return;
+    setEditedPosts((prev) => {
+      const next = [...prev];
+      if (!next[idx]) return prev;
+      next[idx] = applyCalendarPatchToPost(next[idx]!, patch);
+      return next;
+    });
+  }, []);
+
+  const handleTopicScheduleChange = useCallback((change: TopicScheduleChange) => {
+    const idx = parseInt(change.id, 10);
+    if (isNaN(idx)) return;
+    setEditedPosts((prev) => {
+      const next = [...prev];
+      if (!next[idx]) return prev;
+      next[idx] = {
+        ...next[idx]!,
+        date: change.newDate,
+        ...(change.newStartTime !== undefined ? { postTime: change.newStartTime } : {}),
+      };
+      return next;
+    });
+  }, []);
 
   const copyPrompt = useCallback(async () => {
     try {
@@ -172,7 +216,7 @@ export function CampaignPage(props: {
                 type="button"
                 onClick={() => setPreviewTab('list')}
                 className={clsx(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors',
+                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors cursor-pointer',
                   previewTab === 'list' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink',
                 )}
               >
@@ -183,7 +227,7 @@ export function CampaignPage(props: {
                 type="button"
                 onClick={() => setPreviewTab('calendar')}
                 className={clsx(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors',
+                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors cursor-pointer',
                   previewTab === 'calendar' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink',
                 )}
               >
@@ -193,7 +237,7 @@ export function CampaignPage(props: {
             </div>
           </div>
           {parseResult.ok ? (
-            <p className="mt-1 text-xs text-muted">{parseResult.doc.posts.length} post(s)</p>
+            <p className="mt-1 text-xs text-muted">{editedPosts.length} post(s)</p>
           ) : (
             <p className="mt-1 text-xs text-muted">Fix JSON issues to see preview.</p>
           )}
@@ -201,9 +245,15 @@ export function CampaignPage(props: {
           <div className="mt-3 min-h-0 flex-1">
             {parseResult.ok ? (
               previewTab === 'list' ? (
-                <CampaignPostList posts={parseResult.doc.posts} />
+                <CampaignPostList posts={editedPosts} />
               ) : (
-                <CampaignCalendar posts={parseResult.doc.posts} />
+                <ContentScheduleCalendar
+                  topics={calendarTopics}
+                  onTopicPatch={handleTopicPatch}
+                  onTopicScheduleChange={handleTopicScheduleChange}
+                  initialView="month-grid"
+                  className="csc-compact"
+                />
               )
             ) : (
               <p className="text-sm text-muted">No preview yet.</p>
