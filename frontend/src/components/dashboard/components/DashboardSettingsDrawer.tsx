@@ -1007,20 +1007,56 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Default recipient (global)</p>
               <p className="text-xs text-muted">Applied to all topics that don't have their own email settings saved in the editor.</p>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">Default To</label>
-                <Input value={gmailDefaultTo} onChange={e => setGmailDefaultTo(e.target.value)} placeholder="recipient@example.com" className="text-sm" />
+                <label htmlFor="gmail-default-to" className="block text-xs font-semibold text-ink mb-1">
+                  Default To
+                </label>
+                <Input
+                  id="gmail-default-to"
+                  value={gmailDefaultTo}
+                  onChange={(e) => setGmailDefaultTo(e.target.value)}
+                  placeholder="recipient@example.com"
+                  className="text-sm"
+                  aria-label="Default Gmail To"
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">Default Cc</label>
-                <Input value={gmailDefaultCc} onChange={e => setGmailDefaultCc(e.target.value)} className="text-sm" />
+                <label htmlFor="gmail-default-cc" className="block text-xs font-semibold text-ink mb-1">
+                  Default Cc
+                </label>
+                <Input
+                  id="gmail-default-cc"
+                  value={gmailDefaultCc}
+                  onChange={(e) => setGmailDefaultCc(e.target.value)}
+                  className="text-sm"
+                  placeholder="Optional Cc addresses"
+                  aria-label="Default Gmail Cc"
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">Default Bcc</label>
-                <Input value={gmailDefaultBcc} onChange={e => setGmailDefaultBcc(e.target.value)} className="text-sm" />
+                <label htmlFor="gmail-default-bcc" className="block text-xs font-semibold text-ink mb-1">
+                  Default Bcc
+                </label>
+                <Input
+                  id="gmail-default-bcc"
+                  value={gmailDefaultBcc}
+                  onChange={(e) => setGmailDefaultBcc(e.target.value)}
+                  className="text-sm"
+                  placeholder="Optional Bcc addresses"
+                  aria-label="Default Gmail Bcc"
+                />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">Default Subject</label>
-                <Input value={gmailDefaultSubject} onChange={e => setGmailDefaultSubject(e.target.value)} placeholder="Subject line" className="text-sm" />
+                <label htmlFor="gmail-default-subject" className="block text-xs font-semibold text-ink mb-1">
+                  Default Subject
+                </label>
+                <Input
+                  id="gmail-default-subject"
+                  value={gmailDefaultSubject}
+                  onChange={(e) => setGmailDefaultSubject(e.target.value)}
+                  placeholder="Subject line"
+                  className="text-sm"
+                  aria-label="Default Gmail subject"
+                />
               </div>
             </div>
           </div>

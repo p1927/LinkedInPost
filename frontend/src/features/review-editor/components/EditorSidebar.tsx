@@ -97,7 +97,7 @@ export function EditorSidebar() {
           onClick={() => setActiveWorkspacePanel('rules')}
           className={`rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35 ${activeWorkspacePanel === 'rules' ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70' : 'text-muted hover:bg-white/60 hover:text-ink/70'}`}
         >
-          Rules
+          Topic rules
         </Button>
         {deliveryChannel === 'gmail' ? (
           <Button

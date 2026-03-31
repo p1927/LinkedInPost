@@ -27,9 +27,9 @@ export function ReviewHeader() {
   return (
     <>
       {topicTitleInWorkspaceChrome ? (
-        <h2 id="review-workspace-title" ref={topicHeadingRef} tabIndex={-1} className="sr-only">
+        <p id="review-workspace-title" ref={topicHeadingRef} tabIndex={-1} className="sr-only">
           {sheetRow.topic}
-        </h2>
+        </p>
       ) : null}
       {topicTitleInWorkspaceChrome ? null : (
         <header className="shrink-0 border-b border-violet-200/35 px-4 py-2.5 sm:py-3">

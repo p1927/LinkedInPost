@@ -258,6 +258,21 @@ function formatFetchNetworkFailure(endpointUrl: string, reason: unknown): string
         'This page is HTTPS but the worker URL uses http:// — mixed content is blocked. Set VITE_WORKER_URL to https://… and rebuild.',
       );
     }
+    if (
+      typeof globalThis !== 'undefined' &&
+      'location' in globalThis &&
+      globalThis.location?.hostname &&
+      globalThis.location?.origin
+    ) {
+      const loc = globalThis.location;
+      const pageIsLocalDev = /^(localhost|127\.0\.0\.1)$/i.test(loc.hostname);
+      const workerIsRemote = !/^(localhost|127\.0\.0\.1)$/i.test(u.hostname);
+      if (pageIsLocalDev && workerIsRemote) {
+        bits.push(
+          `If this is CORS, add ${loc.origin} to the Worker environment variable CORS_ALLOWED_ORIGINS (exact scheme, host, and port), redeploy, and include http://127.0.0.1:5174 if you open the app via 127.0.0.1 instead of localhost.`,
+        );
+      }
+    }
   } catch {
     /* ignore */
   }

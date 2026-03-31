@@ -74,7 +74,7 @@ export function CampaignPage(props: {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
       <div className="mb-6">
-        <h1 className="font-heading text-2xl font-semibold text-ink">Campaign import</h1>
+        <h2 className="font-heading text-2xl font-semibold text-ink">Import from JSON</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted">
           Build a prompt with your topic ideas, paste it into Claude, then paste the JSON back here. We validate the
           document, preview posts, and create Topics plus Draft rows in one request.

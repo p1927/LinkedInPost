@@ -3538,13 +3538,18 @@ async function signJwt(
   return `${signingInput}.${base64UrlEncode(signature)}`;
 }
 
+function normalizeOriginForCors(value: string): string {
+  return value.trim().toLowerCase().replace(/\/+$/, '');
+}
+
 function buildCorsHeaders(request: Request, env: Env): Headers {
   const origin = request.headers.get('Origin');
-  const allowedOrigins = parseEmailList(env.CORS_ALLOWED_ORIGINS).map((value) => value.toLowerCase());
+  const allowedOrigins = parseEmailList(env.CORS_ALLOWED_ORIGINS).map(normalizeOriginForCors);
   const allowAnyOrigin = allowedOrigins.length === 0 || allowedOrigins.includes('*');
+  const originNorm = origin ? normalizeOriginForCors(origin) : '';
   const allowOrigin = allowAnyOrigin
     ? '*'
-    : origin && allowedOrigins.includes(origin.toLowerCase())
+    : originNorm && allowedOrigins.includes(originNorm)
       ? origin
       : '';
 

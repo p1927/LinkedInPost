@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { NewsProviderKeys, NewsResearchFeedEntry, NewsResearchStored } from '../../services/configService';
@@ -15,6 +16,7 @@ function ApiRow({
   onEnabled: (v: boolean) => void;
   keyOk: boolean;
 }) {
+  const toggleId = useId();
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-violet-200/50 bg-white/60 px-3 py-2">
       <div className="min-w-0">
@@ -24,9 +26,9 @@ function ApiRow({
           {keyOk ? 'Worker API key present' : 'No key in Worker env — provider will be skipped'}
         </p>
       </div>
-      <label className="flex items-center gap-2 text-xs font-semibold text-ink shrink-0">
-        <input type="checkbox" checked={enabled} onChange={(e) => onEnabled(e.target.checked)} />
-        Use
+      <label htmlFor={toggleId} className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-ink shrink-0">
+        <input id={toggleId} type="checkbox" checked={enabled} onChange={(e) => onEnabled(e.target.checked)} />
+        Use {label}
       </label>
     </div>
   );
@@ -67,8 +69,7 @@ export function NewsResearchSettingsSection({
   return (
     <section className="mt-0 space-y-4 border-t border-violet-200/50 pt-6">
       <div>
-        <h2 className="font-heading text-lg font-semibold text-ink">News</h2>
-        <p className="mt-1 text-sm text-muted">
+        <p className="text-sm text-muted">
           Choose news APIs and RSS feeds for the draft <strong className="text-ink">News research</strong> panel. API keys are set as Worker secrets (
           <code className="text-xs">NEWSAPI_KEY</code>, <code className="text-xs">GNEWS_API_KEY</code>,{' '}
           <code className="text-xs">NEWSDATA_API_KEY</code>, <code className="text-xs">SERPAPI_API_KEY</code>).

@@ -30,3 +30,14 @@ export function topicNeedsTruncation(topic: string, maxTotal = TOPIC_UI_TITLE_MA
 export function topicNeedsFullTooltip(topic: string, maxTotal = TOPIC_UI_TITLE_MAX): boolean {
   return topicNeedsTruncation(topic, maxTotal);
 }
+
+const ARIA_QUEUE_ACTION_MAX = 80;
+
+/** First-line topic snippet for per-row action labels (queue, tooltips). */
+export function topicLabelForQueueActions(topic: string): string {
+  const firstLine = topicFirstLine(topic);
+  if (!firstLine) return 'Untitled topic';
+  if (firstLine.length <= ARIA_QUEUE_ACTION_MAX) return firstLine;
+  const maxBody = ARIA_QUEUE_ACTION_MAX - ELLIPSIS.length;
+  return `${firstLine.slice(0, Math.max(1, maxBody)).trimEnd()}${ELLIPSIS}`;
+}

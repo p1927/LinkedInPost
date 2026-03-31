@@ -63,7 +63,9 @@ export function GenerationPanel({
         <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500 shadow-md"></div>
         <p className={`font-bold uppercase tracking-[0.2em] text-indigo-700/90 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Refine with AI</p>
       </div>
-      <h4 className={`mt-2 font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-indigo-800 ${title}`}>Try rewrites before you commit to one</h4>
+      <p className={`mt-2 font-heading font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-indigo-800 ${title}`}>
+        Try rewrites before you commit to one
+      </p>
       <p className={`mt-3 text-slate-700 leading-relaxed font-medium ${body}`}>
         {compact
           ? 'Describe the change you want, then run 4 Variants to explore or Quick Change for a single pass.'

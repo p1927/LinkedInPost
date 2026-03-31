@@ -156,7 +156,7 @@ export interface ReviewFlowContextValue {
   previewReadyCount: number;
 
   // Refs
-  topicHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  topicHeadingRef: React.RefObject<HTMLHeadingElement | HTMLParagraphElement | null>;
 
   // Functions
   leaveToTopics: () => void;

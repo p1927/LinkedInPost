@@ -16,6 +16,7 @@ import {
   isTopicEditorWorkspacePath,
   normalizeWorkspacePathname,
 } from './features/topic-navigation/utils/workspaceRoutes'
+import { getWorkspaceDocumentTitle } from './lib/workspaceDocumentTitle'
 
 function isWorkspaceTopicReviewPath(pathname: string): boolean {
   const p = normalizeWorkspacePathname(pathname)
@@ -80,6 +81,10 @@ function WorkspaceSession({
         : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
   const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
+
+  useEffect(() => {
+    document.title = getWorkspaceDocumentTitle(location.pathname)
+  }, [location.pathname])
 
   return (
     <WorkspaceShell

@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { type PendingScheduledPublish, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { type ChannelId } from '@/integrations/channels';
-import { topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
+import { topicLabelForQueueActions, topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
 
 const rowActionClass =
   'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-40 transition-colors duration-200 cursor-pointer';
@@ -124,6 +124,7 @@ export function DashboardQueue({
               value={newTopic}
               onChange={(e) => setNewTopic(e.target.value)}
               placeholder="Add a topic…"
+              aria-label="New topic title"
               className={cn(
                 'flex-1 rounded-xl border-violet-200/50 bg-white/90 px-3.5 py-2 text-sm text-ink shadow-sm outline-none transition-[colors,border-color,background-color,box-shadow] duration-200 placeholder:text-muted/80 hover:border-violet-300/55 hover:bg-white hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:shadow-md',
                 hasTopics ? 'min-h-10' : 'min-h-[44px]',
@@ -215,235 +216,221 @@ export function DashboardQueue({
             </div>
           ) : (
             <div
-              className="glass-inset custom-scrollbar scroll-mt-24 overflow-x-auto rounded-2xl border border-violet-200/50 shadow-sm"
-              role="table"
-              aria-label="Topics: title, status, date, and actions per row"
+              className="glass-inset custom-scrollbar scroll-mt-24 overflow-x-hidden rounded-2xl border border-violet-200/50 shadow-sm"
+              role="list"
+              aria-label="Topics list"
             >
-              <div className="min-w-[540px]">
-                <div role="rowgroup">
+              {filteredRows.map((row, rowIndex) => {
+                const normalizedStatus = getNormalizedRowStatus(row.status);
+                const dateRaw = row.date?.trim() ?? '';
+                const dateLabel = formatQueueDate(dateRaw);
+                const actionTopic = topicLabelForQueueActions(row.topic);
+                const isSelected =
+                  selectedTopicId !== null && String(row.topicId).trim() === String(selectedTopicId).trim();
+                return (
                   <div
-                    role="row"
-                    className="flex items-center gap-4 border-b border-violet-200/60 bg-white/90 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-ink/60 backdrop-blur-md"
+                    key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
+                    role="listitem"
+                    data-queue-row-id={topicRowElementId(row)}
+                    tabIndex={0}
+                    aria-label={`Topic: ${row.topic}`}
+                    aria-selected={isSelected}
+                    className={cn(
+                      'group relative flex cursor-pointer items-center gap-3 border-b border-violet-100/60 px-4 py-3.5 transition-all duration-200 last:border-b-0',
+                      'hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset',
+                      rowIndex % 2 === 1 && !isSelected && 'bg-violet-50/30',
+                      isSelected
+                        ? 'bg-primary/[0.06] hover:bg-primary/[0.08] before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:rounded-r-full before:bg-primary'
+                        : '',
+                    )}
+                    onClick={() => onSelectTopicRow(row)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectTopicRow(row);
+                      }
+                    }}
                   >
-                    <div role="columnheader" className="min-w-0 flex-1 text-left">
-                      Topic
-                    </div>
-                    <div
-                      role="columnheader"
-                      className="flex shrink-0 items-center justify-end gap-3 text-ink/60"
-                    >
-                      <div className="flex w-[100px] shrink-0 justify-end">
-                        <span>Status</span>
-                      </div>
-                      <div className="w-[110px] shrink-0 text-right">
-                        <span>Date</span>
-                      </div>
-                      <div className="flex min-w-[110px] shrink-0 items-center justify-end gap-2">
-                        <span className="text-right">Action</span>
-                      </div>
-                      <div className="w-10 shrink-0" aria-hidden />
-                    </div>
-                  </div>
-                </div>
-                <div role="rowgroup" className="text-sm">
-                  {filteredRows.map((row, rowIndex) => {
-                    const normalizedStatus = getNormalizedRowStatus(row.status);
-                    const dateRaw = row.date?.trim() ?? '';
-                    const dateLabel = formatQueueDate(dateRaw);
-                    const isSelected =
-                      selectedTopicId !== null && String(row.topicId).trim() === String(selectedTopicId).trim();
-                    return (
-                      <div
-                        key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
-                        role="row"
-                        data-queue-row-id={topicRowElementId(row)}
-                        tabIndex={0}
-                        aria-label={`Topic: ${row.topic}`}
-                        aria-selected={isSelected}
-                        className={cn(
-                          'flex cursor-pointer items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0',
-                          rowIndex % 2 === 1 && 'bg-violet-50/40',
-                          'hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset',
-                          isSelected && 'bg-primary/5 ring-1 ring-inset ring-primary/20',
-                        )}
-                        onClick={() => onSelectTopicRow(row)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onSelectTopicRow(row);
-                          }
-                        }}
+                    {/* Left: topic title + metadata second line */}
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="truncate text-sm font-medium leading-snug text-ink"
+                        title={topicNeedsFullTooltip(row.topic) ? row.topic.trim() : undefined}
                       >
-                        <div role="cell" className="min-w-0 flex-1">
-                          <p
-                            className="min-w-0 truncate font-medium leading-snug text-ink"
-                            title={topicNeedsFullTooltip(row.topic) ? row.topic.trim() : undefined}
-                          >
-                            {truncateTopicForUi(row.topic)}
-                          </p>
-                        </div>
-                        <div role="cell" className="flex shrink-0 items-center justify-end gap-3">
-                          <div className="flex w-[100px] shrink-0 justify-end">
-                            <Badge variant={getQueueStatusVariant(row.status)} size="sm">
-                              {row.status || 'Pending'}
-                            </Badge>
-                          </div>
-                          <div
-                            className="w-[110px] shrink-0 truncate text-right text-xs tabular-nums text-muted"
+                        {truncateTopicForUi(row.topic)}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <Badge variant={getQueueStatusVariant(row.status)} size="sm">
+                          {row.status || 'Pending'}
+                        </Badge>
+                        {dateLabel ? (
+                          <span
+                            className="truncate text-xs tabular-nums text-muted"
                             title={dateRaw || undefined}
                           >
                             {dateLabel}
-                          </div>
-                          <div className="flex min-w-[110px] shrink-0 justify-end gap-2">
-                            {normalizedStatus === 'pending' ? (
-                              <Button
-                                type="button"
-                                variant="primary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void triggerRowGithubAction(row, 'draft');
-                                }}
-                                disabled={
-                                  actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
-                                }
-                                title="Generate draft"
-                                className={rowActionClass}
-                              >
-                                {actionLoading === buildRowActionKey('draft', row) ? (
-                                  <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                                ) : (
-                                  <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                )}
-                                <span className="hidden sm:inline">Draft</span>
-                              </Button>
-                            ) : null}
-
-                            {normalizedStatus === 'drafted' ? (
-                              <>
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onOpenTopicReview(row);
-                                  }}
-                                  title="Edit draft — updates this row (published topics get a new sheet copy when edited)"
-                                  className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
-                                >
-                                  <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                  <span className="sm:hidden">Edit</span>
-                                  <span className="hidden sm:inline">Edit</span>
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="primary"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void publishRowToSelectedChannel(row);
-                                  }}
-                                  disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
-                                  title={
-                                    rowHasActiveScheduledPublish(row)
-                                      ? 'Already scheduled for this time — cancel in the delivery panel or change the schedule in Edit.'
-                                      : 'Publish to the selected channel (approve in the editor first if you have not yet)'
-                                  }
-                                  className={rowActionClass}
-                                >
-                                  {actionLoading === buildRowActionKey('publish', row) ? (
-                                    <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                                  ) : (
-                                    <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                  )}
-                                  <span className="hidden sm:inline">Publish</span>
-                                </Button>
-                              </>
-                            ) : null}
-
-                            {normalizedStatus === 'approved' || normalizedStatus === 'published' ? (
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenTopicReview(row);
-                                }}
-                                title="Edit schedule or content"
-                                className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
-                              >
-                                <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                <span className="sm:hidden">Edit</span>
-                                <span className="hidden sm:inline">Edit</span>
-                              </Button>
-                            ) : null}
-
-                            {normalizedStatus === 'approved' ? (
-                              <Button
-                                type="button"
-                                variant="primary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void publishRowToSelectedChannel(row);
-                                }}
-                                disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
-                                title={
-                                  rowHasActiveScheduledPublish(row)
-                                    ? 'Already scheduled for this time — cancel in the delivery panel or change the schedule in Edit.'
-                                    : 'Publish'
-                                }
-                                className={rowActionClass}
-                              >
-                                {actionLoading === buildRowActionKey('publish', row) ? (
-                                  <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                                ) : (
-                                  <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                )}
-                                <span className="hidden sm:inline">Publish</span>
-                              </Button>
-                            ) : null}
-
-                            {normalizedStatus === 'published' ? (
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void republishRowToSelectedChannel(row);
-                                }}
-                                disabled={actionLoading !== null}
-                                title="Republish to channel"
-                                className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
-                              >
-                                {actionLoading === buildRowActionKey('publish', row) ? (
-                                  <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                                ) : (
-                                  <RotateCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                                )}
-                                <span className="hidden sm:inline">Republish</span>
-                              </Button>
-                            ) : null}
-                          </div>
-                          <div className="flex w-10 shrink-0 items-center justify-end">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteTopic(row);
-                              }}
-                              disabled={deletingRowIndex === row.rowIndex}
-                              title="Delete topic"
-                              aria-label="Delete topic"
-                              className={iconBtn}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
+                          </span>
+                        ) : null}
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                    </div>
+
+                    {/* Right: action buttons — always visible for selected row, revealed on hover for others */}
+                    <div className={cn(
+                      'flex shrink-0 items-center gap-1.5 transition-opacity duration-150',
+                      isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+                    )}>
+                      {normalizedStatus === 'pending' ? (
+                        <Button
+                          type="button"
+                          variant="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void triggerRowGithubAction(row, 'draft');
+                          }}
+                          disabled={
+                            actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
+                          }
+                          title="Generate draft"
+                          aria-label={`Generate draft for ${actionTopic}`}
+                          className={rowActionClass}
+                        >
+                          {actionLoading === buildRowActionKey('draft', row) ? (
+                            <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                          ) : (
+                            <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          )}
+                          <span>Draft</span>
+                        </Button>
+                      ) : null}
+
+                      {normalizedStatus === 'drafted' ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenTopicReview(row);
+                            }}
+                            title="Edit draft — updates this row (published topics get a new sheet copy when edited)"
+                            aria-label={`Edit draft: ${actionTopic}`}
+                            className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
+                          >
+                            <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                            <span>Edit</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void publishRowToSelectedChannel(row);
+                            }}
+                            disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
+                            title={
+                              rowHasActiveScheduledPublish(row)
+                                ? 'Already scheduled for this time — cancel in the delivery panel or change the schedule in Edit.'
+                                : 'Publish to the selected channel (approve in the editor first if you have not yet)'
+                            }
+                            aria-label={`Publish ${actionTopic} to channel`}
+                            className={rowActionClass}
+                          >
+                            {actionLoading === buildRowActionKey('publish', row) ? (
+                              <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                            ) : (
+                              <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                            )}
+                            <span>Publish</span>
+                          </Button>
+                        </>
+                      ) : null}
+
+                      {normalizedStatus === 'approved' || normalizedStatus === 'published' ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenTopicReview(row);
+                          }}
+                          title="Edit schedule or content"
+                          aria-label={`Edit schedule or content: ${actionTopic}`}
+                          className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
+                        >
+                          <FileEdit className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          <span>Edit</span>
+                        </Button>
+                      ) : null}
+
+                      {normalizedStatus === 'approved' ? (
+                        <Button
+                          type="button"
+                          variant="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void publishRowToSelectedChannel(row);
+                          }}
+                          disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
+                          title={
+                            rowHasActiveScheduledPublish(row)
+                              ? 'Already scheduled for this time — cancel in the delivery panel or change the schedule in Edit.'
+                              : 'Publish'
+                          }
+                          aria-label={`Publish ${actionTopic} to channel`}
+                          className={rowActionClass}
+                        >
+                          {actionLoading === buildRowActionKey('publish', row) ? (
+                            <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                          ) : (
+                            <Send className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          )}
+                          <span>Publish</span>
+                        </Button>
+                      ) : null}
+
+                      {normalizedStatus === 'published' ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void republishRowToSelectedChannel(row);
+                          }}
+                          disabled={actionLoading !== null}
+                          title="Republish to channel"
+                          aria-label={`Republish ${actionTopic} to channel`}
+                          className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
+                        >
+                          {actionLoading === buildRowActionKey('publish', row) ? (
+                            <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                          ) : (
+                            <RotateCw className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          )}
+                          <span>Republish</span>
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    {/* Delete — always visible for discoverability */}
+                    <div className="flex shrink-0 items-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTopic(row);
+                        }}
+                        disabled={deletingRowIndex === row.rowIndex}
+                        title="Delete topic"
+                        aria-label={`Delete topic: ${actionTopic}`}
+                        className={iconBtn}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

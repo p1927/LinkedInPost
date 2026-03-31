@@ -343,7 +343,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setPickCarouselIndex: makeSetter(dispatch, 'pickCarouselIndex'),
   }), []); // dispatch is stable — setters never need to be recreated
 
-  const topicHeadingRef = useRef<HTMLHeadingElement>(null);
+  const topicHeadingRef = useRef<HTMLHeadingElement | HTMLParagraphElement | null>(null);
   const lastInitRef = useRef<string | null>(null);
   const lastRowImageFingerprintRef = useRef<string | null>(null);
 

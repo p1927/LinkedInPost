@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Info } from 'lucide-react';
+import { ChevronDown, Eye, Info } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { CHANNEL_OPTIONS, type ChannelId, getChannelLabel } from '@/integrations/channels';
 import type { SheetRow } from '@/services/sheets';
@@ -10,7 +10,9 @@ import { TopicPostPreviewCard } from './TopicPostPreviewCard';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAlert } from '@/components/useAlert';
-import { getNormalizedRowStatus } from '@/components/dashboard/utils';
+import { getNormalizedRowStatus, queueStatusToBadgeVariant } from '@/components/dashboard/utils';
+import { topicNeedsFullTooltip, truncateTopicForUi } from '@/lib/topicDisplay';
+import { Badge } from '@/components/ui/badge';
 
 const WORKSPACE_DEFAULT_MODEL = '__workspace_default__';
 const WORKSPACE_DEFAULT_CHANNEL = '__workspace_default_channel__';
@@ -28,24 +30,31 @@ function CollapsibleSection({
   title,
   expanded,
   onToggle,
-  disabledHint,
   infoTooltip,
   children,
 }: {
   title: string;
   expanded: boolean;
   onToggle: (open: boolean) => void;
-  disabledHint?: string;
   /** Shown on hover via native tooltip (compact section headers). */
   infoTooltip?: string;
   children: React.ReactNode;
 }) {
+  const onHeaderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggle(!expanded);
+    }
+  };
+
   return (
     <div className="border-b border-violet-200/40 py-3 last:border-b-0">
-      <button
-        type="button"
-        className="flex w-full cursor-pointer list-none items-center justify-between gap-2 text-left"
+      <div
+        role="button"
+        tabIndex={0}
+        className="flex w-full cursor-pointer list-none items-center justify-between gap-2 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 focus-visible:ring-offset-1"
         onClick={() => onToggle(!expanded)}
+        onKeyDown={onHeaderKeyDown}
         aria-expanded={expanded}
       >
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -72,12 +81,8 @@ function CollapsibleSection({
           className={`h-4 w-4 shrink-0 text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
           aria-hidden
         />
-      </button>
-      {disabledHint ? (
-        <p className="mt-2 text-xs text-muted">{disabledHint}</p>
-      ) : expanded ? (
-        <div className="mt-3">{children}</div>
-      ) : null}
+      </div>
+      {expanded ? <div className="mt-3">{children}</div> : null}
     </div>
   );
 }
@@ -209,143 +214,171 @@ export function TopicsRightRail({
 
   const railInner = (
     <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
-      <CollapsibleSection
-        title="AI model"
-        expanded={modelOpen}
-        onToggle={setModelOpen}
-        infoTooltip={aiModelInfoTooltip}
-        disabledHint={!hasSelection ? 'Select a topic to set a model override for generation on that topic (or use the workspace default).' : undefined}
-      >
-        {selectedRow ? (
-          <div className="space-y-2">
-            {modelPickerLocked ? (
-              <p className="text-[11px] text-muted">This workspace allows only one model.</p>
-            ) : (
-              <Select
-                value={modelSelectValue}
-                disabled={saving}
-                onValueChange={(val) => {
-                  if (!selectedRow || val == null) return;
-                  if (FEATURE_MULTI_PROVIDER_LLM) {
-                    if (val === WORKSPACE_DEFAULT_MODEL) {
-                      void persist(selectedRow, { topicGenerationModel: '' });
-                      return;
-                    }
-                    const payload = JSON.stringify({
-                      provider: workspaceLlm.provider,
-                      model: val,
-                    });
-                    scheduleModelSave(selectedRow, payload);
-                    return;
-                  }
-                  if (val === WORKSPACE_DEFAULT_MODEL) {
-                    void persist(selectedRow, { topicGenerationModel: '' });
-                    return;
-                  }
-                  scheduleModelSave(selectedRow, val);
-                }}
-                itemToStringLabel={(v) => {
-                  if (v === WORKSPACE_DEFAULT_MODEL) return 'Workspace default';
-                  if (FEATURE_MULTI_PROVIDER_LLM && String(v).startsWith('{')) {
-                    try {
-                      const o = JSON.parse(String(v)) as { model?: string };
-                      const m = String(o.model || '').trim();
-                      return availableModels.find((x) => x.value === m)?.label ?? m;
-                    } catch {
-                      return String(v);
-                    }
-                  }
-                  return availableModels.find((m) => m.value === v)?.label ?? String(v ?? '');
-                }}
+      {!hasSelection ? (
+        /* Unified empty state — single clear placeholder instead of 3 disabled sections */
+        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100/70 text-primary">
+            <Eye className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-ink">No topic selected</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Choose a topic in the list to see preview, model, and delivery settings.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Selected topic title header with status badge */}
+          {selectedRow && (
+            <div className="mb-3 flex items-center gap-2 border-b border-violet-200/40 pb-3">
+              <p
+                className="min-w-0 flex-1 truncate text-xs font-semibold text-ink/80"
+                title={topicNeedsFullTooltip(selectedRow.topic) ? selectedRow.topic.trim() : undefined}
               >
-                <SelectTrigger className="h-auto min-h-10 py-2.5 text-left font-medium">
-                  <SelectValue placeholder="Model" />
-                </SelectTrigger>
-                <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
-                  <SelectItem value={WORKSPACE_DEFAULT_MODEL}>Workspace default</SelectItem>
-                  {availableModels.map((m) => (
-                    <SelectItem
-                      key={m.value}
-                      value={
-                        FEATURE_MULTI_PROVIDER_LLM
-                          ? JSON.stringify({ provider: workspaceLlm.provider, model: m.value })
-                          : m.value
+                {truncateTopicForUi(selectedRow.topic)}
+              </p>
+              <Badge variant={queueStatusToBadgeVariant(selectedRow.status)} size="sm">
+                {selectedRow.status || 'Pending'}
+              </Badge>
+            </div>
+          )}
+
+          {/* 1. Preview — first, most valuable */}
+          <CollapsibleSection
+            title="Preview"
+            expanded={previewOpen}
+            onToggle={setPreviewOpen}
+          >
+            {selectedRow ? (
+              <TopicPostPreviewCard
+                row={selectedRow}
+                previewChannel={previewCh}
+                previewAuthorName={previewAuthorName}
+                compact
+                onOpenEditor={
+                  getNormalizedRowStatus(selectedRow.status) === 'drafted'
+                    ? () => onOpenEditor(selectedRow)
+                    : undefined
+                }
+              />
+            ) : null}
+          </CollapsibleSection>
+
+          {/* 2. AI model */}
+          <CollapsibleSection
+            title="AI model"
+            expanded={modelOpen}
+            onToggle={setModelOpen}
+            infoTooltip={aiModelInfoTooltip}
+          >
+            {selectedRow ? (
+              <div className="space-y-2">
+                {modelPickerLocked ? (
+                  <p className="text-[11px] text-muted">This workspace allows only one model.</p>
+                ) : (
+                  <Select
+                    value={modelSelectValue}
+                    disabled={saving}
+                    onValueChange={(val) => {
+                      if (!selectedRow || val == null) return;
+                      if (FEATURE_MULTI_PROVIDER_LLM) {
+                        if (val === WORKSPACE_DEFAULT_MODEL) {
+                          void persist(selectedRow, { topicGenerationModel: '' });
+                          return;
+                        }
+                        const payload = JSON.stringify({
+                          provider: workspaceLlm.provider,
+                          model: val,
+                        });
+                        scheduleModelSave(selectedRow, payload);
+                        return;
                       }
-                      className="items-start py-2.5"
-                    >
-                      <span className="whitespace-normal leading-snug">{m.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {saving ? <p className="text-[10px] text-muted">Saving…</p> : null}
-          </div>
-        ) : null}
-      </CollapsibleSection>
+                      if (val === WORKSPACE_DEFAULT_MODEL) {
+                        void persist(selectedRow, { topicGenerationModel: '' });
+                        return;
+                      }
+                      scheduleModelSave(selectedRow, val);
+                    }}
+                    itemToStringLabel={(v) => {
+                      if (v === WORKSPACE_DEFAULT_MODEL) return 'Workspace default';
+                      if (FEATURE_MULTI_PROVIDER_LLM && String(v).startsWith('{')) {
+                        try {
+                          const o = JSON.parse(String(v)) as { model?: string };
+                          const m = String(o.model || '').trim();
+                          return availableModels.find((x) => x.value === m)?.label ?? m;
+                        } catch {
+                          return String(v);
+                        }
+                      }
+                      return availableModels.find((m) => m.value === v)?.label ?? String(v ?? '');
+                    }}
+                  >
+                    <SelectTrigger className="h-auto min-h-10 py-2.5 text-left font-medium">
+                      <SelectValue placeholder="Model" />
+                    </SelectTrigger>
+                    <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
+                      <SelectItem value={WORKSPACE_DEFAULT_MODEL}>Workspace default</SelectItem>
+                      {availableModels.map((m) => (
+                        <SelectItem
+                          key={m.value}
+                          value={
+                            FEATURE_MULTI_PROVIDER_LLM
+                              ? JSON.stringify({ provider: workspaceLlm.provider, model: m.value })
+                              : m.value
+                          }
+                          className="items-start py-2.5"
+                        >
+                          <span className="whitespace-normal leading-snug">{m.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {saving ? <p className="text-[10px] text-muted">Saving…</p> : null}
+              </div>
+            ) : null}
+          </CollapsibleSection>
 
-      <CollapsibleSection
-        title="Delivery channel"
-        expanded={deliveryOpen}
-        onToggle={setDeliveryOpen}
-        infoTooltip={deliveryInfoTooltip}
-        disabledHint={
-          !hasSelection
-            ? 'Select a topic to choose where that topic will publish. Telegram and WhatsApp recipients still come from workspace settings.'
-            : undefined
-        }
-      >
-        {selectedRow ? (
-          <div className="space-y-2">
-            <Select
-              value={channelSelectValue}
-              disabled={saving}
-              onValueChange={(val) => {
-                if (!selectedRow) return;
-                const topicDeliveryChannel = val === WORKSPACE_DEFAULT_CHANNEL ? '' : (val as ChannelId);
-                void persist(selectedRow, { topicDeliveryChannel });
-              }}
-              itemToStringLabel={(v) => {
-                if (v === WORKSPACE_DEFAULT_CHANNEL) return 'Workspace default';
-                return getChannelLabel(v as ChannelId);
-              }}
-            >
-              <SelectTrigger className="h-auto min-h-10 py-2.5 text-left font-medium">
-                <SelectValue placeholder="Channel" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>Workspace default</SelectItem>
-                {CHANNEL_OPTIONS.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        title="Preview"
-        expanded={previewOpen}
-        onToggle={setPreviewOpen}
-        disabledHint={!hasSelection ? 'Select a topic from the list to see a channel preview and publishing details.' : undefined}
-      >
-        {selectedRow ? (
-          <TopicPostPreviewCard
-            row={selectedRow}
-            previewChannel={previewCh}
-            previewAuthorName={previewAuthorName}
-            compact
-            onOpenEditor={
-              getNormalizedRowStatus(selectedRow.status) === 'drafted'
-                ? () => onOpenEditor(selectedRow)
-                : undefined
-            }
-          />
-        ) : null}
-      </CollapsibleSection>
+          {/* 3. Delivery channel */}
+          <CollapsibleSection
+            title="Delivery channel"
+            expanded={deliveryOpen}
+            onToggle={setDeliveryOpen}
+            infoTooltip={deliveryInfoTooltip}
+          >
+            {selectedRow ? (
+              <div className="space-y-2">
+                <Select
+                  value={channelSelectValue}
+                  disabled={saving}
+                  onValueChange={(val) => {
+                    if (!selectedRow) return;
+                    const topicDeliveryChannel = val === WORKSPACE_DEFAULT_CHANNEL ? '' : (val as ChannelId);
+                    void persist(selectedRow, { topicDeliveryChannel });
+                  }}
+                  itemToStringLabel={(v) => {
+                    if (v === WORKSPACE_DEFAULT_CHANNEL) return 'Workspace default';
+                    return getChannelLabel(v as ChannelId);
+                  }}
+                >
+                  <SelectTrigger className="h-auto min-h-10 py-2.5 text-left font-medium">
+                    <SelectValue placeholder="Channel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>Workspace default</SelectItem>
+                    {CHANNEL_OPTIONS.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+          </CollapsibleSection>
+        </>
+      )}
     </div>
   );
 

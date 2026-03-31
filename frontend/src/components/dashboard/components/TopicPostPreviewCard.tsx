@@ -53,12 +53,14 @@ export function TopicPostPreviewCard({
 
   return (
     <div className={cn('space-y-4', compact && 'space-y-3')}>
-      <div>
-        <h3 className="truncate font-heading text-sm font-semibold text-ink" title={topicTooltip}>
-          {topicTitle}
-        </h3>
-        <p className="mt-1 text-xs text-muted">Status: {statusLabel}</p>
-      </div>
+      {!compact && (
+        <div>
+          <h3 className="truncate font-heading text-sm font-semibold text-ink" title={topicTooltip}>
+            {topicTitle}
+          </h3>
+          <p className="mt-1 text-xs text-muted">Status: {statusLabel}</p>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-xl border border-white/50 bg-white/40 shadow-sm">
         <ChannelPostPreview

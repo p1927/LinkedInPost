@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   topics: 'Topics',
   settings: 'Settings',
-  rules: 'Global rules',
+  rules: 'Rules',
   campaign: 'Campaign',
 };
 
@@ -170,7 +170,7 @@ export function WorkspaceHeader({
           onClick={() => onRefreshQueue?.()}
           disabled={!onRefreshQueue || queueLoading}
           className="h-9 min-h-9 gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer sm:px-4"
-          aria-label="Refresh queue"
+          aria-label="Refresh sheet data"
         >
           <RefreshCw className={clsx('h-3.5 w-3.5 shrink-0', queueLoading && 'animate-spin')} aria-hidden />
           <span>Refresh</span>

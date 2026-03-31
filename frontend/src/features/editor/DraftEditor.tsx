@@ -336,7 +336,8 @@ export function DraftEditor({
           onMouseUp={syncSelection}
           spellCheck={false}
           className={cn(!compact && 'min-h-0 flex-1')}
-          placeholder="Edit the draft here. Choose Selection, then highlight the part to change with Quick Change or 4 Variants."
+          aria-labelledby="review-draft-editor-heading"
+          placeholder="Write or edit your post…"
         />
       </div>
     </div>
