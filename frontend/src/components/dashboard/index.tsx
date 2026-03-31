@@ -243,7 +243,7 @@ export function Dashboard({
   const refreshQueue = useCallback(() => {
     if (!session.config.spreadsheetId) return;
     void queueHook.loadData();
-  }, [session.config.spreadsheetId, queueHook]);
+  }, [session.config.spreadsheetId, queueHook.loadData]);
 
   const publishingHealth = useMemo(
     () => ({
