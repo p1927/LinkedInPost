@@ -25,6 +25,8 @@ export function WorkspaceHeader({
     useWorkspaceChrome();
   const headerTitle = headerOverride?.title ?? PAGE_TITLES[workspacePage];
   const headerSubtitle = headerOverride?.subtitle ?? null;
+  const headerEyebrow = headerOverride?.eyebrow ?? null;
+  const subtitleTone = headerOverride?.subtitleTone ?? 'caps';
 
   const titleBlock = (
     <div className="min-w-0 flex-1 leading-tight">
@@ -61,6 +63,9 @@ export function WorkspaceHeader({
           ))}
         </nav>
       ) : null}
+      {headerEyebrow ? (
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-indigo-500">{headerEyebrow}</p>
+      ) : null}
       <h1
         className={clsx(
           'min-w-0 font-heading font-bold text-ink',
@@ -73,8 +78,8 @@ export function WorkspaceHeader({
       {headerSubtitle ? (
         <p
           className={clsx(
-            'mt-1 line-clamp-2 text-xs font-medium text-ink/60 transition-colors duration-200',
-            headerOverride ? 'uppercase tracking-widest' : 'font-normal tracking-normal',
+            'mt-1 line-clamp-2 text-xs text-ink/60 transition-colors duration-200',
+            subtitleTone === 'sentence' ? 'font-normal leading-snug tracking-normal' : 'font-medium uppercase tracking-widest',
           )}
         >
           {headerSubtitle}

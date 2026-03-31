@@ -283,13 +283,7 @@ export function CampaignPage(props: {
   return (
     <div className="w-full px-0 py-8 sm:py-12" ref={pageTopRef}>
       <div className="mx-auto max-w-5xl px-4 sm:px-8">
-        <div className="mb-6 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-indigo-400">Campaign</p>
-          <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Bulk Import</h2>
-          <p className="mt-1 text-sm text-slate-500">Generate with AI, paste JSON, preview and publish.</p>
-        </div>
-
-        {/* Carousel step nav */}
+        {/* Carousel step nav — page title lives in workspace header */}
         <Carousel
           steps={CAMPAIGN_STEPS}
           currentStep={currentStep}
@@ -301,7 +295,7 @@ export function CampaignPage(props: {
 
       {/* Animated step content */}
       <CarouselContent currentStep={currentStep}>
-        {/* Step 0: Import Campaign JSON */}
+        {/* Step 0: Import — topic ideas → Claude prompt → paste JSON */}
         <div className="mx-auto max-w-5xl px-4 sm:px-8">
           <div className="space-y-5">
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -309,7 +303,7 @@ export function CampaignPage(props: {
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">1</span>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Topic ideas</h3>
-                  <p className="text-xs text-slate-500">Injected into the AI prompt below — one theme per line.</p>
+                  <p className="text-xs text-slate-500">One theme per line — they are woven into the Claude prompt in step 2.</p>
                 </div>
               </div>
               <div className="p-5">
@@ -320,12 +314,24 @@ export function CampaignPage(props: {
                   className="min-h-[5rem] font-sans text-sm"
                   aria-label="Topic ideas for campaign prompt"
                 />
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+              </div>
+            </section>
+
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Claude prompt</h3>
+                  <p className="text-xs text-slate-500">Copy into your AI, or expand preview to read the full prompt from your topic ideas.</p>
+                </div>
+              </div>
+              <div className="p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-2">
                   <button
                     type="button"
                     onClick={() => void copyPrompt()}
                     className={clsx(
-                      'flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-1.5 text-sm font-semibold text-indigo-600',
+                      'flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-600 sm:w-auto',
                       'transition-colors duration-150 hover:bg-indigo-100',
                       'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
                       'cursor-pointer',
@@ -334,8 +340,10 @@ export function CampaignPage(props: {
                     <Copy className="h-3.5 w-3.5" aria-hidden />
                     Copy Claude prompt
                   </button>
-                  <details className="flex-1">
-                    <summary className="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors">Preview prompt</summary>
+                  <details className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+                    <summary className="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors">
+                      Preview prompt
+                    </summary>
                     <pre className="custom-scrollbar mt-2 max-h-48 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-slate-500">
                       {promptText}
                     </pre>
@@ -346,7 +354,7 @@ export function CampaignPage(props: {
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">Paste campaign JSON</h3>
                   <p className="text-xs text-slate-500">JSON or JSONC (comments and trailing commas allowed).</p>

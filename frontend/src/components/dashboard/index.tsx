@@ -340,6 +340,15 @@ export function Dashboard({
 
   const topicChromeRaw = topicChromeRow?.topic?.trim() ?? '';
   const headerOverride = useMemo(() => {
+    if (FEATURE_CAMPAIGN && pathNorm === WORKSPACE_PATHS.campaign) {
+      return {
+        eyebrow: 'Campaign',
+        title: 'Bulk Import',
+        subtitle: 'Generate with AI, paste JSON, preview and publish.',
+        subtitleTone: 'sentence' as const,
+        titleTooltip: null as string | null,
+      };
+    }
     if (!topicIdFromPath) return null;
     if (!topicChromeRaw) {
       return {
@@ -354,7 +363,7 @@ export function Dashboard({
       subtitle: null,
       titleTooltip: topicNeedsFullTooltip(topicChromeRaw) ? topicChromeRaw : null,
     };
-  }, [topicIdFromPath, topicChromeRaw, queueHook.loading]);
+  }, [pathNorm, topicIdFromPath, topicChromeRaw, queueHook.loading]);
 
   const isTopicsMain = pathNorm === WORKSPACE_PATHS.topics;
 
@@ -461,6 +470,15 @@ export function Dashboard({
     void queueHook.loadData(true);
   }, [api, idToken, queueHook.loadData]);
 
+  const handleUpdatePostSchedule = useCallback(async (row: SheetRow, postTime: string) => {
+    try {
+      await api.updatePostSchedule(idToken, row, postTime);
+    } catch {
+      // ignore; queue refresh still runs so UI can reconcile
+    }
+    void queueHook.loadData(true);
+  }, [api, idToken, queueHook.loadData]);
+
   const queueContent = (
     <DashboardQueue
       setStatusFilter={setStatusFilter}
@@ -489,6 +507,7 @@ export function Dashboard({
       onBulkSetChannel={handleBulkSetChannel}
       onBulkSetModel={handleBulkSetModel}
       onBulkSetSchedule={handleBulkSetSchedule}
+      onUpdatePostSchedule={handleUpdatePostSchedule}
     />
   );
 

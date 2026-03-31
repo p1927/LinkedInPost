@@ -1,3 +1,4 @@
+"""Worker bootstrap config — ported from setup_worker.py."""
 from __future__ import annotations
 
 import copy
@@ -62,25 +63,21 @@ def normalize_origin(value: str) -> str:
     trimmed = value.strip()
     if not trimmed:
         return ''
-
     parsed = urlsplit(trimmed)
     if not parsed.scheme or not parsed.netloc:
         return trimmed.rstrip('/')
-
     return f'{parsed.scheme}://{parsed.netloc}'.rstrip('/')
 
 
 def read_worker_dev_var(dev_vars_path: Path, name: str) -> str:
     if not dev_vars_path.exists():
         return ''
-
     prefix = f'{name}='
     for raw_line in dev_vars_path.read_text().splitlines():
         line = raw_line.strip()
         if not line or line.startswith('#') or not line.startswith(prefix):
             continue
         return line[len(prefix):].strip()
-
     return ''
 
 
@@ -88,11 +85,9 @@ def load_worker_encryption_key(dev_vars_path: Path, generate_encryption_key: Any
     env_key = os.environ.get('GITHUB_TOKEN_ENCRYPTION_KEY', '').strip()
     if env_key:
         return env_key
-
     persisted_key = read_worker_dev_var(dev_vars_path, 'GITHUB_TOKEN_ENCRYPTION_KEY')
     if persisted_key:
         return persisted_key
-
     return generate_encryption_key()
 
 
@@ -101,7 +96,6 @@ def read_existing_kv_ids(wrangler_config_path: Path) -> tuple[str, str]:
     namespaces = config.get('kv_namespaces', [])
     if not namespaces:
         return '', ''
-
     namespace = namespaces[0]
     namespace_id = str(namespace.get('id', '')).strip()
     preview_id = str(namespace.get('preview_id', '')).strip()
@@ -112,35 +106,33 @@ def read_existing_kv_ids(wrangler_config_path: Path) -> tuple[str, str]:
     return namespace_id, preview_id
 
 
+def _read_existing_var(config: dict[str, Any], name: str) -> str:
+    return str(config.get('vars', {}).get(name, '') or '').strip()
+
+
 def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerBootstrap) -> None:
     config = load_wrangler_jsonc(wrangler_config_path)
 
-    # Preserve existing D1 binding so the database_id placeholder (or real ID) is not lost.
     existing_d1 = config.get('d1_databases', [])
     if not existing_d1:
-        existing_d1 = [
-            {
-                'binding': 'PIPELINE_DB',
-                'database_name': 'linkedin-pipeline-db',
-                'database_id': 'REPLACE_WITH_D1_DATABASE_ID',
-                'migrations_dir': 'migrations',
-            }
-        ]
+        existing_d1 = [{
+            'binding': 'PIPELINE_DB',
+            'database_name': 'linkedin-pipeline-db',
+            'database_id': 'REPLACE_WITH_D1_DATABASE_ID',
+            'migrations_dir': 'migrations',
+        }]
     config['d1_databases'] = existing_d1
 
-    # Preserve existing cron triggers (news-snapshot pruning runs daily).
     existing_triggers = config.get('triggers', {})
     if not existing_triggers.get('crons'):
         existing_triggers['crons'] = ['0 3 * * *']
     config['triggers'] = existing_triggers
 
-    config['kv_namespaces'] = [
-        {
-            'binding': 'CONFIG_KV',
-            'id': worker_bootstrap.kv_namespace_id or 'REPLACE_WITH_KV_NAMESPACE_ID',
-            'preview_id': worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID',
-        }
-    ]
+    config['kv_namespaces'] = [{
+        'binding': 'CONFIG_KV',
+        'id': worker_bootstrap.kv_namespace_id or 'REPLACE_WITH_KV_NAMESPACE_ID',
+        'preview_id': worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID',
+    }]
     news_snapshot_max = _read_existing_var(config, 'NEWS_SNAPSHOT_MAX_PER_TOPIC') or '10'
     config['vars'] = {
         'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
@@ -158,19 +150,9 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'NEWS_SNAPSHOT_MAX_PER_TOPIC': news_snapshot_max,
     }
     config['durable_objects'] = {
-        'bindings': [
-            {
-                'name': 'SCHEDULED_LINKEDIN_PUBLISH',
-                'class_name': 'ScheduledPublishAlarm',
-            }
-        ]
+        'bindings': [{'name': 'SCHEDULED_LINKEDIN_PUBLISH', 'class_name': 'ScheduledPublishAlarm'}]
     }
-    config['migrations'] = [
-        {
-            'tag': 'v1',
-            'new_sqlite_classes': ['ScheduledPublishAlarm'],
-        }
-    ]
+    config['migrations'] = [{'tag': 'v1', 'new_sqlite_classes': ['ScheduledPublishAlarm']}]
     preview_binding_id = worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID'
     local_d1 = copy.deepcopy(existing_d1)
     config['env'] = {
@@ -178,22 +160,11 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
             'durable_objects': copy.deepcopy(config['durable_objects']),
             'migrations': copy.deepcopy(config['migrations']),
             'vars': copy.deepcopy(config['vars']),
-            'kv_namespaces': [
-                {
-                    'binding': 'CONFIG_KV',
-                    'id': preview_binding_id,
-                    'preview_id': preview_binding_id,
-                }
-            ],
+            'kv_namespaces': [{'binding': 'CONFIG_KV', 'id': preview_binding_id, 'preview_id': preview_binding_id}],
             'd1_databases': local_d1,
         }
     }
     wrangler_config_path.write_text(json.dumps(config, indent=2) + '\n')
-
-
-def _read_existing_var(config: dict[str, Any], name: str) -> str:
-    """Return the current value of a top-level vars entry, or '' if absent."""
-    return str(config.get('vars', {}).get(name, '') or '').strip()
 
 
 def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json: str) -> dict[str, str]:
@@ -233,17 +204,15 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
 
 
 def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_json: str) -> dict[str, str]:
-    secret_values = {
+    secret_values: dict[str, str] = {
         'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
     }
-
     serpapi_api_key = os.environ.get('SERPAPI_API_KEY', '').strip()
     if serpapi_api_key:
         secret_values['SERPAPI_API_KEY'] = serpapi_api_key
-
-    optional_secret_values = {
+    optional: dict[str, str] = {
         'INSTAGRAM_APP_SECRET': worker_bootstrap.instagram_app_secret,
         'TELEGRAM_BOT_TOKEN': worker_bootstrap.telegram_bot_token,
         'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
@@ -259,7 +228,7 @@ def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_js
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
     }
-    secret_values.update({name: value for name, value in optional_secret_values.items() if value})
+    secret_values.update({name: value for name, value in optional.items() if value})
     return secret_values
 
 
@@ -267,18 +236,15 @@ def extract_namespace_id(output: str) -> str:
     output = output.strip()
     if not output:
         return ''
-
     try:
         parsed = json.loads(output)
         if isinstance(parsed, dict):
             return str(parsed.get('id', '')).strip()
     except json.JSONDecodeError:
         pass
-
     match = re.search(r'"id"\s*:\s*"([^"]+)"', output)
     if match:
         return match.group(1)
-
     match = re.search(r'([a-f0-9]{32})', output, re.IGNORECASE)
     return match.group(1) if match else ''
 
@@ -300,7 +266,6 @@ def pick_verification_origin(cors_allowed_origins: str) -> str:
 def resolve_worker_public_url(worker_bootstrap: WorkerBootstrap | None) -> str:
     if worker_bootstrap and worker_bootstrap.worker_url:
         return worker_bootstrap.worker_url
-
     return os.environ.get('VITE_WORKER_URL', '').strip()
 
 
@@ -315,10 +280,7 @@ def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str
     prerequisites: list[str] = []
     if worker_bootstrap:
         if not worker_bootstrap.gmail_client_id or not worker_bootstrap.gmail_client_secret:
-            prerequisites.append(
-                'Set GMAIL_CLIENT_ID (often the same Web client ID as VITE_GOOGLE_CLIENT_ID) and GMAIL_CLIENT_SECRET; '
-                'for local wrangler dev add authorized redirect http://127.0.0.1:8787/auth/gmail/callback (or http://localhost:8787/auth/gmail/callback).',
-            )
+            prerequisites.append('Set GMAIL_CLIENT_ID (often the same Web client ID as VITE_GOOGLE_CLIENT_ID) and GMAIL_CLIENT_SECRET; for local wrangler dev add authorized redirect http://127.0.0.1:8787/auth/gmail/callback (or http://localhost:8787/auth/gmail/callback).')
         if not worker_bootstrap.instagram_app_id:
             prerequisites.append('Set INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET before testing Instagram popup auth.')
         if not worker_bootstrap.linkedin_client_id:
@@ -345,7 +307,6 @@ def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str
             'then apply migrations: npx wrangler d1 migrations apply linkedin-pipeline-db --remote'
         ),
     ]
-
     return prerequisites + core
 
 
@@ -390,7 +351,6 @@ def print_bootstrap_summary(
             print(f'CONFIG_KV production    = {worker_bootstrap.kv_namespace_id}')
         if worker_bootstrap.kv_preview_id:
             print(f'CONFIG_KV preview       = {worker_bootstrap.kv_preview_id}')
-        # D1 — read current database_id from wrangler.jsonc for display
         try:
             _cfg = load_wrangler_jsonc(wrangler_config_path)
             _d1 = _cfg.get('d1_databases', [])
@@ -420,4 +380,3 @@ def print_bootstrap_summary(
 
     if not args.cloudflare and not args.deploy_worker and not args.sync_github_secrets:
         print('\nRun `python setup.py --all` to continue through Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
-    print('')

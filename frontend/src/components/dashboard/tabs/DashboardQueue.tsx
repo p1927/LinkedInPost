@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit, LayoutList, CalendarDays } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
@@ -17,6 +17,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { type PendingScheduledPublish, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { type ChannelId, CHANNEL_OPTIONS } from '@/integrations/channels';
 import { topicLabelForQueueActions, topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
+import {
+  ContentScheduleCalendar,
+  deriveCalendarFieldsFromSheetRow,
+  sheetRowsToCalendarTopics,
+  type CalendarTopic,
+  type TopicScheduleChange,
+} from '@/features/content-schedule-calendar';
 
 const rowActionClass =
   'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-50 transition-colors duration-200 cursor-pointer';
@@ -51,6 +58,7 @@ export function DashboardQueue({
   onBulkSetChannel,
   onBulkSetModel,
   onBulkSetSchedule,
+  onUpdatePostSchedule,
 }: {
   setStatusFilter: (filter: QueueFilter) => void;
   statusFilter: QueueFilter;
@@ -79,6 +87,7 @@ export function DashboardQueue({
   onBulkSetChannel: (rows: SheetRow[], channel: string) => Promise<void>;
   onBulkSetModel: (rows: SheetRow[], model: string) => Promise<void>;
   onBulkSetSchedule: (rows: SheetRow[], date: string, time: string) => Promise<void>;
+  onUpdatePostSchedule: (row: SheetRow, postTime: string) => Promise<void>;
 }) {
   useEffect(() => {
     if (!scrollTargetId) return;
@@ -107,6 +116,7 @@ export function DashboardQueue({
   const [bulkModel, setBulkModel] = useState('');
   const [bulkDate, setBulkDate] = useState('');
   const [bulkTime, setBulkTime] = useState('');
+  const [topicsViewMode, setTopicsViewMode] = useState<'list' | 'calendar'>('list');
 
   const getTopicId = (row: SheetRow) => String(row.topicId).trim();
   const selectedRows = filteredRows.filter((r) => selectedTopicIds.has(getTopicId(r)));
@@ -139,9 +149,74 @@ export function DashboardQueue({
     }
   };
 
+  const calendarTopics = useMemo(
+    () =>
+      sheetRowsToCalendarTopics(filteredRows, {
+        channelLabelForRow: (r) => effectiveChannel(r, selectedChannel),
+      }),
+    [filteredRows, selectedChannel],
+  );
+
+  const topicsWithCalendarDate = useMemo(
+    () => calendarTopics.filter((t) => t.date.trim()),
+    [calendarTopics],
+  );
+
+  const handleCalendarScheduleChange = useCallback(
+    (change: TopicScheduleChange) => {
+      void (async () => {
+        const row = rows.find((r) => String(r.topicId).trim() === change.id.trim());
+        if (!row) return;
+        const time = change.newStartTime ?? '09:00';
+        const postTime = `${change.newDate} ${time}`;
+        await onUpdatePostSchedule(row, postTime);
+      })();
+    },
+    [rows, onUpdatePostSchedule],
+  );
+
+  const handleCalendarTopicPatch = useCallback(
+    (id: string, patch: Partial<CalendarTopic>) => {
+      void (async () => {
+        const row = rows.find((r) => String(r.topicId).trim() === id.trim());
+        if (!row) return;
+        const base = deriveCalendarFieldsFromSheetRow(row);
+        const nextDate = patch.date !== undefined ? patch.date.trim() : base.date;
+        const nextTime =
+          patch.startTime !== undefined ? patch.startTime.trim() : (base.startTime ?? '');
+        if (patch.date !== undefined || patch.startTime !== undefined) {
+          if (!nextDate) return;
+          const postTime = nextTime ? `${nextDate} ${nextTime}` : nextDate;
+          await onUpdatePostSchedule(row, postTime);
+        }
+        if (patch.title !== undefined && patch.title.trim() !== row.topic.trim()) {
+          onOpenTopicReview(row);
+        }
+      })();
+    },
+    [rows, onUpdatePostSchedule, onOpenTopicReview],
+  );
+
+  const handleCalendarDelete = useCallback(
+    (id: string) => {
+      const row = rows.find((r) => String(r.topicId).trim() === id.trim());
+      if (row) void handleDeleteTopic(row);
+    },
+    [rows, handleDeleteTopic],
+  );
+
+  const toggleTopicSelectionById = useCallback((id: string) => {
+    setSelectedTopicIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   return (
     <div className="flex flex-col gap-4">
-      <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div
           className="flex flex-wrap gap-2"
           role="group"
@@ -162,6 +237,44 @@ export function DashboardQueue({
               )}
             </ChipToggle>
           ))}
+        </div>
+        <div
+          role="tablist"
+          aria-label="Topics layout"
+          className="flex shrink-0 rounded-lg border border-violet-200/70 bg-white/60 p-0.5 shadow-sm"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={topicsViewMode === 'list'}
+            onClick={() => setTopicsViewMode('list')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary/50',
+              topicsViewMode === 'list'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-muted hover:text-ink',
+            )}
+          >
+            <LayoutList className="h-3.5 w-3.5" aria-hidden />
+            List
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={topicsViewMode === 'calendar'}
+            onClick={() => setTopicsViewMode('calendar')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary/50',
+              topicsViewMode === 'calendar'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-muted hover:text-ink',
+            )}
+          >
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+            Calendar
+          </button>
         </div>
       </div>
 
@@ -239,6 +352,31 @@ export function DashboardQueue({
               <p className="mt-2 text-sm text-muted">Use the bar at the top to add your first topic.</p>
             ) : null}
           </div>
+        ) : topicsViewMode === 'calendar' ? (
+          topicsWithCalendarDate.length === 0 ? (
+            <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-6 py-14 text-center">
+              <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
+                <CalendarDays className="h-6 w-6" strokeWidth={1.5} />
+              </div>
+              <p className="text-base font-semibold text-ink">Nothing scheduled on the calendar yet</p>
+              <p className="mt-2 text-sm text-muted">
+                Switch to list view and set a date and post time for topics, or relax your status filter.
+              </p>
+            </div>
+          ) : (
+            <div className="glass-inset overflow-hidden rounded-2xl border border-violet-200/50 shadow-sm">
+              <ContentScheduleCalendar
+                topics={calendarTopics}
+                onTopicScheduleChange={handleCalendarScheduleChange}
+                onTopicPatch={handleCalendarTopicPatch}
+                onTopicDelete={handleCalendarDelete}
+                selectedTopicIds={selectedTopicIds}
+                onTopicSelectionToggle={toggleTopicSelectionById}
+                initialView="month-grid"
+                className="csc-compact"
+              />
+            </div>
+          )
         ) : (
           <div
             className="glass-inset custom-scrollbar scroll-mt-24 overflow-x-hidden rounded-2xl border border-violet-200/50 shadow-sm"

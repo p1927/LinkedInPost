@@ -12,6 +12,7 @@ import {
 } from './scheduled-publish';
 
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
+import { callGenerationWorker, isGenerationWorkerConfigured } from './generation/generationWorkerClient';
 import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway, coerceBulkCampaignPostsFromPayload } from './persistence/drafts';
 import {
@@ -90,6 +91,10 @@ export interface Env {
   META_APP_ID?: string;
   META_APP_SECRET?: string;
   WORKER_SCHEDULER_SECRET?: string;
+  /** URL of the generation-worker service (e.g. https://linkedin-generation-worker.YOUR.workers.dev). */
+  GENERATION_WORKER_URL?: string;
+  /** Shared secret for generation-worker Bearer auth. */
+  GENERATION_WORKER_SECRET?: string;
   WHATSAPP_PHONE_NUMBER_ID?: string;
   WHATSAPP_ACCESS_TOKEN?: string;
   /** Local only (.dev.vars): overrides CONFIG_KV spreadsheetId when preview KV has no config */
@@ -1025,6 +1030,19 @@ async function dispatchAction(
         JSON.stringify(report),
       );
       return report;
+    }
+    case 'callGenerationWorker': {
+      if (!FEATURE_CONTENT_REVIEW) {
+        throw new Error('Generation worker integration is disabled for this deployment.');
+      }
+      ensureSpreadsheetConfigured(storedConfig);
+      if (!isGenerationWorkerConfigured(env)) {
+        throw new Error('GENERATION_WORKER_URL is not configured. Set it in Worker environment.');
+      }
+      return callGenerationWorker(env, {
+        spreadsheetId: storedConfig.spreadsheetId,
+        ...(payload as Record<string, unknown>),
+      } as Parameters<typeof callGenerationWorker>[1]);
     }
     default:
       throw new Error(`Unknown action: ${action}`);

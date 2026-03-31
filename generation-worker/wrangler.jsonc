@@ -1,0 +1,17 @@
+{
+  "name": "linkedin-generation-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "GEN_DB",
+      "database_name": "linkedin-gen-worker-db",
+      "database_id": "TO_BE_CREATED"
+    }
+  ],
+  "vars": {}
+  // Secrets (set via `wrangler secret put`):
+  // GEMINI_API_KEY, WORKER_SHARED_SECRET,
+  // NEWSAPI_KEY, GNEWS_API_KEY, NEWSDATA_API_KEY, SERPAPI_API_KEY
+}

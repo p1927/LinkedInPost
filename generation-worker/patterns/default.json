@@ -1,0 +1,191 @@
+{
+  "packId": "default",
+  "version": "1.0.0",
+  "description": "Core LinkedIn post patterns seeded from content playbook",
+  "patterns": [
+    {
+      "id": "thought-leadership",
+      "version": "1.0.0",
+      "name": "Thought Leadership Take",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["professionals", "executives", "founders"],
+        "tone": ["opinionated", "confident", "insightful"],
+        "jtbd": ["build-authority", "share-perspective", "spark-discussion"],
+        "factual": false
+      },
+      "whenToUse": "Use when the author has a strong, differentiated opinion on an industry trend, common practice, or widely-held belief. Best when the angle is contrarian or non-obvious. Not for neutral summaries — the post must stake a clear claim the reader can agree or disagree with.",
+      "outline": "1. Hook: bold claim or provocative statement (1-2 lines)\n2. Context: why this matters now (2-3 lines)\n3. Core argument: 3 supporting reasons or observations\n4. Implication: what this means for the reader\n5. CTA: invite disagreement or ask for reader's take",
+      "writerSnippet": "Open with the claim, not the build-up. 'Most [X] advice is wrong. Here's why.' Then defend with specifics. End by asking if the reader agrees.",
+      "fewShotLines": [
+        "Cold outreach is dead. Not because people hate messages — because most messages are about the sender, not the recipient.",
+        "Everyone talks about building in public. Almost no one talks about what to do when the thing you built fails publicly."
+      ],
+      "imageHints": {
+        "mood": "bold, conceptual, minimal",
+        "searchKeywords": ["leadership", "strategy", "bold idea", "perspective"]
+      }
+    },
+    {
+      "id": "how-to-guide",
+      "version": "1.0.0",
+      "name": "Practical How-To Guide",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["professionals", "practitioners", "teams"],
+        "tone": ["practical", "clear", "helpful"],
+        "jtbd": ["teach-skill", "solve-problem", "provide-value"],
+        "factual": true
+      },
+      "whenToUse": "Use when the goal is to teach a concrete skill, process, or technique. The reader should be able to act on the post immediately. Works best for step-by-step processes, frameworks, or checklists where each step is actionable. Avoid if the topic is primarily opinion-based.",
+      "outline": "1. Hook: name the problem the reader has right now (1 line)\n2. Promise: what they'll know after reading\n3. Steps: numbered list of 3-7 concrete steps with brief explanation each\n4. Pro tip or common mistake to avoid\n5. CTA: encourage them to try it or share their experience",
+      "writerSnippet": "Lead with the reader's pain, not the solution. 'You're doing X wrong. Here's the fix:' then deliver steps that are specific enough to act on today.",
+      "fewShotLines": [
+        "You're writing job descriptions that filter out great candidates. Here's how to fix that in 5 steps:",
+        "How to run a 30-minute team retrospective that people actually want to attend:"
+      ],
+      "imageHints": {
+        "mood": "clean, instructional, professional",
+        "searchKeywords": ["tutorial", "steps", "process", "workflow", "checklist"]
+      }
+    },
+    {
+      "id": "case-study",
+      "version": "1.0.0",
+      "name": "Mini Case Study / Results Story",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["founders", "executives", "practitioners"],
+        "tone": ["story-driven", "credible", "results-focused"],
+        "jtbd": ["build-credibility", "share-results", "inspire-action"],
+        "factual": true
+      },
+      "whenToUse": "Use when there's a real before/after story with measurable results, a decision that changed the outcome, or a problem that was solved in a non-obvious way. Requires concrete specifics — numbers, timelines, decisions. Don't use for vague success stories without detail.",
+      "outline": "1. Hook: the result or the surprising outcome (1 line)\n2. Context: who, what, when, the starting point\n3. The problem or challenge in detail\n4. The decision or intervention (what changed)\n5. Results with specifics (numbers, timeframes)\n6. Lesson: what this means for the reader\n7. CTA: ask if they've faced a similar challenge",
+      "writerSnippet": "Start with the result, then rewind. '6 months ago, X was struggling with Y. Today, [result]. Here's what changed.' Make the decision the hero, not the person.",
+      "fewShotLines": [
+        "We cut our customer churn by 40% in 90 days. We didn't change the product. We changed the onboarding.",
+        "A client was burning $30k/month on ads with zero ROI. Three weeks later, same budget, 5x return. Here's exactly what we changed:"
+      ],
+      "imageHints": {
+        "mood": "results, growth, transformation",
+        "searchKeywords": ["results", "growth chart", "success", "transformation", "metrics"]
+      }
+    },
+    {
+      "id": "news-commentary",
+      "version": "1.0.0",
+      "name": "News Commentary / Industry Reaction",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["professionals", "industry-watchers", "executives"],
+        "tone": ["analytical", "timely", "opinionated"],
+        "jtbd": ["stay-relevant", "build-authority", "spark-discussion"],
+        "factual": true
+      },
+      "whenToUse": "Use when reacting to a recent industry development, news event, earnings release, product launch, or regulatory change. The post adds the author's unique perspective — not just a summary. Requires a specific news anchor. Do not use for evergreen topics.",
+      "outline": "1. Hook: name the news event and why it matters (1-2 lines)\n2. What happened: brief factual summary (2-3 lines)\n3. The insight: what most people are missing or getting wrong\n4. Implication for the reader's world\n5. CTA: ask what the reader thinks will happen next",
+      "writerSnippet": "Anchor to the specific event first, then pivot to your take. 'Everyone is talking about [news]. Here's what no one is mentioning:' Add the angle the hot takes missed.",
+      "fewShotLines": [
+        "OpenAI just dropped prices by 80%. Everyone's celebrating. I think it's a warning sign for the industry.",
+        "The Fed held rates again. The headlines are wrong about what this means for startups."
+      ],
+      "imageHints": {
+        "mood": "news, current events, analytical",
+        "searchKeywords": ["news", "industry trend", "market", "announcement", "data"]
+      }
+    },
+    {
+      "id": "listicle",
+      "version": "1.0.0",
+      "name": "Numbered Listicle",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["professionals", "teams", "practitioners"],
+        "tone": ["helpful", "clear", "scannable"],
+        "jtbd": ["provide-value", "teach-skill", "entertain"],
+        "factual": false
+      },
+      "whenToUse": "Use when sharing a collection of related tips, mistakes, tools, or observations that each stand alone. Best for 5-10 items where each item can be understood in 1-2 lines. Not for deeply connected arguments that need to be read in sequence.",
+      "outline": "1. Hook: the promise of the list ('X things I wish I knew about Y')\n2. Items 1-N: each item gets one punchy line or a line + 1 sentence explanation\n3. Bonus or the most important item saved for last\n4. CTA: which item resonates most, or what would they add",
+      "writerSnippet": "Write the hook as a bold promise. Each item should be self-contained and specific — not vague advice. The last item should be the sharpest.",
+      "fewShotLines": [
+        "7 things nobody tells you about scaling a remote team:",
+        "10 tools I use every week that most founders don't know about:"
+      ],
+      "imageHints": {
+        "mood": "clean list, minimal, organized",
+        "searchKeywords": ["list", "tips", "tools", "advice", "collection"]
+      }
+    },
+    {
+      "id": "personal-story",
+      "version": "1.0.0",
+      "name": "Personal Story / Vulnerability Hook",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["professionals", "founders", "general"],
+        "tone": ["personal", "authentic", "reflective"],
+        "jtbd": ["build-connection", "inspire", "share-experience"],
+        "factual": false
+      },
+      "whenToUse": "Use when sharing a personal experience — a failure, a turning point, a lesson learned the hard way, or a moment of growth. The story must have a clear narrative arc and a takeaway for the reader. Do not use for generic inspiration without a real story.",
+      "outline": "1. Hook: the moment or realization (present tense, vivid)\n2. Setup: what was happening before\n3. The event or decision\n4. The consequence or what changed\n5. The lesson: what you learned\n6. Application: how the reader can use this\n7. CTA: ask if they've had a similar experience",
+      "writerSnippet": "Drop the reader into the scene. 'It was 11pm. I was about to hit send on an email that would have cost me my biggest client.' Make the moment real before delivering the lesson.",
+      "fewShotLines": [
+        "I got fired from my first job 3 months in. Best thing that ever happened to me. Here's why:",
+        "I spent 18 months building the wrong product. My co-founder finally said something I didn't want to hear."
+      ],
+      "imageHints": {
+        "mood": "human, authentic, warm",
+        "searchKeywords": ["person", "reflection", "journey", "authentic", "story"]
+      }
+    },
+    {
+      "id": "contrarian-take",
+      "version": "1.0.0",
+      "name": "Contrarian / Myth-Busting",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["professionals", "executives", "founders"],
+        "tone": ["bold", "provocative", "confident"],
+        "jtbd": ["build-authority", "spark-discussion", "differentiate"],
+        "factual": false
+      },
+      "whenToUse": "Use when you have a strong, evidence-backed position that contradicts conventional wisdom or popular advice. The claim must be defensible. Best for debunking myths, challenging best practices, or flipping a widely-held assumption. Not for manufactured controversy.",
+      "outline": "1. Hook: name the popular belief you're about to challenge\n2. Acknowledge: why people believe it (steelman the opposing view)\n3. The turn: 'But here's what the data / my experience actually shows'\n4. Evidence: 2-3 specific reasons or examples\n5. The reframe: what to believe instead\n6. CTA: do they agree or have they seen the opposite",
+      "writerSnippet": "Name the myth in line 1. Steelman it briefly — then flip it. 'Everyone says X. I used to believe it too. Then [specific event] changed my mind.' Give the evidence before the conclusion.",
+      "fewShotLines": [
+        "Hustle culture isn't what made great companies. It's what killed most of them.",
+        "The best hiring advice I ever got contradicted everything I learned in business school."
+      ],
+      "imageHints": {
+        "mood": "bold, contrarian, debate",
+        "searchKeywords": ["debate", "myth", "challenge", "bold claim", "perspective shift"]
+      }
+    },
+    {
+      "id": "lesson-learned",
+      "version": "1.0.0",
+      "name": "Lesson Learned / Retrospective",
+      "tags": {
+        "channels": ["linkedin"],
+        "audience": ["professionals", "founders", "managers"],
+        "tone": ["reflective", "honest", "practical"],
+        "jtbd": ["share-experience", "teach-skill", "build-connection"],
+        "factual": false
+      },
+      "whenToUse": "Use when sharing a retrospective on a project, decision, year, or period. Works well for 'what I would do differently' and 'what I learned after X months doing Y' formats. Requires enough distance from the experience to offer genuine hindsight, not just a vent.",
+      "outline": "1. Hook: the period or project being reflected on\n2. What I expected vs what actually happened\n3. 3-5 key lessons (each with a specific example)\n4. The one lesson that surprised me most\n5. What I'd do differently\n6. CTA: ask what they learned from a similar experience",
+      "writerSnippet": "Frame it as 'I wish someone had told me this before I started.' Each lesson needs a specific memory attached to it, not just a principle.",
+      "fewShotLines": [
+        "After 2 years running a fully remote team, here are the 5 things I got completely wrong at the start:",
+        "I spent a year trying to grow on LinkedIn. Here's what actually moved the needle (and what was a complete waste of time):"
+      ],
+      "imageHints": {
+        "mood": "reflective, journey, growth",
+        "searchKeywords": ["retrospective", "lessons", "growth", "experience", "timeline"]
+      }
+    }
+  ]
+}

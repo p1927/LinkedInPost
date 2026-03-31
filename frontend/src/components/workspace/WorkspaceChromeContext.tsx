@@ -51,7 +51,15 @@ type WorkspaceChromeState = {
   highlightRefreshQueue: boolean;
   health: WorkspacePublishingHealth | null;
   /** When set, the workspace header shows this instead of the nav page title. */
-  headerOverride: { title: string; subtitle?: string | null; titleTooltip?: string | null } | null;
+  headerOverride: {
+    title: string;
+    subtitle?: string | null;
+    titleTooltip?: string | null;
+    /** Small label above the title (e.g. section name). */
+    eyebrow?: string | null;
+    /** 'caps' = uppercase tracking (default); 'sentence' = normal body subtitle. */
+    subtitleTone?: 'caps' | 'sentence';
+  } | null;
   /** Topic draft review: back, breadcrumb, optional pick-phase actions. */
   topicReviewHeader: TopicReviewHeaderChrome | null;
   hasUnsavedChanges: boolean;
@@ -108,7 +116,13 @@ export function useRegisterWorkspaceChrome(config: {
   queueLoading: boolean;
   highlightRefreshQueue?: boolean;
   health: WorkspacePublishingHealth | null;
-  headerOverride?: { title: string; subtitle?: string | null; titleTooltip?: string | null } | null;
+  headerOverride?: {
+    title: string;
+    subtitle?: string | null;
+    titleTooltip?: string | null;
+    eyebrow?: string | null;
+    subtitleTone?: 'caps' | 'sentence';
+  } | null;
   clearTopicReviewHeader?: boolean;
   addTopicForm?: AddTopicFormChrome | null;
 }) {
