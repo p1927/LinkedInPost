@@ -4,7 +4,7 @@ import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
-import { getNormalizedRowStatus, buildRowActionKey, formatQueueDate } from '../utils';
+import { getNormalizedRowStatus, buildRowActionKey, formatQueueDate, formatQueuePostTime } from '../utils';
 import { effectiveChannel } from '@/lib/topicEffectivePrefs';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
@@ -217,7 +217,9 @@ export function DashboardQueue({
                         className="max-w-full truncate text-[11px] tabular-nums text-muted/85"
                         title={row.postTime.trim()}
                       >
-                        {row.postTime.trim()}
+                        {dateRaw.trim()
+                          ? formatQueuePostTime(row.postTime.trim())
+                          : row.postTime.trim()}
                       </span>
                     ) : null}
                   </div>

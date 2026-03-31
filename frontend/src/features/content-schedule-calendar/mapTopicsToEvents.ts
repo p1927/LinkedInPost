@@ -2,6 +2,13 @@ import type { CalendarEvent } from '@schedule-x/calendar';
 import type { CalendarTopic } from './types';
 import { statusToCalendarId } from './statusStyles';
 
+export interface MapTopicsToEventsOptions {
+  /** When a topic has no start time, place it in the time grid at this slot (UTC) so week/day drag works. */
+  fallbackSlotTime?: string;
+  /** Topic ids (string) that show a selected outline on the calendar. */
+  selectedTopicIds?: ReadonlySet<string>;
+}
+
 /** Normalize an optional postTime string (e.g. "9:00", "14:30", "2:30 PM") → "HH:MM" or null. */
 function normalizeTime(raw?: string): string | null {
   if (!raw?.trim()) return null;
@@ -18,25 +25,27 @@ function normalizeTime(raw?: string): string | null {
 
 /**
  * Convert CalendarTopic[] to Schedule-X CalendarEvent[] using the Temporal API.
- * Timed events use ZonedDateTime (UTC); all-day events use PlainDate.
+ * Events are timed (ZonedDateTime UTC) so week/day views support drag-to-time;
+ * topics without `startTime` use `fallbackSlotTime` (default 09:00).
  */
-export function mapTopicsToEvents(topics: CalendarTopic[]): CalendarEvent[] {
+export function mapTopicsToEvents(
+  topics: CalendarTopic[],
+  options?: MapTopicsToEventsOptions,
+): CalendarEvent[] {
+  const fallback = options?.fallbackSlotTime ?? '09:00';
+  const fallbackOk = /^([01]?\d|2[0-3]):[0-5]\d$/.test(fallback) ? fallback : '09:00';
+  const selectedTopicIds = options?.selectedTopicIds;
+
   const events: CalendarEvent[] = [];
   for (const topic of topics) {
     if (!topic.date?.trim()) continue;
     try {
-      const time = normalizeTime(topic.startTime);
-      let start: Temporal.ZonedDateTime | Temporal.PlainDate;
-      let end: Temporal.ZonedDateTime | Temporal.PlainDate;
+      const time = normalizeTime(topic.startTime) ?? fallbackOk;
+      const start = Temporal.ZonedDateTime.from(`${topic.date}T${time}:00[UTC]`);
+      const end = start.add({ hours: 1 });
 
-      if (time) {
-        start = Temporal.ZonedDateTime.from(`${topic.date}T${time}:00[UTC]`);
-        end = start.add({ hours: 1 });
-      } else {
-        start = Temporal.PlainDate.from(topic.date);
-        end = start;
-      }
-
+      const idStr = String(topic.id);
+      const selected = selectedTopicIds?.has(idStr);
       events.push({
         id: topic.id,
         title: topic.title || '(no title)',
@@ -44,6 +53,7 @@ export function mapTopicsToEvents(topics: CalendarTopic[]): CalendarEvent[] {
         end,
         calendarId: statusToCalendarId(topic.status),
         description: topic.channels?.join(', '),
+        ...(selected ? { _options: { additionalClasses: ['csc-event--selected'] } } : {}),
       });
     } catch {
       // Skip events with invalid dates rather than crashing

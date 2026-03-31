@@ -73,6 +73,49 @@ export function formatQueueDate(raw: string): string {
   return t;
 }
 
+/**
+ * Time-only label for the queue when `row.date` already shows the calendar date.
+ * Accepts sheet-style `YYYY-MM-DD HH:mm`, `datetime-local`, time-only, or other parseable strings.
+ */
+export function formatQueuePostTime(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '—';
+
+  const ymdTime = t.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (ymdTime) {
+    const dt = new Date(
+      Number(ymdTime[1]),
+      Number(ymdTime[2]) - 1,
+      Number(ymdTime[3]),
+      Number(ymdTime[4]),
+      Number(ymdTime[5]),
+    );
+    if (!Number.isNaN(dt.getTime())) {
+      return dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+  }
+
+  const timeOnly = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm))?$/i);
+  if (timeOnly) {
+    let h = parseInt(timeOnly[1]!, 10);
+    const mi = parseInt(timeOnly[2]!, 10);
+    const ampm = timeOnly[4]?.toLowerCase();
+    if (ampm === 'pm' && h !== 12) h += 12;
+    if (ampm === 'am' && h === 12) h = 0;
+    const dt = new Date(2000, 0, 1, h, mi);
+    if (!Number.isNaN(dt.getTime())) {
+      return dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+  }
+
+  const parsed = new Date(t.includes('T') ? t : t.replace(' ', 'T'));
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  return t;
+}
+
 export function getRecipientOptions(channel: ChannelId, config: BotConfig): RecipientOption[] {
   if (channel === 'telegram') {
     return config.telegramRecipients.map((recipient) => ({

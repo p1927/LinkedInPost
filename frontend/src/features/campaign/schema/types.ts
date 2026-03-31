@@ -20,6 +20,8 @@ export interface CampaignPostV1 {
   selectedImageUrlsJson?: string;
   /** Shown in calendar/list only; not sent to the worker. */
   channels?: ChannelId[];
+  /** Stable list key for preview edits; not sent to import JSON. */
+  _rowId?: string;
 }
 
 export interface CampaignDocV1 {

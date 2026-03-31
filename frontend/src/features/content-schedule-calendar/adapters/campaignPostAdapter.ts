@@ -1,3 +1,4 @@
+import type { ChannelId } from '@/integrations/channels';
 import type { CampaignPostV1 } from '@/features/campaign/schema/types';
 import type { CalendarTopic } from '../types';
 
@@ -26,11 +27,16 @@ export function applyCalendarPatchToPost(
   if (patch.date !== undefined) updated.date = patch.date;
   if (patch.startTime !== undefined) updated.postTime = patch.startTime;
   if (patch.title !== undefined) updated.topic = patch.title;
+  if (patch.channels !== undefined) {
+    updated.channels = patch.channels.length
+      ? (patch.channels as ChannelId[])
+      : undefined;
+  }
   return updated;
 }
 
 /** Normalize postTime strings like "9:00 AM", "14:30", "9:00" → "HH:MM" or undefined. */
-function normalizePostTime(raw?: string): string | undefined {
+export function normalizePostTime(raw?: string): string | undefined {
   if (!raw?.trim()) return undefined;
   const match = raw.trim().match(/^(\d{1,2}):(\d{2})(?:\s*(am|pm))?$/i);
   if (!match) return undefined;

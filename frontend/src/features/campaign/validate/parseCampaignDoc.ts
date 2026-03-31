@@ -72,7 +72,8 @@ function coerceChannels(raw: unknown, path: JSONPath, source: string, root: Node
   return out;
 }
 
-function postToPayload(p: CampaignPostV1): BulkImportCampaignPostPayload {
+/** Maps a preview post to API import payload (omits UI-only fields). */
+export function campaignPostToImportPayload(p: CampaignPostV1): BulkImportCampaignPostPayload {
   return {
     topicId: crypto.randomUUID(),
     topic: p.topic,
@@ -219,7 +220,7 @@ export function parseCampaignPaste(source: string): ParseCampaignResult {
   });
 
   const doc: CampaignDocV1 = { version: 1, posts };
-  const payloadPosts = posts.map(postToPayload);
+  const payloadPosts = posts.map(campaignPostToImportPayload);
 
   return { ok: true, doc, payloadPosts };
 }
