@@ -459,8 +459,15 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
-      if (window.history.state?.trap) {
-        window.history.back();
+      const st = window.history.state;
+      if (st && typeof st === 'object' && 'trap' in st) {
+        const next = { ...st } as Record<string, unknown>;
+        delete next.trap;
+        window.history.replaceState(
+          Object.keys(next).length > 0 ? next : null,
+          '',
+          window.location.href,
+        );
       }
     };
   }, [hasUnsavedReviewState, setters]);

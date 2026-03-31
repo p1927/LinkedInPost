@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BrowserRouter, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
 import { LogOut, Share2, Sparkles, TableProperties } from 'lucide-react'
 import { googleLogout } from '@react-oauth/google'
@@ -134,6 +134,15 @@ function LoginRedirect() {
   return null
 }
 
+/** Split stored path like `/topics?x=1` for stable comparison with {@link normalizeWorkspacePathname}. */
+function splitStoredPath(pathWithSearch: string): { path: string; search: string } {
+  const q = pathWithSearch.indexOf('?')
+  if (q === -1) {
+    return { path: pathWithSearch, search: '' }
+  }
+  return { path: pathWithSearch.slice(0, q), search: pathWithSearch.slice(q) }
+}
+
 /** After bootstrap, send users back to e.g. `/topics` they opened while logged out (GitHub Pages deep links). */
 function PostLoginDeepLinkRestore({
   idToken,
@@ -144,11 +153,19 @@ function PostLoginDeepLinkRestore({
 }) {
   const navigate = useNavigate()
   const location = useLocation()
+  /** One restore attempt per authenticated session; avoids re-running on every route change (React #185). */
+  const restoreAttemptedRef = useRef(false)
 
   useEffect(() => {
     if (!idToken || !session) {
+      restoreAttemptedRef.current = false
       return
     }
+    if (restoreAttemptedRef.current) {
+      return
+    }
+    restoreAttemptedRef.current = true
+
     let target: string | null = null
     try {
       target = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY)
@@ -161,12 +178,15 @@ function PostLoginDeepLinkRestore({
     if (!target) {
       return
     }
-    const current = `${location.pathname}${location.search}`
-    if (target === current) {
+    const { path: tPath, search: tSearch } = splitStoredPath(target.trim())
+    const normalizedTarget = normalizeWorkspacePathname(tPath) + tSearch
+    const current = normalizeWorkspacePathname(location.pathname) + location.search
+    if (normalizedTarget === current) {
       return
     }
-    navigate(target, { replace: true })
-  }, [idToken, session, navigate, location.pathname, location.search])
+    navigate(target.trim().startsWith('/') ? target.trim() : `/${target.trim()}`, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when auth becomes ready; location is snapshot for comparison at that render only
+  }, [idToken, session, navigate])
 
   return null
 }

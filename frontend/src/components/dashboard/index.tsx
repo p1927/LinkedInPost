@@ -207,7 +207,7 @@ export function Dashboard({
     if (row) {
       queueMicrotask(() => setSelectedTopicsPanelTopicId(String(row.topicId).trim()));
     }
-    navigate(WORKSPACE_PATHS.topics, { replace: true, state: null });
+    navigate({ pathname: WORKSPACE_PATHS.topics }, { replace: true, state: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rows updates every poll; ref ensures one consume per openPreview key
   }, [openPreviewForTopicKey, queueHook.loading, navigate]);
 
