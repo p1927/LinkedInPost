@@ -27,3 +27,10 @@ export interface TopicScheduleChange {
   /** Present only for timed events. */
   newStartTime?: string;
 }
+
+/** Confirmed batch reschedule from the Topics calendar dialog (after drag/resize). */
+export interface TopicRescheduleCommitPayload {
+  topicIds: string[];
+  date: string;
+  time: string;
+}

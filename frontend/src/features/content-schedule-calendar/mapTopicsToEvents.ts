@@ -46,6 +46,10 @@ export function mapTopicsToEvents(
 
       const idStr = String(topic.id);
       const selected = selectedTopicIds?.has(idStr);
+      const blocked = (topic.status ?? '').toLowerCase() === 'blocked';
+      const eventOptions: { disableDND?: boolean; additionalClasses?: string[] } = {};
+      if (blocked) eventOptions.disableDND = true;
+      if (selected) eventOptions.additionalClasses = ['csc-event--selected'];
       events.push({
         id: topic.id,
         title: topic.title || '(no title)',
@@ -53,7 +57,7 @@ export function mapTopicsToEvents(
         end,
         calendarId: statusToCalendarId(topic.status),
         description: topic.channels?.join(', '),
-        ...(selected ? { _options: { additionalClasses: ['csc-event--selected'] } } : {}),
+        ...(Object.keys(eventOptions).length ? { _options: eventOptions } : {}),
       });
     } catch {
       // Skip events with invalid dates rather than crashing

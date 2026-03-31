@@ -21,10 +21,11 @@ import { topicLabelForQueueActions, topicNeedsFullTooltip, truncateTopicForUi } 
 import {
   ContentScheduleCalendar,
   deriveCalendarFieldsFromSheetRow,
+  isLocalScheduleInPast,
   localDateIsoToday,
   sheetRowsToCalendarTopics,
   type CalendarTopic,
-  type TopicScheduleChange,
+  type TopicRescheduleCommitPayload,
 } from '@/features/content-schedule-calendar';
 
 const rowActionClass =
@@ -61,6 +62,7 @@ export function DashboardQueue({
   onBulkSetModel,
   onBulkSetSchedule,
   onUpdatePostSchedule,
+  onCalendarRescheduleCommit,
   onGenerationWorkerDraft,
 }: {
   setStatusFilter: (filter: QueueFilter) => void;
@@ -91,6 +93,7 @@ export function DashboardQueue({
   onBulkSetModel: (rows: SheetRow[], model: string) => Promise<void>;
   onBulkSetSchedule: (rows: SheetRow[], date: string, time: string) => Promise<void>;
   onUpdatePostSchedule: (row: SheetRow, postTime: string) => Promise<void>;
+  onCalendarRescheduleCommit: (payload: TopicRescheduleCommitPayload) => Promise<void>;
   onGenerationWorkerDraft?: (row: SheetRow, request: GenWorkerGenerateRequest) => Promise<void>;
 }) {
   useEffect(() => {
@@ -199,21 +202,6 @@ export function DashboardQueue({
     [calendarTopics],
   );
 
-  const handleCalendarScheduleChange = useCallback(
-    (change: TopicScheduleChange) => {
-      void (async () => {
-        const today = localDateIsoToday();
-        if (change.newDate < today) return;
-        const row = rows.find((r) => String(r.topicId).trim() === change.id.trim());
-        if (!row) return;
-        const time = change.newStartTime ?? '09:00';
-        const postTime = `${change.newDate} ${time}`;
-        await onUpdatePostSchedule(row, postTime);
-      })();
-    },
-    [rows, onUpdatePostSchedule],
-  );
-
   const handleCalendarTopicPatch = useCallback(
     (id: string, patch: Partial<CalendarTopic>) => {
       void (async () => {
@@ -226,6 +214,7 @@ export function DashboardQueue({
         if (patch.date !== undefined || patch.startTime !== undefined) {
           if (!nextDate) return;
           if (nextDate < localDateIsoToday()) return;
+          if (nextTime && isLocalScheduleInPast(nextDate, nextTime)) return;
           const postTime = nextTime ? `${nextDate} ${nextTime}` : nextDate;
           await onUpdatePostSchedule(row, postTime);
         }
@@ -407,7 +396,8 @@ export function DashboardQueue({
             <div className="glass-inset overflow-visible rounded-2xl border border-violet-200/50 shadow-sm">
               <ContentScheduleCalendar
                 topics={calendarTopics}
-                onTopicScheduleChange={handleCalendarScheduleChange}
+                rescheduleConfirm
+                onRescheduleCommit={onCalendarRescheduleCommit}
                 onTopicPatch={handleCalendarTopicPatch}
                 onTopicDelete={handleCalendarDelete}
                 onTopicActivate={(topic) => {

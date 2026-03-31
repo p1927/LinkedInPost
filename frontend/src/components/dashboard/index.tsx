@@ -39,6 +39,7 @@ import {
 } from '../../generated/features';
 import { CampaignPage } from '../../features/campaign';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
+import type { TopicRescheduleCommitPayload } from '@/features/content-schedule-calendar';
 
 function previewAuthorDisplayName(email: string): string {
   const local = email.split('@')[0]?.trim() ?? '';
@@ -479,6 +480,38 @@ export function Dashboard({
     void queueHook.loadData(true);
   }, [api, idToken, queueHook.loadData]);
 
+  const handleCalendarRescheduleCommit = useCallback(
+    async ({ topicIds, date, time }: TopicRescheduleCommitPayload) => {
+      const postTime = time ? `${date} ${time}` : date;
+      for (const id of topicIds) {
+        const row = queueHook.rows.find((r) => String(r.topicId).trim() === String(id).trim());
+        if (!row) continue;
+        try {
+          if (getNormalizedRowStatus(row.status) === 'published') {
+            await api.createDraftFromPublished(
+              idToken,
+              row,
+              (row.selectedText ?? '').trim(),
+              row.selectedImageId ?? '',
+              postTime,
+              (row.emailTo ?? '').trim(),
+              (row.emailCc ?? '').trim(),
+              (row.emailBcc ?? '').trim(),
+              (row.emailSubject ?? '').trim(),
+              row.selectedImageUrlsJson ?? '',
+            );
+          } else {
+            await api.updatePostSchedule(idToken, row, postTime);
+          }
+        } catch {
+          // continue with remaining topics
+        }
+      }
+      void queueHook.loadData(true);
+    },
+    [api, idToken, queueHook.rows, queueHook.loadData],
+  );
+
   const queueContent = (
     <DashboardQueue
       setStatusFilter={setStatusFilter}
@@ -509,6 +542,7 @@ export function Dashboard({
       onBulkSetModel={handleBulkSetModel}
       onBulkSetSchedule={handleBulkSetSchedule}
       onUpdatePostSchedule={handleUpdatePostSchedule}
+      onCalendarRescheduleCommit={handleCalendarRescheduleCommit}
     />
   );
 
