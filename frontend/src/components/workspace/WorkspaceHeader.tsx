@@ -1,8 +1,9 @@
 import clsx from 'clsx';
-import { ChevronLeft, ChevronRight, LogOut, Menu, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogOut, Menu, Plus, RefreshCw } from 'lucide-react';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { type WorkspaceNavPage } from './AppSidebar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   topics: 'Topics',
@@ -20,7 +21,7 @@ export function WorkspaceHeader({
   onOpenMobileSidebar: () => void;
   onLogout: () => void;
 }) {
-  const { onRefreshQueue, queueLoading, headerOverride, topicReviewHeader } = useWorkspaceChrome();
+  const { onRefreshQueue, queueLoading, headerOverride, topicReviewHeader, addTopicForm } = useWorkspaceChrome();
   const headerTitle = headerOverride?.title ?? PAGE_TITLES[workspacePage];
   const headerSubtitle = headerOverride?.subtitle ?? null;
 
@@ -86,6 +87,7 @@ export function WorkspaceHeader({
       className={clsx(
         'glass-header sticky top-0 z-30 flex min-h-[4.25rem] shrink-0 flex-col justify-center gap-2 border-b px-3 py-2.5 sm:min-h-[4.75rem] sm:flex-row sm:justify-between sm:gap-4 sm:px-4 sm:py-3',
         topicReviewHeader ? 'sm:items-start' : 'sm:items-center',
+        addTopicForm && !topicReviewHeader ? 'relative' : '',
       )}
     >
       {topicReviewHeader ? (
@@ -132,6 +134,41 @@ export function WorkspaceHeader({
           {titleBlock}
         </div>
       )}
+
+      {addTopicForm && !topicReviewHeader ? (
+        <form
+          onSubmit={addTopicForm.handleAddTopic}
+          aria-busy={addTopicForm.addingTopic}
+          className={clsx(
+            'absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-2 sm:flex',
+            addTopicForm.addingTopic && 'pointer-events-none select-none',
+          )}
+        >
+          <Input
+            type="text"
+            value={addTopicForm.newTopic}
+            onChange={(e) => addTopicForm.setNewTopic(e.target.value)}
+            placeholder="Add a topic…"
+            aria-label="New topic title"
+            disabled={addTopicForm.loading && !addTopicForm.addingTopic}
+            className="h-9 w-56 rounded-lg border-violet-200/50 bg-white/90 px-3 text-sm text-ink shadow-sm transition-[border-color,box-shadow] duration-200 placeholder:text-muted/70 hover:border-violet-300 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:shadow-md lg:w-72"
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            disabled={(addTopicForm.loading && !addTopicForm.addingTopic) || !addTopicForm.newTopic.trim()}
+            className="h-9 min-h-9 gap-1.5 rounded-lg px-3 text-xs font-semibold cursor-pointer"
+          >
+            {addTopicForm.addingTopic ? (
+              <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+            ) : (
+              <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            )}
+            <span>Add topic</span>
+          </Button>
+        </form>
+      ) : null}
 
       <div
         className={clsx(

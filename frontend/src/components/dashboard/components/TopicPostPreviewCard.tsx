@@ -62,7 +62,7 @@ export function TopicPostPreviewCard({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-white/50 bg-white/40 shadow-sm">
+      <div className="flex justify-center overflow-hidden rounded-xl border border-white/50 bg-white/40 shadow-sm">
         <ChannelPostPreview
           optionNumber={1}
           text={row.selectedText || row.variant1}

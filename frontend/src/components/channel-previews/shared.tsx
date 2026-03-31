@@ -17,7 +17,7 @@ export function linkedInFeedCardWidthClass(sidebar: boolean, carousel: boolean, 
 
 /** ~Phone-width Instagram mock; stays narrow on desktop. */
 export function instagramPhoneCardWidthClass(sidebar: boolean, carousel: boolean): string {
-  if (sidebar) return 'mx-auto w-full max-w-[260px]';
+  if (sidebar) return 'mx-auto w-full max-w-[340px]';
   if (carousel) return 'mx-auto w-full max-w-[min(100%,18rem)] sm:max-w-[17.5rem]';
   return cn(
     'mx-auto w-full max-w-[min(100%,20rem)]',
@@ -29,7 +29,7 @@ export function instagramPhoneCardWidthClass(sidebar: boolean, carousel: boolean
 
 /** Chat bubble row: phone-ish width on all breakpoints. */
 export function messagingBubbleMaxClass(sidebar: boolean): string {
-  if (sidebar) return 'max-w-[min(100%,240px)]';
+  if (sidebar) return 'mx-auto max-w-[min(100%,300px)]';
   return cn(
     'w-full max-w-[min(100%,17.5rem)]',
     'sm:max-w-[18rem]',
@@ -40,7 +40,7 @@ export function messagingBubbleMaxClass(sidebar: boolean): string {
 
 /** Full chat panel behind bubbles: narrow column on desktop like a phone screen. */
 export function messagingChatPanelWidthClass(sidebar: boolean): string {
-  if (sidebar) return 'w-full';
+  if (sidebar) return 'mx-auto w-full max-w-[360px]';
   return cn('mx-auto w-full', 'max-w-[min(100%,21rem)]', 'sm:max-w-[20rem]', 'md:max-w-[19rem]');
 }
 

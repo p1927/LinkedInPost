@@ -36,6 +36,14 @@ export type TopicReviewHeaderChrome = {
   pickToolbar: { onMedia: () => void; onOpenEditor: () => void } | null;
 };
 
+export type AddTopicFormChrome = {
+  newTopic: string;
+  setNewTopic: (v: string) => void;
+  handleAddTopic: (e: React.FormEvent) => Promise<void>;
+  addingTopic: boolean;
+  loading: boolean;
+};
+
 type WorkspaceChromeState = {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
@@ -45,6 +53,8 @@ type WorkspaceChromeState = {
   /** Topic draft review: back, breadcrumb, optional pick-phase actions. */
   topicReviewHeader: TopicReviewHeaderChrome | null;
   hasUnsavedChanges: boolean;
+  /** When set, renders the add-topic form in the workspace header center. */
+  addTopicForm: AddTopicFormChrome | null;
 };
 
 const defaultState: WorkspaceChromeState = {
@@ -54,6 +64,7 @@ const defaultState: WorkspaceChromeState = {
   headerOverride: null,
   topicReviewHeader: null,
   hasUnsavedChanges: false,
+  addTopicForm: null,
 };
 
 type WorkspaceChromeContextValue = WorkspaceChromeState & {
@@ -95,19 +106,21 @@ export function useRegisterWorkspaceChrome(config: {
   health: WorkspacePublishingHealth | null;
   headerOverride?: { title: string; subtitle?: string | null; titleTooltip?: string | null } | null;
   clearTopicReviewHeader?: boolean;
+  addTopicForm?: AddTopicFormChrome | null;
 }) {
   const { setChrome } = useWorkspaceChrome();
-  const { onRefreshQueue, queueLoading, health, headerOverride = null, clearTopicReviewHeader } = config;
+  const { onRefreshQueue, queueLoading, health, headerOverride = null, clearTopicReviewHeader, addTopicForm = null } = config;
 
   useEffect(() => {
-    setChrome({ 
-      onRefreshQueue, 
-      queueLoading, 
-      health, 
+    setChrome({
+      onRefreshQueue,
+      queueLoading,
+      health,
       headerOverride,
+      addTopicForm,
       ...(clearTopicReviewHeader ? { topicReviewHeader: null } : {})
     });
-  }, [setChrome, onRefreshQueue, queueLoading, health, headerOverride, clearTopicReviewHeader]);
+  }, [setChrome, onRefreshQueue, queueLoading, health, headerOverride, clearTopicReviewHeader, addTopicForm]);
 
   useEffect(() => {
     return () => {

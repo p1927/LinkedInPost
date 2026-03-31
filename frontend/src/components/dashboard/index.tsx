@@ -321,12 +321,30 @@ export function Dashboard({
     };
   }, [topicIdFromPath, topicChromeRaw, queueHook.loading]);
 
+  const isTopicsMain = pathNorm === WORKSPACE_PATHS.topics;
+
+  const addTopicForm = useMemo(
+    () =>
+      isTopicsMain && !topicIdFromPath
+        ? {
+            newTopic: queueHook.newTopic,
+            setNewTopic: queueHook.setNewTopic,
+            handleAddTopic: queueHook.handleAddTopic,
+            addingTopic: queueHook.addingTopic,
+            loading: queueHook.loading,
+          }
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isTopicsMain, topicIdFromPath, queueHook.newTopic, queueHook.addingTopic, queueHook.loading],
+  );
+
   useRegisterWorkspaceChrome({
     onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,
     queueLoading: queueHook.loading,
     health: publishingHealth,
     headerOverride,
     clearTopicReviewHeader: !topicIdFromPath,
+    addTopicForm,
   });
 
   const parsedTelegramRecipientsForSettings = useMemo(() => {
@@ -337,7 +355,6 @@ export function Dashboard({
     }
   }, [channelsHook.telegramRecipientsInput]);
 
-  const isTopicsMain = pathNorm === WORKSPACE_PATHS.topics;
   const savedScrollY = useRef(0);
 
   useEffect(() => {
@@ -375,11 +392,6 @@ export function Dashboard({
 
   const queueContent = (
     <DashboardQueue
-      handleAddTopic={queueHook.handleAddTopic}
-      newTopic={queueHook.newTopic}
-      setNewTopic={queueHook.setNewTopic}
-      loading={queueHook.loading}
-      addingTopic={queueHook.addingTopic}
       setStatusFilter={setStatusFilter}
       statusFilter={statusFilter}
       queueCounts={queueCounts}

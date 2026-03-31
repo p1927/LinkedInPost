@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Eye, Info } from 'lucide-react';
+import { Eye, Info } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { CHANNEL_OPTIONS, type ChannelId, getChannelLabel } from '@/integrations/channels';
 import type { SheetRow } from '@/services/sheets';
@@ -26,63 +27,33 @@ function ResizeHandle() {
   );
 }
 
-function CollapsibleSection({
+function RailSection({
   title,
-  expanded,
-  onToggle,
   infoTooltip,
   children,
+  className,
 }: {
   title: string;
-  expanded: boolean;
-  onToggle: (open: boolean) => void;
-  /** Shown on hover via native tooltip (compact section headers). */
   infoTooltip?: string;
   children: React.ReactNode;
+  className?: string;
 }) {
-  const onHeaderKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onToggle(!expanded);
-    }
-  };
-
   return (
-    <div className="border-b border-violet-200/40 py-3 last:border-b-0">
-      <div
-        role="button"
-        tabIndex={0}
-        className="flex w-full cursor-pointer list-none items-center justify-between gap-2 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 focus-visible:ring-offset-1"
-        onClick={() => onToggle(!expanded)}
-        onKeyDown={onHeaderKeyDown}
-        aria-expanded={expanded}
-      >
-        <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">{title}</span>
-          {infoTooltip ? (
-            <span
-              className="inline-flex shrink-0"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                className="rounded p-0.5 text-muted transition-colors hover:bg-violet-100/60 hover:text-ink"
-                aria-label={infoTooltip}
-                title={infoTooltip}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Info className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              </button>
-            </span>
-          ) : null}
-        </span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
-          aria-hidden
-        />
+    <div className={className}>
+      <div className="mb-2.5 flex items-center gap-1.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">{title}</span>
+        {infoTooltip ? (
+          <button
+            type="button"
+            className="rounded p-0.5 text-muted transition-colors hover:bg-violet-100/60 hover:text-ink"
+            aria-label={infoTooltip}
+            title={infoTooltip}
+          >
+            <Info className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+          </button>
+        ) : null}
       </div>
-      {expanded ? <div className="mt-3">{children}</div> : null}
+      {children}
     </div>
   );
 }
@@ -121,21 +92,6 @@ export function TopicsRightRail({
   );
 
   const hasSelection = Boolean(selectedRow);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [modelOpen, setModelOpen] = useState(false);
-  const [deliveryOpen, setDeliveryOpen] = useState(false);
-
-  useEffect(() => {
-    if (hasSelection) {
-      setPreviewOpen(true);
-      setModelOpen(true);
-      setDeliveryOpen(true);
-    } else {
-      setPreviewOpen(false);
-      setModelOpen(false);
-      setDeliveryOpen(false);
-    }
-  }, [hasSelection, selectedTopicId]);
 
   const previewCh = selectedRow ? effectiveChannel(selectedRow, workspaceChannel) : workspaceChannel;
 
@@ -215,7 +171,6 @@ export function TopicsRightRail({
   const railInner = (
     <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
       {!hasSelection ? (
-        /* Unified empty state — single clear placeholder instead of 3 disabled sections */
         <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100/70 text-primary">
             <Eye className="h-5 w-5" strokeWidth={1.5} aria-hidden />
@@ -229,9 +184,9 @@ export function TopicsRightRail({
         </div>
       ) : (
         <>
-          {/* Selected topic title header with status badge */}
+          {/* Topic header */}
           {selectedRow && (
-            <div className="mb-3 flex items-center gap-2 border-b border-violet-200/40 pb-3">
+            <div className="mb-4 flex items-center gap-2 border-b border-violet-200/40 pb-3">
               <p
                 className="min-w-0 flex-1 truncate text-xs font-semibold text-ink/80"
                 title={topicNeedsFullTooltip(selectedRow.topic) ? selectedRow.topic.trim() : undefined}
@@ -244,12 +199,8 @@ export function TopicsRightRail({
             </div>
           )}
 
-          {/* 1. Preview — first, most valuable */}
-          <CollapsibleSection
-            title="Preview"
-            expanded={previewOpen}
-            onToggle={setPreviewOpen}
-          >
+          {/* Preview — always visible */}
+          <RailSection title="Preview" className="mb-5">
             {selectedRow ? (
               <TopicPostPreviewCard
                 row={selectedRow}
@@ -263,120 +214,135 @@ export function TopicsRightRail({
                 }
               />
             ) : null}
-          </CollapsibleSection>
+          </RailSection>
 
-          {/* 2. AI model */}
-          <CollapsibleSection
-            title="AI model"
-            expanded={modelOpen}
-            onToggle={setModelOpen}
-            infoTooltip={aiModelInfoTooltip}
-          >
-            {selectedRow ? (
-              <div className="space-y-2">
-                {modelPickerLocked ? (
-                  <p className="text-[11px] text-muted">This workspace allows only one model.</p>
-                ) : (
-                  <Select
-                    value={modelSelectValue}
-                    disabled={saving}
-                    onValueChange={(val) => {
-                      if (!selectedRow || val == null) return;
-                      if (FEATURE_MULTI_PROVIDER_LLM) {
+          {/* Settings — compact 2-col grid, always visible */}
+          {selectedRow ? (
+            <div className="border-t border-violet-200/40 pt-4">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted/70">Settings</p>
+              <div className={cn('grid gap-3', modelPickerLocked ? 'grid-cols-1' : 'grid-cols-2')}>
+                {/* AI model */}
+                {!modelPickerLocked ? (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted">AI model</span>
+                      <button
+                        type="button"
+                        className="rounded p-0.5 text-muted transition-colors hover:bg-violet-100/60 hover:text-ink"
+                        aria-label={aiModelInfoTooltip}
+                        title={aiModelInfoTooltip}
+                      >
+                        <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
+                      </button>
+                    </div>
+                    <Select
+                      value={modelSelectValue}
+                      disabled={saving}
+                      onValueChange={(val) => {
+                        if (!selectedRow || val == null) return;
+                        if (FEATURE_MULTI_PROVIDER_LLM) {
+                          if (val === WORKSPACE_DEFAULT_MODEL) {
+                            void persist(selectedRow, { topicGenerationModel: '' });
+                            return;
+                          }
+                          const payload = JSON.stringify({
+                            provider: workspaceLlm.provider,
+                            model: val,
+                          });
+                          scheduleModelSave(selectedRow, payload);
+                          return;
+                        }
                         if (val === WORKSPACE_DEFAULT_MODEL) {
                           void persist(selectedRow, { topicGenerationModel: '' });
                           return;
                         }
-                        const payload = JSON.stringify({
-                          provider: workspaceLlm.provider,
-                          model: val,
-                        });
-                        scheduleModelSave(selectedRow, payload);
-                        return;
-                      }
-                      if (val === WORKSPACE_DEFAULT_MODEL) {
-                        void persist(selectedRow, { topicGenerationModel: '' });
-                        return;
-                      }
-                      scheduleModelSave(selectedRow, val);
+                        scheduleModelSave(selectedRow, val);
+                      }}
+                      itemToStringLabel={(v) => {
+                        if (v === WORKSPACE_DEFAULT_MODEL) return 'Workspace default';
+                        if (FEATURE_MULTI_PROVIDER_LLM && String(v).startsWith('{')) {
+                          try {
+                            const o = JSON.parse(String(v)) as { model?: string };
+                            const m = String(o.model || '').trim();
+                            return availableModels.find((x) => x.value === m)?.label ?? m;
+                          } catch {
+                            return String(v);
+                          }
+                        }
+                        return availableModels.find((m) => m.value === v)?.label ?? String(v ?? '');
+                      }}
+                    >
+                      <SelectTrigger className="h-9 py-2 text-left text-xs font-medium">
+                        <SelectValue placeholder="Model" />
+                      </SelectTrigger>
+                      <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
+                        <SelectItem value={WORKSPACE_DEFAULT_MODEL}>Workspace default</SelectItem>
+                        {availableModels.map((m) => (
+                          <SelectItem
+                            key={m.value}
+                            value={
+                              FEATURE_MULTI_PROVIDER_LLM
+                                ? JSON.stringify({ provider: workspaceLlm.provider, model: m.value })
+                                : m.value
+                            }
+                            className="items-start py-2"
+                          >
+                            <span className="whitespace-normal leading-snug">{m.label}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] text-muted">AI model</span>
+                    <p className="text-[11px] text-muted">One model workspace.</p>
+                  </div>
+                )}
+
+                {/* Delivery channel */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-muted">Channel</span>
+                    <button
+                      type="button"
+                      className="rounded p-0.5 text-muted transition-colors hover:bg-violet-100/60 hover:text-ink"
+                      aria-label={deliveryInfoTooltip}
+                      title={deliveryInfoTooltip}
+                    >
+                      <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
+                    </button>
+                  </div>
+                  <Select
+                    value={channelSelectValue}
+                    disabled={saving}
+                    onValueChange={(val) => {
+                      if (!selectedRow) return;
+                      const topicDeliveryChannel = val === WORKSPACE_DEFAULT_CHANNEL ? '' : (val as ChannelId);
+                      void persist(selectedRow, { topicDeliveryChannel });
                     }}
                     itemToStringLabel={(v) => {
-                      if (v === WORKSPACE_DEFAULT_MODEL) return 'Workspace default';
-                      if (FEATURE_MULTI_PROVIDER_LLM && String(v).startsWith('{')) {
-                        try {
-                          const o = JSON.parse(String(v)) as { model?: string };
-                          const m = String(o.model || '').trim();
-                          return availableModels.find((x) => x.value === m)?.label ?? m;
-                        } catch {
-                          return String(v);
-                        }
-                      }
-                      return availableModels.find((m) => m.value === v)?.label ?? String(v ?? '');
+                      if (v === WORKSPACE_DEFAULT_CHANNEL) return 'Workspace default';
+                      return getChannelLabel(v as ChannelId);
                     }}
                   >
-                    <SelectTrigger className="h-auto min-h-10 py-2.5 text-left font-medium">
-                      <SelectValue placeholder="Model" />
+                    <SelectTrigger className="h-9 py-2 text-left text-xs font-medium">
+                      <SelectValue placeholder="Channel" />
                     </SelectTrigger>
-                    <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
-                      <SelectItem value={WORKSPACE_DEFAULT_MODEL}>Workspace default</SelectItem>
-                      {availableModels.map((m) => (
-                        <SelectItem
-                          key={m.value}
-                          value={
-                            FEATURE_MULTI_PROVIDER_LLM
-                              ? JSON.stringify({ provider: workspaceLlm.provider, model: m.value })
-                              : m.value
-                          }
-                          className="items-start py-2.5"
-                        >
-                          <span className="whitespace-normal leading-snug">{m.label}</span>
+                    <SelectContent>
+                      <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>Workspace default</SelectItem>
+                      {CHANNEL_OPTIONS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                )}
-                {saving ? <p className="text-[10px] text-muted">Saving…</p> : null}
+                </div>
               </div>
-            ) : null}
-          </CollapsibleSection>
-
-          {/* 3. Delivery channel */}
-          <CollapsibleSection
-            title="Delivery channel"
-            expanded={deliveryOpen}
-            onToggle={setDeliveryOpen}
-            infoTooltip={deliveryInfoTooltip}
-          >
-            {selectedRow ? (
-              <div className="space-y-2">
-                <Select
-                  value={channelSelectValue}
-                  disabled={saving}
-                  onValueChange={(val) => {
-                    if (!selectedRow) return;
-                    const topicDeliveryChannel = val === WORKSPACE_DEFAULT_CHANNEL ? '' : (val as ChannelId);
-                    void persist(selectedRow, { topicDeliveryChannel });
-                  }}
-                  itemToStringLabel={(v) => {
-                    if (v === WORKSPACE_DEFAULT_CHANNEL) return 'Workspace default';
-                    return getChannelLabel(v as ChannelId);
-                  }}
-                >
-                  <SelectTrigger className="h-auto min-h-10 py-2.5 text-left font-medium">
-                    <SelectValue placeholder="Channel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>Workspace default</SelectItem>
-                    {CHANNEL_OPTIONS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>
-                        {c.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-          </CollapsibleSection>
+              {saving ? <p className="mt-2 text-[10px] text-muted">Saving…</p> : null}
+            </div>
+          ) : null}
         </>
       )}
     </div>
