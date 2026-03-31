@@ -1,7 +1,7 @@
 import type { BotConfig, BotConfigUpdate, GoogleModelOption, LlmProviderId } from './configService';
 import { normalizeBotConfig } from './configService';
 import type { ChannelId } from '../integrations/channels';
-import type { SheetRow } from './sheets';
+import type { DraftPreviewSelection, SheetRow } from './sheets';
 import type { ContentReviewReport } from '../features/content-review/types';
 
 export interface AppSession {
@@ -247,6 +247,19 @@ export interface PostTemplate {
   rules: string;
 }
 
+/**
+ * ContentPattern extends PostTemplate with channel and usage metadata.
+ * The worker may return these fields if stored; otherwise they are optional.
+ */
+export interface ContentPattern extends PostTemplate {
+  /** Optional delivery channel this pattern is optimised for (e.g. 'linkedin'). */
+  deliveryChannel?: string;
+  /** Tags for categorisation (e.g. ['thought-leadership', 'short-form']). */
+  tags?: string[];
+  /** Human-readable guidance on when to use this pattern. */
+  whenToUse?: string;
+}
+
 export interface GenerationRulesVersion {
   savedAt: string;
   savedBy: string;
@@ -466,10 +479,16 @@ export class BackendApi {
     return this.post<NewsResearchSnapshotDetail>('getNewsResearchSnapshot', idToken, { id });
   }
 
-  async saveDraftVariants(idToken: string, row: SheetRow, variants: string[]): Promise<SheetRow> {
+  async saveDraftVariants(
+    idToken: string,
+    row: SheetRow,
+    variants: string[],
+    previewSelection?: DraftPreviewSelection,
+  ): Promise<SheetRow> {
     return this.post<SheetRow>('saveDraftVariants', idToken, {
       row,
       variants,
+      ...(previewSelection ? { previewSelection } : {}),
     });
   }
 
@@ -501,6 +520,19 @@ export class BackendApi {
       row,
       generationTemplateId,
     });
+  }
+
+  /** List content patterns (enriched PostTemplates with channel/tag/whenToUse metadata). */
+  async listPatterns(idToken: string): Promise<ContentPattern[]> {
+    return this.post<ContentPattern[]>('listPatterns', idToken);
+  }
+
+  /**
+   * Assign a pattern to a row (persists generationTemplateId).
+   * Falls back to saveGenerationTemplateId action when listPatterns is not yet wired on the worker.
+   */
+  async assignPattern(idToken: string, row: SheetRow, patternId: string): Promise<SheetRow> {
+    return this.post<SheetRow>('assignPattern', idToken, { row, patternId });
   }
 
   async saveTopicDeliveryPreferences(

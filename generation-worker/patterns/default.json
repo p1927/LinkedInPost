@@ -8,7 +8,7 @@
       "version": "1.0.0",
       "name": "Thought Leadership Take",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "instagram"],
         "audience": ["professionals", "executives", "founders"],
         "tone": ["opinionated", "confident", "insightful"],
         "jtbd": ["build-authority", "share-perspective", "spark-discussion"],
@@ -31,7 +31,7 @@
       "version": "1.0.0",
       "name": "Practical How-To Guide",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "email", "whatsapp"],
         "audience": ["professionals", "practitioners", "teams"],
         "tone": ["practical", "clear", "helpful"],
         "jtbd": ["teach-skill", "solve-problem", "provide-value"],
@@ -54,7 +54,7 @@
       "version": "1.0.0",
       "name": "Mini Case Study / Results Story",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "email"],
         "audience": ["founders", "executives", "practitioners"],
         "tone": ["story-driven", "credible", "results-focused"],
         "jtbd": ["build-credibility", "share-results", "inspire-action"],
@@ -77,7 +77,7 @@
       "version": "1.0.0",
       "name": "News Commentary / Industry Reaction",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "email"],
         "audience": ["professionals", "industry-watchers", "executives"],
         "tone": ["analytical", "timely", "opinionated"],
         "jtbd": ["stay-relevant", "build-authority", "spark-discussion"],
@@ -100,7 +100,7 @@
       "version": "1.0.0",
       "name": "Numbered Listicle",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "instagram", "whatsapp"],
         "audience": ["professionals", "teams", "practitioners"],
         "tone": ["helpful", "clear", "scannable"],
         "jtbd": ["provide-value", "teach-skill", "entertain"],
@@ -123,7 +123,7 @@
       "version": "1.0.0",
       "name": "Personal Story / Vulnerability Hook",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "instagram", "whatsapp"],
         "audience": ["professionals", "founders", "general"],
         "tone": ["personal", "authentic", "reflective"],
         "jtbd": ["build-connection", "inspire", "share-experience"],
@@ -146,7 +146,7 @@
       "version": "1.0.0",
       "name": "Contrarian / Myth-Busting",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "instagram"],
         "audience": ["professionals", "executives", "founders"],
         "tone": ["bold", "provocative", "confident"],
         "jtbd": ["build-authority", "spark-discussion", "differentiate"],
@@ -169,7 +169,7 @@
       "version": "1.0.0",
       "name": "Lesson Learned / Retrospective",
       "tags": {
-        "channels": ["linkedin"],
+        "channels": ["linkedin", "email", "whatsapp"],
         "audience": ["professionals", "founders", "managers"],
         "tone": ["reflective", "honest", "practical"],
         "jtbd": ["share-experience", "teach-skill", "build-connection"],

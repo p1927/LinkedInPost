@@ -11,3 +11,5 @@ campaign: true
 # Gemini + Grok (xAI) workspace LLM gateway and Settings → AI / LLM. Set false to hide UI and RPCs.
 multiProviderLlm: true
 contentReview: true
+# Content flow: pattern-based template selector in the review workspace.
+contentFlow: true

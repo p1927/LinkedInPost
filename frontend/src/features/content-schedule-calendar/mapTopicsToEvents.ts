@@ -3,7 +3,7 @@ import type { CalendarTopic } from './types';
 import { statusToCalendarId } from './statusStyles';
 
 export interface MapTopicsToEventsOptions {
-  /** When a topic has no start time, place it in the time grid at this slot (UTC) so week/day drag works. */
+  /** When a topic has no start time, place it in the time grid at this slot (local wall clock) so week/day drag works. */
   fallbackSlotTime?: string;
   /** Topic ids (string) that show a selected outline on the calendar. */
   selectedTopicIds?: ReadonlySet<string>;
@@ -23,10 +23,18 @@ function normalizeTime(raw?: string): string | null {
   return `${String(h).padStart(2, '0')}:${m}`;
 }
 
+function browserLocalTimeZoneId(): string {
+  try {
+    return Temporal.Now.zonedDateTimeISO().timeZoneId;
+  } catch {
+    return 'UTC';
+  }
+}
+
 /**
  * Convert CalendarTopic[] to Schedule-X CalendarEvent[] using the Temporal API.
- * Events are timed (ZonedDateTime UTC) so week/day views support drag-to-time;
- * topics without `startTime` use `fallbackSlotTime` (default 09:00).
+ * Date + time are interpreted as the user's local calendar wall clock (same as `isLocalScheduleInPast`),
+ * not UTC, so month/week/day cells match Topics sheet values.
  */
 export function mapTopicsToEvents(
   topics: CalendarTopic[],
@@ -36,12 +44,13 @@ export function mapTopicsToEvents(
   const fallbackOk = /^([01]?\d|2[0-3]):[0-5]\d$/.test(fallback) ? fallback : '09:00';
   const selectedTopicIds = options?.selectedTopicIds;
 
+  const tz = browserLocalTimeZoneId();
   const events: CalendarEvent[] = [];
   for (const topic of topics) {
     if (!topic.date?.trim()) continue;
     try {
       const time = normalizeTime(topic.startTime) ?? fallbackOk;
-      const start = Temporal.ZonedDateTime.from(`${topic.date}T${time}:00[UTC]`);
+      const start = Temporal.PlainDateTime.from(`${topic.date.trim()}T${time}:00`).toZonedDateTime(tz);
       const end = start.add({ hours: 1 });
 
       const idStr = String(topic.id);
@@ -73,14 +82,24 @@ export function extractDateFromStart(
   start: Temporal.ZonedDateTime | Temporal.PlainDate | unknown,
 ): { date: string; time?: string } {
   if (!start || typeof start !== 'object') return { date: String(start) };
-  const s = start as Temporal.ZonedDateTime | Temporal.PlainDate;
-  if ('hour' in s) {
-    const zdt = s as Temporal.ZonedDateTime;
+  const o = start as Record<string, unknown>;
+  if (typeof o.timeZoneId === 'string') {
+    const zdt = start as Temporal.ZonedDateTime;
     const t = zdt.toPlainTime();
     return {
       date: zdt.toPlainDate().toString(),
       time: `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`,
     };
   }
-  return { date: s.toString() };
+  if (
+    'year' in start &&
+    'month' in start &&
+    'day' in start &&
+    typeof o.year === 'number' &&
+    typeof o.month === 'number' &&
+    typeof o.day === 'number'
+  ) {
+    return { date: (start as Temporal.PlainDate).toString() };
+  }
+  return { date: String(start) };
 }

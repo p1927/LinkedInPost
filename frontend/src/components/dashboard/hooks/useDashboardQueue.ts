@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { type SheetRow } from '../../../services/sheets';
+import { type DraftPreviewSelection, type SheetRow } from '../../../services/sheets';
 import type { NewsResearchSearchPayload, NewsResearchSearchResult, GenWorkerGenerateRequest } from '../../../services/backendApi';
 import {
   type ContentReviewReport,
+  type ContentPattern,
   type GenerationRequest,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
@@ -10,6 +11,7 @@ import {
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../services/backendApi';
 import type { LlmRef } from '../../../services/configService';
 import { type DeliverySummary } from '../types';
+import { FEATURE_CONTENT_FLOW } from '../../../generated/features';
 
 import { type ChannelId, getChannelOption, getChannelLabel } from '../../../integrations/channels';
 import { effectiveChannel, effectiveLlmRef } from '@/lib/topicEffectivePrefs';
@@ -401,9 +403,13 @@ export function useDashboardQueue({
     }
   };
 
-  const handleSaveDraftVariants = async (row: SheetRow, variants: string[]): Promise<SheetRow> => {
+  const handleSaveDraftVariants = async (
+    row: SheetRow,
+    variants: string[],
+    previewSelection?: DraftPreviewSelection,
+  ): Promise<SheetRow> => {
     try {
-      const updatedRow = await api.saveDraftVariants(idToken, row, variants);
+      const updatedRow = await api.saveDraftVariants(idToken, row, variants, previewSelection);
       setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicId(entry, updatedRow) ? updatedRow : entry)));
       return updatedRow;
     } catch (error) {
@@ -426,6 +432,26 @@ export function useDashboardQueue({
   const loadPostTemplates = useCallback(async () => {
     return api.listPostTemplates(idToken);
   }, [api, idToken]);
+
+  // E8: Load patterns once so queue items can display pattern names.
+  const [postTemplates, setPostTemplates] = useState<ContentPattern[]>([]);
+  useEffect(() => {
+    if (!FEATURE_CONTENT_FLOW || !session.config.spreadsheetId) return;
+    let cancelled = false;
+    void api.listPostTemplates(idToken)
+      .then((list) => { if (!cancelled) setPostTemplates(list as ContentPattern[]); })
+      .catch(() => { /* non-critical */ });
+    return () => { cancelled = true; };
+  }, [api, idToken, session.config.spreadsheetId]);
+
+  /** Returns the pattern name for a generationTemplateId, or null when not found. */
+  const getPatternName = useCallback(
+    (templateId: string | undefined): string | null => {
+      if (!templateId?.trim() || !FEATURE_CONTENT_FLOW) return null;
+      return postTemplates.find((p) => p.id === templateId)?.name ?? null;
+    },
+    [postTemplates],
+  );
 
   const handleSaveGenerationTemplateId = async (row: SheetRow, generationTemplateId: string): Promise<SheetRow> => {
     try {
@@ -827,5 +853,8 @@ export function useDashboardQueue({
     handleSearchNewsResearch,
     handleListNewsResearchHistory,
     handleGetNewsResearchSnapshot,
+    // E8: pattern metadata for queue display
+    postTemplates,
+    getPatternName,
   };
 }

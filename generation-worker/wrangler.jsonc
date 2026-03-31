@@ -7,11 +7,9 @@
     {
       "binding": "GEN_DB",
       "database_name": "linkedin-gen-worker-db",
-      "database_id": "TO_BE_CREATED"
+      "database_id": "TO_BE_CREATED",
+      "migrations_dir": "migrations"
     }
   ],
   "vars": {}
-  // Secrets (set via `wrangler secret put`):
-  // GEMINI_API_KEY, WORKER_SHARED_SECRET,
-  // NEWSAPI_KEY, GNEWS_API_KEY, NEWSDATA_API_KEY, SERPAPI_API_KEY
 }

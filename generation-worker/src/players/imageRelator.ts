@@ -1,5 +1,6 @@
-import { callGeminiJson } from '../gemini';
-import type { Pattern, RequirementReport, TextVariant } from '../types';
+import type { LlmRef } from '../llmFromWorker';
+import { generateLlmParsedJson, hasAnyLlmProvider } from '../llmFromWorker';
+import type { Env, Pattern, RequirementReport, TextVariant } from '../types';
 
 export interface ImageRelatorOutput {
   visualBrief: string;
@@ -17,14 +18,14 @@ export async function relateImages(
   primaryVariant: TextVariant,
   pattern: Pattern,
   report: RequirementReport,
-  env: { GEMINI_API_KEY?: string },
+  env: Env,
+  llmRef: LlmRef,
 ): Promise<ImageRelatorOutput> {
   // Merge pattern image hints as default
   const hintKeywords = pattern.imageHints?.searchKeywords ?? [];
   const hintMood = pattern.imageHints?.mood ?? '';
 
-  const apiKey = String(env.GEMINI_API_KEY ?? '').trim();
-  if (!apiKey) {
+  if (!hasAnyLlmProvider(env)) {
     return {
       visualBrief: `${hintMood} image for topic: ${report.topic}`,
       searchKeywords: hintKeywords.length ? hintKeywords : [report.topic],
@@ -50,7 +51,7 @@ Return JSON with this exact shape:
 }`;
 
   try {
-    const result = await callGeminiJson<LlmImageRelatorResponse>(apiKey, prompt, {
+    const result = await generateLlmParsedJson<LlmImageRelatorResponse>(env, llmRef, prompt, {
       temperature: 0.5,
       maxOutputTokens: 512,
     });

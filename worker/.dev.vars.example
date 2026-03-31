@@ -16,10 +16,11 @@ GEMINI_API_KEY=your_gemini_api_key_here
 # xAI Grok (optional — only needed when multi-provider LLM is enabled and you want Grok as primary/fallback)
 XAI_API_KEY=your_xai_grok_api_key_here
 
-# Generation Worker (optional — enables AI Draft button in the dashboard)
-# Deploy the generation worker separately and set its URL here
+# Generation Worker (optional — enables AI Draft in the dashboard)
+# setup.py --cloudflare provisions D1; deploy requires GEMINI_API_KEY and/or XAI_API_KEY, then
+# setup.py --deploy-worker deploys the generation worker and fills GENERATION_WORKER_URL / GENERATION_WORKER_SECRET (or set manually):
 # GENERATION_WORKER_URL=https://your-generation-worker.your-account.workers.dev
-# GENERATION_WORKER_SECRET=use-a-long-random-shared-secret
+# GENERATION_WORKER_SECRET=must-match-WORKER_SHARED_SECRET-on-the-generation-worker
 
 # Scheduled publish auth secret (required for Durable Object alarm callbacks)
 WORKER_SCHEDULER_SECRET=use-a-long-random-string

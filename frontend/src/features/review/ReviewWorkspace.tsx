@@ -1,4 +1,4 @@
-import { type SheetRow } from '../../services/sheets';
+import { type DraftPreviewSelection, type SheetRow } from '../../services/sheets';
 import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../services/configService';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
@@ -42,7 +42,7 @@ export interface ReviewWorkspaceProps {
   globalEmailDefaults?: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
-  onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
+  onSaveVariants: (row: SheetRow, variants: string[], previewSelection?: DraftPreviewSelection) => Promise<SheetRow>;
   onFetchMoreImages: (searchQuery?: string) => Promise<string[]>;
   onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;

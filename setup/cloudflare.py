@@ -6,7 +6,14 @@ import re
 import tempfile
 from pathlib import Path
 
-from .constants import WORKER_DEV_VARS, WORKER_DIR, WORKER_WRANGLER_CONFIG
+from .constants import (
+    GEN_WORKER_DB_NAME,
+    GEN_WORKER_DIR,
+    GEN_WORKER_WRANGLER_CONFIG,
+    WORKER_DEV_VARS,
+    WORKER_DIR,
+    WORKER_WRANGLER_CONFIG,
+)
 from .utils import ensure_command, ok, run_command, warn
 from .worker_config import (
     WorkerBootstrap,
@@ -14,6 +21,7 @@ from .worker_config import (
     build_worker_secret_values,
     extract_namespace_id,
     extract_worker_url,
+    load_wrangler_jsonc,
     read_existing_kv_ids,
     update_wrangler_config,
 )
@@ -42,6 +50,22 @@ def install_worker_dependencies() -> None:
         ok('Worker dependencies', f'installed with {" ".join(npm_command)}')
     else:
         ok('Worker dependencies', 'already installed')
+    _install_generation_worker_dependencies()
+
+
+def _install_generation_worker_dependencies() -> None:
+    if not GEN_WORKER_DIR.is_dir() or not (GEN_WORKER_DIR / 'package.json').is_file():
+        return
+    gen_lock = GEN_WORKER_DIR / 'package-lock.json'
+    gen_modules = GEN_WORKER_DIR / 'node_modules'
+    gen_wrangler = gen_modules / '.bin' / 'wrangler'
+    should_install = not gen_modules.exists() or not gen_wrangler.exists()
+    npm_command = ['npm', 'ci'] if gen_lock.exists() else ['npm', 'install']
+    if should_install:
+        run_command(npm_command, cwd=GEN_WORKER_DIR, capture_output=True)
+        ok('Generation Worker dependencies', f'installed with {" ".join(npm_command)}')
+    else:
+        ok('Generation Worker dependencies', 'already installed')
 
 
 def create_kv_namespace(preview: bool) -> str:
@@ -167,6 +191,143 @@ def provision_d1_database() -> None:
     _apply_d1_migrations(remote=True)
 
 
+def _d1_id_is_placeholder(database_id: str) -> bool:
+    d = database_id.strip()
+    if not d:
+        return True
+    low = d.lower()
+    if low.startswith('replace_with_') or low == 'to_be_created':
+        return True
+    if d == '00000000-0000-0000-0000-000000000001':
+        return True
+    return False
+
+
+def _apply_generation_worker_d1_migrations(remote: bool = False) -> None:
+    if not GEN_WORKER_DIR.is_dir():
+        return
+    flag = '--remote' if remote else '--local'
+    try:
+        run_command(
+            ['npx', 'wrangler', 'd1', 'migrations', 'apply', GEN_WORKER_DB_NAME, flag],
+            cwd=GEN_WORKER_DIR,
+            capture_output=True,
+        )
+        ok('Generation Worker D1 migrations', f'applied {flag}')
+    except RuntimeError as error:
+        warn('Generation Worker D1 migrations', str(error)[:300])
+
+
+def provision_generation_worker_d1() -> None:
+    """Create the generation Worker D1 database if needed and write database_id into generation-worker/wrangler.jsonc."""
+    if not GEN_WORKER_WRANGLER_CONFIG.is_file():
+        return
+    ensure_command('npx', 'Install Node.js so setup.py can call Wrangler.')
+    try:
+        config = load_wrangler_jsonc(GEN_WORKER_WRANGLER_CONFIG)
+    except Exception as exc:
+        warn('Generation Worker D1', f'could not read wrangler config: {exc}')
+        return
+
+    d1_list = config.get('d1_databases', [])
+    if not d1_list:
+        warn('Generation Worker D1', 'no d1_databases in generation-worker/wrangler.jsonc')
+        return
+
+    entry = d1_list[0]
+    current_id = str(entry.get('database_id', '') or '').strip()
+    if not _d1_id_is_placeholder(current_id):
+        ok('Generation Worker D1 database ID', current_id)
+        _apply_generation_worker_d1_migrations(remote=True)
+        return
+
+    print(f'\n[D1] Creating D1 database {GEN_WORKER_DB_NAME} (generation worker)...')
+    try:
+        result = run_command(
+            ['npx', 'wrangler', 'd1', 'create', GEN_WORKER_DB_NAME, '--json'],
+            cwd=GEN_WORKER_DIR,
+            capture_output=True,
+        )
+        stdout = result.stdout.strip()
+    except RuntimeError:
+        result = run_command(
+            ['npx', 'wrangler', 'd1', 'create', GEN_WORKER_DB_NAME],
+            cwd=GEN_WORKER_DIR,
+            capture_output=True,
+        )
+        stdout = result.stdout.strip()
+
+    database_id = _extract_d1_database_id(stdout)
+    if not database_id:
+        warn('Generation Worker D1', 'Could not parse database_id from wrangler output.')
+        warn('Generation Worker D1 output', stdout[:400])
+        return
+
+    entry['database_id'] = database_id
+    if not str(entry.get('migrations_dir', '') or '').strip():
+        entry['migrations_dir'] = 'migrations'
+    config['d1_databases'] = d1_list
+    GEN_WORKER_WRANGLER_CONFIG.write_text(json.dumps(config, indent=2) + '\n')
+    ok('Generation Worker D1 database ID', database_id)
+    _apply_generation_worker_d1_migrations(remote=True)
+
+
+# Secrets the generation worker accepts for LLM calls (at least one required on deploy).
+GENERATION_WORKER_LLM_SECRET_KEYS = ('GEMINI_API_KEY', 'XAI_API_KEY')
+
+
+def _generation_worker_llm_secrets_from_env() -> dict[str, str]:
+    out: dict[str, str] = {}
+    for key in GENERATION_WORKER_LLM_SECRET_KEYS:
+        val = os.environ.get(key, '').strip()
+        if val:
+            out[key] = val
+    return out
+
+
+def deploy_generation_worker(worker_bootstrap: WorkerBootstrap) -> str:
+    """Deploy generation-worker to Cloudflare. Requires at least one of GEMINI_API_KEY or XAI_API_KEY."""
+    if not GEN_WORKER_DIR.is_dir() or not (GEN_WORKER_DIR / 'package.json').is_file():
+        return ''
+
+    llm_secrets = _generation_worker_llm_secrets_from_env()
+    if not llm_secrets:
+        raise RuntimeError(
+            'Cannot deploy the generation worker: no LLM API key is set. '
+            'Set at least one of GEMINI_API_KEY or XAI_API_KEY in your environment (for example in `.env`) '
+            'before running setup.py --deploy-worker or --all.',
+        )
+
+    gen_secrets: dict[str, str] = {
+        'WORKER_SHARED_SECRET': worker_bootstrap.generation_worker_secret,
+        **llm_secrets,
+    }
+    for key in (
+        'NEWSAPI_KEY',
+        'GNEWS_API_KEY',
+        'NEWSDATA_API_KEY',
+        'SERPAPI_API_KEY',
+        'RESEARCHER_RSS_FEEDS',
+    ):
+        val = os.environ.get(key, '').strip()
+        if val:
+            gen_secrets[key] = val
+
+    with build_wrangler_secrets_file(gen_secrets) as secrets_file:
+        result = run_command(
+            ['npx', 'wrangler', 'deploy', '--secrets-file', secrets_file],
+            cwd=GEN_WORKER_DIR,
+            capture_output=True,
+        )
+
+    url = extract_worker_url(result.stdout)
+    if url:
+        ok('Generation Worker deployed', url)
+    else:
+        warn('Generation Worker deploy', 'completed, but setup.py could not parse the deployment URL')
+    return url
+
+
 def update_worker_wrangler_config(worker_bootstrap: WorkerBootstrap) -> None:
     update_wrangler_config(WORKER_WRANGLER_CONFIG, worker_bootstrap)
     ok('wrangler.jsonc updated', str(WORKER_WRANGLER_CONFIG))
@@ -222,6 +383,12 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: ob
     if not credentials_json:
         raise RuntimeError('GOOGLE_CREDENTIALS_JSON is required to deploy the Worker.')
 
+    gen_url = deploy_generation_worker(worker_bootstrap)
+    if gen_url:
+        worker_bootstrap.generation_worker_url = gen_url
+        update_worker_wrangler_config(worker_bootstrap)
+        ok('Main Worker wrangler.jsonc', 'GENERATION_WORKER_URL set to deployed generation worker')
+
     secret_values = build_worker_secret_values(worker_bootstrap, credentials_json)
 
     with build_wrangler_secrets_file(secret_values) as secrets_file:
@@ -238,3 +405,10 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: ob
         ok('Worker deployed', worker_bootstrap.worker_url)
     else:
         warn('Worker deploy output', 'completed, but setup.py could not parse the deployment URL')
+
+    if worker_bootstrap.generation_worker_url:
+        creds = credentials_json
+        values = build_worker_dev_values(worker_bootstrap, creds)
+        lines = [f'{key}={value}' for key, value in values.items() if value]
+        WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
+        ok('Worker local env file', f'{WORKER_DEV_VARS} (GENERATION_WORKER_URL updated)')

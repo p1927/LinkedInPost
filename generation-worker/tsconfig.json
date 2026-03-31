@@ -16,5 +16,5 @@
       "zod": ["../frontend/node_modules/zod/index.d.ts"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "../worker/src/llm/catalog.ts", "../worker/src/llm/structuredJson.ts", "../worker/src/llm/genWorkerDefaults.ts", "../worker/src/llm/types.ts", "../worker/src/llm/providers/**/*.ts"]
 }

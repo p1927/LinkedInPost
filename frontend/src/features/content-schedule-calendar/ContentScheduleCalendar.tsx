@@ -307,17 +307,17 @@ export function ContentScheduleCalendar({
     setRescheduleBusy(true);
     try {
       await commit({ topicIds, date: date.trim(), time: timeNorm });
+      // Tell Schedule-X to keep the dragged position; rejecting here reverts the UI until a slow queue refresh.
+      finishRescheduleDialog(true);
     } catch (e) {
       void showAlert({
         title: 'Schedule update failed',
         description: e instanceof Error ? e.message : 'Something went wrong. Try again.',
       });
-      setRescheduleBusy(false);
-      return;
+      finishRescheduleDialog(false);
     } finally {
       setRescheduleBusy(false);
     }
-    finishRescheduleDialog(false);
   };
 
   const wrapperRef = useRef<HTMLDivElement>(null);

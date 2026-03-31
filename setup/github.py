@@ -56,6 +56,13 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: object |
         or read_worker_dev_var(WORKER_DEV_VARS, 'WORKER_SCHEDULER_SECRET')
         or generate_encryption_key()
     )
+    generation_worker_secret = (
+        os.environ.get('GENERATION_WORKER_SECRET', '').strip()
+        or read_worker_dev_var(WORKER_DEV_VARS, 'GENERATION_WORKER_SECRET')
+        or os.environ.get('WORKER_SHARED_SECRET', '').strip()
+        or read_worker_dev_var(WORKER_DEV_VARS, 'WORKER_SHARED_SECRET')
+        or generate_encryption_key()
+    )
 
     if not allowed_emails:
         warn('ALLOWED_EMAILS', 'not provided. Worker access control must be set before deployment.')
@@ -77,6 +84,7 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: object |
         cors_allowed_origins=normalize_space_delimited(f'http://localhost:5173 {github_pages_origin}'.strip()),
         encryption_key=encryption_key,
         scheduler_secret=scheduler_secret,
+        generation_worker_secret=generation_worker_secret,
         github_repo=github_repo,
         instagram_app_id=args.instagram_app_id,
         instagram_app_secret=args.instagram_app_secret,

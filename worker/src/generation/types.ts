@@ -44,6 +44,14 @@ export interface SheetRow {
   contentReviewAt?: string;
   /** JSON blob: full content review report. */
   contentReviewJson?: string;
+  /** Generation run ID from the generation worker. */
+  generationRunId?: string;
+  /** Primary pattern ID selected by the generation worker. */
+  patternId?: string;
+  /** Human-readable pattern name. */
+  patternName?: string;
+  /** Rationale for pattern selection. */
+  patternRationale?: string;
 }
 
 export interface PostTemplate {

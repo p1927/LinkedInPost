@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { type SheetRow } from '../../../services/sheets';
+import { type DraftPreviewSelection, type SheetRow } from '../../../services/sheets';
 import {
   type ContentReviewReport,
   type GenerationRequest,
@@ -205,7 +205,7 @@ export interface ReviewFlowProviderProps {
   globalEmailDefaults?: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
-  onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
+  onSaveVariants: (row: SheetRow, variants: string[], previewSelection?: DraftPreviewSelection) => Promise<SheetRow>;
   onFetchMoreImages: (searchQuery?: string) => Promise<string[]>;
   /** Copy a remote image to workspace storage before approve/publish when the URL is not already hosted for delivery. */
   onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;

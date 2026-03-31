@@ -29,6 +29,10 @@ export interface PipelineStateDbRow {
   content_review_fingerprint: string;
   content_review_at: string | null;
   content_review_json: string;
+  generation_run_id: string;
+  pattern_id: string;
+  pattern_name: string;
+  pattern_rationale: string;
   created_at: string;
   updated_at: string;
 }

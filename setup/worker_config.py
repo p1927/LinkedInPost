@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from .constants import GEN_WORKER_WRANGLER_CONFIG, WORKER_DEV_VARS
+
 
 def load_wrangler_jsonc(wrangler_config_path: Path) -> dict[str, Any]:
     """Parse worker/wrangler.jsonc. Wrangler allows JSONC (trailing commas, comments); stdlib json does not."""
@@ -38,6 +40,7 @@ class WorkerBootstrap:
     cors_allowed_origins: str
     encryption_key: str
     scheduler_secret: str
+    generation_worker_secret: str
     github_repo: str
     instagram_app_id: str
     instagram_app_secret: str
@@ -53,6 +56,7 @@ class WorkerBootstrap:
     kv_namespace_id: str = ''
     kv_preview_id: str = ''
     worker_url: str = ''
+    generation_worker_url: str = ''
 
 
 def normalize_space_delimited(value: str) -> str:
@@ -134,6 +138,10 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'preview_id': worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID',
     }]
     news_snapshot_max = _read_existing_var(config, 'NEWS_SNAPSHOT_MAX_PER_TOPIC') or '10'
+    gen_worker_url = (
+        worker_bootstrap.generation_worker_url.strip()
+        or _read_existing_var(config, 'GENERATION_WORKER_URL')
+    )
     config['vars'] = {
         'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
@@ -148,6 +156,7 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'WHATSAPP_PHONE_NUMBER_ID': worker_bootstrap.whatsapp_phone_number_id,
         'GMAIL_CLIENT_ID': worker_bootstrap.gmail_client_id,
         'NEWS_SNAPSHOT_MAX_PER_TOPIC': news_snapshot_max,
+        'GENERATION_WORKER_URL': gen_worker_url,
     }
     config['durable_objects'] = {
         'bindings': [{'name': 'SCHEDULED_LINKEDIN_PUBLISH', 'class_name': 'ScheduledPublishAlarm'}]
@@ -165,6 +174,18 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         }
     }
     wrangler_config_path.write_text(json.dumps(config, indent=2) + '\n')
+
+
+def generation_worker_url_for_dev(worker_bootstrap: WorkerBootstrap, dev_vars_path: Path) -> str:
+    if worker_bootstrap.generation_worker_url.strip():
+        return worker_bootstrap.generation_worker_url.strip()
+    env_url = os.environ.get('GENERATION_WORKER_URL', '').strip()
+    if env_url:
+        return env_url
+    persisted = read_worker_dev_var(dev_vars_path, 'GENERATION_WORKER_URL')
+    if persisted:
+        return persisted
+    return 'http://127.0.0.1:8788'
 
 
 def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json: str) -> dict[str, str]:
@@ -200,6 +221,8 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'INSTAGRAM_USER_ID': os.environ.get('INSTAGRAM_USER_ID', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
+        'GENERATION_WORKER_URL': generation_worker_url_for_dev(worker_bootstrap, WORKER_DEV_VARS),
+        'GENERATION_WORKER_SECRET': worker_bootstrap.generation_worker_secret,
     }
 
 
@@ -208,6 +231,7 @@ def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_js
         'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
         'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
+        'GENERATION_WORKER_SECRET': worker_bootstrap.generation_worker_secret,
     }
     serpapi_api_key = os.environ.get('SERPAPI_API_KEY', '').strip()
     if serpapi_api_key:
@@ -306,6 +330,11 @@ def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str
             'then patch the returned database_id into wrangler.jsonc d1_databases[0].database_id, '
             'then apply migrations: npx wrangler d1 migrations apply linkedin-pipeline-db --remote'
         ),
+        (
+            'Generation worker (AI Draft): setup.py --cloudflare provisions generation-worker D1; '
+            'setup.py --deploy-worker deploys linkedin-generation-worker when GEMINI_API_KEY and/or XAI_API_KEY is set '
+            '(missing both fails deploy). For local generation only: cd generation-worker && npm run dev (port 8788).'
+        ),
     ]
     return prerequisites + core
 
@@ -361,6 +390,36 @@ def print_bootstrap_summary(
                 print('PIPELINE_DB (D1)        = <not yet provisioned — run setup.py --cloudflare or wrangler d1 create>')
         except Exception:
             pass
+        try:
+            if GEN_WORKER_WRANGLER_CONFIG.is_file():
+                _gcfg = load_wrangler_jsonc(GEN_WORKER_WRANGLER_CONFIG)
+                _gd1 = _gcfg.get('d1_databases', [])
+                _gid = str(_gd1[0].get('database_id', '') if _gd1 else '').strip()
+                low = _gid.lower()
+                if _gid and not low.startswith('replace_with_') and low != 'to_be_created' and _gid != '00000000-0000-0000-0000-000000000001':
+                    print(f'GEN_DB (generation D1)  = {_gid}')
+                else:
+                    print('GEN_DB (generation D1)  = <not yet provisioned — run setup.py --cloudflare>')
+        except Exception:
+            pass
+        try:
+            _cfg2 = load_wrangler_jsonc(wrangler_config_path)
+            _gw = str(_cfg2.get('vars', {}).get('GENERATION_WORKER_URL', '') or '').strip()
+            if _gw:
+                print(f'GENERATION_WORKER_URL   = {_gw}')
+            elif worker_bootstrap.generation_worker_url:
+                print(f'GENERATION_WORKER_URL   = {worker_bootstrap.generation_worker_url}')
+            else:
+                print(
+                    'GENERATION_WORKER_URL   = <empty in wrangler — run setup.py --deploy-worker with GEMINI_API_KEY '
+                    'and/or XAI_API_KEY, or use local http://127.0.0.1:8788 via worker/.dev.vars>'
+                )
+        except Exception:
+            pass
+        print(
+            'GENERATION_WORKER_SECRET = <stored in worker/.dev.vars and as a Worker secret; matches generation '
+            "worker's WORKER_SHARED_SECRET>"
+        )
     if resolved_worker_url:
         print(f'VITE_WORKER_URL         = {resolved_worker_url}')
 

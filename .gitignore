@@ -16,3 +16,6 @@ worker/.dev.vars
 .claude
 .omc
 .github/prompts/ui-ux**
+
+generation-worker/node_modules
+node_modules

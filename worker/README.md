@@ -16,7 +16,9 @@ If you update this guide or `setup.py`, update the other file in the same change
 
 If you want one script to handle most of this flow, run `python setup.py --all` from the repository root. The manual steps below remain useful when you want tighter control over the deployment sequence.
 
-If you only want the local Worker toolchain installed first, run `python setup.py --install-worker-deps` from the repository root.
+If you only want the local Worker toolchain installed first, run `python setup.py --install-worker-deps` from the repository root. That installs dependencies for both `worker/` and `generation-worker/`.
+
+The optional **generation worker** (AI Draft pipeline) is bootstrapped by the same script: `python setup.py --cloudflare` provisions its D1 database; `python setup.py --deploy-worker` deploys it when at least one of `GEMINI_API_KEY` or `XAI_API_KEY` is set (otherwise deploy fails), then sets `GENERATION_WORKER_URL` on the main Worker. See the Step 3 notes in [SETUP.md](../SETUP.md).
 
 ## What you need
 

@@ -9,6 +9,7 @@ import {
   SuggestPatternRequestSchema,
 } from './types';
 import type { Env } from './types';
+import { getLlmProviderCatalog, resolveGenerationWorkerLlmRef } from './llmFromWorker';
 
 function corsHeaders(): HeadersInit {
   return {
@@ -72,6 +73,22 @@ export default {
       return json({ patterns: repo.compactSummaries() });
     }
 
+    // GET /v1/patterns/full — return full pattern objects including outline, fewShotLines, imageHints
+    if (pathname === '/v1/patterns/full' && method === 'GET') {
+      const repo = loadBundledRepository();
+      return json({ patterns: repo.getAll() });
+    }
+
+    // GET /v1/llm/catalog — providers + model lists (same discovery as main Worker listLlmModels)
+    if (pathname === '/v1/llm/catalog' && method === 'GET') {
+      try {
+        const catalog = await getLlmProviderCatalog(env);
+        return json({ providers: catalog });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
     if (method !== 'POST') {
       return json({ error: 'Method not allowed' }, 405);
     }
@@ -118,7 +135,8 @@ export default {
       try {
         const report = buildRequirementReportFromSuggest(parsed.data);
         const repo = loadBundledRepository();
-        const finder = await findPattern(repo, report, env);
+        const llmRef = await resolveGenerationWorkerLlmRef(env);
+        const finder = await findPattern(repo, report, env, llmRef);
         return json({ requirementReport: report, ...finder });
       } catch (e) {
         return json({ error: String(e) }, 500);

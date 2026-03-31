@@ -24,4 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 WORKER_DIR = ROOT / 'worker'
 WORKER_WRANGLER_CONFIG = WORKER_DIR / 'wrangler.jsonc'
 WORKER_DEV_VARS = WORKER_DIR / '.dev.vars'
+GEN_WORKER_DIR = ROOT / 'generation-worker'
+GEN_WORKER_WRANGLER_CONFIG = GEN_WORKER_DIR / 'wrangler.jsonc'
+GEN_WORKER_DB_NAME = 'linkedin-gen-worker-db'
 FEATURES_YAML = ROOT / 'features.yaml'

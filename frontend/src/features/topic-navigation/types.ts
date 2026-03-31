@@ -1,4 +1,4 @@
-import { type SheetRow } from '../../services/sheets';
+import { type DraftPreviewSelection, type SheetRow } from '../../services/sheets';
 import {
   type ContentReviewReport,
   type GenerationRequest,
@@ -31,7 +31,7 @@ export type TopicReviewPagesBaseProps = {
   globalEmailDefaults: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
   onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
-  onSaveVariants: (row: SheetRow, variants: string[]) => Promise<SheetRow>;
+  onSaveVariants: (row: SheetRow, variants: string[], previewSelection?: DraftPreviewSelection) => Promise<SheetRow>;
   onFetchMoreImages: (row: SheetRow, searchQuery?: string) => Promise<string[]>;
   onPromoteRemoteImage: (row: SheetRow, sourceUrl: string) => Promise<string>;
   onUploadImage: (row: SheetRow, file: File) => Promise<string>;

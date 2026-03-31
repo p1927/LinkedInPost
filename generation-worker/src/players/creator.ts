@@ -1,5 +1,6 @@
-import { callGeminiJson } from '../gemini';
-import type { ComposableAssets, Pattern, RequirementReport, TextVariant } from '../types';
+import type { LlmRef } from '../llmFromWorker';
+import { generateLlmParsedJson } from '../llmFromWorker';
+import type { ComposableAssets, Env, Pattern, RequirementReport, TextVariant } from '../types';
 import type { ResearchArticleRef } from '@linkedinpost/researcher';
 
 interface LlmVariantsResponse {
@@ -32,14 +33,10 @@ export async function createVariants(
   report: RequirementReport,
   research: ResearchArticleRef[],
   assets: ComposableAssets,
-  env: { GEMINI_API_KEY?: string },
+  env: Env,
+  llmRef: LlmRef,
 ): Promise<TextVariant[]> {
-  const apiKey = String(env.GEMINI_API_KEY ?? '').trim();
-  if (!apiKey) {
-    return [{ index: 0, label: 'Draft', text: `[No GEMINI_API_KEY] Topic: ${report.topic}` }];
-  }
-
-  const prompt = `You are an expert LinkedIn content writer. Write 3 comparable post variants using the pattern below.
+  const prompt = `You are an expert content writer. Write 4 comparable post variants using the pattern below.
 
 PATTERN: ${pattern.name}
 Pattern outline:
@@ -71,7 +68,7 @@ ${buildAssetsBlock(assets)}
 
 ---
 INSTRUCTIONS:
-Write exactly 3 variants. Each variant MUST:
+Write exactly 4 variants. Each variant MUST:
 1. Follow the same pattern (${pattern.name}) — same structure, different hook/angle/emphasis
 2. Be platform-native for ${report.channel} (appropriate length, formatting, tone)
 3. Be complete and publication-ready
@@ -82,13 +79,14 @@ Return JSON with this exact shape:
   "variants": [
     { "label": "Variant A — <hook style>", "text": "<full post text>" },
     { "label": "Variant B — <hook style>", "text": "<full post text>" },
-    { "label": "Variant C — <hook style>", "text": "<full post text>" }
+    { "label": "Variant C — <hook style>", "text": "<full post text>" },
+    { "label": "Variant D — <hook style>", "text": "<full post text>" }
   ]
 }`;
 
-  const result = await callGeminiJson<LlmVariantsResponse>(apiKey, prompt, {
+  const result = await generateLlmParsedJson<LlmVariantsResponse>(env, llmRef, prompt, {
     temperature: 0.8,
-    maxOutputTokens: 3000,
+    maxOutputTokens: 4000,
   });
 
   if (!Array.isArray(result.variants) || result.variants.length === 0) {

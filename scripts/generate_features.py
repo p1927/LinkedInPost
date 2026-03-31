@@ -25,6 +25,7 @@ DEFAULTS: dict[str, bool] = {
     'campaign': True,
     'multiProviderLlm': False,
     'contentReview': False,
+    'contentFlow': False,
 }
 
 # TypeScript export name per YAML key (extend when adding features)
@@ -33,6 +34,7 @@ TS_CONST_NAMES: dict[str, str] = {
     'campaign': 'FEATURE_CAMPAIGN',
     'multiProviderLlm': 'FEATURE_MULTI_PROVIDER_LLM',
     'contentReview': 'FEATURE_CONTENT_REVIEW',
+    'contentFlow': 'FEATURE_CONTENT_FLOW',
 }
 
 

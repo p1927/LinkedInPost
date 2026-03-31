@@ -116,6 +116,10 @@ export function pipelineDbRowToFields(row: PipelineStateDbRow): Omit<SheetRow, '
     contentReviewFingerprint: row.content_review_fingerprint ?? '',
     contentReviewAt: row.content_review_at || undefined,
     contentReviewJson: row.content_review_json ?? '',
+    generationRunId: row.generation_run_id ?? '',
+    patternId: row.pattern_id ?? '',
+    patternName: row.pattern_name ?? '',
+    patternRationale: row.pattern_rationale ?? '',
   };
 }
 
@@ -151,6 +155,10 @@ export function sheetRowToPipelineColumns(spreadsheetId: string, row: SheetRow):
     content_review_fingerprint: row.contentReviewFingerprint ?? '',
     content_review_at: row.contentReviewAt ?? null,
     content_review_json: row.contentReviewJson ?? '',
+    generation_run_id: row.generationRunId ?? '',
+    pattern_id: row.patternId ?? '',
+    pattern_name: row.patternName ?? '',
+    pattern_rationale: row.patternRationale ?? '',
   };
 }
 
@@ -226,5 +234,9 @@ export function mergeTopicWithPipeline(topic: TopicSheetEntry, pipeline: Pipelin
     contentReviewFingerprint: baseFields.contentReviewFingerprint,
     contentReviewAt: baseFields.contentReviewAt,
     contentReviewJson: baseFields.contentReviewJson,
+    generationRunId: baseFields.generationRunId,
+    patternId: baseFields.patternId,
+    patternName: baseFields.patternName,
+    patternRationale: baseFields.patternRationale,
   };
 }

@@ -74,7 +74,7 @@ The setup script can now handle most of the Worker setup work for you.
 
 If you update this checklist or `setup.py`, update the other file in the same change.
 
-Any Worker-related setup flag now starts by installing the local Worker dependencies from [worker/package.json](worker/package.json). That includes `wrangler`.
+Any Worker-related setup flag now starts by installing the local Worker dependencies from [worker/package.json](worker/package.json) and [generation-worker/package.json](generation-worker/package.json). That includes `wrangler` in each package.
 
 Use this command for the full path:
 
@@ -91,6 +91,8 @@ That flow can:
 * Deploy the Worker with those secrets in one step
 * Verify that the deployed URL returns the API JSON envelope and a valid CORS preflight response before syncing it elsewhere
 * Sync GitHub Actions secrets with `gh secret set`
+
+The same flow also provisions the **generation worker** ([generation-worker/](generation-worker/)): `python setup.py --cloudflare` creates the `linkedin-gen-worker-db` D1 database (when needed) and updates [generation-worker/wrangler.jsonc](generation-worker/wrangler.jsonc). `python setup.py --deploy-worker` **requires at least one LLM key** in the environment — `GEMINI_API_KEY` and/or `XAI_API_KEY` — then deploys `linkedin-generation-worker` first, writes its URL into the main Worker’s `GENERATION_WORKER_URL` var, and sets `GENERATION_WORKER_SECRET` on the main Worker to match the generation worker’s `WORKER_SHARED_SECRET` (both are derived from `.env` / `worker/.dev.vars` or generated on first bootstrap). If neither LLM key is set, deploy fails with a clear error. Optional news keys in `.env` are passed through to the generation worker deploy when present.
 
 The script needs the following tools for the full automation path:
 

@@ -4,6 +4,7 @@ import { z } from 'zod';
 export interface Env {
   GEN_DB: D1Database;
   GEMINI_API_KEY?: string;
+  XAI_API_KEY?: string;
   WORKER_SHARED_SECRET?: string;
   NEWSAPI_KEY?: string;
   GNEWS_API_KEY?: string;
@@ -95,6 +96,13 @@ export const GenerateRequestSchema = z.object({
   newsResearchConfig: z.any().optional(),
   composableAssets: ComposableAssetsSchema.optional(),
   preferPatternId: z.string().optional(),
+  /** Optional override; otherwise first model from provider catalog (same as dashboard listLlmModels). */
+  llm: z
+    .object({
+      provider: z.enum(['gemini', 'grok']),
+      model: z.string().min(1),
+    })
+    .optional(),
 });
 
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;

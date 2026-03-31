@@ -1,5 +1,6 @@
-import { callGeminiJson } from '../gemini';
-import type { RequirementReport } from '../types';
+import type { LlmRef } from '../llmFromWorker';
+import { generateLlmParsedJson, hasAnyLlmProvider } from '../llmFromWorker';
+import type { Env, RequirementReport } from '../types';
 import type { PatternRepository } from './patternRepository';
 
 interface FinderResult {
@@ -19,7 +20,8 @@ interface LlmRankResponse {
 export async function findPattern(
   repo: PatternRepository,
   report: RequirementReport,
-  env: { GEMINI_API_KEY?: string },
+  env: Env,
+  llmRef: LlmRef,
   preferPatternId?: string,
 ): Promise<FinderResult> {
   const all = repo.getAll();
@@ -43,10 +45,8 @@ export async function findPattern(
     return { primaryId: candidates[0].id, runnerUpId: candidates[0].id, rationale: 'Only one matching pattern', confidence: 0.8 };
   }
 
-  const apiKey = String(env.GEMINI_API_KEY ?? '').trim();
-  if (!apiKey) {
-    // Fallback: pick first two
-    return { primaryId: candidates[0].id, runnerUpId: candidates[1].id, rationale: 'No API key — defaulted to first match', confidence: 0.5 };
+  if (!hasAnyLlmProvider(env)) {
+    return { primaryId: candidates[0].id, runnerUpId: candidates[1].id, rationale: 'No LLM provider — defaulted to first match', confidence: 0.5 };
   }
 
   // Step 2: LLM ranking over compact summaries
@@ -80,7 +80,7 @@ Return JSON with this exact shape:
 }`;
 
   try {
-    const result = await callGeminiJson<LlmRankResponse>(apiKey, prompt, {
+    const result = await generateLlmParsedJson<LlmRankResponse>(env, llmRef, prompt, {
       temperature: 0.2,
       maxOutputTokens: 512,
     });

@@ -8,6 +8,7 @@ import { reviewContent } from './players/review';
 import { relateImages } from './players/imageRelator';
 import { buildCandidatesFromRelator } from './players/imagePicker';
 import type { Env, GenerateRequest, GenerateResponse, ComposableAssets } from './types';
+import { resolveGenerationWorkerLlmRef } from './llmFromWorker';
 
 const EMPTY_ASSETS: ComposableAssets = {
   brandContext: '',
@@ -29,15 +30,19 @@ export async function runPipeline(
   const report = buildRequirementReport(req);
   trace.requirementReport = report;
 
-  // 1. PatternRepository + PatternFinder
+  // 1. LLM ref from shared provider catalog (worker/src/llm)
+  const llmRef = await resolveGenerationWorkerLlmRef(env, req.llm);
+  trace.llmRef = llmRef;
+
+  // 2. PatternRepository + PatternFinder
   const repo = loadBundledRepository();
-  const finder = await findPattern(repo, report, env, req.preferPatternId);
+  const finder = await findPattern(repo, report, env, llmRef, req.preferPatternId);
   trace.patternFinder = finder;
 
   const pattern = repo.getById(finder.primaryId);
   if (!pattern) throw new Error(`Pattern not found: ${finder.primaryId}`);
 
-  // 2. Research (optional — only when factual flag set)
+  // 3. Research (optional — only when factual flag set)
   let research: ResearchArticleRef[] = [];
   if (report.factual && req.newsResearchConfig) {
     try {
@@ -57,22 +62,22 @@ export async function runPipeline(
     }
   }
 
-  // 3. Creator
+  // 4. Creator
   const assets = req.composableAssets ?? EMPTY_ASSETS;
-  const variants = await createVariants(pattern, report, research, assets, env);
+  const variants = await createVariants(pattern, report, research, assets, env, llmRef);
   trace.creatorVariantCount = variants.length;
 
-  // 4. Review
+  // 5. Review
   const review = reviewContent(variants, report);
   trace.review = review;
 
-  // 5. ImageRelator + ImagePicker
+  // 6. ImageRelator + ImagePicker
   const primaryVariant = variants[0];
-  const relator = await relateImages(primaryVariant, pattern, report, env);
+  const relator = await relateImages(primaryVariant, pattern, report, env, llmRef);
   const imageCandidates = buildCandidatesFromRelator(relator);
   trace.imageRelator = { visualBrief: relator.visualBrief, keywordCount: relator.searchKeywords.length };
 
-  // 6. Persist run to D1
+  // 7. Persist run to D1
   await db
     .prepare(
       `INSERT INTO generation_runs

@@ -30,6 +30,13 @@ Optional LLM and news research: when set in `.env`, `XAI_API_KEY`, `NEWSAPI_KEY`
 `GNEWS_API_KEY`, `NEWSDATA_API_KEY`, and `RESEARCHER_RSS_FEEDS` are copied into
 `worker/.dev.vars`, included in Worker deploy secrets when non-empty, and synced
 to GitHub Actions secrets with `--sync-github-secrets`.
+
+Generation worker: `--cloudflare` provisions D1 for `generation-worker/` and
+writes `generation-worker/wrangler.jsonc`. `--deploy-worker` deploys
+`linkedin-generation-worker` first when at least one of `GEMINI_API_KEY` or
+`XAI_API_KEY` is set; if neither is set, setup fails. It then sets
+`GENERATION_WORKER_URL` and `GENERATION_WORKER_SECRET` on the main Worker
+(`GENERATION_WORKER_SECRET` matches the generation worker's `WORKER_SHARED_SECRET`).
 """
 
 from __future__ import annotations
@@ -45,6 +52,7 @@ from setup.cloudflare import (
     ensure_worker_deploy,
     install_worker_dependencies,
     provision_d1_database,
+    provision_generation_worker_d1,
     update_worker_wrangler_config,
     write_worker_dev_vars,
 )
@@ -86,6 +94,7 @@ def main() -> None:
     if args.cloudflare:
         create_cloudflare_kv_namespaces(worker_bootstrap)
         provision_d1_database()
+        provision_generation_worker_d1()
         update_worker_wrangler_config(worker_bootstrap)
         write_worker_dev_vars(worker_bootstrap, google_resources)
 

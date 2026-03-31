@@ -4,6 +4,19 @@ import type { SheetsGateway } from '../drafts';
 import { mergeTopicWithPipeline, pipelineFieldsFromGooglePipelineRow, sheetRowToPipelineColumns } from './mappers';
 import type { PipelineStateDbRow } from './types';
 
+/**
+ * Deterministic A/B test group assignment using a simple hash of the rowId.
+ * Returns 'A' or 'B' consistently for the same input.
+ */
+export function getRandomizedTestGroup(rowId: string): string {
+  const id = String(rowId || '').trim();
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  }
+  return (Math.abs(hash) % 2) === 0 ? 'A' : 'B';
+}
+
 /** Atomic upsert — INSERT OR REPLACE leverages PRIMARY KEY (spreadsheet_id, topic_id) to replace in one statement. */
 const INSERT_PIPELINE_ROW_SQL = `
 INSERT OR REPLACE INTO pipeline_state (
@@ -14,7 +27,8 @@ INSERT OR REPLACE INTO pipeline_state (
   post_time, email_to, email_cc, email_bcc, email_subject,
   topic_generation_rules, generation_template_id, published_at,
   topic_delivery_channel, topic_generation_model,
-  content_review_fingerprint, content_review_at, content_review_json
+  content_review_fingerprint, content_review_at, content_review_json,
+  generation_run_id, pattern_id, pattern_name, pattern_rationale
 ) VALUES (
   ?1, ?2, ?3, ?4, ?5,
   ?6, ?7, ?8, ?9,
@@ -23,7 +37,8 @@ INSERT OR REPLACE INTO pipeline_state (
   ?17, ?18, ?19, ?20, ?21,
   ?22, ?23, ?24,
   ?25, ?26,
-  ?27, ?28, ?29
+  ?27, ?28, ?29,
+  ?30, ?31, ?32, ?33
 )
 `;
 
@@ -102,6 +117,10 @@ function bindPipelineInsert(stmt: D1PreparedStatement, spreadsheetId: string, ro
     c.content_review_fingerprint,
     c.content_review_at,
     c.content_review_json,
+    c.generation_run_id,
+    c.pattern_id,
+    c.pattern_name,
+    c.pattern_rationale,
   );
 }
 
@@ -234,6 +253,11 @@ export class PipelineStore {
     spreadsheetId: string,
     row: SheetRow,
     variants: string[],
+    previewSelection?: {
+      selectedText: string;
+      selectedImageId: string;
+      selectedImageUrlsJson: string;
+    },
   ): Promise<SheetRow> {
     const next: SheetRow = {
       ...row,
@@ -241,6 +265,13 @@ export class PipelineStore {
       variant2: variants[1] ?? '',
       variant3: variants[2] ?? '',
       variant4: variants[3] ?? '',
+      ...(previewSelection
+        ? {
+            selectedText: previewSelection.selectedText,
+            selectedImageId: previewSelection.selectedImageId,
+            selectedImageUrlsJson: previewSelection.selectedImageUrlsJson,
+          }
+        : {}),
     };
     await this.upsertFull(spreadsheetId, next);
     return next;
@@ -330,6 +361,122 @@ export class PipelineStore {
     const next = { ...row, generationTemplateId: value };
     await this.upsertFull(spreadsheetId, next);
     return next;
+  }
+
+  async savePatternMetadata(
+    spreadsheetId: string,
+    row: SheetRow,
+    meta: {
+      generationRunId: string;
+      patternId: string;
+      patternName: string;
+      patternRationale: string;
+    },
+  ): Promise<SheetRow> {
+    const next: SheetRow = {
+      ...row,
+      generationRunId: meta.generationRunId,
+      patternId: meta.patternId,
+      patternName: meta.patternName,
+      patternRationale: meta.patternRationale,
+    };
+    await this.upsertFull(spreadsheetId, next);
+
+    const topicId = String(row.topicId || '').trim();
+    const testGroup = getRandomizedTestGroup(topicId);
+    await this.db
+      .prepare(
+        `INSERT OR REPLACE INTO template_assignments (
+          spreadsheet_id, topic_id, generation_run_id,
+          pattern_id, pattern_name, pattern_rationale, test_group
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`,
+      )
+      .bind(
+        spreadsheetId,
+        topicId,
+        meta.generationRunId,
+        meta.patternId,
+        meta.patternName,
+        meta.patternRationale,
+        testGroup,
+      )
+      .run();
+
+    return next;
+  }
+
+  async getTemplateAssignment(
+    spreadsheetId: string,
+    topicId: string,
+  ): Promise<{
+    generationRunId: string;
+    patternId: string;
+    patternName: string;
+    patternRationale: string;
+    testGroup: string;
+  } | null> {
+    const tid = String(topicId || '').trim();
+    if (!tid) return null;
+    const row = await this.db
+      .prepare(
+        `SELECT generation_run_id, pattern_id, pattern_name, pattern_rationale, test_group
+         FROM template_assignments WHERE spreadsheet_id = ? AND topic_id = ?`,
+      )
+      .bind(spreadsheetId, tid)
+      .first<{
+        generation_run_id: string;
+        pattern_id: string;
+        pattern_name: string;
+        pattern_rationale: string;
+        test_group: string;
+      }>();
+    if (!row) return null;
+    return {
+      generationRunId: row.generation_run_id,
+      patternId: row.pattern_id,
+      patternName: row.pattern_name,
+      patternRationale: row.pattern_rationale,
+      testGroup: row.test_group,
+    };
+  }
+
+  async listTemplateAssignments(
+    spreadsheetId: string,
+  ): Promise<
+    Array<{
+      topicId: string;
+      generationRunId: string;
+      patternId: string;
+      patternName: string;
+      patternRationale: string;
+      testGroup: string;
+      assignedAt: string;
+    }>
+  > {
+    const res = await this.db
+      .prepare(
+        `SELECT topic_id, generation_run_id, pattern_id, pattern_name, pattern_rationale, test_group, assigned_at
+         FROM template_assignments WHERE spreadsheet_id = ? ORDER BY assigned_at DESC`,
+      )
+      .bind(spreadsheetId)
+      .all<{
+        topic_id: string;
+        generation_run_id: string;
+        pattern_id: string;
+        pattern_name: string;
+        pattern_rationale: string;
+        test_group: string;
+        assigned_at: string;
+      }>();
+    return (res.results ?? []).map((r) => ({
+      topicId: r.topic_id,
+      generationRunId: r.generation_run_id,
+      patternId: r.pattern_id,
+      patternName: r.pattern_name,
+      patternRationale: r.pattern_rationale,
+      testGroup: r.test_group,
+      assignedAt: r.assigned_at,
+    }));
   }
 
   async saveTopicDeliveryPreferences(

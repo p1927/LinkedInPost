@@ -37,3 +37,10 @@ export interface SheetRow {
    */
   topicGenerationModel?: string;
 }
+
+/** Columns L / M / T updated with variant slots when saving from the editor so the Topics preview matches. */
+export type DraftPreviewSelection = {
+  selectedText: string;
+  selectedImageId: string;
+  selectedImageUrlsJson: string;
+};

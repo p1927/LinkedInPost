@@ -19,6 +19,8 @@ export interface GenWorkerGenerateRequest {
     authorProfile?: string;
     reviewChecklist?: string[];
   };
+  /** Matches generation worker catalog (`GET /v1/llm/catalog`); omit to use default model for first configured provider. */
+  llm?: { provider: 'gemini' | 'grok'; model: string };
 }
 
 export interface TextVariant {
@@ -27,12 +29,19 @@ export interface TextVariant {
   text: string;
 }
 
+export interface ImageCandidate {
+  url: string;
+  alt?: string;
+  source?: string;
+}
+
 export interface GenWorkerGenerateResponse {
   runId: string;
   primaryPatternId: string;
   runnerUpPatternId: string;
   patternRationale: string;
   variants: TextVariant[];
+  imageCandidates?: ImageCandidate[];
   review: { passed: boolean; verdict: string; summary: string };
   trace: Record<string, unknown>;
 }

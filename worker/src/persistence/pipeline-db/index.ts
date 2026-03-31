@@ -1,4 +1,4 @@
-export { PipelineStore } from './pipeline';
+export { PipelineStore, getRandomizedTestGroup } from './pipeline';
 export {
   insertNewsSnapshotAndPrune,
   listNewsResearchHistory,

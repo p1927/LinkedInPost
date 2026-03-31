@@ -36,6 +36,7 @@ import {
   listGrokModels,
   STATIC_GEMINI_MODELS,
   STATIC_GROK_MODELS,
+  getConfiguredLlmProviderIds,
   resolveAllowedGrokModelIds,
   resolveGithubAutomationGeminiModel,
   resolveStoredFallback,
@@ -44,8 +45,14 @@ import {
   type LlmRef,
 } from './llm';
 
-import { FEATURE_CAMPAIGN, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
+import { FEATURE_CAMPAIGN, FEATURE_CONTENT_FLOW, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
 import { normalizeContentReviewStored, runContentReview } from './features/content-review';
+import {
+  handleGetPatternAssignment,
+  handleListPatternAssignments,
+  handleSavePatternMetadata,
+  handleGetTestGroup,
+} from './routes/patterns';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -775,6 +782,17 @@ async function dispatchAction(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         coerceVariantList(payload.variants),
+        payload.previewSelection &&
+        typeof payload.previewSelection === 'object' &&
+        payload.previewSelection !== null
+          ? {
+              selectedText: String((payload.previewSelection as { selectedText?: unknown }).selectedText ?? ''),
+              selectedImageId: String((payload.previewSelection as { selectedImageId?: unknown }).selectedImageId ?? ''),
+              selectedImageUrlsJson: String(
+                (payload.previewSelection as { selectedImageUrlsJson?: unknown }).selectedImageUrlsJson ?? '',
+              ),
+            }
+          : undefined,
       );
     case 'addTopic':
       ensureSpreadsheetConfigured(storedConfig);
@@ -1033,17 +1051,88 @@ async function dispatchAction(
       return report;
     }
     case 'callGenerationWorker': {
-      if (!FEATURE_CONTENT_REVIEW) {
+      if (!FEATURE_CONTENT_FLOW) {
         throw new Error('Generation worker integration is disabled for this deployment.');
       }
       ensureSpreadsheetConfigured(storedConfig);
       if (!isGenerationWorkerConfigured(env)) {
         throw new Error('GENERATION_WORKER_URL is not configured. Set it in Worker environment.');
       }
-      return callGenerationWorker(env, {
+      const genResult = await callGenerationWorker(env, {
         spreadsheetId: storedConfig.spreadsheetId,
         ...(payload as Record<string, unknown>),
       } as Parameters<typeof callGenerationWorker>[1]);
+
+      // C4: Auto-save generation results to D1
+      const topicIdForSave = String((payload as Record<string, unknown>).topicId || '').trim();
+      if (topicIdForSave && genResult.primaryPatternId) {
+        try {
+          const rowForSave = await pipeline.getRowByTopicId(sheets, storedConfig.spreadsheetId, topicIdForSave);
+          if (rowForSave) {
+            await pipeline.savePatternMetadata(storedConfig.spreadsheetId, rowForSave, {
+              generationRunId: genResult.runId || '',
+              patternId: genResult.primaryPatternId || '',
+              patternName: '', // pattern name resolved by generation worker; stored in trace
+              patternRationale: genResult.patternRationale || '',
+            });
+          }
+        } catch (e) {
+          console.error('[auto-save patternMetadata]', e);
+        }
+      }
+
+      return genResult;
+    }
+    case 'getPatternAssignment': {
+      ensureSpreadsheetConfigured(storedConfig);
+      return handleGetPatternAssignment(pipeline, storedConfig.spreadsheetId, payload);
+    }
+    case 'listPatternAssignments': {
+      ensureSpreadsheetConfigured(storedConfig);
+      return handleListPatternAssignments(pipeline, storedConfig.spreadsheetId);
+    }
+    case 'savePatternMetadata': {
+      ensureSpreadsheetConfigured(storedConfig);
+      return handleSavePatternMetadata(pipeline, storedConfig.spreadsheetId, payload, async () => {
+        const topicId = String(payload.topicId || '').trim();
+        if (!topicId) throw new Error('topicId is required.');
+        const row = await pipeline.getRowByTopicId(sheets, storedConfig.spreadsheetId, topicId);
+        if (!row) throw new Error(`Row not found for topicId: ${topicId}`);
+        return row;
+      });
+    }
+    case 'getTestGroup': {
+      return handleGetTestGroup(payload);
+    }
+    case 'listPatterns': {
+      const baseUrl = String(env.GENERATION_WORKER_URL || '').trim().replace(/\/$/, '');
+      if (!baseUrl) {
+        throw new Error('GENERATION_WORKER_URL is not configured. Set it in Worker environment.');
+      }
+      const secret = String(env.GENERATION_WORKER_SECRET || '').trim();
+      const response = await fetch(`${baseUrl}/v1/patterns/full`, {
+        headers: { Authorization: `Bearer ${secret}` },
+      });
+      if (!response.ok) {
+        throw new Error(`Generation worker returned ${response.status}: ${await response.text()}`);
+      }
+      return (await response.json() as { patterns: unknown[] }).patterns;
+    }
+    case 'assignPattern': {
+      ensureSpreadsheetConfigured(storedConfig);
+      const { row, patternId, patternName, patternRationale, generationRunId } = payload as {
+        row: SheetRow;
+        patternId: string;
+        patternName?: string;
+        patternRationale?: string;
+        generationRunId?: string;
+      };
+      return pipeline.savePatternMetadata(storedConfig.spreadsheetId, coerceSheetRow(row), {
+        generationRunId: generationRunId || '',
+        patternId: String(patternId || '').trim(),
+        patternName: patternName || '',
+        patternRationale: patternRationale || '',
+      });
     }
     default:
       throw new Error(`Unknown action: ${action}`);
@@ -1249,10 +1338,10 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
         fallback: resolveStoredFallback(ws, true),
         allowedGrokModels: resolveAllowedGrokModelIds(ws),
       },
-      llmProviderKeys: {
-        gemini: Boolean(String(env.GEMINI_API_KEY || '').trim()),
-        grok: Boolean(String(env.XAI_API_KEY || '').trim()),
-      },
+      llmProviderKeys: (() => {
+        const ids = getConfiguredLlmProviderIds(env);
+        return { gemini: ids.includes('gemini'), grok: ids.includes('grok') };
+      })(),
     };
   }
   if (!FEATURE_NEWS_RESEARCH && !FEATURE_CONTENT_REVIEW) {

@@ -116,20 +116,41 @@ export async function generateGeminiMultimodalJson(
   return text;
 }
 
-export async function generateGeminiJson(env: WorkerEnvForLlm, model: string, prompt: string): Promise<string> {
+export interface GeminiTextGenerationOptions {
+  temperature?: number;
+  maxOutputTokens?: number;
+  systemInstruction?: string;
+}
+
+export async function generateGeminiJson(
+  env: WorkerEnvForLlm,
+  model: string,
+  prompt: string,
+  opts?: GeminiTextGenerationOptions,
+): Promise<string> {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
   if (!apiKey) {
     throw new Error('Missing GEMINI_API_KEY in the Worker environment. Add it before using preview generation.');
   }
+
+  const generationConfig: Record<string, unknown> = { responseMimeType: 'application/json' };
+  if (opts?.temperature !== undefined) generationConfig.temperature = opts.temperature;
+  if (opts?.maxOutputTokens !== undefined) generationConfig.maxOutputTokens = opts.maxOutputTokens;
+
+  const body: Record<string, unknown> = {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig,
+  };
+  if (opts?.systemInstruction?.trim()) {
+    body.systemInstruction = { parts: [{ text: opts.systemInstruction.trim() }] };
+  }
+
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
+      body: JSON.stringify(body),
     },
   );
   if (!response.ok) {

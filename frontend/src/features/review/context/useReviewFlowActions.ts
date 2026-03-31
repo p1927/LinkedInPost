@@ -131,10 +131,6 @@ export function useReviewFlowActions(
         return;
       }
       event.preventDefault();
-      if (routed?.screen === 'editor' && sheetVariants.length > 0) {
-        requestNavigateToVariants();
-        return;
-      }
       leaveToTopics();
     };
     window.addEventListener('keydown', handleEscape);
@@ -147,9 +143,6 @@ export function useReviewFlowActions(
     submitting,
     publishSubmitting,
     leaveToTopics,
-    requestNavigateToVariants,
-    routed?.screen,
-    sheetVariants.length,
   ]);
 
   const buildGenerationRequest = (): GenerationRequest => {
@@ -545,6 +538,8 @@ export function useReviewFlowActions(
     }
     setSavingDraft(true);
     try {
+      const urlsForSheet = await ensureSelectedImagesStored();
+      const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(urlsForSheet);
       const slot = editorVariantIndex ?? 0;
       const merged = [
         slot === 0 ? editorText.trim() : (sheetRow.variant1 ?? ''),
@@ -552,7 +547,11 @@ export function useReviewFlowActions(
         slot === 2 ? editorText.trim() : (sheetRow.variant3 ?? ''),
         slot === 3 ? editorText.trim() : (sheetRow.variant4 ?? ''),
       ];
-      const updatedRow = await onSaveVariants(sheetRow, merged);
+      const updatedRow = await onSaveVariants(sheetRow, merged, {
+        selectedText: editorText.trim(),
+        selectedImageId,
+        selectedImageUrlsJson,
+      });
       setSheetRow(updatedRow);
       setEditorBaselineText(editorText.trim());
       void showAlert({ title: 'Saved', description: 'Draft saved.' });
@@ -626,7 +625,9 @@ export function useReviewFlowActions(
       topicReviewHeader: {
         onBackToTopics: leaveToTopics,
         onBackToVariants:
-          showEditorLayout && sheetVariants.length > 0 ? requestNavigateToVariants : undefined,
+          showEditorLayout && sheetVariants.length > 0 && routed.screen !== 'editor'
+            ? requestNavigateToVariants
+            : undefined,
         crumbs: [
           { key: 'topics', label: 'Topics', onPress: leaveToTopics },
           {
