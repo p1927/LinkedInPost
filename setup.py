@@ -54,6 +54,7 @@ from setup.cloudflare import (
     provision_d1_database,
     provision_generation_worker_d1,
     update_worker_wrangler_config,
+    write_generation_worker_dev_vars,
     write_worker_dev_vars,
 )
 from setup.constants import WORKER_DEV_VARS, WORKER_WRANGLER_CONFIG
@@ -97,6 +98,7 @@ def main() -> None:
         provision_generation_worker_d1()
         update_worker_wrangler_config(worker_bootstrap)
         write_worker_dev_vars(worker_bootstrap, google_resources)
+        write_generation_worker_dev_vars(worker_bootstrap)
 
     if args.deploy_worker:
         ensure_worker_deploy(worker_bootstrap, google_resources)

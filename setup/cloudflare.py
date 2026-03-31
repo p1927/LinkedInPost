@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .constants import (
     GEN_WORKER_DB_NAME,
+    GEN_WORKER_DEV_VARS,
     GEN_WORKER_DIR,
     GEN_WORKER_WRANGLER_CONFIG,
     WORKER_DEV_VARS,
@@ -342,6 +343,32 @@ def write_worker_dev_vars(worker_bootstrap: WorkerBootstrap, google_resources: o
     lines = [f'{key}={value}' for key, value in values.items() if value]
     WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
     ok('Worker local env file', str(WORKER_DEV_VARS))
+
+
+def write_generation_worker_dev_vars(worker_bootstrap: WorkerBootstrap) -> None:
+    """Write generation-worker/.dev.vars with WORKER_SHARED_SECRET and LLM keys.
+
+    This ensures the generation worker has the same auth secret as the main worker,
+    preventing 401 Unauthorized errors during local development.
+    """
+    if not GEN_WORKER_DIR.is_dir():
+        return
+
+    values: dict[str, str] = {}
+
+    # LLM API keys — required for generation
+    for key in ('GEMINI_API_KEY', 'XAI_API_KEY'):
+        val = os.environ.get(key, '').strip()
+        if val:
+            values[key] = val
+
+    # WORKER_SHARED_SECRET must match main worker's GENERATION_WORKER_SECRET
+    values['WORKER_SHARED_SECRET'] = worker_bootstrap.generation_worker_secret
+
+    # Write .dev.vars file
+    lines = [f'{key}={value}' for key, value in values.items() if value]
+    GEN_WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
+    ok('Generation Worker local env file', str(GEN_WORKER_DEV_VARS))
 
 
 class TemporaryPath:
