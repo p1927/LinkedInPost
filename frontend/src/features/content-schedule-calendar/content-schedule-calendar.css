@@ -84,6 +84,77 @@
 
 /* Compact layout for the Campaign aside panel */
 .csc-wrapper.csc-compact .sx__calendar {
-  min-height: 360px;
   font-size: 0.6875rem;
+}
+
+/* Full-width layout for standalone calendar page */
+.csc-wrapper.csc-fullwidth {
+  min-height: 90vh;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+.csc-wrapper.csc-fullwidth .sx__calendar {
+  min-height: 90vh;
+  height: 90vh;
+  font-size: 0.875rem;
+}
+
+.csc-wrapper.csc-fullwidth .sx__view-selection-item {
+  font-size: 0.875rem;
+}
+
+.csc-wrapper.csc-fullwidth .sx__event {
+  font-size: 0.8125rem;
+}
+
+.csc-wrapper.csc-fullwidth .sx__month-grid-day__header-date {
+  font-size: 0.8125rem;
+}
+
+/* Responsive: mobile (≤ 480px) */
+@media (max-width: 480px) {
+  .csc-wrapper.csc-fullwidth {
+    min-height: 90vh;
+    padding: 0;
+  }
+
+  .csc-wrapper.csc-fullwidth .sx__calendar {
+    min-height: 90vh;
+    height: 90vh;
+    font-size: 0.75rem;
+    border-radius: 0;
+  }
+
+  .csc-wrapper.csc-fullwidth .sx__view-selection-item {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .csc-wrapper.csc-fullwidth .sx__event {
+    font-size: 0.6875rem;
+  }
+
+  .csc-wrapper.csc-fullwidth .sx__month-grid-day__header-date {
+    font-size: 0.6875rem;
+  }
+}
+
+/* Responsive: tablet (481px – 1023px) */
+@media (min-width: 481px) and (max-width: 1023px) {
+  .csc-wrapper.csc-fullwidth .sx__calendar {
+    font-size: 0.8125rem;
+  }
+
+  .csc-wrapper.csc-fullwidth .sx__view-selection-item {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Responsive: desktop (≥ 1024px) */
+@media (min-width: 1024px) {
+  .csc-wrapper.csc-fullwidth .sx__calendar {
+    font-size: 0.875rem;
+  }
 }

@@ -15,6 +15,7 @@ import clsx from 'clsx';
 import { Copy, LayoutList, CalendarDays, Loader2 } from 'lucide-react';
 
 type PreviewTab = 'list' | 'calendar';
+type ViewMode = 'list' | 'calendar';
 
 export function CampaignPage(props: {
   idToken: string;
@@ -29,6 +30,7 @@ export function CampaignPage(props: {
   const [topicsIdeas, setTopicsIdeas] = useState('');
   const [pasteText, setPasteText] = useState('');
   const [previewTab, setPreviewTab] = useState<PreviewTab>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [submitting, setSubmitting] = useState(false);
 
   const promptText = useMemo(() => buildCampaignClaudePrompt(topicsIdeas), [topicsIdeas]);
@@ -125,7 +127,52 @@ export function CampaignPage(props: {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+      <div className="mb-6 flex items-center gap-2" role="tablist" aria-label="Campaign view mode">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={viewMode === 'list'}
+          onClick={() => setViewMode('list')}
+          className={clsx(
+            'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors cursor-pointer',
+            viewMode === 'list'
+              ? 'border-white/50 bg-white text-ink shadow-sm'
+              : 'border-white/50 bg-white/40 text-muted hover:text-ink',
+          )}
+        >
+          <LayoutList className="h-4 w-4" aria-hidden />
+          List View
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={viewMode === 'calendar'}
+          onClick={() => setViewMode('calendar')}
+          className={clsx(
+            'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors cursor-pointer',
+            viewMode === 'calendar'
+              ? 'border-white/50 bg-white text-ink shadow-sm'
+              : 'border-white/50 bg-white/40 text-muted hover:text-ink',
+          )}
+        >
+          <CalendarDays className="h-4 w-4" aria-hidden />
+          Calendar View
+        </button>
+      </div>
+
+      {viewMode === 'calendar' ? (
+        <div className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
+          <ContentScheduleCalendar
+            topics={calendarTopics}
+            onTopicPatch={handleTopicPatch}
+            onTopicScheduleChange={handleTopicScheduleChange}
+            initialView="month-grid"
+            className="csc-fullwidth"
+          />
+        </div>
+      ) : null}
+
+      <div className={clsx('grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]', viewMode !== 'list' && 'hidden')}>
         <div className="space-y-5">
           <section className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
             <h2 className="text-sm font-semibold text-ink">1. Topic ideas</h2>
@@ -211,12 +258,14 @@ export function CampaignPage(props: {
         <aside className="glass-panel flex flex-col rounded-2xl p-4 shadow-card sm:p-5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-ink">Preview</h2>
-            <div className="flex rounded-lg border border-white/50 bg-white/40 p-0.5">
+            <div role="tablist" className="flex rounded-lg border border-white/50 bg-white/40 p-0.5">
               <button
                 type="button"
+                role="tab"
+                aria-selected={previewTab === 'list'}
                 onClick={() => setPreviewTab('list')}
                 className={clsx(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors cursor-pointer',
+                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
                   previewTab === 'list' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink',
                 )}
               >
@@ -225,9 +274,11 @@ export function CampaignPage(props: {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={previewTab === 'calendar'}
                 onClick={() => setPreviewTab('calendar')}
                 className={clsx(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors cursor-pointer',
+                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
                   previewTab === 'calendar' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink',
                 )}
               >

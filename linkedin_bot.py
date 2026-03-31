@@ -665,9 +665,18 @@ VARIANTS_JSON_SCHEMA = {
         'variant2': {'type': 'string'},
         'variant3': {'type': 'string'},
         'variant4': {'type': 'string'},
-        'imageSearchQuery1': {'type': 'string'},
-        'imageSearchQuery2': {'type': 'string'},
-        'imageSearchQuery3': {'type': 'string'},
+        'imageSearchQuery1': {
+            'type': 'string',
+            'description': '2–6 space-separated search keywords for Google Images; literal visual terms only, no full sentences.',
+        },
+        'imageSearchQuery2': {
+            'type': 'string',
+            'description': 'Different keyword set from query1; same rules—tokens only, stock-photo friendly.',
+        },
+        'imageSearchQuery3': {
+            'type': 'string',
+            'description': 'Third distinct keyword line; avoid metaphors as prose—use nouns/objects/settings.',
+        },
     },
     'required': [
         'variant1',
@@ -692,7 +701,7 @@ def strip_json_code_fences(text):
 
 
 def parse_gemini_variants_json(raw_text):
-    """Parse JSON object with variant1–4 and imageSearchQuery1–3; tolerate markdown fences and lax JSON."""
+    """Parse JSON object with variant1–4 and image keyword queries imageSearchQuery1–3; tolerate markdown fences."""
     text = strip_json_code_fences(raw_text or '')
     if not text:
         raise ValueError('Empty Gemini response when parsing variants JSON.')
@@ -716,10 +725,11 @@ def generate_variants_content(model, prompt, generation_config):
 
 
 def normalize_llm_image_query(text):
-    """Short, SerpApi-friendly image search phrase (no hashtags, length-capped)."""
+    """Short, SerpApi-friendly image search string: keywords/terms, no hashtags, length-capped."""
     if not isinstance(text, str):
         return ''
     without_tags = re.sub(r'#\w+', ' ', text)
+    without_tags = re.sub(r'[,;]+', ' ', without_tags)
     s = normalize_search_text(without_tags)
     if len(s) > IMAGE_SEARCH_QUERY_MAX_CHARS:
         s = s[:IMAGE_SEARCH_QUERY_MAX_CHARS].rstrip()
@@ -727,7 +737,7 @@ def normalize_llm_image_query(text):
 
 
 def normalize_llm_image_queries(content):
-    """Extract three deduplicated LLM image queries from the generation payload."""
+    """Extract three deduplicated LLM image keyword queries from the generation payload."""
     if not isinstance(content, dict):
         return []
     seen = set()
@@ -745,7 +755,7 @@ def normalize_llm_image_queries(content):
 
 
 def build_image_serp_queries(topic, preferred_queries=None):
-    """Ordered SerpApi image queries: LLM phrases first, then topic-derived fallbacks."""
+    """Ordered SerpApi image queries: LLM keyword queries first, then topic-derived fallbacks."""
     candidates = []
     seen_lower = set()
 
@@ -806,7 +816,7 @@ def fetch_web_research(topic, num_results=3):
     return ""
 
 def research_and_generate(topic, base_text='', refinement_instructions=''):
-    """Uses LLM to write 4 variants plus compact image-search phrases. Returns (variants_dict, image_queries)."""
+    """Uses LLM to write 4 variants plus compact image-search keyword lines. Returns (variants_dict, image_queries)."""
     print(f"Generating variants with model: {GOOGLE_MODEL}")
     # Read the recipe
     recipe_content = ""
@@ -848,10 +858,14 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
     Do NOT include hashtags in the text block itself, but keep them at the end.
     Every variant value must be a plain JSON string. Do not return nested JSON objects, arrays, or metadata for any variant.
 
-    Also provide exactly three short English image search phrases for finding relevant stock or illustration-style images
-    (imageSearchQuery1, imageSearchQuery2, imageSearchQuery3). Each phrase must be at most {IMAGE_SEARCH_QUERY_MAX_CHARS}
-    characters, no hashtags, no full sentences—only concrete visual keywords (e.g. themes, metaphors, settings, mood).
-    Phrases must differ from each other (e.g. literal topic, metaphor, people/workplace angle).
+    Also provide exactly three English image-search QUERY STRINGS for Google Images
+    (imageSearchQuery1, imageSearchQuery2, imageSearchQuery3). Each string must be SEARCH TERMS AND KEYWORDS ONLY—not
+    a sentence, not a caption, not a metaphor explained in prose. Use 2–6 concrete tokens separated by a single space
+    (nouns, objects, settings, roles, simple adjectives that stock photos use: e.g. "software developer laptop office",
+    "team meeting whiteboard", "cloud security diagram"). Do not start with filler like "image of", "photo of", or
+    "showing"; no hashtags; no commas or semicolons—spaces only between words. Each string must be at most
+    {IMAGE_SEARCH_QUERY_MAX_CHARS} characters and must differ from the others (e.g. literal subject vs workplace/people
+    vs object/detail angle).
     
     Output JSON format ONLY:
     {{
@@ -880,8 +894,8 @@ def research_and_generate(topic, base_text='', refinement_instructions=''):
         repair_suffix = (
             '\n\nYour previous output was not valid JSON. Respond again with ONLY a single JSON object '
             'with keys variant1, variant2, variant3, variant4, imageSearchQuery1, imageSearchQuery2, '
-            'imageSearchQuery3. variant1–4 are full post strings; imageSearchQuery1–3 are short image '
-            'search phrases (max '
+            'imageSearchQuery3. variant1–4 are full post strings; imageSearchQuery1–3 are keyword-only image search '
+            'lines—2–6 space-separated terms each, no sentences (max '
             f'{IMAGE_SEARCH_QUERY_MAX_CHARS} chars each, no hashtags). Escape every double-quote and line break '
             'inside strings using JSON rules. No markdown, no code fences.'
         )
