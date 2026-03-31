@@ -72,6 +72,21 @@
           ]
         }
       ],
+      "vars": {
+        "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
+        "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
+        "GOOGLE_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+        "GOOGLE_CLOUD_STORAGE_BUCKET": "linkedin-image-archive-742",
+        "DELETE_UNUSED_GENERATED_IMAGES": "true",
+        "CORS_ALLOWED_ORIGINS": "http://localhost:5173 http://localhost:5174 https://p1927.github.io",
+        "INSTAGRAM_APP_ID": "2367592213744797",
+        "LINKEDIN_CLIENT_ID": "86ht5xld6204vy",
+        "LINKEDIN_PERSON_URN": "",
+        "META_APP_ID": "2059399091272282",
+        "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
+        "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+        "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10"
+      },
       "kv_namespaces": [
         {
           "binding": "CONFIG_KV",
@@ -86,23 +101,7 @@
           "database_id": "4dee8b3f-5366-4adf-85e0-38c7960e9e00",
           "migrations_dir": "migrations"
         }
-      ],
-      "vars": {
-        "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
-        "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
-        "GOOGLE_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
-        "GOOGLE_CLOUD_STORAGE_BUCKET": "linkedin-image-archive-742",
-        "DELETE_UNUSED_GENERATED_IMAGES": "true",
-        "CORS_ALLOWED_ORIGINS": "http://localhost:5173 http://localhost:5174 https://p1927.github.io",
-        "INSTAGRAM_APP_ID": "2367592213744797",
-        "LINKEDIN_CLIENT_ID": "86ht5xld6204vy",
-        "LINKEDIN_PERSON_URN": "",
-        "META_APP_ID": "2059399091272282",
-        "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
-        "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
-        "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
-        "DEV_GOOGLE_AUTH_BYPASS_SECRET": "local-dev-google-auth-bypass-linkedinpost"
-      }
+      ]
     }
   }
 }

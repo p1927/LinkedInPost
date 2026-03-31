@@ -28,8 +28,3 @@ export interface ContentReviewReport {
   overallVerdict: ContentReviewVerdict;
 }
 
-export interface ContentReviewSettings {
-  textModelId?: string;
-  visionModelId?: string;
-  newsMode?: ContentReviewNewsMode;
-}

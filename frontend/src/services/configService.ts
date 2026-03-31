@@ -1,5 +1,5 @@
 import type { ChannelId } from '../integrations/channels';
-import { FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../generated/features';
+import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../generated/features';
 import { normalizeTelegramRecipients, type TelegramRecipient } from '../integrations/telegram';
 import { normalizeWhatsAppRecipients, type WhatsAppRecipient } from '../integrations/whatsapp';
 
@@ -133,6 +133,34 @@ export const DEFAULT_NEWS_RESEARCH_CONFIG: NewsResearchStored = {
   rssFeeds: [],
 };
 
+export type ContentReviewNewsMode = 'existing' | 'fresh';
+
+export interface ContentReviewStored {
+  textModelId: string;
+  visionModelId: string;
+  newsMode: ContentReviewNewsMode;
+}
+
+export const DEFAULT_CONTENT_REVIEW_STORED: ContentReviewStored = {
+  textModelId: DEFAULT_GOOGLE_MODEL,
+  visionModelId: DEFAULT_GOOGLE_MODEL,
+  newsMode: 'existing',
+};
+
+export function normalizeContentReviewStored(raw: unknown): ContentReviewStored {
+  if (!raw || typeof raw !== 'object') {
+    return { ...DEFAULT_CONTENT_REVIEW_STORED };
+  }
+  const o = raw as Record<string, unknown>;
+  const text = String(o.textModelId ?? '').trim() || DEFAULT_GOOGLE_MODEL;
+  const vision = String(o.visionModelId ?? '').trim() || DEFAULT_GOOGLE_MODEL;
+  return {
+    textModelId: text,
+    visionModelId: vision,
+    newsMode: o.newsMode === 'fresh' ? 'fresh' : 'existing',
+  };
+}
+
 export interface BotConfig {
   spreadsheetId: string;
   githubRepo: string;
@@ -177,6 +205,8 @@ export interface BotConfig {
     gemini: boolean;
     grok: boolean;
   };
+  /** Omitted when content review is disabled in features.yaml. */
+  contentReview?: ContentReviewStored;
 }
 
 function normalizeNewsResearchConfig(raw: unknown): NewsResearchStored {
@@ -280,20 +310,27 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
       },
     };
   }
-  if (!FEATURE_MULTI_PROVIDER_LLM || !config?.llm) {
-    return withNews;
+  let withLlm = withNews;
+  if (FEATURE_MULTI_PROVIDER_LLM && config?.llm) {
+    withLlm = {
+      ...withNews,
+      llm: {
+        primary: config.llm.primary,
+        fallback: config.llm.fallback,
+        allowedGrokModels: [...(config.llm.allowedGrokModels || [])],
+      },
+      llmProviderKeys: {
+        gemini: Boolean(config.llmProviderKeys?.gemini),
+        grok: Boolean(config.llmProviderKeys?.grok),
+      },
+    };
+  }
+  if (!FEATURE_CONTENT_REVIEW) {
+    return withLlm;
   }
   return {
-    ...withNews,
-    llm: {
-      primary: config.llm.primary,
-      fallback: config.llm.fallback,
-      allowedGrokModels: [...(config.llm.allowedGrokModels || [])],
-    },
-    llmProviderKeys: {
-      gemini: Boolean(config.llmProviderKeys?.gemini),
-      grok: Boolean(config.llmProviderKeys?.grok),
-    },
+    ...withLlm,
+    contentReview: normalizeContentReviewStored(config?.contentReview),
   };
 }
 
@@ -329,4 +366,5 @@ export interface BotConfigUpdate {
     fallback?: LlmRef | null;
     allowedGrokModels?: string[];
   };
+  contentReview?: ContentReviewStored;
 }

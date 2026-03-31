@@ -528,6 +528,7 @@ export function Dashboard({
       channelCredentialsConfigured={selectedChannelCredentialsConfigured}
       isAdmin={session.isAdmin}
       onOpenSettings={() => navigate(WORKSPACE_PATHS.settings)}
+      compact
     />
   );
 
@@ -590,6 +591,11 @@ export function Dashboard({
       newsResearch={FEATURE_NEWS_RESEARCH ? settingsHook.newsResearch : undefined}
       setNewsResearch={FEATURE_NEWS_RESEARCH ? settingsHook.setNewsResearch : undefined}
       newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
+      contentReview={FEATURE_CONTENT_REVIEW ? settingsHook.contentReview : undefined}
+      setContentReview={FEATURE_CONTENT_REVIEW ? settingsHook.setContentReview : undefined}
+      newsResearchEnabledForContentReview={
+        FEATURE_NEWS_RESEARCH && FEATURE_CONTENT_REVIEW && settingsHook.newsResearch.enabled
+      }
       {...(FEATURE_MULTI_PROVIDER_LLM
         ? {
             llmPrimaryProvider: settingsHook.llmPrimaryProvider,
@@ -613,15 +619,15 @@ export function Dashboard({
     <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
       <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
       <div className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-4 lg:self-start">
+        <div className="glass-panel rounded-2xl border border-white/55 p-3 shadow-lift ring-1 ring-white/55">
+          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Channel delivery</h2>
+          <div className="mt-2">{deliveryContent}</div>
+        </div>
         <SettingsConnectionsCard
           health={publishingHealth}
           onNavigateToSection={(sectionId) => settingsDrawerRef.current?.scrollToSection(sectionId)}
           className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md"
         />
-        <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
-          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Channel delivery</h2>
-          <div className="mt-3">{deliveryContent}</div>
-        </div>
       </div>
     </div>
   );

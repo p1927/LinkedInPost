@@ -44,7 +44,7 @@ import {
 } from './llm';
 
 import { FEATURE_CAMPAIGN, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
-import { runContentReview } from './features/content-review';
+import { normalizeContentReviewStored, runContentReview } from './features/content-review';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -152,6 +152,12 @@ interface BotConfig {
     gnews: boolean;
     newsdata: boolean;
     serpapi: boolean;
+  };
+  /** Present when FEATURE_CONTENT_REVIEW is enabled. */
+  contentReview?: {
+    textModelId: string;
+    visionModelId: string;
+    newsMode: 'existing' | 'fresh';
   };
 }
 
@@ -1176,6 +1182,9 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     generationRulesHistory: config?.generationRulesHistory || [],
     newsResearch: normalizeNewsResearchStored(config?.newsResearch),
     llm: config?.llm,
+    contentReview: FEATURE_CONTENT_REVIEW
+      ? normalizeContentReviewStored(config?.contentReview)
+      : config?.contentReview,
   };
 }
 
@@ -1226,14 +1235,24 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
       },
     };
   }
-  if (!FEATURE_NEWS_RESEARCH) {
+  if (!FEATURE_NEWS_RESEARCH && !FEATURE_CONTENT_REVIEW) {
     return base;
   }
-  return {
-    ...base,
-    newsResearch: normalizeNewsResearchStored(config.newsResearch),
-    newsProviderKeys: getNewsProviderKeyStatus(env),
-  };
+  let out: BotConfig = base;
+  if (FEATURE_NEWS_RESEARCH) {
+    out = {
+      ...out,
+      newsResearch: normalizeNewsResearchStored(config.newsResearch),
+      newsProviderKeys: getNewsProviderKeyStatus(env),
+    };
+  }
+  if (FEATURE_CONTENT_REVIEW) {
+    out = {
+      ...out,
+      contentReview: normalizeContentReviewStored(config.contentReview),
+    };
+  }
+  return out;
 }
 
 function hasInstagramOAuthConfig(env: Env): boolean {
@@ -2370,7 +2389,11 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
         ? normalizeNewsResearchStored(update.newsResearch)
         : normalizeNewsResearchStored(current.newsResearch),
     llm: nextLlm,
-    contentReview: current.contentReview,
+    contentReview: FEATURE_CONTENT_REVIEW
+      ? (update.contentReview !== undefined
+          ? normalizeContentReviewStored({ ...(current.contentReview || {}), ...update.contentReview })
+          : normalizeContentReviewStored(current.contentReview))
+      : current.contentReview,
   };
 
   if (update.githubToken) {

@@ -1,9 +1,4 @@
 export { ContentReviewIndicator } from './ContentReviewIndicator';
 export { ContentReviewReport } from './ContentReviewReport';
 export { ContentReviewSettings } from './ContentReviewSettings';
-export type {
-  ContentReviewReport as ContentReviewReportType,
-  ContentReviewSettings as ContentReviewSettingsData,
-  ContentReviewVerdict,
-  ContentReviewNewsMode,
-} from './types';
+export type { ContentReviewReport as ContentReviewReportType, ContentReviewVerdict } from './types';

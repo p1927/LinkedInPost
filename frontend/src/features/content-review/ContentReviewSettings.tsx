@@ -1,31 +1,15 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { ContentReviewSettings, ContentReviewNewsMode } from './types';
+import type { ContentReviewNewsMode, ContentReviewStored } from '../../services/configService';
 
 interface ContentReviewSettingsProps {
-  settings: ContentReviewSettings;
+  value: ContentReviewStored;
+  onChange: (next: ContentReviewStored) => void;
   newsResearchEnabled: boolean;
-  onSave: (updated: ContentReviewSettings) => Promise<void>;
 }
 
-export function ContentReviewSettings({ settings, newsResearchEnabled, onSave }: ContentReviewSettingsProps) {
-  const [textModelId, setTextModelId] = useState(settings.textModelId ?? 'gemini-2.5-flash');
-  const [visionModelId, setVisionModelId] = useState(settings.visionModelId ?? 'gemini-2.5-flash');
-  const [newsMode, setNewsMode] = useState<ContentReviewNewsMode>(settings.newsMode ?? 'existing');
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await onSave({
-        textModelId: textModelId.trim() || undefined,
-        visionModelId: visionModelId.trim() || undefined,
-        newsMode,
-      });
-    } finally {
-      setSaving(false);
-    }
+export function ContentReviewSettings({ value, onChange, newsResearchEnabled }: ContentReviewSettingsProps) {
+  const setNewsMode = (newsMode: ContentReviewNewsMode) => {
+    onChange({ ...value, newsMode });
   };
 
   return (
@@ -37,8 +21,8 @@ export function ContentReviewSettings({ settings, newsResearchEnabled, onSave }:
           Text review model
           <Input
             className="mt-0.5 h-8 text-xs font-mono"
-            value={textModelId}
-            onChange={(e) => setTextModelId(e.target.value)}
+            value={value.textModelId}
+            onChange={(e) => onChange({ ...value, textModelId: e.target.value })}
             placeholder="gemini-2.5-flash"
           />
         </label>
@@ -47,8 +31,8 @@ export function ContentReviewSettings({ settings, newsResearchEnabled, onSave }:
           Vision review model
           <Input
             className="mt-0.5 h-8 text-xs font-mono"
-            value={visionModelId}
-            onChange={(e) => setVisionModelId(e.target.value)}
+            value={value.visionModelId}
+            onChange={(e) => onChange({ ...value, visionModelId: e.target.value })}
             placeholder="gemini-2.5-flash"
           />
         </label>
@@ -65,7 +49,7 @@ export function ContentReviewSettings({ settings, newsResearchEnabled, onSave }:
               type="radio"
               name="content-review-news-mode"
               value="existing"
-              checked={newsMode === 'existing'}
+              checked={value.newsMode === 'existing'}
               onChange={() => setNewsMode('existing')}
               className="mt-0.5"
             />
@@ -80,7 +64,7 @@ export function ContentReviewSettings({ settings, newsResearchEnabled, onSave }:
               type="radio"
               name="content-review-news-mode"
               value="fresh"
-              checked={newsMode === 'fresh'}
+              checked={value.newsMode === 'fresh'}
               onChange={() => {
                 if (newsResearchEnabled) setNewsMode('fresh');
               }}
@@ -97,17 +81,6 @@ export function ContentReviewSettings({ settings, newsResearchEnabled, onSave }:
           </label>
         </div>
       </div>
-
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="text-xs font-semibold"
-        disabled={saving}
-        onClick={() => void handleSave()}
-      >
-        {saving ? 'Saving…' : 'Save'}
-      </Button>
     </section>
   );
 }

@@ -36,7 +36,15 @@ export async function runContentReview(
   row: SheetRow,
   config?: Partial<ContentReviewConfig>,
 ): Promise<ContentReviewReport> {
-  const cfg: ContentReviewConfig = { ...DEFAULT_CONTENT_REVIEW_CONFIG, ...config };
+  const p = config ?? {};
+  const cfg: ContentReviewConfig = {
+    ...DEFAULT_CONTENT_REVIEW_CONFIG,
+    ...p,
+    textModelId: (p.textModelId?.trim() || DEFAULT_CONTENT_REVIEW_CONFIG.textModelId),
+    visionModelId: (p.visionModelId?.trim() || DEFAULT_CONTENT_REVIEW_CONFIG.visionModelId),
+    newsMode: p.newsMode ?? DEFAULT_CONTENT_REVIEW_CONFIG.newsMode,
+    maxImages: p.maxImages ?? DEFAULT_CONTENT_REVIEW_CONFIG.maxImages,
+  };
   const fingerprint = computeFingerprint(row);
   const topic = String(row.topic || '');
   const postText = String(row.selectedText || '');

@@ -9,11 +9,14 @@ import {
   AVAILABLE_GOOGLE_MODELS,
   DEFAULT_GOOGLE_MODEL,
   DEFAULT_NEWS_RESEARCH_CONFIG,
+  DEFAULT_CONTENT_REVIEW_STORED,
   loadAvailableGoogleModels,
   normalizeGoogleModelOptions,
+  normalizeContentReviewStored,
   type NewsResearchStored,
+  type ContentReviewStored,
 } from '../../../services/configService';
-import { FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
+import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { type ChannelId } from '../../../integrations/channels';
 import { formatTelegramRecipientsInput, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
 import { formatRecipientsInput, parseRecipientsInput, type WhatsAppRecipient } from '../../../integrations/whatsapp';
@@ -97,6 +100,11 @@ export function useDashboardSettings({
   const [newsResearch, setNewsResearch] = useState<NewsResearchStored>(() =>
     session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG,
   );
+  const [contentReview, setContentReview] = useState<ContentReviewStored>(() =>
+    FEATURE_CONTENT_REVIEW
+      ? normalizeContentReviewStored(session.config.contentReview)
+      : DEFAULT_CONTENT_REVIEW_STORED,
+  );
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -143,6 +151,11 @@ export function useDashboardSettings({
     if (!FEATURE_NEWS_RESEARCH) return;
     setNewsResearch(session.config.newsResearch || DEFAULT_NEWS_RESEARCH_CONFIG);
   }, [session.config.newsResearch]);
+
+  useEffect(() => {
+    if (!FEATURE_CONTENT_REVIEW) return;
+    setContentReview(normalizeContentReviewStored(session.config.contentReview));
+  }, [session.config.contentReview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -297,6 +310,12 @@ export function useDashboardSettings({
     ) {
       return true;
     }
+    if (
+      FEATURE_CONTENT_REVIEW
+      && JSON.stringify(contentReview) !== JSON.stringify(normalizeContentReviewStored(c.contentReview))
+    ) {
+      return true;
+    }
     return false;
   }, [
     session.config,
@@ -320,6 +339,7 @@ export function useDashboardSettings({
     gmailDefaultBcc,
     gmailDefaultSubject,
     newsResearch,
+    contentReview,
     llmFallback,
   ]);
 
@@ -344,6 +364,7 @@ export function useDashboardSettings({
         gmailDefaultBcc: gmailDefaultBcc.trim(),
         gmailDefaultSubject: gmailDefaultSubject.trim(),
         ...(FEATURE_NEWS_RESEARCH ? { newsResearch } : {}),
+        ...(FEATURE_CONTENT_REVIEW ? { contentReview } : {}),
         ...(FEATURE_MULTI_PROVIDER_LLM
           ? {
               llm: {
@@ -404,6 +425,8 @@ export function useDashboardSettings({
     setGmailDefaultSubject,
     newsResearch,
     setNewsResearch,
+    contentReview,
+    setContentReview,
     saveSettings,
     hasUnsavedSettingsChanges,
     generationLlm,

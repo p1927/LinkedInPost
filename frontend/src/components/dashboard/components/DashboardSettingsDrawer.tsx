@@ -23,8 +23,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { type WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeContext';
 import { NewsResearchSettingsSection } from '../../../features/news-research';
-import type { LlmProviderId, LlmRef, NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
-import { FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
+import { ContentReviewSettings } from '../../../features/content-review/ContentReviewSettings';
+import type {
+  LlmProviderId,
+  LlmRef,
+  NewsResearchStored,
+  NewsProviderKeys,
+  ContentReviewStored,
+} from '../../../services/configService';
+import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 
 const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
@@ -36,6 +43,7 @@ const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-whatsapp', label: 'WhatsApp' },
   { id: 'settings-gmail', label: 'Gmail' },
   { id: 'settings-news', label: 'News' },
+  { id: 'settings-content-review', label: 'Content review' },
 ] as const;
 
 export type SettingsSectionId = (typeof ALL_SETTINGS_SECTIONS)[number]['id'];
@@ -123,6 +131,9 @@ type DashboardSettingsDrawerProps = {
   newsResearch?: NewsResearchStored;
   setNewsResearch?: (next: NewsResearchStored) => void;
   newsProviderKeys?: NewsProviderKeys;
+  contentReview?: ContentReviewStored;
+  setContentReview?: (next: ContentReviewStored) => void;
+  newsResearchEnabledForContentReview?: boolean;
   llmPrimaryProvider?: LlmProviderId;
   setLlmPrimaryProvider?: (v: LlmProviderId) => void;
   llmModelId?: string;
@@ -219,6 +230,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       newsResearch,
       setNewsResearch,
       newsProviderKeys,
+      contentReview,
+      setContentReview,
+      newsResearchEnabledForContentReview,
       llmPrimaryProvider,
       setLlmPrimaryProvider,
       llmModelId,
@@ -249,6 +263,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       let s = [...ALL_SETTINGS_SECTIONS];
       if (!FEATURE_NEWS_RESEARCH) {
         s = s.filter((sec) => sec.id !== 'settings-news');
+      }
+      if (!FEATURE_CONTENT_REVIEW) {
+        s = s.filter((sec) => sec.id !== 'settings-content-review');
       }
       if (!session.isAdmin) {
         s = s.filter((sec) => sec.id !== 'settings-llm');
@@ -1068,6 +1085,20 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               value={newsResearch}
               onChange={setNewsResearch}
               newsProviderKeys={newsProviderKeys}
+            />
+          </SettingsSectionCard>
+        ) : null}
+
+        {FEATURE_CONTENT_REVIEW && contentReview && setContentReview ? (
+          <SettingsSectionCard id="settings-content-review" title="Content review">
+            <p className="mb-4 text-xs leading-relaxed text-muted">
+              Models used for the editor <strong className="text-ink">Content checker</strong> (text guardrails and image review). Requires{' '}
+              <code className="rounded bg-border/40 px-1 font-mono text-[0.65rem]">GEMINI_API_KEY</code> on the Worker.
+            </p>
+            <ContentReviewSettings
+              value={contentReview}
+              onChange={setContentReview}
+              newsResearchEnabled={Boolean(newsResearchEnabledForContentReview)}
             />
           </SettingsSectionCard>
         ) : null}
