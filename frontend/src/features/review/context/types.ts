@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { type SheetRow } from '../../../services/sheets';
 import {
+  type ContentReviewReport,
   type GenerationRequest,
   type GenerationScope,
   type NewsResearchHistoryItem,
@@ -181,6 +182,12 @@ export interface ReviewFlowContextValue {
   onCancel: () => void;
   researchContextArticles: ResearchArticleRef[];
   setResearchContextArticles: React.Dispatch<React.SetStateAction<ResearchArticleRef[]>>;
+  onRunContentReview?: (
+    editorText: string,
+    selectedImageUrls: string[],
+    deliveryChannel: ChannelId,
+  ) => Promise<ContentReviewReport>;
+  onAfterContentReview?: () => Promise<void>;
 }
 
 export interface ReviewFlowProviderProps {
@@ -218,4 +225,10 @@ export interface ReviewFlowProviderProps {
   onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
   onListNewsResearchHistory?: () => Promise<NewsResearchHistoryItem[]>;
   onGetNewsResearchSnapshot?: (id: string) => Promise<NewsResearchSnapshotDetail>;
+  onRunContentReview?: (
+    editorText: string,
+    selectedImageUrls: string[],
+    deliveryChannel: ChannelId,
+  ) => Promise<ContentReviewReport>;
+  onAfterContentReview?: () => Promise<void>;
 }

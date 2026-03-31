@@ -13,7 +13,8 @@ INSERT OR REPLACE INTO pipeline_state (
   selected_text, selected_image_id, selected_image_urls_json,
   post_time, email_to, email_cc, email_bcc, email_subject,
   topic_generation_rules, generation_template_id, published_at,
-  topic_delivery_channel, topic_generation_model
+  topic_delivery_channel, topic_generation_model,
+  content_review_fingerprint, content_review_at, content_review_json
 ) VALUES (
   ?1, ?2, ?3, ?4, ?5,
   ?6, ?7, ?8, ?9,
@@ -21,7 +22,8 @@ INSERT OR REPLACE INTO pipeline_state (
   ?14, ?15, ?16,
   ?17, ?18, ?19, ?20, ?21,
   ?22, ?23, ?24,
-  ?25, ?26
+  ?25, ?26,
+  ?27, ?28, ?29
 )
 `;
 
@@ -97,6 +99,9 @@ function bindPipelineInsert(stmt: D1PreparedStatement, spreadsheetId: string, ro
     c.published_at,
     c.topic_delivery_channel,
     c.topic_generation_model,
+    c.content_review_fingerprint,
+    c.content_review_at,
+    c.content_review_json,
   );
 }
 
@@ -504,5 +509,24 @@ export class PipelineStore {
     }
 
     return { success: true, imported: posts.length };
+  }
+
+  async updateContentReview(
+    spreadsheetId: string,
+    topicId: string,
+    fingerprint: string,
+    reviewedAt: string,
+    json: string,
+  ): Promise<void> {
+    const tid = String(topicId || '').trim();
+    if (!tid) return;
+    await this.db
+      .prepare(
+        `UPDATE pipeline_state
+         SET content_review_fingerprint = ?1, content_review_at = ?2, content_review_json = ?3, updated_at = datetime('now')
+         WHERE spreadsheet_id = ?4 AND topic_id = ?5`,
+      )
+      .bind(fingerprint, reviewedAt, json, spreadsheetId, tid)
+      .run();
   }
 }

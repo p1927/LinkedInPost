@@ -91,6 +91,13 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         onGetNewsResearchSnapshot={
           p.onGetNewsResearchSnapshot ? (id) => p.onGetNewsResearchSnapshot!(row, id) : undefined
         }
+        onRunContentReview={
+          p.onRunContentReview
+            ? (editorText, selectedImageUrls, deliveryChannel) =>
+                p.onRunContentReview!(row, editorText, selectedImageUrls, deliveryChannel)
+            : undefined
+        }
+        onAfterContentReview={p.onAfterContentReview}
       />
     </div>
   );

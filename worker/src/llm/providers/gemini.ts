@@ -62,6 +62,60 @@ export async function listGeminiModels(env: WorkerEnvForLlm): Promise<LlmModelOp
   }
 }
 
+export interface GeminiInlineImagePart {
+  mimeType: string;
+  /** Base64-encoded bytes of the image. */
+  data: string;
+}
+
+/**
+ * Single multimodal Gemini call: image bytes + text prompt → structured JSON.
+ * Uses the same API key and response pattern as generateGeminiJson.
+ */
+export async function generateGeminiMultimodalJson(
+  env: WorkerEnvForLlm,
+  model: string,
+  image: GeminiInlineImagePart,
+  prompt: string,
+): Promise<string> {
+  const apiKey = String(env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) {
+    throw new Error('Missing GEMINI_API_KEY in the Worker environment.');
+  }
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inlineData: { mimeType: image.mimeType, data: image.data } },
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+    },
+  );
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Gemini multimodal generation failed with status ${response.status}. ${message.slice(0, 280)}`.trim());
+  }
+  const payload = (await response.json()) as GeminiGenerateResponse;
+  if (payload.promptFeedback?.blockReason) {
+    throw new Error(`Gemini blocked the multimodal generation request: ${payload.promptFeedback.blockReason}.`);
+  }
+  const text = payload.candidates?.[0]?.content?.parts?.map((part) => String(part.text || '')).join('\n').trim() || '';
+  if (!text) {
+    throw new Error('Gemini returned an empty multimodal generation response.');
+  }
+  return text;
+}
+
 export async function generateGeminiJson(env: WorkerEnvForLlm, model: string, prompt: string): Promise<string> {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
   if (!apiKey) {

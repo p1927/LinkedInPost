@@ -90,6 +90,8 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     onSearchNewsResearch: props.onSearchNewsResearch,
     onListNewsResearchHistory: props.onListNewsResearchHistory,
     onGetNewsResearchSnapshot: props.onGetNewsResearchSnapshot,
+    onRunContentReview: props.onRunContentReview,
+    onAfterContentReview: props.onAfterContentReview,
     // State
     sheetRow: restState.sheetRow,
     setSheetRow: restState.setSheetRow,

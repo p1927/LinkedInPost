@@ -12,6 +12,7 @@ export function statusToCalendarId(status?: string): string {
     case 'approved': return 'approved';
     case 'drafted': return 'drafted';
     case 'pending': return 'pending';
+    case 'blocked': return 'blocked';
     default: return 'pending';
   }
 }
@@ -33,5 +34,9 @@ export const STATUS_CALENDARS: Record<string, CalendarColorConfig> = {
   published: {
     colorName: 'published',
     lightColors: { main: '#94A3B8', container: '#F8FAFC', onContainer: '#334155' },
+  },
+  blocked: {
+    colorName: 'blocked',
+    lightColors: { main: '#EF4444', container: '#FEF2F2', onContainer: '#7F1D1D' },
   },
 };

@@ -1,5 +1,6 @@
 import { type SheetRow } from '../../services/sheets';
 import {
+  type ContentReviewReport,
   type GenerationRequest,
   type NewsResearchHistoryItem,
   type NewsResearchSearchPayload,
@@ -50,6 +51,15 @@ export type TopicReviewPagesBaseProps = {
   onSearchNewsResearch?: (row: SheetRow, payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
   onListNewsResearchHistory?: (row: SheetRow) => Promise<NewsResearchHistoryItem[]>;
   onGetNewsResearchSnapshot?: (row: SheetRow, id: string) => Promise<NewsResearchSnapshotDetail>;
+  /** Manual AI content check from the topic editor (feature-gated). */
+  onRunContentReview?: (
+    row: SheetRow,
+    editorText: string,
+    selectedImageUrls: string[],
+    deliveryChannel: ChannelId,
+  ) => Promise<ContentReviewReport>;
+  /** Refresh queue row after a content review so D1 fields sync in the UI. */
+  onAfterContentReview?: () => Promise<void>;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

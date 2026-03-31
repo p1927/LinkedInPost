@@ -1338,6 +1338,10 @@ def process_publishing(sheets_service, docs_service, storage_bucket):
         if status_l == 'published':
             continue
 
+        if status_l == 'blocked':
+            print(f"Skipping blocked row: {topic}")
+            continue
+
         if status_l == 'approved' and selected_text:
             try:
                 timing = decide_publish_timing(now, post_time_str)

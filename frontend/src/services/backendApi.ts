@@ -2,6 +2,7 @@ import type { BotConfig, BotConfigUpdate, GoogleModelOption, LlmProviderId } fro
 import { normalizeBotConfig } from './configService';
 import type { ChannelId } from '../integrations/channels';
 import type { SheetRow } from './sheets';
+import type { ContentReviewReport } from '../features/content-review/types';
 
 export interface AppSession {
   email: string;
@@ -177,6 +178,16 @@ export interface GenerationRequest {
   llm?: { provider: LlmProviderId; model: string };
   researchArticles?: ResearchArticleRef[];
 }
+
+export interface RunContentReviewRequest {
+  row: SheetRow;
+  editorText: string;
+  selectedImageUrls: string[];
+  /** Effective delivery channel for prompt context (e.g. linkedin). */
+  deliveryChannel?: string;
+}
+
+export type { ContentReviewReport };
 
 export interface QuickChangePreviewResult {
   scope: GenerationScope;
@@ -406,6 +417,14 @@ export class BackendApi {
     return this.post<VariantsPreviewResponse>('generateVariantsPreview', idToken, { ...request });
   }
 
+  async runContentReview(idToken: string, body: RunContentReviewRequest): Promise<ContentReviewReport> {
+    return this.post<ContentReviewReport>('runContentReview', idToken, {
+      row: body.row,
+      editorText: body.editorText,
+      selectedImageUrls: body.selectedImageUrls,
+      deliveryChannel: body.deliveryChannel,
+    });
+  }
 
   async searchNewsResearch(idToken: string, payload: NewsResearchSearchPayload): Promise<NewsResearchSearchResult> {
     return this.post<NewsResearchSearchResult>('searchNewsResearch', idToken, { ...payload });

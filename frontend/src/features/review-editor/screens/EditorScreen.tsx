@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
@@ -5,6 +7,8 @@ import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContex
 import { EditorSidebar } from '../components/EditorSidebar';
 import { LivePreviewSidebar } from '../components/LivePreviewSidebar';
 import { EditorVariantBar } from '../../variant/components/EditorVariantBar';
+import { ContentReviewReport } from '@/features/content-review/ContentReviewReport';
+import type { ContentReviewReport as ContentReviewReportData } from '@/features/content-review/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +16,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/cn';
 import { getChannelLabel } from '@/integrations/channels';
 import { ScheduledPublishBanner, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
+import { FEATURE_CONTENT_REVIEW } from '@/generated/features';
 
 function ResizeHandle() {
   return (
@@ -41,6 +46,9 @@ export function EditorScreen() {
     routed,
     editorStartMediaPanel,
     sheetVariants,
+    selectedImageUrls,
+    onRunContentReview,
+    onAfterContentReview,
   } = useReviewFlow();
   const {
     editorText,
@@ -53,12 +61,31 @@ export function EditorScreen() {
     handleFormatting,
   } = useReviewFlowEditor();
 
+  const [contentReviewOpen, setContentReviewOpen] = useState(false);
+  const [contentReviewBusy, setContentReviewBusy] = useState(false);
+  const [contentReviewResult, setContentReviewResult] = useState<ContentReviewReportData | null>(null);
+
   const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}`;
 
   const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
   const hasSheetVariants = sheetVariants.length > 0;
   const isDesktop = useMediaQuery('(min-width: 1280px)');
-  const footerBusy = submitting || publishSubmitting || savingDraft;
+  const footerBusy = submitting || publishSubmitting || savingDraft || contentReviewBusy;
+  const showContentReview =
+    FEATURE_CONTENT_REVIEW && typeof onRunContentReview === 'function';
+
+  const runManualContentReview = async () => {
+    if (!onRunContentReview) return;
+    setContentReviewBusy(true);
+    try {
+      const report = await onRunContentReview(editorText, selectedImageUrls, deliveryChannel);
+      setContentReviewResult(report);
+      setContentReviewOpen(true);
+      await onAfterContentReview?.();
+    } finally {
+      setContentReviewBusy(false);
+    }
+  };
   const channelLabel = getChannelLabel(deliveryChannel);
   const showScheduledBanner =
     pendingScheduledPublish != null
@@ -188,6 +215,26 @@ export function EditorScreen() {
                 )}
               />
             </div>
+            {showContentReview ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void runManualContentReview()}
+                disabled={footerBusy}
+                title="Run AI checks on the current editor text and selected image(s). You do not need to save first."
+                className="min-h-[44px] w-full border-violet-200/80 bg-white/90 shadow-sm sm:w-auto sm:min-w-[9rem]"
+              >
+                {contentReviewBusy ? (
+                  'Checking…'
+                ) : (
+                  <>
+                    <ShieldCheck className="mr-1.5 h-4 w-4 shrink-0" aria-hidden />
+                    Check content
+                  </>
+                )}
+              </Button>
+            ) : null}
             {isPublished && !hasSheetVariants ? (
               <Button
                 type="button"
@@ -275,6 +322,15 @@ export function EditorScreen() {
           </div>
         </div>
       </footer>
+      {contentReviewOpen && contentReviewResult ? (
+        <ContentReviewReport
+          report={contentReviewResult}
+          onClose={() => {
+            setContentReviewOpen(false);
+            setContentReviewResult(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

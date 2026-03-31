@@ -31,7 +31,12 @@ import {
   normalizeWorkspacePathname,
   topicEditorPathForRow,
 } from '../../features/topic-navigation/utils/workspaceRoutes';
-import { FEATURE_CAMPAIGN, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../generated/features';
+import {
+  FEATURE_CAMPAIGN,
+  FEATURE_CONTENT_REVIEW,
+  FEATURE_MULTI_PROVIDER_LLM,
+  FEATURE_NEWS_RESEARCH,
+} from '../../generated/features';
 import { CampaignPage } from '../../features/campaign';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 
@@ -325,6 +330,12 @@ export function Dashboard({
     onSearchNewsResearch: FEATURE_NEWS_RESEARCH ? queueHook.handleSearchNewsResearch : undefined,
     onListNewsResearchHistory: FEATURE_NEWS_RESEARCH ? queueHook.handleListNewsResearchHistory : undefined,
     onGetNewsResearchSnapshot: FEATURE_NEWS_RESEARCH ? queueHook.handleGetNewsResearchSnapshot : undefined,
+    ...(FEATURE_CONTENT_REVIEW
+      ? {
+          onRunContentReview: queueHook.handleRunContentReview,
+          onAfterContentReview: () => queueHook.loadData(true),
+        }
+      : {}),
   };
 
   const topicChromeRaw = topicChromeRow?.topic?.trim() ?? '';

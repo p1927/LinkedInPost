@@ -580,7 +580,7 @@ export function DashboardQueue({
             <DialogTitle>Set channel for {selectedRows.length} topic(s)</DialogTitle>
           </DialogHeader>
           <div className="py-1">
-            <Select value={bulkChannel} onValueChange={setBulkChannel}>
+            <Select value={bulkChannel} onValueChange={(v) => setBulkChannel(v ?? '')}>
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="Choose channel…" />
               </SelectTrigger>
@@ -619,7 +619,7 @@ export function DashboardQueue({
             <DialogTitle>Set AI model for {selectedRows.length} topic(s)</DialogTitle>
           </DialogHeader>
           <div className="py-1">
-            <Select value={bulkModel} onValueChange={setBulkModel}>
+            <Select value={bulkModel} onValueChange={(v) => setBulkModel(v ?? '')}>
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="Choose model…" />
               </SelectTrigger>

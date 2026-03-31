@@ -113,6 +113,9 @@ export function pipelineDbRowToFields(row: PipelineStateDbRow): Omit<SheetRow, '
     publishedAt: row.published_at || undefined,
     topicDeliveryChannel: row.topic_delivery_channel ?? '',
     topicGenerationModel: row.topic_generation_model ?? '',
+    contentReviewFingerprint: row.content_review_fingerprint ?? '',
+    contentReviewAt: row.content_review_at || undefined,
+    contentReviewJson: row.content_review_json ?? '',
   };
 }
 
@@ -145,6 +148,9 @@ export function sheetRowToPipelineColumns(spreadsheetId: string, row: SheetRow):
     published_at: row.publishedAt ?? null,
     topic_delivery_channel: row.topicDeliveryChannel ?? '',
     topic_generation_model: row.topicGenerationModel ?? '',
+    content_review_fingerprint: row.contentReviewFingerprint ?? '',
+    content_review_at: row.contentReviewAt ?? null,
+    content_review_json: row.contentReviewJson ?? '',
   };
 }
 
@@ -217,5 +223,8 @@ export function mergeTopicWithPipeline(topic: TopicSheetEntry, pipeline: Pipelin
     publishedAt: baseFields.publishedAt,
     topicDeliveryChannel: baseFields.topicDeliveryChannel,
     topicGenerationModel: baseFields.topicGenerationModel,
+    contentReviewFingerprint: baseFields.contentReviewFingerprint,
+    contentReviewAt: baseFields.contentReviewAt,
+    contentReviewJson: baseFields.contentReviewJson,
   };
 }

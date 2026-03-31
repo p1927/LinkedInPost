@@ -38,6 +38,12 @@ export interface SheetRow {
    * Column X — optional generation model override. Plain model id (Gemini) or JSON `{"provider":"grok"|"gemini","model":"..."}` when multi-provider.
    */
   topicGenerationModel?: string;
+  /** Content review fingerprint (hash of inputs). Empty when not yet reviewed. */
+  contentReviewFingerprint?: string;
+  /** ISO timestamp of last content review run. */
+  contentReviewAt?: string;
+  /** JSON blob: full content review report. */
+  contentReviewJson?: string;
 }
 
 export interface PostTemplate {

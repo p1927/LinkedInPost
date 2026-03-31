@@ -2,6 +2,7 @@ import { type SheetRow } from '../../services/sheets';
 import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../services/configService';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
+  type ContentReviewReport,
   type GenerationRequest,
   type NewsResearchHistoryItem,
   type NewsResearchSearchPayload,
@@ -63,6 +64,12 @@ export interface ReviewWorkspaceProps {
   onSearchNewsResearch?: (payload: NewsResearchSearchPayload) => Promise<NewsResearchSearchResult>;
   onListNewsResearchHistory?: () => Promise<NewsResearchHistoryItem[]>;
   onGetNewsResearchSnapshot?: (id: string) => Promise<NewsResearchSnapshotDetail>;
+  onRunContentReview?: (
+    editorText: string,
+    selectedImageUrls: string[],
+    deliveryChannel: ChannelId,
+  ) => Promise<ContentReviewReport>;
+  onAfterContentReview?: () => Promise<void>;
 }
 
 function ReviewWorkspaceLayout() {

@@ -1,7 +1,12 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { type SheetRow } from '../../../services/sheets';
 import type { NewsResearchSearchPayload, NewsResearchSearchResult } from '../../../services/backendApi';
-import { type GenerationRequest, type QuickChangePreviewResult, type VariantsPreviewResponse } from '../../../services/backendApi';
+import {
+  type ContentReviewReport,
+  type GenerationRequest,
+  type QuickChangePreviewResult,
+  type VariantsPreviewResponse,
+} from '../../../services/backendApi';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../services/backendApi';
 import type { LlmRef } from '../../../services/configService';
 import { type DeliverySummary } from '../types';
@@ -329,6 +334,24 @@ export function useDashboardQueue({
     }
   };
 
+  const handleRunContentReview = async (
+    row: SheetRow,
+    editorText: string,
+    selectedImageUrls: string[],
+    deliveryChannel: ChannelId,
+  ): Promise<ContentReviewReport> => {
+    try {
+      return await api.runContentReview(idToken, {
+        row,
+        editorText,
+        selectedImageUrls,
+        deliveryChannel,
+      });
+    } catch (error) {
+      handleFailure(error, 'Content review failed. Check that Gemini is configured and try again.');
+      throw error;
+    }
+  };
 
   const handleSearchNewsResearch = async (row: SheetRow, payload: NewsResearchSearchPayload): Promise<NewsResearchSearchResult> => {
     try {
@@ -767,6 +790,7 @@ export function useDashboardQueue({
     triggerRowGithubAction,
     handleGenerateQuickChange,
     handleGenerateVariantsPreview,
+    handleRunContentReview,
     handleSaveDraftVariants,
     handleSaveTopicGenerationRules,
     loadPostTemplates,

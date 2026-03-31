@@ -24,6 +24,8 @@ export function queueStatusToBadgeVariant(status?: string): BadgeVariant {
       return 'approved';
     case 'published':
       return 'published';
+    case 'blocked':
+      return 'neutral';
     default:
       return 'neutral';
   }

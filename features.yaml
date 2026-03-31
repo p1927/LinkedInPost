@@ -10,3 +10,4 @@ newsResearch: true
 campaign: true
 # Gemini + Grok (xAI) workspace LLM gateway and Settings → AI / LLM. Set false to hide UI and RPCs.
 multiProviderLlm: true
+contentReview: true

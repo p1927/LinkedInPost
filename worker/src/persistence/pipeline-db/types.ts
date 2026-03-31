@@ -26,6 +26,9 @@ export interface PipelineStateDbRow {
   published_at: string | null;
   topic_delivery_channel: string;
   topic_generation_model: string;
+  content_review_fingerprint: string;
+  content_review_at: string | null;
+  content_review_json: string;
   created_at: string;
   updated_at: string;
 }

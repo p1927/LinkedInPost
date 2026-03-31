@@ -43,7 +43,8 @@ import {
   type LlmRef,
 } from './llm';
 
-import { FEATURE_CAMPAIGN, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
+import { FEATURE_CAMPAIGN, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
+import { runContentReview } from './features/content-review';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -203,6 +204,11 @@ export interface StoredConfig {
     fallback?: LlmRef;
     allowedGrokModels?: string[];
   };
+  contentReview?: {
+    textModelId?: string;
+    visionModelId?: string;
+    newsMode?: 'existing' | 'fresh';
+  };
 }
 
 interface BotConfigUpdate {
@@ -236,6 +242,11 @@ interface BotConfigUpdate {
     primary?: LlmRef;
     fallback?: LlmRef | null;
     allowedGrokModels?: string[];
+  };
+  contentReview?: {
+    textModelId?: string;
+    visionModelId?: string;
+    newsMode?: 'existing' | 'fresh';
   };
 }
 
@@ -969,6 +980,46 @@ async function dispatchAction(
           articles,
         };
       }
+    case 'runContentReview': {
+      if (!FEATURE_CONTENT_REVIEW) {
+        throw new Error('Content review is disabled for this deployment.');
+      }
+      ensureSpreadsheetConfigured(storedConfig);
+      const baseRow = coerceSheetRow(payload.row);
+      const editorText = String(payload.editorText ?? '');
+      const urlsRaw = payload.selectedImageUrls;
+      const selectedImageUrls = Array.isArray(urlsRaw)
+        ? urlsRaw.map((u) => String(u || '').trim()).filter(Boolean)
+        : [];
+      const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(selectedImageUrls);
+      const deliveryCh = String(payload.deliveryChannel || baseRow.topicDeliveryChannel || 'linkedin').trim() || 'linkedin';
+      const syntheticRow: SheetRow = {
+        ...baseRow,
+        selectedText: editorText,
+        selectedImageId,
+        selectedImageUrlsJson,
+        topicDeliveryChannel: deliveryCh,
+      };
+      const cr = storedConfig.contentReview;
+      const report = await runContentReview(
+        env,
+        storedConfig.spreadsheetId,
+        syntheticRow,
+        {
+          textModelId: cr?.textModelId,
+          visionModelId: cr?.visionModelId,
+          newsMode: cr?.newsMode,
+        },
+      );
+      await pipeline.updateContentReview(
+        storedConfig.spreadsheetId,
+        baseRow.topicId,
+        report.fingerprint,
+        report.reviewedAt,
+        JSON.stringify(report),
+      );
+      return report;
+    }
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -2319,6 +2370,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
         ? normalizeNewsResearchStored(update.newsResearch)
         : normalizeNewsResearchStored(current.newsResearch),
     llm: nextLlm,
+    contentReview: current.contentReview,
   };
 
   if (update.githubToken) {
@@ -2434,8 +2486,11 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
   }
 
   const normalizedStatus = String(row.status || '').trim().toLowerCase();
+  if (normalizedStatus === 'blocked') {
+    return;
+  }
   const intent = task.intent || 'publish';
-  
+
   if (intent === 'publish' && (normalizedStatus === 'published' || normalizedStatus !== 'approved')) {
     return;
   }
