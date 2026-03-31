@@ -297,132 +297,142 @@ export function CampaignPage(props: {
       <CarouselContent currentStep={currentStep}>
         {/* Step 0: Import — topic ideas → Claude prompt → paste JSON */}
         <div className="mx-auto max-w-5xl px-4 sm:px-8">
-          <div className="space-y-5">
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">1</span>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Topic ideas</h3>
-                  <p className="text-xs text-slate-500">One theme per line — they are woven into the Claude prompt in step 2.</p>
-                </div>
-              </div>
-              <div className="p-5">
-                <Textarea
-                  value={topicsIdeas}
-                  onChange={(e) => setTopicsIdeas(e.target.value)}
-                  placeholder="e.g. Q2 product launch&#10;Hiring update&#10;Customer story: Acme Corp"
-                  className="min-h-[5rem] font-sans text-sm"
-                  aria-label="Topic ideas for campaign prompt"
-                />
-              </div>
-            </section>
+          {/* Two-column layout on md+: left = topics + prompt, right = JSON editor */}
+          <div className="flex flex-col gap-5 md:flex-row md:items-stretch md:gap-5">
 
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Claude prompt</h3>
-                  <p className="text-xs text-slate-500">Copy into your AI, or expand preview to read the full prompt from your topic ideas.</p>
-                </div>
-              </div>
-              <div className="p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void copyPrompt()}
-                    className={clsx(
-                      'flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-600 sm:w-auto',
-                      'transition-colors duration-150 hover:bg-indigo-100',
-                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
-                      'cursor-pointer',
-                    )}
-                  >
-                    <Copy className="h-3.5 w-3.5" aria-hidden />
-                    Copy Claude prompt
-                  </button>
-                  <details className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
-                    <summary className="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors">
-                      Preview prompt
-                    </summary>
-                    <pre className="custom-scrollbar mt-2 max-h-48 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-slate-500">
-                      {promptText}
-                    </pre>
-                  </details>
-                </div>
-              </div>
-            </section>
-
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Paste campaign JSON</h3>
-                  <p className="text-xs text-slate-500">JSON or JSONC (comments and trailing commas allowed).</p>
-                </div>
-              </div>
-              <div className="p-5">
-                <div className="flex gap-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
-                  <div
-                    className="hidden w-10 shrink-0 select-none border-r border-slate-200 bg-slate-100/60 py-2 text-right font-mono text-[10px] leading-5 text-slate-400 sm:block"
-                    aria-hidden
-                  >
-                    {pasteText.split('\n').map((_, i) => (
-                      <div
-                        key={i}
-                        className={clsx('pr-1', errorLines.has(i + 1) && 'bg-rose-200/80 font-semibold text-rose-950')}
-                      >
-                        {i + 1}
-                      </div>
-                    ))}
-                    {pasteText === '' ? <div className="pr-1">1</div> : null}
+            {/* Left column: sections 1 + 2 */}
+            <div className="flex flex-col gap-5 md:w-[42%] md:min-w-0">
+              {/* Section 1: Topic ideas */}
+              <section className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">1</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Topic ideas</h3>
+                    <p className="text-xs text-slate-500">One theme per line — woven into the prompt below.</p>
                   </div>
+                </div>
+                <div className="flex flex-1 flex-col p-5">
                   <Textarea
-                    value={pasteText}
-                    onChange={(e) => setPasteText(e.target.value)}
-                    placeholder='{ "version": 1, "posts": [ … ] }'
-                    className="min-h-[14rem] flex-1 resize-y border-0 bg-transparent font-mono text-xs leading-5 shadow-none focus-visible:ring-0 sm:min-h-[18rem]"
-                    spellCheck={false}
-                    aria-label="Campaign JSON"
+                    value={topicsIdeas}
+                    onChange={(e) => setTopicsIdeas(e.target.value)}
+                    placeholder={'e.g. Q2 product launch\nHiring update\nCustomer story: Acme Corp'}
+                    className="flex-1 resize-none font-sans text-sm md:min-h-[8rem]"
+                    aria-label="Topic ideas for campaign prompt"
                   />
                 </div>
+              </section>
 
-                {diagnostics.length > 0 ? (
-                  <ul role="alert" className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
-                    {diagnostics.map((d, i) => (
-                      <li key={i}>
-                        <span className="font-mono font-semibold">Line {d.line}:{d.column}</span>{' '}
-                        {d.message}
-                      </li>
-                    ))}
-                  </ul>
-                ) : pasteText.trim() ? (
-                  <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    Document looks valid
-                  </p>
-                ) : null}
-
-                <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
-                  <button
-                    type="button"
-                    disabled={!parseResult.ok}
-                    onClick={() => handleStepChange(1)}
-                    className={clsx(
-                      'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
-                      'transition-colors duration-150 hover:bg-indigo-700',
-                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
-                      'disabled:cursor-not-allowed disabled:bg-indigo-300 cursor-pointer',
-                    )}
-                  >
-                    Preview &amp; Publish
-                    <ArrowRight className="h-4 w-4" aria-hidden />
-                  </button>
-                  {!parseResult.ok && pasteText.trim() && (
-                    <p className="text-xs text-slate-400">Fix JSON errors above to continue.</p>
-                  )}
+              {/* Section 2: Claude prompt */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Claude prompt</h3>
+                    <p className="text-xs text-slate-500">Copy into Claude, or expand to preview the full prompt.</p>
+                  </div>
                 </div>
-              </div>
-            </section>
+                <div className="p-5">
+                  <div className="flex flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void copyPrompt()}
+                      className={clsx(
+                        'flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-600',
+                        'transition-colors duration-150 hover:bg-indigo-100 cursor-pointer',
+                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                      )}
+                    >
+                      <Copy className="h-3.5 w-3.5" aria-hidden />
+                      Copy Claude prompt
+                    </button>
+                    <details className="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2">
+                      <summary className="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors">
+                        Preview prompt
+                      </summary>
+                      <pre className="custom-scrollbar mt-2 max-h-40 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-slate-500">
+                        {promptText}
+                      </pre>
+                    </details>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* Right column: section 3 — JSON paste (wider, taller) */}
+            <div className="md:flex-1 md:min-w-0">
+              <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Paste campaign JSON</h3>
+                    <p className="text-xs text-slate-500">JSON or JSONC (comments and trailing commas allowed).</p>
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="flex flex-1 gap-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
+                    <div
+                      className="hidden w-10 shrink-0 select-none border-r border-slate-200 bg-slate-100/60 py-2 text-right font-mono text-[10px] leading-5 text-slate-400 sm:block"
+                      aria-hidden
+                    >
+                      {pasteText.split('\n').map((_, i) => (
+                        <div
+                          key={i}
+                          className={clsx('pr-1', errorLines.has(i + 1) && 'bg-rose-200/80 font-semibold text-rose-950')}
+                        >
+                          {i + 1}
+                        </div>
+                      ))}
+                      {pasteText === '' ? <div className="pr-1">1</div> : null}
+                    </div>
+                    <Textarea
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                      placeholder='{ "version": 1, "posts": [ … ] }'
+                      className="min-h-[14rem] flex-1 resize-y border-0 bg-transparent font-mono text-xs leading-5 shadow-none focus-visible:ring-0 md:min-h-[24rem]"
+                      spellCheck={false}
+                      aria-label="Campaign JSON"
+                    />
+                  </div>
+
+                  {diagnostics.length > 0 ? (
+                    <ul role="alert" className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
+                      {diagnostics.map((d, i) => (
+                        <li key={i}>
+                          <span className="font-mono font-semibold">Line {d.line}:{d.column}</span>{' '}
+                          {d.message}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : pasteText.trim() ? (
+                    <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      Document looks valid
+                    </p>
+                  ) : null}
+
+                  <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
+                    <button
+                      type="button"
+                      disabled={!parseResult.ok}
+                      onClick={() => handleStepChange(1)}
+                      className={clsx(
+                        'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
+                        'transition-colors duration-150 hover:bg-indigo-700',
+                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                        'disabled:cursor-not-allowed disabled:bg-indigo-300 cursor-pointer',
+                      )}
+                    >
+                      Preview &amp; Publish
+                      <ArrowRight className="h-4 w-4" aria-hidden />
+                    </button>
+                    {!parseResult.ok && pasteText.trim() && (
+                      <p className="text-xs text-slate-400">Fix JSON errors above to continue.</p>
+                    )}
+                  </div>
+                </div>
+              </section>
+            </div>
+
           </div>
         </div>
 

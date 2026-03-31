@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScheduleXCalendar, useCalendarApp } from '@schedule-x/react';
 import { viewWeek, viewMonthGrid, viewDay } from '@schedule-x/calendar';
 import { createDragAndDropPlugin } from '@schedule-x/drag-and-drop';
@@ -7,6 +7,7 @@ import './content-schedule-calendar.css';
 import { mapTopicsToEvents, extractDateFromStart } from './mapTopicsToEvents';
 import { STATUS_CALENDARS } from './statusStyles';
 import { EventDetailAndEdit } from './EventDetailAndEdit';
+import { eventStartToPlainDate } from './calendarTemporal';
 import type { CalendarTopic, TopicScheduleChange } from './types';
 
 export type CalendarView = 'week' | 'month-grid' | 'day';
@@ -25,6 +26,15 @@ export interface ContentScheduleCalendarProps {
   /** ⌘/Ctrl-click toggles selection; plain click still opens the detail dialog. */
   onTopicSelectionToggle?: (id: string) => void;
   onTopicDelete?: (id: string) => void;
+  /**
+   * Plain click (without modifier) on an event: notify host (e.g. sync list/rail selection)
+   * before opening the detail dialog.
+   */
+  onTopicActivate?: (topic: CalendarTopic) => void;
+  /** Block dragging/rescheduling events onto dates before today (local). */
+  disablePastDates?: boolean;
+  /** Portal the header date-picker to `document.body` so it is not clipped by scroll parents. */
+  teleportDatePicker?: boolean;
   className?: string;
 }
 
@@ -38,6 +48,9 @@ export function ContentScheduleCalendar({
   selectedTopicIds,
   onTopicSelectionToggle,
   onTopicDelete,
+  onTopicActivate,
+  disablePastDates = false,
+  teleportDatePicker = false,
   className,
 }: ContentScheduleCalendarProps) {
   // Use refs so callbacks always see latest values without recreating the app.
@@ -46,15 +59,27 @@ export function ContentScheduleCalendar({
   const onScheduleChangeRef = useRef(onTopicScheduleChange);
   const onSelectionToggleRef = useRef(onTopicSelectionToggle);
   const onDeleteRef = useRef(onTopicDelete);
+  const onTopicActivateRef = useRef(onTopicActivate);
+  const disablePastDatesRef = useRef(disablePastDates);
   useEffect(() => { topicsRef.current = topics; }, [topics]);
   useEffect(() => { onPatchRef.current = onTopicPatch; }, [onTopicPatch]);
   useEffect(() => { onScheduleChangeRef.current = onTopicScheduleChange; }, [onTopicScheduleChange]);
   useEffect(() => { onSelectionToggleRef.current = onTopicSelectionToggle; }, [onTopicSelectionToggle]);
   useEffect(() => { onDeleteRef.current = onTopicDelete; }, [onTopicDelete]);
+  useEffect(() => { onTopicActivateRef.current = onTopicActivate; }, [onTopicActivate]);
+  useEffect(() => { disablePastDatesRef.current = disablePastDates; }, [disablePastDates]);
 
   const [selectedTopic, setSelectedTopic] = useState<CalendarTopic | null>(null);
 
   const plugins = canDrag ? [createDragAndDropPlugin(15)] : [];
+
+  const datePickerConfig = useMemo(
+    () =>
+      teleportDatePicker && typeof document !== 'undefined'
+        ? { teleportTo: document.body as HTMLElement }
+        : undefined,
+    [teleportDatePicker],
+  );
 
   const calendarApp = useCalendarApp(
     {
@@ -63,6 +88,7 @@ export function ContentScheduleCalendar({
       events: mapTopicsToEvents(topics, { fallbackSlotTime, selectedTopicIds }),
       calendars: STATUS_CALENDARS,
       dayBoundaries: { start: '07:00', end: '22:00' },
+      ...(datePickerConfig ? { datePicker: datePickerConfig } : {}),
       callbacks: {
         onEventClick(calendarEvent, uiEvent) {
           const id = String(calendarEvent.id);
@@ -72,7 +98,17 @@ export function ContentScheduleCalendar({
             return;
           }
           const topic = topicsRef.current.find((t) => String(t.id) === id);
-          if (topic) setSelectedTopic(topic);
+          if (topic) {
+            onTopicActivateRef.current?.(topic);
+            setSelectedTopic(topic);
+          }
+        },
+        onBeforeEventUpdate(_oldEvent, newEvent) {
+          if (!disablePastDatesRef.current) return true;
+          const plain = eventStartToPlainDate(newEvent.start);
+          if (!plain) return true;
+          const today = Temporal.Now.plainDateISO();
+          return Temporal.PlainDate.compare(plain, today) >= 0;
         },
         onEventUpdate(event) {
           const change = extractDateFromStart(event.start);
@@ -104,8 +140,10 @@ export function ContentScheduleCalendar({
 
       {selectedTopic && (
         <EventDetailAndEdit
+          key={String(selectedTopic.id)}
           topic={selectedTopic}
           defaultSlotTime={fallbackSlotTime}
+          minSelectableDateIso={disablePastDates ? Temporal.Now.plainDateISO().toString() : undefined}
           onClose={() => setSelectedTopic(null)}
           onSave={(patch) => {
             onPatchRef.current?.(selectedTopic.id, patch);

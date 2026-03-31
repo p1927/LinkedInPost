@@ -20,6 +20,7 @@ import { topicLabelForQueueActions, topicNeedsFullTooltip, truncateTopicForUi } 
 import {
   ContentScheduleCalendar,
   deriveCalendarFieldsFromSheetRow,
+  localDateIsoToday,
   sheetRowsToCalendarTopics,
   type CalendarTopic,
   type TopicScheduleChange,
@@ -165,6 +166,8 @@ export function DashboardQueue({
   const handleCalendarScheduleChange = useCallback(
     (change: TopicScheduleChange) => {
       void (async () => {
+        const today = localDateIsoToday();
+        if (change.newDate < today) return;
         const row = rows.find((r) => String(r.topicId).trim() === change.id.trim());
         if (!row) return;
         const time = change.newStartTime ?? '09:00';
@@ -186,6 +189,7 @@ export function DashboardQueue({
           patch.startTime !== undefined ? patch.startTime.trim() : (base.startTime ?? '');
         if (patch.date !== undefined || patch.startTime !== undefined) {
           if (!nextDate) return;
+          if (nextDate < localDateIsoToday()) return;
           const postTime = nextTime ? `${nextDate} ${nextTime}` : nextDate;
           await onUpdatePostSchedule(row, postTime);
         }
@@ -364,16 +368,22 @@ export function DashboardQueue({
               </p>
             </div>
           ) : (
-            <div className="glass-inset overflow-hidden rounded-2xl border border-violet-200/50 shadow-sm">
+            <div className="glass-inset overflow-visible rounded-2xl border border-violet-200/50 shadow-sm">
               <ContentScheduleCalendar
                 topics={calendarTopics}
                 onTopicScheduleChange={handleCalendarScheduleChange}
                 onTopicPatch={handleCalendarTopicPatch}
                 onTopicDelete={handleCalendarDelete}
+                onTopicActivate={(topic) => {
+                  const payload = topic.payload as SheetRow | undefined;
+                  if (payload) onSelectTopicRow(payload);
+                }}
                 selectedTopicIds={selectedTopicIds}
                 onTopicSelectionToggle={toggleTopicSelectionById}
                 initialView="month-grid"
-                className="csc-compact"
+                disablePastDates
+                teleportDatePicker
+                className="csc-compact csc-topics-queue"
               />
             </div>
           )

@@ -61,6 +61,7 @@ function getPostPreviewText(payload: unknown): string | null {
 export function EventDetailAndEdit({
   topic,
   defaultSlotTime,
+  minSelectableDateIso,
   onClose,
   onSave,
   onDelete,
@@ -68,6 +69,8 @@ export function EventDetailAndEdit({
   topic: CalendarTopic;
   /** Shown when `topic.startTime` is missing (matches calendar fallback slot). */
   defaultSlotTime: string;
+  /** When set, date picker cannot go before this `YYYY-MM-DD` (local). */
+  minSelectableDateIso?: string;
   onClose: () => void;
   onSave: (patch: Partial<CalendarTopic>) => void;
   onDelete?: () => void;
@@ -83,6 +86,9 @@ export function EventDetailAndEdit({
   const previewText = getPostPreviewText(topic.payload);
 
   function handleSave() {
+    if (minSelectableDateIso?.trim() && date.trim() && date < minSelectableDateIso.trim()) {
+      return;
+    }
     const patch: Partial<CalendarTopic> = {};
     if (date !== topic.date) patch.date = date;
     if (startTime !== (topic.startTime ?? '')) patch.startTime = startTime || undefined;
@@ -230,7 +236,13 @@ export function EventDetailAndEdit({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-slate-600">Date</label>
-                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9 text-sm" />
+                  <Input
+                    type="date"
+                    value={date}
+                    min={minSelectableDateIso?.trim() || undefined}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="h-9 text-sm"
+                  />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-slate-600">Time <span className="font-normal text-slate-400">(optional)</span></label>
