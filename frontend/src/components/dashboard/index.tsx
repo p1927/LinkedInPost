@@ -424,6 +424,7 @@ export function Dashboard({
       getQueueStatusVariant={queueStatusToBadgeVariant}
       triggerRowGithubAction={queueHook.triggerRowGithubAction}
       actionLoading={queueHook.actionLoading}
+      draftDispatchPendingTopicIds={queueHook.draftDispatchPendingTopicIds}
       session={session}
       onOpenTopicReview={(row) => navigate(topicEditorPathForRow(row))}
       selectedTopicId={railSelectedTopicId}

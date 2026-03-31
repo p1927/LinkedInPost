@@ -30,6 +30,7 @@ export function DashboardQueue({
   getQueueStatusVariant,
   triggerRowGithubAction,
   actionLoading,
+  draftDispatchPendingTopicIds,
   session,
   onOpenTopicReview,
   selectedTopicId,
@@ -51,6 +52,8 @@ export function DashboardQueue({
   getQueueStatusVariant: (status: string) => BadgeVariant;
   triggerRowGithubAction: (row: SheetRow, action: 'draft' | 'publish') => Promise<void>;
   actionLoading: string | null;
+  /** Topic IDs where draft was dispatched; that row stays disabled with busy UI until status updates. */
+  draftDispatchPendingTopicIds: readonly string[];
   session: AppSession;
   onOpenTopicReview: (row: SheetRow) => void;
   selectedTopicId: string | null;
@@ -147,6 +150,10 @@ export function DashboardQueue({
               const dateRaw = row.date?.trim() ?? '';
               const dateLabel = formatQueueDate(dateRaw);
               const actionTopic = topicLabelForQueueActions(row.topic);
+              const topicIdKey = String(row.topicId ?? '').trim();
+              const draftDispatchSentBusy = topicIdKey !== '' && draftDispatchPendingTopicIds.includes(topicIdKey);
+              const draftActionKey = buildRowActionKey('draft', row);
+              const draftButtonBusy = actionLoading === draftActionKey || draftDispatchSentBusy;
               const isSelected =
                 selectedTopicId !== null && String(row.topicId).trim() === String(selectedTopicId).trim();
               return (
@@ -216,27 +223,30 @@ export function DashboardQueue({
                           void triggerRowGithubAction(row, 'draft');
                         }}
                         disabled={
-                          actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
+                          actionLoading !== null ||
+                          draftDispatchSentBusy ||
+                          !session.config.githubRepo ||
+                          !session.config.hasGitHubToken
                         }
-                        aria-busy={actionLoading === buildRowActionKey('draft', row)}
+                        aria-busy={draftButtonBusy}
                         title={
                           !session.config.githubRepo || !session.config.hasGitHubToken
                             ? 'Configure GitHub repo and token in Settings to enable drafting'
-                            : actionLoading === buildRowActionKey('draft', row)
-                              ? 'Draft generation in progress…'
-                              : 'Generate draft'
+                            : draftDispatchSentBusy
+                              ? 'Draft job sent — GitHub is generating; use Refresh until this row shows Drafted'
+                              : actionLoading === draftActionKey
+                                ? 'Sending draft request…'
+                                : 'Generate draft'
                         }
                         aria-label={`Generate draft for ${actionTopic}`}
                         className={rowActionClass}
                       >
-                        {actionLoading === buildRowActionKey('draft', row) ? (
+                        {draftButtonBusy ? (
                           <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
                         ) : (
                           <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         )}
-                        <span>
-                          {actionLoading === buildRowActionKey('draft', row) ? 'Drafting…' : 'Draft'}
-                        </span>
+                        <span>{draftButtonBusy ? 'Drafting…' : 'Draft'}</span>
                       </Button>
                     ) : null}
 

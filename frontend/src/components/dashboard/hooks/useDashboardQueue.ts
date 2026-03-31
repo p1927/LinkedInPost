@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { type SheetRow } from '../../../services/sheets';
 import type { NewsResearchSearchPayload, NewsResearchSearchResult } from '../../../services/backendApi';
 import { type GenerationRequest, type QuickChangePreviewResult, type VariantsPreviewResponse } from '../../../services/backendApi';
@@ -18,6 +18,9 @@ import {
   parseRowImageUrls,
   serializeRowImageUrls,
 } from '@/services/selectedImageUrls';
+
+/** Max time to keep a row's Draft control busy after dispatch if the sheet never updates. */
+const DRAFT_DISPATCH_PENDING_MAX_MS = 20 * 60 * 1000;
 
 export function useDashboardQueue({
   idToken,
@@ -69,8 +72,34 @@ export function useDashboardQueue({
   const [newTopic, setNewTopic] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
+  /** Topic IDs with a draft GitHub dispatch already sent; row stays busy until sheet leaves Pending or timeout. */
+  const [draftDispatchPendingTopicIds, setDraftDispatchPendingTopicIds] = useState<string[]>([]);
+  const draftPendingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const { showAlert, showConfirm } = useAlert();
+
+  useEffect(() => {
+    return () => {
+      draftPendingTimersRef.current.forEach(clearTimeout);
+      draftPendingTimersRef.current.clear();
+    };
+  }, []);
+
+  useEffect(() => {
+    setDraftDispatchPendingTopicIds((prev) => {
+      const next = prev.filter((id) => {
+        const row = rows.find((r) => (r.topicId || '').trim() === id);
+        const keep = Boolean(row && getNormalizedRowStatus(row.status) === 'pending');
+        if (!keep) {
+          const t = draftPendingTimersRef.current.get(id);
+          if (t) clearTimeout(t);
+          draftPendingTimersRef.current.delete(id);
+        }
+        return keep;
+      });
+      return next.length === prev.length && next.every((x, i) => x === prev[i]) ? prev : next;
+    });
+  }, [rows]);
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -258,10 +287,24 @@ export function useDashboardQueue({
         actionKey,
       );
       if (ok) {
-        await loadData(true);
         if (action === 'draft') {
+          const tid = (row.topicId || '').trim();
+          if (tid) {
+            setDraftDispatchPendingTopicIds((prev) => (prev.includes(tid) ? prev : [...prev, tid]));
+            const timers = draftPendingTimersRef.current;
+            const old = timers.get(tid);
+            if (old) clearTimeout(old);
+            timers.set(
+              tid,
+              setTimeout(() => {
+                timers.delete(tid);
+                setDraftDispatchPendingTopicIds((p) => p.filter((x) => x !== tid));
+              }, DRAFT_DISPATCH_PENDING_MAX_MS),
+            );
+          }
           onDraftWorkflowStarted?.();
         }
+        await loadData(true);
       }
     } finally {
       setActionLoading(null);
@@ -715,6 +758,7 @@ export function useDashboardQueue({
     newTopic,
     setNewTopic,
     actionLoading,
+    draftDispatchPendingTopicIds,
     deletingRowIndex,
     loadData,
     handleAddTopic,
