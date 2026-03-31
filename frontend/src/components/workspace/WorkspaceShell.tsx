@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { googleLogout } from '@react-oauth/google';
 import { WorkspaceChromeProvider } from './WorkspaceChromeContext';
 import { AppSidebar, readSidebarCollapsed, writeSidebarCollapsed, type WorkspaceNavPage } from './AppSidebar';
@@ -31,16 +31,14 @@ export function WorkspaceShell({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   /** On the editor route, user may expand the rail via toggle; otherwise we keep it collapsed for width. */
   const [editorSidebarExpanded, setEditorSidebarExpanded] = useState(false);
-  const prevAutoCollapseRef = useRef(autoCollapseMainSidebar);
 
+  // Collapse the rail whenever we enter the editor route (autoCollapseMainSidebar becomes true).
+  // Does nothing when leaving — the user's expanded state is intentionally preserved until next entry.
   useEffect(() => {
-    if (prevAutoCollapseRef.current !== autoCollapseMainSidebar) {
-      prevAutoCollapseRef.current = autoCollapseMainSidebar;
-      if (autoCollapseMainSidebar) {
-        setEditorSidebarExpanded(false);
-      }
+    if (autoCollapseMainSidebar) {
+      setEditorSidebarExpanded(false);
     }
-  });
+  }, [autoCollapseMainSidebar]);
 
   const sidebarRailCollapsed = autoCollapseMainSidebar ? !editorSidebarExpanded : sidebarCollapsed;
   const effectiveMobileSidebarOpen = autoCollapseMainSidebar ? false : mobileSidebarOpen;

@@ -293,7 +293,7 @@ function App() {
                                 : 'Use an approved Google account to open the workspace.'}
                             </p>
                           </div>
-                          <div className="flex justify-center pt-2">
+                          <div className="w-full pt-2">
                             <GoogleLoginButton onLogin={handleLogin} onSignInIntent={() => setErrorMessage('')} />
                           </div>
                           {isDevGoogleAuthBypassEnabled() && getDevGoogleAuthBypassToken() ? (

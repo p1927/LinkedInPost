@@ -1,4 +1,4 @@
-import { normalizeDeliveryImageUrl } from '../media';
+import { fetchImageAsset, normalizeDeliveryImageUrl } from '../media';
 
 export interface TelegramSendRequest {
   botToken: string;
@@ -68,6 +68,31 @@ function resolveTelegramPhotoUrls(request: TelegramSendRequest): string[] {
   return one ? [one] : [];
 }
 
+/** Telegram fetches URL-based photos from its own servers; many origins (e.g. GCS) block or fail for those requests. Upload bytes from the worker instead. */
+function imageFilenameForTelegram(index: number, contentType: string): string {
+  const ct = contentType.toLowerCase();
+  if (ct.includes('png')) {
+    return `photo${index}.png`;
+  }
+  if (ct.includes('webp')) {
+    return `photo${index}.webp`;
+  }
+  if (ct.includes('gif')) {
+    return `photo${index}.gif`;
+  }
+  return `photo${index}.jpg`;
+}
+
+async function fetchTelegramPhotoBlobs(urls: string[]): Promise<Array<{ blob: Blob; filename: string }>> {
+  const out: Array<{ blob: Blob; filename: string }> = [];
+  for (let i = 0; i < urls.length; i += 1) {
+    const { bytes, contentType } = await fetchImageAsset(urls[i]!);
+    const filename = imageFilenameForTelegram(i, contentType);
+    out.push({ blob: new Blob([bytes], { type: contentType }), filename });
+  }
+  return out;
+}
+
 export async function sendTelegramMessage(request: TelegramSendRequest): Promise<{ messageId: string | null }> {
   const urls = resolveTelegramPhotoUrls(request);
 
@@ -90,14 +115,17 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
   }
 
   if (urls.length === 1) {
+    const [{ blob, filename }] = await fetchTelegramPhotoBlobs(urls);
+    const form = new FormData();
+    form.append('chat_id', request.chatId);
+    form.append('photo', blob, filename);
+    if (request.text) {
+      form.append('caption', request.text);
+    }
+
     const response = await fetch(`https://api.telegram.org/bot${request.botToken}/sendPhoto`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: request.chatId,
-        photo: urls[0],
-        caption: request.text,
-      }),
+      body: form,
     });
     const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
     if (!response.ok || !payload?.ok) {
@@ -107,19 +135,22 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
     return { messageId: r?.message_id ? String(r.message_id) : null };
   }
 
-  const media = urls.map((url, index) =>
-    index === 0
-      ? { type: 'photo' as const, media: url, caption: request.text }
-      : { type: 'photo' as const, media: url },
-  );
+  const blobs = await fetchTelegramPhotoBlobs(urls);
+  const media = blobs.map((_, index) => {
+    const base = { type: 'photo' as const, media: `attach://photo${index}` };
+    return index === 0 ? { ...base, caption: request.text } : base;
+  });
+
+  const form = new FormData();
+  form.append('chat_id', request.chatId);
+  form.append('media', JSON.stringify(media));
+  blobs.forEach((b, index) => {
+    form.append(`photo${index}`, b.blob, b.filename);
+  });
 
   const response = await fetch(`https://api.telegram.org/bot${request.botToken}/sendMediaGroup`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: request.chatId,
-      media,
-    }),
+    body: form,
   });
 
   const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
