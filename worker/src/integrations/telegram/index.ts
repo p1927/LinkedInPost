@@ -1,4 +1,8 @@
-import { fetchImageAsset, normalizeDeliveryImageUrl } from '../media';
+import {
+  fetchImageAsset,
+  normalizeDeliveryImageUrl,
+  rasterBytesQualifyForTelegramPhoto,
+} from '../media';
 
 export interface TelegramSendRequest {
   botToken: string;
@@ -83,14 +87,33 @@ function imageFilenameForTelegram(index: number, contentType: string): string {
   return `photo${index}.jpg`;
 }
 
-async function fetchTelegramPhotoBlobs(urls: string[]): Promise<Array<{ blob: Blob; filename: string }>> {
-  const out: Array<{ blob: Blob; filename: string }> = [];
+async function fetchTelegramImageParts(
+  urls: string[],
+): Promise<Array<{ bytes: ArrayBuffer; blob: Blob; filename: string }>> {
+  const out: Array<{ bytes: ArrayBuffer; blob: Blob; filename: string }> = [];
   for (let i = 0; i < urls.length; i += 1) {
     const { bytes, contentType } = await fetchImageAsset(urls[i]!);
     const filename = imageFilenameForTelegram(i, contentType);
-    out.push({ blob: new Blob([bytes], { type: contentType }), filename });
+    out.push({ bytes, blob: new Blob([bytes], { type: contentType }), filename });
   }
   return out;
+}
+
+async function postTelegramForm(
+  botToken: string,
+  method: 'sendPhoto' | 'sendDocument' | 'sendMediaGroup',
+  form: FormData,
+  chatId: string,
+): Promise<TelegramApiResponse | null> {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+    method: 'POST',
+    body: form,
+  });
+  const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
+  if (!response.ok || !payload?.ok) {
+    throw new Error(formatTelegramApiError(payload?.description, chatId, response.status, 'delivery'));
+  }
+  return payload;
 }
 
 export async function sendTelegramMessage(request: TelegramSendRequest): Promise<{ messageId: string | null }> {
@@ -115,54 +138,66 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
   }
 
   if (urls.length === 1) {
-    const [{ blob, filename }] = await fetchTelegramPhotoBlobs(urls);
+    const [{ bytes, blob, filename }] = await fetchTelegramImageParts(urls);
+    const asPhoto = rasterBytesQualifyForTelegramPhoto(bytes);
     const form = new FormData();
     form.append('chat_id', request.chatId);
-    form.append('photo', blob, filename);
+    form.append(asPhoto ? 'photo' : 'document', blob, filename);
     if (request.text) {
       form.append('caption', request.text);
     }
 
-    const response = await fetch(`https://api.telegram.org/bot${request.botToken}/sendPhoto`, {
-      method: 'POST',
-      body: form,
-    });
-    const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
-    if (!response.ok || !payload?.ok) {
-      throw new Error(formatTelegramApiError(payload?.description, request.chatId, response.status, 'delivery'));
-    }
-    const r = payload.result as { message_id?: number } | undefined;
+    const payload = await postTelegramForm(
+      request.botToken,
+      asPhoto ? 'sendPhoto' : 'sendDocument',
+      form,
+      request.chatId,
+    );
+    const r = payload?.result as { message_id?: number } | undefined;
     return { messageId: r?.message_id ? String(r.message_id) : null };
   }
 
-  const blobs = await fetchTelegramPhotoBlobs(urls);
-  const media = blobs.map((_, index) => {
-    const base = { type: 'photo' as const, media: `attach://photo${index}` };
-    return index === 0 ? { ...base, caption: request.text } : base;
-  });
+  const parts = await fetchTelegramImageParts(urls);
+  const allAsPhotos = parts.every((p) => rasterBytesQualifyForTelegramPhoto(p.bytes));
 
-  const form = new FormData();
-  form.append('chat_id', request.chatId);
-  form.append('media', JSON.stringify(media));
-  blobs.forEach((b, index) => {
-    form.append(`photo${index}`, b.blob, b.filename);
-  });
+  if (allAsPhotos) {
+    const media = parts.map((_, index) => {
+      const base = { type: 'photo' as const, media: `attach://photo${index}` };
+      return index === 0 ? { ...base, caption: request.text } : base;
+    });
 
-  const response = await fetch(`https://api.telegram.org/bot${request.botToken}/sendMediaGroup`, {
-    method: 'POST',
-    body: form,
-  });
+    const form = new FormData();
+    form.append('chat_id', request.chatId);
+    form.append('media', JSON.stringify(media));
+    parts.forEach((b, index) => {
+      form.append(`photo${index}`, b.blob, b.filename);
+    });
 
-  const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
-  if (!response.ok || !payload?.ok) {
-    throw new Error(formatTelegramApiError(payload?.description, request.chatId, response.status, 'delivery'));
+    const payload = await postTelegramForm(request.botToken, 'sendMediaGroup', form, request.chatId);
+    const results = payload?.result;
+    const firstId = Array.isArray(results) ? results[0]?.message_id : results?.message_id;
+    return {
+      messageId: firstId != null ? String(firstId) : null,
+    };
   }
 
-  const results = payload.result;
-  const firstId = Array.isArray(results) ? results[0]?.message_id : results?.message_id;
-  return {
-    messageId: firstId != null ? String(firstId) : null,
-  };
+  let lastMessageId: string | null = null;
+  for (let i = 0; i < parts.length; i += 1) {
+    const { blob, filename } = parts[i]!;
+    const form = new FormData();
+    form.append('chat_id', request.chatId);
+    form.append('document', blob, filename);
+    if (i === 0 && request.text) {
+      form.append('caption', request.text);
+    }
+    const payload = await postTelegramForm(request.botToken, 'sendDocument', form, request.chatId);
+    const r = payload?.result as { message_id?: number } | undefined;
+    if (r?.message_id != null) {
+      lastMessageId = String(r.message_id);
+    }
+  }
+
+  return { messageId: lastMessageId };
 }
 
 export async function verifyTelegramChat(request: TelegramChatVerificationRequest): Promise<TelegramChatVerificationResult> {
