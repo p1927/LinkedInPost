@@ -413,10 +413,10 @@ export function DashboardQueue({
               <div className="min-w-0 flex-1 px-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Topic</span>
               </div>
-              <div className="hidden w-[7.25rem] shrink-0 text-right sm:block sm:w-[8.5rem]">
+              <div className="hidden w-[7.25rem] shrink-0 pr-3 text-right sm:block sm:w-[8.5rem]">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Date</span>
               </div>
-              <div className="w-[152px] shrink-0 pl-1" />
+              <div className="w-[152px] shrink-0 pl-2" />
               <div className="w-9 shrink-0 pl-0.5" />
             </div>
 
@@ -485,7 +485,7 @@ export function DashboardQueue({
                   </div>
 
                   {/* Date column — right-aligned within a fixed width so text sits left of action buttons with column gap */}
-                  <div className="hidden w-[7.25rem] shrink-0 flex-col items-end justify-center gap-0.5 text-right sm:flex sm:w-[8.5rem]">
+                  <div className="hidden w-[7.25rem] shrink-0 flex-col items-end justify-center gap-0.5 pr-3 text-right sm:flex sm:w-[8.5rem]">
                     {dateRaw.trim() ? (
                       <span
                         className="max-w-full truncate text-xs tabular-nums text-muted"
@@ -510,7 +510,7 @@ export function DashboardQueue({
 
                   {/* Actions column — always visible for selected row, revealed on hover for others */}
                   <div className={cn(
-                    'flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-1 transition-opacity duration-150',
+                    'flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-2 transition-opacity duration-150',
                     isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto',
                   )}>
                     {normalizedStatus === 'pending' ? (

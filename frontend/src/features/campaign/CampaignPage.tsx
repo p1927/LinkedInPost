@@ -281,27 +281,23 @@ export function CampaignPage(props: {
   const errorLines = new Set(diagnostics.map((d) => d.line));
 
   return (
-    <div className="w-full px-0 py-8 sm:py-12" ref={pageTopRef}>
-      <div className="mx-auto max-w-5xl px-4 sm:px-8">
+    <div className="w-full px-0 py-4 sm:py-6" ref={pageTopRef}>
+      <div className="mx-auto max-w-6xl px-4 sm:px-8">
         {/* Carousel step nav — page title lives in workspace header */}
         <Carousel
           steps={CAMPAIGN_STEPS}
           currentStep={currentStep}
           onStepChange={handleStepChange}
           disabledSteps={parseResult.ok ? [] : [1]}
-          className="mb-8"
+          className="mb-5"
         />
       </div>
 
       {/* Animated step content */}
       <CarouselContent currentStep={currentStep}>
         {/* Step 0: Import — topic ideas → Claude prompt → paste JSON */}
-        <div className="mx-auto max-w-5xl px-4 sm:px-8">
-          {/* Two-column layout on md+: left = topics + prompt, right = JSON editor */}
-          <div className="flex flex-col gap-5 md:flex-row md:items-stretch md:gap-5">
-
-            {/* Left column: sections 1 + 2 */}
-            <div className="flex flex-col gap-5 md:w-[42%] md:min-w-0">
+        <div className="mx-auto max-w-6xl px-4 sm:px-8">
+          <div className="flex flex-col gap-5">
               {/* Section 1: Topic ideas */}
               <section className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
@@ -356,11 +352,9 @@ export function CampaignPage(props: {
                   </div>
                 </div>
               </section>
-            </div>
 
-            {/* Right column: section 3 — JSON paste (wider, taller) */}
-            <div className="md:flex-1 md:min-w-0">
-              <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {/* Section 3: JSON paste */}
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
                   <div>
@@ -430,14 +424,13 @@ export function CampaignPage(props: {
                     )}
                   </div>
                 </div>
-              </section>
-            </div>
+            </section>
 
           </div>
         </div>
 
         {/* Step 1: Preview & Publish */}
-        <div className="mx-auto max-w-5xl px-4 sm:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-8">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
             {/* Card header: tab switcher + post count */}
