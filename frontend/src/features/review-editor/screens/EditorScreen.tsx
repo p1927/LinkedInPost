@@ -1,6 +1,7 @@
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
 import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { LivePreviewSidebar } from '../components/LivePreviewSidebar';
 import { EditorVariantBar } from '../../variant/components/EditorVariantBar';
@@ -24,14 +25,6 @@ function ResizeHandle() {
 export function EditorScreen() {
   const {
     sheetRow,
-    editorText,
-    setEditorText,
-    selection,
-    setSelection,
-    scope,
-    setScope,
-    editorDirty,
-    handleFormatting,
     handleApprove,
     handlePublishNow,
     publishSubmitting,
@@ -47,6 +40,16 @@ export function EditorScreen() {
     editorStartMediaPanel,
     sheetVariants,
   } = useReviewFlow();
+  const {
+    editorText,
+    setEditorText,
+    selection,
+    setSelection,
+    scope,
+    setScope,
+    editorDirty,
+    handleFormatting,
+  } = useReviewFlowEditor();
 
   const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}`;
 

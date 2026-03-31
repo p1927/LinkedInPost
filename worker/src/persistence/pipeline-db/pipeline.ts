@@ -4,9 +4,9 @@ import type { SheetsGateway } from '../drafts';
 import { mergeTopicWithPipeline, pipelineFieldsFromGooglePipelineRow, sheetRowToPipelineColumns } from './mappers';
 import type { PipelineStateDbRow } from './types';
 
-/** Plain insert; pair with DELETE BY spreadsheet_id + topic_id so upsert works without ON CONFLICT (legacy D1 PK was topic_key). */
+/** Atomic upsert — INSERT OR REPLACE leverages PRIMARY KEY (spreadsheet_id, topic_id) to replace in one statement. */
 const INSERT_PIPELINE_ROW_SQL = `
-INSERT INTO pipeline_state (
+INSERT OR REPLACE INTO pipeline_state (
   spreadsheet_id, topic_id, topic, date, status,
   variant1, variant2, variant3, variant4,
   image_link1, image_link2, image_link3, image_link4,
@@ -23,7 +23,11 @@ INSERT INTO pipeline_state (
 )
 `;
 
-const DELETE_PIPELINE_BY_TOPIC_SQL = `DELETE FROM pipeline_state WHERE spreadsheet_id = ?1 AND topic_id = ?2`;
+const UPDATE_EMAIL_FIELDS_SQL = `
+UPDATE pipeline_state
+SET email_to = ?1, email_cc = ?2, email_bcc = ?3, email_subject = ?4, updated_at = datetime('now')
+WHERE spreadsheet_id = ?5 AND topic_id = ?6
+`;
 
 function normalizeStatus(value: string | null | undefined): string {
   return String(value ?? '').trim().toLowerCase();
@@ -92,15 +96,8 @@ function bindPipelineInsert(stmt: D1PreparedStatement, spreadsheetId: string, ro
   );
 }
 
-function pipelineUpsertStatements(
-  db: D1Database,
-  spreadsheetId: string,
-  row: SheetRow,
-): [D1PreparedStatement, D1PreparedStatement] {
-  const c = sheetRowToPipelineColumns(spreadsheetId, row);
-  const del = db.prepare(DELETE_PIPELINE_BY_TOPIC_SQL).bind(c.spreadsheet_id, c.topic_id);
-  const ins = bindPipelineInsert(db.prepare(INSERT_PIPELINE_ROW_SQL), spreadsheetId, row);
-  return [del, ins];
+function pipelineUpsertStatement(db: D1Database, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
+  return bindPipelineInsert(db.prepare(INSERT_PIPELINE_ROW_SQL), spreadsheetId, row);
 }
 
 export class PipelineStore {
@@ -214,7 +211,7 @@ export class PipelineStore {
 
   async upsertFull(spreadsheetId: string, row: SheetRow): Promise<void> {
     await this.ensureWorkspace(spreadsheetId);
-    await this.db.batch(pipelineUpsertStatements(this.db, spreadsheetId, row));
+    await pipelineUpsertStatement(this.db, spreadsheetId, row).run();
   }
 
   async saveDraftVariants(
@@ -298,13 +295,11 @@ export class PipelineStore {
     emailBcc: string,
     emailSubject: string,
   ): Promise<{ success: true }> {
-    await this.upsertFull(spreadsheetId, {
-      ...row,
-      emailTo,
-      emailCc,
-      emailBcc,
-      emailSubject,
-    });
+    const topicId = String(row.topicId || '').trim();
+    await this.db
+      .prepare(UPDATE_EMAIL_FIELDS_SQL)
+      .bind(emailTo, emailCc, emailBcc, emailSubject, spreadsheetId, topicId)
+      .run();
     return { success: true };
   }
 
@@ -442,7 +437,7 @@ export class PipelineStore {
     await sheets.appendTopicRows(spreadsheetId, topicsValues);
 
     await this.ensureWorkspace(spreadsheetId);
-    const pairs: D1PreparedStatement[] = [];
+    const stmts: D1PreparedStatement[] = [];
     for (const p of posts) {
       const row: SheetRow = {
         rowIndex: 0,
@@ -470,12 +465,11 @@ export class PipelineStore {
         topicGenerationRules: p.topicGenerationRules,
         generationTemplateId: p.generationTemplateId,
       };
-      const [del, ins] = pipelineUpsertStatements(this.db, spreadsheetId, row);
-      pairs.push(del, ins);
+      stmts.push(pipelineUpsertStatement(this.db, spreadsheetId, row));
     }
 
-    for (let i = 0; i < pairs.length; i += 128) {
-      await this.db.batch(pairs.slice(i, i + 128));
+    for (let i = 0; i < stmts.length; i += 100) {
+      await this.db.batch(stmts.slice(i, i + 100));
     }
 
     return { success: true, imported: posts.length };

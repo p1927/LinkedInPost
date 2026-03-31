@@ -2,19 +2,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LinkedInPostPreview } from '../../../components/LinkedInPostPreview';
 import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 
 export function LivePreviewSidebar() {
   const {
     selectedImageUrls,
     previewCollapsed,
     setPreviewCollapsed,
-    editorText,
     deliveryChannel,
     previewAuthorName,
     setActiveWorkspacePanel,
     emailTo,
     emailSubject,
   } = useReviewFlow();
+  const { editorText } = useReviewFlowEditor();
 
   return (
     <aside className="order-3 min-h-0 min-w-0 px-3 py-3 xl:order-none xl:max-h-full xl:overflow-y-auto">

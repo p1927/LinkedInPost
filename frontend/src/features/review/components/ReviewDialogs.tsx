@@ -1,6 +1,7 @@
 import { Dialog } from '../../../components/Dialog';
 import { CompareDialog } from '../../compare/CompareDialog';
 import { useReviewFlow } from '../context/ReviewFlowContext';
+import { useReviewFlowEditor } from '../context/ReviewFlowEditorContext';
 
 export function ReviewDialogs() {
   const {
@@ -10,23 +11,25 @@ export function ReviewDialogs() {
     openMediaAfterVariantConfirm,
     sheetVariants,
     routed,
-    applySheetVariantBase,
     setActiveWorkspacePanel,
     pendingClose,
     setPendingClose,
     onCancel,
     pendingNavigateToVariants,
     setPendingNavigateToVariants,
+    setReviewPhase,
+  } = useReviewFlow();
+  const {
+    applySheetVariantBase,
     setEditorText,
     editorBaselineText,
     setSelection,
     setInstruction,
     setQuickChangePreview,
     setVariantsPreview,
-    setReviewPhase,
     compareState,
     setCompareState,
-  } = useReviewFlow();
+  } = useReviewFlowEditor();
 
   return (
     <>

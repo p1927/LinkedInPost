@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'react';
 import { DEFAULT_NEWS_RESEARCH_CONFIG } from '../../../services/configService';
-import { type ReviewFlowContextValue, type ReviewFlowProviderProps } from './types';
+import { type ReviewFlowContextValue, type ReviewFlowEditorContextValue, type ReviewFlowProviderProps } from './types';
 import { useReviewFlowState } from './useReviewFlowState';
 import { useReviewFlowActions } from './useReviewFlowActions';
+import { ReviewFlowEditorContext } from './ReviewFlowEditorContext';
 
 const ReviewFlowContext = createContext<ReviewFlowContextValue | null>(null);
 
@@ -19,14 +20,50 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
   const state = useReviewFlowState(props);
   const actions = useReviewFlowActions(props, state);
 
-  // We omit `setChrome` from the context value since it's an internal detail of the state hook
+  // Internal-only fields stripped from context
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { setChrome, effectiveGenerationRules, suppressAutoImageSelection, setSuppressAutoImageSelection, ...restState } =
-    state;
+  const { setChrome, effectiveGenerationRules, suppressAutoImageSelection, setSuppressAutoImageSelection, setGenerationLoading, setAlternateImageOptions, setUploadedImageOptions, setSubmitting, setPreviewVariantSaveByIndex, setPreviewVariantSaveErrors, ...restState } = state;
   void suppressAutoImageSelection;
   void setSuppressAutoImageSelection;
 
-  const value: ReviewFlowContextValue = {
+  // Editor-sensitive context (re-renders on every keystroke / generation change)
+  const editorValue: ReviewFlowEditorContextValue = {
+    editorText: restState.editorText,
+    setEditorText: restState.setEditorText,
+    editorBaselineText: restState.editorBaselineText,
+    setEditorBaselineText: restState.setEditorBaselineText,
+    selection: restState.selection,
+    setSelection: restState.setSelection,
+    scope: restState.scope,
+    setScope: restState.setScope,
+    instruction: restState.instruction,
+    setInstruction: restState.setInstruction,
+    generationLoading: restState.generationLoading,
+    quickChangePreview: restState.quickChangePreview,
+    setQuickChangePreview: restState.setQuickChangePreview,
+    variantsPreview: restState.variantsPreview,
+    setVariantsPreview: restState.setVariantsPreview,
+    previewVariantSaveByIndex: restState.previewVariantSaveByIndex,
+    previewVariantSaveErrors: restState.previewVariantSaveErrors,
+    compareState: restState.compareState,
+    setCompareState: restState.setCompareState,
+    effectiveScope: restState.effectiveScope,
+    aiRefineBlocked: restState.aiRefineBlocked,
+    aiRefineBlockedReason: restState.aiRefineBlockedReason,
+    currentTargetText: restState.currentTargetText,
+    editorDirty: restState.editorDirty,
+    applySheetVariantBase: actions.applySheetVariantBase,
+    handleGenerateQuickChange: actions.handleGenerateQuickChange,
+    handleGenerateVariants: actions.handleGenerateVariants,
+    openCompare: actions.openCompare,
+    handleApplyQuickChange: actions.handleApplyQuickChange,
+    handleApplyVariant: actions.handleApplyVariant,
+    handleSavePreviewVariantAtIndex: actions.handleSavePreviewVariantAtIndex,
+    handleFormatting: actions.handleFormatting,
+  };
+
+  // Stable context — does NOT change on typing
+  const stableValue: ReviewFlowContextValue = {
     // Props
     row: props.row,
     deliveryChannel: props.deliveryChannel,
@@ -53,10 +90,86 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     onSearchNewsResearch: props.onSearchNewsResearch,
     onListNewsResearchHistory: props.onListNewsResearchHistory,
     onGetNewsResearchSnapshot: props.onGetNewsResearchSnapshot,
-
-    ...restState,
-    ...actions,
+    // State
+    sheetRow: restState.sheetRow,
+    setSheetRow: restState.setSheetRow,
+    postTime: restState.postTime,
+    setPostTime: restState.setPostTime,
+    selectedImageUrls: restState.selectedImageUrls,
+    setSelectedImageUrls: restState.setSelectedImageUrls,
+    handleSelectImageOption: actions.handleSelectImageOption,
+    handleClearSelectedImage: actions.handleClearSelectedImage,
+    alternateImageOptions: restState.alternateImageOptions,
+    uploadedImageOptions: restState.uploadedImageOptions,
+    pendingVariantIndex: restState.pendingVariantIndex,
+    setPendingVariantIndex: restState.setPendingVariantIndex,
+    openMediaAfterVariantConfirm: restState.openMediaAfterVariantConfirm,
+    setOpenMediaAfterVariantConfirm: restState.setOpenMediaAfterVariantConfirm,
+    pendingClose: restState.pendingClose,
+    setPendingClose: restState.setPendingClose,
+    pendingNavigateToVariants: restState.pendingNavigateToVariants,
+    setPendingNavigateToVariants: restState.setPendingNavigateToVariants,
+    submitting: restState.submitting,
+    activeWorkspacePanel: restState.activeWorkspacePanel,
+    setActiveWorkspacePanel: restState.setActiveWorkspacePanel,
+    reviewPhase: restState.reviewPhase,
+    setReviewPhase: restState.setReviewPhase,
+    editorVariantIndex: restState.editorVariantIndex,
+    setEditorVariantIndex: restState.setEditorVariantIndex,
+    topicExpanded: restState.topicExpanded,
+    setTopicExpanded: restState.setTopicExpanded,
+    previewCollapsed: restState.previewCollapsed,
+    setPreviewCollapsed: restState.setPreviewCollapsed,
+    pickCarouselIndex: restState.pickCarouselIndex,
+    setPickCarouselIndex: restState.setPickCarouselIndex,
+    emailTo: restState.emailTo,
+    setEmailTo: restState.setEmailTo,
+    emailCc: restState.emailCc,
+    setEmailCc: restState.setEmailCc,
+    emailBcc: restState.emailBcc,
+    setEmailBcc: restState.setEmailBcc,
+    emailSubject: restState.emailSubject,
+    setEmailSubject: restState.setEmailSubject,
+    savingEmailFields: actions.savingEmailFields,
+    // Computed
+    sheetVariants: restState.sheetVariants,
+    showPickPhase: restState.showPickPhase,
+    showEditorLayout: restState.showEditorLayout,
+    topicTitleInWorkspaceChrome: restState.topicTitleInWorkspaceChrome,
+    topicIsLong: restState.topicIsLong,
+    generatedImageOptions: restState.generatedImageOptions,
+    imageOptions: restState.imageOptions,
+    hasUnsavedReviewState: restState.hasUnsavedReviewState,
+    previewReadyCount: restState.previewReadyCount,
+    // Refs
+    topicHeadingRef: restState.topicHeadingRef,
+    // Functions
+    leaveToTopics: actions.leaveToTopics,
+    requestNavigateToVariants: actions.requestNavigateToVariants,
+    handleFetchMoreImageOptions: actions.handleFetchMoreImageOptions,
+    handleUploadImageOption: actions.handleUploadImageOption,
+    handleApprove: actions.handleApprove,
+    handlePublishNow: actions.handlePublishNow,
+    publishSubmitting: actions.publishSubmitting,
+    handleLoadSheetVariant: actions.handleLoadSheetVariant,
+    handleOpenMediaFromPickTile: actions.handleOpenMediaFromPickTile,
+    changePickCarouselBy: actions.changePickCarouselBy,
+    handlePickCarouselKeyDown: actions.handlePickCarouselKeyDown,
+    handleSaveTopicRules: actions.handleSaveTopicRules,
+    savingTopicRules: actions.savingTopicRules,
+    postTemplates: restState.postTemplates,
+    handleSaveGenerationTemplateId: actions.handleSaveGenerationTemplateId,
+    savingGenerationTemplateId: actions.savingGenerationTemplateId,
+    handleSaveEmailFields: actions.handleSaveEmailFields,
+    researchContextArticles: restState.researchContextArticles,
+    setResearchContextArticles: restState.setResearchContextArticles,
   };
 
-  return <ReviewFlowContext.Provider value={value}>{props.children}</ReviewFlowContext.Provider>;
+  return (
+    <ReviewFlowContext.Provider value={stableValue}>
+      <ReviewFlowEditorContext.Provider value={editorValue}>
+        {props.children}
+      </ReviewFlowEditorContext.Provider>
+    </ReviewFlowContext.Provider>
+  );
 }

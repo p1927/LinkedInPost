@@ -3,26 +3,13 @@ import { GenerationPanel } from '../../generation/GenerationPanel';
 import { RulesPanel } from '../../rules/RulesPanel';
 import { ImageAssetManager } from '../../../components/ImageAssetManager';
 import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 import { ResearcherPanel } from '../../news-research';
 
 export function EditorSidebar() {
   const {
     activeWorkspacePanel,
     setActiveWorkspacePanel,
-    instruction,
-    setInstruction,
-    generationLoading,
-    quickChangePreview,
-    variantsPreview,
-    handleGenerateQuickChange,
-    handleGenerateVariants,
-    handleApplyQuickChange,
-    handleApplyVariant,
-    previewVariantSaveByIndex,
-    previewVariantSaveErrors,
-    handleSavePreviewVariantAtIndex,
-    aiRefineBlocked,
-    aiRefineBlockedReason,
     sheetRow,
     imageOptions,
     selectedImageUrls,
@@ -52,6 +39,22 @@ export function EditorSidebar() {
     onListNewsResearchHistory,
     onGetNewsResearchSnapshot,
   } = useReviewFlow();
+  const {
+    instruction,
+    setInstruction,
+    generationLoading,
+    quickChangePreview,
+    variantsPreview,
+    handleGenerateQuickChange,
+    handleGenerateVariants,
+    handleApplyQuickChange,
+    handleApplyVariant,
+    previewVariantSaveByIndex,
+    previewVariantSaveErrors,
+    handleSavePreviewVariantAtIndex,
+    aiRefineBlocked,
+    aiRefineBlockedReason,
+  } = useReviewFlowEditor();
 
   return (
     <aside
