@@ -10,6 +10,35 @@ import { EventDetailAndEdit } from './EventDetailAndEdit';
 import { eventStartToPlainDate } from './calendarTemporal';
 import type { CalendarTopic, TopicScheduleChange } from './types';
 
+/** Schedule-X runtime shape (config is not exposed on public CalendarApp typings). */
+type ScheduleXCalendarInternals = {
+  $app: {
+    config: {
+      weekOptions: {
+        value: {
+          gridHeight: number;
+          gridStep: number;
+          nDays: number;
+          eventWidth: number;
+          eventOverlap: boolean;
+          timeAxisFormatOptions: Intl.DateTimeFormatOptions;
+        };
+      };
+      monthGridOptions: { value: { nEventsPerDay: number } };
+    };
+  };
+};
+
+function eventsPerDayForWrapperHeight(px: number): number {
+  if (px < 340) return 3;
+  if (px < 420) return 4;
+  if (px < 500) return 5;
+  if (px < 580) return 6;
+  if (px < 660) return 7;
+  if (px < 760) return 8;
+  return 9;
+}
+
 export type CalendarView = 'week' | 'month-grid' | 'day';
 
 export interface ContentScheduleCalendarProps {
@@ -88,6 +117,9 @@ export function ContentScheduleCalendar({
       events: mapTopicsToEvents(topics, { fallbackSlotTime, selectedTopicIds }),
       calendars: STATUS_CALENDARS,
       dayBoundaries: { start: '07:00', end: '22:00' },
+      /** Initial guess; ResizeObserver below matches grid pixel height to the wrapper (viewport). */
+      weekOptions: { gridHeight: 520, gridStep: 60 },
+      monthGridOptions: { nEventsPerDay: 5 },
       ...(datePickerConfig ? { datePicker: datePickerConfig } : {}),
       callbacks: {
         onEventClick(calendarEvent, uiEvent) {
@@ -123,6 +155,57 @@ export function ContentScheduleCalendar({
     plugins,
   );
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Fit week/day time grid and month “N events per day” to the actual wrapper size (vw/vh / panel).
+  useEffect(() => {
+    if (!calendarApp) return;
+    const root = wrapperRef.current;
+    if (!root) return;
+
+    const internal = calendarApp as unknown as ScheduleXCalendarInternals;
+    let raf = 0;
+
+    const apply = () => {
+      const h = root.getBoundingClientRect().height;
+      if (h < 8) return;
+
+      const headerEl = root.querySelector('.sx__calendar-header');
+      const headerH =
+        headerEl instanceof HTMLElement ? headerEl.getBoundingClientRect().height : 76;
+      const gridH = Math.max(200, Math.round(h - headerH - 6));
+
+      const wo = internal.$app.config.weekOptions.value;
+      if (wo.gridHeight !== gridH) {
+        internal.$app.config.weekOptions.value = { ...wo, gridHeight: gridH };
+      }
+
+      const n = eventsPerDayForWrapperHeight(h);
+      const mo = internal.$app.config.monthGridOptions.value;
+      if (mo.nEventsPerDay !== n) {
+        internal.$app.config.monthGridOptions.value = { ...mo, nEventsPerDay: n };
+      }
+    };
+
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(apply);
+    };
+
+    const ro = new ResizeObserver(schedule);
+    ro.observe(root);
+    schedule();
+    const postPaint = requestAnimationFrame(() => {
+      requestAnimationFrame(apply);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      cancelAnimationFrame(postPaint);
+      ro.disconnect();
+    };
+  }, [calendarApp]);
+
   // Sync events whenever topics prop changes (re-parses / edits from host).
   useEffect(() => {
     if (!calendarApp) return;
@@ -134,6 +217,7 @@ export function ContentScheduleCalendar({
 
   return (
     <div
+      ref={wrapperRef}
       className={`csc-wrapper ${canDrag ? 'csc-draggable' : ''} ${className ?? ''}`.trim()}
     >
       {calendarApp && <ScheduleXCalendar calendarApp={calendarApp} />}

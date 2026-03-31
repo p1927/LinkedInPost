@@ -15,6 +15,9 @@
   width: 100%;
   min-height: 480px;
   font-size: 0.8125rem;
+  /* Lets month cells scale with available height/width (see @container rules below). */
+  container-type: size;
+  container-name: csc;
 }
 
 /* Make the calendar fill its wrapper */
@@ -35,6 +38,41 @@
 
 .csc-wrapper .sx__view-container {
   border-radius: 0 0 0.75rem 0.75rem;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+/* Month grid: stretch rows to fill the view; event rows shrink when space is tight */
+.csc-wrapper .sx__month-grid-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.csc-wrapper .sx__month-grid-week {
+  min-height: 0;
+}
+
+.csc-wrapper .sx__month-grid-day {
+  min-height: 0;
+}
+
+.csc-wrapper .sx__month-grid-day__events {
+  grid-gap: clamp(2px, 0.35cqh, 4px);
+}
+
+@supports (height: 1cqh) {
+  .csc-wrapper .sx__month-grid-cell {
+    height: clamp(11px, min(3.6cqh, 3.8cqw), 26px);
+  }
+
+  .csc-wrapper .sx__month-grid-event {
+    font-size: clamp(9px, min(2.6cqh, 2.8cqw), 13px);
+    padding: 1px clamp(3px, 0.5cqw, 6px);
+  }
+
+  .csc-wrapper .sx__month-grid-event-time {
+    margin-right: clamp(2px, 0.35cqw, 4px);
+  }
 }
 
 /* Header bar */
