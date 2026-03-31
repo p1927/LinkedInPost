@@ -47,6 +47,8 @@ export type AddTopicFormChrome = {
 type WorkspaceChromeState = {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
+  /** Pulse / glow on the header Refresh control (e.g. after draft dispatch). */
+  highlightRefreshQueue: boolean;
   health: WorkspacePublishingHealth | null;
   /** When set, the workspace header shows this instead of the nav page title. */
   headerOverride: { title: string; subtitle?: string | null; titleTooltip?: string | null } | null;
@@ -60,6 +62,7 @@ type WorkspaceChromeState = {
 const defaultState: WorkspaceChromeState = {
   onRefreshQueue: null,
   queueLoading: false,
+  highlightRefreshQueue: false,
   health: null,
   headerOverride: null,
   topicReviewHeader: null,
@@ -103,30 +106,50 @@ export function useWorkspaceChrome() {
 export function useRegisterWorkspaceChrome(config: {
   onRefreshQueue: (() => void) | null;
   queueLoading: boolean;
+  highlightRefreshQueue?: boolean;
   health: WorkspacePublishingHealth | null;
   headerOverride?: { title: string; subtitle?: string | null; titleTooltip?: string | null } | null;
   clearTopicReviewHeader?: boolean;
   addTopicForm?: AddTopicFormChrome | null;
 }) {
   const { setChrome } = useWorkspaceChrome();
-  const { onRefreshQueue, queueLoading, health, headerOverride = null, clearTopicReviewHeader, addTopicForm = null } = config;
+  const {
+    onRefreshQueue,
+    queueLoading,
+    highlightRefreshQueue = false,
+    health,
+    headerOverride = null,
+    clearTopicReviewHeader,
+    addTopicForm = null,
+  } = config;
 
   useEffect(() => {
     setChrome({
       onRefreshQueue,
       queueLoading,
+      highlightRefreshQueue,
       health,
       headerOverride,
       addTopicForm,
       ...(clearTopicReviewHeader ? { topicReviewHeader: null } : {})
     });
-  }, [setChrome, onRefreshQueue, queueLoading, health, headerOverride, clearTopicReviewHeader, addTopicForm]);
+  }, [
+    setChrome,
+    onRefreshQueue,
+    queueLoading,
+    highlightRefreshQueue,
+    health,
+    headerOverride,
+    clearTopicReviewHeader,
+    addTopicForm,
+  ]);
 
   useEffect(() => {
     return () => {
       setChrome({
         onRefreshQueue: null,
         queueLoading: false,
+        highlightRefreshQueue: false,
         health: null,
         headerOverride: null,
         topicReviewHeader: null,

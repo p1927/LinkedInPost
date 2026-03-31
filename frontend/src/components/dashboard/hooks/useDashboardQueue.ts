@@ -37,6 +37,8 @@ export function useDashboardQueue({
   viewingTopicRouteId,
   onLeaveTopicRoute,
   onAfterApprove,
+  /** Called after a draft GitHub dispatch succeeds and the queue refresh finishes — e.g. to hint “refresh again” in the header. */
+  onDraftWorkflowStarted,
 }: {
   idToken: string;
   api: BackendApi;
@@ -57,6 +59,7 @@ export function useDashboardQueue({
   viewingTopicRouteId?: string | null;
   onLeaveTopicRoute?: () => void;
   onAfterApprove?: () => void;
+  onDraftWorkflowStarted?: () => void;
 }) {
   const [rows, setRows] = useState<SheetRow[]>([]);
   /** Start true when a sheet is configured so first paint does not run “loaded” logic before loadData runs. */
@@ -232,30 +235,36 @@ export function useDashboardQueue({
       void showAlert({ title: 'Success', description: successMessage });
       return true;
     } catch (error) {
+      setActionLoading(null);
       handleFailure(error, 'Failed to trigger the GitHub Action.');
       throw error;
-    } finally {
-      setActionLoading(null);
     }
   };
 
   const triggerRowGithubAction = async (row: SheetRow, action: 'draft' | 'publish') => {
     const actionKey = buildRowActionKey(action, row);
-    const ok = await dispatchGithubAction(
-      row,
-      action,
-      action === 'draft' ? 'trigger-draft' : 'trigger-publish',
-      {
-        target_topic: row.topic,
-        target_date: row.date,
-      },
-      action === 'draft'
-        ? `Requested post generation for "${row.topic}" using ${effectiveLlmRef(row, workspaceLlm).model}. The queue will refresh from the sheet — if a draft already existed, you should see Drafted and Edit right away.`
-        : `Requested publishing for "${row.topic}". The queue will refresh from the sheet shortly.`,
-      actionKey,
-    );
-    if (ok) {
-      await loadData(true);
+    try {
+      const ok = await dispatchGithubAction(
+        row,
+        action,
+        action === 'draft' ? 'trigger-draft' : 'trigger-publish',
+        {
+          target_topic: row.topic,
+          target_date: row.date,
+        },
+        action === 'draft'
+          ? `Requested post generation for "${row.topic}" using ${effectiveLlmRef(row, workspaceLlm).model}. GitHub is generating the draft — the sheet updates when the workflow finishes. Refresh the queue in a few seconds if status is still Pending.`
+          : `Requested publishing for "${row.topic}". The queue will refresh from the sheet shortly.`,
+        actionKey,
+      );
+      if (ok) {
+        await loadData(true);
+        if (action === 'draft') {
+          onDraftWorkflowStarted?.();
+        }
+      }
+    } finally {
+      setActionLoading(null);
     }
   };
 

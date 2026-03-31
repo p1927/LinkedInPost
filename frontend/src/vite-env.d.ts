@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="temporal-polyfill/global" />
 
 declare const __APP_BUILD_LABEL__: string
 

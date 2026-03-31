@@ -117,7 +117,21 @@
   }
 }
 
+@keyframes refresh-hint-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.2), 0 0 12px rgba(124, 58, 237, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.35), 0 0 22px rgba(124, 58, 237, 0.5);
+  }
+}
+
 @layer utilities {
+  .animate-refresh-hint {
+    animation: refresh-hint-glow 1.75s ease-in-out infinite;
+  }
+
   /* Vibrant mesh behind glass layers (ui-ux-pro-max Glassmorphism + purple accent) */
   .bg-app-mesh {
     background-color: #ede9fe;

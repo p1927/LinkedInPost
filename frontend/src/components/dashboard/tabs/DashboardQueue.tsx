@@ -218,10 +218,13 @@ export function DashboardQueue({
                         disabled={
                           actionLoading !== null || !session.config.githubRepo || !session.config.hasGitHubToken
                         }
+                        aria-busy={actionLoading === buildRowActionKey('draft', row)}
                         title={
                           !session.config.githubRepo || !session.config.hasGitHubToken
                             ? 'Configure GitHub repo and token in Settings to enable drafting'
-                            : 'Generate draft'
+                            : actionLoading === buildRowActionKey('draft', row)
+                              ? 'Draft generation in progress…'
+                              : 'Generate draft'
                         }
                         aria-label={`Generate draft for ${actionTopic}`}
                         className={rowActionClass}
@@ -231,7 +234,9 @@ export function DashboardQueue({
                         ) : (
                           <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         )}
-                        <span>Draft</span>
+                        <span>
+                          {actionLoading === buildRowActionKey('draft', row) ? 'Drafting…' : 'Draft'}
+                        </span>
                       </Button>
                     ) : null}
 

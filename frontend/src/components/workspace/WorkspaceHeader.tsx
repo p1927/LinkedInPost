@@ -21,7 +21,8 @@ export function WorkspaceHeader({
   onOpenMobileSidebar: () => void;
   onLogout: () => void;
 }) {
-  const { onRefreshQueue, queueLoading, headerOverride, topicReviewHeader, addTopicForm } = useWorkspaceChrome();
+  const { onRefreshQueue, queueLoading, highlightRefreshQueue, headerOverride, topicReviewHeader, addTopicForm } =
+    useWorkspaceChrome();
   const headerTitle = headerOverride?.title ?? PAGE_TITLES[workspacePage];
   const headerSubtitle = headerOverride?.subtitle ?? null;
 
@@ -206,8 +207,13 @@ export function WorkspaceHeader({
           size="sm"
           onClick={() => onRefreshQueue?.()}
           disabled={!onRefreshQueue || queueLoading}
-          className="h-9 min-h-9 gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer sm:px-4"
-          aria-label="Refresh sheet data"
+          className={clsx(
+            'h-9 min-h-9 gap-2 rounded-lg border px-3 text-xs font-medium transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer sm:px-4',
+            highlightRefreshQueue
+              ? 'animate-refresh-hint border-violet-400/80 bg-violet-50/90 text-violet-950 shadow-[0_0_20px_rgba(124,58,237,0.35)] hover:border-violet-500 hover:bg-violet-50'
+              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100',
+          )}
+          aria-label={highlightRefreshQueue ? 'Refresh sheet data — run again to see draft updates' : 'Refresh sheet data'}
         >
           <RefreshCw className={clsx('h-3.5 w-3.5 shrink-0', queueLoading && 'animate-spin')} aria-hidden />
           <span>Refresh</span>

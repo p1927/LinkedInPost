@@ -38,6 +38,7 @@ export function ReviewDialogs() {
         title="Discard current editor changes?"
         description="Loading a different sheet variant will replace the current editor working state."
         confirmLabel="Discard and load"
+        cancelLabel="Keep editing"
         onCancel={() => {
           setOpenMediaAfterVariantConfirm(false);
           setPendingVariantIndex(null);
@@ -72,6 +73,7 @@ export function ReviewDialogs() {
         title="Discard current editor changes?"
         description="Going back will remove the current local editor state and preview context. Sheet drafts will remain unchanged."
         confirmLabel="Discard and go back"
+        cancelLabel="Keep editing"
         onCancel={() => {
           setPendingClose(false);
         }}
@@ -86,6 +88,7 @@ export function ReviewDialogs() {
         title="Discard current editor changes?"
         description="Returning to variant selection will remove the current local editor state and preview context. Sheet drafts will remain unchanged."
         confirmLabel="Discard and continue"
+        cancelLabel="Keep editing"
         onCancel={() => setPendingNavigateToVariants(false)}
         onConfirm={() => {
           setPendingNavigateToVariants(false);

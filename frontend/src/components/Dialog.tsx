@@ -14,6 +14,7 @@ interface DialogProps {
   title: string;
   description: string;
   confirmLabel: string;
+  /** When omitted, only the confirm action is shown (typical alert). */
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -25,7 +26,7 @@ export function Dialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = 'Keep editing',
+  cancelLabel,
   onConfirm,
   onCancel,
   children,
@@ -42,18 +43,28 @@ export function Dialog({
 
         {children ? <div className="mt-4">{children}</div> : null}
 
-        <DialogFooter className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end bg-transparent border-none p-0 m-0">
+        <DialogFooter
+          className={
+            cancelLabel
+              ? 'mx-0 mb-0 mt-6 flex flex-col-reverse gap-3 rounded-xl border border-slate-200/80 bg-slate-50/95 p-4 shadow-inner sm:flex-row sm:justify-end'
+              : 'mx-0 mb-0 mt-6 flex flex-row justify-end rounded-xl border border-slate-200/80 bg-slate-50/95 p-4 shadow-inner'
+          }
+        >
+          {cancelLabel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="h-auto rounded-xl border-slate-200 bg-white px-4 py-3 font-semibold text-ink shadow-sm transition-colors hover:bg-slate-50"
+            >
+              {cancelLabel}
+            </Button>
+          ) : null}
           <Button
-            variant="ghost"
-            onClick={onCancel}
-            className="glass-inset px-4 py-3 h-auto rounded-xl font-semibold text-ink transition-colors hover:bg-white/80"
-          >
-            {cancelLabel}
-          </Button>
-          <Button
+            type="button"
             variant="primary"
             onClick={onConfirm}
-            className="px-4 py-3 h-auto rounded-xl font-semibold transition-colors"
+            className="h-auto rounded-xl px-4 py-3 font-semibold shadow-sm"
           >
             {confirmLabel}
           </Button>
