@@ -289,8 +289,8 @@ function makeSetter<K extends keyof ReviewFlowState>(
     dispatch({
       type: 'SET',
       key,
-      value: value as ReviewFlowState[K] | ((prev: ReviewFlowState[K]) => ReviewFlowState[K]),
-    });
+      value,
+    } as ReviewFlowAction);
 }
 
 // ---------------------------------------------------------------------------
