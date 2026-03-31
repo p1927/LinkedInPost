@@ -148,6 +148,8 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     requestNavigateToVariants: actions.requestNavigateToVariants,
     handleFetchMoreImageOptions: actions.handleFetchMoreImageOptions,
     handleUploadImageOption: actions.handleUploadImageOption,
+    handleSaveDraft: actions.handleSaveDraft,
+    savingDraft: actions.savingDraft,
     handleApprove: actions.handleApprove,
     handlePublishNow: actions.handlePublishNow,
     publishSubmitting: actions.publishSubmitting,

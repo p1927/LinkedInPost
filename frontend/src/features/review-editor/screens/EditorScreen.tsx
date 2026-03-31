@@ -25,6 +25,8 @@ function ResizeHandle() {
 export function EditorScreen() {
   const {
     sheetRow,
+    handleSaveDraft,
+    savingDraft,
     handleApprove,
     handlePublishNow,
     publishSubmitting,
@@ -56,7 +58,7 @@ export function EditorScreen() {
   const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
   const hasSheetVariants = sheetVariants.length > 0;
   const isDesktop = useMediaQuery('(min-width: 1280px)');
-  const footerBusy = submitting || publishSubmitting;
+  const footerBusy = submitting || publishSubmitting || savingDraft;
   const channelLabel = getChannelLabel(deliveryChannel);
   const showScheduledBanner =
     pendingScheduledPublish != null
@@ -235,12 +237,23 @@ export function EditorScreen() {
                   type="button"
                   size="sm"
                   variant="secondary"
+                  onClick={() => void handleSaveDraft()}
+                  disabled={footerBusy}
+                  title="Save your edits as a draft without approving."
+                  className="min-h-[44px] w-full border-primary/25 shadow-sm sm:w-auto sm:min-w-[8rem]"
+                >
+                  {savingDraft ? 'Saving…' : 'Save draft'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
                   onClick={() => void handleApprove()}
                   disabled={footerBusy}
                   title="Mark as approved in the sheet only. Publish later from the queue."
-                  className="min-h-[44px] w-full border-primary/25 shadow-sm sm:w-auto sm:min-w-[8.5rem]"
+                  className="min-h-[44px] w-full border-primary/25 shadow-sm sm:w-auto sm:min-w-[8rem]"
                 >
-                  {submitting ? 'Saving…' : 'Approve only'}
+                  {submitting ? 'Saving…' : 'Approve'}
                 </Button>
                 <Button
                   type="button"
@@ -255,9 +268,7 @@ export function EditorScreen() {
                   }
                   className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none sm:w-auto sm:min-w-[9rem]"
                 >
-                  {publishSubmitting
-                    ? 'Publishing…'
-                    : `Publish to ${channelLabel}`}
+                  {publishSubmitting ? 'Publishing…' : `Publish to ${channelLabel}`}
                 </Button>
               </>
             )}

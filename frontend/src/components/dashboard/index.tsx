@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
+import { type SheetRow } from '../../services/sheets';
 import { type BotConfig, type BotConfigUpdate, type LlmRef } from '../../services/configService';
 import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
 import { type QueueFilter, type DeliverySummary } from './types';
@@ -414,6 +415,41 @@ export function Dashboard({
     );
   }
 
+  const handleBulkDelete = useCallback(async (rows: SheetRow[]) => {
+    for (const row of rows) {
+      try {
+        await api.deleteRow(idToken, row);
+      } catch {
+        // continue with remaining rows
+      }
+    }
+    void queueHook.loadData(true);
+  }, [api, idToken, queueHook.loadData]);
+
+  const handleBulkSetChannel = useCallback(async (rows: SheetRow[], channel: string) => {
+    for (const row of rows) {
+      await queueHook.handleSaveTopicDeliveryPreferences(row, { topicDeliveryChannel: channel });
+    }
+  }, [queueHook.handleSaveTopicDeliveryPreferences]);
+
+  const handleBulkSetModel = useCallback(async (rows: SheetRow[], model: string) => {
+    for (const row of rows) {
+      await queueHook.handleSaveTopicDeliveryPreferences(row, { topicGenerationModel: model });
+    }
+  }, [queueHook.handleSaveTopicDeliveryPreferences]);
+
+  const handleBulkSetSchedule = useCallback(async (rows: SheetRow[], date: string, time: string) => {
+    const postTime = time ? `${date} ${time}` : date;
+    for (const row of rows) {
+      try {
+        await api.updatePostSchedule(idToken, row, postTime);
+      } catch {
+        // continue
+      }
+    }
+    void queueHook.loadData(true);
+  }, [api, idToken, queueHook.loadData]);
+
   const queueContent = (
     <DashboardQueue
       setStatusFilter={setStatusFilter}
@@ -437,6 +473,11 @@ export function Dashboard({
       onScrollTargetHandled={handleScrollTargetHandled}
       pendingScheduledPublish={queueHook.pendingScheduledPublish}
       selectedChannel={channelsHook.selectedChannel}
+      availableModels={settingsHook.availableModels}
+      onBulkDelete={handleBulkDelete}
+      onBulkSetChannel={handleBulkSetChannel}
+      onBulkSetModel={handleBulkSetModel}
+      onBulkSetSchedule={handleBulkSetSchedule}
     />
   );
 

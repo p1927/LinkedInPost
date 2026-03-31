@@ -71,6 +71,7 @@ export function useReviewFlowActions(
     setSubmitting,
     setActiveWorkspacePanel,
     setReviewPhase,
+    editorVariantIndex,
     setEditorVariantIndex,
     setPickCarouselIndex,
     sheetVariants,
@@ -88,6 +89,7 @@ export function useReviewFlowActions(
 
   const { showAlert } = useAlert();
   const [publishSubmitting, setPublishSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
   const leaveToTopics = useCallback(() => {
     if (hasUnsavedReviewState) {
@@ -536,6 +538,34 @@ export function useReviewFlowActions(
     }
   };
 
+  const handleSaveDraft = async () => {
+    if (!(editorText || '').trim()) {
+      void showAlert({ title: 'Notice', description: 'Post text cannot be empty.' });
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const slot = editorVariantIndex ?? 0;
+      const merged = [
+        slot === 0 ? editorText.trim() : (sheetRow.variant1 ?? ''),
+        slot === 1 ? editorText.trim() : (sheetRow.variant2 ?? ''),
+        slot === 2 ? editorText.trim() : (sheetRow.variant3 ?? ''),
+        slot === 3 ? editorText.trim() : (sheetRow.variant4 ?? ''),
+      ];
+      const updatedRow = await onSaveVariants(sheetRow, merged);
+      setSheetRow(updatedRow);
+      setEditorBaselineText(editorText.trim());
+      void showAlert({ title: 'Saved', description: 'Draft saved.' });
+    } catch (error) {
+      void showAlert({
+        title: 'Save failed',
+        description: error instanceof Error ? error.message : 'Could not save the draft.',
+      });
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   const handleLoadSheetVariant = useCallback(
     (index: number) => {
       const variant = sheetVariants[index];
@@ -759,6 +789,8 @@ export function useReviewFlowActions(
     handleSelectImageOption,
     handleClearSelectedImage,
     handleUploadImageOption,
+    handleSaveDraft,
+    savingDraft,
     handleApprove,
     handlePublishNow,
     publishSubmitting,

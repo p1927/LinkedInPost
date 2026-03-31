@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
@@ -11,8 +11,11 @@ import { filterOptions } from '../constants';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { type PendingScheduledPublish, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
-import { type ChannelId } from '@/integrations/channels';
+import { type ChannelId, CHANNEL_OPTIONS } from '@/integrations/channels';
 import { topicLabelForQueueActions, topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
 
 const rowActionClass =
@@ -43,6 +46,11 @@ export function DashboardQueue({
   onScrollTargetHandled,
   pendingScheduledPublish,
   selectedChannel,
+  availableModels,
+  onBulkDelete,
+  onBulkSetChannel,
+  onBulkSetModel,
+  onBulkSetSchedule,
 }: {
   setStatusFilter: (filter: QueueFilter) => void;
   statusFilter: QueueFilter;
@@ -66,6 +74,11 @@ export function DashboardQueue({
   onScrollTargetHandled: () => void;
   pendingScheduledPublish: PendingScheduledPublish | null;
   selectedChannel: ChannelId;
+  availableModels: Array<{ value: string; label: string }>;
+  onBulkDelete: (rows: SheetRow[]) => Promise<void>;
+  onBulkSetChannel: (rows: SheetRow[], channel: string) => Promise<void>;
+  onBulkSetModel: (rows: SheetRow[], model: string) => Promise<void>;
+  onBulkSetSchedule: (rows: SheetRow[], date: string, time: string) => Promise<void>;
 }) {
   useEffect(() => {
     if (!scrollTargetId) return;
@@ -84,6 +97,47 @@ export function DashboardQueue({
 
   const rowHasActiveScheduledPublish = (row: SheetRow) =>
     rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, effectiveChannel(row, selectedChannel));
+
+  const [selectedTopicIds, setSelectedTopicIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkChannelOpen, setBulkChannelOpen] = useState(false);
+  const [bulkModelOpen, setBulkModelOpen] = useState(false);
+  const [bulkScheduleOpen, setBulkScheduleOpen] = useState(false);
+  const [bulkChannel, setBulkChannel] = useState('');
+  const [bulkModel, setBulkModel] = useState('');
+  const [bulkDate, setBulkDate] = useState('');
+  const [bulkTime, setBulkTime] = useState('');
+
+  const getTopicId = (row: SheetRow) => String(row.topicId).trim();
+  const selectedRows = filteredRows.filter((r) => selectedTopicIds.has(getTopicId(r)));
+  const allFilteredSelected =
+    filteredRows.length > 0 && filteredRows.every((r) => selectedTopicIds.has(getTopicId(r)));
+
+  const toggleRow = (row: SheetRow) => {
+    const id = getTopicId(row);
+    setSelectedTopicIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (allFilteredSelected) {
+      setSelectedTopicIds((prev) => {
+        const next = new Set(prev);
+        filteredRows.forEach((r) => next.delete(getTopicId(r)));
+        return next;
+      });
+    } else {
+      setSelectedTopicIds((prev) => {
+        const next = new Set(prev);
+        filteredRows.forEach((r) => next.add(getTopicId(r)));
+        return next;
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -111,6 +165,67 @@ export function DashboardQueue({
         </div>
       </div>
 
+      {selectedTopicIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/80 px-3 py-2">
+          <span className="text-xs font-semibold text-violet-800">{selectedTopicIds.size} selected</span>
+          <button
+            type="button"
+            onClick={() => setSelectedTopicIds(new Set())}
+            className="text-xs text-muted hover:text-ink"
+          >
+            Clear
+          </button>
+          <div className="ml-auto flex flex-wrap gap-1.5">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={bulkBusy}
+              onClick={() => { setBulkDate(''); setBulkTime('09:00'); setBulkScheduleOpen(true); }}
+              className="h-7 gap-1 rounded-lg px-2.5 text-xs font-semibold"
+            >
+              Set schedule
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={bulkBusy}
+              onClick={() => { setBulkChannel(''); setBulkChannelOpen(true); }}
+              className="h-7 gap-1 rounded-lg px-2.5 text-xs font-semibold"
+            >
+              Set channel
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={bulkBusy}
+              onClick={() => { setBulkModel(''); setBulkModelOpen(true); }}
+              className="h-7 gap-1 rounded-lg px-2.5 text-xs font-semibold"
+            >
+              Set AI model
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={bulkBusy}
+              onClick={async () => {
+                if (!window.confirm(`Delete ${selectedRows.length} topic(s)? This cannot be undone.`)) return;
+                setBulkBusy(true);
+                try {
+                  await onBulkDelete(selectedRows);
+                  setSelectedTopicIds(new Set());
+                } finally {
+                  setBulkBusy(false);
+                }
+              }}
+              className="h-7 gap-1 rounded-lg px-2.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div>
         {filteredRows.length === 0 ? (
           <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-6 py-16 text-center">
@@ -135,6 +250,15 @@ export function DashboardQueue({
               className="flex items-center gap-x-2 border-b border-violet-200/60 bg-slate-50/70 px-4 py-2 sm:gap-x-3"
               aria-hidden
             >
+              <div className="w-6 shrink-0">
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={toggleAll}
+                  className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  aria-label="Select all topics"
+                />
+              </div>
               <div className="w-[88px] shrink-0 pr-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Status</span>
               </div>
@@ -183,6 +307,18 @@ export function DashboardQueue({
                     }
                   }}
                 >
+                  {/* Checkbox column */}
+                  <div className="flex w-6 shrink-0 items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedTopicIds.has(getTopicId(row))}
+                      onChange={(e) => { e.stopPropagation(); toggleRow(row); }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      aria-label={`Select ${row.topic}`}
+                    />
+                  </div>
+
                   {/* Status column */}
                   <div className="flex w-[88px] shrink-0 items-center pr-1">
                     <Badge variant={getQueueStatusVariant(row.status)} size="sm">
@@ -399,6 +535,123 @@ export function DashboardQueue({
           </div>
         )}
       </div>
+
+      {/* Bulk: Set Schedule */}
+      <Dialog open={bulkScheduleOpen} onOpenChange={setBulkScheduleOpen}>
+        <DialogContent className="sm:max-w-sm" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Set schedule for {selectedRows.length} topic(s)</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-1">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-700">Date</label>
+              <Input type="date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)} className="h-9" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-700">Time</label>
+              <Input type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)} className="h-9" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkScheduleOpen(false)}>Cancel</Button>
+            <Button
+              disabled={bulkBusy || !bulkDate}
+              onClick={async () => {
+                setBulkBusy(true);
+                try {
+                  await onBulkSetSchedule(selectedRows, bulkDate, bulkTime);
+                  setSelectedTopicIds(new Set());
+                  setBulkScheduleOpen(false);
+                } finally {
+                  setBulkBusy(false);
+                }
+              }}
+            >
+              {bulkBusy ? 'Applying…' : 'Apply'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk: Set Channel */}
+      <Dialog open={bulkChannelOpen} onOpenChange={setBulkChannelOpen}>
+        <DialogContent className="sm:max-w-sm" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Set channel for {selectedRows.length} topic(s)</DialogTitle>
+          </DialogHeader>
+          <div className="py-1">
+            <Select value={bulkChannel} onValueChange={setBulkChannel}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Choose channel…" />
+              </SelectTrigger>
+              <SelectContent>
+                {CHANNEL_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkChannelOpen(false)}>Cancel</Button>
+            <Button
+              disabled={bulkBusy || !bulkChannel}
+              onClick={async () => {
+                setBulkBusy(true);
+                try {
+                  await onBulkSetChannel(selectedRows, bulkChannel);
+                  setSelectedTopicIds(new Set());
+                  setBulkChannelOpen(false);
+                } finally {
+                  setBulkBusy(false);
+                }
+              }}
+            >
+              {bulkBusy ? 'Applying…' : 'Apply'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk: Set AI Model */}
+      <Dialog open={bulkModelOpen} onOpenChange={setBulkModelOpen}>
+        <DialogContent className="sm:max-w-sm" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Set AI model for {selectedRows.length} topic(s)</DialogTitle>
+          </DialogHeader>
+          <div className="py-1">
+            <Select value={bulkModel} onValueChange={setBulkModel}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Choose model…" />
+              </SelectTrigger>
+              <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
+                {availableModels.map((m) => (
+                  <SelectItem key={m.value} value={m.value} className="items-start py-2">
+                    <span className="whitespace-normal leading-snug">{m.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkModelOpen(false)}>Cancel</Button>
+            <Button
+              disabled={bulkBusy || !bulkModel}
+              onClick={async () => {
+                setBulkBusy(true);
+                try {
+                  await onBulkSetModel(selectedRows, bulkModel);
+                  setSelectedTopicIds(new Set());
+                  setBulkModelOpen(false);
+                } finally {
+                  setBulkBusy(false);
+                }
+              }}
+            >
+              {bulkBusy ? 'Applying…' : 'Apply'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

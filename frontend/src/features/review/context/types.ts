@@ -163,6 +163,8 @@ export interface ReviewFlowContextValue {
   requestNavigateToVariants: () => void;
   handleFetchMoreImageOptions: (searchQuery?: string) => Promise<void>;
   handleUploadImageOption: (file: File) => Promise<void>;
+  handleSaveDraft: () => Promise<void>;
+  savingDraft: boolean;
   handleApprove: () => Promise<void>;
   handlePublishNow: () => Promise<void>;
   publishSubmitting: boolean;
