@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit, LayoutList, CalendarDays } from 'lucide-react';
 import { cn } from '../../../lib/cn';
-import { type AppSession } from '../../../services/backendApi';
+import { type AppSession, type GenWorkerGenerateRequest } from '../../../services/backendApi';
+import { Textarea } from '@/components/ui/textarea';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import { getNormalizedRowStatus, buildRowActionKey, formatQueueDate, formatQueuePostTime } from '../utils';
@@ -60,6 +61,7 @@ export function DashboardQueue({
   onBulkSetModel,
   onBulkSetSchedule,
   onUpdatePostSchedule,
+  onGenerationWorkerDraft,
 }: {
   setStatusFilter: (filter: QueueFilter) => void;
   statusFilter: QueueFilter;
@@ -89,6 +91,7 @@ export function DashboardQueue({
   onBulkSetModel: (rows: SheetRow[], model: string) => Promise<void>;
   onBulkSetSchedule: (rows: SheetRow[], date: string, time: string) => Promise<void>;
   onUpdatePostSchedule: (row: SheetRow, postTime: string) => Promise<void>;
+  onGenerationWorkerDraft?: (row: SheetRow, request: GenWorkerGenerateRequest) => Promise<void>;
 }) {
   useEffect(() => {
     if (!scrollTargetId) return;
@@ -118,6 +121,39 @@ export function DashboardQueue({
   const [bulkDate, setBulkDate] = useState('');
   const [bulkTime, setBulkTime] = useState('');
   const [topicsViewMode, setTopicsViewMode] = useState<'list' | 'calendar'>('list');
+
+  // Generation worker draft dialog
+  const [genWorkerDialogRow, setGenWorkerDialogRow] = useState<SheetRow | null>(null);
+  const [genWorkerBusy, setGenWorkerBusy] = useState(false);
+  const [gwAudience, setGwAudience] = useState('');
+  const [gwTone, setGwTone] = useState('');
+  const [gwCta, setGwCta] = useState('');
+  const [gwConstraints, setGwConstraints] = useState('');
+  const [gwFactual, setGwFactual] = useState(false);
+
+  const handleGenWorkerSubmit = useCallback(async () => {
+    if (!genWorkerDialogRow || !onGenerationWorkerDraft) return;
+    setGenWorkerBusy(true);
+    try {
+      await onGenerationWorkerDraft(genWorkerDialogRow, {
+        topic: genWorkerDialogRow.topic,
+        channel: effectiveChannel(genWorkerDialogRow, selectedChannel),
+        ...(gwAudience.trim() ? { audience: gwAudience.trim() } : {}),
+        ...(gwTone.trim() ? { tone: gwTone.trim() } : {}),
+        ...(gwCta.trim() ? { cta: gwCta.trim() } : {}),
+        ...(gwConstraints.trim() ? { constraints: gwConstraints.trim() } : {}),
+        ...(gwFactual ? { factual: true } : {}),
+      });
+      setGenWorkerDialogRow(null);
+      setGwAudience('');
+      setGwTone('');
+      setGwCta('');
+      setGwConstraints('');
+      setGwFactual(false);
+    } finally {
+      setGenWorkerBusy(false);
+    }
+  }, [genWorkerDialogRow, onGenerationWorkerDraft, selectedChannel, gwAudience, gwTone, gwCta, gwConstraints, gwFactual]);
 
   const getTopicId = (row: SheetRow) => String(row.topicId).trim();
   const selectedRows = filteredRows.filter((r) => selectedTopicIds.has(getTopicId(r)));
@@ -514,39 +550,59 @@ export function DashboardQueue({
                     isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto',
                   )}>
                     {normalizedStatus === 'pending' ? (
-                      <Button
-                        type="button"
-                        variant="primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void triggerRowGithubAction(row, 'draft');
-                        }}
-                        disabled={
-                          actionLoading !== null ||
-                          draftDispatchSentBusy ||
-                          !session.config.githubRepo ||
-                          !session.config.hasGitHubToken
-                        }
-                        aria-busy={draftButtonBusy}
-                        title={
-                          !session.config.githubRepo || !session.config.hasGitHubToken
-                            ? 'Configure GitHub repo and token in Settings to enable drafting'
-                            : draftDispatchSentBusy
-                              ? 'Draft job sent — GitHub is generating; use Refresh until this row shows Drafted'
-                              : actionLoading === draftActionKey
-                                ? 'Sending draft request…'
-                                : 'Generate draft'
-                        }
-                        aria-label={`Generate draft for ${actionTopic}`}
-                        className={rowActionClass}
-                      >
-                        {draftButtonBusy ? (
-                          <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                      <>
+                        {session.config.hasGenerationWorker && onGenerationWorkerDraft ? (
+                          <Button
+                            type="button"
+                            variant="primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setGenWorkerDialogRow(row);
+                            }}
+                            disabled={actionLoading !== null || genWorkerBusy}
+                            aria-label={`AI generate draft for ${actionTopic}`}
+                            title="Generate draft with AI generation worker"
+                            className={rowActionClass}
+                          >
+                            <Bot className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                            <span>AI Draft</span>
+                          </Button>
                         ) : (
-                          <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          <Button
+                            type="button"
+                            variant="primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void triggerRowGithubAction(row, 'draft');
+                            }}
+                            disabled={
+                              actionLoading !== null ||
+                              draftDispatchSentBusy ||
+                              !session.config.githubRepo ||
+                              !session.config.hasGitHubToken
+                            }
+                            aria-busy={draftButtonBusy}
+                            title={
+                              !session.config.githubRepo || !session.config.hasGitHubToken
+                                ? 'Configure GitHub repo and token in Settings to enable drafting'
+                                : draftDispatchSentBusy
+                                  ? 'Draft job sent — GitHub is generating; use Refresh until this row shows Drafted'
+                                  : actionLoading === draftActionKey
+                                    ? 'Sending draft request…'
+                                    : 'Generate draft'
+                            }
+                            aria-label={`Generate draft for ${actionTopic}`}
+                            className={rowActionClass}
+                          >
+                            {draftButtonBusy ? (
+                              <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+                            ) : (
+                              <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                            )}
+                            <span>{draftButtonBusy ? 'Drafting…' : 'Draft'}</span>
+                          </Button>
                         )}
-                        <span>{draftButtonBusy ? 'Drafting…' : 'Draft'}</span>
-                      </Button>
+                      </>
                     ) : null}
 
                     {normalizedStatus === 'drafted' ? (
@@ -796,6 +852,80 @@ export function DashboardQueue({
               }}
             >
               {bulkBusy ? 'Applying…' : 'Apply'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generation worker draft dialog */}
+      <Dialog open={genWorkerDialogRow !== null} onOpenChange={(open) => { if (!open && !genWorkerBusy) setGenWorkerDialogRow(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>AI Draft — {genWorkerDialogRow?.topic ?? ''}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-1">
+            <p className="text-sm text-muted-foreground">All fields are optional. Leave blank to use workspace defaults.</p>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium">Audience</label>
+              <Input
+                placeholder="e.g. senior engineers, startup founders"
+                value={gwAudience}
+                onChange={(e) => setGwAudience(e.target.value)}
+                disabled={genWorkerBusy}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium">Tone</label>
+              <Input
+                placeholder="e.g. conversational, authoritative, witty"
+                value={gwTone}
+                onChange={(e) => setGwTone(e.target.value)}
+                disabled={genWorkerBusy}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium">Call to action</label>
+              <Input
+                placeholder="e.g. follow for more, share your thoughts"
+                value={gwCta}
+                onChange={(e) => setGwCta(e.target.value)}
+                disabled={genWorkerBusy}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium">Additional constraints</label>
+              <Textarea
+                placeholder="e.g. keep under 300 words, include a statistic"
+                value={gwConstraints}
+                onChange={(e) => setGwConstraints(e.target.value)}
+                disabled={genWorkerBusy}
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={gwFactual}
+                onChange={(e) => setGwFactual(e.target.checked)}
+                disabled={genWorkerBusy}
+                className="h-4 w-4 rounded border"
+              />
+              Factual / data-driven post
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGenWorkerDialogRow(null)} disabled={genWorkerBusy}>Cancel</Button>
+            <Button
+              variant="primary"
+              disabled={genWorkerBusy}
+              onClick={() => void handleGenWorkerSubmit()}
+            >
+              {genWorkerBusy ? (
+                <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generating…</>
+              ) : (
+                <><Bot className="h-3.5 w-3.5 mr-1.5" />Generate</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

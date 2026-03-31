@@ -189,6 +189,34 @@ export interface RunContentReviewRequest {
 
 export type { ContentReviewReport };
 
+export interface GenWorkerGenerateRequest {
+  topic: string;
+  channel?: string;
+  audience?: string;
+  tone?: string;
+  jtbd?: string;
+  factual?: boolean;
+  mustInclude?: string[];
+  mustAvoid?: string[];
+  cta?: string;
+  constraints?: string;
+}
+
+export interface TextVariant {
+  index: number;
+  label: string;
+  text: string;
+}
+
+export interface GenWorkerGenerateResponse {
+  runId: string;
+  primaryPatternId: string;
+  runnerUpPatternId: string;
+  patternRationale: string;
+  variants: TextVariant[];
+  review: { passed: boolean; verdict: string; summary: string };
+}
+
 export interface QuickChangePreviewResult {
   scope: GenerationScope;
   model: string;
@@ -694,6 +722,17 @@ export class BackendApi {
     request: CancelScheduledPublishRequest,
   ): Promise<CancelScheduledPublishResult> {
     return this.post<CancelScheduledPublishResult>('cancelScheduledPublish', idToken, { ...request });
+  }
+
+  async callGenerationWorker(
+    idToken: string,
+    spreadsheetId: string,
+    request: GenWorkerGenerateRequest,
+  ): Promise<GenWorkerGenerateResponse> {
+    return this.post<GenWorkerGenerateResponse>('callGenerationWorker', idToken, {
+      spreadsheetId,
+      ...request,
+    });
   }
 }
 

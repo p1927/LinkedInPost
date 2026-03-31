@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { type SheetRow } from '../../../services/sheets';
-import type { NewsResearchSearchPayload, NewsResearchSearchResult } from '../../../services/backendApi';
+import type { NewsResearchSearchPayload, NewsResearchSearchResult, GenWorkerGenerateRequest } from '../../../services/backendApi';
 import {
   type ContentReviewReport,
   type GenerationRequest,
@@ -313,6 +313,22 @@ export function useDashboardQueue({
       }
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const draftWithGenerationWorker = async (row: SheetRow, request: GenWorkerGenerateRequest): Promise<void> => {
+    try {
+      const result = await api.callGenerationWorker(idToken, session.config.spreadsheetId, request);
+      const variantTexts = result.variants.map((v) => v.text);
+      const updated = await api.saveDraftVariants(idToken, row, variantTexts);
+      setRows((prev) => prev.map((r) => (isSameTopicId(r, updated) ? updated : r)));
+      void showAlert({
+        title: 'Draft generated',
+        description: `Generated ${variantTexts.length} variant${variantTexts.length !== 1 ? 's' : ''} for "${row.topic}". Open the topic to review and select one.`,
+      });
+    } catch (error) {
+      handleFailure(error, 'Failed to generate draft via generation worker.');
+      throw error;
     }
   };
 
@@ -788,6 +804,7 @@ export function useDashboardQueue({
     handleApproveVariant,
     handleSaveEmailFields,
     triggerRowGithubAction,
+    draftWithGenerationWorker,
     handleGenerateQuickChange,
     handleGenerateVariantsPreview,
     handleRunContentReview,
