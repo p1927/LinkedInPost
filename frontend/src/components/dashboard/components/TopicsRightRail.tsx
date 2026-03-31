@@ -360,11 +360,11 @@ export function TopicsHomePanels({
         className="min-h-[min(28rem,calc(100vh-8rem))]"
         resizeTargetMinimumSize={{ coarse: 28, fine: 14 }}
       >
-        <Panel defaultSize={72} minSize={45} className="min-w-0 min-h-0 overflow-hidden pr-1">
+        <Panel defaultSize="72%" minSize="45%" className="min-w-0 min-h-0 overflow-hidden pr-1">
           <div className="custom-scrollbar max-h-[calc(100vh-3.5rem)] overflow-y-auto pr-2">{queue}</div>
         </Panel>
         <ResizeHandle />
-        <Panel defaultSize={28} minSize={18} maxSize={42} className="min-w-0 min-h-0">
+        <Panel defaultSize="28%" minSize="20%" maxSize="42%" className="min-w-0 min-h-0">
           {rail}
         </Panel>
       </PanelGroup>

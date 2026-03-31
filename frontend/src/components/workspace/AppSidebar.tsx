@@ -207,20 +207,20 @@ export function AppSidebar({
             collapsed ? 'flex flex-col items-center gap-1.5' : 'flex h-14 items-center justify-between gap-2',
           )}
         >
-          <div className={clsx('flex min-w-0 items-center gap-2', collapsed && 'w-full justify-center')}>
-            <div
-              className={clsx(
-                'flex shrink-0 items-center justify-center bg-primary font-heading text-sm font-semibold text-primary-fg shadow-sm',
-                RAIL_TILE,
-                RAIL_RADIUS,
-              )}
-            >
-              CB
-            </div>
-            {!collapsed ? (
+          {!collapsed ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <div
+                className={clsx(
+                  'flex shrink-0 items-center justify-center bg-primary font-heading text-sm font-semibold text-primary-fg shadow-sm',
+                  RAIL_TILE,
+                  RAIL_RADIUS,
+                )}
+              >
+                CB
+              </div>
               <span className="truncate font-heading text-sm font-semibold text-ink">Channel Bot</span>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           <Button
             type="button"
             variant="ghost"
