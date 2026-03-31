@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { CHANNEL_OPTIONS, type ChannelId, getChannelLabel } from '@/integrations/channels';
 import type { SheetRow } from '@/services/sheets';
@@ -29,12 +29,15 @@ function CollapsibleSection({
   expanded,
   onToggle,
   disabledHint,
+  infoTooltip,
   children,
 }: {
   title: string;
   expanded: boolean;
   onToggle: (open: boolean) => void;
   disabledHint?: string;
+  /** Shown on hover via native tooltip (compact section headers). */
+  infoTooltip?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -45,7 +48,26 @@ function CollapsibleSection({
         onClick={() => onToggle(!expanded)}
         aria-expanded={expanded}
       >
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">{title}</span>
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">{title}</span>
+          {infoTooltip ? (
+            <span
+              className="inline-flex shrink-0"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="rounded p-0.5 text-muted transition-colors hover:bg-violet-100/60 hover:text-ink"
+                aria-label={infoTooltip}
+                title={infoTooltip}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Info className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+              </button>
+            </span>
+          ) : null}
+        </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
           aria-hidden
@@ -136,6 +158,17 @@ export function TopicsRightRail({
     return o ?? WORKSPACE_DEFAULT_CHANNEL;
   }, [selectedRow]);
 
+  const aiModelInfoTooltip = useMemo(() => {
+    let t = 'Override the workspace model for Quick Change and variants on this topic only.';
+    if (FEATURE_MULTI_PROVIDER_LLM && providerLabel) {
+      t += ` Workspace provider: ${providerLabel}.`;
+    }
+    return t;
+  }, [providerLabel]);
+
+  const deliveryInfoTooltip =
+    'Override the workspace channel for this topic. Recipients for Telegram and WhatsApp remain workspace-wide.';
+
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -177,40 +210,14 @@ export function TopicsRightRail({
   const railInner = (
     <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
       <CollapsibleSection
-        title="Preview"
-        expanded={previewOpen}
-        onToggle={setPreviewOpen}
-        disabledHint={!hasSelection ? 'Select a topic from the list to see a channel preview and publishing details.' : undefined}
-      >
-        {selectedRow ? (
-          <TopicPostPreviewCard
-            row={selectedRow}
-            previewChannel={previewCh}
-            previewAuthorName={previewAuthorName}
-            compact
-            onOpenEditor={
-              getNormalizedRowStatus(selectedRow.status) === 'drafted'
-                ? () => onOpenEditor(selectedRow)
-                : undefined
-            }
-          />
-        ) : null}
-      </CollapsibleSection>
-
-      <CollapsibleSection
         title="AI model"
         expanded={modelOpen}
         onToggle={setModelOpen}
+        infoTooltip={aiModelInfoTooltip}
         disabledHint={!hasSelection ? 'Select a topic to set a model override for generation on that topic (or use the workspace default).' : undefined}
       >
         {selectedRow ? (
           <div className="space-y-2">
-            <p className="text-[11px] leading-relaxed text-muted">
-              Override the workspace model for Quick Change and variants on this topic only.
-              {FEATURE_MULTI_PROVIDER_LLM && providerLabel ? (
-                <span className="mt-0.5 block font-medium text-ink/80">Workspace provider: {providerLabel}</span>
-              ) : null}
-            </p>
             {modelPickerLocked ? (
               <p className="text-[11px] text-muted">This workspace allows only one model.</p>
             ) : (
@@ -281,6 +288,7 @@ export function TopicsRightRail({
         title="Delivery channel"
         expanded={deliveryOpen}
         onToggle={setDeliveryOpen}
+        infoTooltip={deliveryInfoTooltip}
         disabledHint={
           !hasSelection
             ? 'Select a topic to choose where that topic will publish. Telegram and WhatsApp recipients still come from workspace settings.'
@@ -289,9 +297,6 @@ export function TopicsRightRail({
       >
         {selectedRow ? (
           <div className="space-y-2">
-            <p className="text-[11px] leading-relaxed text-muted">
-              Override the workspace channel for this topic. Recipients for Telegram/WhatsApp remain workspace-wide.
-            </p>
             <Select
               value={channelSelectValue}
               disabled={saving}
@@ -320,6 +325,27 @@ export function TopicsRightRail({
           </div>
         ) : null}
       </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Preview"
+        expanded={previewOpen}
+        onToggle={setPreviewOpen}
+        disabledHint={!hasSelection ? 'Select a topic from the list to see a channel preview and publishing details.' : undefined}
+      >
+        {selectedRow ? (
+          <TopicPostPreviewCard
+            row={selectedRow}
+            previewChannel={previewCh}
+            previewAuthorName={previewAuthorName}
+            compact
+            onOpenEditor={
+              getNormalizedRowStatus(selectedRow.status) === 'drafted'
+                ? () => onOpenEditor(selectedRow)
+                : undefined
+            }
+          />
+        ) : null}
+      </CollapsibleSection>
     </div>
   );
 
@@ -327,11 +353,7 @@ export function TopicsRightRail({
     return <aside className="min-w-0 w-full">{railInner}</aside>;
   }
 
-  return (
-    <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
-      {railInner}
-    </aside>
-  );
+  return <aside className="min-w-0 lg:min-h-0 lg:pb-2">{railInner}</aside>;
 }
 
 export function TopicsHomePanels({
@@ -345,7 +367,7 @@ export function TopicsHomePanels({
 
   if (!isDesktop) {
     return (
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-[min(100%,1820px)] flex-col gap-5">
         <div className="min-w-0">{queue}</div>
         {rail}
       </div>
@@ -353,18 +375,18 @@ export function TopicsHomePanels({
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] min-w-0">
+    <div className="mx-auto w-full max-w-[min(100%,1820px)] min-w-0">
       <PanelGroup
         orientation="horizontal"
         id="topics-home-main-rail"
-        className="min-h-[min(28rem,calc(100vh-8rem))]"
+        className="min-h-[min(28rem,calc(100vh-8rem))] items-start"
         resizeTargetMinimumSize={{ coarse: 28, fine: 14 }}
       >
-        <Panel defaultSize="72%" minSize="45%" className="min-w-0 min-h-0 overflow-hidden pr-1">
+        <Panel defaultSize="58%" minSize="38%" className="min-w-0 min-h-0 overflow-hidden pr-1">
           <div className="custom-scrollbar max-h-[calc(100vh-3.5rem)] overflow-y-auto pr-2">{queue}</div>
         </Panel>
         <ResizeHandle />
-        <Panel defaultSize="28%" minSize="20%" maxSize="42%" className="min-w-0 min-h-0">
+        <Panel defaultSize="42%" minSize="24%" maxSize="58%" className="min-w-0 min-h-0">
           {rail}
         </Panel>
       </PanelGroup>
