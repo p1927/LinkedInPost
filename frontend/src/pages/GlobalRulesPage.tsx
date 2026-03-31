@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useTextUndoRedo } from '@/hooks/useTextUndoRedo';
@@ -23,6 +23,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { WhoAmISection } from '@/features/who-am-i/WhoAmISection';
+import { PreSaveTextDiff } from '@/features/rules/PreSaveTextDiff';
+import { cn } from '@/lib/cn';
+
+type RulesTabId = 'author' | 'global-rules' | 'post-templates';
+
+const ALL_RULES_TABS: { id: RulesTabId; label: string }[] = [
+  { id: 'author', label: 'Who am I' },
+  { id: 'global-rules', label: 'Global rules' },
+  { id: 'post-templates', label: 'Post templates' },
+];
 
 export function GlobalRulesPage({
   idToken,
@@ -53,7 +63,20 @@ export function GlobalRulesPage({
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [templateFormName, setTemplateFormName] = useState('');
   const [templateFormRules, setTemplateFormRules] = useState('');
+  const [templateRulesBaseline, setTemplateRulesBaseline] = useState('');
   const [savingPostTemplate, setSavingPostTemplate] = useState(false);
+
+  const visibleTabs = useMemo(() => {
+    return session.isAdmin ? ALL_RULES_TABS : ALL_RULES_TABS.filter((t) => t.id !== 'post-templates');
+  }, [session.isAdmin]);
+
+  const [activeTab, setActiveTab] = useState<RulesTabId>('author');
+
+  useEffect(() => {
+    if (!visibleTabs.some((t) => t.id === activeTab)) {
+      setActiveTab(visibleTabs[0]?.id ?? 'author');
+    }
+  }, [visibleTabs, activeTab]);
 
   const dirty = value.trim() !== serverText.trim();
   const [authorDirty, setAuthorDirty] = useState(false);
@@ -117,6 +140,7 @@ export function GlobalRulesPage({
     setEditingTemplateId(null);
     setTemplateFormName('');
     setTemplateFormRules('');
+    setTemplateRulesBaseline('');
     setTemplateDialogOpen(true);
   };
 
@@ -124,6 +148,7 @@ export function GlobalRulesPage({
     setEditingTemplateId(t.id);
     setTemplateFormName(t.name);
     setTemplateFormRules(t.rules);
+    setTemplateRulesBaseline(t.rules);
     setTemplateDialogOpen(true);
   };
 
@@ -155,7 +180,7 @@ export function GlobalRulesPage({
   };
 
   const handleDeletePostTemplate = async (t: PostTemplate) => {
-    if (!window.confirm(`Delete template “${t.name || t.id}”? Draft rows that still reference this id will fall back to global rules.`)) {
+    if (!window.confirm(`Delete template "${t.name || t.id}"? Draft rows that still reference this id will fall back to global rules.`)) {
       return;
     }
     try {
@@ -232,241 +257,313 @@ export function GlobalRulesPage({
     }
   };
 
-  return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pb-10">
-      <WhoAmISection
-        serverAuthorProfile={session.config.authorProfile || ''}
-        isAdmin={session.isAdmin}
-        onDirtyChange={handleAuthorDirty}
-        onSave={handleSaveAuthorProfile}
-      />
-
-      <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Workspace</p>
-        <h2 className="mt-1 font-heading text-xl font-semibold text-ink">Global generation rules</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">
-          These apply to Quick Change and 4-variant previews for every topic, unless the topic uses a{' '}
-          <strong className="text-ink">post template</strong> or non-empty <strong className="text-ink">Topic rules</strong>{' '}
-          in the review sidebar (Draft sheet columns U and S).
+  const versionHistorySection =
+    session.isAdmin ? (
+      <div className="glass-panel mt-6 rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
+        <h3 className="font-heading text-lg font-semibold text-ink">Saved version history</h3>
+        <p className="mt-1 text-sm text-muted">
+          Compare past snapshots of global rules (stored when an admin saves). This is separate from the unsaved-changes diff
+          above.
         </p>
+        {historyError ? <p className="mt-2 text-sm text-destructive">{historyError}</p> : null}
 
-        {session.isAdmin ? (
-          <>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canUndo}
-                onClick={() => undo()}
-                className="gap-1.5"
+        <div className="mt-4 flex flex-wrap gap-3">
+          <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-xs font-semibold text-ink">
+            Base
+            <select
+              className="rounded-lg border border-border bg-white px-2 py-2 text-sm font-normal text-ink"
+              value={diffLeft === 'current' ? 'current' : `v:${diffLeft}`}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDiffLeft(v === 'current' ? 'current' : Number(v.slice(2)));
+              }}
+            >
+              <option value="current">Current (saved)</option>
+              {versions.map((v, i) => (
+                <option key={`l-${v.savedAt}`} value={`v:${i}`}>
+                  {new Date(v.savedAt).toLocaleString()} — {v.savedBy}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-xs font-semibold text-ink">
+            Compare
+            <select
+              className="rounded-lg border border-border bg-white px-2 py-2 text-sm font-normal text-ink"
+              value={diffRight === 'current' ? 'current' : `v:${diffRight}`}
+              onChange={(e) => {
+                const v = e.target.value;
+                setDiffRight(v === 'current' ? 'current' : Number(v.slice(2)));
+              }}
+            >
+              <option value="current">Current (saved)</option>
+              {versions.map((v, i) => (
+                <option key={`r-${v.savedAt}`} value={`v:${i}`}>
+                  {new Date(v.savedAt).toLocaleString()} — {v.savedBy}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="custom-scrollbar mt-4 max-h-[min(50vh,420px)] overflow-auto rounded-xl border border-border bg-ink/[0.03] p-3 font-mono text-xs leading-5">
+          {diffRows.length === 0 ? (
+            <p className="text-muted">No differences.</p>
+          ) : (
+            diffRows.map((row, i) => (
+              <div
+                key={i}
+                className={
+                  row.kind === 'same'
+                    ? 'text-ink/80'
+                    : row.kind === 'add'
+                      ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-100'
+                      : 'bg-rose-500/15 text-rose-900 dark:text-rose-100'
+                }
               >
-                <Undo2 className="size-4" aria-hidden />
-                Undo
-              </Button>
+                <span className="select-none pr-2 text-muted">
+                  {row.kind === 'same' ? ' ' : row.kind === 'add' ? '+' : '-'}
+                </span>
+                {row.line || ' '}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    ) : null;
+
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-10">
+      <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+        <aside className="sticky top-4 z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:self-start">
+          <nav
+            role="tablist"
+            aria-label="Rules sections"
+            className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:pr-1"
+          >
+            <p className="mb-2 hidden text-xs font-bold uppercase tracking-[0.14em] text-muted lg:block">Sections</p>
+            {visibleTabs.map(({ id, label }) => (
               <Button
+                key={id}
                 type="button"
-                variant="outline"
+                role="tab"
+                id={`rules-tab-trigger-${id}`}
+                aria-selected={activeTab === id}
+                aria-controls={`rules-tabpanel-${id}`}
+                variant="ghost"
                 size="sm"
-                disabled={!canRedo}
-                onClick={() => redo()}
-                className="gap-1.5"
+                onClick={() => setActiveTab(id)}
+                className={cn(
+                  'w-full shrink-0 justify-start rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                  activeTab === id
+                    ? 'bg-primary/12 font-semibold text-ink'
+                    : 'text-muted hover:bg-white/60 hover:text-ink',
+                )}
               >
-                <Redo2 className="size-4" aria-hidden />
-                Redo
+                {label}
               </Button>
-              <span className="text-xs text-muted">⌘/Ctrl+Z · Shift+⌘/Ctrl+Z in the editor</span>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          {activeTab === 'author' ? (
+            <div
+              role="tabpanel"
+              id="rules-tabpanel-author"
+              aria-labelledby="rules-tab-trigger-author"
+              className="min-w-0"
+            >
+              <WhoAmISection
+                serverAuthorProfile={session.config.authorProfile || ''}
+                isAdmin={session.isAdmin}
+                onDirtyChange={handleAuthorDirty}
+                onSave={handleSaveAuthorProfile}
+              />
             </div>
-            <Textarea
-              data-global-rules-editor
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              disabled={saving}
-              placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words…"
-              className="mt-3 min-h-[220px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-sm leading-6 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              aria-label="Global generation rules"
-            />
-            <div className="mt-3 flex justify-end gap-2">
-              <Button type="button" disabled={!dirty || saving} onClick={() => void handleSave()}>
-                {saving ? 'Saving…' : 'Save global rules'}
-              </Button>
+          ) : null}
+
+          {activeTab === 'global-rules' ? (
+            <div
+              role="tabpanel"
+              id="rules-tabpanel-global-rules"
+              aria-labelledby="rules-tab-trigger-global-rules"
+              className="min-w-0"
+            >
+              <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Workspace</p>
+                <h2 className="mt-1 font-heading text-xl font-semibold text-ink">Global generation rules</h2>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  These apply to Quick Change and 4-variant previews for every topic, unless the topic uses a{' '}
+                  <strong className="text-ink">post template</strong> or non-empty <strong className="text-ink">Topic rules</strong>{' '}
+                  in the review sidebar (Draft sheet columns U and S).
+                </p>
+
+                {session.isAdmin ? (
+                  <>
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!canUndo}
+                        onClick={() => undo()}
+                        className="gap-1.5"
+                      >
+                        <Undo2 className="size-4" aria-hidden />
+                        Undo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!canRedo}
+                        onClick={() => redo()}
+                        className="gap-1.5"
+                      >
+                        <Redo2 className="size-4" aria-hidden />
+                        Redo
+                      </Button>
+                      <span className="text-xs text-muted">⌘/Ctrl+Z · Shift+⌘/Ctrl+Z in the editor</span>
+                    </div>
+                    <Textarea
+                      data-global-rules-editor
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      disabled={saving}
+                      placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words…"
+                      className="mt-3 min-h-[220px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-sm leading-6 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                      aria-label="Global generation rules"
+                    />
+                    <PreSaveTextDiff baseline={serverText} draft={value} title="Changes vs saved global rules" />
+                    <div className="mt-3 flex justify-end gap-2">
+                      <Button type="button" disabled={!dirty || saving} onClick={() => void handleSave()}>
+                        {saving ? 'Saving…' : 'Save global rules'}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-border/70 bg-canvas/80 px-4 py-4 text-sm leading-6 text-ink whitespace-pre-wrap">
+                    {serverText.trim() || 'No global rules configured yet.'}
+                  </div>
+                )}
+              </div>
+              {versionHistorySection}
             </div>
-          </>
-        ) : (
-          <div className="mt-4 rounded-xl border border-border/70 bg-canvas/80 px-4 py-4 text-sm leading-6 text-ink whitespace-pre-wrap">
-            {serverText.trim() || 'No global rules configured yet.'}
-          </div>
-        )}
+          ) : null}
+
+          {activeTab === 'post-templates' && session.isAdmin ? (
+            <div
+              role="tabpanel"
+              id="rules-tabpanel-post-templates"
+              aria-labelledby="rules-tab-trigger-post-templates"
+              className="min-w-0"
+            >
+              <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
+                <h3 className="font-heading text-lg font-semibold text-ink">Post templates</h3>
+                <p className="mt-1 text-sm leading-6 text-muted">
+                  Reusable instruction blocks stored in the <strong className="text-ink">PostTemplates</strong> sheet. Assign a
+                  template per topic in the review sidebar to switch styles without editing global rules.
+                </p>
+                {!session.config.spreadsheetId?.trim() ? (
+                  <p className="mt-3 text-sm text-muted">Connect a spreadsheet in Settings to create templates.</p>
+                ) : postTemplatesError ? (
+                  <p className="mt-3 text-sm text-destructive">{postTemplatesError}</p>
+                ) : null}
+                {session.config.spreadsheetId?.trim() ? (
+                  <>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button type="button" size="sm" onClick={() => openNewTemplateDialog()}>
+                        New template
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" disabled={postTemplatesLoading} onClick={() => void loadPostTemplates()}>
+                        {postTemplatesLoading ? 'Refreshing…' : 'Refresh'}
+                      </Button>
+                    </div>
+                    <ul className="mt-4 space-y-3">
+                      {postTemplatesLoading && postTemplates.length === 0 ? (
+                        <li className="text-sm text-muted">Loading templates…</li>
+                      ) : postTemplates.length === 0 ? (
+                        <li className="text-sm text-muted">No templates yet. Create one to get started.</li>
+                      ) : (
+                        postTemplates.map((t) => (
+                          <li
+                            key={t.id}
+                            className="rounded-xl border border-border/80 bg-canvas/50 px-4 py-3 text-sm shadow-sm"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-semibold text-ink">{t.name || 'Untitled'}</p>
+                                <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-muted">{t.rules.trim() || '—'}</p>
+                              </div>
+                              <div className="flex shrink-0 gap-2">
+                                <Button type="button" variant="outline" size="sm" onClick={() => openEditTemplateDialog(t)}>
+                                  Edit
+                                </Button>
+                                <Button type="button" variant="outline" size="sm" onClick={() => void handleDeletePostTemplate(t)}>
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {session.isAdmin ? (
-        <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
-          <h3 className="font-heading text-lg font-semibold text-ink">Post templates</h3>
-          <p className="mt-1 text-sm leading-6 text-muted">
-            Reusable instruction blocks stored in the <strong className="text-ink">PostTemplates</strong> sheet. Assign a
-            template per topic in the review sidebar to switch styles without editing global rules.
-          </p>
-          {!session.config.spreadsheetId?.trim() ? (
-            <p className="mt-3 text-sm text-muted">Connect a spreadsheet in Settings to create templates.</p>
-          ) : postTemplatesError ? (
-            <p className="mt-3 text-sm text-destructive">{postTemplatesError}</p>
-          ) : null}
-          {session.config.spreadsheetId?.trim() ? (
-            <>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button type="button" size="sm" onClick={() => openNewTemplateDialog()}>
-                  New template
-                </Button>
-                <Button type="button" variant="outline" size="sm" disabled={postTemplatesLoading} onClick={() => void loadPostTemplates()}>
-                  {postTemplatesLoading ? 'Refreshing…' : 'Refresh'}
-                </Button>
-              </div>
-              <ul className="mt-4 space-y-3">
-                {postTemplatesLoading && postTemplates.length === 0 ? (
-                  <li className="text-sm text-muted">Loading templates…</li>
-                ) : postTemplates.length === 0 ? (
-                  <li className="text-sm text-muted">No templates yet. Create one to get started.</li>
-                ) : (
-                  postTemplates.map((t) => (
-                    <li
-                      key={t.id}
-                      className="rounded-xl border border-border/80 bg-canvas/50 px-4 py-3 text-sm shadow-sm"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-ink">{t.name || 'Untitled'}</p>
-                          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-muted">{t.rules.trim() || '—'}</p>
-                        </div>
-                        <div className="flex shrink-0 gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => openEditTemplateDialog(t)}>
-                            Edit
-                          </Button>
-                          <Button type="button" variant="outline" size="sm" onClick={() => void handleDeletePostTemplate(t)}>
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </>
-          ) : null}
-
-          <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-            <DialogContent showCloseButton className="max-h-[min(90vh,640px)] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingTemplateId ? 'Edit template' : 'New template'}</DialogTitle>
-                <DialogDescription>
-                  Rules are sent to the model like global rules when this template is selected on a topic (and topic rules
-                  are empty).
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-3 py-2">
-                <label className="text-xs font-semibold text-ink">
-                  Name
-                  <input
-                    type="text"
-                    value={templateFormName}
-                    onChange={(e) => setTemplateFormName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm font-normal text-ink"
-                    placeholder="e.g. Story-first, Data-heavy"
-                  />
-                </label>
-                <label className="text-xs font-semibold text-ink">
-                  Rules
-                  <Textarea
-                    value={templateFormRules}
-                    onChange={(e) => setTemplateFormRules(e.target.value)}
-                    placeholder="Instructions for tone, structure, length, hashtags…"
-                    className="mt-1 min-h-[200px] w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm leading-6"
-                  />
-                </label>
-              </div>
-              <DialogFooter className="border-t-0 bg-transparent p-0 pt-2 sm:justify-end">
-                <Button type="button" variant="outline" onClick={() => setTemplateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="button" disabled={savingPostTemplate} onClick={() => void handleSavePostTemplate()}>
-                  {savingPostTemplate ? 'Saving…' : editingTemplateId ? 'Save changes' : 'Create'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      ) : null}
-
-      {session.isAdmin ? (
-        <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
-          <h3 className="font-heading text-lg font-semibold text-ink">Version diff</h3>
-          <p className="mt-1 text-sm text-muted">
-            Compare the live saved rules with previous snapshots (stored when an admin saves changes).
-          </p>
-          {historyError ? <p className="mt-2 text-sm text-destructive">{historyError}</p> : null}
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-xs font-semibold text-ink">
-              Base
-              <select
-                className="rounded-lg border border-border bg-white px-2 py-2 text-sm font-normal text-ink"
-                value={diffLeft === 'current' ? 'current' : `v:${diffLeft}`}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setDiffLeft(v === 'current' ? 'current' : Number(v.slice(2)));
-                }}
-              >
-                <option value="current">Current (saved)</option>
-                {versions.map((v, i) => (
-                  <option key={`l-${v.savedAt}`} value={`v:${i}`}>
-                    {new Date(v.savedAt).toLocaleString()} — {v.savedBy}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 text-xs font-semibold text-ink">
-              Compare
-              <select
-                className="rounded-lg border border-border bg-white px-2 py-2 text-sm font-normal text-ink"
-                value={diffRight === 'current' ? 'current' : `v:${diffRight}`}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setDiffRight(v === 'current' ? 'current' : Number(v.slice(2)));
-                }}
-              >
-                <option value="current">Current (saved)</option>
-                {versions.map((v, i) => (
-                  <option key={`r-${v.savedAt}`} value={`v:${i}`}>
-                    {new Date(v.savedAt).toLocaleString()} — {v.savedBy}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="custom-scrollbar mt-4 max-h-[min(50vh,420px)] overflow-auto rounded-xl border border-border bg-ink/[0.03] p-3 font-mono text-xs leading-5">
-            {diffRows.length === 0 ? (
-              <p className="text-muted">No differences.</p>
-            ) : (
-              diffRows.map((row, i) => (
-                <div
-                  key={i}
-                  className={
-                    row.kind === 'same'
-                      ? 'text-ink/80'
-                      : row.kind === 'add'
-                        ? 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-100'
-                        : 'bg-rose-500/15 text-rose-900 dark:text-rose-100'
-                  }
-                >
-                  <span className="select-none pr-2 text-muted">
-                    {row.kind === 'same' ? ' ' : row.kind === 'add' ? '+' : '-'}
-                  </span>
-                  {row.line || ' '}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+          <DialogContent showCloseButton className="max-h-[min(90vh,640px)] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingTemplateId ? 'Edit template' : 'New template'}</DialogTitle>
+              <DialogDescription>
+                Rules are sent to the model like global rules when this template is selected on a topic (and topic rules are
+                empty).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 py-2">
+              <label className="text-xs font-semibold text-ink">
+                Name
+                <input
+                  type="text"
+                  value={templateFormName}
+                  onChange={(e) => setTemplateFormName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm font-normal text-ink"
+                  placeholder="e.g. Story-first, Data-heavy"
+                />
+              </label>
+              <label className="text-xs font-semibold text-ink">
+                Rules
+                <Textarea
+                  value={templateFormRules}
+                  onChange={(e) => setTemplateFormRules(e.target.value)}
+                  placeholder="Instructions for tone, structure, length, hashtags…"
+                  className="mt-1 min-h-[200px] w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm leading-6"
+                />
+              </label>
+              <PreSaveTextDiff
+                baseline={templateRulesBaseline}
+                draft={templateFormRules}
+                title="Changes vs template rules on open"
+                treatTrimAsNoChanges={false}
+              />
+            </div>
+            <DialogFooter className="border-t-0 bg-transparent p-0 pt-2 sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setTemplateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" disabled={savingPostTemplate} onClick={() => void handleSavePostTemplate()}>
+                {savingPostTemplate ? 'Saving…' : editingTemplateId ? 'Save changes' : 'Create'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </div>
   );

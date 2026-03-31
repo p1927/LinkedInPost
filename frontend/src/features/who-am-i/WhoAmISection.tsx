@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTextUndoRedo } from '@/hooks/useTextUndoRedo';
 import { Redo2, Undo2 } from 'lucide-react';
 import { DEFAULT_AUTHOR_PROFILE_TEMPLATE } from './default-author-profile-template';
+import { PreSaveTextDiff } from '@/features/rules/PreSaveTextDiff';
 
 export function WhoAmISection({
   serverAuthorProfile,
@@ -105,6 +106,7 @@ export function WhoAmISection({
             className="mt-3 min-h-[200px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-sm leading-6 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             aria-label="Who am I author profile"
           />
+          <PreSaveTextDiff baseline={serverAuthorProfile} draft={value} title="Changes vs saved author profile" />
           <div className="mt-3 flex justify-end gap-2">
             <Button type="button" disabled={!dirty || saving} onClick={() => void handleSave()}>
               {saving ? 'Saving…' : 'Save author profile'}

@@ -218,7 +218,7 @@ export function TopicsRightRail({
                 value={modelSelectValue}
                 disabled={saving}
                 onValueChange={(val) => {
-                  if (!selectedRow) return;
+                  if (!selectedRow || val == null) return;
                   if (FEATURE_MULTI_PROVIDER_LLM) {
                     if (val === WORKSPACE_DEFAULT_MODEL) {
                       void persist(selectedRow, { topicGenerationModel: '' });
@@ -356,7 +356,7 @@ export function TopicsHomePanels({
     <div className="mx-auto w-full max-w-[1400px] min-w-0">
       <PanelGroup
         orientation="horizontal"
-        autoSaveId="topics-home-main-rail"
+        id="topics-home-main-rail"
         className="min-h-[min(28rem,calc(100vh-8rem))]"
         resizeTargetMinimumSize={{ coarse: 28, fine: 14 }}
       >
