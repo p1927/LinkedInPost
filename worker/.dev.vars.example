@@ -9,7 +9,27 @@ ADMIN_EMAILS=you@gmail.com
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
 GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"linkedin-bot@your-project.iam.gserviceaccount.com","client_id":"...","token_uri":"https://oauth2.googleapis.com/token"}
 GITHUB_TOKEN_ENCRYPTION_KEY=REPLACE_WITH_BASE64_32_BYTE_KEY
-CORS_ALLOWED_ORIGINS=http://localhost:5173 http://localhost:5174 https://your-username.github.io
+CORS_ALLOWED_ORIGINS=http://localhost:5173 http://localhost:5174 http://127.0.0.1:5173 http://127.0.0.1:5174 https://your-username.github.io
+
+# LLM providers — required for generation
+GEMINI_API_KEY=your_gemini_api_key_here
+# xAI Grok (optional — only needed when multi-provider LLM is enabled and you want Grok as primary/fallback)
+XAI_API_KEY=your_xai_grok_api_key_here
+
+# Generation Worker (optional — enables AI Draft button in the dashboard)
+# Deploy the generation worker separately and set its URL here
+# GENERATION_WORKER_URL=https://your-generation-worker.your-account.workers.dev
+# GENERATION_WORKER_SECRET=use-a-long-random-shared-secret
+
+# Scheduled publish auth secret (required for Durable Object alarm callbacks)
+WORKER_SCHEDULER_SECRET=use-a-long-random-string
+
+# News research API keys (optional — enable per-provider in Settings > News Research)
+# NEWSAPI_KEY=your_newsapi_key_here
+# GNEWS_API_KEY=your_gnews_key_here
+# NEWSDATA_API_KEY=your_newsdata_key_here
+# SERPAPI_API_KEY=your_serpapi_key_here
+
 INSTAGRAM_APP_ID=your_instagram_app_id_here
 INSTAGRAM_APP_SECRET=your_instagram_app_secret_here
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here

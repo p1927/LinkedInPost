@@ -25,6 +25,16 @@
   backdrop-filter: blur(8px);
   min-height: 480px;
   height: 100%;
+  /*
+   * Theme default is overflow:hidden, which clips the header "View" label
+   * (translateY(-50%)) and absolutely positioned view dropdowns. The grid
+   * scrolls inside .sx__view-container instead.
+   */
+  overflow: visible;
+}
+
+.csc-wrapper .sx__view-container {
+  border-radius: 0 0 0.75rem 0.75rem;
 }
 
 /* Header bar */
@@ -239,14 +249,42 @@
 }
 
 /* ------------------------------------------------------------------
-   Topics queue — header controls (view switcher + date picker UX)
-   Opens view menu upward so it is not clipped by scroll parents.
+   Topics queue — same Schedule-X chrome as campaign (compact), plus
+   padding, viewport-bounded height (week/day scroll inside the grid),
+   and high z-index so the view menu sits above the month/week cells.
    ------------------------------------------------------------------ */
 
 .csc-wrapper.csc-topics-queue {
   --sx-calendar-header-popup-z-index: 70;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  /* Bounded height so week/day time grids scroll inside .sx__view-container */
+  min-height: 280px; /* overrides .csc-wrapper { min-height: 480px } */
+  height: clamp(280px, 72vh, calc(100dvh - 14rem));
+  max-height: calc(100dvh - 14rem);
+}
+
+.csc-wrapper.csc-topics-queue .sx-react-calendar-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.csc-wrapper.csc-topics-queue .sx__calendar-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.csc-wrapper.csc-compact.csc-topics-queue .sx__calendar {
+  /* Override compact min-height so max-height on the wrapper can win */
+  min-height: 0;
+  flex: 1 1 auto;
+  max-height: 100%;
 }
 
 .csc-wrapper.csc-topics-queue .sx__view-selection {
@@ -278,10 +316,10 @@
 }
 
 .csc-wrapper.csc-topics-queue .sx__view-selection-items {
-  top: auto;
-  bottom: 100%;
+  /* Default theme opens downward (top: 100%). Upward positioning clipped
+   * against .sx__calendar when combined with scroll parents; overflow on
+   * .sx__calendar is visible so this stays readable. */
   left: 0;
-  margin-bottom: 6px;
   min-width: 11rem;
   border-radius: 0.625rem;
   border: 1px solid rgba(99, 102, 241, 0.2);
