@@ -21,6 +21,7 @@ import {
   listNewsResearchHistory,
   pruneOldNewsSnapshots,
 } from './persistence/pipeline-db';
+import { buildServices } from './services';
 import { requireTopicId } from './persistence/pipeline-db/mappers';
 import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
@@ -567,8 +568,7 @@ export default {
       }
 
       const storedConfig = await loadStoredConfig(env);
-      const sheets = new SheetsGateway(env);
-      const pipeline = new PipelineStore(env.PIPELINE_DB);
+      const { sheets, pipeline } = buildServices(env);
       const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, pipeline, request);
       return jsonResponse({ ok: true, data }, 200, corsHeaders);
     } catch (error) {
@@ -619,8 +619,7 @@ async function handleScheduledLinkedInPublishRequest(request: Request, env: Env)
   }
 
   if (!topicId && topic && date) {
-    const sheets = new SheetsGateway(env);
-    const pipeline = new PipelineStore(env.PIPELINE_DB);
+    const { sheets, pipeline } = buildServices(env);
     const rows = await pipeline.getMergedRows(sheets, config.spreadsheetId);
     const match = rows.find((r) => r.topic.trim() === topic && r.date.trim() === date);
     topicId = String(match?.topicId || '').trim();
@@ -659,8 +658,7 @@ async function handleInternalMergedRowsRequest(request: Request, env: Env): Prom
 
   const config = await loadStoredConfig(env);
   ensureSpreadsheetConfigured(config);
-  const sheets = new SheetsGateway(env);
-  const pipeline = new PipelineStore(env.PIPELINE_DB);
+  const { sheets, pipeline } = buildServices(env);
   const rows = await pipeline.getMergedRows(sheets, config.spreadsheetId);
   return Response.json({ ok: true, data: rows });
 }
@@ -675,7 +673,7 @@ async function handleInternalPipelineUpsertRequest(request: Request, env: Env): 
   ensureSpreadsheetConfigured(config);
   const body = (await request.json()) as { row?: unknown };
   const row = coerceSheetRow(body.row);
-  const pipeline = new PipelineStore(env.PIPELINE_DB);
+  const { pipeline } = buildServices(env);
   await pipeline.upsertFull(config.spreadsheetId, row);
   return Response.json({ ok: true });
 }
@@ -860,6 +858,14 @@ async function dispatchAction(
         coerceSheetRow(payload.row),
         String(payload.generationTemplateId ?? ''),
       );
+    case 'saveTopicDeliveryPreferences':
+      ensureSpreadsheetConfigured(storedConfig);
+      return pipeline.saveTopicDeliveryPreferences(storedConfig.spreadsheetId, coerceSheetRow(payload.row), {
+        topicDeliveryChannel:
+          payload.topicDeliveryChannel !== undefined ? String(payload.topicDeliveryChannel ?? '') : undefined,
+        topicGenerationModel:
+          payload.topicGenerationModel !== undefined ? String(payload.topicGenerationModel ?? '') : undefined,
+      });
     case 'startLinkedInAuth':
       ensureAdmin(session);
       return startLinkedInAuth(request, env, session);
@@ -2427,8 +2433,7 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
   const config = await loadStoredConfig(env);
   ensureSpreadsheetConfigured(config);
 
-  const sheets = new SheetsGateway(env);
-  const pipeline = new PipelineStore(env.PIPELINE_DB);
+  const { sheets, pipeline } = buildServices(env);
   const topicId = String(task.topicId || '').trim();
   if (!topicId) {
     return;

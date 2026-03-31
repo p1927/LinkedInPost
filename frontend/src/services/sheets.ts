@@ -30,4 +30,10 @@ export interface SheetRow {
   generationTemplateId?: string;
   /** When the row was marked published (worker / D1). */
   publishedAt?: string;
+  /** Optional delivery channel override; empty uses workspace default. */
+  topicDeliveryChannel?: string;
+  /**
+   * Optional generation model override. Plain Gemini model id or JSON `{"provider":"grok"|"gemini","model":"..."}`.
+   */
+  topicGenerationModel?: string;
 }

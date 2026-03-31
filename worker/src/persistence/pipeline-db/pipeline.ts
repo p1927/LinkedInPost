@@ -12,14 +12,16 @@ INSERT OR REPLACE INTO pipeline_state (
   image_link1, image_link2, image_link3, image_link4,
   selected_text, selected_image_id, selected_image_urls_json,
   post_time, email_to, email_cc, email_bcc, email_subject,
-  topic_generation_rules, generation_template_id, published_at
+  topic_generation_rules, generation_template_id, published_at,
+  topic_delivery_channel, topic_generation_model
 ) VALUES (
   ?1, ?2, ?3, ?4, ?5,
   ?6, ?7, ?8, ?9,
   ?10, ?11, ?12, ?13,
   ?14, ?15, ?16,
   ?17, ?18, ?19, ?20, ?21,
-  ?22, ?23, ?24
+  ?22, ?23, ?24,
+  ?25, ?26
 )
 `;
 
@@ -93,6 +95,8 @@ function bindPipelineInsert(stmt: D1PreparedStatement, spreadsheetId: string, ro
     c.topic_generation_rules,
     c.generation_template_id,
     c.published_at,
+    c.topic_delivery_channel,
+    c.topic_generation_model,
   );
 }
 
@@ -176,13 +180,20 @@ export class PipelineStore {
       if (!needsHydrate) {
         continue;
       }
+      const sheetCh = String(fields.topicDeliveryChannel || '').trim();
+      const sheetModel = String(fields.topicGenerationModel || '').trim();
+      const mergedFields = {
+        ...fields,
+        topicDeliveryChannel: sheetCh || (p ? String(p.topic_delivery_channel ?? '').trim() : ''),
+        topicGenerationModel: sheetModel || (p ? String(p.topic_generation_model ?? '').trim() : ''),
+      };
       const sourceSheet: SheetRow['sourceSheet'] =
-        normalizeStatus(fields.status) === 'published' ? 'Post' : 'Draft';
+        normalizeStatus(mergedFields.status) === 'published' ? 'Post' : 'Draft';
       hydrateUpserts.push({
         rowIndex: t.rowIndex,
         sourceSheet,
         topicRowIndex: t.rowIndex,
-        ...fields,
+        ...mergedFields,
       });
     }
 
@@ -316,6 +327,22 @@ export class PipelineStore {
     return next;
   }
 
+  async saveTopicDeliveryPreferences(
+    spreadsheetId: string,
+    row: SheetRow,
+    prefs: { topicDeliveryChannel?: string; topicGenerationModel?: string },
+  ): Promise<SheetRow> {
+    let next: SheetRow = { ...row };
+    if (prefs.topicDeliveryChannel !== undefined) {
+      next = { ...next, topicDeliveryChannel: String(prefs.topicDeliveryChannel || '').trim() };
+    }
+    if (prefs.topicGenerationModel !== undefined) {
+      next = { ...next, topicGenerationModel: String(prefs.topicGenerationModel || '').trim() };
+    }
+    await this.upsertFull(spreadsheetId, next);
+    return next;
+  }
+
   async updatePostSchedule(spreadsheetId: string, row: SheetRow, postTime: string): Promise<{ success: true }> {
     await this.upsertFull(spreadsheetId, { ...row, postTime });
     return { success: true };
@@ -380,6 +407,8 @@ export class PipelineStore {
       selectedImageUrlsJson,
       generationTemplateId: sourceRow.generationTemplateId || '',
       publishedAt: undefined,
+      topicDeliveryChannel: sourceRow.topicDeliveryChannel || '',
+      topicGenerationModel: sourceRow.topicGenerationModel || '',
     };
 
     await this.ensureWorkspace(spreadsheetId);
@@ -464,6 +493,8 @@ export class PipelineStore {
         emailSubject: '',
         topicGenerationRules: p.topicGenerationRules,
         generationTemplateId: p.generationTemplateId,
+        topicDeliveryChannel: '',
+        topicGenerationModel: '',
       };
       stmts.push(pipelineUpsertStatement(this.db, spreadsheetId, row));
     }

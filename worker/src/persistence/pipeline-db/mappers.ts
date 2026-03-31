@@ -1,8 +1,8 @@
 import type { SheetRow } from '../../generation/types';
 import type { PipelineStateDbRow } from './types';
 
-/** Must match `GOOGLE_PIPELINE_SHEET_WIDTH` / PIPELINE_HEADERS width (A–V) in `drafts.ts`. */
-const GOOGLE_PIPELINE_ROW_COL_COUNT = 22;
+/** Must match `GOOGLE_PIPELINE_SHEET_WIDTH` / PIPELINE_HEADERS width (A–X) in `drafts.ts`. */
+const GOOGLE_PIPELINE_ROW_COL_COUNT = 24;
 
 function padGooglePipelineRow(row: unknown[], width: number): string[] {
   const padded = row.map((c) => (typeof c === 'string' ? c : String(c ?? '')));
@@ -13,7 +13,7 @@ function padGooglePipelineRow(row: unknown[], width: number): string[] {
 }
 
 /**
- * Parses a Google Draft/Post row (PIPELINE_HEADERS, A–V) into pipeline fields.
+ * Parses a Google Draft/Post row (PIPELINE_HEADERS, A–X) into pipeline fields.
  * `topicId` always comes from the Topics sheet (column C), not column V on the row.
  */
 export function pipelineFieldsFromGooglePipelineRow(
@@ -66,6 +66,8 @@ export function pipelineFieldsFromGooglePipelineRow(
     selectedImageUrlsJson: p[19] ?? '',
     generationTemplateId: p[20] ?? '',
     publishedAt: undefined,
+    topicDeliveryChannel: p[22] ?? '',
+    topicGenerationModel: p[23] ?? '',
   };
 }
 
@@ -109,6 +111,8 @@ export function pipelineDbRowToFields(row: PipelineStateDbRow): Omit<SheetRow, '
     topicGenerationRules: row.topic_generation_rules ?? '',
     generationTemplateId: row.generation_template_id ?? '',
     publishedAt: row.published_at || undefined,
+    topicDeliveryChannel: row.topic_delivery_channel ?? '',
+    topicGenerationModel: row.topic_generation_model ?? '',
   };
 }
 
@@ -139,6 +143,8 @@ export function sheetRowToPipelineColumns(spreadsheetId: string, row: SheetRow):
     topic_generation_rules: row.topicGenerationRules ?? '',
     generation_template_id: row.generationTemplateId ?? '',
     published_at: row.publishedAt ?? null,
+    topic_delivery_channel: row.topicDeliveryChannel ?? '',
+    topic_generation_model: row.topicGenerationModel ?? '',
   };
 }
 
@@ -174,6 +180,8 @@ export function mergeTopicWithPipeline(topic: TopicSheetEntry, pipeline: Pipelin
         topicGenerationRules: '',
         generationTemplateId: '',
         publishedAt: undefined as string | undefined,
+        topicDeliveryChannel: '',
+        topicGenerationModel: '',
       };
 
   const statusNorm = String(baseFields.status || '').trim().toLowerCase();
@@ -207,5 +215,7 @@ export function mergeTopicWithPipeline(topic: TopicSheetEntry, pipeline: Pipelin
     topicGenerationRules: baseFields.topicGenerationRules,
     generationTemplateId: baseFields.generationTemplateId,
     publishedAt: baseFields.publishedAt,
+    topicDeliveryChannel: baseFields.topicDeliveryChannel,
+    topicGenerationModel: baseFields.topicGenerationModel,
   };
 }

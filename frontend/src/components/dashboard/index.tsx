@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
-import { type BotConfig, type BotConfigUpdate } from '../../services/configService';
-import { getNormalizedRowStatus, queueStatusToBadgeVariant, canPreviewPublishedContent } from './utils';
+import { type BotConfig, type BotConfigUpdate, type LlmRef } from '../../services/configService';
+import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
 import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
@@ -12,9 +12,9 @@ import {
   type DashboardSettingsDrawerHandle,
 } from './components/DashboardSettingsDrawer';
 import { SettingsConnectionsCard } from './components/SettingsConnectionsCard';
-import { DashboardToolbar } from './components/DashboardToolbar';
 import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
+import { TopicsHomePanels, TopicsRightRail } from './components/TopicsRightRail';
 import { getChannelOption } from '../../integrations/channels';
 import { useRegisterWorkspaceChrome } from '../workspace/WorkspaceChromeContext';
 import { normalizeTelegramChatId, parseTelegramRecipientsInput } from '../../integrations/telegram';
@@ -22,7 +22,7 @@ import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { TopicVariantsPage } from '../../features/topic-navigation/screens/TopicVariantsPage';
 import { TopicEditorPage } from '../../features/topic-navigation/screens/TopicEditorPage';
 import { GlobalRulesPage } from '../../pages/GlobalRulesPage';
-import { ApprovedPostPreview } from '../ApprovedPostPreview';
+import { effectiveChannel, effectiveLlmRef } from '@/lib/topicEffectivePrefs';
 import { findRowByTopicRouteId, normalizeTopicRouteParam } from '../../features/topic-navigation/utils/topicRoute';
 import {
   WORKSPACE_PATHS,
@@ -147,12 +147,23 @@ export function Dashboard({
       ? (location.state as { openPreviewForTopicKey: string }).openPreviewForTopicKey
       : undefined;
 
+  const workspaceLlm: LlmRef = useMemo(
+    () =>
+      settingsHook.generationLlm ?? {
+        provider: 'gemini',
+        model: settingsHook.googleModel,
+      },
+    [settingsHook.generationLlm, settingsHook.googleModel],
+  );
+
+  const [selectedTopicsPanelTopicId, setSelectedTopicsPanelTopicId] = useState<string | null>(null);
+
   const queueHook = useDashboardQueue({
     idToken,
     api,
     session,
     onAuthExpired,
-    googleModel: settingsHook.googleModel,
+    workspaceLlm,
     selectedChannel: channelsHook.selectedChannel,
     resolvedRecipientId,
     selectedRecipientLabel,
@@ -181,10 +192,17 @@ export function Dashboard({
     if (queueHook.loading) return;
     const row = findRowByTopicRouteId(queueHook.rows, openPreviewForTopicKey);
     if (row) {
-      queueHook.setSelectedApprovedRowPreview(row);
+      queueMicrotask(() => setSelectedTopicsPanelTopicId(String(row.topicId).trim()));
     }
     navigate(WORKSPACE_PATHS.topics, { replace: true, state: null });
-  }, [openPreviewForTopicKey, queueHook.loading, queueHook.rows, navigate, queueHook.setSelectedApprovedRowPreview]);
+  }, [openPreviewForTopicKey, queueHook.loading, queueHook.rows, navigate]);
+
+  const railSelectedTopicId = useMemo(() => {
+    if (!selectedTopicsPanelTopicId) return null;
+    const id = String(selectedTopicsPanelTopicId).trim();
+    if (queueHook.loading) return id;
+    return queueHook.rows.some((r) => String(r.topicId).trim() === id) ? id : null;
+  }, [selectedTopicsPanelTopicId, queueHook.rows, queueHook.loading]);
 
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
@@ -211,7 +229,7 @@ export function Dashboard({
   const refreshQueue = useCallback(() => {
     if (!session.config.spreadsheetId) return;
     void queueHook.loadData();
-  }, [session.config.spreadsheetId, queueHook.loadData]);
+  }, [session.config.spreadsheetId, queueHook]);
 
   const publishingHealth = useMemo(
     () => ({
@@ -224,14 +242,23 @@ export function Dashboard({
     [linkedinConfigured, instagramConfigured, telegramConfigured, whatsappConfigured, gmailConfigured],
   );
 
+  const topicChromeRow = topicIdFromPath
+    ? findRowByTopicRouteId(queueHook.rows, topicIdFromPath)
+    : undefined;
+
+  const reviewDeliveryChannel = topicChromeRow
+    ? effectiveChannel(topicChromeRow, channelsHook.selectedChannel)
+    : channelsHook.selectedChannel;
+  const reviewLlm = topicChromeRow ? effectiveLlmRef(topicChromeRow, workspaceLlm) : workspaceLlm;
+
   const topicReviewBase = {
     rows: queueHook.rows,
     queueLoading: queueHook.loading,
-    deliveryChannel: channelsHook.selectedChannel,
+    deliveryChannel: reviewDeliveryChannel,
     previewAuthorName: previewAuthorDisplayName(session.email),
     globalGenerationRules: session.config.generationRules,
-    googleModel: settingsHook.googleModel,
-    generationLlm: settingsHook.generationLlm,
+    googleModel: reviewLlm.model,
+    generationLlm: FEATURE_MULTI_PROVIDER_LLM ? reviewLlm : undefined,
     onApprove: queueHook.handleApproveVariant,
     onPublishNow: queueHook.publishFromReviewEditor,
     onSaveEmailFields: queueHook.handleSaveEmailFields,
@@ -261,10 +288,6 @@ export function Dashboard({
     onListNewsResearchHistory: FEATURE_NEWS_RESEARCH ? queueHook.handleListNewsResearchHistory : undefined,
     onGetNewsResearchSnapshot: FEATURE_NEWS_RESEARCH ? queueHook.handleGetNewsResearchSnapshot : undefined,
   };
-
-  const topicChromeRow = topicIdFromPath
-    ? findRowByTopicRouteId(queueHook.rows, topicIdFromPath)
-    : undefined;
 
   const topicChromeRaw = topicChromeRow?.topic?.trim() ?? '';
   const headerOverride = useMemo(() => {
@@ -353,25 +376,31 @@ export function Dashboard({
       actionLoading={queueHook.actionLoading}
       session={session}
       onOpenTopicReview={(row) => navigate(topicEditorPathForRow(row))}
-      onTopicNavigate={(row) => {
-        const st = getNormalizedRowStatus(row.status);
-        if (canPreviewPublishedContent(row)) {
-          queueHook.setSelectedApprovedRowPreview(row);
-          return;
-        }
-        if (st === 'drafted') {
-          navigate(topicEditorPathForRow(row));
-        }
-      }}
+      selectedTopicId={railSelectedTopicId}
+      onSelectTopicRow={(row) => setSelectedTopicsPanelTopicId(String(row.topicId).trim())}
       publishRowToSelectedChannel={queueHook.publishRowToSelectedChannel}
       republishRowToSelectedChannel={queueHook.republishRowToSelectedChannel}
-      setSelectedApprovedRowPreview={queueHook.setSelectedApprovedRowPreview}
       handleDeleteTopic={queueHook.handleDeleteTopic}
       deletingRowIndex={queueHook.deletingRowIndex}
       scrollTargetId={queueScrollTargetId}
       onScrollTargetHandled={handleScrollTargetHandled}
       pendingScheduledPublish={queueHook.pendingScheduledPublish}
       selectedChannel={channelsHook.selectedChannel}
+    />
+  );
+
+  const topicsRail = (
+    <TopicsRightRail
+      workspaceChannel={channelsHook.selectedChannel}
+      workspaceLlm={workspaceLlm}
+      selectedTopicId={railSelectedTopicId}
+      rows={queueHook.rows}
+      availableModels={settingsHook.availableModels}
+      modelPickerLocked={settingsHook.modelPickerLocked}
+      providerLabel={settingsHook.llmPrimaryProvider === 'grok' ? 'Grok (xAI)' : 'Google Gemini'}
+      previewAuthorName={previewAuthorDisplayName(session.email)}
+      onSaveTopicDeliveryPreferences={queueHook.handleSaveTopicDeliveryPreferences}
+      onOpenEditor={(row) => navigate(topicEditorPathForRow(row))}
     />
   );
 
@@ -475,46 +504,22 @@ export function Dashboard({
     />
   );
 
-  const topicsHome = (
-    <div className="mx-auto grid w-full max-w-[1400px] gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="min-w-0">{queueContent}</div>
-      <aside className="min-w-0 lg:sticky lg:top-14 lg:z-10 lg:max-h-[calc(100vh-3.5rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
-        <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
-          <section aria-labelledby="topics-rail-ai-model" className="space-y-2">
-            <h2 id="topics-rail-ai-model" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
-              AI model
-            </h2>
-            <DashboardToolbar
-              embedded
-              googleModel={settingsHook.googleModel}
-              setGoogleModel={settingsHook.setGoogleModel}
-              availableModels={settingsHook.availableModels}
-              modelPickerLocked={settingsHook.modelPickerLocked}
-              providerLabel={
-                settingsHook.llmPrimaryProvider === 'grok' ? 'Grok (xAI)' : 'Google Gemini'
-              }
-            />
-          </section>
-          <div className="my-5 border-t border-violet-200/45" aria-hidden />
-          <section aria-labelledby="topics-rail-delivery" className="space-y-3">
-            <h2 id="topics-rail-delivery" className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">
-              Channel delivery
-            </h2>
-            {deliveryContent}
-          </section>
-        </div>
-      </aside>
-    </div>
-  );
+  const topicsHome = <TopicsHomePanels queue={queueContent} rail={topicsRail} />;
 
   const settingsHome = (
     <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
       <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
-      <SettingsConnectionsCard
-        health={publishingHealth}
-        onNavigateToSection={(sectionId) => settingsDrawerRef.current?.scrollToSection(sectionId)}
-        className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md lg:sticky lg:top-4"
-      />
+      <div className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-4 lg:self-start">
+        <SettingsConnectionsCard
+          health={publishingHealth}
+          onNavigateToSection={(sectionId) => settingsDrawerRef.current?.scrollToSection(sectionId)}
+          className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md"
+        />
+        <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
+          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Channel delivery</h2>
+          <div className="mt-3">{deliveryContent}</div>
+        </div>
+      </div>
     </div>
   );
 
@@ -572,13 +577,6 @@ export function Dashboard({
         <Route path="*" element={isTopicsMain ? null : <Navigate to={WORKSPACE_PATHS.topics} replace />} />
       </Routes>
 
-      {queueHook.selectedApprovedRowPreview ? (
-        <ApprovedPostPreview
-          row={queueHook.selectedApprovedRowPreview}
-          previewChannel={channelsHook.selectedChannel}
-          onClose={() => queueHook.setSelectedApprovedRowPreview(null)}
-        />
-      ) : null}
     </div>
   );
 }

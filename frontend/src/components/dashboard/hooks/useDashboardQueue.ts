@@ -3,9 +3,11 @@ import { type SheetRow } from '../../../services/sheets';
 import type { NewsResearchSearchPayload, NewsResearchSearchResult } from '../../../services/backendApi';
 import { type GenerationRequest, type QuickChangePreviewResult, type VariantsPreviewResponse } from '../../../services/backendApi';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '../../../services/backendApi';
+import type { LlmRef } from '../../../services/configService';
 import { type DeliverySummary } from '../types';
 
 import { type ChannelId, getChannelOption, getChannelLabel } from '../../../integrations/channels';
+import { effectiveChannel, effectiveLlmRef } from '@/lib/topicEffectivePrefs';
 import { buildRowActionKey, findRowByTopicId, getNormalizedRowStatus, isSameTopicId } from '../utils';
 import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
@@ -22,7 +24,7 @@ export function useDashboardQueue({
   api,
   session,
   onAuthExpired,
-  googleModel,
+  workspaceLlm,
   selectedChannel,
   resolvedRecipientId,
   selectedRecipientLabel,
@@ -40,7 +42,8 @@ export function useDashboardQueue({
   api: BackendApi;
   session: AppSession;
   onAuthExpired: () => void;
-  googleModel: string;
+  /** Workspace primary LLM; used with per-topic overrides for generation and GitHub dispatch. */
+  workspaceLlm: LlmRef;
   selectedChannel: ChannelId;
   resolvedRecipientId: string;
   selectedRecipientLabel: string;
@@ -61,13 +64,10 @@ export function useDashboardQueue({
   /** True only while add-topic API + follow-up refresh run (not general queue loads). */
   const [addingTopic, setAddingTopic] = useState(false);
   const [newTopic, setNewTopic] = useState('');
-  const [selectedApprovedRowPreview, setSelectedApprovedRowPreview] = useState<SheetRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
 
   const { showAlert, showConfirm } = useAlert();
-
-  const selectedChannelOption = getChannelOption(selectedChannel);
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -207,6 +207,7 @@ export function useDashboardQueue({
   };
 
   const dispatchGithubAction = async (
+    rowForModel: SheetRow,
     action: 'draft' | 'publish' | 'refine',
     eventType: 'trigger-draft' | 'trigger-publish',
     payload: Record<string, unknown>,
@@ -225,7 +226,7 @@ export function useDashboardQueue({
     setActionLoading(loadingKey);
     try {
       await api.triggerGithubAction(idToken, action, eventType, {
-        google_model: googleModel,
+        google_model: effectiveLlmRef(rowForModel, workspaceLlm).model,
         ...payload,
       });
       void showAlert({ title: 'Success', description: successMessage });
@@ -241,6 +242,7 @@ export function useDashboardQueue({
   const triggerRowGithubAction = async (row: SheetRow, action: 'draft' | 'publish') => {
     const actionKey = buildRowActionKey(action, row);
     const ok = await dispatchGithubAction(
+      row,
       action,
       action === 'draft' ? 'trigger-draft' : 'trigger-publish',
       {
@@ -248,7 +250,7 @@ export function useDashboardQueue({
         target_date: row.date,
       },
       action === 'draft'
-        ? `Requested post generation for "${row.topic}" using ${googleModel}. The queue will refresh from the sheet — if a draft already existed, you should see Drafted and Edit right away.`
+        ? `Requested post generation for "${row.topic}" using ${effectiveLlmRef(row, workspaceLlm).model}. The queue will refresh from the sheet — if a draft already existed, you should see Drafted and Edit right away.`
         : `Requested publishing for "${row.topic}". The queue will refresh from the sheet shortly.`,
       actionKey,
     );
@@ -345,6 +347,15 @@ export function useDashboardQueue({
     }
   };
 
+  const handleSaveTopicDeliveryPreferences = async (
+    row: SheetRow,
+    prefs: { topicDeliveryChannel?: string; topicGenerationModel?: string },
+  ): Promise<SheetRow> => {
+    const updatedRow = await api.saveTopicDeliveryPreferences(idToken, row, prefs);
+    setRows((current: SheetRow[]) => current.map((entry) => (isSameTopicId(entry, updatedRow) ? updatedRow : entry)));
+    return updatedRow;
+  };
+
   const handleFetchReviewImages = async (row: SheetRow, searchQuery?: string) => {
     const result = await api.fetchDraftImages(idToken, row.topic, DRAFT_IMAGE_SEARCH_CHOICE_COUNT, searchQuery);
     return result.imageUrls;
@@ -375,33 +386,35 @@ export function useDashboardQueue({
   const describePublishPrerequisiteFailure = useMemo(
     () =>
       (message: string, rowForImages: SheetRow, emailToForGmail: string, emptyTextHint: 'queue' | 'editor'): string | null => {
-        if (selectedChannel === 'telegram' && !telegramConfigured) {
+        const ch = effectiveChannel(rowForImages, selectedChannel);
+        const chOpt = getChannelOption(ch);
+        if (ch === 'telegram' && !telegramConfigured) {
           return session.isAdmin
             ? 'Complete the Telegram delivery settings in the workspace drawer first.'
             : 'A workspace admin still needs to configure Telegram delivery settings.';
         }
-        if (selectedChannel === 'whatsapp' && !whatsappConfigured) {
+        if (ch === 'whatsapp' && !whatsappConfigured) {
           return session.isAdmin
             ? 'Complete the WhatsApp settings in the workspace drawer first.'
             : 'A workspace admin still needs to configure WhatsApp delivery settings.';
         }
-        if (selectedChannel === 'instagram' && !instagramConfigured) {
+        if (ch === 'instagram' && !instagramConfigured) {
           return session.isAdmin
             ? 'Complete the Instagram publishing settings in the workspace drawer first.'
             : 'A workspace admin still needs to configure Instagram publishing settings.';
         }
-        if (selectedChannel === 'linkedin' && !linkedinConfigured) {
+        if (ch === 'linkedin' && !linkedinConfigured) {
           return session.isAdmin
             ? 'Complete the LinkedIn publishing settings in the workspace drawer first.'
             : 'A workspace admin still needs to configure LinkedIn publishing settings.';
         }
-        if (selectedChannel === 'gmail' && !gmailConfigured) {
+        if (ch === 'gmail' && !gmailConfigured) {
           return session.isAdmin
             ? 'Connect Gmail in the workspace settings drawer first.'
             : 'A workspace admin still needs to connect Gmail for this workspace.';
         }
-        if (selectedChannelOption.requiresRecipient && !resolvedRecipientId) {
-          return selectedChannel === 'telegram'
+        if (chOpt.requiresRecipient && !resolvedRecipientId) {
+          return ch === 'telegram'
             ? 'Select a saved Telegram chat or enter a valid chat ID.'
             : 'Select a saved WhatsApp recipient or enter a valid phone number in international format.';
         }
@@ -410,10 +423,10 @@ export function useDashboardQueue({
             ? 'This row does not have approved text yet. Review and approve a draft first.'
             : 'Post text is empty. Write or select content before publishing.';
         }
-        if (selectedChannel === 'instagram' && parseRowImageUrls(rowForImages).length === 0) {
+        if (ch === 'instagram' && parseRowImageUrls(rowForImages).length === 0) {
           return 'Instagram requires a selected image. Choose an image in the Media panel before publishing.';
         }
-        if (selectedChannel === 'gmail' && !emailToForGmail.trim()) {
+        if (ch === 'gmail' && !emailToForGmail.trim()) {
           return emptyTextHint === 'queue'
             ? 'Gmail needs at least one To address on this row. Open the topic in the editor, use the Email tab, fill To (and optional Cc, Bcc, Subject), then approve again so the sheet is updated — or enter addresses before the first approve.'
             : 'Gmail needs at least one To address. Open the Email tab, fill To (and optional Cc, Bcc, Subject), then publish again.';
@@ -428,7 +441,6 @@ export function useDashboardQueue({
       linkedinConfigured,
       gmailConfigured,
       session.isAdmin,
-      selectedChannelOption.requiresRecipient,
       resolvedRecipientId,
     ],
   );
@@ -436,7 +448,10 @@ export function useDashboardQueue({
   const publishRowToSelectedChannel = async (row: SheetRow) => {
     if (actionLoading !== null) return;
 
-    if (rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, selectedChannel)) {
+    const rowChannel = effectiveChannel(row, selectedChannel);
+    const rowChannelOption = getChannelOption(rowChannel);
+
+    if (rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, rowChannel)) {
       void showAlert({
         title: 'Notice',
         description:
@@ -459,8 +474,8 @@ export function useDashboardQueue({
       const { selectedImageId: primaryId } = serializeRowImageUrls(imageUrls);
       const result = await api.publishContent(idToken, {
         row,
-        channel: selectedChannel,
-        recipientId: selectedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
+        channel: rowChannel,
+        recipientId: rowChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
         message,
         imageUrl: primaryId || undefined,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
@@ -470,27 +485,27 @@ export function useDashboardQueue({
         clearPendingIfMatchesRow(row);
         setLastDeliverySummary({
           topic: row.topic,
-          channel: selectedChannel,
+          channel: rowChannel,
           mediaMode: result.mediaMode,
-          recipientLabel: selectedChannelOption.requiresRecipient
+          recipientLabel: rowChannelOption.requiresRecipient
             ? selectedRecipientLabel || resolvedRecipientId
-            : selectedChannel === 'instagram'
+            : rowChannel === 'instagram'
               ? session.config.instagramUsername || 'connected account'
-              : selectedChannel === 'gmail'
+              : rowChannel === 'gmail'
                 ? (result.recipientId || row.emailTo || '').trim() || session.config.gmailEmailAddress || 'recipient'
                 : 'LinkedIn audience',
         });
         await loadData(true);
-        void showAlert({ title: 'Success', description: selectedChannelOption.requiresRecipient ? `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.` : `Published "${row.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.` });
+        void showAlert({ title: 'Success', description: rowChannelOption.requiresRecipient ? `Sent "${row.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(rowChannel)} as a ${result.mediaMode} post.` : `Published "${row.topic}" to ${getChannelLabel(rowChannel)} as a ${result.mediaMode} post.` });
       } else {
         applyQueuedPublishResult(result, row);
         void showAlert({
           title: 'Scheduled',
-          description: `Publishing for "${row.topic}" is queued for ${getChannelLabel(selectedChannel)} at ${result.scheduledTime || row.postTime}. You can cancel from the delivery panel until then.`,
+          description: `Publishing for "${row.topic}" is queued for ${getChannelLabel(rowChannel)} at ${result.scheduledTime || row.postTime}. You can cancel from the delivery panel until then.`,
         });
       }
     } catch (error) {
-      handleFailure(error, `Failed to send the approved message to ${getChannelLabel(selectedChannel)}.`);
+      handleFailure(error, `Failed to send the approved message to ${getChannelLabel(rowChannel)}.`);
     } finally {
       setActionLoading(null);
     }
@@ -513,7 +528,7 @@ export function useDashboardQueue({
       rowMatchesPendingScheduledPublish(
         { topicId: row.topicId, postTime },
         pendingScheduledPublish,
-        selectedChannel,
+        effectiveChannel(row, selectedChannel),
       )
     ) {
       void showAlert({
@@ -598,10 +613,13 @@ export function useDashboardQueue({
       const imageUrls = parseRowImageUrls(mergedRow);
       const { selectedImageId: primaryId } = serializeRowImageUrls(imageUrls);
 
+      const mergedChannel = effectiveChannel(mergedRow, selectedChannel);
+      const mergedChannelOption = getChannelOption(mergedChannel);
+
       const result = await api.publishContent(idToken, {
         row: mergedRow,
-        channel: selectedChannel,
-        recipientId: selectedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
+        channel: mergedChannel,
+        recipientId: mergedChannelOption.requiresRecipient ? resolvedRecipientId : undefined,
         message,
         imageUrl: primaryId || undefined,
         imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
@@ -611,40 +629,41 @@ export function useDashboardQueue({
         clearPendingIfMatchesRow(mergedRow);
         setLastDeliverySummary({
           topic: mergedRow.topic,
-          channel: selectedChannel,
+          channel: mergedChannel,
           mediaMode: result.mediaMode,
-          recipientLabel: selectedChannelOption.requiresRecipient
+          recipientLabel: mergedChannelOption.requiresRecipient
             ? selectedRecipientLabel || resolvedRecipientId
-            : selectedChannel === 'instagram'
+            : mergedChannel === 'instagram'
               ? session.config.instagramUsername || 'connected account'
-              : selectedChannel === 'gmail'
+              : mergedChannel === 'gmail'
                 ? (result.recipientId || mergedRow.emailTo || '').trim() || session.config.gmailEmailAddress || 'recipient'
                 : 'LinkedIn audience',
         });
         await loadData(true);
         void showAlert({
           title: 'Success',
-          description: selectedChannelOption.requiresRecipient
-            ? `Sent "${mergedRow.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`
-            : `Published "${mergedRow.topic}" to ${getChannelLabel(selectedChannel)} as a ${result.mediaMode} post.`,
+          description: mergedChannelOption.requiresRecipient
+            ? `Sent "${mergedRow.topic}" to ${selectedRecipientLabel || resolvedRecipientId} on ${getChannelLabel(mergedChannel)} as a ${result.mediaMode} post.`
+            : `Published "${mergedRow.topic}" to ${getChannelLabel(mergedChannel)} as a ${result.mediaMode} post.`,
         });
       } else {
         applyQueuedPublishResult(result, mergedRow);
         void showAlert({
           title: 'Scheduled',
-          description: `Publishing for "${mergedRow.topic}" is queued for ${getChannelLabel(selectedChannel)} at ${result.scheduledTime || mergedRow.postTime}. You can cancel from the editor or delivery panel until then.`,
+          description: `Publishing for "${mergedRow.topic}" is queued for ${getChannelLabel(mergedChannel)} at ${result.scheduledTime || mergedRow.postTime}. You can cancel from the editor or delivery panel until then.`,
         });
       }
       onAfterApprove?.();
     } catch (error) {
-      handleFailure(error, `Failed to send the approved message to ${getChannelLabel(selectedChannel)}.`);
+      handleFailure(error, `Failed to send the approved message to ${getChannelLabel(effectiveChannel(row, selectedChannel))}.`);
     } finally {
       setActionLoading(null);
     }
   };
 
   const republishRowToSelectedChannel = async (row: SheetRow) => {
-    if (!await showConfirm({ title: 'Confirm Publish', description: `Publish "${row.topic}" again to ${getChannelLabel(selectedChannel)}? This will send the currently approved text and selected media one more time.` })) return;
+    const ch = effectiveChannel(row, selectedChannel);
+    if (!await showConfirm({ title: 'Confirm Publish', description: `Publish "${row.topic}" again to ${getChannelLabel(ch)}? This will send the currently approved text and selected media one more time.` })) return;
     await publishRowToSelectedChannel(row);
   };
 
@@ -654,7 +673,7 @@ export function useDashboardQueue({
     try {
       if (
         pendingScheduledPublish
-        && rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, selectedChannel)
+        && rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, effectiveChannel(row, selectedChannel))
       ) {
         try {
           await api.cancelScheduledPublish(idToken, {
@@ -686,8 +705,6 @@ export function useDashboardQueue({
     addingTopic,
     newTopic,
     setNewTopic,
-    selectedApprovedRowPreview,
-    setSelectedApprovedRowPreview,
     actionLoading,
     deletingRowIndex,
     loadData,
@@ -701,6 +718,7 @@ export function useDashboardQueue({
     handleSaveTopicGenerationRules,
     loadPostTemplates,
     handleSaveGenerationTemplateId,
+    handleSaveTopicDeliveryPreferences,
     handleFetchReviewImages,
     handlePromoteReviewImage,
     handleUploadReviewImage,

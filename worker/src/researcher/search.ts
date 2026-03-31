@@ -1,6 +1,6 @@
 import type { Env } from '../index';
 import { insertNewsSnapshotAndPrune } from '../persistence/pipeline-db/news';
-import { PipelineStore } from '../persistence/pipeline-db/pipeline';
+import { buildServices } from '../services';
 import { collectEnabledRssUrls, normalizeNewsResearchStored } from './config';
 import { dedupeArticles } from './dedupe';
 import { trimArticleSnippet } from './trim';
@@ -154,7 +154,7 @@ export async function searchNewsResearch(
   }
 
   try {
-    const pipeline = new PipelineStore(env.PIPELINE_DB);
+    const { pipeline } = buildServices(env);
     await pipeline.ensureWorkspace(spreadsheetId);
     await insertNewsSnapshotAndPrune(env.PIPELINE_DB, {
       spreadsheetId,

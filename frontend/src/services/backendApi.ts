@@ -441,6 +441,17 @@ export class BackendApi {
     });
   }
 
+  async saveTopicDeliveryPreferences(
+    idToken: string,
+    row: SheetRow,
+    prefs: { topicDeliveryChannel?: string; topicGenerationModel?: string },
+  ): Promise<SheetRow> {
+    return this.post<SheetRow>('saveTopicDeliveryPreferences', idToken, {
+      row,
+      ...prefs,
+    });
+  }
+
   async getGenerationRulesHistory(idToken: string): Promise<GenerationRulesHistoryResult> {
     return this.post<GenerationRulesHistoryResult>('getGenerationRulesHistory', idToken);
   }

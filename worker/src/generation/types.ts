@@ -32,6 +32,12 @@ export interface SheetRow {
   generationTemplateId?: string;
   /** Set when status is Published (D1); ISO timestamp. */
   publishedAt?: string;
+  /** Column W — optional delivery channel override (linkedin, telegram, …); empty uses workspace default. */
+  topicDeliveryChannel?: string;
+  /**
+   * Column X — optional generation model override. Plain model id (Gemini) or JSON `{"provider":"grok"|"gemini","model":"..."}` when multi-provider.
+   */
+  topicGenerationModel?: string;
 }
 
 export interface PostTemplate {

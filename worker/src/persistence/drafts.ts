@@ -33,6 +33,8 @@ const PIPELINE_HEADERS = [
   'Image URLs JSON',
   'Generation template id',
   'Topic Id',
+  'Delivery channel',
+  'Generation model',
 ];
 
 interface SpreadsheetMetadataResponse {
@@ -50,8 +52,8 @@ export function buildTopicKey(topic: string, date: string): string {
   return `${topic.trim()}::${date.trim()}`;
 }
 
-/** Width of Draft/Post rows (PIPELINE_HEADERS, columns A–V). Used to hydrate D1 from Sheets. */
-export const GOOGLE_PIPELINE_SHEET_WIDTH = 22;
+/** Width of Draft/Post rows (PIPELINE_HEADERS, columns A–X). Used to hydrate D1 from Sheets. */
+export const GOOGLE_PIPELINE_SHEET_WIDTH = 24;
 
 export interface GooglePipelineSheetMaps {
   draftByTopicKey: Map<string, string[]>;
@@ -368,7 +370,7 @@ export class SheetsGateway {
     return { draftRowIndex, postRowIndex };
   }
 
-  /** Full Draft/Post rows (A2:V) keyed by topic+date — used only to upsert into D1. */
+  /** Full Draft/Post rows (A2:X) keyed by topic+date — used only to upsert into D1. */
   async getGooglePipelineSheetMaps(
     spreadsheetId: string,
     options?: { skipEnsure?: boolean },
@@ -376,7 +378,7 @@ export class SheetsGateway {
     if (!options?.skipEnsure) {
       await this.ensureRequiredSheets(spreadsheetId);
     }
-    const range = `A2:V`;
+    const range = `A2:X`;
     const [draftRows, postRows] = await this.batchGetValues(spreadsheetId, [
       `${DRAFT_SHEET}!${range}`,
       `${POST_SHEET}!${range}`,
@@ -550,9 +552,9 @@ export class SheetsGateway {
     }
 
     // One read for Draft/Post T–V row-1 headers and Topics C1 (was 7 sequential batchGets).
-    const [draftTuv, postTuv, topicsIdCell] = await this.batchGetValues(spreadsheetId, [
-      `${DRAFT_SHEET}!T1:V1`,
-      `${POST_SHEET}!T1:V1`,
+    const [draftTuvwx, postTuvwx, topicsIdCell] = await this.batchGetValues(spreadsheetId, [
+      `${DRAFT_SHEET}!T1:X1`,
+      `${POST_SHEET}!T1:X1`,
       `${TOPICS_SHEET}!C1:C1`,
     ]);
     const extraHeaderWrites: Array<{ range: string; values: string[][] }> = [];
@@ -560,12 +562,16 @@ export class SheetsGateway {
       const t = String(row?.[0]?.[0] || '').trim();
       const u = String(row?.[0]?.[1] || '').trim();
       const v = String(row?.[0]?.[2] || '').trim();
+      const w = String(row?.[0]?.[3] || '').trim();
+      const x = String(row?.[0]?.[4] || '').trim();
       if (!t) extraHeaderWrites.push({ range: `${sheet}!T1`, values: [['Image URLs JSON']] });
       if (!u) extraHeaderWrites.push({ range: `${sheet}!U1`, values: [['Generation template id']] });
       if (!v) extraHeaderWrites.push({ range: `${sheet}!V1`, values: [['Topic Id']] });
+      if (!w) extraHeaderWrites.push({ range: `${sheet}!W1`, values: [['Delivery channel']] });
+      if (!x) extraHeaderWrites.push({ range: `${sheet}!X1`, values: [['Generation model']] });
     };
-    collectPipelineExtraHeaders(DRAFT_SHEET, draftTuv);
-    collectPipelineExtraHeaders(POST_SHEET, postTuv);
+    collectPipelineExtraHeaders(DRAFT_SHEET, draftTuvwx);
+    collectPipelineExtraHeaders(POST_SHEET, postTuvwx);
     if (!String(topicsIdCell?.[0]?.[0] || '').trim()) {
       extraHeaderWrites.push({ range: `${TOPICS_SHEET}!C1`, values: [['Topic Id']] });
     }

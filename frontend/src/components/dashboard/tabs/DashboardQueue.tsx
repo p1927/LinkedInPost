@@ -4,7 +4,8 @@ import { cn } from '../../../lib/cn';
 import { type AppSession } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
-import { getNormalizedRowStatus, buildRowActionKey, canPreviewPublishedContent, formatQueueDate } from '../utils';
+import { getNormalizedRowStatus, buildRowActionKey, formatQueueDate } from '../utils';
+import { effectiveChannel } from '@/lib/topicEffectivePrefs';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
@@ -37,10 +38,10 @@ export function DashboardQueue({
   actionLoading,
   session,
   onOpenTopicReview,
-  onTopicNavigate,
+  selectedTopicId,
+  onSelectTopicRow,
   publishRowToSelectedChannel,
   republishRowToSelectedChannel,
-  setSelectedApprovedRowPreview,
   handleDeleteTopic,
   deletingRowIndex,
   scrollTargetId,
@@ -64,11 +65,10 @@ export function DashboardQueue({
   actionLoading: string | null;
   session: AppSession;
   onOpenTopicReview: (row: SheetRow) => void;
-  /** Topic title / row primary action: preview when post is ready to view, else open draft review. */
-  onTopicNavigate: (row: SheetRow) => void;
+  selectedTopicId: string | null;
+  onSelectTopicRow: (row: SheetRow) => void;
   publishRowToSelectedChannel: (row: SheetRow) => Promise<void>;
   republishRowToSelectedChannel: (row: SheetRow) => Promise<void>;
-  setSelectedApprovedRowPreview: (row: SheetRow) => void;
   handleDeleteTopic: (row: SheetRow) => void;
   deletingRowIndex: number | null;
   scrollTargetId: string | null;
@@ -94,7 +94,7 @@ export function DashboardQueue({
   const hasTopics = rows.length > 0;
 
   const rowHasActiveScheduledPublish = (row: SheetRow) =>
-    rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, selectedChannel);
+    rowMatchesPendingScheduledPublish(row, pendingScheduledPublish, effectiveChannel(row, selectedChannel));
 
   return (
     <div className="flex flex-col gap-5">
@@ -248,70 +248,39 @@ export function DashboardQueue({
                 <div role="rowgroup" className="text-sm">
                   {filteredRows.map((row, rowIndex) => {
                     const normalizedStatus = getNormalizedRowStatus(row.status);
-                    const showPreview = canPreviewPublishedContent(row);
                     const dateRaw = row.date?.trim() ?? '';
                     const dateLabel = formatQueueDate(dateRaw);
+                    const isSelected =
+                      selectedTopicId !== null && String(row.topicId).trim() === String(selectedTopicId).trim();
                     return (
                       <div
                         key={`${row.sourceSheet}-${row.rowIndex}-${row.topic}`}
                         role="row"
                         data-queue-row-id={topicRowElementId(row)}
-                        tabIndex={showPreview ? 0 : undefined}
-                        aria-label={showPreview ? `Preview post: ${row.topic}` : undefined}
+                        tabIndex={0}
+                        aria-label={`Topic: ${row.topic}`}
+                        aria-selected={isSelected}
                         className={cn(
-                          'flex items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0',
+                          'flex cursor-pointer items-center gap-4 border-b border-violet-100/60 px-5 py-3 transition-colors duration-200 last:border-b-0',
                           rowIndex % 2 === 1 && 'bg-violet-50/40',
-                          showPreview &&
-                            'cursor-pointer hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset',
+                          'hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset',
+                          isSelected && 'bg-primary/5 ring-1 ring-inset ring-primary/20',
                         )}
-                        onClick={
-                          showPreview
-                            ? () => {
-                                setSelectedApprovedRowPreview(row);
-                              }
-                            : undefined
-                        }
-                        onKeyDown={
-                          showPreview
-                            ? (e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  setSelectedApprovedRowPreview(row);
-                                }
-                              }
-                            : undefined
-                        }
+                        onClick={() => onSelectTopicRow(row)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onSelectTopicRow(row);
+                          }
+                        }}
                       >
                         <div role="cell" className="min-w-0 flex-1">
-                          {normalizedStatus === 'drafted' ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onTopicNavigate(row);
-                              }}
-                              className={cn(
-                                'min-w-0 truncate w-full text-left font-medium leading-snug text-ink transition-colors duration-200',
-                                'rounded-lg outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40',
-                              )}
-                              title={
-                                row.topic.trim()
-                                  ? topicNeedsFullTooltip(row.topic)
-                                    ? `${row.topic.trim()} — Open draft editor`
-                                    : 'Open draft editor'
-                                  : 'Open draft editor'
-                              }
-                            >
-                              {truncateTopicForUi(row.topic)}
-                            </button>
-                          ) : (
-                            <p
-                              className="min-w-0 truncate font-medium leading-snug text-ink transition-colors duration-200"
-                              title={topicNeedsFullTooltip(row.topic) ? row.topic.trim() : undefined}
-                            >
-                              {truncateTopicForUi(row.topic)}
-                            </p>
-                          )}
+                          <p
+                            className="min-w-0 truncate font-medium leading-snug text-ink"
+                            title={topicNeedsFullTooltip(row.topic) ? row.topic.trim() : undefined}
+                          >
+                            {truncateTopicForUi(row.topic)}
+                          </p>
                         </div>
                         <div role="cell" className="flex shrink-0 items-center justify-end gap-3">
                           <div className="flex w-[100px] shrink-0 justify-end">

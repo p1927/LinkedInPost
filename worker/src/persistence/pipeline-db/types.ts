@@ -24,6 +24,8 @@ export interface PipelineStateDbRow {
   topic_generation_rules: string;
   generation_template_id: string;
   published_at: string | null;
+  topic_delivery_channel: string;
+  topic_generation_model: string;
   created_at: string;
   updated_at: string;
 }
