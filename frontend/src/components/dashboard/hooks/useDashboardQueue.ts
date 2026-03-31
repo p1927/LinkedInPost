@@ -330,9 +330,9 @@ export function useDashboardQueue({
     }
   };
 
-  const loadPostTemplates = async () => {
+  const loadPostTemplates = useCallback(async () => {
     return api.listPostTemplates(idToken);
-  };
+  }, [api, idToken]);
 
   const handleSaveGenerationTemplateId = async (row: SheetRow, generationTemplateId: string): Promise<SheetRow> => {
     try {

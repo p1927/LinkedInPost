@@ -140,6 +140,8 @@ export interface BotConfig {
   /** Gemini model IDs non-admins may use; admins edit this in Settings. */
   allowedGoogleModels: string[];
   generationRules: string;
+  /** Workspace author context for LLM; always included when non-empty. */
+  authorProfile: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
@@ -241,6 +243,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     googleModel,
     allowedGoogleModels,
     generationRules: config?.generationRules || '',
+    authorProfile: config?.authorProfile || '',
     hasGitHubToken: Boolean(config?.hasGitHubToken),
     defaultChannel,
     instagramAuthAvailable: Boolean(config?.instagramAuthAvailable),
@@ -300,6 +303,7 @@ export interface BotConfigUpdate {
   googleModel?: string;
   allowedGoogleModels?: string[];
   generationRules?: string;
+  authorProfile?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
   instagramUserId?: string;

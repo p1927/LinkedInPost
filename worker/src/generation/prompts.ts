@@ -24,6 +24,18 @@ function buildResearchContextAppendix(articles: ResearchArticleRef[] | undefined
   return lines.join('\n');
 }
 
+/** Author context precedes numbered “Critical instructions” when both are present. */
+function prependAuthorToRulesPrefix(authorProfileBlock: string, rulesPrefix: string): string {
+  const author = authorProfileBlock.trim();
+  if (!author) {
+    return rulesPrefix;
+  }
+  if (!rulesPrefix.trim()) {
+    return author;
+  }
+  return `${author}\n${rulesPrefix}`;
+}
+
 export function buildQuickChangePrompt(
   row: SheetRow,
   editorText: string,
@@ -31,9 +43,10 @@ export function buildQuickChangePrompt(
   selection: TextSelectionRange | null,
   instruction: string,
   sharedRules: string,
+  authorProfileBlock: string,
   researchArticles?: ResearchArticleRef[],
 ): string {
-  const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
+  const rulesPrefix = prependAuthorToRulesPrefix(authorProfileBlock, buildRulesPrefix(sharedRules, instruction));
   const researchBlock = buildResearchContextAppendix(researchArticles);
   if (scope === 'selection' && selection) {
     return [
@@ -76,9 +89,10 @@ export function buildVariantsPrompt(
   selection: TextSelectionRange | null,
   instruction: string,
   sharedRules: string,
+  authorProfileBlock: string,
   researchArticles?: ResearchArticleRef[],
 ): string {
-  const rulesPrefix = buildRulesPrefix(sharedRules, instruction);
+  const rulesPrefix = prependAuthorToRulesPrefix(authorProfileBlock, buildRulesPrefix(sharedRules, instruction));
   const researchBlock = buildResearchContextAppendix(researchArticles);
   const promptLines = [
     'You are generating four distinct LinkedIn draft options.',

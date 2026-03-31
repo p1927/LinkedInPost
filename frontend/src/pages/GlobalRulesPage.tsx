@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { WhoAmISection } from '@/features/who-am-i/WhoAmISection';
 
 export function GlobalRulesPage({
   idToken,
@@ -55,7 +56,11 @@ export function GlobalRulesPage({
   const [savingPostTemplate, setSavingPostTemplate] = useState(false);
 
   const dirty = value.trim() !== serverText.trim();
-  useRegisterUnsavedChanges(session.isAdmin && dirty);
+  const [authorDirty, setAuthorDirty] = useState(false);
+  const handleAuthorDirty = useCallback((d: boolean) => {
+    setAuthorDirty(d);
+  }, []);
+  useRegisterUnsavedChanges(session.isAdmin && (dirty || authorDirty));
 
   useEffect(() => {
     if (!session.isAdmin) {
@@ -191,6 +196,21 @@ export function GlobalRulesPage({
     return () => window.removeEventListener('keydown', onKey);
   }, [session.isAdmin, redo, undo]);
 
+  const handleSaveAuthorProfile = useCallback(
+    async (text: string) => {
+      if (!session.isAdmin) return;
+      try {
+        await onSaveConfig({ authorProfile: text });
+        void showAlert({ title: 'Saved', description: 'Author profile was updated.' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to save.';
+        if (isAuthErrorMessage(message)) onAuthExpired();
+        else void showAlert({ title: 'Could not save', description: message });
+      }
+    },
+    [session.isAdmin, onSaveConfig, showAlert, onAuthExpired],
+  );
+
   const handleSave = async () => {
     if (!session.isAdmin || saving) return;
     setSaving(true);
@@ -214,6 +234,13 @@ export function GlobalRulesPage({
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pb-10">
+      <WhoAmISection
+        serverAuthorProfile={session.config.authorProfile || ''}
+        isAdmin={session.isAdmin}
+        onDirtyChange={handleAuthorDirty}
+        onSave={handleSaveAuthorProfile}
+      />
+
       <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Workspace</p>
         <h2 className="mt-1 font-heading text-xl font-semibold text-ink">Global generation rules</h2>

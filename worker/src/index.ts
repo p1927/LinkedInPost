@@ -119,6 +119,8 @@ interface BotConfig {
     grok: boolean;
   };
   generationRules: string;
+  /** Workspace author context for LLM; always included when non-empty (not overridden by topic rules). */
+  authorProfile: string;
   hasGitHubToken: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
@@ -164,6 +166,8 @@ export interface StoredConfig {
   /** When absent, the worker defaults to Gemini 2.5 Flash only. */
   allowedGoogleModels?: string[];
   generationRules: string;
+  /** Author “who am I” context for generations; separate from style rules. */
+  authorProfile?: string;
   /** Prior snapshots when global rules change (newest first). */
   generationRulesHistory?: GenerationRulesVersion[];
   disconnectedAuthProviders?: AuthProvider[];
@@ -206,6 +210,7 @@ interface BotConfigUpdate {
   googleModel?: string;
   allowedGoogleModels?: string[];
   generationRules?: string;
+  authorProfile?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;
   instagramUserId?: string;
@@ -1084,6 +1089,7 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
     allowedGoogleModels: config?.allowedGoogleModels,
     generationRules: config?.generationRules || '',
+    authorProfile: config?.authorProfile || '',
     disconnectedAuthProviders,
     githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
     defaultChannel,
@@ -1124,6 +1130,7 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     googleModel: resolveEffectiveGoogleModel(config, config.googleModel),
     allowedGoogleModels,
     generationRules: config.generationRules || '',
+    authorProfile: config.authorProfile || '',
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
     defaultChannel: config.defaultChannel,
     instagramAuthAvailable: hasInstagramOAuthConfig(env),
@@ -2275,6 +2282,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     googleModel: resolvedGoogleModel,
     allowedGoogleModels: nextAllowed,
     generationRules: typeof update.generationRules === 'string' ? update.generationRules.trim() : current.generationRules,
+    authorProfile: typeof update.authorProfile === 'string' ? update.authorProfile.trim() : (current.authorProfile || ''),
     disconnectedAuthProviders: current.disconnectedAuthProviders || [],
     githubTokenCiphertext: current.githubTokenCiphertext,
     defaultChannel: update.defaultChannel === 'whatsapp'

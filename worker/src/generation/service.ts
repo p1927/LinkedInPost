@@ -1,5 +1,6 @@
 import type { Env, StoredConfig } from '../index';
 import { coerceSheetRow } from '../index';
+import { formatAuthorProfileForPrompt } from './author-profile/format-for-prompt';
 import { buildQuickChangePrompt, buildVariantsPrompt } from './prompts';
 import { resolveEffectiveGenerationRulesWithTemplate } from './rules';
 import type { SheetRow } from './types';
@@ -106,7 +107,8 @@ export async function generateQuickChangePreview(
     storedConfig.generationRules || '',
   );
   const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
-  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, researchRefs);
+  const authorBlock = formatAuthorProfileForPrompt(storedConfig.authorProfile || '');
+  const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, authorBlock, researchRefs);
   const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
   const replacementText = normalizePlainTextValue(tryParseJson(text));
 
@@ -148,6 +150,7 @@ export async function generateVariantsPreview(
     storedConfig.generationRules || '',
   );
   const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
+  const authorBlock = formatAuthorProfileForPrompt(storedConfig.authorProfile || '');
   const prompt = buildVariantsPrompt(
     row,
     editorText,
@@ -155,6 +158,7 @@ export async function generateVariantsPreview(
     selection,
     String(request.instruction || '').trim(),
     effectiveRules,
+    authorBlock,
     researchRefs,
   );
   const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
