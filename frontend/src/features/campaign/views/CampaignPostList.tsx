@@ -28,48 +28,43 @@ export function CampaignPostList({
   onDeletePost: (index: number) => void;
 }) {
   return (
-    <ul className="custom-scrollbar max-h-[min(28rem,50vh)] list-none space-y-2 overflow-y-auto p-0">
+    <ul className="custom-scrollbar max-h-[min(28rem,50vh)] list-none divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200 p-0">
       {posts.map((p, i) => (
         <li
           key={p._rowId ?? `post-${i}`}
-          className="rounded-xl border border-white/50 bg-white/40 px-3 py-2.5 text-sm shadow-sm backdrop-blur-sm"
+          className={`flex gap-3 px-3 py-3 text-sm transition-colors duration-100 ${selectedIndices.has(i) ? 'bg-indigo-50/60' : 'bg-white hover:bg-slate-50/70'}`}
         >
-          <div className="flex gap-2">
-            <label className="mt-0.5 flex cursor-pointer items-start">
-              <input
-                type="checkbox"
-                checked={selectedIndices.has(i)}
-                onChange={() => onToggleSelect(i)}
-                className="mt-0.5 size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                aria-label={`Select ${p.topic || `post ${i + 1}`}`}
-              />
-            </label>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-semibold text-ink">{p.topic}</span>
-                <span className="text-xs text-muted">{p.date}</span>
-                {p.postTime ? (
-                  <span className="text-xs tabular-nums text-muted">{p.postTime}</span>
-                ) : null}
-                {p.channels?.map((c) => (
-                  <Badge key={c} variant="secondary" className="text-[10px] font-medium">
-                    {c}
-                  </Badge>
-                ))}
-              </div>
-              <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-muted">{previewBody(p)}</p>
+          <label className="mt-0.5 flex shrink-0 cursor-pointer items-start pt-px">
+            <input
+              type="checkbox"
+              checked={selectedIndices.has(i)}
+              onChange={() => onToggleSelect(i)}
+              className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              aria-label={`Select ${p.topic || `post ${i + 1}`}`}
+            />
+          </label>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="font-semibold text-slate-900">{p.topic}</span>
+              <span className="text-xs tabular-nums text-slate-400">{p.date}{p.postTime ? ` · ${p.postTime}` : ''}</span>
+              {p.channels?.map((c) => (
+                <Badge key={c} variant="secondary" className="text-[10px] font-medium">
+                  {c}
+                </Badge>
+              ))}
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="shrink-0 text-muted hover:bg-rose-50 hover:text-rose-700"
-              aria-label={`Delete ${p.topic || `post ${i + 1}`}`}
-              onClick={() => onDeletePost(i)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs leading-relaxed text-slate-500">{previewBody(p)}</p>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="mt-0.5 shrink-0 text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+            aria-label={`Delete ${p.topic || `post ${i + 1}`}`}
+            onClick={() => onDeletePost(i)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </li>
       ))}
     </ul>

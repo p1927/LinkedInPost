@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CHANNEL_OPTIONS } from '@/integrations/channels';
@@ -30,6 +30,18 @@ function formatTimeHm(hhmm: string): string {
 
 function channelLabel(id: string): string {
   return CHANNEL_OPTIONS.find((c) => c.value === id)?.label ?? id;
+}
+
+const STATUS_BADGE: Record<string, string> = {
+  pending:   'bg-indigo-50 text-indigo-700 ring-indigo-200/80',
+  drafted:   'bg-amber-50 text-amber-700 ring-amber-200/80',
+  approved:  'bg-emerald-50 text-emerald-700 ring-emerald-200/80',
+  published: 'bg-slate-100 text-slate-600 ring-slate-200/80',
+  blocked:   'bg-rose-50 text-rose-700 ring-rose-200/80',
+};
+
+function statusBadgeClass(status?: string): string {
+  return STATUS_BADGE[(status ?? '').toLowerCase()] ?? 'bg-slate-100 text-slate-600 ring-slate-200/80';
 }
 
 function getPostPreviewText(payload: unknown): string | null {
@@ -80,144 +92,160 @@ export function EventDetailAndEdit({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm p-4 sm:items-center"
       onClick={onClose}
     >
       <div
-        className="relative max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-violet-200/50 bg-white/95 p-5 shadow-xl backdrop-blur"
+        className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 rounded-lg p-1 text-muted hover:bg-slate-100 hover:text-ink cursor-pointer"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
         {!editing ? (
           <>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted/70">
-              {topic.status ?? 'pending'}
-            </p>
-            <h3 className="mt-1 pr-8 font-heading text-base font-semibold text-ink">{topic.title}</h3>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <div className="min-w-0 flex-1">
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1 ${statusBadgeClass(topic.status)}`}
+                >
+                  {topic.status ?? 'pending'}
+                </span>
+                <h3 className="mt-1.5 text-sm font-semibold leading-snug text-slate-900">{topic.title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-0.5 shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-            <dl className="mt-4 space-y-2 text-sm">
-              <div className="flex gap-3 border-b border-slate-100 pb-2">
-                <dt className="w-24 shrink-0 font-medium text-ink/70">Date</dt>
-                <dd className="text-ink">{formatCalendarDate(topic.date)}</dd>
-              </div>
-              <div className="flex gap-3 border-b border-slate-100 pb-2">
-                <dt className="w-24 shrink-0 font-medium text-ink/70">Time</dt>
-                <dd className="text-ink">
+            {/* Body */}
+            <div className="px-5 py-4">
+              <dl className="grid grid-cols-[4.5rem_1fr] gap-x-4 gap-y-3 text-sm">
+                <dt className="self-start pt-px font-medium text-slate-500">Date</dt>
+                <dd className="text-slate-800">{formatCalendarDate(topic.date)}</dd>
+
+                <dt className="self-start pt-px font-medium text-slate-500">Time</dt>
+                <dd className="text-slate-800">
                   {formatTimeHm(effectiveTime)}
-                  {usingDefaultSlot ? (
-                    <span className="ml-1.5 text-xs font-normal text-muted">
-                      (default slot — set a time or drag in Week/Day view)
+                  {usingDefaultSlot && (
+                    <span className="ml-1.5 text-xs text-slate-400">
+                      (default — drag in Week/Day to set)
                     </span>
-                  ) : null}
+                  )}
                 </dd>
-              </div>
-              <div className="flex gap-3 border-b border-slate-100 pb-2">
-                <dt className="w-24 shrink-0 font-medium text-ink/70">Channels</dt>
+
+                <dt className="self-start pt-px font-medium text-slate-500">Channels</dt>
                 <dd className="flex flex-wrap gap-1.5">
                   {topic.channels?.length ? (
                     topic.channels.map((ch) => (
                       <span
                         key={ch}
-                        className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-800 ring-1 ring-indigo-200/80"
+                        className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-indigo-200/80"
                       >
                         {channelLabel(ch)}
                       </span>
                     ))
                   ) : (
-                    <span className="text-muted">None selected</span>
+                    <span className="text-slate-400">None selected</span>
                   )}
                 </dd>
-              </div>
-            </dl>
+              </dl>
 
-            {previewText ? (
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={() => setPreviewOpen((o) => !o)}
-                  className="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-left text-sm font-medium text-ink transition-colors hover:bg-slate-100 cursor-pointer"
-                >
-                  {previewOpen ? (
-                    <ChevronDown className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+              {previewText && (
+                <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/80">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewOpen((o) => !o)}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition-colors hover:text-slate-900 cursor-pointer"
+                  >
+                    {previewOpen
+                      ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+                      : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+                    }
+                    Post preview
+                  </button>
+                  {previewOpen && (
+                    <div className="max-h-44 overflow-y-auto border-t border-slate-100 px-3 py-3 text-xs leading-relaxed text-slate-700 whitespace-pre-wrap">
+                      {previewText}
+                    </div>
                   )}
-                  Post preview
-                </button>
-                {previewOpen ? (
-                  <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-relaxed text-ink/90 whitespace-pre-wrap">
-                    {previewText}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+                </div>
+              )}
+            </div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" size="sm" onClick={() => setEditing(true)} className="cursor-pointer">
+            {/* Footer */}
+            <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-5 py-3">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setEditing(true)}
+                className="cursor-pointer gap-1.5"
+              >
+                <Pencil className="h-3.5 w-3.5" aria-hidden />
                 Edit
               </Button>
-              {onDelete ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={onDelete}
-                  className="cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                >
-                  <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden />
-                  Delete
+              <div className="flex items-center gap-1.5">
+                {onDelete && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onDelete}
+                    className="cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    <span className="sr-only">Delete</span>
+                  </Button>
+                )}
+                <Button type="button" variant="ghost" size="sm" onClick={onClose} className="cursor-pointer text-slate-600">
+                  Close
                 </Button>
-              ) : null}
-              <Button type="button" variant="ghost" size="sm" onClick={onClose} className="cursor-pointer">
-                Close
-              </Button>
+              </div>
             </div>
           </>
         ) : (
           <>
-            <h3 className="font-heading text-base font-semibold text-ink">Edit occurrence</h3>
-            <div className="mt-4 space-y-3">
+            {/* Edit header */}
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <h3 className="text-sm font-semibold text-slate-900">Edit event</h3>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+                aria-label="Cancel editing"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Edit body */}
+            <div className="space-y-4 px-5 py-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ink/70">Title</label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="h-8 text-sm"
-                />
+                <label className="mb-1.5 block text-xs font-medium text-slate-600">Title</label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-9 text-sm" />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink/70">Date (YYYY-MM-DD)</label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink/70">Time (HH:MM, optional)</label>
-                <Input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="h-8 text-sm"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-slate-600">Date</label>
+                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-slate-600">Time <span className="font-normal text-slate-400">(optional)</span></label>
+                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="h-9 text-sm" />
+                </div>
               </div>
             </div>
-            <div className="mt-4 flex gap-2">
-              <Button type="button" size="sm" onClick={handleSave} className="cursor-pointer">
-                Save
-              </Button>
+
+            {/* Edit footer */}
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-3">
               <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)} className="cursor-pointer">
                 Cancel
+              </Button>
+              <Button type="button" size="sm" onClick={handleSave} className="cursor-pointer">
+                Save changes
               </Button>
             </div>
           </>

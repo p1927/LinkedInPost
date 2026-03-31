@@ -283,7 +283,11 @@ export function CampaignPage(props: {
   return (
     <div className="w-full px-0 py-8 sm:py-12" ref={pageTopRef}>
       <div className="mx-auto max-w-5xl px-4 sm:px-8">
-        <p className="mb-4 text-center text-xs font-medium uppercase tracking-wide text-muted">Campaign Import</p>
+        <div className="mb-6 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-indigo-400">Campaign</p>
+          <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Bulk Import</h2>
+          <p className="mt-1 text-sm text-slate-500">Generate with AI, paste JSON, preview and publish.</p>
+        </div>
 
         {/* Carousel step nav */}
         <Carousel
@@ -291,7 +295,7 @@ export function CampaignPage(props: {
           currentStep={currentStep}
           onStepChange={handleStepChange}
           disabledSteps={parseResult.ok ? [] : [1]}
-          className="mb-6"
+          className="mb-8"
         />
       </div>
 
@@ -299,97 +303,116 @@ export function CampaignPage(props: {
       <CarouselContent currentStep={currentStep}>
         {/* Step 0: Import Campaign JSON */}
         <div className="mx-auto max-w-5xl px-4 sm:px-8">
-          <div className="space-y-8">
-            <section className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm sm:p-8">
-              <h3 className="font-heading text-base font-semibold text-slate-900">1. Topic ideas</h3>
-              <p className="mt-1 text-sm text-muted">Injected into the prompt below (one theme per line is fine).</p>
-              <Textarea
-                value={topicsIdeas}
-                onChange={(e) => setTopicsIdeas(e.target.value)}
-                placeholder="e.g. Q2 product launch&#10;Hiring update&#10;Customer story: Acme Corp"
-                className="mt-3 min-h-[5rem] font-sans text-sm"
-                aria-label="Topic ideas for campaign prompt"
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => void copyPrompt()}
-                  className={clsx(
-                    'flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600',
-                    'transition-colors duration-200 hover:bg-indigo-50',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
-                  )}
-                >
-                  <Copy className="h-3.5 w-3.5" aria-hidden />
-                  Copy Claude prompt
-                </button>
+          <div className="space-y-5">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">1</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Topic ideas</h3>
+                  <p className="text-xs text-slate-500">Injected into the AI prompt below — one theme per line.</p>
+                </div>
               </div>
-              <details className="mt-4 rounded-xl border border-indigo-200 bg-white/60 p-3 text-xs backdrop-blur-sm">
-                <summary className="cursor-pointer font-semibold text-slate-900">Preview full prompt</summary>
-                <pre className="custom-scrollbar mt-2 max-h-48 overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-muted">
-                  {promptText}
-                </pre>
-              </details>
+              <div className="p-5">
+                <Textarea
+                  value={topicsIdeas}
+                  onChange={(e) => setTopicsIdeas(e.target.value)}
+                  placeholder="e.g. Q2 product launch&#10;Hiring update&#10;Customer story: Acme Corp"
+                  className="min-h-[5rem] font-sans text-sm"
+                  aria-label="Topic ideas for campaign prompt"
+                />
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void copyPrompt()}
+                    className={clsx(
+                      'flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-1.5 text-sm font-semibold text-indigo-600',
+                      'transition-colors duration-150 hover:bg-indigo-100',
+                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                      'cursor-pointer',
+                    )}
+                  >
+                    <Copy className="h-3.5 w-3.5" aria-hidden />
+                    Copy Claude prompt
+                  </button>
+                  <details className="flex-1">
+                    <summary className="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors">Preview prompt</summary>
+                    <pre className="custom-scrollbar mt-2 max-h-48 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-slate-500">
+                      {promptText}
+                    </pre>
+                  </details>
+                </div>
+              </div>
             </section>
 
-            <section className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm sm:p-8">
-              <h3 className="font-heading text-base font-semibold text-slate-900">2. Paste campaign JSON</h3>
-              <p className="mt-1 text-sm text-muted">JSON or JSONC (comments and trailing commas allowed).</p>
-              <div className="mt-3 flex gap-0 overflow-hidden rounded-xl border border-indigo-200 bg-white/70">
-                <div
-                  className="hidden w-10 shrink-0 select-none border-r border-indigo-100 bg-indigo-50/80 py-2 text-right font-mono text-[10px] leading-5 text-muted sm:block"
-                  aria-hidden
-                >
-                  {pasteText.split('\n').map((_, i) => (
-                    <div
-                      key={i}
-                      className={clsx('pr-1', errorLines.has(i + 1) && 'bg-rose-200/80 font-semibold text-rose-950')}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
-                  {pasteText === '' ? <div className="pr-1">1</div> : null}
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Paste campaign JSON</h3>
+                  <p className="text-xs text-slate-500">JSON or JSONC (comments and trailing commas allowed).</p>
                 </div>
-                <Textarea
-                  value={pasteText}
-                  onChange={(e) => setPasteText(e.target.value)}
-                  placeholder='{ "version": 1, "posts": [ … ] }'
-                  className="min-h-[14rem] flex-1 resize-y border-0 bg-transparent font-mono text-xs leading-5 shadow-none focus-visible:ring-0 sm:min-h-[18rem]"
-                  spellCheck={false}
-                  aria-label="Campaign JSON"
-                />
               </div>
+              <div className="p-5">
+                <div className="flex gap-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
+                  <div
+                    className="hidden w-10 shrink-0 select-none border-r border-slate-200 bg-slate-100/60 py-2 text-right font-mono text-[10px] leading-5 text-slate-400 sm:block"
+                    aria-hidden
+                  >
+                    {pasteText.split('\n').map((_, i) => (
+                      <div
+                        key={i}
+                        className={clsx('pr-1', errorLines.has(i + 1) && 'bg-rose-200/80 font-semibold text-rose-950')}
+                      >
+                        {i + 1}
+                      </div>
+                    ))}
+                    {pasteText === '' ? <div className="pr-1">1</div> : null}
+                  </div>
+                  <Textarea
+                    value={pasteText}
+                    onChange={(e) => setPasteText(e.target.value)}
+                    placeholder='{ "version": 1, "posts": [ … ] }'
+                    className="min-h-[14rem] flex-1 resize-y border-0 bg-transparent font-mono text-xs leading-5 shadow-none focus-visible:ring-0 sm:min-h-[18rem]"
+                    spellCheck={false}
+                    aria-label="Campaign JSON"
+                  />
+                </div>
 
-              {diagnostics.length > 0 ? (
-                <ul role="alert" className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
-                  {diagnostics.map((d, i) => (
-                    <li key={i}>
-                      <span className="font-mono font-semibold">
-                        Line {d.line}:{d.column}
-                      </span>{' '}
-                      {d.message}
-                    </li>
-                  ))}
-                </ul>
-              ) : pasteText.trim() ? (
-                <p className="mt-3 text-xs font-medium text-emerald-700" role="status">Document looks valid.</p>
-              ) : null}
+                {diagnostics.length > 0 ? (
+                  <ul role="alert" className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
+                    {diagnostics.map((d, i) => (
+                      <li key={i}>
+                        <span className="font-mono font-semibold">Line {d.line}:{d.column}</span>{' '}
+                        {d.message}
+                      </li>
+                    ))}
+                  </ul>
+                ) : pasteText.trim() ? (
+                  <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Document looks valid
+                  </p>
+                ) : null}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={!parseResult.ok}
-                  onClick={() => handleStepChange(1)}
-                  className={clsx(
-                    'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
-                    'transition-colors duration-200 hover:bg-indigo-700',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
-                    'disabled:cursor-not-allowed disabled:bg-indigo-300',
+                <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
+                  <button
+                    type="button"
+                    disabled={!parseResult.ok}
+                    onClick={() => handleStepChange(1)}
+                    className={clsx(
+                      'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
+                      'transition-colors duration-150 hover:bg-indigo-700',
+                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                      'disabled:cursor-not-allowed disabled:bg-indigo-300 cursor-pointer',
+                    )}
+                  >
+                    Preview &amp; Publish
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </button>
+                  {!parseResult.ok && pasteText.trim() && (
+                    <p className="text-xs text-slate-400">Fix JSON errors above to continue.</p>
                   )}
-                >
-                  Next: Preview &amp; Publish
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </button>
+                </div>
               </div>
             </section>
           </div>
@@ -397,45 +420,54 @@ export function CampaignPage(props: {
 
         {/* Step 1: Preview & Publish */}
         <div className="mx-auto max-w-5xl px-4 sm:px-8">
-          <div className="space-y-5">
-            <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm sm:p-6">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted">
-                  {parseResult.ok ? `${editedPosts.length} post(s) ready` : 'Fix JSON issues to see preview'}
-                </span>
-                <div role="tablist" aria-label="Preview view mode" className="flex rounded-lg border border-indigo-200 bg-white/60 p-0.5">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={previewTab === 'list'}
-                    onClick={() => setPreviewTab('list')}
-                    className={clsx(
-                      'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
-                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
-                      previewTab === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-muted hover:text-slate-900',
-                    )}
-                  >
-                    <LayoutList className="h-3.5 w-3.5" aria-hidden />
-                    List
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={previewTab === 'calendar'}
-                    onClick={() => setPreviewTab('calendar')}
-                    className={clsx(
-                      'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
-                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
-                      previewTab === 'calendar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-muted hover:text-slate-900',
-                    )}
-                  >
-                    <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-                    Calendar
-                  </button>
-                </div>
-              </div>
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-              {parseResult.ok ? (
+            {/* Card header: tab switcher + post count */}
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
+              <div className="flex items-center gap-2">
+                {parseResult.ok ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                    {editedPosts.length} post{editedPosts.length !== 1 ? 's' : ''}
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-400">Fix JSON to see preview</span>
+                )}
+              </div>
+              <div role="tablist" aria-label="Preview view mode" className="flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={previewTab === 'list'}
+                  onClick={() => setPreviewTab('list')}
+                  className={clsx(
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
+                    previewTab === 'list' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
+                  )}
+                >
+                  <LayoutList className="h-3.5 w-3.5" aria-hidden />
+                  List
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={previewTab === 'calendar'}
+                  onClick={() => setPreviewTab('calendar')}
+                  className={clsx(
+                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
+                    previewTab === 'calendar' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
+                  )}
+                >
+                  <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                  Calendar
+                </button>
+              </div>
+            </div>
+
+            {/* Toolbar */}
+            {parseResult.ok && (
+              <div className="border-b border-slate-100 px-5 py-3">
                 <CampaignPreviewToolbar
                   postCount={editedPosts.length}
                   selectedCount={selectedCount}
@@ -446,61 +478,65 @@ export function CampaignPage(props: {
                   onOpenSetSchedule={openBulkSchedule}
                   onOpenSetChannels={openBulkChannels}
                 />
-              ) : null}
+              </div>
+            )}
 
-              <div className="mt-4">
-                {parseResult.ok ? (
-                  previewTab === 'list' ? (
-                    <CampaignPostList
-                      posts={editedPosts}
-                      selectedIndices={selectedIndices}
-                      onToggleSelect={toggleSelect}
-                      onDeletePost={deletePostAt}
-                    />
-                  ) : (
-                    <ContentScheduleCalendar
-                      topics={calendarTopics}
-                      onTopicPatch={handleTopicPatch}
-                      onTopicScheduleChange={handleTopicScheduleChange}
-                      onTopicDelete={handleTopicDelete}
-                      selectedTopicIds={selectedTopicIds}
-                      onTopicSelectionToggle={toggleSelectByTopicId}
-                      initialView="month-grid"
-                      className="csc-compact"
-                    />
-                  )
+            {/* Preview content */}
+            <div className="p-4 sm:p-5">
+              {parseResult.ok ? (
+                previewTab === 'list' ? (
+                  <CampaignPostList
+                    posts={editedPosts}
+                    selectedIndices={selectedIndices}
+                    onToggleSelect={toggleSelect}
+                    onDeletePost={deletePostAt}
+                  />
                 ) : (
-                  <p className="text-sm text-muted">No preview yet.</p>
-                )}
-              </div>
+                  <ContentScheduleCalendar
+                    topics={calendarTopics}
+                    onTopicPatch={handleTopicPatch}
+                    onTopicScheduleChange={handleTopicScheduleChange}
+                    onTopicDelete={handleTopicDelete}
+                    selectedTopicIds={selectedTopicIds}
+                    onTopicSelectionToggle={toggleSelectByTopicId}
+                    initialView="month-grid"
+                    className="csc-compact"
+                  />
+                )
+              ) : (
+                <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-slate-200">
+                  <p className="text-sm text-slate-400">No preview yet — go back and paste valid JSON.</p>
+                </div>
+              )}
+            </div>
 
-              <div className="mt-6 flex flex-wrap gap-3 border-t border-indigo-100 pt-5">
-                <button
-                  type="button"
-                  onClick={() => handleStepChange(0)}
-                  className={clsx(
-                    'rounded-xl border border-indigo-200 px-5 py-2.5 text-sm font-semibold text-indigo-600',
-                    'transition-colors duration-200 hover:bg-indigo-50',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
-                  )}
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  disabled={!parseResult.ok || submitting || editedPosts.length === 0}
-                  onClick={() => void handleCreate()}
-                  className={clsx(
-                    'flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white',
-                    'transition-colors duration-200 hover:bg-emerald-600',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500',
-                    'disabled:cursor-not-allowed disabled:bg-emerald-300',
-                  )}
-                >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-                  Create campaign in sheet
-                </button>
-              </div>
+            {/* Footer actions */}
+            <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => handleStepChange(0)}
+                className={clsx(
+                  'rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700',
+                  'transition-colors duration-150 hover:bg-slate-50 cursor-pointer',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                )}
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                disabled={!parseResult.ok || submitting || editedPosts.length === 0}
+                onClick={() => void handleCreate()}
+                className={clsx(
+                  'flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white',
+                  'transition-colors duration-150 hover:bg-emerald-700',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600',
+                  'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
+                )}
+              >
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                Create campaign
+              </button>
             </div>
           </div>
         </div>
