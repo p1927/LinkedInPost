@@ -171,6 +171,7 @@ export interface BotConfig {
   /** Workspace author context for LLM; always included when non-empty. */
   authorProfile: string;
   hasGitHubToken: boolean;
+  hasGenerationWorker: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
   instagramUserId: string;
@@ -275,6 +276,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     generationRules: config?.generationRules || '',
     authorProfile: config?.authorProfile || '',
     hasGitHubToken: Boolean(config?.hasGitHubToken),
+    hasGenerationWorker: Boolean(config?.hasGenerationWorker),
     defaultChannel,
     instagramAuthAvailable: Boolean(config?.instagramAuthAvailable),
     instagramUserId: config?.instagramUserId || '',

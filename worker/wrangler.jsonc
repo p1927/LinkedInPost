@@ -86,7 +86,8 @@
         "META_APP_ID": "2059399091272282",
         "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
         "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
-        "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10"
+        "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
+        "GENERATION_WORKER_URL": ""
       },
       "kv_namespaces": [
         {

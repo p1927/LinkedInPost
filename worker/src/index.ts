@@ -129,6 +129,7 @@ interface BotConfig {
   /** Workspace author context for LLM; always included when non-empty (not overridden by topic rules). */
   authorProfile: string;
   hasGitHubToken: boolean;
+  hasGenerationWorker: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
   instagramUserId: string;
@@ -1216,6 +1217,7 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     generationRules: config.generationRules || '',
     authorProfile: config.authorProfile || '',
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
+    hasGenerationWorker: isGenerationWorkerConfigured(env),
     defaultChannel: config.defaultChannel,
     instagramAuthAvailable: hasInstagramOAuthConfig(env),
     instagramUserId: config.instagramUserId,
