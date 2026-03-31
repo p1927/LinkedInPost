@@ -40,20 +40,37 @@ export function GoogleLoginButton({
       return;
     }
 
-    const update = () => {
+    /** @react-oauth/google re-calls `google.accounts.id.initialize()` whenever `width` changes — avoid churn from subpixel / scrollbar resize. */
+    const MIN_WIDTH_DELTA_PX = 12;
+    const DEBOUNCE_MS = 120;
+    const lastCommittedRef = { current: null as number | null };
+    let debounceId: ReturnType<typeof setTimeout> | undefined;
+
+    const measure = (force: boolean) => {
       const w = el.getBoundingClientRect().width;
       if (!w) {
         return;
       }
-      // Never wider than the container (required). No artificial floor — a floor above container width caused clipping on narrow viewports.
       const next = Math.min(GSI_WIDTH_MAX, Math.floor(w));
-      setGsiWidth((prev) => (prev === next ? prev : next));
+      const prev = lastCommittedRef.current;
+      if (!force && prev !== null && Math.abs(next - prev) < MIN_WIDTH_DELTA_PX) {
+        return;
+      }
+      lastCommittedRef.current = next;
+      setGsiWidth((p) => (p === next ? p : next));
     };
 
-    update();
-    const ro = new ResizeObserver(update);
+    measure(true);
+    const schedule = () => {
+      clearTimeout(debounceId);
+      debounceId = setTimeout(() => measure(false), DEBOUNCE_MS);
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      clearTimeout(debounceId);
+    };
   }, [idToken]);
 
   const handleLogout = () => {
@@ -104,7 +121,7 @@ export function GoogleLoginButton({
             onError={() => {
               console.error('Google sign-in failed.');
               setLoginHint(
-                'Sign-in did not complete. Allow pop-ups for localhost, try again, and confirm this exact URL (including port) is an Authorized JavaScript origin for your OAuth client.',
+                'Sign-in did not complete. Allow pop-ups, try again, and add your site origin (scheme + host only, no path) as an Authorized JavaScript origin in Google Cloud Console.',
               );
             }}
             useOneTap={false}

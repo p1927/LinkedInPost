@@ -187,15 +187,28 @@ export function Dashboard({
 
   const filteredRows = queueHook.rows.filter((row) => statusFilter === 'all' || getNormalizedRowStatus(row.status) === statusFilter);
 
+  /** Consume `location.state.openPreviewForTopicKey` once — `queueHook.rows` changes every poll; re-running navigate() caused max update depth (React #185). */
+  const openPreviewHandledRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!openPreviewForTopicKey) return;
-    if (queueHook.loading) return;
+    if (!openPreviewForTopicKey) {
+      openPreviewHandledRef.current = null;
+      return;
+    }
+    if (openPreviewHandledRef.current === openPreviewForTopicKey) {
+      return;
+    }
+    if (queueHook.loading) {
+      return;
+    }
+    openPreviewHandledRef.current = openPreviewForTopicKey;
     const row = findRowByTopicRouteId(queueHook.rows, openPreviewForTopicKey);
     if (row) {
       queueMicrotask(() => setSelectedTopicsPanelTopicId(String(row.topicId).trim()));
     }
     navigate(WORKSPACE_PATHS.topics, { replace: true, state: null });
-  }, [openPreviewForTopicKey, queueHook.loading, queueHook.rows, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rows updates every poll; ref ensures one consume per openPreview key
+  }, [openPreviewForTopicKey, queueHook.loading, navigate]);
 
   const railSelectedTopicId = useMemo(() => {
     if (!selectedTopicsPanelTopicId) return null;

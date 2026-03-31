@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
-import { BrowserRouter, useLocation, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
 import { LogOut, Share2, Sparkles, TableProperties } from 'lucide-react'
 import { googleLogout } from '@react-oauth/google'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
@@ -28,6 +28,10 @@ import {
 import { PrivacyPolicy } from './components/PrivacyPolicy'
 import { LegalFooterLinks } from './components/LegalFooterLinks'
 import { TermsOfServicePage } from './pages/TermsOfServicePage'
+import {
+  POST_LOGIN_REDIRECT_KEY,
+  shouldCapturePathForPostLogin,
+} from './lib/postLoginRedirect'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
 
@@ -112,8 +116,55 @@ function getBackendHostLabel(endpointUrl: string): string {
 function LoginRedirect() {
   const location = useLocation()
   if (location.pathname !== '/' && location.pathname !== '/terms' && location.pathname !== '/privacy-policy') {
+    if (shouldCapturePathForPostLogin(location.pathname)) {
+      try {
+        sessionStorage.setItem(
+          POST_LOGIN_REDIRECT_KEY,
+          `${location.pathname}${location.search}`,
+        )
+      } catch {
+        /* private mode / quota */
+      }
+    }
     return <Navigate to="/" replace />
   }
+  return null
+}
+
+/** After bootstrap, send users back to e.g. `/topics` they opened while logged out (GitHub Pages deep links). */
+function PostLoginDeepLinkRestore({
+  idToken,
+  session,
+}: {
+  idToken: string | null
+  session: AppSession | null
+}) {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (!idToken || !session) {
+      return
+    }
+    let target: string | null = null
+    try {
+      target = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY)
+      if (target) {
+        sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY)
+      }
+    } catch {
+      return
+    }
+    if (!target) {
+      return
+    }
+    const current = `${location.pathname}${location.search}`
+    if (target === current) {
+      return
+    }
+    navigate(target, { replace: true })
+  }, [idToken, session, navigate, location.pathname, location.search])
+
   return null
 }
 
@@ -181,6 +232,7 @@ function App() {
   return (
     <AlertProvider>
       <BrowserRouter {...(routerBasename ? { basename: routerBasename } : {})}>
+        <PostLoginDeepLinkRestore idToken={idToken} session={session} />
         <Routes>
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />

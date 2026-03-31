@@ -7,11 +7,14 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 /**
- * GitHub Pages has no server fallback for client-side routes. Copying the built
- * `index.html` to `404.html` lets deep links and refreshes on `/topics`, etc. load the SPA.
+ * GitHub Pages has no server fallback for client-side routes.
+ * - `404.html` = SPA shell for unknown paths (still returns 404 status for arbitrary URLs).
+ * - `topics/index.html`, `settings/index.html`, … = same shell with **200** for those paths
+ *   (avoids noisy 404 in DevTools on refresh / direct open of workspace routes).
  */
 function spaGithubPages404(): Plugin {
   let outDir = 'dist'
+  const workspaceSpaDirs = ['topics', 'settings', 'rules', 'campaign'] as const
   return {
     name: 'spa-github-pages-404',
     apply: 'build',
@@ -21,8 +24,14 @@ function spaGithubPages404(): Plugin {
     closeBundle() {
       const indexHtml = path.resolve(process.cwd(), outDir, 'index.html')
       const notFoundHtml = path.resolve(process.cwd(), outDir, '404.html')
-      if (fs.existsSync(indexHtml)) {
-        fs.copyFileSync(indexHtml, notFoundHtml)
+      if (!fs.existsSync(indexHtml)) {
+        return
+      }
+      fs.copyFileSync(indexHtml, notFoundHtml)
+      for (const dir of workspaceSpaDirs) {
+        const dirPath = path.resolve(process.cwd(), outDir, dir)
+        fs.mkdirSync(dirPath, { recursive: true })
+        fs.copyFileSync(indexHtml, path.join(dirPath, 'index.html'))
       }
     },
   }
