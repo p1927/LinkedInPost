@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
+import { Carousel, CarouselContent } from '@/components/ui/carousel';
 import { useAlert } from '@/components/useAlert';
 import { useWorkspaceChrome } from '@/components/workspace/WorkspaceChromeContext';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '@/services/backendApi';
@@ -12,10 +12,14 @@ import { ContentScheduleCalendar, campaignPostsToCalendarTopics, applyCalendarPa
 import type { CalendarTopic, TopicScheduleChange } from '@/features/content-schedule-calendar';
 import type { CampaignPostV1 } from './schema/types';
 import clsx from 'clsx';
-import { Copy, LayoutList, CalendarDays, Loader2 } from 'lucide-react';
+import { Copy, LayoutList, CalendarDays, Loader2, ArrowRight } from 'lucide-react';
 
 type PreviewTab = 'list' | 'calendar';
-type ViewMode = 'list' | 'calendar';
+
+const CAMPAIGN_STEPS = [
+  { id: 'import', label: 'Import', name: 'Import Campaign JSON' },
+  { id: 'preview', label: 'Preview', name: 'Preview & Publish' },
+];
 
 export function CampaignPage(props: {
   idToken: string;
@@ -29,18 +33,14 @@ export function CampaignPage(props: {
   const { onRefreshQueue } = useWorkspaceChrome();
   const [topicsIdeas, setTopicsIdeas] = useState('');
   const [pasteText, setPasteText] = useState('');
-  const [previewTab, setPreviewTab] = useState<PreviewTab>('list');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [previewTab, setPreviewTab] = useState<PreviewTab>('calendar');
   const [submitting, setSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const pageTopRef = useRef<HTMLDivElement>(null);
 
   const promptText = useMemo(() => buildCampaignClaudePrompt(topicsIdeas), [topicsIdeas]);
   const parseResult = useMemo(() => parseCampaignPaste(pasteText), [pasteText]);
 
-  /**
-   * Lifted posts state — mirrors parseResult.doc.posts when the paste text changes,
-   * but allows in-calendar edits (topic patch / schedule change) to persist without
-   * re-parsing the JSON textarea each time.
-   */
   const [editedPosts, setEditedPosts] = useState<CampaignPostV1[]>([]);
 
   useEffect(() => {
@@ -105,6 +105,7 @@ export function CampaignPage(props: {
       });
       onRefreshQueue?.();
       setPasteText('');
+      setCurrentStep(0);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Import failed.';
       if (isAuthErrorMessage(msg)) onAuthExpired();
@@ -114,69 +115,42 @@ export function CampaignPage(props: {
     }
   }, [api, idToken, onAuthExpired, onRefreshQueue, parseResult, session.config.spreadsheetId, showAlert]);
 
+  const handleStepChange = useCallback((step: number) => {
+    // Step 1 (Preview) requires valid JSON
+    if (step === 1 && !parseResult.ok) return;
+    setCurrentStep(step);
+    pageTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [parseResult.ok]);
+
   const diagnostics = parseResult.ok ? [] : parseResult.diagnostics;
   const errorLines = new Set(diagnostics.map((d) => d.line));
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-      <div className="mb-6">
-        <h2 className="font-heading text-2xl font-semibold text-ink">Import from JSON</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted">
+    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12" ref={pageTopRef}>
+      <div className="mb-8 text-center">
+        <h2 className="font-heading text-2xl font-semibold text-slate-900 sm:text-3xl">Campaign Import</h2>
+        <p className="mt-2 max-w-2xl mx-auto text-sm text-muted">
           Build a prompt with your topic ideas, paste it into Claude, then paste the JSON back here. We validate the
           document, preview posts, and create Topics plus Draft rows in one request.
         </p>
       </div>
 
-      <div className="mb-6 flex items-center gap-2" role="tablist" aria-label="Campaign view mode">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={viewMode === 'list'}
-          onClick={() => setViewMode('list')}
-          className={clsx(
-            'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors cursor-pointer',
-            viewMode === 'list'
-              ? 'border-white/50 bg-white text-ink shadow-sm'
-              : 'border-white/50 bg-white/40 text-muted hover:text-ink',
-          )}
-        >
-          <LayoutList className="h-4 w-4" aria-hidden />
-          List View
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={viewMode === 'calendar'}
-          onClick={() => setViewMode('calendar')}
-          className={clsx(
-            'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors cursor-pointer',
-            viewMode === 'calendar'
-              ? 'border-white/50 bg-white text-ink shadow-sm'
-              : 'border-white/50 bg-white/40 text-muted hover:text-ink',
-          )}
-        >
-          <CalendarDays className="h-4 w-4" aria-hidden />
-          Calendar View
-        </button>
-      </div>
+      {/* Carousel step nav */}
+      <Carousel
+        steps={CAMPAIGN_STEPS}
+        currentStep={currentStep}
+        onStepChange={handleStepChange}
+        disabledSteps={parseResult.ok ? [] : [1]}
+        className="mb-6"
+      />
 
-      {viewMode === 'calendar' ? (
-        <div className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
-          <ContentScheduleCalendar
-            topics={calendarTopics}
-            onTopicPatch={handleTopicPatch}
-            onTopicScheduleChange={handleTopicScheduleChange}
-            initialView="month-grid"
-            className="csc-fullwidth"
-          />
-        </div>
-      ) : null}
-
-      <div className={clsx('grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]', viewMode !== 'list' && 'hidden')}>
+      {/* Animated step content */}
+      <CarouselContent currentStep={currentStep}>
+        {/* Step 0: Import Campaign JSON */}
         <div className="space-y-5">
-          <section className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
-            <h2 className="text-sm font-semibold text-ink">1. Topic ideas</h2>
-            <p className="mt-1 text-xs text-muted">Injected into the prompt below (one theme per line is fine).</p>
+          <section className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm sm:p-8">
+            <h3 className="font-heading text-base font-semibold text-slate-900">1. Topic ideas</h3>
+            <p className="mt-1 text-sm text-muted">Injected into the prompt below (one theme per line is fine).</p>
             <Textarea
               value={topicsIdeas}
               onChange={(e) => setTopicsIdeas(e.target.value)}
@@ -185,25 +159,33 @@ export function CampaignPage(props: {
               aria-label="Topic ideas for campaign prompt"
             />
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" size="sm" className="gap-1.5" onClick={() => void copyPrompt()}>
+              <button
+                type="button"
+                onClick={() => void copyPrompt()}
+                className={clsx(
+                  'flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600',
+                  'transition-colors duration-200 hover:bg-indigo-50',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                )}
+              >
                 <Copy className="h-3.5 w-3.5" aria-hidden />
                 Copy Claude prompt
-              </Button>
+              </button>
             </div>
-            <details className="mt-4 rounded-xl border border-white/50 bg-white/30 p-3 text-xs">
-              <summary className="cursor-pointer font-semibold text-ink">Preview full prompt</summary>
+            <details className="mt-4 rounded-xl border border-indigo-200 bg-white/60 p-3 text-xs backdrop-blur-sm">
+              <summary className="cursor-pointer font-semibold text-slate-900">Preview full prompt</summary>
               <pre className="custom-scrollbar mt-2 max-h-48 overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-muted">
                 {promptText}
               </pre>
             </details>
           </section>
 
-          <section className="glass-panel rounded-2xl p-4 shadow-card sm:p-5">
-            <h2 className="text-sm font-semibold text-ink">2. Paste campaign JSON</h2>
-            <p className="mt-1 text-xs text-muted">JSON or JSONC (comments and trailing commas allowed).</p>
-            <div className="mt-3 flex gap-0 overflow-hidden rounded-xl border border-white/50 bg-deep-purple/[0.03]">
+          <section className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm sm:p-8">
+            <h3 className="font-heading text-base font-semibold text-slate-900">2. Paste campaign JSON</h3>
+            <p className="mt-1 text-sm text-muted">JSON or JSONC (comments and trailing commas allowed).</p>
+            <div className="mt-3 flex gap-0 overflow-hidden rounded-xl border border-indigo-200 bg-white/70">
               <div
-                className="hidden w-10 shrink-0 select-none border-r border-white/40 bg-white/20 py-2 text-right font-mono text-[10px] leading-5 text-muted sm:block"
+                className="hidden w-10 shrink-0 select-none border-r border-indigo-100 bg-indigo-50/80 py-2 text-right font-mono text-[10px] leading-5 text-muted sm:block"
                 aria-hidden
               >
                 {pasteText.split('\n').map((_, i) => (
@@ -227,7 +209,7 @@ export function CampaignPage(props: {
             </div>
 
             {diagnostics.length > 0 ? (
-              <ul className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
+              <ul role="alert" className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
                 {diagnostics.map((d, i) => (
                   <li key={i}>
                     <span className="font-mono font-semibold">
@@ -238,80 +220,120 @@ export function CampaignPage(props: {
                 ))}
               </ul>
             ) : pasteText.trim() ? (
-              <p className="mt-3 text-xs font-medium text-emerald-800">Document looks valid.</p>
+              <p className="mt-3 text-xs font-medium text-emerald-700" role="status">Document looks valid.</p>
             ) : null}
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button
+              <button
                 type="button"
-                disabled={!parseResult.ok || submitting}
-                onClick={() => void handleCreate()}
-                className="gap-2"
+                disabled={!parseResult.ok}
+                onClick={() => handleStepChange(1)}
+                className={clsx(
+                  'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
+                  'transition-colors duration-200 hover:bg-indigo-700',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                  'disabled:cursor-not-allowed disabled:bg-indigo-300',
+                )}
               >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-                Create campaign in sheet
-              </Button>
+                Next: Preview &amp; Publish
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </button>
             </div>
           </section>
         </div>
 
-        <aside className="glass-panel flex flex-col rounded-2xl p-4 shadow-card sm:p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-ink">Preview</h2>
-            <div role="tablist" className="flex rounded-lg border border-white/50 bg-white/40 p-0.5">
+        {/* Step 1: Preview & Publish */}
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm sm:p-8">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="font-heading text-base font-semibold text-slate-900">Preview &amp; Publish</h3>
+                {parseResult.ok ? (
+                  <p className="mt-0.5 text-sm text-muted">{editedPosts.length} post(s) ready to import.</p>
+                ) : (
+                  <p className="mt-0.5 text-sm text-muted">Fix JSON issues to see preview.</p>
+                )}
+              </div>
+              <div role="tablist" aria-label="Preview view mode" className="flex rounded-lg border border-indigo-200 bg-white/60 p-0.5">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={previewTab === 'list'}
+                  onClick={() => setPreviewTab('list')}
+                  className={clsx(
+                    'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
+                    previewTab === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-muted hover:text-slate-900',
+                  )}
+                >
+                  <LayoutList className="h-3.5 w-3.5" aria-hidden />
+                  List
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={previewTab === 'calendar'}
+                  onClick={() => setPreviewTab('calendar')}
+                  className={clsx(
+                    'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
+                    previewTab === 'calendar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-muted hover:text-slate-900',
+                  )}
+                >
+                  <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                  Calendar
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 min-h-[16rem]">
+              {parseResult.ok ? (
+                previewTab === 'list' ? (
+                  <CampaignPostList posts={editedPosts} />
+                ) : (
+                  <ContentScheduleCalendar
+                    topics={calendarTopics}
+                    onTopicPatch={handleTopicPatch}
+                    onTopicScheduleChange={handleTopicScheduleChange}
+                    initialView="month-grid"
+                    className="csc-compact"
+                  />
+                )
+              ) : (
+                <p className="text-sm text-muted">No preview yet.</p>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3 border-t border-indigo-100 pt-5">
               <button
                 type="button"
-                role="tab"
-                aria-selected={previewTab === 'list'}
-                onClick={() => setPreviewTab('list')}
+                onClick={() => handleStepChange(0)}
                 className={clsx(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
-                  previewTab === 'list' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink',
+                  'rounded-xl border border-indigo-200 px-5 py-2.5 text-sm font-semibold text-indigo-600',
+                  'transition-colors duration-200 hover:bg-indigo-50',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
                 )}
               >
-                <LayoutList className="h-3.5 w-3.5" aria-hidden />
-                List
+                Back
               </button>
               <button
                 type="button"
-                role="tab"
-                aria-selected={previewTab === 'calendar'}
-                onClick={() => setPreviewTab('calendar')}
+                disabled={!parseResult.ok || submitting}
+                onClick={() => void handleCreate()}
                 className={clsx(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-colors duration-200 cursor-pointer',
-                  previewTab === 'calendar' ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink',
+                  'flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white',
+                  'transition-colors duration-200 hover:bg-emerald-600',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500',
+                  'disabled:cursor-not-allowed disabled:bg-emerald-300',
                 )}
               >
-                <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-                Calendar
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                Create campaign in sheet
               </button>
             </div>
           </div>
-          {parseResult.ok ? (
-            <p className="mt-1 text-xs text-muted">{editedPosts.length} post(s)</p>
-          ) : (
-            <p className="mt-1 text-xs text-muted">Fix JSON issues to see preview.</p>
-          )}
-
-          <div className="mt-3 min-h-0 flex-1">
-            {parseResult.ok ? (
-              previewTab === 'list' ? (
-                <CampaignPostList posts={editedPosts} />
-              ) : (
-                <ContentScheduleCalendar
-                  topics={calendarTopics}
-                  onTopicPatch={handleTopicPatch}
-                  onTopicScheduleChange={handleTopicScheduleChange}
-                  initialView="month-grid"
-                  className="csc-compact"
-                />
-              )
-            ) : (
-              <p className="text-sm text-muted">No preview yet.</p>
-            )}
-          </div>
-        </aside>
-      </div>
+        </div>
+      </CarouselContent>
     </div>
   );
 }

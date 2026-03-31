@@ -13,8 +13,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['Poppins', 'system-ui', 'sans-serif'],
-        sans: ['"Open Sans"', 'system-ui', 'sans-serif'],
+        heading: ['Plus Jakarta Sans', 'Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', '"Open Sans"', 'system-ui', 'sans-serif'],
       },
       colors: {
         /* Micro SaaS — exact CSV hex where specified */

@@ -131,18 +131,21 @@ export function DashboardQueue({
             aria-label="Topics list"
           >
             {/* Column header */}
-            <div className="flex items-center border-b border-violet-200/60 bg-slate-50/70 px-4 py-2" aria-hidden>
-              <div className="w-[88px] shrink-0">
+            <div
+              className="flex items-center gap-x-2 border-b border-violet-200/60 bg-slate-50/70 px-4 py-2 sm:gap-x-3"
+              aria-hidden
+            >
+              <div className="w-[88px] shrink-0 pr-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Status</span>
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 px-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Topic</span>
               </div>
-              <div className="hidden w-24 shrink-0 text-right sm:block">
+              <div className="hidden w-[7.25rem] shrink-0 text-right sm:block sm:w-[8.5rem]">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Date</span>
               </div>
-              <div className="w-[152px] shrink-0" />
-              <div className="w-9 shrink-0" />
+              <div className="w-[152px] shrink-0 pl-1" />
+              <div className="w-9 shrink-0 pl-0.5" />
             </div>
 
             {filteredRows.map((row, rowIndex) => {
@@ -165,7 +168,7 @@ export function DashboardQueue({
                   aria-label={`Topic: ${row.topic}`}
                   aria-selected={isSelected}
                   className={cn(
-                    'group relative flex cursor-pointer items-center border-b border-violet-100/60 px-4 py-2.5 transition-all duration-200 last:border-b-0',
+                    'group relative flex cursor-pointer items-center gap-x-2 border-b border-violet-100/60 px-4 py-2.5 transition-all duration-200 last:border-b-0 sm:gap-x-3',
                     'hover:bg-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-inset',
                     rowIndex % 2 === 1 && !isSelected && 'bg-violet-50/30',
                     isSelected
@@ -181,14 +184,14 @@ export function DashboardQueue({
                   }}
                 >
                   {/* Status column */}
-                  <div className="flex w-[88px] shrink-0 items-center">
+                  <div className="flex w-[88px] shrink-0 items-center pr-1">
                     <Badge variant={getQueueStatusVariant(row.status)} size="sm">
                       {row.status || 'Pending'}
                     </Badge>
                   </div>
 
                   {/* Topic column */}
-                  <div className="flex min-w-0 flex-1 items-center">
+                  <div className="flex min-w-0 flex-1 items-center px-1">
                     <p
                       className="truncate text-sm font-medium leading-snug text-ink"
                       title={topicNeedsFullTooltip(row.topic) ? row.topic.trim() : undefined}
@@ -197,21 +200,31 @@ export function DashboardQueue({
                     </p>
                   </div>
 
-                  {/* Date column */}
-                  <div className="hidden w-24 shrink-0 items-center justify-end sm:flex">
-                    {dateLabel ? (
+                  {/* Date column — right-aligned within a fixed width so text sits left of action buttons with column gap */}
+                  <div className="hidden w-[7.25rem] shrink-0 flex-col items-end justify-center gap-0.5 text-right sm:flex sm:w-[8.5rem]">
+                    {dateRaw.trim() ? (
                       <span
-                        className="truncate text-xs tabular-nums text-muted"
+                        className="max-w-full truncate text-xs tabular-nums text-muted"
                         title={dateRaw || undefined}
                       >
                         {dateLabel}
+                      </span>
+                    ) : row.postTime?.trim() ? null : (
+                      <span className="text-xs tabular-nums text-muted">—</span>
+                    )}
+                    {row.postTime?.trim() ? (
+                      <span
+                        className="max-w-full truncate text-[11px] tabular-nums text-muted/85"
+                        title={row.postTime.trim()}
+                      >
+                        {row.postTime.trim()}
                       </span>
                     ) : null}
                   </div>
 
                   {/* Actions column — always visible for selected row, revealed on hover for others */}
                   <div className={cn(
-                    'flex w-[152px] shrink-0 items-center justify-end gap-1.5 transition-opacity duration-150',
+                    'flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-1 transition-opacity duration-150',
                     isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto',
                   )}>
                     {normalizedStatus === 'pending' ? (
@@ -360,7 +373,7 @@ export function DashboardQueue({
 
                   {/* Delete column */}
                   <div className={cn(
-                    'flex w-9 shrink-0 items-center justify-end transition-opacity duration-150',
+                    'flex w-9 shrink-0 items-center justify-end pl-0.5 transition-opacity duration-150',
                     isSelected ? 'opacity-100' : 'opacity-40 group-hover:opacity-100',
                   )}>
                     <Button

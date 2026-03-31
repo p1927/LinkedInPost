@@ -25,7 +25,7 @@ export function ContentScheduleCalendar({
   topics,
   onTopicPatch,
   onTopicScheduleChange,
-  initialView = 'week',
+  initialView = 'month-grid',
   canDrag = true,
   className,
 }: ContentScheduleCalendarProps) {
