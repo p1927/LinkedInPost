@@ -6,6 +6,7 @@ import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Button } from '@/components/ui/button'
 import { Dashboard } from './components/dashboard'
 import { AlertProvider } from './components/AlertProvider'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
@@ -253,6 +254,7 @@ function App() {
   const routerBasename = workspaceRouterBasename()
 
   return (
+    <ErrorBoundary>
     <AlertProvider>
       <BrowserRouter {...(routerBasename ? { basename: routerBasename } : {})}>
         <PostLoginDeepLinkRestore idToken={idToken} session={session} />
@@ -430,6 +432,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </AlertProvider>
+    </ErrorBoundary>
   )
 }
 

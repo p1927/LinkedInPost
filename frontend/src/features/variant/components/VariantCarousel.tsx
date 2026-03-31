@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '../../../lib/cn';
 import { ChannelPostPreview } from '../../../components/channel-previews/ChannelPostPreview';
-import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlow } from '../../review/context/useReviewFlow';
 
 export function VariantCarousel() {
   const {

@@ -1,6 +1,6 @@
 import { Dialog } from '../../../components/Dialog';
 import { CompareDialog } from '../../compare/CompareDialog';
-import { useReviewFlow } from '../context/ReviewFlowContext';
+import { useReviewFlow } from '../context/useReviewFlow';
 import { useReviewFlowEditor } from '../context/ReviewFlowEditorContext';
 
 export function ReviewDialogs() {
@@ -14,7 +14,6 @@ export function ReviewDialogs() {
     setActiveWorkspacePanel,
     pendingClose,
     setPendingClose,
-    navigationBlocker,
     onCancel,
     pendingNavigateToVariants,
     setPendingNavigateToVariants,
@@ -75,15 +74,9 @@ export function ReviewDialogs() {
         confirmLabel="Discard and go back"
         onCancel={() => {
           setPendingClose(false);
-          if (navigationBlocker.state === 'blocked') {
-            navigationBlocker.reset();
-          }
         }}
         onConfirm={() => {
           setPendingClose(false);
-          if (navigationBlocker.state === 'blocked') {
-            navigationBlocker.reset();
-          }
           onCancel();
         }}
       />

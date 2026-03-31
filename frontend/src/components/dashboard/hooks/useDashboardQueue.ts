@@ -11,7 +11,7 @@ import { effectiveChannel, effectiveLlmRef } from '@/lib/topicEffectivePrefs';
 import { buildRowActionKey, findRowByTopicId, getNormalizedRowStatus, isSameTopicId } from '../utils';
 import { encodeTopicRouteId, normalizeTopicRouteParam } from '../../../features/topic-navigation/utils/topicRoute';
 
-import { useAlert } from '../../AlertProvider';
+import { useAlert } from '../../useAlert';
 import { rowMatchesPendingScheduledPublish, usePendingScheduledPublish } from '@/features/scheduled-publish';
 import {
   DRAFT_IMAGE_SEARCH_CHOICE_COUNT,

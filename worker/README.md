@@ -62,11 +62,13 @@ openssl rand -base64 32
 ```
 
 Use `CORS_ALLOWED_ORIGINS` to list the frontend origins that can call the Worker.
-For GitHub Pages, that is usually your production Pages origin plus `http://localhost:5173` for local Vite development.
+For GitHub Pages, that is usually your production Pages origin plus local Vite URLs. This repo’s Vite dev server uses **port 5174** (`strictPort` in `frontend/vite.config.ts`), so include both `http://localhost:5173` and `http://localhost:5174` unless you change the port.
 
 The setup script writes [worker/.dev.vars](.dev.vars) automatically when you run `python setup.py --cloudflare` or `python setup.py --all`.
 
-Run the Worker API with `npm run dev` from the `worker` directory. That uses Wrangler `--env local`, which binds `CONFIG_KV` to the **preview** namespace only so local runs do not read or write production KV. Secrets still come from `.dev.vars`. To run on Cloudflare's network with those same `local` bindings, use `npm run dev:remote`. To start `wrangler dev` without the `local` environment (root profile only), use `npm run dev:default`.
+Run the Worker API with `npm run dev` from the `worker` directory. That uses Wrangler `--env local` and listens on **port 8787** so it matches the usual frontend `VITE_WORKER_URL=http://localhost:8787`. If something else already uses 8787, stop that process or change both the `--port` flag and `VITE_WORKER_URL`. The `local` environment binds `CONFIG_KV` to the **preview** namespace only so local runs do not read or write production KV. Secrets still come from `.dev.vars`. To run on Cloudflare's network with those same `local` bindings, use `npm run dev:remote`. To start `wrangler dev` without the `local` environment (root profile only), use `npm run dev:default`.
+
+If Wrangler logs `Error: self-signed certificate in certificate chain`, Node cannot validate TLS to Cloudflare (common behind corporate TLS inspection). Point Node at your org’s CA bundle, for example `export NODE_EXTRA_CA_CERTS=/path/to/corp-root.pem`, then run `npm run dev` again.
 
 Preview KV often has no `shared-config` yet, so the queue stays empty until you either copy that key from production KV or set `DEV_SPREADSHEET_ID` in `.dev.vars` to your Google Sheet id (from the spreadsheet URL). That variable is local-only and overrides the stored spreadsheet id when present.
 

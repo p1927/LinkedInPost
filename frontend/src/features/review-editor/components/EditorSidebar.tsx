@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
 import { RulesPanel } from '../../rules/RulesPanel';
 import { ImageAssetManager } from '../../../components/ImageAssetManager';
-import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 import { ResearcherPanel } from '../../news-research';
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ReviewFlowProviderProps } from './types';
 import { type GenerationRequest, isAuthErrorMessage } from '../../../services/backendApi';
-import { useAlert } from '../../../components/AlertProvider';
+import { useAlert } from '../../../components/useAlert';
 import { applyFormattingAction } from '@/features/draft-selection-target';
 import { rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { mergeUniqueImageOptions, type SheetVariantForReview } from './utils';
@@ -89,21 +89,17 @@ export function useReviewFlowActions(
   const { showAlert } = useAlert();
   const [publishSubmitting, setPublishSubmitting] = useState(false);
 
-  const requestClose = useCallback(() => {
+  const leaveToTopics = useCallback(() => {
     if (hasUnsavedReviewState) {
       setPendingClose(true);
       return;
     }
-    onCancel();
-  }, [hasUnsavedReviewState, onCancel, setPendingClose]);
-
-  const leaveToTopics = useCallback(() => {
     if (showPickPhase && routed) {
       routed.onNavigateToTopics();
       return;
     }
-    requestClose();
-  }, [showPickPhase, routed, requestClose]);
+    onCancel();
+  }, [hasUnsavedReviewState, showPickPhase, routed, onCancel, setPendingClose]);
 
   const requestNavigateToVariants = useCallback(() => {
     if (hasUnsavedReviewState) {

@@ -17,7 +17,7 @@ import { FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../gene
 import { type ChannelId } from '../../../integrations/channels';
 import { formatTelegramRecipientsInput, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
 import { formatRecipientsInput, parseRecipientsInput, type WhatsAppRecipient } from '../../../integrations/whatsapp';
-import { useAlert } from '../../AlertProvider';
+import { useAlert } from '../../useAlert';
 
 function recipientsInputMatchesSaved<T extends TelegramRecipient | WhatsAppRecipient>(
   input: string,

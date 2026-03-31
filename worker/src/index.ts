@@ -42,7 +42,7 @@ import {
   workspaceConfigFromStored,
   type LlmRef,
 } from './llm';
-import type { LlmModelOption as GoogleModelOption } from './llm';
+
 import { FEATURE_CAMPAIGN, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
 
 
@@ -2034,16 +2034,6 @@ async function disconnectChannelAuth(env: Env, current: StoredConfig, provider: 
   return toPublicConfig(nextConfig, env);
 }
 
-async function persistTelegramToken(env: Env, botToken: string): Promise<BotConfig> {
-  const current = await loadStoredConfig(env);
-  const nextConfig: StoredConfig = {
-    ...current,
-    telegramBotTokenCiphertext: await encryptSecret(botToken, requireSecretEncryptionKey(env)),
-    telegramBotToken: undefined,
-  };
-  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-  return toPublicConfig(nextConfig, env);
-}
 
 async function resolveTelegramBotToken(env: Env, config: StoredConfig): Promise<string> {
   if (!config.telegramBotTokenCiphertext && !config.telegramBotToken) {
@@ -2503,7 +2493,7 @@ async function publishContent(
   env: Env,
   config: StoredConfig,
   payload: Record<string, unknown>,
-  sheets: SheetsGateway,
+  _sheets: SheetsGateway,
   pipeline: PipelineStore,
 ): Promise<{
   success: true;
@@ -3079,16 +3069,6 @@ function requireSecretEncryptionKey(env: Env): string {
 
 
 
-
-function firstNonEmpty(...values: unknown[]): string {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim();
-    }
-  }
-
-  return '';
-}
 
 /** Hosts whose image URLs usually fail in browser <img> (hotlink / tracking / auth) or spam the console. */
 const SERP_IMAGE_HOTLINK_BLOCKED_HOST_SUFFIXES = [

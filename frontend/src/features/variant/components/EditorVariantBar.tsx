@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
-import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { VariantCarousel } from './VariantCarousel';
 
 export function EditorVariantBar() {

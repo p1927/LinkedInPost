@@ -12,7 +12,8 @@ import {
   type VariantsPreviewResponse,
 } from '../../services/backendApi';
 import { type ChannelId } from '../../integrations/channels';
-import { ReviewFlowProvider, useReviewFlow } from './context/ReviewFlowContext';
+import { ReviewFlowProvider } from './context/ReviewFlowContext';
+import { useReviewFlow } from './context/useReviewFlow';
 import { ReviewHeader } from './components/ReviewHeader';
 import { ReviewDialogs } from './components/ReviewDialogs';
 import { VariantSelectionScreen } from '../variant/screens/VariantSelectionScreen';

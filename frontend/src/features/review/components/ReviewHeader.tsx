@@ -2,7 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '../../../lib/cn';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
-import { useReviewFlow } from '../context/ReviewFlowContext';
+import { useReviewFlow } from '../context/useReviewFlow';
 
 export function ReviewHeader() {
   const {

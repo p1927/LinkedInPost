@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "pretypecheck": "python3 ../scripts/generate_features.py",
-    "dev": "wrangler dev --env local",
+    "dev": "wrangler dev --env local --port 8787",
     "dev:default": "wrangler dev",
-    "dev:remote": "wrangler dev --env local --remote",
+    "dev:remote": "wrangler dev --env local --remote --port 8787",
     "deploy": "wrangler deploy --env \"\"",
     "typecheck": "tsc --noEmit"
   },

@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef, useReducer } from 'react';
-import { IDLE_BLOCKER } from 'react-router-dom';
 import { type ReviewFlowProviderProps, type CompareState } from './types';
 import { getInitialEditorText, buildSheetVariants, buildGeneratedImages } from './utils';
 import {
@@ -442,7 +441,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
   /**
    * Browser back with unsaved editor state: show discard dialog instead of leaving.
-   * `useBlocker` requires a data router (`RouterProvider`); this app uses `BrowserRouter`, so we keep the history trap.
+   * (`useBlocker` needs `RouterProvider`; this app uses `BrowserRouter`, so we use a history trap.)
    */
   useEffect(() => {
     if (!hasUnsavedReviewState) return;
@@ -555,6 +554,5 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     postTemplates,
     researchContextArticles,
     setResearchContextArticles,
-    navigationBlocker: IDLE_BLOCKER,
   };
 }

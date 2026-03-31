@@ -1,49 +1,30 @@
-import { createContext, useContext } from 'react';
+import { createContext } from 'react';
 import { DEFAULT_NEWS_RESEARCH_CONFIG } from '../../../services/configService';
 import { type ReviewFlowContextValue, type ReviewFlowEditorContextValue, type ReviewFlowProviderProps } from './types';
 import { useReviewFlowState } from './useReviewFlowState';
 import { useReviewFlowActions } from './useReviewFlowActions';
 import { ReviewFlowEditorContext } from './ReviewFlowEditorContext';
 
-const ReviewFlowContext = createContext<ReviewFlowContextValue | null>(null);
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useReviewFlow(): ReviewFlowContextValue {
-  const context = useContext(ReviewFlowContext);
-  if (!context) {
-    throw new Error('useReviewFlow must be used within a ReviewFlowProvider');
-  }
-  return context;
-}
+export const ReviewFlowContext = createContext<ReviewFlowContextValue | null>(null);
 
 export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
   const state = useReviewFlowState(props);
   const actions = useReviewFlowActions(props, state);
 
-  // Internal-only fields stripped from context
+  // Internal-only fields stripped from context (prefixed _ to satisfy noUnusedLocals)
   const {
-    setChrome,
+    setChrome: _setChrome,
     effectiveGenerationRules,
-    suppressAutoImageSelection,
-    setSuppressAutoImageSelection,
-    setGenerationLoading,
-    setAlternateImageOptions,
-    setUploadedImageOptions,
-    setSubmitting,
-    setPreviewVariantSaveByIndex,
-    setPreviewVariantSaveErrors,
-    navigationBlocker,
+    suppressAutoImageSelection: _suppressAutoImageSelection,
+    setSuppressAutoImageSelection: _setSuppressAutoImageSelection,
+    setGenerationLoading: _setGenerationLoading,
+    setAlternateImageOptions: _setAlternateImageOptions,
+    setUploadedImageOptions: _setUploadedImageOptions,
+    setSubmitting: _setSubmitting,
+    setPreviewVariantSaveByIndex: _setPreviewVariantSaveByIndex,
+    setPreviewVariantSaveErrors: _setPreviewVariantSaveErrors,
     ...restState
   } = state;
-  void suppressAutoImageSelection;
-  void setSuppressAutoImageSelection;
-  void setChrome;
-  void setGenerationLoading;
-  void setAlternateImageOptions;
-  void setUploadedImageOptions;
-  void setSubmitting;
-  void setPreviewVariantSaveByIndex;
-  void setPreviewVariantSaveErrors;
 
   // Editor-sensitive context (re-renders on every keystroke / generation change)
   const editorValue: ReviewFlowEditorContextValue = {
@@ -126,7 +107,6 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     setOpenMediaAfterVariantConfirm: restState.setOpenMediaAfterVariantConfirm,
     pendingClose: restState.pendingClose,
     setPendingClose: restState.setPendingClose,
-    navigationBlocker,
     pendingNavigateToVariants: restState.pendingNavigateToVariants,
     setPendingNavigateToVariants: restState.setPendingNavigateToVariants,
     submitting: restState.submitting,

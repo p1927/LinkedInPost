@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useAlert } from '@/components/AlertProvider';
+import { useAlert } from '@/components/useAlert';
 import { useWorkspaceChrome } from '@/components/workspace/WorkspaceChromeContext';
 import { type AppSession, type BackendApi, isAuthErrorMessage } from '@/services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '@/services/configService';

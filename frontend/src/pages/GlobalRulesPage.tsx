@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTextUndoRedo } from '@/hooks/useTextUndoRedo';
 import { diffLines } from '@/utils/lineDiff';
 import { useRegisterUnsavedChanges } from '@/components/workspace/WorkspaceChromeContext';
-import { useAlert } from '@/components/AlertProvider';
+import { useAlert } from '@/components/useAlert';
 import {
   type AppSession,
   type BackendApi,

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TopicPostPreviewCard } from './TopicPostPreviewCard';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useAlert } from '@/components/AlertProvider';
+import { useAlert } from '@/components/useAlert';
 import { getNormalizedRowStatus } from '@/components/dashboard/utils';
 
 const WORKSPACE_DEFAULT_MODEL = '__workspace_default__';

@@ -91,10 +91,6 @@ function inlineFilenameForContentType(contentType: string): string {
   return 'image.jpg';
 }
 
-function buildHtmlBodyWithInline(plainBody: string, contentId: string): string {
-  const escaped = escapeHtml(plainBody).replace(/\r\n|\n|\r/g, '<br/>');
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;line-height:1.5;color:#222;"><p><img src="cid:${contentId}" alt="" style="max-width:100%;height:auto;display:block;" /></p><div>${escaped}</div></body></html>`;
-}
 
 function buildHtmlBodyMultiInline(plainBody: string, contentIds: string[]): string {
   const escaped = escapeHtml(plainBody).replace(/\r\n|\n|\r/g, '<br/>');
@@ -113,11 +109,6 @@ function buildHtmlBodyMultiAttachmentNote(plainBody: string, filenames: string[]
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;line-height:1.5;color:#222;"><div>${escaped}</div><p style="color:#666;font-size:0.9em;">Images attached: ${list}</p></body></html>`;
 }
 
-function buildHtmlBodyWithAttachmentNote(plainBody: string, filename: string): string {
-  const escaped = escapeHtml(plainBody).replace(/\r\n|\n|\r/g, '<br/>');
-  const fn = escapeHtml(filename);
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;line-height:1.5;color:#222;"><div>${escaped}</div><p style="color:#666;font-size:0.9em;">Image attached: ${fn}</p></body></html>`;
-}
 
 function collectGmailImageParts(request: GmailSendRequest): Array<{ contentType: string; bytes: ArrayBuffer }> {
   const fromMany = (request.inlineImages || []).filter((i) => i.bytes.byteLength > 0);

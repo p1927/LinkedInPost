@@ -1,5 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { Dialog } from './Dialog';
 
 export interface AlertOptions {
@@ -17,15 +16,7 @@ interface AlertContextType {
   showConfirm: (options: ConfirmOptions) => Promise<boolean>;
 }
 
-const AlertContext = createContext<AlertContextType | null>(null);
-
-export function useAlert() {
-  const context = useContext(AlertContext);
-  if (!context) {
-    throw new Error('useAlert must be used within an AlertProvider');
-  }
-  return context;
-}
+export const AlertContext = createContext<AlertContextType | null>(null);
 
 export function AlertProvider({ children }: { children: ReactNode }) {
   const [alertState, setAlertState] = useState<{

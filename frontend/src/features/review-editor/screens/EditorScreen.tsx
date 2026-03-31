@@ -1,6 +1,6 @@
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
-import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 import { EditorSidebar } from '../components/EditorSidebar';
 import { LivePreviewSidebar } from '../components/LivePreviewSidebar';

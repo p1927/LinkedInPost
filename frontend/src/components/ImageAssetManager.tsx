@@ -3,7 +3,7 @@ import { Download, ImagePlus, LoaderCircle, RefreshCw, Upload, X } from 'lucide-
 import { Badge } from '@/components/ui/badge';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
 import { MAX_IMAGES_PER_POST } from '../services/selectedImageUrls';
-import { useAlert } from './AlertProvider';
+import { useAlert } from './useAlert';
 import { Input } from './ui/input';
 import { Button } from '@/components/ui/button';
 

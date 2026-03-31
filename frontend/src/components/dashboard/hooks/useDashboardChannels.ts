@@ -5,7 +5,7 @@ import { type ChannelId } from '../../../integrations/channels';
 import { formatTelegramRecipientsInput, normalizeTelegramChatId, parseTelegramRecipientsInput, type TelegramRecipient } from '../../../integrations/telegram';
 import { formatRecipientsInput } from '../../../integrations/whatsapp';
 import { getDefaultRecipientMode, getDefaultRecipientValue, openOAuthPopup } from '../utils';
-import { useAlert } from '../../AlertProvider';
+import { useAlert } from '../../useAlert';
 
 export function useDashboardChannels({
   idToken,

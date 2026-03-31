@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChannelPostPreview } from '../../../components/channel-previews/ChannelPostPreview';
-import { useReviewFlow } from '../../review/context/ReviewFlowContext';
+import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 
 export function LivePreviewSidebar() {
