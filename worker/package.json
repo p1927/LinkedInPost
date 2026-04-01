@@ -11,6 +11,9 @@
     "deploy": "NODE_OPTIONS=--use-system-ca wrangler deploy --env \"\"",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260317.1",
     "typescript": "^5.9.3",
