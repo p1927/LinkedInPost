@@ -1498,7 +1498,7 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     };
   }
   if (config.imageGen) {
-    out = { ...out, imageGen: config.imageGen };
+    out = { ...out, imageGen: { provider: config.imageGen.provider ?? 'pixazo', model: config.imageGen.model } };
   }
   return out;
 }

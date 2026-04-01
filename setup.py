@@ -31,6 +31,14 @@ Optional LLM and news research: when set in `.env`, `XAI_API_KEY`, `NEWSAPI_KEY`
 `worker/.dev.vars`, included in Worker deploy secrets when non-empty, and synced
 to GitHub Actions secrets with `--sync-github-secrets`.
 
+Image generation: set image provider API keys in `.env` to enable AI-generated
+variant images. Supported providers (pick at least one):
+  `PIXAZO_API_KEY`   — Pixazo Stable Diffusion XL (default provider)
+  `SEEDANCE_API_KEY` — Seedance / ByteDance Ark (models: seedance-1-lite, seedance-1)
+  `GEMINI_API_KEY`   — Google Gemini image generation (reuses LLM key)
+Keys are written to `generation-worker/.dev.vars` and deployed as Worker secrets.
+The active provider and model are configured per-workspace in dashboard Settings.
+
 Generation worker: `--cloudflare` provisions D1 for `generation-worker/` and
 writes `generation-worker/wrangler.jsonc`. `--deploy-worker` deploys
 `linkedin-generation-worker` first when at least one of `GEMINI_API_KEY` or

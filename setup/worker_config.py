@@ -335,6 +335,11 @@ def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str
             'setup.py --deploy-worker deploys linkedin-generation-worker when GEMINI_API_KEY and/or XAI_API_KEY is set '
             '(missing both fails deploy). For local generation only: cd generation-worker && npm run dev (port 8788).'
         ),
+        (
+            'Image generation (variant images): set at least one image provider key in .env before deploying — '
+            'PIXAZO_API_KEY (Pixazo SDXL, default), SEEDANCE_API_KEY (ByteDance Ark), or GEMINI_API_KEY (reused). '
+            'Active provider and model are configurable per-workspace in dashboard Settings → Image Generation.'
+        ),
     ]
     return prerequisites + core
 
