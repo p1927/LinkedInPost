@@ -576,6 +576,18 @@ export class BackendApi {
     return this.post<GoogleModelOption[]>('listLlmModels', idToken, { provider });
   }
 
+  /**
+   * Fetches the full LLM provider catalog from the worker, including available providers,
+   * their models, and static fallbacks. Throws on RPC failure; callers should handle with
+   * try/catch and fall back to static defaults if needed.
+   */
+  async getLlmProviderCatalog(idToken: string): Promise<{
+    providers: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }>;
+    staticFallbacks: Record<LlmProviderId, GoogleModelOption[]>;
+  }> {
+    return this.post('getLlmProviderCatalog', idToken);
+  }
+
   async addTopic(idToken: string, topic: string): Promise<void> {
     await this.post<{ success: true }>('addTopic', idToken, { topic });
   }

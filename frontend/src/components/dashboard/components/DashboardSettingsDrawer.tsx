@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { NewsResearchSettingsSection } from '../../../features/news-research';
 import { ContentReviewSettings } from '../../../features/content-review/ContentReviewSettings';
+import { LLM_PROVIDER_IDS, getProviderLabel } from '@repo/llm-core';
 import type {
   LlmProviderId,
   LlmRef,
@@ -44,6 +45,8 @@ export { PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID };
 
 type DashboardSettingsDrawerProps = {
   session: AppSession;
+  backendApi: import('../../../services/backendApi').BackendApi;
+  idToken: string;
   sheetIdInput: string;
   setSheetIdInput: (val: string) => void;
   selectedChannel: ChannelId;
@@ -122,7 +125,7 @@ type DashboardSettingsDrawerProps = {
   allowedGrokModels?: string[];
   toggleAllowedGrokModel?: (modelId: string, enabled: boolean) => void;
   refreshGrokModels?: () => void;
-  onSaveGenerationLlm?: (llm: LlmRef) => Promise<void>;
+  llmCatalog?: any[] | null;
 };
 
 function SettingsSectionCard({
@@ -154,6 +157,8 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
   function DashboardSettingsDrawer(
     {
       session,
+      backendApi,
+      idToken,
       sheetIdInput,
       setSheetIdInput,
       selectedChannel,
@@ -222,7 +227,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       allowedGrokModels,
       toggleAllowedGrokModel,
       refreshGrokModels,
-      onSaveGenerationLlm,
+      llmCatalog,
     },
     ref,
   ) {
@@ -422,15 +427,16 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                     value={llmPrimaryProvider!}
                     onValueChange={(v) => setLlmPrimaryProvider!(v as LlmProviderId)}
                     itemToStringLabel={(v) =>
-                      v === 'gemini' ? 'Gemini' : v === 'grok' ? 'Grok (xAI)' : String(v ?? '')
+                      getProviderLabel(v as LlmProviderId) || String(v ?? '')
                     }
                   >
                     <SelectTrigger className="h-auto min-h-10 w-full max-w-xs rounded-xl py-2.5 font-medium">
                       <SelectValue placeholder="Select provider" />
                     </SelectTrigger>
                     <SelectContent className="max-w-[min(100vw-1.5rem,24rem)]">
-                      <SelectItem value="gemini">Gemini</SelectItem>
-                      <SelectItem value="grok">Grok (xAI)</SelectItem>
+                      {LLM_PROVIDER_IDS.map((p) => (
+                        <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -478,7 +484,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                         });
                       }}
                       itemToStringLabel={(v) =>
-                        v === 'none' ? 'None' : v === 'gemini' ? 'Gemini' : v === 'grok' ? 'Grok (xAI)' : String(v ?? '')
+                        v === 'none' ? 'None' : getProviderLabel(v as LlmProviderId) || String(v ?? '')
                       }
                     >
                       <SelectTrigger className="h-auto min-h-10 w-full rounded-xl py-2.5 font-medium sm:max-w-[11rem]">
@@ -486,8 +492,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="gemini">Gemini</SelectItem>
-                        <SelectItem value="grok">Grok (xAI)</SelectItem>
+                        {LLM_PROVIDER_IDS.map((p) => (
+                          <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {llmFallback ? (
@@ -585,12 +592,21 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             Configure the LLM provider and model used for generating post content and variations.
           </p>
           <PostGenerateSettings
-            onSettingsChange={(settings) => {
-              void onSaveGenerationLlm?.({
-                provider: settings.provider,
-                model: settings.model,
-              });
-            }}
+            value={
+              multiLlmReady
+                ? { provider: llmPrimaryProvider!, model: llmModelId! }
+                : undefined
+            }
+            onSettingsChange={
+              multiLlmReady && session.isAdmin
+                ? (next) => {
+                    setLlmPrimaryProvider!(next.provider);
+                    setLlmModelId!(next.model);
+                  }
+                : undefined
+            }
+            disabled={multiLlmReady && !session.isAdmin}
+            llmCatalog={llmCatalog}
           />
         </SettingsSectionCard>
 
@@ -1093,6 +1109,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               value={contentReview}
               onChange={setContentReview}
               newsResearchEnabled={Boolean(newsResearchEnabledForContentReview)}
+              llmCatalog={llmCatalog}
             />
           </SettingsSectionCard>
         ) : null}

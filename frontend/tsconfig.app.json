@@ -4,6 +4,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@repo/llm-core": [
+        "../packages/llm-core/src/index.ts"
       ]
     },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",

@@ -1,3 +1,5 @@
+import type { LlmRef } from '@repo/llm-core';
+
 export type ContentReviewVerdict = 'pass' | 'flag' | 'block';
 export type ContentReviewNewsMode = 'existing' | 'fresh';
 
@@ -29,15 +31,15 @@ export interface ContentReviewReport {
 }
 
 export interface ContentReviewConfig {
-  textModelId: string;
-  visionModelId: string;
+  textRef: LlmRef;
+  visionRef: LlmRef;
   newsMode: ContentReviewNewsMode;
   maxImages: number;
 }
 
 export const DEFAULT_CONTENT_REVIEW_CONFIG: ContentReviewConfig = {
-  textModelId: 'gemini-2.5-flash',
-  visionModelId: 'gemini-2.5-flash',
+  textRef: { provider: 'gemini', model: 'gemini-2.5-flash' },
+  visionRef: { provider: 'gemini', model: 'gemini-2.5-flash' },
   newsMode: 'existing',
   maxImages: 3,
 };

@@ -1,13 +1,81 @@
-import { Input } from '@/components/ui/input';
+import { useMemo } from 'react';
+import { LLM_PROVIDER_IDS, getProviderLabel } from '@repo/llm-core';
+import type { LlmProviderId, LlmModelOption } from '@repo/llm-core';
 import type { ContentReviewNewsMode, ContentReviewStored } from '../../services/configService';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ContentReviewSettingsProps {
   value: ContentReviewStored;
   onChange: (next: ContentReviewStored) => void;
   newsResearchEnabled: boolean;
+  llmCatalog?: any[] | null;
 }
 
-export function ContentReviewSettings({ value, onChange, newsResearchEnabled }: ContentReviewSettingsProps) {
+function modelsForProvider(provider: LlmProviderId, catalog?: any[] | null): LlmModelOption[] {
+  if (!catalog || catalog.length === 0) {
+    return [];
+  }
+  const providerData = catalog.find((p: any) => p.id === provider);
+  return providerData?.models ?? [];
+}
+
+function ensureModelInList(models: LlmModelOption[], modelId: string, provider: LlmProviderId): LlmModelOption[] {
+  if (modelId && !models.some((m) => m.value === modelId)) {
+    return [{ value: modelId, label: modelId, provider }, ...models];
+  }
+  return models;
+}
+
+export function ContentReviewSettings({ value, onChange, newsResearchEnabled, llmCatalog }: ContentReviewSettingsProps) {
+  const textProvider: LlmProviderId = value.textRef.provider;
+  const textModel: string = value.textRef.model;
+  const visionProvider: LlmProviderId = value.visionRef.provider;
+  const visionModel: string = value.visionRef.model;
+
+  const textModels = useMemo(
+    () => ensureModelInList(modelsForProvider(textProvider, llmCatalog), textModel, textProvider),
+    [textProvider, textModel, llmCatalog],
+  );
+
+  const visionModels = useMemo(
+    () => ensureModelInList(modelsForProvider(visionProvider, llmCatalog), visionModel, visionProvider),
+    [visionProvider, visionModel, llmCatalog],
+  );
+
+  const handleTextProviderChange = (provider: LlmProviderId) => {
+    const models = modelsForProvider(provider, llmCatalog);
+    const firstModel = models[0]?.value ?? '';
+    onChange({
+      ...value,
+      textRef: { provider, model: firstModel },
+    });
+  };
+
+  const handleTextModelChange = (model: string | null) => {
+    if (!model) return;
+    onChange({
+      ...value,
+      textRef: { provider: textProvider, model },
+    });
+  };
+
+  const handleVisionProviderChange = (provider: LlmProviderId) => {
+    const models = modelsForProvider(provider, llmCatalog);
+    const firstModel = models[0]?.value ?? '';
+    onChange({
+      ...value,
+      visionRef: { provider, model: firstModel },
+    });
+  };
+
+  const handleVisionModelChange = (model: string | null) => {
+    if (!model) return;
+    onChange({
+      ...value,
+      visionRef: { provider: visionProvider, model },
+    });
+  };
+
   const setNewsMode = (newsMode: ContentReviewNewsMode) => {
     onChange({ ...value, newsMode });
   };
@@ -15,26 +83,66 @@ export function ContentReviewSettings({ value, onChange, newsResearchEnabled }: 
   return (
     <section className="mt-0 space-y-4 border-t border-violet-200/50 pt-6">
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/75">Content Review Models</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/75">Text Review</h3>
 
         <label className="block text-[0.65rem] font-semibold text-ink">
-          Text review model
-          <Input
-            className="mt-0.5 h-8 text-xs font-mono"
-            value={value.textModelId}
-            onChange={(e) => onChange({ ...value, textModelId: e.target.value })}
-            placeholder="gemini-2.5-flash"
-          />
+          Provider
+          <Select value={textProvider} onValueChange={(v) => handleTextProviderChange(v as LlmProviderId)}>
+            <SelectTrigger className="mt-0.5 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LLM_PROVIDER_IDS.map((p) => (
+                <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
 
         <label className="block text-[0.65rem] font-semibold text-ink">
-          Vision review model
-          <Input
-            className="mt-0.5 h-8 text-xs font-mono"
-            value={value.visionModelId}
-            onChange={(e) => onChange({ ...value, visionModelId: e.target.value })}
-            placeholder="gemini-2.5-flash"
-          />
+          Model
+          <Select value={textModel} onValueChange={handleTextModelChange}>
+            <SelectTrigger className="mt-0.5 h-8 text-xs font-mono">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {textModels.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ink/75">Vision Review</h3>
+
+        <label className="block text-[0.65rem] font-semibold text-ink">
+          Provider
+          <Select value={visionProvider} onValueChange={(v) => handleVisionProviderChange(v as LlmProviderId)}>
+            <SelectTrigger className="mt-0.5 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LLM_PROVIDER_IDS.map((p) => (
+                <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+
+        <label className="block text-[0.65rem] font-semibold text-ink">
+          Model
+          <Select value={visionModel} onValueChange={handleVisionModelChange}>
+            <SelectTrigger className="mt-0.5 h-8 text-xs font-mono">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {visionModels.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
       </div>
 

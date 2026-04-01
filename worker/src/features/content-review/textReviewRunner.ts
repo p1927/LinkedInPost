@@ -1,5 +1,6 @@
 import type { WorkerEnvForLlm } from '../../llm/types';
-import { generateGeminiJson } from '../../llm/providers/gemini';
+import type { LlmRef } from '../../llm/types';
+import { generateForRef } from '../../llm/gateway';
 import { buildTextGuardrailsPrompt } from './prompts/textGuardrails';
 import type { TextReviewResult, ContentReviewVerdict } from './types';
 
@@ -34,14 +35,14 @@ function parseTextReviewJson(raw: string): TextReviewResult {
 
 export async function runTextReview(
   env: WorkerEnvForLlm,
-  modelId: string,
+  ref: LlmRef,
   topic: string,
   postText: string,
   channel: string,
 ): Promise<TextReviewResult> {
   const prompt = buildTextGuardrailsPrompt({ topic, postText, channel });
   try {
-    const raw = await generateGeminiJson(env, modelId, prompt);
+    const raw = await generateForRef(env, ref, prompt);
     return parseTextReviewJson(raw);
   } catch (err) {
     return {

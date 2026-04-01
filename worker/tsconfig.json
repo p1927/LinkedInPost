@@ -13,9 +13,15 @@
     "types": [
       "@cloudflare/workers-types"
     ],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repo/llm-core": ["../packages/llm-core/src"],
+      "@repo/llm-core/*": ["../packages/llm-core/src/*"]
+    }
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "../packages/llm-core/src/**/*.ts"
   ]
 }

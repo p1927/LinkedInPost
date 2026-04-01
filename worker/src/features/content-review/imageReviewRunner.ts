@@ -1,5 +1,6 @@
 import type { WorkerEnvForLlm } from '../../llm/types';
-import { generateGeminiMultimodalJson } from '../../llm/providers/gemini';
+import type { LlmRef } from '../../llm/types';
+import { generateMultimodalForRef } from '../../llm/gateway';
 import { buildImageMultimodalPrompt } from './prompts/imageMultimodal';
 import type { ImageReviewResult, ContentReviewVerdict } from './types';
 
@@ -30,7 +31,7 @@ function parseImageReviewJson(raw: string, imageUrl: string): ImageReviewResult 
 
 export async function runImageReview(
   env: WorkerEnvForLlm,
-  modelId: string,
+  ref: LlmRef,
   imageUrls: string[],
   topic: string,
   postText: string,
@@ -63,7 +64,7 @@ export async function runImageReview(
       const mimeType = contentType.split(';')[0]?.trim() || 'image/jpeg';
 
       const prompt = buildImageMultimodalPrompt({ topic, postText, channel, imageIndex: i });
-      const raw = await generateGeminiMultimodalJson(env, modelId, { mimeType, data: base64 }, prompt);
+      const { text: raw } = await generateMultimodalForRef(env, ref, { mimeType, data: base64 }, prompt);
       results.push(parseImageReviewJson(raw, url));
     } catch (err) {
       results.push({

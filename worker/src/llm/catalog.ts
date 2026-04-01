@@ -1,8 +1,7 @@
 import { listGeminiModels } from './providers/gemini';
 import { listGrokModels } from './providers/grok';
 import type { LlmModelOption, LlmProviderId, WorkerEnvForLlm } from './types';
-
-const PROVIDER_ORDER: LlmProviderId[] = ['gemini', 'grok'];
+import { LLM_PROVIDER_IDS } from '@repo/llm-core';
 
 export function isLlmProviderConfigured(env: WorkerEnvForLlm, provider: LlmProviderId): boolean {
   if (provider === 'gemini') return Boolean(String(env.GEMINI_API_KEY || '').trim());
@@ -11,7 +10,7 @@ export function isLlmProviderConfigured(env: WorkerEnvForLlm, provider: LlmProvi
 
 /** Providers that have credentials in env, in stable preference order (Gemini first). */
 export function getConfiguredLlmProviderIds(env: WorkerEnvForLlm): LlmProviderId[] {
-  return PROVIDER_ORDER.filter((p) => isLlmProviderConfigured(env, p));
+  return LLM_PROVIDER_IDS.filter((p) => isLlmProviderConfigured(env, p));
 }
 
 export function hasAnyLlmProvider(env: WorkerEnvForLlm): boolean {

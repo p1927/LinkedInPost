@@ -1,13 +1,23 @@
+// Approved public surface for the llm module.
+//
+// Allowed categories:
+//   - Gateway:  generateTextJsonWithFallback, generateMultimodalForRef, generateForRef
+//   - Catalog:  getLlmProviderCatalog, listModelsForProvider, getConfiguredLlmProviderIds,
+//               hasAnyLlmProvider, isLlmProviderConfigured
+//   - Policy:   resolveAllowedGrokModelIds, resolveStoredPrimary, resolveStoredFallback,
+//               resolveGenerationRef, resolveFallbackForGeneration,
+//               resolveGithubAutomationGeminiModel, workspaceConfigFromStored
+//   - Helpers:  generateLlmParsedJson, resolveGenerationWorkerLlmRef
+//   - Types:    LlmModelOption, LlmProviderId, LlmRef, LlmWorkspaceConfig,
+//               GenerationLlmPayload, WorkerEnvForLlm
+//
+// Direct provider symbols (generateGeminiJson, STATIC_GEMINI_MODELS, listGeminiModels,
+// generateGrokJson, STATIC_GROK_MODELS, listGrokModels, etc.) are intentionally NOT
+// re-exported here. Callers inside the llm/ directory import providers directly.
+// Callers outside llm/ that need provider-specific symbols must import from
+// ./llm/providers/{gemini,grok} directly.
+
 export type { LlmModelOption, LlmProviderId, LlmRef, LlmWorkspaceConfig, GenerationLlmPayload, WorkerEnvForLlm } from './types';
-export {
-  listGeminiModels,
-  generateGeminiJson,
-  generateGeminiMultimodalJson,
-  STATIC_GEMINI_MODELS,
-  formatGeminiModelLabel,
-} from './providers/gemini';
-export type { GeminiInlineImagePart, GeminiTextGenerationOptions } from './providers/gemini';
-export { listGrokModels, STATIC_GROK_MODELS } from './providers/grok';
 export {
   resolveAllowedGrokModelIds,
   resolveStoredPrimary,
@@ -17,7 +27,7 @@ export {
   resolveGithubAutomationGeminiModel,
   workspaceConfigFromStored,
 } from './policy';
-export { generateTextJsonWithFallback } from './gateway';
+export { generateTextJsonWithFallback, generateMultimodalForRef, generateForRef } from './gateway';
 export {
   getConfiguredLlmProviderIds,
   hasAnyLlmProvider,

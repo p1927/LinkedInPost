@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@repo/llm-core": "*",
     "@linkedinpost/researcher": "*",
     "zod": "^3.24.0"
   },

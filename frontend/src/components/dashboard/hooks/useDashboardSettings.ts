@@ -42,7 +42,7 @@ function normalizeGrokOptions(models: GoogleModelOption[], selected?: string): G
     new Map(models.filter((m) => m.value.trim() && m.label.trim()).map((m) => [m.value.trim(), m])).values(),
   );
   if (selected && !deduped.some((m) => m.value === selected)) {
-    deduped.unshift({ value: selected, label: selected });
+    deduped.unshift({ value: selected, label: selected, provider: 'grok' as const });
   }
   return deduped;
 }

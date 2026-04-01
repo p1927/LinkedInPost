@@ -3,9 +3,9 @@ import type { LlmModelOption, WorkerEnvForLlm } from '../types';
 const GROK_API_BASE = 'https://api.x.ai/v1';
 
 export const STATIC_GROK_MODELS: LlmModelOption[] = [
-  { value: 'grok-3', label: 'Grok 3' },
-  { value: 'grok-3-mini', label: 'Grok 3 Mini' },
-  { value: 'grok-2-latest', label: 'Grok 2 Latest' },
+  { value: 'grok-3', label: 'Grok 3', provider: 'grok' },
+  { value: 'grok-3-mini', label: 'Grok 3 Mini', provider: 'grok' },
+  { value: 'grok-2-latest', label: 'Grok 2 Latest', provider: 'grok' },
 ];
 
 interface GrokModelsResponse {
@@ -33,7 +33,7 @@ export async function listGrokModels(env: WorkerEnvForLlm): Promise<LlmModelOpti
     const rows = (payload.data ?? [])
       .map((m) => String(m.id || '').trim())
       .filter(Boolean)
-      .map((id) => ({ value: id, label: id }));
+      .map((id) => ({ value: id, label: id, provider: 'grok' as const }));
     const deduped = Array.from(new Map(rows.map((m) => [m.value, m])).values());
     return deduped.length > 0 ? deduped : STATIC_GROK_MODELS;
   } catch {

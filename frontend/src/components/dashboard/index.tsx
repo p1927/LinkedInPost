@@ -56,12 +56,14 @@ export function Dashboard({
   api,
   onSaveConfig,
   onAuthExpired,
+  llmCatalog,
 }: {
   idToken: string;
   session: AppSession;
   api: BackendApi;
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
+  llmCatalog: any[] | null;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -591,6 +593,8 @@ export function Dashboard({
     <DashboardSettingsDrawer
       ref={settingsDrawerRef}
       session={session}
+      backendApi={api}
+      idToken={idToken}
       sheetIdInput={settingsHook.sheetIdInput}
       setSheetIdInput={settingsHook.setSheetIdInput}
       selectedChannel={channelsHook.selectedChannel}
@@ -665,6 +669,7 @@ export function Dashboard({
             refreshGrokModels: settingsHook.refreshGrokModels,
           }
         : {})}
+      llmCatalog={llmCatalog}
     />
   );
 

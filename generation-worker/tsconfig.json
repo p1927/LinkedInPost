@@ -12,9 +12,10 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
+      "@repo/llm-core": ["../packages/llm-core/src/index.ts"],
       "@linkedinpost/researcher": ["../packages/researcher/src/index.ts"],
       "zod": ["../frontend/node_modules/zod/index.d.ts"]
     }
   },
-  "include": ["src/**/*", "../worker/src/llm/catalog.ts", "../worker/src/llm/structuredJson.ts", "../worker/src/llm/genWorkerDefaults.ts", "../worker/src/llm/types.ts", "../worker/src/llm/providers/**/*.ts"]
+  "include": ["src/**/*", "../packages/llm-core/src/**/*", "../worker/src/llm/catalog.ts", "../worker/src/llm/structuredJson.ts", "../worker/src/llm/genWorkerDefaults.ts", "../worker/src/llm/types.ts", "../worker/src/llm/providers/**/*.ts"]
 }

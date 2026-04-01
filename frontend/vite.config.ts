@@ -70,6 +70,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@repo/llm-core": path.resolve(__dirname, "../packages/llm-core/src"),
     },
   },
   base: process.env.VITE_BASE_PATH || '/',

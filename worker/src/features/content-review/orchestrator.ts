@@ -40,8 +40,8 @@ export async function runContentReview(
   const cfg: ContentReviewConfig = {
     ...DEFAULT_CONTENT_REVIEW_CONFIG,
     ...p,
-    textModelId: (p.textModelId?.trim() || DEFAULT_CONTENT_REVIEW_CONFIG.textModelId),
-    visionModelId: (p.visionModelId?.trim() || DEFAULT_CONTENT_REVIEW_CONFIG.visionModelId),
+    textRef: p.textRef ?? DEFAULT_CONTENT_REVIEW_CONFIG.textRef,
+    visionRef: p.visionRef ?? DEFAULT_CONTENT_REVIEW_CONFIG.visionRef,
     newsMode: p.newsMode ?? DEFAULT_CONTENT_REVIEW_CONFIG.newsMode,
     maxImages: p.maxImages ?? DEFAULT_CONTENT_REVIEW_CONFIG.maxImages,
   };
@@ -51,12 +51,12 @@ export async function runContentReview(
   const channel = String(row.topicDeliveryChannel || 'linkedin');
 
   // Text review
-  const textResult = await runTextReview(env, cfg.textModelId, topic, postText, channel);
+  const textResult = await runTextReview(env, cfg.textRef, topic, postText, channel);
 
   // Image review (cap at maxImages)
   const imageUrls = parseRowImageUrls(row).slice(0, cfg.maxImages);
   const imageResults = imageUrls.length > 0
-    ? await runImageReview(env, cfg.visionModelId, imageUrls, topic, postText, channel)
+    ? await runImageReview(env, cfg.visionRef, imageUrls, topic, postText, channel)
     : [];
 
   // News context

@@ -2,28 +2,13 @@ import type { ChannelId } from '../integrations/channels';
 import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../generated/features';
 import { normalizeTelegramRecipients, type TelegramRecipient } from '../integrations/telegram';
 import { normalizeWhatsAppRecipients, type WhatsAppRecipient } from '../integrations/whatsapp';
-
-export interface GoogleModelOption {
-  value: string;
-  label: string;
-}
-
-export type LlmProviderId = 'gemini' | 'grok';
-
-export interface LlmRef {
-  provider: LlmProviderId;
-  model: string;
-}
+import { STATIC_MODELS_BY_PROVIDER } from '@repo/llm-core';
+export type { LlmProviderId, LlmRef, LlmModelOption as GoogleModelOption } from '@repo/llm-core';
+import type { LlmModelOption, LlmRef } from '@repo/llm-core';
 
 export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
 
-export const AVAILABLE_GOOGLE_MODELS: GoogleModelOption[] = [
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-  { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
-  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-];
+export const AVAILABLE_GOOGLE_MODELS: LlmModelOption[] = STATIC_MODELS_BY_PROVIDER.gemini ?? [];
 
 export function formatGoogleModelLabel(modelName: string): string {
   return modelName
@@ -44,23 +29,24 @@ export function formatGoogleModelLabel(modelName: string): string {
     .replace(/\bTts\b/g, 'TTS');
 }
 
-function isGoogleModelOption(model: unknown): model is GoogleModelOption {
+function isGoogleModelOption(model: unknown): model is LlmModelOption {
   return Boolean(
     model
       && typeof model === 'object'
-      && typeof (model as GoogleModelOption).value === 'string'
-      && typeof (model as GoogleModelOption).label === 'string'
-      && (model as GoogleModelOption).value.trim()
-      && (model as GoogleModelOption).label.trim()
+      && typeof (model as LlmModelOption).value === 'string'
+      && typeof (model as LlmModelOption).label === 'string'
+      && (model as LlmModelOption).value.trim()
+      && (model as LlmModelOption).label.trim()
   );
 }
 
-export function normalizeGoogleModelOptions(models: GoogleModelOption[], selectedModel?: string): GoogleModelOption[] {
+export function normalizeGoogleModelOptions(models: LlmModelOption[], selectedModel?: string): LlmModelOption[] {
   const normalized = models
     .filter(isGoogleModelOption)
     .map((model) => ({
       value: model.value.trim(),
       label: model.label.trim(),
+      provider: 'gemini' as const,
     }));
 
   const merged = normalized.length > 0 ? normalized : AVAILABLE_GOOGLE_MODELS;
@@ -70,13 +56,14 @@ export function normalizeGoogleModelOptions(models: GoogleModelOption[], selecte
     deduped.unshift({
       value: selectedModel,
       label: formatGoogleModelLabel(selectedModel),
+      provider: 'gemini' as const,
     });
   }
 
   return deduped;
 }
 
-export async function loadAvailableGoogleModels(selectedModel?: string): Promise<GoogleModelOption[]> {
+export async function loadAvailableGoogleModels(selectedModel?: string): Promise<LlmModelOption[]> {
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}google-models.json`, {
       cache: 'no-store',
@@ -86,7 +73,7 @@ export async function loadAvailableGoogleModels(selectedModel?: string): Promise
       throw new Error(`Failed to fetch model manifest: ${response.status}`);
     }
 
-    const payload = await response.json() as { models?: GoogleModelOption[] };
+    const payload = await response.json() as { models?: LlmModelOption[] };
     return normalizeGoogleModelOptions(payload.models ?? [], selectedModel);
   } catch {
     return normalizeGoogleModelOptions([], selectedModel);
@@ -136,27 +123,40 @@ export const DEFAULT_NEWS_RESEARCH_CONFIG: NewsResearchStored = {
 export type ContentReviewNewsMode = 'existing' | 'fresh';
 
 export interface ContentReviewStored {
-  textModelId: string;
-  visionModelId: string;
+  textRef: LlmRef;
+  visionRef: LlmRef;
   newsMode: ContentReviewNewsMode;
 }
 
 export const DEFAULT_CONTENT_REVIEW_STORED: ContentReviewStored = {
-  textModelId: DEFAULT_GOOGLE_MODEL,
-  visionModelId: DEFAULT_GOOGLE_MODEL,
+  textRef: { provider: 'gemini', model: DEFAULT_GOOGLE_MODEL },
+  visionRef: { provider: 'gemini', model: DEFAULT_GOOGLE_MODEL },
   newsMode: 'existing',
 };
+
+function normalizeLlmRef(raw: unknown, fallbackModel: string): LlmRef {
+  if (raw && typeof raw === 'object') {
+    const r = raw as Record<string, unknown>;
+    const provider = (r.provider === 'gemini' || r.provider === 'grok') ? r.provider : 'gemini';
+    const model = String(r.model ?? '').trim() || fallbackModel;
+    return { provider, model };
+  }
+  return { provider: 'gemini', model: fallbackModel };
+}
 
 export function normalizeContentReviewStored(raw: unknown): ContentReviewStored {
   if (!raw || typeof raw !== 'object') {
     return { ...DEFAULT_CONTENT_REVIEW_STORED };
   }
   const o = raw as Record<string, unknown>;
+  // Handle reads of both new format (textRef/visionRef) and legacy format (textModelId/visionModelId)
   const text = String(o.textModelId ?? '').trim() || DEFAULT_GOOGLE_MODEL;
   const vision = String(o.visionModelId ?? '').trim() || DEFAULT_GOOGLE_MODEL;
+  const textRef = normalizeLlmRef(o.textRef, text);
+  const visionRef = normalizeLlmRef(o.visionRef, vision);
   return {
-    textModelId: text,
-    visionModelId: vision,
+    textRef,
+    visionRef,
     newsMode: o.newsMode === 'fresh' ? 'fresh' : 'existing',
   };
 }

@@ -1,14 +1,5 @@
-export type LlmProviderId = 'gemini' | 'grok';
-
-export interface LlmRef {
-  provider: LlmProviderId;
-  model: string;
-}
-
-export interface LlmModelOption {
-  value: string;
-  label: string;
-}
+// Re-export shared types from llm-core
+export type { LlmProviderId, LlmRef, LlmModelOption, GenerationLlmPayload } from '@repo/llm-core';
 
 /** Secrets + bindings used by LLM HTTP calls. */
 export type WorkerEnvForLlm = {
@@ -21,15 +12,10 @@ export interface LlmWorkspaceConfig {
   googleModel: string;
   allowedGoogleModels?: string[];
   llm?: {
-    primary?: LlmRef;
-    fallback?: LlmRef;
+    primary?: import('@repo/llm-core').LlmRef;
+    fallback?: import('@repo/llm-core').LlmRef;
     allowedGrokModels?: string[];
   };
-}
-
-export interface GenerationLlmPayload {
-  googleModel?: string;
-  llm?: { provider?: string; model?: string };
 }
 
 export interface LlmGenerationOptions {

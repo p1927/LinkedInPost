@@ -31,12 +31,10 @@ import type { SheetRow } from './generation/types';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
+import { getProviderLabel } from '@repo/llm-core';
 import {
-  listGeminiModels,
-  listGrokModels,
-  STATIC_GEMINI_MODELS,
-  STATIC_GROK_MODELS,
   getConfiguredLlmProviderIds,
+  getLlmProviderCatalog,
   resolveAllowedGrokModelIds,
   resolveGithubAutomationGeminiModel,
   resolveStoredFallback,
@@ -44,6 +42,8 @@ import {
   workspaceConfigFromStored,
   type LlmRef,
 } from './llm';
+import { listGeminiModels, STATIC_GEMINI_MODELS } from './llm/providers/gemini';
+import { listGrokModels, STATIC_GROK_MODELS } from './llm/providers/grok';
 
 import { FEATURE_CAMPAIGN, FEATURE_CONTENT_FLOW, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
 import { normalizeContentReviewStored, runContentReview } from './features/content-review';
@@ -168,8 +168,8 @@ interface BotConfig {
   };
   /** Present when FEATURE_CONTENT_REVIEW is enabled. */
   contentReview?: {
-    textModelId: string;
-    visionModelId: string;
+    textRef: LlmRef;
+    visionRef: LlmRef;
     newsMode: 'existing' | 'fresh';
   };
 }
@@ -224,8 +224,8 @@ export interface StoredConfig {
     allowedGrokModels?: string[];
   };
   contentReview?: {
-    textModelId?: string;
-    visionModelId?: string;
+    textRef?: LlmRef;
+    visionRef?: LlmRef;
     newsMode?: 'existing' | 'fresh';
   };
 }
@@ -263,8 +263,8 @@ interface BotConfigUpdate {
     allowedGrokModels?: string[];
   };
   contentReview?: {
-    textModelId?: string;
-    visionModelId?: string;
+    textRef?: LlmRef;
+    visionRef?: LlmRef;
     newsMode?: 'existing' | 'fresh';
   };
 }
@@ -763,6 +763,23 @@ async function dispatchAction(
       }
       throw new Error('Unknown LLM provider.');
     }
+    case 'getLlmProviderCatalog': {
+      if (!FEATURE_MULTI_PROVIDER_LLM) {
+        throw new Error('Multi-provider LLM is disabled for this deployment.');
+      }
+      const catalog = await getLlmProviderCatalog(env);
+      return {
+        providers: catalog.map((entry) => ({
+          id: entry.provider,
+          name: getProviderLabel(entry.provider),
+          models: entry.models,
+        })),
+        staticFallbacks: {
+          gemini: STATIC_GEMINI_MODELS,
+          grok: STATIC_GROK_MODELS,
+        },
+      };
+    }
     case 'getRows':
       ensureSpreadsheetConfigured(storedConfig);
       return pipeline.getMergedRows(sheets, storedConfig.spreadsheetId);
@@ -1036,8 +1053,8 @@ async function dispatchAction(
         storedConfig.spreadsheetId,
         syntheticRow,
         {
-          textModelId: cr?.textModelId,
-          visionModelId: cr?.visionModelId,
+          textRef: cr?.textRef,
+          visionRef: cr?.visionRef,
           newsMode: cr?.newsMode,
         },
       );

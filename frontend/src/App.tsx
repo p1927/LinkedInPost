@@ -10,6 +10,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
+import type { LlmProviderId } from '@repo/llm-core'
 import {
   workspaceRouterBasename,
   WORKSPACE_PATHS,
@@ -51,6 +52,8 @@ function readInitialIdToken(): string | null {
   }
 }
 
+type LlmProviderCatalog = Array<{ id: LlmProviderId; name: string; models: any[] }>;
+
 function WorkspaceSession({
   idToken,
   session,
@@ -60,6 +63,7 @@ function WorkspaceSession({
   setIdToken,
   setErrorMessage,
   onAuthExpired,
+  llmCatalog,
 }: {
   idToken: string
   session: AppSession
@@ -69,6 +73,7 @@ function WorkspaceSession({
   setIdToken: Dispatch<SetStateAction<string | null>>
   setErrorMessage: Dispatch<SetStateAction<string>>
   onAuthExpired: () => void
+  llmCatalog: LlmProviderCatalog | null
 }) {
   const location = useLocation()
   const path = normalizeWorkspacePathname(location.pathname)
@@ -103,6 +108,7 @@ function WorkspaceSession({
         idToken={idToken}
         session={session}
         api={api}
+        llmCatalog={llmCatalog}
         onSaveConfig={async (config) => {
           const updatedConfig = await api.saveConfig(idToken, config)
           setSession((current) => (current ? { ...current, config: updatedConfig } : current))
@@ -209,6 +215,7 @@ function App() {
   const [session, setSession] = useState<AppSession | null>(null)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [llmCatalog, setLlmCatalog] = useState<LlmProviderCatalog | null>(null)
   useEffect(() => {
     if (!idToken) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -219,11 +226,22 @@ function App() {
 
     setLoading(true)
     setErrorMessage('')
+    setLlmCatalog(null)
 
     api
       .bootstrap(idToken)
-      .then((nextSession) => {
+      .then(async (nextSession) => {
         setSession(nextSession)
+
+        // Fetch LLM catalog after session is ready
+        try {
+          const catalogData = await api.getLlmProviderCatalog(idToken)
+          setLlmCatalog(catalogData.providers)
+        } catch (catalogError) {
+          console.error('Failed to fetch LLM catalog:', catalogError)
+          // Don't fail the entire app if catalog fetch fails - fall back to static models
+          setLlmCatalog([])
+        }
       })
       .catch((error) => {
         const message = error instanceof Error ? error.message : 'Failed to start the session.'
@@ -313,6 +331,7 @@ function App() {
                     setIdToken={setIdToken}
                     setErrorMessage={setErrorMessage}
                     onAuthExpired={handleAuthExpired}
+                    llmCatalog={llmCatalog}
                   />
                 ) : (
                   <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pb-12 pt-6 sm:px-6">
