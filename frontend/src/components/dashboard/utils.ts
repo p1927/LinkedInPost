@@ -14,6 +14,25 @@ export function getNormalizedRowStatus(status?: string): string {
   return (status || '').trim().toLowerCase() || 'pending';
 }
 
+/** True when the merged row already has text in the pipeline fields (D1 / sheet merge). */
+export function rowHasPipelineDraftText(row: SheetRow): boolean {
+  for (const p of [row.selectedText, row.variant1, row.variant2, row.variant3, row.variant4]) {
+    if (String(p ?? '').trim()) return true;
+  }
+  return false;
+}
+
+/**
+ * Queue + topics rail treat "drafted" as: status Drafted, or Pending with variant/selected text.
+ * The latter covers pipeline rows where content was saved but status stayed Pending (e.g. partial sync).
+ */
+export function shouldShowDraftedQueueActions(row: SheetRow): boolean {
+  const s = getNormalizedRowStatus(row.status);
+  if (s === 'approved' || s === 'published' || s === 'blocked') return false;
+  if (s === 'drafted') return true;
+  return s === 'pending' && rowHasPipelineDraftText(row);
+}
+
 export function queueStatusToBadgeVariant(status?: string): BadgeVariant {
   switch (getNormalizedRowStatus(status)) {
     case 'pending':

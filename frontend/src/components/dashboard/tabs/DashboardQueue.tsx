@@ -4,7 +4,13 @@ import { cn } from '../../../lib/cn';
 import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
-import { getNormalizedRowStatus, buildRowActionKey, formatQueueDate, formatQueuePostTime } from '../utils';
+import {
+  getNormalizedRowStatus,
+  buildRowActionKey,
+  formatQueueDate,
+  formatQueuePostTime,
+  shouldShowDraftedQueueActions,
+} from '../utils';
 import { effectiveChannel } from '@/lib/topicEffectivePrefs';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
@@ -336,7 +342,8 @@ export function DashboardQueue({
           return { visible: false, mode: 'publish' as const, disabled: true, busy: false };
         }
         const st = getNormalizedRowStatus(row.status);
-        if (st === 'pending' || st === 'blocked') {
+        const draftReady = shouldShowDraftedQueueActions(row);
+        if (st === 'blocked' || (st === 'pending' && !draftReady)) {
           return { visible: false, mode: 'publish' as const, disabled: true, busy: false };
         }
         const publishKey = buildRowActionKey('publish', row);
@@ -349,7 +356,7 @@ export function DashboardQueue({
             busy,
           };
         }
-        if (st === 'drafted' || st === 'approved') {
+        if (draftReady || st === 'approved') {
           const scheduled = rowMatchesPendingScheduledPublish(
             row,
             pendingScheduledPublish,
@@ -587,6 +594,7 @@ export function DashboardQueue({
 
             {filteredRows.map((row, rowIndex) => {
               const normalizedStatus = getNormalizedRowStatus(row.status);
+              const showDraftActions = shouldShowDraftedQueueActions(row);
               const dateRaw = row.date?.trim() ?? '';
               const dateLabel = formatQueueDate(dateRaw);
               const actionTopic = topicLabelForQueueActions(row.topic);
@@ -678,7 +686,7 @@ export function DashboardQueue({
                     'flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-2 transition-opacity duration-150',
                     isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto',
                   )}>
-                    {normalizedStatus === 'pending' ? (
+                    {normalizedStatus === 'pending' && !showDraftActions ? (
                       <>
                         {session.config.hasGenerationWorker && onGenerationWorkerDraft ? (
                           <Button
@@ -735,7 +743,7 @@ export function DashboardQueue({
                       </>
                     ) : null}
 
-                    {normalizedStatus === 'drafted' ? (
+                    {showDraftActions ? (
                       <>
                         <Button
                           type="button"

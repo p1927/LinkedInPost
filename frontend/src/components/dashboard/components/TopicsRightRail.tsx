@@ -11,7 +11,11 @@ import { TopicPostPreviewCard } from './TopicPostPreviewCard';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAlert } from '@/components/useAlert';
-import { getNormalizedRowStatus, queueStatusToBadgeVariant } from '@/components/dashboard/utils';
+import {
+  getNormalizedRowStatus,
+  queueStatusToBadgeVariant,
+  shouldShowDraftedQueueActions,
+} from '@/components/dashboard/utils';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '@/lib/topicDisplay';
 import { Badge } from '@/components/ui/badge';
 
@@ -223,7 +227,7 @@ export function TopicsRightRail({
                 previewAuthorName={previewAuthorName}
                 compact
                 onOpenEditor={
-                  getNormalizedRowStatus(selectedRow.status) === 'drafted'
+                  shouldShowDraftedQueueActions(selectedRow)
                     ? () => onOpenEditor(selectedRow)
                     : undefined
                 }
