@@ -7,6 +7,9 @@
       ],
       "@repo/llm-core": [
         "../packages/llm-core/src/index.ts"
+      ],
+      "zod": [
+        "./node_modules/zod"
       ]
     },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
