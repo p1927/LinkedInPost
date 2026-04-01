@@ -201,6 +201,17 @@ export interface GenWorkerGenerateRequest {
   mustAvoid?: string[];
   cta?: string;
   constraints?: string;
+  newsWindowStart?: string;
+  newsWindowEnd?: string;
+  newsResearchConfig?: any;
+  composableAssets?: {
+    brandContext?: string;
+    globalRules?: string;
+    fewShotExamples?: string;
+    reviewChecklist?: string[];
+    authorProfile?: string;
+  };
+  llm?: any;
 }
 
 export interface TextVariant {

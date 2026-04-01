@@ -71,6 +71,8 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@repo/llm-core": path.resolve(__dirname, "../packages/llm-core/src"),
+      // Source under ../packages/llm-core imports `zod`; Rolldown must resolve it via frontend deps.
+      zod: path.resolve(__dirname, "./node_modules/zod"),
     },
   },
   base: process.env.VITE_BASE_PATH || '/',
