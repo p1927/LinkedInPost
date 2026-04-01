@@ -7,8 +7,18 @@ import './content-schedule-calendar.css';
 import { mapTopicsToEvents, extractDateFromStart } from './mapTopicsToEvents';
 import { STATUS_CALENDARS } from './statusStyles';
 import { EventDetailAndEdit } from './EventDetailAndEdit';
+import {
+  CscDateGridTopicEvent,
+  CscMonthGridTopicEvent,
+  CscTimeGridTopicEvent,
+} from './CscTopicEventCustom';
 import { isLocalScheduleInPast } from './scheduleValidation';
-import type { CalendarTopic, TopicRescheduleCommitPayload, TopicScheduleChange } from './types';
+import type {
+  CalendarTopic,
+  TopicEventModalActions,
+  TopicRescheduleCommitPayload,
+  TopicScheduleChange,
+} from './types';
 import { useAlert } from '@/components/useAlert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +105,8 @@ export interface ContentScheduleCalendarProps {
    */
   rescheduleConfirm?: boolean;
   onRescheduleCommit?: (payload: TopicRescheduleCommitPayload) => Promise<void>;
+  /** Topics queue: event modal shows schedule, channel, edit, publish (no post preview). */
+  topicEventModalActions?: TopicEventModalActions;
 }
 
 export function ContentScheduleCalendar({
@@ -113,6 +125,7 @@ export function ContentScheduleCalendar({
   className,
   rescheduleConfirm = false,
   onRescheduleCommit,
+  topicEventModalActions,
 }: ContentScheduleCalendarProps) {
   const { showAlert } = useAlert();
 
@@ -208,7 +221,11 @@ export function ContentScheduleCalendar({
       events: mapTopicsToEvents(topics, { fallbackSlotTime, selectedTopicIds }),
       calendars: STATUS_CALENDARS,
       dayBoundaries: { start: '07:00', end: '22:00' },
-      weekOptions: { gridHeight: 520, gridStep: 60 },
+      weekOptions: {
+        gridHeight: 520,
+        gridStep: 60,
+        timeAxisFormatOptions: { hour: '2-digit', minute: '2-digit', hour12: false },
+      },
       monthGridOptions: { nEventsPerDay: 5 },
       ...(datePickerConfig ? { datePicker: datePickerConfig } : {}),
       callbacks: {
@@ -385,7 +402,6 @@ export function ContentScheduleCalendar({
     calendarApp.events.set(
       mapTopicsToEvents(topicsRef.current, { fallbackSlotTime, selectedTopicIds }),
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calendarApp, topics, fallbackSlotTime, selectedTopicIds]);
 
   return (
@@ -393,7 +409,16 @@ export function ContentScheduleCalendar({
       ref={wrapperRef}
       className={`csc-wrapper ${canDrag ? 'csc-draggable' : ''} ${className ?? ''}`.trim()}
     >
-      {calendarApp && <ScheduleXCalendar calendarApp={calendarApp} />}
+      {calendarApp && (
+        <ScheduleXCalendar
+          calendarApp={calendarApp}
+          customComponents={{
+            monthGridEvent: CscMonthGridTopicEvent,
+            timeGridEvent: CscTimeGridTopicEvent,
+            dateGridEvent: CscDateGridTopicEvent,
+          }}
+        />
+      )}
 
       <Dialog open={rescheduleUi.open} onOpenChange={handleRescheduleDialogOpenChange}>
         <DialogContent className="sm:max-w-md" showCloseButton={!rescheduleBusy}>
@@ -481,8 +506,9 @@ export function ContentScheduleCalendar({
           onClose={() => setSelectedTopic(null)}
           onSave={(patch) => {
             onPatchRef.current?.(selectedTopic.id, patch);
-            setSelectedTopic(null);
+            if (!topicEventModalActions) setSelectedTopic(null);
           }}
+          topicQueueModal={topicEventModalActions}
           onDelete={
             onTopicDelete
               ? () => {

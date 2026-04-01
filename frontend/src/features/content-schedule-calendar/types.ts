@@ -1,3 +1,5 @@
+import type { ChannelId } from '@/integrations/channels';
+
 /** Canonical shape consumed by ContentScheduleCalendar. */
 export interface CalendarTopic {
   /** Stable unique id (used as Schedule-X event id). */
@@ -18,6 +20,23 @@ export interface CalendarTopic {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: any;
+}
+
+/** When set on the calendar, the event detail modal uses queue actions instead of post preview. */
+export interface TopicEventPublishControl {
+  visible: boolean;
+  mode: 'publish' | 'republish';
+  disabled: boolean;
+  busy: boolean;
+  disabledReason?: string;
+}
+
+export interface TopicEventModalActions {
+  workspaceChannel: ChannelId;
+  onSetChannel: (topic: CalendarTopic, channel: ChannelId) => Promise<void>;
+  onOpenEdit: (topic: CalendarTopic) => void;
+  onPublish: (topic: CalendarTopic) => Promise<void>;
+  getPublishControl: (topic: CalendarTopic) => TopicEventPublishControl;
 }
 
 /** Emitted by ContentScheduleCalendar when a drag/resize changes the schedule. */

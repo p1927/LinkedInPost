@@ -24,6 +24,7 @@ import {
   localDateIsoToday,
   sheetRowsToCalendarTopics,
   type CalendarTopic,
+  type TopicEventModalActions,
   type TopicRescheduleCommitPayload,
 } from '@/features/content-schedule-calendar';
 import { GenWorkerDraftField } from '@/features/ai-draft/GenWorkerDraftField';
@@ -310,6 +311,76 @@ export function DashboardQueue({
     });
   }, []);
 
+  const calendarTopicEventActions: TopicEventModalActions = useMemo(
+    () => ({
+      workspaceChannel: selectedChannel,
+      onSetChannel: async (topic, channel) => {
+        const row = topic.payload as SheetRow | undefined;
+        if (!row) return;
+        await onBulkSetChannel([row], channel);
+      },
+      onOpenEdit: (topic) => {
+        const row = topic.payload as SheetRow | undefined;
+        if (row) onOpenTopicReview(row);
+      },
+      onPublish: async (topic) => {
+        const row = topic.payload as SheetRow | undefined;
+        if (!row) return;
+        const st = getNormalizedRowStatus(row.status);
+        if (st === 'published') await republishRowToSelectedChannel(row);
+        else await publishRowToSelectedChannel(row);
+      },
+      getPublishControl: (topic) => {
+        const row = topic.payload as SheetRow | undefined;
+        if (!row) {
+          return { visible: false, mode: 'publish' as const, disabled: true, busy: false };
+        }
+        const st = getNormalizedRowStatus(row.status);
+        if (st === 'pending' || st === 'blocked') {
+          return { visible: false, mode: 'publish' as const, disabled: true, busy: false };
+        }
+        const publishKey = buildRowActionKey('publish', row);
+        const busy = actionLoading === publishKey;
+        if (st === 'published') {
+          return {
+            visible: true,
+            mode: 'republish' as const,
+            disabled: actionLoading !== null,
+            busy,
+          };
+        }
+        if (st === 'drafted' || st === 'approved') {
+          const scheduled = rowMatchesPendingScheduledPublish(
+            row,
+            pendingScheduledPublish,
+            effectiveChannel(row, selectedChannel),
+          );
+          return {
+            visible: true,
+            mode: 'publish' as const,
+            disabled: actionLoading !== null || scheduled,
+            busy,
+            disabledReason: scheduled
+              ? 'Already scheduled for this time — cancel in the delivery panel or change the schedule in Edit.'
+              : actionLoading !== null
+                ? 'Another action is in progress.'
+                : undefined,
+          };
+        }
+        return { visible: false, mode: 'publish' as const, disabled: true, busy: false };
+      },
+    }),
+    [
+      selectedChannel,
+      onBulkSetChannel,
+      onOpenTopicReview,
+      publishRowToSelectedChannel,
+      republishRowToSelectedChannel,
+      actionLoading,
+      pendingScheduledPublish,
+    ],
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -468,6 +539,7 @@ export function DashboardQueue({
                 onRescheduleCommit={onCalendarRescheduleCommit}
                 onTopicPatch={handleCalendarTopicPatch}
                 onTopicDelete={handleCalendarDelete}
+                topicEventModalActions={calendarTopicEventActions}
                 onTopicActivate={(topic) => {
                   const payload = topic.payload as SheetRow | undefined;
                   if (payload) onSelectTopicRow(payload);
