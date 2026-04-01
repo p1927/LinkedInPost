@@ -111,7 +111,8 @@ Return JSON with this exact shape:
 
   const result = await generateLlmParsedJson<LlmVariantsResponse>(env, llmRef, prompt, {
     temperature: 0.8,
-    maxOutputTokens: 4000,
+    // Four full posts + JSON overhead; a low cap yields truncated JSON and JSON.parse fails with "non-JSON".
+    maxOutputTokens: 8192,
   });
 
   if (!Array.isArray(result.variants) || result.variants.length === 0) {

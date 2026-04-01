@@ -1,6 +1,14 @@
 import { generateForRef } from './gateway';
 import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
 
+function stripJsonCodeFences(text: string): string {
+  let s = text.trim();
+  if (s.startsWith('```')) {
+    s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+  }
+  return s.trim();
+}
+
 /** JSON structured output: dispatches to Gemini or Grok via gateway.generateForRef. */
 export async function generateLlmParsedJson<T>(
   env: WorkerEnvForLlm,
@@ -9,9 +17,14 @@ export async function generateLlmParsedJson<T>(
   opts?: LlmGenerationOptions,
 ): Promise<T> {
   const raw = await generateForRef(env, ref, prompt, opts);
+  const toParse = stripJsonCodeFences(raw);
   try {
-    return JSON.parse(raw) as T;
+    return JSON.parse(toParse) as T;
   } catch {
-    throw new Error(`LLM returned non-JSON: ${raw.slice(0, 200)}`);
+    const hint =
+      toParse.startsWith('{') && !toParse.trimEnd().endsWith('}')
+        ? ' (response looks truncated — try raising maxOutputTokens)'
+        : '';
+    throw new Error(`LLM returned non-JSON${hint}: ${toParse.slice(0, 200)}`);
   }
 }
