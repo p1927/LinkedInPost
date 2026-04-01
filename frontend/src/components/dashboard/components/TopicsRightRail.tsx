@@ -11,11 +11,7 @@ import { TopicPostPreviewCard } from './TopicPostPreviewCard';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAlert } from '@/components/useAlert';
-import {
-  getNormalizedRowStatus,
-  queueStatusToBadgeVariant,
-  shouldShowDraftedQueueActions,
-} from '@/components/dashboard/utils';
+import { queueStatusToBadgeVariant, shouldShowDraftedQueueActions } from '@/components/dashboard/utils';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '@/lib/topicDisplay';
 import { Badge } from '@/components/ui/badge';
 
