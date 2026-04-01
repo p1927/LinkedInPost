@@ -31,6 +31,7 @@ export const PatternSchema = z.object({
   outline: z.string().min(10),
   writerSnippet: z.string().min(5),
   fewShotLines: z.array(z.string()).default([]),
+  maxPostChars: z.number().int().positive().optional(),
   imageHints: z.object({
     mood: z.string().default(''),
     searchKeywords: z.array(z.string()).default([]),

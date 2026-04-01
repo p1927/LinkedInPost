@@ -1,4 +1,4 @@
-import type { BotConfig, BotConfigUpdate, GoogleModelOption, LlmProviderId } from './configService';
+import type { BotConfig, BotConfigUpdate, GoogleModelOption, LlmProviderId, LlmSettingKey } from './configService';
 import { normalizeBotConfig } from './configService';
 import type { ChannelId } from '../integrations/channels';
 import type { DraftPreviewSelection, SheetRow } from './sheets';
@@ -598,7 +598,10 @@ export class BackendApi {
     providers: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }>;
     staticFallbacks: Record<LlmProviderId, GoogleModelOption[]>;
   }> {
-    return this.post('getLlmProviderCatalog', idToken);
+    return this.post<{
+      providers: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }>;
+      staticFallbacks: Record<LlmProviderId, GoogleModelOption[]>;
+    }>('getLlmProviderCatalog', idToken);
   }
 
   async addTopic(idToken: string, topic: string): Promise<void> {
@@ -808,6 +811,14 @@ export class BackendApi {
       spreadsheetId,
       ...request,
     });
+  }
+
+  async getLlmSettings(idToken: string): Promise<Record<string, { provider: string; model: string }>> {
+    return this.post<Record<string, { provider: string; model: string }>>('getLlmSettings', idToken);
+  }
+
+  async saveLlmSetting(idToken: string, key: LlmSettingKey, ref: { provider: string; model: string }): Promise<void> {
+    await this.post<{ ok: boolean }>('saveLlmSetting', idToken, { key, ref });
   }
 }
 

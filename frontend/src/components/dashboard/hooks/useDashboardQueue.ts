@@ -322,7 +322,7 @@ export function useDashboardQueue({
     try {
       const fullRequest: GenWorkerGenerateRequest = {
         ...request,
-        llm: workspaceLlm,
+        llm: effectiveLlmRef(row, workspaceLlm),
         newsResearchConfig: session.config.newsResearch,
         composableAssets: {
           brandContext: session.config.brandContext || '',

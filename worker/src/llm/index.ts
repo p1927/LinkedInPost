@@ -37,3 +37,5 @@ export {
 } from './catalog';
 export { generateLlmParsedJson } from './structuredJson';
 export { resolveGenerationWorkerLlmRef } from './genWorkerDefaults';
+export type { LlmSettingKey, LlmSettingsMap } from './d1Settings';
+export { LLM_SETTING_KEYS, getLlmSettingsFromD1, setLlmSettingInD1, seedLlmSettingsIfEmpty } from './d1Settings';

@@ -57,6 +57,27 @@ def worker_get_merged_rows() -> list[dict[str, Any]]:
     return rows
 
 
+def worker_github_automation_gemini_model() -> str:
+    """Gemini model for GitHub draft jobs — matches Worker workspace LLM policy (not a Python default)."""
+    data = worker_internal_post('/internal/github-automation-gemini-model')
+    inner = data.get('data')
+    if not isinstance(inner, dict):
+        raise RuntimeError('Worker github-automation-gemini-model response missing data object.')
+    model = str(inner.get('googleModel') or '').strip()
+    if not model:
+        raise RuntimeError('Worker returned an empty googleModel.')
+    return model.removeprefix('models/')
+
+
+def worker_github_automation_generate_variants(payload: dict[str, Any]) -> dict[str, Any]:
+    """Runs GitHub draft variant generation on the Cloudflare Worker (D1 `github_automation` LLM ref)."""
+    data = worker_internal_post('/internal/github-automation-generate-variants', payload, timeout=180)
+    inner = data.get('data')
+    if not isinstance(inner, dict):
+        raise RuntimeError('Worker github-automation-generate-variants response missing data object.')
+    return inner
+
+
 def worker_pipeline_upsert(row: dict[str, Any]) -> None:
     worker_internal_post('/internal/pipeline-upsert', {'row': row})
 

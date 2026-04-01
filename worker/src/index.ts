@@ -35,13 +35,20 @@ import { getProviderLabel } from '@repo/llm-core';
 import {
   getConfiguredLlmProviderIds,
   getLlmProviderCatalog,
+  isLlmProviderConfigured,
   resolveAllowedGrokModelIds,
   resolveGithubAutomationGeminiModel,
   resolveStoredFallback,
   resolveStoredPrimary,
   workspaceConfigFromStored,
+  setLlmSettingInD1,
+  seedLlmSettingsIfEmpty,
+  LLM_SETTING_KEYS,
   type LlmRef,
+  type LlmSettingKey,
+  type LlmSettingsMap,
 } from './llm';
+import { runGithubAutomationGenerateVariants } from './internal/githubAutomationGenerateVariants';
 import { listGeminiModels, STATIC_GEMINI_MODELS } from './llm/providers/gemini';
 import { listGrokModels, STATIC_GROK_MODELS } from './llm/providers/grok';
 
@@ -174,6 +181,8 @@ interface BotConfig {
     visionRef: LlmRef;
     newsMode: 'existing' | 'fresh';
   };
+  /** Per-feature chosen LlmRef, loaded from D1, seeded from KV on first bootstrap. */
+  llmSettings?: LlmSettingsMap;
 }
 
 interface GenerationRulesVersion {
@@ -587,6 +596,14 @@ export default {
       return handleInternalPipelineUpsertRequest(request, env);
     }
 
+    if (url.pathname === '/internal/github-automation-gemini-model') {
+      return handleInternalGithubAutomationGeminiModelRequest(request, env);
+    }
+
+    if (url.pathname === '/internal/github-automation-generate-variants') {
+      return handleInternalGithubAutomationGenerateVariantsRequest(request, env);
+    }
+
     try {
       const { action, idToken, payload } = await parseRequest(request);
       if (!action) {
@@ -710,6 +727,61 @@ async function handleInternalPipelineUpsertRequest(request: Request, env: Env): 
   return Response.json({ ok: true });
 }
 
+/** Same Gemini model id the Worker injects into GitHub `repository_dispatch` for draft automation. */
+async function handleInternalGithubAutomationGeminiModelRequest(request: Request, env: Env): Promise<Response> {
+  const authError = await verifySchedulerSecret(request, env);
+  if (authError) {
+    return authError;
+  }
+
+  const config = await loadStoredConfig(env);
+  ensureSpreadsheetConfigured(config);
+  const llmSettings = await seedLlmSettingsIfEmpty(
+    env.PIPELINE_DB,
+    config.spreadsheetId,
+    config,
+    GOOGLE_MODEL_DEFAULT,
+  );
+  const auto = llmSettings.github_automation;
+  if (auto.provider === 'gemini') {
+    return Response.json({ ok: true, data: { googleModel: auto.model } });
+  }
+  const ws = workspaceConfigFromStored(config.googleModel, config.allowedGoogleModels, config.llm);
+  const googleModel = resolveGithubAutomationGeminiModel(ws, FEATURE_MULTI_PROVIDER_LLM);
+  return Response.json({ ok: true, data: { googleModel } });
+}
+
+async function handleInternalGithubAutomationGenerateVariantsRequest(request: Request, env: Env): Promise<Response> {
+  const authError = await verifySchedulerSecret(request, env);
+  if (authError) {
+    return authError;
+  }
+
+  const config = await loadStoredConfig(env);
+  ensureSpreadsheetConfigured(config);
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 });
+  }
+
+  try {
+    const data = await runGithubAutomationGenerateVariants(
+      env,
+      config.spreadsheetId,
+      config,
+      body,
+      GOOGLE_MODEL_DEFAULT,
+    );
+    return Response.json({ ok: true, data });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'GitHub automation generation failed.';
+    return Response.json({ ok: false, error: message }, { status: 400 });
+  }
+}
+
 async function dispatchAction(
   action: string,
   payload: Record<string, unknown>,
@@ -721,12 +793,17 @@ async function dispatchAction(
   request: Request,
 ): Promise<unknown> {
   switch (action) {
-    case 'bootstrap':
+    case 'bootstrap': {
+      const llmSettings = storedConfig.spreadsheetId
+        ? await seedLlmSettingsIfEmpty(env.PIPELINE_DB, storedConfig.spreadsheetId, storedConfig, GOOGLE_MODEL_DEFAULT)
+        : undefined;
+      const publicConfig = toPublicConfig(storedConfig, env);
       return {
         email: session.email,
         isAdmin: session.isAdmin,
-        config: toPublicConfig(storedConfig, env),
+        config: llmSettings ? { ...publicConfig, llmSettings } : publicConfig,
       } satisfies AppSession;
+    }
     case 'getGoogleModels': {
       const full = await listGeminiModels(env);
       if (session.isAdmin) {
@@ -781,6 +858,33 @@ async function dispatchAction(
           grok: STATIC_GROK_MODELS,
         },
       };
+    }
+    case 'getLlmSettings': {
+      ensureSpreadsheetConfigured(storedConfig);
+      const settings = await seedLlmSettingsIfEmpty(env.PIPELINE_DB, storedConfig.spreadsheetId, storedConfig, GOOGLE_MODEL_DEFAULT);
+      return settings;
+    }
+    case 'saveLlmSetting': {
+      ensureAdmin(session);
+      ensureSpreadsheetConfigured(storedConfig);
+      const key = String(payload.key || '').trim() as LlmSettingKey;
+      if (!(LLM_SETTING_KEYS as readonly string[]).includes(key)) {
+        throw new Error(`Unknown LLM setting key: ${key}`);
+      }
+      const ref = payload.ref as { provider?: string; model?: string } | undefined;
+      if (!ref?.provider || !ref?.model) {
+        throw new Error('saveLlmSetting requires payload.ref with provider and model.');
+      }
+      const provider = String(ref.provider).trim();
+      const model = String(ref.model).trim();
+      if (provider !== 'gemini' && provider !== 'grok') {
+        throw new Error(`Unknown provider: ${provider}`);
+      }
+      if (!isLlmProviderConfigured(env, provider as import('./llm/types').LlmProviderId)) {
+        throw new Error(`Provider "${provider}" is not configured in this Worker environment.`);
+      }
+      await setLlmSettingInD1(env.PIPELINE_DB, storedConfig.spreadsheetId, key, { provider: provider as import('./llm/types').LlmProviderId, model });
+      return { ok: true, key, provider, model };
     }
     case 'getRows':
       ensureSpreadsheetConfigured(storedConfig);
@@ -2590,7 +2694,17 @@ async function triggerGithubAction(env: Env, config: StoredConfig, payload: Reco
       : {};
   const innerPayload = { ...innerBase };
   const ws = workspaceConfigFromStored(config.googleModel, config.allowedGoogleModels, config.llm);
-  const automationGemini = resolveGithubAutomationGeminiModel(ws, FEATURE_MULTI_PROVIDER_LLM);
+  const llmSettings = await seedLlmSettingsIfEmpty(
+    env.PIPELINE_DB,
+    config.spreadsheetId,
+    config,
+    GOOGLE_MODEL_DEFAULT,
+  );
+  const auto = llmSettings.github_automation;
+  const automationGemini =
+    auto.provider === 'gemini'
+      ? auto.model
+      : resolveGithubAutomationGeminiModel(ws, FEATURE_MULTI_PROVIDER_LLM);
   const requested = String(innerPayload.google_model ?? '').trim();
   innerPayload.google_model = requested
     ? resolveEffectiveGoogleModel(

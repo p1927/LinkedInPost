@@ -27,10 +27,12 @@ import { LLM_PROVIDER_IDS, getProviderLabel } from '@repo/llm-core';
 import type {
   LlmProviderId,
   LlmRef,
+  LlmSettingKey,
   NewsResearchStored,
   NewsProviderKeys,
   ContentReviewStored,
 } from '../../../services/configService';
+import { LLM_SETTING_KEY_LABELS } from '../../../services/configService';
 import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { PostGenerateSettings } from '../../../features/review/components/PostGenerateSettings';
 import {
@@ -153,10 +155,145 @@ function SettingsSectionCard({
   );
 }
 
+const LLM_SETTING_KEYS: LlmSettingKey[] = [
+  'review_generation',
+  'generation_worker',
+  'content_review_text',
+  'content_review_vision',
+  'github_automation',
+];
+
+function LlmPerFeatureSettings({
+  session,
+  backendApi,
+  idToken,
+  adminModelCatalog,
+  grokAdminCatalog,
+}: {
+  session: import('../../../services/backendApi').AppSession;
+  backendApi: import('../../../services/backendApi').BackendApi;
+  idToken: string;
+  adminModelCatalog: GoogleModelOption[];
+  grokAdminCatalog: GoogleModelOption[];
+}) {
+  const [drafts, setDrafts] = useState<Record<LlmSettingKey, { provider: string; model: string }>>(() => {
+    const base: Partial<Record<LlmSettingKey, { provider: string; model: string }>> = {};
+    for (const key of LLM_SETTING_KEYS) {
+      const saved = session.config.llmSettings?.[key];
+      base[key] = saved
+        ? { provider: saved.provider, model: saved.model }
+        : { provider: 'gemini', model: adminModelCatalog[0]?.value ?? '' };
+    }
+    return base as Record<LlmSettingKey, { provider: string; model: string }>;
+  });
+  const [saving, setSaving] = useState<LlmSettingKey | null>(null);
+  const [feedback, setFeedback] = useState<Record<LlmSettingKey, string | null>>({
+    review_generation: null,
+    generation_worker: null,
+    content_review_text: null,
+    content_review_vision: null,
+    github_automation: null,
+  });
+
+  const handleSave = async (key: LlmSettingKey) => {
+    setSaving(key);
+    setFeedback((prev) => ({ ...prev, [key]: null }));
+    try {
+      await backendApi.saveLlmSetting(idToken, key, drafts[key]);
+      setFeedback((prev) => ({ ...prev, [key]: 'Saved.' }));
+    } catch (err) {
+      setFeedback((prev) => ({
+        ...prev,
+        [key]: err instanceof Error ? err.message : 'Failed to save.',
+      }));
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="mt-6 space-y-4">
+      <div>
+        <p className="mb-1 text-sm font-semibold text-ink">Model per feature</p>
+        <p className="mb-3 text-xs leading-relaxed text-muted">
+          Override the LLM used for each backend feature. Changes take effect on the next request for that feature.
+        </p>
+      </div>
+      {LLM_SETTING_KEYS.map((key) => {
+        const draft = drafts[key];
+        const catalog = draft.provider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+        return (
+          <div key={key} className="rounded-xl border border-border bg-surface px-4 py-3">
+            <p className="mb-2 text-sm font-medium text-ink">{LLM_SETTING_KEY_LABELS[key]}</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Select
+                value={draft.provider}
+                onValueChange={(v) => {
+                  const newProvider = v as string;
+                  const newCatalog = newProvider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [key]: { provider: newProvider, model: newCatalog[0]?.value ?? prev[key].model },
+                  }));
+                }}
+                itemToStringLabel={(v) => getProviderLabel(v as LlmProviderId) || String(v ?? '')}
+              >
+                <SelectTrigger className="h-auto min-h-9 w-full rounded-xl py-2 font-medium sm:max-w-[10rem]">
+                  <SelectValue placeholder="Provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LLM_PROVIDER_IDS.map((p) => (
+                    <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={draft.model}
+                onValueChange={(v) =>
+                  setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], model: v } }))
+                }
+                itemToStringLabel={(v) => catalog.find((m) => m.value === v)?.label ?? String(v ?? '')}
+              >
+                <SelectTrigger className="h-auto min-h-9 w-full flex-1 rounded-xl py-2 font-medium">
+                  <SelectValue placeholder="Model" />
+                </SelectTrigger>
+                <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
+                  {catalog.map((m) => (
+                    <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
+                      <span className="whitespace-normal leading-snug">{m.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 rounded-xl"
+                disabled={saving === key}
+                onClick={() => void handleSave(key)}
+              >
+                {saving === key ? 'Saving…' : 'Save'}
+              </Button>
+            </div>
+            {feedback[key] ? (
+              <p className={`mt-1.5 text-xs ${feedback[key] === 'Saved.' ? 'text-green-600' : 'text-rose-600'}`}>
+                {feedback[key]}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle, DashboardSettingsDrawerProps>(
   function DashboardSettingsDrawer(
     {
       session,
+      backendApi,
+      idToken,
       sheetIdInput,
       setSheetIdInput,
       selectedChannel,
@@ -582,6 +719,15 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 </div>
               </div>
             ) : null}
+            {multiLlmReady ? (
+              <LlmPerFeatureSettings
+                session={session}
+                backendApi={backendApi}
+                idToken={idToken}
+                adminModelCatalog={adminModelCatalog}
+                grokAdminCatalog={grokAdminCatalog!}
+              />
+            ) : null}
           </SettingsSectionCard>
         ) : null}
 
@@ -605,6 +751,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             }
             disabled={multiLlmReady && !session.isAdmin}
             llmCatalog={llmCatalog}
+            llmProviderKeys={session.config.llmProviderKeys}
           />
         </SettingsSectionCard>
 

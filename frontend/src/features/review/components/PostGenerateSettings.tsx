@@ -19,8 +19,14 @@ interface PostGenerateSettingsProps {
   onSettingsChange?: (settings: GenerationSettings) => void;
   disabled?: boolean;
   className?: string;
-  /** Cached LLM provider catalog from app load. */
+  /**
+   * LLM catalog from the Worker (`getLlmProviderCatalog`).
+   * - `null`: still loading after sign-in
+   * - `[]`: loaded but no providers (usually no API keys on the Worker, or catalog RPC failed)
+   */
   llmCatalog?: any[] | null;
+  /** From session bootstrap; used to explain empty catalog vs. missing Worker secrets. */
+  llmProviderKeys?: { gemini: boolean; grok: boolean };
 }
 
 export function PostGenerateSettings({
@@ -29,6 +35,7 @@ export function PostGenerateSettings({
   disabled = false,
   className,
   llmCatalog,
+  llmProviderKeys,
 }: PostGenerateSettingsProps) {
   const [internalSettings, setInternalSettings] = useState<GenerationSettings>({
     provider: 'gemini',
@@ -39,9 +46,12 @@ export function PostGenerateSettings({
   const isControlledRef = useRef(value !== undefined);
   isControlledRef.current = value !== undefined;
 
-  // Use cached catalog from app load
+  // Use cached catalog from app load (`null` = not fetched yet — do not treat as empty)
   const providers: CatalogProvider[] = useMemo(() => {
-    if (!llmCatalog || llmCatalog.length === 0) {
+    if (llmCatalog == null) {
+      return [];
+    }
+    if (llmCatalog.length === 0) {
       return [];
     }
     return llmCatalog as CatalogProvider[];
@@ -93,10 +103,32 @@ export function PostGenerateSettings({
     onSettingsChange?.(newSettings);
   };
 
-  if (!providers || providers.length === 0) {
+  if (llmCatalog === null) {
     return (
       <div className={clsx('p-4 bg-gray-50 rounded-lg', className)}>
-        <p className="text-sm text-gray-600">No LLM providers available</p>
+        <p className="text-sm text-gray-600">Loading LLM providers…</p>
+      </div>
+    );
+  }
+
+  if (providers.length === 0) {
+    const hasWorkerKeys = llmProviderKeys && (llmProviderKeys.gemini || llmProviderKeys.grok);
+    return (
+      <div className={clsx('space-y-2 p-4 bg-gray-50 rounded-lg border border-gray-200', className)}>
+        <p className="text-sm font-medium text-gray-800">No LLM providers available</p>
+        {hasWorkerKeys ? (
+          <p className="text-xs leading-relaxed text-gray-600">
+            The Worker reports API keys, but the model catalog did not load. Try refreshing the page. If it keeps happening,
+            check the browser network tab for <span className="font-mono">getLlmProviderCatalog</span> errors.
+          </p>
+        ) : (
+          <p className="text-xs leading-relaxed text-gray-600">
+            The Cloudflare Worker only lists providers that have credentials. Set{' '}
+            <span className="font-mono">GEMINI_API_KEY</span> and/or <span className="font-mono">XAI_API_KEY</span> in the
+            Worker environment (Wrangler secrets or the dashboard), redeploy, then refresh this app. The status line under
+            Settings → AI / LLM shows whether each key is present.
+          </p>
+        )}
       </div>
     );
   }

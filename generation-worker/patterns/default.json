@@ -7,6 +7,7 @@
       "id": "thought-leadership",
       "version": "1.0.0",
       "name": "Thought Leadership Take",
+      "maxPostChars": 1100,
       "tags": {
         "channels": ["linkedin", "instagram"],
         "audience": ["professionals", "executives", "founders"],
@@ -30,6 +31,7 @@
       "id": "how-to-guide",
       "version": "1.0.0",
       "name": "Practical How-To Guide",
+      "maxPostChars": 900,
       "tags": {
         "channels": ["linkedin", "email", "whatsapp"],
         "audience": ["professionals", "practitioners", "teams"],
@@ -53,6 +55,7 @@
       "id": "case-study",
       "version": "1.0.0",
       "name": "Mini Case Study / Results Story",
+      "maxPostChars": 1200,
       "tags": {
         "channels": ["linkedin", "email"],
         "audience": ["founders", "executives", "practitioners"],
@@ -76,6 +79,7 @@
       "id": "news-commentary",
       "version": "1.0.0",
       "name": "News Commentary / Industry Reaction",
+      "maxPostChars": 800,
       "tags": {
         "channels": ["linkedin", "email"],
         "audience": ["professionals", "industry-watchers", "executives"],
@@ -99,6 +103,7 @@
       "id": "listicle",
       "version": "1.0.0",
       "name": "Numbered Listicle",
+      "maxPostChars": 1000,
       "tags": {
         "channels": ["linkedin", "instagram", "whatsapp"],
         "audience": ["professionals", "teams", "practitioners"],
@@ -122,6 +127,7 @@
       "id": "personal-story",
       "version": "1.0.0",
       "name": "Personal Story / Vulnerability Hook",
+      "maxPostChars": 1100,
       "tags": {
         "channels": ["linkedin", "instagram", "whatsapp"],
         "audience": ["professionals", "founders", "general"],
@@ -145,6 +151,7 @@
       "id": "contrarian-take",
       "version": "1.0.0",
       "name": "Contrarian / Myth-Busting",
+      "maxPostChars": 900,
       "tags": {
         "channels": ["linkedin", "instagram"],
         "audience": ["professionals", "executives", "founders"],
@@ -168,6 +175,7 @@
       "id": "lesson-learned",
       "version": "1.0.0",
       "name": "Lesson Learned / Retrospective",
+      "maxPostChars": 1100,
       "tags": {
         "channels": ["linkedin", "email", "whatsapp"],
         "audience": ["professionals", "founders", "managers"],

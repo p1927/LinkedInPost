@@ -37,10 +37,10 @@ import {
 } from '@/features/ai-draft/genWorkerDraftSuggestions';
 
 const rowActionClass =
-  'h-8 min-h-8 shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-50 transition-colors duration-200 cursor-pointer';
+  'h-8 min-h-[44px] shrink-0 gap-1 rounded-lg px-2.5 text-xs font-semibold active:translate-y-0 disabled:opacity-50 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
 
 const iconBtn =
-  'h-8 w-8 shrink-0 cursor-pointer rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors duration-200 focus:ring-2 focus:ring-primary/50 focus:outline-none';
+  'h-8 w-8 min-h-[44px] min-w-[44px] shrink-0 cursor-pointer rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none';
 
 export function DashboardQueue({
   setStatusFilter,
@@ -380,7 +380,8 @@ export function DashboardQueue({
           <button
             type="button"
             onClick={() => setSelectedTopicIds(new Set())}
-            className="text-xs text-muted hover:text-ink"
+            aria-label="Clear selection"
+            className="min-h-[44px] min-w-[44px] px-2 text-xs text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded"
           >
             Clear
           </button>
@@ -489,7 +490,6 @@ export function DashboardQueue({
             {/* Column header */}
             <div
               className="flex items-center gap-x-2 border-b border-violet-200/60 bg-slate-50/70 px-4 py-2 sm:gap-x-3"
-              aria-hidden
             >
               <div className="w-6 shrink-0">
                 <input
@@ -500,17 +500,17 @@ export function DashboardQueue({
                   aria-label="Select all topics"
                 />
               </div>
-              <div className="w-[88px] shrink-0 pr-1">
+              <div className="w-[88px] shrink-0 pr-1" aria-hidden="true">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Status</span>
               </div>
-              <div className="min-w-0 flex-1 px-1">
+              <div className="min-w-0 flex-1 px-1" aria-hidden="true">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Topic</span>
               </div>
-              <div className="hidden w-[7.25rem] shrink-0 pr-3 text-right sm:block sm:w-[8.5rem]">
+              <div className="hidden w-[7.25rem] shrink-0 pr-3 text-right sm:block sm:w-[8.5rem]" aria-hidden="true">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Date</span>
               </div>
-              <div className="w-[152px] shrink-0 pl-2" />
-              <div className="w-9 shrink-0 pl-0.5" />
+              <div className="w-[152px] shrink-0 pl-2" aria-hidden="true" />
+              <div className="w-9 shrink-0 pl-0.5" aria-hidden="true" />
             </div>
 
             {filteredRows.map((row, rowIndex) => {
@@ -806,12 +806,12 @@ export function DashboardQueue({
           </DialogHeader>
           <div className="grid gap-3 py-1">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-700">Date</label>
-              <Input type="date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)} className="h-9" />
+              <label htmlFor="bulk-schedule-date" className="mb-1 block text-xs font-medium text-slate-700">Date</label>
+              <Input id="bulk-schedule-date" type="date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)} className="h-9" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-700">Time</label>
-              <Input type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)} className="h-9" />
+              <label htmlFor="bulk-schedule-time" className="mb-1 block text-xs font-medium text-slate-700">Time</label>
+              <Input id="bulk-schedule-time" type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)} className="h-9" />
             </div>
           </div>
           <DialogFooter>
@@ -925,16 +925,33 @@ export function DashboardQueue({
           }
         }}
       >
-        <DialogContent className="max-h-[min(90vh,720px)] max-w-md overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>AI Draft - {genWorkerDialogRow?.topic ?? ""}</DialogTitle>
+        <DialogContent aria-describedby="gen-worker-dialog-desc" className="flex max-h-[min(90vh,720px)] w-full max-w-lg flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl">
+          {/* Header */}
+          <DialogHeader className="shrink-0 border-b border-border/60 px-6 py-5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Bot className="h-4 w-4 text-primary" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <DialogTitle className="text-base font-semibold leading-tight text-ink">
+                  Generate AI Draft
+                </DialogTitle>
+                {genWorkerDialogRow?.topic && (
+                  <p className="mt-0.5 truncate text-xs text-muted" title={genWorkerDialogRow.topic}>
+                    {genWorkerDialogRow.topic}
+                  </p>
+                )}
+              </div>
+            </div>
           </DialogHeader>
-          <div className="flex flex-col gap-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground leading-relaxed">
-              All fields are optional. Use quick-add chips (tailored to this topic’s channel and content pattern) or type your
-              own. Leave everything blank to use workspace defaults.
+
+          {/* Scrollable body */}
+          <div className="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
+            <p id="gen-worker-dialog-desc" className="mb-5 text-sm leading-relaxed text-muted-foreground">
+              All fields are optional. Use quick-add chips tailored to this topic’s channel and content
+              pattern, or type your own. Leave everything blank to use workspace defaults.
             </p>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               <GenWorkerDraftField
                 label="Audience"
                 placeholder="e.g. senior engineers, startup founders"
@@ -982,21 +999,31 @@ export function DashboardQueue({
                 freeRows={2}
               />
             </div>
-            <div className="border-t border-border pt-3">
-              <label className="flex items-center gap-2.5 text-sm font-medium cursor-pointer select-none hover:text-ink transition-colors" htmlFor="factual-checkbox">
+
+            {/* Factual checkbox */}
+            <div className="mt-5 rounded-xl border border-border/70 bg-slate-50/60 px-4 py-3">
+              <label
+                className="flex cursor-pointer select-none items-center gap-3 text-sm font-medium text-ink transition-colors hover:text-ink/80"
+                htmlFor="factual-checkbox"
+              >
                 <input
                   id="factual-checkbox"
                   type="checkbox"
                   checked={gwFactual}
                   onChange={(e) => setGwFactual(e.target.checked)}
                   disabled={genWorkerBusy}
-                  className="h-4 w-4 rounded border border-input bg-background cursor-pointer accent-primary hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="h-4 w-4 cursor-pointer rounded border border-input bg-background accent-primary transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <span>Factual / data-driven post</span>
               </label>
+              <p className="ml-7 mt-1 text-xs leading-relaxed text-muted">
+                Instructs the AI to prioritise accuracy and cite sources or data points where relevant.
+              </p>
             </div>
           </div>
-          <DialogFooter className="gap-2">
+
+          {/* Footer */}
+          <DialogFooter className="shrink-0 flex-row items-center gap-2 border-t border-border/60 px-6 py-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -1004,6 +1031,7 @@ export function DashboardQueue({
                 setGenWorkerDialogRow(null);
               }}
               disabled={genWorkerBusy}
+              className="min-w-[80px] transition-colors duration-150 hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               Cancel
             </Button>
@@ -1011,12 +1039,18 @@ export function DashboardQueue({
               variant="primary"
               disabled={genWorkerBusy}
               onClick={() => void handleGenWorkerSubmit()}
-              className="w-full"
+              className="flex flex-1 items-center justify-center gap-1.5 transition-all duration-150 active:scale-[0.98] disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               {genWorkerBusy ? (
-                <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generating…</>
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                  Generating…
+                </>
               ) : (
-                <><Bot className="h-3.5 w-3.5 mr-1.5" />Generate</>
+                <>
+                  <Bot className="h-3.5 w-3.5" aria-hidden />
+                  Generate Draft
+                </>
               )}
             </Button>
           </DialogFooter>

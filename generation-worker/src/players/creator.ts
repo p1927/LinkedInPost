@@ -10,6 +10,16 @@ interface LlmVariantsResponse {
   }>;
 }
 
+const CHANNEL_MAX_CHARS: Record<string, number> = {
+  linkedin: 100,
+  instagram: 100,
+  email: 100,
+  gmail: 100,
+  whatsapp: 150,
+  telegram: 100,
+};
+const DEFAULT_MAX_CHARS = 200;
+
 function buildResearchBlock(articles: ResearchArticleRef[]): string {
   if (articles.length === 0) return 'No research — write from general knowledge.';
   return articles
@@ -36,6 +46,9 @@ export async function createVariants(
   env: Env,
   llmRef: LlmRef,
 ): Promise<TextVariant[]> {
+  const channelMax = CHANNEL_MAX_CHARS[report.channel.toLowerCase()] ?? DEFAULT_MAX_CHARS;
+  const maxPostChars = pattern.maxPostChars ? Math.min(pattern.maxPostChars, channelMax) : channelMax;
+
   const prompt = `You are an expert content writer. Write 4 comparable post variants using the pattern below.
 
 PATTERN: ${pattern.name}
@@ -84,6 +97,7 @@ Write exactly 4 variants. Each variant MUST:
 2. Be platform-native for ${report.channel} (appropriate length, formatting, tone)
 3. Be complete and publication-ready
 4. Ground any factual claims in the research material if provided
+5. Stay under ${maxPostChars} characters (hard limit — cut content before exceeding this)
 
 Return JSON with this exact shape:
 {

@@ -387,8 +387,13 @@ export function useDashboardSettings({
     }
   };
 
-  const generationLlm: LlmRef | undefined =
-    FEATURE_MULTI_PROVIDER_LLM ? { provider: llmPrimaryProvider, model: googleModel } : undefined;
+  const fallbackLlm: LlmRef = { provider: llmPrimaryProvider, model: googleModel };
+  const reviewGenerationLlm: LlmRef | undefined = FEATURE_MULTI_PROVIDER_LLM
+    ? (session.config.llmSettings?.review_generation ?? fallbackLlm)
+    : undefined;
+  const generationWorkerLlm: LlmRef | undefined = FEATURE_MULTI_PROVIDER_LLM
+    ? (session.config.llmSettings?.generation_worker ?? fallbackLlm)
+    : undefined;
 
   return {
     sheetIdInput,
@@ -429,6 +434,7 @@ export function useDashboardSettings({
     setContentReview,
     saveSettings,
     hasUnsavedSettingsChanges,
-    generationLlm,
+    reviewGenerationLlm,
+    generationWorkerLlm,
   };
 }

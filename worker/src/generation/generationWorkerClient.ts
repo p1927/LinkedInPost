@@ -2,6 +2,7 @@ import type { Env } from '../index';
 
 export interface GenWorkerGenerateRequest {
   spreadsheetId: string;
+  topicId?: string;
   topic: string;
   channel?: string;
   audience?: string;
@@ -12,6 +13,8 @@ export interface GenWorkerGenerateRequest {
   mustAvoid?: string[];
   cta?: string;
   constraints?: string;
+  newsWindowStart?: string;
+  newsWindowEnd?: string;
   composableAssets?: {
     brandContext?: string;
     globalRules?: string;
@@ -21,6 +24,7 @@ export interface GenWorkerGenerateRequest {
   };
   /** Matches generation worker catalog (`GET /v1/llm/catalog`); omit to use default model for first configured provider. */
   llm?: { provider: 'gemini' | 'grok'; model: string };
+  newsResearchConfig?: unknown;
   skipImages?: boolean;
 }
 

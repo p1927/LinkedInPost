@@ -10,7 +10,6 @@ import uuid
 import requests
 from dotenv import load_dotenv
 load_dotenv()
-import google.generativeai as genai
 from google.cloud import storage
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -29,12 +28,6 @@ GCS_OBJECT_PREFIX = os.environ.get('GOOGLE_CLOUD_STORAGE_PREFIX', 'linkedin-imag
 GOOGLE_CREDENTIALS_JSON = os.environ.get('GOOGLE_CREDENTIALS_JSON') # Service Account JSON
 GOOGLE_DOC_ID = os.environ.get('GOOGLE_DOC_ID') # ID of the 'Posted' Google Doc
 DELETE_UNUSED_GENERATED_IMAGES = os.environ.get('DELETE_UNUSED_GENERATED_IMAGES', 'true').strip().lower() not in {'0', 'false', 'no'}
-
-# Gemini for Research and Post Generation
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-GOOGLE_MODEL = os.environ.get('GOOGLE_MODEL', 'gemini-2.5-flash')
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 # Search configuration
 SERPAPI_API_KEY = os.environ.get('SERPAPI_API_KEY', '').strip()
@@ -92,7 +85,7 @@ def validate_environment(action):
 
     if action == 'draft':
         missing = [
-            name for name in ['GOOGLE_SHEET_ID', 'GOOGLE_CLOUD_STORAGE_BUCKET', 'GOOGLE_CREDENTIALS_JSON', 'GEMINI_API_KEY']
+            name for name in ['GOOGLE_SHEET_ID', 'GOOGLE_CLOUD_STORAGE_BUCKET', 'GOOGLE_CREDENTIALS_JSON']
             if not os.environ.get(name)
         ]
         if not SERPAPI_API_KEY:
@@ -648,7 +641,7 @@ def stringify_generated_variant(value):
 
 def normalize_generated_variants(content):
     if not isinstance(content, dict):
-        raise ValueError(f'Expected Gemini JSON object, received {type(content).__name__}.')
+        raise ValueError(f'Expected variants JSON object, received {type(content).__name__}.')
 
     normalized = {}
     for index in range(1, 5):
@@ -656,72 +649,6 @@ def normalize_generated_variants(content):
         normalized[key] = stringify_generated_variant(content.get(key, ''))
 
     return normalized
-
-
-VARIANTS_JSON_SCHEMA = {
-    'type': 'object',
-    'properties': {
-        'variant1': {'type': 'string'},
-        'variant2': {'type': 'string'},
-        'variant3': {'type': 'string'},
-        'variant4': {'type': 'string'},
-        'imageSearchQuery1': {
-            'type': 'string',
-            'description': '2–6 space-separated search keywords for Google Images; literal visual terms only, no full sentences.',
-        },
-        'imageSearchQuery2': {
-            'type': 'string',
-            'description': 'Different keyword set from query1; same rules—tokens only, stock-photo friendly.',
-        },
-        'imageSearchQuery3': {
-            'type': 'string',
-            'description': 'Third distinct keyword line; avoid metaphors as prose—use nouns/objects/settings.',
-        },
-    },
-    'required': [
-        'variant1',
-        'variant2',
-        'variant3',
-        'variant4',
-        'imageSearchQuery1',
-        'imageSearchQuery2',
-        'imageSearchQuery3',
-    ],
-}
-
-
-def strip_json_code_fences(text):
-    if not text:
-        return text
-    stripped = text.strip()
-    if stripped.startswith('```'):
-        stripped = re.sub(r'^```(?:json)?\s*', '', stripped, flags=re.IGNORECASE)
-        stripped = re.sub(r'\s*```\s*$', '', stripped)
-    return stripped.strip()
-
-
-def parse_gemini_variants_json(raw_text):
-    """Parse JSON object with variant1–4 and image keyword queries imageSearchQuery1–3; tolerate markdown fences."""
-    text = strip_json_code_fences(raw_text or '')
-    if not text:
-        raise ValueError('Empty Gemini response when parsing variants JSON.')
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError as json_err:
-        try:
-            return json5.loads(text)
-        except Exception as json5_err:
-            raise ValueError(
-                f'Invalid variants JSON (json: {json_err}; json5: {json5_err})'
-            ) from json5_err
-
-
-def generate_variants_content(model, prompt, generation_config):
-    response = model.generate_content(prompt, generation_config=generation_config)
-    raw = (response.text or '').strip()
-    if not raw:
-        raise ValueError('Empty text in Gemini generate_content response.')
-    return parse_gemini_variants_json(raw)
 
 
 def normalize_llm_image_query(text):
@@ -780,7 +707,7 @@ def build_image_serp_queries(topic, preferred_queries=None):
 
 
 # ==========================================
-# 1. RESEARCH & GENERATE (GEMINI)
+# 1. RESEARCH & GENERATE (Worker LLM)
 # ==========================================
 def fetch_web_research(topic, num_results=3):
     print(f"Fetching web research for: {topic}")
@@ -816,91 +743,33 @@ def fetch_web_research(topic, num_results=3):
     return ""
 
 def research_and_generate(topic, base_text='', refinement_instructions=''):
-    """Uses LLM to write 4 variants plus compact image-search keyword lines. Returns (variants_dict, image_queries)."""
-    print(f"Generating variants with model: {GOOGLE_MODEL}")
-    # Read the recipe
-    recipe_content = ""
-    try:
-        with open("recipe.md", "r", encoding="utf-8") as f:
-            recipe_content = f.read()
-    except Exception as e:
-        print(f"Could not read recipe.md: {e}")
+    """Uses the Cloudflare Worker (D1 github_automation LLM) to write 4 variants plus image-search keyword lines."""
+    if not linkedin_d1.worker_base_url() or not linkedin_d1.worker_scheduler_secret():
+        raise RuntimeError(
+            'Draft LLM runs on the Worker. Set VITE_WORKER_URL and WORKER_SCHEDULER_SECRET for GitHub Actions / local draft.'
+        )
 
-    # Fetch web research
+    recipe_content = ''
+    try:
+        with open('recipe.md', 'r', encoding='utf-8') as f:
+            recipe_content = f.read()
+    except OSError as e:
+        print(f'Could not read recipe.md: {e}')
+
     web_research = fetch_web_research(topic)
     word_limit = extract_requested_word_limit(refinement_instructions, topic)
 
-    refinement_context = ""
-    if base_text:
-        refinement_context += f'\nUse this draft as the starting point and preserve its strongest ideas:\n"""{base_text}"""\n'
-
-    if refinement_instructions:
-        refinement_context += f'\nApply these improvement notes while generating the new variants:\n{refinement_instructions}\n'
-
-    word_limit_instruction = ""
-    if word_limit:
-        word_limit_instruction = f"Each variant must be {word_limit} words or fewer."
-
-    prompt = f"""
-    Act as an expert LinkedIn ghostwriter. Write 4 distinct, engaging variants for a LinkedIn post about the topic: "{topic}".
-    
-    Here is some web research on the topic to include in your post:
-    {web_research}
-    
-    Follow this recipe/guideline for writing the post:
-    {recipe_content}
-
-    {refinement_context}
-
-    Make each variant distinct in tone (e.g., 1. Storytelling, 2. Analytical/Data-driven, 3. Short & Punchy, 4. Question/Engagement focused).
-    If a draft and refinement notes are provided, treat them as instructions to improve the post instead of starting from scratch.
-    {word_limit_instruction}
-    Do NOT include hashtags in the text block itself, but keep them at the end.
-    Every variant value must be a plain JSON string. Do not return nested JSON objects, arrays, or metadata for any variant.
-
-    Also provide exactly three English image-search QUERY STRINGS for Google Images
-    (imageSearchQuery1, imageSearchQuery2, imageSearchQuery3). Each string must be SEARCH TERMS AND KEYWORDS ONLY—not
-    a sentence, not a caption, not a metaphor explained in prose. Use 2–6 concrete tokens separated by a single space
-    (nouns, objects, settings, roles, simple adjectives that stock photos use: e.g. "software developer laptop office",
-    "team meeting whiteboard", "cloud security diagram"). Do not start with filler like "image of", "photo of", or
-    "showing"; no hashtags; no commas or semicolons—spaces only between words. Each string must be at most
-    {IMAGE_SEARCH_QUERY_MAX_CHARS} characters and must differ from the others (e.g. literal subject vs workplace/people
-    vs object/detail angle).
-    
-    Output JSON format ONLY:
-    {{
-        "variant1": "...",
-        "variant2": "...",
-        "variant3": "...",
-        "variant4": "...",
-        "imageSearchQuery1": "...",
-        "imageSearchQuery2": "...",
-        "imageSearchQuery3": "..."
-    }}
-    """
-    generation_config = genai.GenerationConfig(
-        response_mime_type='application/json',
-        response_schema=VARIANTS_JSON_SCHEMA,
-    )
-    model = genai.GenerativeModel(GOOGLE_MODEL)
-
-    try:
-        content = generate_variants_content(model, prompt, generation_config)
-    except ValueError as err:
-        msg = str(err)
-        if 'Empty Gemini response' in msg or 'Empty text in Gemini' in msg:
-            raise
-        print(f'Failed to parse Gemini variants JSON on first attempt: {err}')
-        repair_suffix = (
-            '\n\nYour previous output was not valid JSON. Respond again with ONLY a single JSON object '
-            'with keys variant1, variant2, variant3, variant4, imageSearchQuery1, imageSearchQuery2, '
-            'imageSearchQuery3. variant1–4 are full post strings; imageSearchQuery1–3 are keyword-only image search '
-            'lines—2–6 space-separated terms each, no sentences (max '
-            f'{IMAGE_SEARCH_QUERY_MAX_CHARS} chars each, no hashtags). Escape every double-quote and line break '
-            'inside strings using JSON rules. No markdown, no code fences.'
-        )
-        content = generate_variants_content(model, prompt + repair_suffix, generation_config)
-
+    payload = {
+        'topic': topic,
+        'webResearch': web_research,
+        'recipeContent': recipe_content,
+        'baseText': base_text or '',
+        'refinementInstructions': refinement_instructions or '',
+        'wordLimitWords': word_limit,
+        'imageSearchQueryMaxChars': IMAGE_SEARCH_QUERY_MAX_CHARS,
+    }
+    print('Generating variants via Worker /internal/github-automation-generate-variants')
+    content = linkedin_d1.worker_github_automation_generate_variants(payload)
     image_queries = normalize_llm_image_queries(content)
     return normalize_generated_variants(content), image_queries
 

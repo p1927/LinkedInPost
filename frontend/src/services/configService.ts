@@ -8,6 +8,21 @@ import type { LlmModelOption, LlmRef } from '@repo/llm-core';
 
 export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
 
+export type LlmSettingKey =
+  | 'review_generation'
+  | 'generation_worker'
+  | 'content_review_text'
+  | 'content_review_vision'
+  | 'github_automation';
+
+export const LLM_SETTING_KEY_LABELS: Record<LlmSettingKey, string> = {
+  review_generation: 'Review Generation',
+  generation_worker: 'Generation Worker',
+  content_review_text: 'Content Review (Text)',
+  content_review_vision: 'Content Review (Vision)',
+  github_automation: 'GitHub Automation',
+};
+
 export const AVAILABLE_GOOGLE_MODELS: LlmModelOption[] = STATIC_MODELS_BY_PROVIDER.gemini ?? [];
 
 export function formatGoogleModelLabel(modelName: string): string {
@@ -208,6 +223,8 @@ export interface BotConfig {
     gemini: boolean;
     grok: boolean;
   };
+  /** Per-feature chosen LlmRef, loaded from D1 on bootstrap. */
+  llmSettings?: Record<LlmSettingKey, LlmRef>;
   /** Omitted when content review is disabled in features.yaml. */
   contentReview?: ContentReviewStored;
 }
@@ -330,11 +347,12 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
       },
     };
   }
+  const withLlmSettings = config?.llmSettings ? { ...withLlm, llmSettings: config.llmSettings } : withLlm;
   if (!FEATURE_CONTENT_REVIEW) {
-    return withLlm;
+    return withLlmSettings;
   }
   return {
-    ...withLlm,
+    ...withLlmSettings,
     contentReview: normalizeContentReviewStored(config?.contentReview),
   };
 }

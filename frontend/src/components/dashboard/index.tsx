@@ -177,13 +177,22 @@ export function Dashboard({
       ? (location.state as { openPreviewForTopicKey: string }).openPreviewForTopicKey
       : undefined;
 
-  const workspaceLlm: LlmRef = useMemo(
+  const queueWorkspaceLlm: LlmRef = useMemo(
     () =>
-      settingsHook.generationLlm ?? {
+      settingsHook.generationWorkerLlm ?? {
         provider: 'gemini',
         model: settingsHook.googleModel,
       },
-    [settingsHook.generationLlm, settingsHook.googleModel],
+    [settingsHook.generationWorkerLlm, settingsHook.googleModel],
+  );
+
+  const reviewBaseLlm: LlmRef = useMemo(
+    () =>
+      settingsHook.reviewGenerationLlm ?? {
+        provider: 'gemini',
+        model: settingsHook.googleModel,
+      },
+    [settingsHook.reviewGenerationLlm, settingsHook.googleModel],
   );
 
   const [selectedTopicsPanelTopicId, setSelectedTopicsPanelTopicId] = useState<string | null>(null);
@@ -193,7 +202,7 @@ export function Dashboard({
     api,
     session,
     onAuthExpired,
-    workspaceLlm,
+    workspaceLlm: queueWorkspaceLlm,
     selectedChannel: channelsHook.selectedChannel,
     resolvedRecipientId,
     selectedRecipientLabel,
@@ -295,7 +304,7 @@ export function Dashboard({
   const reviewDeliveryChannel = topicChromeRow
     ? effectiveChannel(topicChromeRow, channelsHook.selectedChannel)
     : channelsHook.selectedChannel;
-  const reviewLlm = topicChromeRow ? effectiveLlmRef(topicChromeRow, workspaceLlm) : workspaceLlm;
+  const reviewLlm = topicChromeRow ? effectiveLlmRef(topicChromeRow, reviewBaseLlm) : reviewBaseLlm;
 
   const topicReviewBase = {
     rows: queueHook.rows,
@@ -552,7 +561,7 @@ export function Dashboard({
   const topicsRail = (
     <TopicsRightRail
       workspaceChannel={channelsHook.selectedChannel}
-      workspaceLlm={workspaceLlm}
+      workspaceLlm={queueWorkspaceLlm}
       selectedTopicId={railSelectedTopicId}
       rows={queueHook.rows}
       availableModels={settingsHook.availableModels}
