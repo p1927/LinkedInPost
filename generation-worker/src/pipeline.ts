@@ -7,7 +7,7 @@ import { createVariants } from './players/creator';
 import { reviewContent } from './players/review';
 import { relateImages } from './players/imageRelator';
 import { buildCandidatesFromRelator } from './players/imagePicker';
-import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates } from './types';
+import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates, ImageCandidate } from './types';
 import { resolveGenerationWorkerLlmRef } from './llmFromWorker';
 
 const EMPTY_ASSETS: ComposableAssets = {
@@ -72,20 +72,26 @@ export async function runPipeline(
   trace.review = review;
 
   // 6. ImageRelator + ImagePicker (per-variant, parallel)
-  const relatorResults = await Promise.all(
-    variants.map((v) => relateImages(v, pattern, report, env, llmRef))
-  );
-  const perVariantImageCandidates: PerVariantImageCandidates[] = relatorResults.map((rel, i) => ({
-    variantIndex: i,
-    candidates: buildCandidatesFromRelator(rel, i),
-  }));
-  // Flat list for backward compatibility
-  const imageCandidates = perVariantImageCandidates.flatMap((pv) => pv.candidates);
-  trace.imageRelator = relatorResults.map((rel, i) => ({
-    variantIndex: i,
-    visualBrief: rel.visualBrief,
-    keywordCount: rel.searchKeywords.length,
-  }));
+  let perVariantImageCandidates: PerVariantImageCandidates[] = [];
+  let imageCandidates: ImageCandidate[] = [];
+  if (!req.skipImages) {
+    const relatorResults = await Promise.all(
+      variants.map((v) => relateImages(v, pattern, report, env, llmRef))
+    );
+    perVariantImageCandidates = relatorResults.map((rel, i) => ({
+      variantIndex: i,
+      candidates: buildCandidatesFromRelator(rel, i),
+    }));
+    // Flat list for backward compatibility
+    imageCandidates = perVariantImageCandidates.flatMap((pv) => pv.candidates);
+    trace.imageRelator = relatorResults.map((rel, i) => ({
+      variantIndex: i,
+      visualBrief: rel.visualBrief,
+      keywordCount: rel.searchKeywords.length,
+    }));
+  } else {
+    trace.imageRelator = 'skipped';
+  }
 
   // 7. Persist run to D1
   await db

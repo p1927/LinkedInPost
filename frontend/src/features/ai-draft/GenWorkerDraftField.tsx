@@ -34,15 +34,15 @@ export function GenWorkerDraftField({
   const available = suggestions.filter((s) => !picked.has(s));
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium">{label}</span>
+    <div className="flex flex-col gap-2">
+      <label className="text-xs font-medium uppercase tracking-wide text-ink" htmlFor={`field-${label}`}>{label}</label>
       {chips.length > 0 ? (
         <div className="flex flex-wrap gap-1.5" role="list" aria-label={`Selected ${label}`}>
           {chips.map((c) => (
             <span
               key={c}
               role="listitem"
-              className="inline-flex max-w-full items-center gap-1 rounded-full border border-border bg-canvas px-2.5 py-1 text-xs font-medium text-ink"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-canvas px-2.5 py-1 text-xs font-medium text-ink hover:border-primary/40 transition-colors"
             >
               <span className="min-w-0 truncate" title={c}>
                 {c}
@@ -52,9 +52,10 @@ export function GenWorkerDraftField({
                 disabled={disabled}
                 onClick={() => onRemoveChip(c)}
                 className={cn(
-                  'shrink-0 rounded-full p-0.5 text-muted hover:bg-red-50 hover:text-red-600',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                  disabled && 'pointer-events-none opacity-40',
+                  'shrink-0 rounded-full p-0.5 text-muted hover:bg-red-50 hover:text-red-600 cursor-pointer',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400',
+                  'transition-colors duration-150',
+                  disabled && 'pointer-events-none opacity-40 cursor-not-allowed',
                 )}
                 aria-label={`Remove ${c}`}
               >
@@ -66,6 +67,7 @@ export function GenWorkerDraftField({
       ) : null}
       {multiline ? (
         <Textarea
+          id={`field-${label}`}
           placeholder={placeholder}
           value={freeValue}
           onChange={(e) => onFreeChange(e.target.value)}
@@ -74,10 +76,16 @@ export function GenWorkerDraftField({
           className="resize-none"
         />
       ) : (
-        <Input placeholder={placeholder} value={freeValue} onChange={(e) => onFreeChange(e.target.value)} disabled={disabled} />
+        <Input
+          id={`field-${label}`}
+          placeholder={placeholder}
+          value={freeValue}
+          onChange={(e) => onFreeChange(e.target.value)}
+          disabled={disabled}
+        />
       )}
       {available.length > 0 ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Quick add</span>
           <div className="flex flex-wrap gap-1.5">
             {available.map((s) => (
@@ -88,10 +96,10 @@ export function GenWorkerDraftField({
                 onClick={() => onAddChip(s)}
                 title={s}
                 className={cn(
-                  'max-w-full truncate rounded-full border border-dashed border-border/80 bg-white/80 px-2.5 py-1 text-left text-xs font-medium text-ink/80',
-                  'hover:border-primary/40 hover:bg-primary/5 hover:text-ink',
+                  'max-w-full truncate rounded-full border border-dashed border-border/80 bg-white/80 px-2.5 py-1 text-left text-xs font-medium text-ink/80 cursor-pointer',
+                  'hover:border-primary/40 hover:bg-primary/5 hover:text-ink transition-colors duration-150',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                  disabled && 'pointer-events-none opacity-40',
+                  disabled && 'pointer-events-none opacity-40 cursor-not-allowed',
                 )}
               >
                 + {s}

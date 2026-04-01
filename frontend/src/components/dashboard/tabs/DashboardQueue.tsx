@@ -927,71 +927,76 @@ export function DashboardQueue({
       >
         <DialogContent className="max-h-[min(90vh,720px)] max-w-md overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>AI Draft — {genWorkerDialogRow?.topic ?? ''}</DialogTitle>
+            <DialogTitle>AI Draft - {genWorkerDialogRow?.topic ?? ""}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-3 py-1">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground leading-relaxed">
               All fields are optional. Use quick-add chips (tailored to this topic’s channel and content pattern) or type your
               own. Leave everything blank to use workspace defaults.
             </p>
-            <GenWorkerDraftField
-              label="Audience"
-              placeholder="e.g. senior engineers, startup founders"
-              chips={gwAudienceChips}
-              onAddChip={(v) => setGwAudienceChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
-              onRemoveChip={(v) => setGwAudienceChips((prev) => prev.filter((x) => x !== v))}
-              freeValue={gwAudience}
-              onFreeChange={setGwAudience}
-              suggestions={audienceSuggestions}
-              disabled={genWorkerBusy}
-            />
-            <GenWorkerDraftField
-              label="Tone"
-              placeholder="e.g. conversational, authoritative, witty"
-              chips={gwToneChips}
-              onAddChip={(v) => setGwToneChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
-              onRemoveChip={(v) => setGwToneChips((prev) => prev.filter((x) => x !== v))}
-              freeValue={gwTone}
-              onFreeChange={setGwTone}
-              suggestions={toneSuggestions}
-              disabled={genWorkerBusy}
-            />
-            <GenWorkerDraftField
-              label="Call to action"
-              placeholder="e.g. follow for more, share your thoughts"
-              chips={gwCtaChips}
-              onAddChip={(v) => setGwCtaChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
-              onRemoveChip={(v) => setGwCtaChips((prev) => prev.filter((x) => x !== v))}
-              freeValue={gwCta}
-              onFreeChange={setGwCta}
-              suggestions={ctaSuggestions}
-              disabled={genWorkerBusy}
-            />
-            <GenWorkerDraftField
-              label="Additional constraints"
-              placeholder="e.g. keep under 300 words, include a statistic"
-              chips={gwConstraintsChips}
-              onAddChip={(v) => setGwConstraintsChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
-              onRemoveChip={(v) => setGwConstraintsChips((prev) => prev.filter((x) => x !== v))}
-              freeValue={gwConstraints}
-              onFreeChange={setGwConstraints}
-              suggestions={constraintsSuggestions}
-              disabled={genWorkerBusy}
-              multiline
-              freeRows={2}
-            />
-            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={gwFactual}
-                onChange={(e) => setGwFactual(e.target.checked)}
+            <div className="flex flex-col gap-4">
+              <GenWorkerDraftField
+                label="Audience"
+                placeholder="e.g. senior engineers, startup founders"
+                chips={gwAudienceChips}
+                onAddChip={(v) => setGwAudienceChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+                onRemoveChip={(v) => setGwAudienceChips((prev) => prev.filter((x) => x !== v))}
+                freeValue={gwAudience}
+                onFreeChange={setGwAudience}
+                suggestions={audienceSuggestions}
                 disabled={genWorkerBusy}
-                className="h-4 w-4 rounded border"
               />
-              Factual / data-driven post
-            </label>
+              <GenWorkerDraftField
+                label="Tone"
+                placeholder="e.g. conversational, authoritative, witty"
+                chips={gwToneChips}
+                onAddChip={(v) => setGwToneChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+                onRemoveChip={(v) => setGwToneChips((prev) => prev.filter((x) => x !== v))}
+                freeValue={gwTone}
+                onFreeChange={setGwTone}
+                suggestions={toneSuggestions}
+                disabled={genWorkerBusy}
+              />
+              <GenWorkerDraftField
+                label="Call to action"
+                placeholder="e.g. follow for more, share your thoughts"
+                chips={gwCtaChips}
+                onAddChip={(v) => setGwCtaChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+                onRemoveChip={(v) => setGwCtaChips((prev) => prev.filter((x) => x !== v))}
+                freeValue={gwCta}
+                onFreeChange={setGwCta}
+                suggestions={ctaSuggestions}
+                disabled={genWorkerBusy}
+              />
+              <GenWorkerDraftField
+                label="Additional constraints"
+                placeholder="e.g. keep under 300 words, include a statistic"
+                chips={gwConstraintsChips}
+                onAddChip={(v) => setGwConstraintsChips((prev) => (prev.includes(v) ? prev : [...prev, v]))}
+                onRemoveChip={(v) => setGwConstraintsChips((prev) => prev.filter((x) => x !== v))}
+                freeValue={gwConstraints}
+                onFreeChange={setGwConstraints}
+                suggestions={constraintsSuggestions}
+                disabled={genWorkerBusy}
+                multiline
+                freeRows={2}
+              />
+            </div>
+            <div className="border-t border-border pt-3">
+              <label className="flex items-center gap-2.5 text-sm font-medium cursor-pointer select-none hover:text-ink transition-colors" htmlFor="factual-checkbox">
+                <input
+                  id="factual-checkbox"
+                  type="checkbox"
+                  checked={gwFactual}
+                  onChange={(e) => setGwFactual(e.target.checked)}
+                  disabled={genWorkerBusy}
+                  className="h-4 w-4 rounded border border-input bg-background cursor-pointer accent-primary hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                />
+                <span>Factual / data-driven post</span>
+              </label>
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => {
@@ -1006,6 +1011,7 @@ export function DashboardQueue({
               variant="primary"
               disabled={genWorkerBusy}
               onClick={() => void handleGenWorkerSubmit()}
+              className="w-full"
             >
               {genWorkerBusy ? (
                 <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generating…</>

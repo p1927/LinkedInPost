@@ -1089,7 +1089,7 @@ async function dispatchAction(
             await pipeline.savePatternMetadata(storedConfig.spreadsheetId, rowForSave, {
               generationRunId: genResult.runId || '',
               patternId: genResult.primaryPatternId || '',
-              patternName: '', // pattern name resolved by generation worker; stored in trace
+              patternName: rowForSave.patternName || '', // prevent empty overwrite
               patternRationale: genResult.patternRationale || '',
             });
           }

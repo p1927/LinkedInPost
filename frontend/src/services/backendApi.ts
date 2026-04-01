@@ -211,7 +211,7 @@ export interface GenWorkerGenerateRequest {
     reviewChecklist?: string[];
     authorProfile?: string;
   };
-  llm?: any;
+  skipImages?: boolean;
 }
 
 export interface TextVariant {

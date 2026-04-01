@@ -103,6 +103,7 @@ export const GenerateRequestSchema = z.object({
       model: z.string().min(1),
     })
     .optional(),
+  skipImages: z.boolean().optional(),
 });
 
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;

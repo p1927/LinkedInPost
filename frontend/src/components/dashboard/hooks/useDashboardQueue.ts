@@ -320,7 +320,25 @@ export function useDashboardQueue({
 
   const draftWithGenerationWorker = async (row: SheetRow, request: GenWorkerGenerateRequest): Promise<void> => {
     try {
-      const result = await api.callGenerationWorker(idToken, session.config.spreadsheetId, request);
+      const fullRequest: GenWorkerGenerateRequest = {
+        ...request,
+        llm: workspaceLlm,
+        newsResearchConfig: session.config.newsResearch,
+        composableAssets: {
+          brandContext: session.config.brandContext || '',
+          globalRules: session.config.generationRules || '',
+          fewShotExamples: '',
+          reviewChecklist: [],
+          authorProfile: session.config.authorProfile || '',
+        },
+        skipImages: true,
+      };
+      const result = await api.callGenerationWorker(idToken, session.config.spreadsheetId, fullRequest);
+      
+      if (!result.variants) {
+        throw new Error('Generation worker returned an invalid response (missing variants).');
+      }
+
       const variantTexts = result.variants.map((v) => v.text);
       const updated = await api.saveDraftVariants(idToken, row, variantTexts);
       setRows((prev) => prev.map((r) => (isSameTopicId(r, updated) ? updated : r)));

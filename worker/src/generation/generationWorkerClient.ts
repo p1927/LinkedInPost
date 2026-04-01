@@ -21,6 +21,7 @@ export interface GenWorkerGenerateRequest {
   };
   /** Matches generation worker catalog (`GET /v1/llm/catalog`); omit to use default model for first configured provider. */
   llm?: { provider: 'gemini' | 'grok'; model: string };
+  skipImages?: boolean;
 }
 
 export interface TextVariant {
@@ -78,7 +79,7 @@ export async function callGenerationWorker(
       method: 'POST',
       headers,
       body: JSON.stringify(req),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(120_000), // increased from 60s to 120s
     });
     console.log(`[callGenerationWorker] Response status: ${response.status}`);
   } catch (e) {
