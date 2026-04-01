@@ -157,8 +157,6 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
   function DashboardSettingsDrawer(
     {
       session,
-      backendApi,
-      idToken,
       sheetIdInput,
       setSheetIdInput,
       selectedChannel,
