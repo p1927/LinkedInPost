@@ -927,13 +927,13 @@ export function DashboardQueue({
       >
         <DialogContent
           aria-describedby="gen-worker-dialog-desc"
-          className="flex max-h-[min(92vh,680px)] w-full max-w-lg flex-col gap-0 overflow-hidden p-0 shadow-xl ring-1 ring-black/[0.06] sm:rounded-2xl"
+          className="flex max-h-[min(92vh,680px)] w-full max-w-lg flex-col gap-0 overflow-hidden border border-border-strong/80 bg-white/95 p-0 shadow-glass ring-1 ring-primary/10 backdrop-blur-xl sm:rounded-2xl"
         >
           {/* Header */}
-          <DialogHeader className="shrink-0 border-b border-border/60 px-5 py-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Bot className="h-4 w-4 text-primary" aria-hidden />
+          <DialogHeader className="shrink-0 border-b border-border bg-gradient-to-br from-violet-50/95 via-fuchsia-50/35 to-white px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/18 shadow-[0_1px_0_rgba(255,255,255,0.75)_inset] ring-1 ring-primary/15">
+                <Bot className="h-[18px] w-[18px] text-primary" aria-hidden />
               </div>
               <div className="min-w-0">
                 <DialogTitle className="text-base font-semibold leading-tight text-ink">
@@ -949,8 +949,8 @@ export function DashboardQueue({
           </DialogHeader>
 
           {/* Scrollable body */}
-          <div className="custom-scrollbar flex-1 overflow-y-auto px-5 py-4">
-            <p id="gen-worker-dialog-desc" className="mb-4 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+          <div className="custom-scrollbar flex-1 overflow-y-auto bg-gradient-to-b from-white to-violet-50/25 px-5 py-4">
+            <p id="gen-worker-dialog-desc" className="mb-4 text-xs leading-relaxed text-muted sm:text-sm">
               All fields are optional. Use the tags under each field or type your own. Leave everything blank
               for workspace defaults.
             </p>
@@ -1004,9 +1004,9 @@ export function DashboardQueue({
             </div>
 
             {/* Factual checkbox */}
-            <div className="mt-4 rounded-lg border border-border/70 bg-muted/30 px-3 py-2.5">
+            <div className="mt-4 rounded-xl border border-primary/22 bg-primary/[0.07] px-3.5 py-3 shadow-[0_1px_0_rgba(255,255,255,0.65)_inset]">
               <label
-                className="flex cursor-pointer select-none items-center gap-2.5 text-sm font-medium text-ink transition-colors hover:text-ink/80"
+                className="flex cursor-pointer select-none items-center gap-2.5 text-sm font-medium text-ink transition-colors duration-200 hover:text-ink-hover"
                 htmlFor="factual-checkbox"
               >
                 <input
@@ -1015,7 +1015,7 @@ export function DashboardQueue({
                   checked={gwFactual}
                   onChange={(e) => setGwFactual(e.target.checked)}
                   disabled={genWorkerBusy}
-                  className="h-4 w-4 shrink-0 cursor-pointer rounded border border-input bg-background accent-primary transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-4 w-4 shrink-0 cursor-pointer rounded border border-primary/35 bg-white accent-primary transition-colors duration-200 hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <span>Factual / data-driven post (optional)</span>
               </label>
@@ -1026,7 +1026,7 @@ export function DashboardQueue({
           </div>
 
           {/* Footer: reset DialogFooter negative margins when content uses p-0 */}
-          <DialogFooter className="mx-0 mb-0 mt-0 shrink-0 flex flex-row flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-muted/25 px-5 py-3.5 sm:flex-nowrap">
+          <DialogFooter className="mx-0 mb-0 mt-0 shrink-0 flex flex-row flex-wrap items-center justify-end gap-2 border-t border-border bg-gradient-to-t from-violet-50/80 via-primary/[0.06] to-white px-5 py-3.5 sm:flex-nowrap">
             <Button
               variant="outline"
               size="sm"
@@ -1035,7 +1035,7 @@ export function DashboardQueue({
                 setGenWorkerDialogRow(null);
               }}
               disabled={genWorkerBusy}
-              className="h-9 min-h-9 w-full min-w-0 border border-primary/35 sm:w-auto sm:min-w-[9.5rem]"
+              className="h-9 min-h-9 w-full min-w-0 border border-primary/40 bg-white/90 shadow-sm transition-colors duration-200 hover:bg-violet-50/80 sm:w-auto sm:min-w-[9.5rem]"
             >
               Cancel
             </Button>
@@ -1044,7 +1044,7 @@ export function DashboardQueue({
               size="sm"
               disabled={genWorkerBusy}
               onClick={() => void handleGenWorkerSubmit()}
-              className="h-9 min-h-9 w-full min-w-0 gap-1.5 sm:w-auto sm:min-w-[9.5rem]"
+              className="h-9 min-h-9 w-full min-w-0 gap-1.5 shadow-card transition-all duration-200 hover:brightness-[1.03] sm:w-auto sm:min-w-[9.5rem]"
             >
               {genWorkerBusy ? (
                 <>
