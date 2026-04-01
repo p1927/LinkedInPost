@@ -88,13 +88,13 @@ export function GenWorkerDraftField({
             <span
               key={c}
               className={cn(
-                'inline-flex max-w-[min(100%,220px)] items-center gap-0.5 rounded-md border px-1.5 py-0.5',
+                'inline-flex max-w-[min(100%,15rem)] items-center gap-0.5 rounded-md border px-1.5 py-0.5',
                 'border-primary/30 bg-primary/10 text-[11px] font-medium text-ink',
                 'transition-colors duration-150',
                 disabled ? 'opacity-50' : 'hover:border-primary/45 hover:bg-primary/[0.14]',
               )}
             >
-              <span className="min-w-0 truncate leading-tight" title={c}>
+              <span className="min-w-0 break-words leading-tight" title={c}>
                 {c}
               </span>
               <button
@@ -122,7 +122,7 @@ export function GenWorkerDraftField({
               onClick={() => onAddChip(s)}
               title={s}
               className={cn(
-                'inline-flex max-w-full items-baseline rounded-md border border-dashed border-border/70',
+                'inline-flex max-w-[min(100%,15rem)] items-start rounded-md border border-dashed border-border/70',
                 'bg-muted/20 px-2 py-1 text-left text-[11px] font-medium leading-snug text-muted-foreground',
                 'transition-colors duration-150',
                 'hover:border-primary/35 hover:bg-primary/6 hover:text-ink',
@@ -131,7 +131,7 @@ export function GenWorkerDraftField({
                 disabled && 'pointer-events-none cursor-not-allowed opacity-40',
               )}
             >
-              <span className="break-words [overflow-wrap:anywhere]">+ {s}</span>
+              <span className="break-words">+ {s}</span>
             </button>
           ))}
         </div>
