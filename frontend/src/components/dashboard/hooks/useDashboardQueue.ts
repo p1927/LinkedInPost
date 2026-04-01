@@ -802,6 +802,26 @@ export function useDashboardQueue({
     await publishRowToSelectedChannel(row);
   };
 
+  /**
+   * Update local row date/postTime immediately after a calendar drag reschedule is confirmed,
+   * so Schedule-X is not reset to the old slot by `events.set` before `loadData` returns.
+   */
+  const applyOptimisticPostSchedule = useCallback(
+    (topicIds: readonly string[], dateIso: string, timeHm: string) => {
+      const d = dateIso.trim();
+      const t = timeHm.trim();
+      const postTime = t ? `${d} ${t}` : d;
+      const idSet = new Set(topicIds.map((id) => String(id).trim()));
+      setRows((prev) =>
+        prev.map((row) => {
+          if (!idSet.has(String(row.topicId).trim())) return row;
+          return { ...row, date: d, postTime };
+        }),
+      );
+    },
+    [],
+  );
+
   const handleDeleteTopic = async (row: SheetRow) => {
     if (!await showConfirm({ title: 'Confirm Delete', description: `Delete "${row.topic}" from the content calendar?` })) return;
     setDeletingRowIndex(row.rowIndex);
@@ -844,6 +864,7 @@ export function useDashboardQueue({
     draftDispatchPendingTopicIds,
     deletingRowIndex,
     loadData,
+    applyOptimisticPostSchedule,
     handleAddTopic,
     handleApproveVariant,
     handleSaveEmailFields,

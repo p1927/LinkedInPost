@@ -494,6 +494,15 @@ export function Dashboard({
   const handleCalendarRescheduleCommit = useCallback(
     async ({ topicIds, date, time }: TopicRescheduleCommitPayload) => {
       const postTime = time ? `${date} ${time}` : date;
+      const d = date.trim();
+      const timeNorm = time.trim();
+      const nonPublishedIds = topicIds.filter((id) => {
+        const row = queueHook.rows.find((r) => String(r.topicId).trim() === String(id).trim());
+        return row && getNormalizedRowStatus(row.status) !== 'published';
+      });
+      if (nonPublishedIds.length) {
+        queueHook.applyOptimisticPostSchedule(nonPublishedIds, d, timeNorm);
+      }
       for (const id of topicIds) {
         const row = queueHook.rows.find((r) => String(r.topicId).trim() === String(id).trim());
         if (!row) continue;
@@ -520,7 +529,7 @@ export function Dashboard({
       }
       void queueHook.loadData(true);
     },
-    [api, idToken, queueHook.rows, queueHook.loadData],
+    [api, idToken, queueHook.rows, queueHook.loadData, queueHook.applyOptimisticPostSchedule],
   );
 
   const queueContent = (

@@ -290,7 +290,9 @@ export function ContentScheduleCalendar({
   };
 
   const handleRescheduleDialogOpenChange = (open: boolean) => {
-    if (!open && !rescheduleBusy) {
+    if (open || rescheduleBusy) return;
+    // Apply/Cancel already resolved the drag promise; only overlay/X close leaves it pending.
+    if (rescheduleResolveRef.current) {
       finishRescheduleDialog(false);
     }
   };
