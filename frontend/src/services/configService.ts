@@ -168,6 +168,8 @@ export interface BotConfig {
   /** Gemini model IDs non-admins may use; admins edit this in Settings. */
   allowedGoogleModels: string[];
   generationRules: string;
+  /** Optional brand / positioning context for generation worker composable assets. */
+  brandContext: string;
   /** Workspace author context for LLM; always included when non-empty. */
   authorProfile: string;
   hasGitHubToken: boolean;
@@ -274,6 +276,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     googleModel,
     allowedGoogleModels,
     generationRules: config?.generationRules || '',
+    brandContext: typeof config?.brandContext === 'string' ? config.brandContext : '',
     authorProfile: config?.authorProfile || '',
     hasGitHubToken: Boolean(config?.hasGitHubToken),
     hasGenerationWorker: Boolean(config?.hasGenerationWorker),
@@ -342,6 +345,7 @@ export interface BotConfigUpdate {
   googleModel?: string;
   allowedGoogleModels?: string[];
   generationRules?: string;
+  brandContext?: string;
   authorProfile?: string;
   githubToken?: string;
   defaultChannel?: ChannelId;

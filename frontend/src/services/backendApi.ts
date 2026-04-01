@@ -203,7 +203,9 @@ export interface GenWorkerGenerateRequest {
   constraints?: string;
   newsWindowStart?: string;
   newsWindowEnd?: string;
-  newsResearchConfig?: any;
+  /** Matches generation worker catalog; forwarded by the API worker. */
+  llm?: { provider: LlmProviderId; model: string };
+  newsResearchConfig?: unknown;
   composableAssets?: {
     brandContext?: string;
     globalRules?: string;

@@ -60,8 +60,8 @@ def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
         result = run_command(
             ['npx', 'wrangler', 'secret', 'put', 'GENERATION_WORKER_SECRET', '--env', ''],
             cwd=WORKER_DIR,
-            input=secret_value,
             capture_output=True,
+            input_text=secret_value,
         )
         if 'Success' in result.stdout or 'Uploaded' in result.stdout:
             ok('Main Worker secret', 'GENERATION_WORKER_SECRET set')
@@ -78,8 +78,8 @@ def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
         result = run_command(
             ['npx', 'wrangler', 'secret', 'put', 'WORKER_SHARED_SECRET'],
             cwd=GEN_WORKER_DIR,
-            input=secret_value,
             capture_output=True,
+            input_text=secret_value,
         )
         if 'Success' in result.stdout or 'Uploaded' in result.stdout:
             ok('Generation Worker secret', 'WORKER_SHARED_SECRET set')
