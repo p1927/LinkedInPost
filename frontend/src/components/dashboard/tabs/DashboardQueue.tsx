@@ -1017,7 +1017,7 @@ export function DashboardQueue({
                   disabled={genWorkerBusy}
                   className="h-4 w-4 shrink-0 cursor-pointer rounded border border-input bg-background accent-primary transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
                 />
-                <span>Factual / data-driven post</span>
+                <span>Factual / data-driven post (optional)</span>
               </label>
               <p className="mt-1.5 pl-[1.375rem] text-[11px] leading-relaxed text-muted sm:text-xs">
                 Instructs the AI to prioritise accuracy and cite sources or data points where relevant.

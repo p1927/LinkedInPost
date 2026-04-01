@@ -8,6 +8,14 @@ import { getNormalizedRowStatus } from '@/components/dashboard/utils';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 
+function firstNonEmptyDraftText(row: SheetRow): string {
+  for (const p of [row.selectedText, row.variant1, row.variant2, row.variant3, row.variant4]) {
+    const t = String(p ?? '').trim();
+    if (t) return t;
+  }
+  return '';
+}
+
 export function TopicPostPreviewCard({
   row,
   previewChannel,
@@ -22,7 +30,7 @@ export function TopicPostPreviewCard({
   onOpenEditor?: () => void;
 }) {
   const previewUrls = getTopicPreviewImageUrls(row);
-  const body = (row.selectedText || row.variant1 || '').trim();
+  const body = firstNonEmptyDraftText(row);
   const normalizedStatus = getNormalizedRowStatus(row.status);
   const isPublished = normalizedStatus === 'published';
   const isApproved = normalizedStatus === 'approved';
@@ -65,7 +73,7 @@ export function TopicPostPreviewCard({
       <div className="flex justify-center overflow-hidden rounded-xl border border-white/50 bg-white/40 shadow-sm">
         <ChannelPostPreview
           optionNumber={1}
-          text={row.selectedText || row.variant1}
+          text={firstNonEmptyDraftText(row)}
           imageUrl={previewUrls[0]}
           imageUrls={previewUrls.length > 1 ? previewUrls : undefined}
           previewChannel={previewChannel}

@@ -259,21 +259,25 @@ export class PipelineStore {
       selectedImageUrlsJson: string;
     },
   ): Promise<SheetRow> {
+    const v1 = variants[0] ?? '';
+    const v2 = variants[1] ?? '';
+    const v3 = variants[2] ?? '';
+    const v4 = variants[3] ?? '';
     const next: SheetRow = {
       ...row,
       status: 'Drafted',
-      variant1: variants[0] ?? '',
-      variant2: variants[1] ?? '',
-      variant3: variants[2] ?? '',
-      variant4: variants[3] ?? '',
-      ...(previewSelection
-        ? {
-            selectedText: previewSelection.selectedText,
-            selectedImageId: previewSelection.selectedImageId,
-            selectedImageUrlsJson: previewSelection.selectedImageUrlsJson,
-          }
-        : {}),
+      variant1: v1,
+      variant2: v2,
+      variant3: v3,
+      variant4: v4,
     };
+    if (previewSelection) {
+      next.selectedText = previewSelection.selectedText;
+      next.selectedImageId = previewSelection.selectedImageId;
+      next.selectedImageUrlsJson = previewSelection.selectedImageUrlsJson;
+    } else if (!String(row.selectedText || '').trim() && String(v1).trim()) {
+      next.selectedText = v1;
+    }
     await this.upsertFull(spreadsheetId, next);
     return next;
   }

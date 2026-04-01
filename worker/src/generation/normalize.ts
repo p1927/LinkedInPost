@@ -103,16 +103,20 @@ export function coerceVariantList(value: unknown): string[] {
     throw new Error('Missing preview variants payload.');
   }
 
-  const variants = value
-    .map((entry) => normalizePlainTextValue(entry))
-    .filter((entry) => entry.trim())
-    .slice(0, 4);
-
-  if (variants.length !== 4) {
-    throw new Error('Exactly four variants are required before saving them to Sheets.');
+  const slots = value.map((entry) => normalizePlainTextValue(entry).trim()).slice(0, 4);
+  if (slots.length === 4 && slots.every((s) => s)) {
+    return slots;
   }
 
-  return variants;
+  const nonEmpty = slots.filter(Boolean);
+  if (nonEmpty.length === 0) {
+    throw new Error('At least one non-empty variant is required before saving.');
+  }
+  const last = nonEmpty[nonEmpty.length - 1]!;
+  while (nonEmpty.length < 4) {
+    nonEmpty.push(last);
+  }
+  return nonEmpty;
 }
 
 export function coerceSelectionRange(value: unknown): TextSelectionRange | null {
