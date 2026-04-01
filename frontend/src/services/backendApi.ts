@@ -209,12 +209,29 @@ export interface TextVariant {
   text: string;
 }
 
+export interface ImageCandidate {
+  id: string;
+  url?: string;
+  searchQuery?: string;
+  generationPrompt?: string;
+  visualBrief: string;
+  score: number;
+  variantIndex?: number;
+}
+
+export interface PerVariantImageCandidates {
+  variantIndex: number;
+  candidates: ImageCandidate[];
+}
+
 export interface GenWorkerGenerateResponse {
   runId: string;
   primaryPatternId: string;
   runnerUpPatternId: string;
   patternRationale: string;
   variants: TextVariant[];
+  imageCandidates: ImageCandidate[];
+  perVariantImageCandidates: PerVariantImageCandidates[];
   review: { passed: boolean; verdict: string; summary: string };
 }
 

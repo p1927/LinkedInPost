@@ -120,6 +120,12 @@ export interface ImageCandidate {
   generationPrompt?: string;
   visualBrief: string;
   score: number;
+  variantIndex?: number;
+}
+
+export interface PerVariantImageCandidates {
+  variantIndex: number;
+  candidates: ImageCandidate[];
 }
 
 export interface ReviewResult {
@@ -137,6 +143,7 @@ export interface GenerateResponse {
   patternRationale: string;
   variants: TextVariant[];
   imageCandidates: ImageCandidate[];
+  perVariantImageCandidates: PerVariantImageCandidates[];
   review: ReviewResult;
   trace: Record<string, unknown>;
 }

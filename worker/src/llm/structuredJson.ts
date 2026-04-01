@@ -1,18 +1,18 @@
-import { generateGeminiJson, type GeminiTextGenerationOptions } from './providers/gemini';
+import { generateGeminiJson } from './providers/gemini';
 import { generateGrokJson } from './providers/grok';
-import type { LlmRef, WorkerEnvForLlm } from './types';
+import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
 
 /** JSON structured output: Gemini or Grok via existing provider modules. */
 export async function generateLlmParsedJson<T>(
   env: WorkerEnvForLlm,
   ref: LlmRef,
   prompt: string,
-  geminiOpts?: GeminiTextGenerationOptions,
+  opts?: LlmGenerationOptions,
 ): Promise<T> {
   const raw =
     ref.provider === 'gemini'
-      ? await generateGeminiJson(env, ref.model, prompt, geminiOpts)
-      : await generateGrokJson(env, ref.model, prompt);
+      ? await generateGeminiJson(env, ref.model, prompt, opts)
+      : await generateGrokJson(env, ref.model, prompt, opts);
   try {
     return JSON.parse(raw) as T;
   } catch {

@@ -33,15 +33,30 @@ export async function relateImages(
     };
   }
 
+  // Grok does not support multimodal/image context; fall back to Gemini when available.
+  let effectiveLlmRef = llmRef;
+  if (llmRef.provider === 'grok' && env.GEMINI_API_KEY) {
+    effectiveLlmRef = { provider: 'gemini', model: 'gemini-2.0-flash' };
+  }
+
   const prompt = `You are a visual content strategist. Given a LinkedIn post and its pattern, create image search guidance.
 
 POST TEXT (first 400 chars):
 ${primaryVariant.text.slice(0, 400)}
 
 PATTERN: ${pattern.name}
-Pattern mood hint: ${hintMood || 'professional'}
 Topic: ${report.topic}
 Channel: ${report.channel}
+
+IMAGE HINTS:
+${JSON.stringify(
+  {
+    mood: hintMood || 'professional',
+    searchKeywords: hintKeywords,
+  },
+  null,
+  2,
+)}
 
 Return JSON with this exact shape:
 {
@@ -51,7 +66,7 @@ Return JSON with this exact shape:
 }`;
 
   try {
-    const result = await generateLlmParsedJson<LlmImageRelatorResponse>(env, llmRef, prompt, {
+    const result = await generateLlmParsedJson<LlmImageRelatorResponse>(env, effectiveLlmRef, prompt, {
       temperature: 0.5,
       maxOutputTokens: 512,
     });

@@ -64,6 +64,17 @@ RESEARCH MATERIAL:
 ${buildResearchBlock(research)}
 
 ---
+IMAGE GUIDANCE:
+${JSON.stringify(
+  {
+    mood: pattern.imageHints?.mood ?? '',
+    searchKeywords: pattern.imageHints?.searchKeywords ?? [],
+  },
+  null,
+  2,
+)}
+
+---
 ${buildAssetsBlock(assets)}
 
 ---

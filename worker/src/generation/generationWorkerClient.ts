@@ -30,9 +30,18 @@ export interface TextVariant {
 }
 
 export interface ImageCandidate {
-  url: string;
-  alt?: string;
-  source?: string;
+  id: string;
+  url?: string;
+  searchQuery?: string;
+  generationPrompt?: string;
+  visualBrief: string;
+  score: number;
+  variantIndex?: number;
+}
+
+export interface PerVariantImageCandidates {
+  variantIndex: number;
+  candidates: ImageCandidate[];
 }
 
 export interface GenWorkerGenerateResponse {
@@ -41,7 +50,8 @@ export interface GenWorkerGenerateResponse {
   runnerUpPatternId: string;
   patternRationale: string;
   variants: TextVariant[];
-  imageCandidates?: ImageCandidate[];
+  imageCandidates: ImageCandidate[];
+  perVariantImageCandidates: PerVariantImageCandidates[];
   review: { passed: boolean; verdict: string; summary: string };
   trace: Record<string, unknown>;
 }

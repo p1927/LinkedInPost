@@ -41,7 +41,12 @@ export async function listGrokModels(env: WorkerEnvForLlm): Promise<LlmModelOpti
   }
 }
 
-export async function generateGrokJson(env: WorkerEnvForLlm, model: string, prompt: string): Promise<string> {
+export async function generateGrokJson(
+  env: WorkerEnvForLlm,
+  model: string,
+  prompt: string,
+  opts?: { temperature?: number; maxOutputTokens?: number },
+): Promise<string> {
   const key = String(env.XAI_API_KEY || '').trim();
   if (!key) {
     throw new Error('Missing XAI_API_KEY in the Worker environment. Add it to use Grok.');
@@ -56,6 +61,8 @@ export async function generateGrokJson(env: WorkerEnvForLlm, model: string, prom
       model,
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
+      ...(opts?.temperature !== undefined && { temperature: opts.temperature }),
+      ...(opts?.maxOutputTokens !== undefined && { max_tokens: opts.maxOutputTokens }),
     }),
   });
   if (!response.ok) {

@@ -31,3 +31,8 @@ export interface GenerationLlmPayload {
   googleModel?: string;
   llm?: { provider?: string; model?: string };
 }
+
+export interface LlmGenerationOptions {
+  temperature?: number;
+  maxOutputTokens?: number;
+}

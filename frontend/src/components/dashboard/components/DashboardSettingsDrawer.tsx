@@ -21,7 +21,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { type WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeContext';
 import { NewsResearchSettingsSection } from '../../../features/news-research';
 import { ContentReviewSettings } from '../../../features/content-review/ContentReviewSettings';
 import type {
@@ -33,38 +32,15 @@ import type {
 } from '../../../services/configService';
 import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { PostGenerateSettings } from '../../../features/review/components/PostGenerateSettings';
+import {
+  type SettingsSectionId,
+  type DashboardSettingsDrawerHandle,
+  PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID,
+  ALL_SETTINGS_SECTIONS,
+} from './DashboardSettingsDrawer.types';
 
-const ALL_SETTINGS_SECTIONS = [
-  { id: 'settings-workspace-core', label: 'Workspace core' },
-  { id: 'settings-llm', label: 'AI / LLM' },
-  { id: 'settings-generate-posts', label: 'Generate Posts' },
-  { id: 'settings-github-actions', label: 'GitHub Actions' },
-  { id: 'settings-instagram', label: 'Instagram' },
-  { id: 'settings-linkedin', label: 'LinkedIn' },
-  { id: 'settings-telegram', label: 'Telegram' },
-  { id: 'settings-whatsapp', label: 'WhatsApp' },
-  { id: 'settings-gmail', label: 'Gmail' },
-  { id: 'settings-news', label: 'News' },
-  { id: 'settings-content-review', label: 'Content review' },
-] as const;
-
-export type SettingsSectionId = (typeof ALL_SETTINGS_SECTIONS)[number]['id'];
-
-export type DashboardSettingsDrawerHandle = {
-  scrollToSection: (id: SettingsSectionId) => void;
-};
-
-/** Maps Connections card rows to settings section ids (Jump to nav / scroll targets). */
-export const PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID: Record<
-  keyof WorkspacePublishingHealth,
-  SettingsSectionId
-> = {
-  linkedin: 'settings-linkedin',
-  instagram: 'settings-instagram',
-  telegram: 'settings-telegram',
-  whatsapp: 'settings-whatsapp',
-  gmail: 'settings-gmail',
-};
+export type { SettingsSectionId, DashboardSettingsDrawerHandle };
+export { PUBLISHING_CHANNEL_TO_SETTINGS_SECTION_ID };
 
 type DashboardSettingsDrawerProps = {
   session: AppSession;

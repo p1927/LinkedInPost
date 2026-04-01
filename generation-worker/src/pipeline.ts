@@ -7,7 +7,7 @@ import { createVariants } from './players/creator';
 import { reviewContent } from './players/review';
 import { relateImages } from './players/imageRelator';
 import { buildCandidatesFromRelator } from './players/imagePicker';
-import type { Env, GenerateRequest, GenerateResponse, ComposableAssets } from './types';
+import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates } from './types';
 import { resolveGenerationWorkerLlmRef } from './llmFromWorker';
 
 const EMPTY_ASSETS: ComposableAssets = {
@@ -71,11 +71,21 @@ export async function runPipeline(
   const review = reviewContent(variants, report);
   trace.review = review;
 
-  // 6. ImageRelator + ImagePicker
-  const primaryVariant = variants[0];
-  const relator = await relateImages(primaryVariant, pattern, report, env, llmRef);
-  const imageCandidates = buildCandidatesFromRelator(relator);
-  trace.imageRelator = { visualBrief: relator.visualBrief, keywordCount: relator.searchKeywords.length };
+  // 6. ImageRelator + ImagePicker (per-variant, parallel)
+  const relatorResults = await Promise.all(
+    variants.map((v) => relateImages(v, pattern, report, env, llmRef))
+  );
+  const perVariantImageCandidates: PerVariantImageCandidates[] = relatorResults.map((rel, i) => ({
+    variantIndex: i,
+    candidates: buildCandidatesFromRelator(rel, i),
+  }));
+  // Flat list for backward compatibility
+  const imageCandidates = perVariantImageCandidates.flatMap((pv) => pv.candidates);
+  trace.imageRelator = relatorResults.map((rel, i) => ({
+    variantIndex: i,
+    visualBrief: rel.visualBrief,
+    keywordCount: rel.searchKeywords.length,
+  }));
 
   // 7. Persist run to D1
   await db
@@ -111,6 +121,7 @@ export async function runPipeline(
     patternRationale: finder.rationale,
     variants,
     imageCandidates,
+    perVariantImageCandidates,
     review,
     trace,
   };
