@@ -105,6 +105,7 @@ export const GenerateRequestSchema = z.object({
     })
     .optional(),
   skipImages: z.boolean().optional(),
+  personaId: z.string().optional(),
 });
 
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;

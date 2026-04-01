@@ -33,7 +33,7 @@ import type {
   ContentReviewStored,
 } from '../../../services/configService';
 import { LLM_SETTING_KEY_LABELS } from '../../../services/configService';
-import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
+import { FEATURE_CONTENT_REVIEW, FEATURE_ENRICHMENT, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { PostGenerateSettings } from '../../../features/review/components/PostGenerateSettings';
 import {
   type SettingsSectionId,
@@ -162,6 +162,138 @@ const LLM_SETTING_KEYS: LlmSettingKey[] = [
   'content_review_vision',
   'github_automation',
 ];
+
+const ENRICHMENT_SETTING_KEYS: LlmSettingKey[] = [
+  'enrichment_persona',
+  'enrichment_emotion',
+  'enrichment_psychology',
+  'enrichment_persuasion',
+  'enrichment_copywriting',
+  'enrichment_storytelling',
+  'enrichment_image_strategy',
+  'enrichment_vocabulary',
+  'enrichment_trending',
+];
+
+function EnrichmentLlmSettings({
+  session,
+  backendApi,
+  idToken,
+  adminModelCatalog,
+  grokAdminCatalog,
+}: {
+  session: import('../../../services/backendApi').AppSession;
+  backendApi: import('../../../services/backendApi').BackendApi;
+  idToken: string;
+  adminModelCatalog: GoogleModelOption[];
+  grokAdminCatalog: GoogleModelOption[];
+}) {
+  const [drafts, setDrafts] = useState<Record<string, { provider: string; model: string }>>(() => {
+    const base: Record<string, { provider: string; model: string }> = {};
+    for (const key of ENRICHMENT_SETTING_KEYS) {
+      const saved = session.config.llmSettings?.[key];
+      base[key] = saved
+        ? { provider: saved.provider, model: saved.model }
+        : { provider: 'gemini', model: adminModelCatalog[0]?.value ?? '' };
+    }
+    return base;
+  });
+  const [saving, setSaving] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Record<string, string | null>>(() => {
+    const base: Record<string, string | null> = {};
+    for (const key of ENRICHMENT_SETTING_KEYS) base[key] = null;
+    return base;
+  });
+
+  const handleSave = async (key: LlmSettingKey) => {
+    setSaving(key);
+    setFeedback((prev) => ({ ...prev, [key]: null }));
+    try {
+      await backendApi.saveLlmSetting(idToken, key, drafts[key]);
+      setFeedback((prev) => ({ ...prev, [key]: 'Saved.' }));
+    } catch (err) {
+      setFeedback((prev) => ({
+        ...prev,
+        [key]: err instanceof Error ? err.message : 'Failed to save.',
+      }));
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {ENRICHMENT_SETTING_KEYS.map((key) => {
+        const draft = drafts[key];
+        const catalog = draft.provider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+        return (
+          <div key={key} className="rounded-xl border border-border bg-surface px-4 py-3">
+            <p className="mb-2 text-sm font-medium text-ink">{LLM_SETTING_KEY_LABELS[key]}</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Select
+                value={draft.provider}
+                onValueChange={(v) => {
+                  const newProvider = v as string;
+                  const newCatalog = newProvider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [key]: { provider: newProvider, model: newCatalog[0]?.value ?? prev[key].model },
+                  }));
+                }}
+                itemToStringLabel={(v) => getProviderLabel(v as LlmProviderId) || String(v ?? '')}
+              >
+                <SelectTrigger className="h-auto min-h-9 w-full rounded-xl py-2 font-medium sm:max-w-[10rem]">
+                  <SelectValue placeholder="Provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LLM_PROVIDER_IDS.map((p) => (
+                    <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={draft.model}
+                onValueChange={(v) =>
+                  setDrafts((prev) => ({
+                    ...prev,
+                    [key]: { ...prev[key], model: v as string },
+                  }))
+                }
+                itemToStringLabel={(v) => catalog.find((m) => m.value === v)?.label ?? String(v ?? '')}
+              >
+                <SelectTrigger className="h-auto min-h-9 min-w-0 w-full flex-1 rounded-xl py-2 font-medium">
+                  <SelectValue placeholder="Model" />
+                </SelectTrigger>
+                <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
+                  {catalog.map((m) => (
+                    <SelectItem key={m.value} value={m.value} className="items-start py-2">
+                      <span className="whitespace-normal leading-snug">{m.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 rounded-xl"
+                disabled={saving === key}
+                onClick={() => handleSave(key)}
+              >
+                {saving === key ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+            {feedback[key] ? (
+              <p className={cn('mt-1.5 text-xs', feedback[key] === 'Saved.' ? 'text-green-600' : 'text-red-500')}>
+                {feedback[key]}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function LlmPerFeatureSettings({
   session,
@@ -389,6 +521,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       }
       if (!session.isAdmin) {
         s = s.filter((sec) => sec.id !== 'settings-llm');
+      }
+      if (!FEATURE_ENRICHMENT || !session.isAdmin) {
+        s = s.filter((sec) => sec.id !== 'settings-enrichment');
       }
       return s;
     }, [session.isAdmin]);
@@ -728,6 +863,23 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 grokAdminCatalog={grokAdminCatalog!}
               />
             ) : null}
+          </SettingsSectionCard>
+        ) : null}
+
+        {FEATURE_ENRICHMENT && session.isAdmin && multiLlmReady ? (
+          <SettingsSectionCard id="settings-enrichment" title="Enrichment" variant="canvas">
+            <p className="text-xs leading-relaxed text-muted">
+              Override the LLM provider and model for each enrichment module. These modules run during content generation to add emotional, psychological, and persuasion signals to your posts.
+            </p>
+            <div className="mt-4">
+              <EnrichmentLlmSettings
+                session={session}
+                backendApi={backendApi}
+                idToken={idToken}
+                adminModelCatalog={adminModelCatalog}
+                grokAdminCatalog={grokAdminCatalog!}
+              />
+            </div>
           </SettingsSectionCard>
         ) : null}
 

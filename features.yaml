@@ -13,3 +13,5 @@ multiProviderLlm: true
 contentReview: true
 # Content flow: pattern-based template selector in the review workspace.
 contentFlow: true
+# Modular content enrichment layer — emotion, psychology, persuasion, etc.
+enrichment: true

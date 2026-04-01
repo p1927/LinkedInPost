@@ -13,7 +13,16 @@ export type LlmSettingKey =
   | 'generation_worker'
   | 'content_review_text'
   | 'content_review_vision'
-  | 'github_automation';
+  | 'github_automation'
+  | 'enrichment_persona'
+  | 'enrichment_emotion'
+  | 'enrichment_psychology'
+  | 'enrichment_persuasion'
+  | 'enrichment_copywriting'
+  | 'enrichment_storytelling'
+  | 'enrichment_image_strategy'
+  | 'enrichment_vocabulary'
+  | 'enrichment_trending';
 
 export const LLM_SETTING_KEY_LABELS: Record<LlmSettingKey, string> = {
   review_generation: 'Review Generation',
@@ -21,6 +30,15 @@ export const LLM_SETTING_KEY_LABELS: Record<LlmSettingKey, string> = {
   content_review_text: 'Content Review (Text)',
   content_review_vision: 'Content Review (Vision)',
   github_automation: 'GitHub Automation',
+  enrichment_persona: 'Enrichment: Persona',
+  enrichment_emotion: 'Enrichment: Emotion',
+  enrichment_psychology: 'Enrichment: Psychology',
+  enrichment_persuasion: 'Enrichment: Persuasion',
+  enrichment_copywriting: 'Enrichment: Copywriting',
+  enrichment_storytelling: 'Enrichment: Storytelling',
+  enrichment_image_strategy: 'Enrichment: Image Strategy',
+  enrichment_vocabulary: 'Enrichment: Vocabulary',
+  enrichment_trending: 'Enrichment: Trending',
 };
 
 export const AVAILABLE_GOOGLE_MODELS: LlmModelOption[] = STATIC_MODELS_BY_PROVIDER.gemini ?? [];

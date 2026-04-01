@@ -5,7 +5,16 @@ export type LlmSettingKey =
   | 'generation_worker'
   | 'content_review_text'
   | 'content_review_vision'
-  | 'github_automation';
+  | 'github_automation'
+  | 'enrichment_persona'
+  | 'enrichment_emotion'
+  | 'enrichment_psychology'
+  | 'enrichment_persuasion'
+  | 'enrichment_copywriting'
+  | 'enrichment_storytelling'
+  | 'enrichment_image_strategy'
+  | 'enrichment_vocabulary'
+  | 'enrichment_trending';
 
 export const LLM_SETTING_KEYS: readonly LlmSettingKey[] = [
   'review_generation',
@@ -13,6 +22,15 @@ export const LLM_SETTING_KEYS: readonly LlmSettingKey[] = [
   'content_review_text',
   'content_review_vision',
   'github_automation',
+  'enrichment_persona',
+  'enrichment_emotion',
+  'enrichment_psychology',
+  'enrichment_persuasion',
+  'enrichment_copywriting',
+  'enrichment_storytelling',
+  'enrichment_image_strategy',
+  'enrichment_vocabulary',
+  'enrichment_trending',
 ];
 
 export type LlmSettingsMap = Record<LlmSettingKey, LlmRef>;
@@ -105,6 +123,15 @@ export async function seedLlmSettingsIfEmpty(
       provider: 'gemini',
       model: storedConfig.googleModel || defaultModel,
     },
+    enrichment_persona: existing.enrichment_persona ?? primaryRef,
+    enrichment_emotion: existing.enrichment_emotion ?? primaryRef,
+    enrichment_psychology: existing.enrichment_psychology ?? primaryRef,
+    enrichment_persuasion: existing.enrichment_persuasion ?? primaryRef,
+    enrichment_copywriting: existing.enrichment_copywriting ?? primaryRef,
+    enrichment_storytelling: existing.enrichment_storytelling ?? primaryRef,
+    enrichment_image_strategy: existing.enrichment_image_strategy ?? primaryRef,
+    enrichment_vocabulary: existing.enrichment_vocabulary ?? primaryRef,
+    enrichment_trending: existing.enrichment_trending ?? primaryRef,
   };
 
   const writes: Promise<void>[] = [];

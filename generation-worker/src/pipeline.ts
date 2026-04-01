@@ -7,7 +7,12 @@ import { createVariants } from './players/creator';
 import { reviewContent } from './players/review';
 import { relateImages } from './players/imageRelator';
 import { buildCandidatesFromRelator } from './players/imagePicker';
-import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates, ImageCandidate } from './types';
+import { runEnrichment } from './modules/_shared/orchestrator';
+import { createEnrichedVariants } from './modules/_shared/creator';
+import { selectTopVariants } from './modules/_shared/selector';
+import { formatForChannel } from './modules/channel-adapter/index';
+import { FEATURE_ENRICHMENT } from '../../worker/src/generated/features';
+import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates, ImageCandidate, TextVariant } from './types';
 import { resolveGenerationWorkerLlmRef } from './llmFromWorker';
 
 const EMPTY_ASSETS: ComposableAssets = {
@@ -30,7 +35,7 @@ export async function runPipeline(
   const report = buildRequirementReport(req);
   trace.requirementReport = report;
 
-  // 1. LLM ref from shared provider catalog (worker/src/llm)
+  // 1. LLM ref from shared provider catalog
   const llmRef = await resolveGenerationWorkerLlmRef(env, req.llm);
   trace.llmRef = llmRef;
 
@@ -44,28 +49,62 @@ export async function runPipeline(
 
   // 3. Research (optional — only when factual flag set)
   let research: ResearchArticleRef[] = [];
-  if (report.factual && req.newsResearchConfig) {
-    try {
-      const windowStart = req.newsWindowStart ?? new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-      const windowEnd = req.newsWindowEnd ?? new Date().toISOString().slice(0, 10);
-      const result = await runNewsResearch(env, req.newsResearchConfig, {
-        topicId: runId,
-        topic: report.topic,
-        date: windowEnd,
-        windowStart,
-        windowEnd,
-      });
-      research = trimForPrompt(result.articles);
-      trace.research = { articleCount: research.length, warnings: result.warnings };
-    } catch (e) {
-      trace.researchError = String(e);
+  const researchTask = async () => {
+    if (report.factual && req.newsResearchConfig) {
+      try {
+        const windowStart = req.newsWindowStart ?? new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+        const windowEnd = req.newsWindowEnd ?? new Date().toISOString().slice(0, 10);
+        const result = await runNewsResearch(env, req.newsResearchConfig, {
+          topicId: runId,
+          topic: report.topic,
+          date: windowEnd,
+          windowStart,
+          windowEnd,
+        });
+        research = trimForPrompt(result.articles);
+        trace.research = { articleCount: research.length, warnings: result.warnings };
+      } catch (e) {
+        trace.researchError = String(e);
+      }
     }
-  }
+  };
 
-  // 4. Creator
+  let variants: TextVariant[];
   const assets = req.composableAssets ?? EMPTY_ASSETS;
-  const variants = await createVariants(pattern, report, research, assets, env, llmRef);
-  trace.creatorVariantCount = variants.length;
+
+  if (FEATURE_ENRICHMENT) {
+    // --- ENRICHMENT PATH ---
+    // Run research and enrichment in parallel
+    const [, enrichmentBundle] = await Promise.all([
+      researchTask(),
+      runEnrichment(report, pattern, env, llmRef),
+    ]);
+    trace.enrichmentBundle = enrichmentBundle;
+
+    // Enhanced Creator (4 parallel groups -> 8-12 variants)
+    const allVariants = await createEnrichedVariants(
+      pattern, report, research, enrichmentBundle, assets, env, llmRef,
+    );
+    trace.creatorVariantCount = allVariants.length;
+    trace.creatorGroups = [...new Set(allVariants.map((v) => v.emphasisGroup))];
+
+    // Selector (rule filter + LLM judge -> top 4)
+    const scored = await selectTopVariants(allVariants, enrichmentBundle, report, env, llmRef);
+    trace.selectorScores = scored.map((v) => ({ label: v.label, ...v.scores }));
+
+    // Channel adapter
+    const formatted = scored.map((v) => ({
+      ...v,
+      text: formatForChannel(v, enrichmentBundle.typography, report.channel).formattedText,
+    }));
+
+    variants = formatted;
+  } else {
+    // --- LEGACY PATH ---
+    await researchTask();
+    variants = await createVariants(pattern, report, research, assets, env, llmRef);
+    trace.creatorVariantCount = variants.length;
+  }
 
   // 5. Review
   const review = reviewContent(variants, report);
@@ -82,7 +121,6 @@ export async function runPipeline(
       variantIndex: i,
       candidates: buildCandidatesFromRelator(rel, i),
     }));
-    // Flat list for backward compatibility
     imageCandidates = perVariantImageCandidates.flatMap((pv) => pv.candidates);
     trace.imageRelator = relatorResults.map((rel, i) => ({
       variantIndex: i,
