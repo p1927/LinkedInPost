@@ -3,6 +3,9 @@
   "name": "linkedin-bot-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-03-25",
+  "alias": {
+    "zod": "./node_modules/zod"
+  },
   "d1_databases": [
     {
       "binding": "PIPELINE_DB",
