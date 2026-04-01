@@ -32,10 +32,12 @@ import type {
   ContentReviewStored,
 } from '../../../services/configService';
 import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
+import { PostGenerateSettings } from '../../../features/review/components/PostGenerateSettings';
 
 const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
   { id: 'settings-llm', label: 'AI / LLM' },
+  { id: 'settings-generate-posts', label: 'Generate Posts' },
   { id: 'settings-github-actions', label: 'GitHub Actions' },
   { id: 'settings-instagram', label: 'Instagram' },
   { id: 'settings-linkedin', label: 'LinkedIn' },
@@ -144,6 +146,7 @@ type DashboardSettingsDrawerProps = {
   allowedGrokModels?: string[];
   toggleAllowedGrokModel?: (modelId: string, enabled: boolean) => void;
   refreshGrokModels?: () => void;
+  onSaveGenerationLlm?: (llm: LlmRef) => Promise<void>;
 };
 
 function SettingsSectionCard({
@@ -243,6 +246,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       allowedGrokModels,
       toggleAllowedGrokModel,
       refreshGrokModels,
+      onSaveGenerationLlm,
     },
     ref,
   ) {
@@ -599,6 +603,20 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             ) : null}
           </SettingsSectionCard>
         ) : null}
+
+        <SettingsSectionCard id="settings-generate-posts" title="Generate Posts">
+          <p className="text-xs leading-5 text-muted mb-4">
+            Configure the LLM provider and model used for generating post content and variations.
+          </p>
+          <PostGenerateSettings
+            onSettingsChange={(settings) => {
+              void onSaveGenerationLlm?.({
+                provider: settings.provider,
+                model: settings.model,
+              });
+            }}
+          />
+        </SettingsSectionCard>
 
         <SettingsSectionCard id="settings-instagram" title="Instagram Publishing">
           <p className="text-xs leading-5 text-muted">

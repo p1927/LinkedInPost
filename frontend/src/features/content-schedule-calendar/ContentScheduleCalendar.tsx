@@ -197,6 +197,14 @@ export function ContentScheduleCalendar({
     {
       views: [viewWeek, viewMonthGrid, viewDay],
       defaultView: initialView,
+      /**
+       * Schedule-X defaults `isResponsive` to true: on narrow wrappers it calls `setScreenSizeCompatibleView`,
+       * which replaces Month grid (`hasSmallScreenCompat: false`) with the first small-compat view in
+       * `views` — here **Day** — even when `defaultView` is `month-grid`. Topics/Campaign panels are often
+       * under ~700px wide, so users saw Day instead of Month. Disabling responsive auto-switch keeps
+       * `initialView`; users can still pick Week/Day from the header.
+       */
+      isResponsive: false,
       events: mapTopicsToEvents(topics, { fallbackSlotTime, selectedTopicIds }),
       calendars: STATUS_CALENDARS,
       dayBoundaries: { start: '07:00', end: '22:00' },
