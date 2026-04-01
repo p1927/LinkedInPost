@@ -1,36 +1,51 @@
-import type { ImageCandidate } from '../types';
+import type { Env, ImageCandidate } from '../types';
 import type { ImageRelatorOutput } from './imageRelator';
+import type { ImageGenProvider } from '../modules/image-generation/index';
+import { generateImagesForVariant } from '../modules/image-generation/index';
+import { searchImagesForVariant } from '../modules/image-search/index';
 
-/**
- * Given a relator output (keywords + brief), build synthetic image candidates
- * from the search keyword lines. In production the caller would fetch actual
- * image results and pass them here; this function also handles scoring/ranking.
- */
-export function buildCandidatesFromRelator(relator: ImageRelatorOutput, variantIndex?: number): ImageCandidate[] {
-  const candidates: ImageCandidate[] = [];
+export interface ImageGenConfig {
+  provider?: ImageGenProvider;
+  model?: string;
+}
+
+export async function buildCandidatesFromRelator(
+  relator: ImageRelatorOutput,
+  variantIndex: number,
+  env: Env,
+  imageGenConfig?: ImageGenConfig,
+): Promise<ImageCandidate[]> {
   const vIdx = variantIndex ?? 0;
 
-  relator.searchKeywords.forEach((kw, i) => {
-    candidates.push({
-      id: `search-${vIdx}-${i}`,
-      searchQuery: kw,
-      visualBrief: relator.visualBrief,
-      score: 1 - i * 0.05, // slight decay for lower-ranked keywords
-      variantIndex: vIdx,
-    });
-  });
+  const [generated, searched] = await Promise.all([
+    generateImagesForVariant(relator.genPrompts, relator.visualBrief, vIdx, env, imageGenConfig ?? {}),
+    searchImagesForVariant(relator.searchKeywords, relator.visualBrief, vIdx, env),
+  ]);
 
-  relator.genPrompts.forEach((prompt, i) => {
-    candidates.push({
-      id: `gen-${vIdx}-${i}`,
-      generationPrompt: prompt,
-      visualBrief: relator.visualBrief,
-      score: 0.9 - i * 0.05,
-      variantIndex: vIdx,
-    });
-  });
+  const combined = [...generated, ...searched];
 
-  return rankCandidates(candidates);
+  if (combined.length === 0) {
+    relator.searchKeywords.forEach((kw, i) => {
+      combined.push({
+        id: `stub-${vIdx}-${i}`,
+        searchQuery: kw,
+        visualBrief: relator.visualBrief,
+        score: 1 - i * 0.05,
+        variantIndex: vIdx,
+      });
+    });
+    relator.genPrompts.forEach((prompt, i) => {
+      combined.push({
+        id: `gen-stub-${vIdx}-${i}`,
+        generationPrompt: prompt,
+        visualBrief: relator.visualBrief,
+        score: 0.9 - i * 0.05,
+        variantIndex: vIdx,
+      });
+    });
+  }
+
+  return rankCandidates(combined);
 }
 
 export function rankCandidates(candidates: ImageCandidate[]): ImageCandidate[] {

@@ -26,6 +26,7 @@ export interface GenWorkerGenerateRequest {
   llm?: { provider: 'gemini' | 'grok'; model: string };
   newsResearchConfig?: unknown;
   skipImages?: boolean;
+  imageGen?: { provider: string; model?: string };
 }
 
 export interface TextVariant {

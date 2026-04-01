@@ -10,6 +10,8 @@ export interface Env {
   GNEWS_API_KEY?: string;
   NEWSDATA_API_KEY?: string;
   SERPAPI_API_KEY?: string;
+  PIXAZO_API_KEY?: string;
+  SEEDANCE_API_KEY?: string;
   RESEARCHER_RSS_FEEDS?: string;
 }
 
@@ -105,9 +107,16 @@ export const GenerateRequestSchema = z.object({
     })
     .optional(),
   skipImages: z.boolean().optional(),
+  personaId: z.string().optional(),
+  imageGen: z.object({
+    provider: z.enum(['pixazo', 'gemini', 'seedance']).default('pixazo'),
+    model: z.string().optional(),
+  }).optional(),
 });
 
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;
+
+export type ImageGenProvider = 'pixazo' | 'gemini' | 'seedance';
 
 export interface TextVariant {
   index: number;

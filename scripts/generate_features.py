@@ -26,6 +26,7 @@ DEFAULTS: dict[str, bool] = {
     'multiProviderLlm': False,
     'contentReview': False,
     'contentFlow': False,
+    'enrichment': True,
 }
 
 # TypeScript export name per YAML key (extend when adding features)
@@ -35,6 +36,7 @@ TS_CONST_NAMES: dict[str, str] = {
     'multiProviderLlm': 'FEATURE_MULTI_PROVIDER_LLM',
     'contentReview': 'FEATURE_CONTENT_REVIEW',
     'contentFlow': 'FEATURE_CONTENT_FLOW',
+    'enrichment': 'FEATURE_ENRICHMENT',
 }
 
 

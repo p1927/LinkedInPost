@@ -8,12 +8,41 @@ import type { LlmModelOption, LlmRef } from '@repo/llm-core';
 
 export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
 
+export type ImageGenProvider = 'pixazo' | 'gemini' | 'seedance';
+
+export const IMAGE_GEN_PROVIDERS: Array<{ value: ImageGenProvider; label: string }> = [
+  { value: 'pixazo', label: 'Pixazo SDXL' },
+  { value: 'gemini', label: 'Google Gemini' },
+  { value: 'seedance', label: 'Seedance (ByteDance)' },
+];
+
+export const IMAGE_GEN_MODELS: Record<ImageGenProvider, Array<{ value: string; label: string }>> = {
+  pixazo: [],  // Pixazo has no model selection
+  gemini: [
+    { value: 'gemini-2.0-flash-preview-image-generation', label: 'Gemini 2.0 Flash (Image)' },
+    { value: 'imagen-3.0-generate-001', label: 'Imagen 3' },
+  ],
+  seedance: [
+    { value: 'seedance-1-lite', label: 'Seedance 1 Lite' },
+    { value: 'seedance-1', label: 'Seedance 1' },
+  ],
+};
+
 export type LlmSettingKey =
   | 'review_generation'
   | 'generation_worker'
   | 'content_review_text'
   | 'content_review_vision'
-  | 'github_automation';
+  | 'github_automation'
+  | 'enrichment_persona'
+  | 'enrichment_emotion'
+  | 'enrichment_psychology'
+  | 'enrichment_persuasion'
+  | 'enrichment_copywriting'
+  | 'enrichment_storytelling'
+  | 'enrichment_image_strategy'
+  | 'enrichment_vocabulary'
+  | 'enrichment_trending';
 
 export const LLM_SETTING_KEY_LABELS: Record<LlmSettingKey, string> = {
   review_generation: 'Review Generation',
@@ -21,6 +50,15 @@ export const LLM_SETTING_KEY_LABELS: Record<LlmSettingKey, string> = {
   content_review_text: 'Content Review (Text)',
   content_review_vision: 'Content Review (Vision)',
   github_automation: 'GitHub Automation',
+  enrichment_persona: 'Enrichment: Persona',
+  enrichment_emotion: 'Enrichment: Emotion',
+  enrichment_psychology: 'Enrichment: Psychology',
+  enrichment_persuasion: 'Enrichment: Persuasion',
+  enrichment_copywriting: 'Enrichment: Copywriting',
+  enrichment_storytelling: 'Enrichment: Storytelling',
+  enrichment_image_strategy: 'Enrichment: Image Strategy',
+  enrichment_vocabulary: 'Enrichment: Vocabulary',
+  enrichment_trending: 'Enrichment: Trending',
 };
 
 export const AVAILABLE_GOOGLE_MODELS: LlmModelOption[] = STATIC_MODELS_BY_PROVIDER.gemini ?? [];
@@ -227,6 +265,10 @@ export interface BotConfig {
   llmSettings?: Record<LlmSettingKey, LlmRef>;
   /** Omitted when content review is disabled in features.yaml. */
   contentReview?: ContentReviewStored;
+  imageGen?: {
+    provider: ImageGenProvider;
+    model?: string;
+  };
 }
 
 function normalizeNewsResearchConfig(raw: unknown): NewsResearchStored {
@@ -348,11 +390,12 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     };
   }
   const withLlmSettings = config?.llmSettings ? { ...withLlm, llmSettings: config.llmSettings } : withLlm;
+  const withImageGen = config?.imageGen ? { ...withLlmSettings, imageGen: { provider: (config.imageGen.provider ?? 'pixazo') as ImageGenProvider, model: config.imageGen.model } } : withLlmSettings;
   if (!FEATURE_CONTENT_REVIEW) {
-    return withLlmSettings;
+    return withImageGen;
   }
   return {
-    ...withLlmSettings,
+    ...withImageGen,
     contentReview: normalizeContentReviewStored(config?.contentReview),
   };
 }
@@ -391,4 +434,8 @@ export interface BotConfigUpdate {
     allowedGrokModels?: string[];
   };
   contentReview?: ContentReviewStored;
+  imageGen?: {
+    provider?: ImageGenProvider;
+    model?: string;
+  };
 }

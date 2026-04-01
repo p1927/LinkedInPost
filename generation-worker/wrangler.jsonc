@@ -19,5 +19,12 @@
       "invocation_logs": true
     }
   },
-  "vars": {}
+  "vars": {},
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.md"],
+      "fallthrough": false
+    }
+  ]
 }

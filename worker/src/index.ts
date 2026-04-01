@@ -183,6 +183,10 @@ interface BotConfig {
   };
   /** Per-feature chosen LlmRef, loaded from D1, seeded from KV on first bootstrap. */
   llmSettings?: LlmSettingsMap;
+  imageGen?: {
+    provider: string;
+    model?: string;
+  };
 }
 
 interface GenerationRulesVersion {
@@ -239,6 +243,10 @@ export interface StoredConfig {
     visionRef?: LlmRef;
     newsMode?: 'existing' | 'fresh';
   };
+  imageGen?: {
+    provider?: string;
+    model?: string;
+  };
 }
 
 interface BotConfigUpdate {
@@ -277,6 +285,10 @@ interface BotConfigUpdate {
     textRef?: LlmRef;
     visionRef?: LlmRef;
     newsMode?: 'existing' | 'fresh';
+  };
+  imageGen?: {
+    provider?: string;
+    model?: string;
   };
 }
 
@@ -1184,6 +1196,7 @@ async function dispatchAction(
       const genResult = await callGenerationWorker(env, {
         spreadsheetId: storedConfig.spreadsheetId,
         ...(payload as Record<string, unknown>),
+        ...(storedConfig.imageGen ? { imageGen: storedConfig.imageGen } : {}),
       } as Parameters<typeof callGenerationWorker>[1]);
 
       // C4: Auto-save generation results to D1
@@ -1483,6 +1496,9 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
       ...out,
       contentReview: normalizeContentReviewStored(config.contentReview),
     };
+  }
+  if (config.imageGen) {
+    out = { ...out, imageGen: config.imageGen };
   }
   return out;
 }
@@ -2626,6 +2642,9 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
           ? normalizeContentReviewStored({ ...(current.contentReview || {}), ...update.contentReview })
           : normalizeContentReviewStored(current.contentReview))
       : current.contentReview,
+    imageGen: update.imageGen !== undefined
+      ? { provider: update.imageGen.provider || current.imageGen?.provider, model: update.imageGen.model }
+      : current.imageGen,
   };
 
   if (update.githubToken) {

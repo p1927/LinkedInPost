@@ -6,6 +6,7 @@ import {
   type GoogleModelOption,
   type LlmProviderId,
   type LlmRef,
+  type ImageGenProvider,
   AVAILABLE_GOOGLE_MODELS,
   DEFAULT_GOOGLE_MODEL,
   DEFAULT_NEWS_RESEARCH_CONFIG,
@@ -105,6 +106,12 @@ export function useDashboardSettings({
       ? normalizeContentReviewStored(session.config.contentReview)
       : DEFAULT_CONTENT_REVIEW_STORED,
   );
+  const [imageGenProvider, setImageGenProvider] = useState<ImageGenProvider>(
+    () => (session.config.imageGen?.provider as ImageGenProvider) ?? 'pixazo',
+  );
+  const [imageGenModel, setImageGenModel] = useState<string>(
+    () => session.config.imageGen?.model ?? '',
+  );
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -156,6 +163,11 @@ export function useDashboardSettings({
     if (!FEATURE_CONTENT_REVIEW) return;
     setContentReview(normalizeContentReviewStored(session.config.contentReview));
   }, [session.config.contentReview]);
+
+  useEffect(() => {
+    setImageGenProvider((session.config.imageGen?.provider as ImageGenProvider) ?? 'pixazo');
+    setImageGenModel(session.config.imageGen?.model ?? '');
+  }, [session.config.imageGen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -316,6 +328,8 @@ export function useDashboardSettings({
     ) {
       return true;
     }
+    if (imageGenProvider !== (c.imageGen?.provider ?? 'pixazo')) return true;
+    if (imageGenModel !== (c.imageGen?.model ?? '')) return true;
     return false;
   }, [
     session.config,
@@ -341,6 +355,8 @@ export function useDashboardSettings({
     newsResearch,
     contentReview,
     llmFallback,
+    imageGenProvider,
+    imageGenModel,
   ]);
 
   const saveSettings = async () => {
@@ -374,6 +390,7 @@ export function useDashboardSettings({
               },
             }
           : {}),
+        imageGen: { provider: imageGenProvider, model: imageGenModel || undefined },
       });
       setGithubTokenInput('');
       setTelegramBotTokenInput('');
@@ -432,6 +449,10 @@ export function useDashboardSettings({
     setNewsResearch,
     contentReview,
     setContentReview,
+    imageGenProvider,
+    setImageGenProvider,
+    imageGenModel,
+    setImageGenModel,
     saveSettings,
     hasUnsavedSettingsChanges,
     reviewGenerationLlm,

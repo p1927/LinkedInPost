@@ -3,6 +3,8 @@ import type { WorkspacePublishingHealth } from '../../workspace/WorkspaceChromeC
 const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-workspace-core', label: 'Workspace core' },
   { id: 'settings-llm', label: 'AI / LLM' },
+  { id: 'settings-enrichment', label: 'Enrichment' },
+  { id: 'settings-image-generation', label: 'Image Generation' },
   { id: 'settings-generate-posts', label: 'Generate Posts' },
   { id: 'settings-github-actions', label: 'GitHub Actions' },
   { id: 'settings-instagram', label: 'Instagram' },

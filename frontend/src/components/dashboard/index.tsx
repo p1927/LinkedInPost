@@ -670,6 +670,10 @@ export function Dashboard({
       newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
       contentReview={FEATURE_CONTENT_REVIEW ? settingsHook.contentReview : undefined}
       setContentReview={FEATURE_CONTENT_REVIEW ? settingsHook.setContentReview : undefined}
+      imageGenProvider={settingsHook.imageGenProvider}
+      setImageGenProvider={settingsHook.setImageGenProvider}
+      imageGenModel={settingsHook.imageGenModel}
+      setImageGenModel={settingsHook.setImageGenModel}
       newsResearchEnabledForContentReview={
         FEATURE_NEWS_RESEARCH && FEATURE_CONTENT_REVIEW && settingsHook.newsResearch.enabled
       }
