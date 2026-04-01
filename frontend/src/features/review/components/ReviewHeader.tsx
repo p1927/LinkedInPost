@@ -31,6 +31,7 @@ export function ReviewHeader() {
     postTemplates,
     sheetRow: { generationTemplateId },
     handleSaveGenerationTemplateId,
+    handleSaveGenerationLlm,
     deliveryChannel,
   } = useReviewFlow();
 
@@ -163,8 +164,10 @@ export function ReviewHeader() {
                     <div className="absolute right-0 top-full z-50 mt-1 w-96">
                       <PostGenerateSettings
                         onSettingsChange={(settings) => {
-                          console.log('Generation settings changed:', settings);
-                          // Settings can be used when making generation requests
+                          void handleSaveGenerationLlm({
+                            provider: settings.provider,
+                            model: settings.model,
+                          });
                         }}
                         className="shadow-lg"
                       />

@@ -195,6 +195,7 @@ export function DashboardQueue({
     setGenWorkerBusy(true);
     try {
       await onGenerationWorkerDraft(genWorkerDialogRow, {
+        topicId: genWorkerDialogRow.topicId,
         topic: genWorkerDialogRow.topic,
         channel: effectiveChannel(genWorkerDialogRow, selectedChannel),
         ...(audienceMerged ? { audience: audienceMerged } : {}),

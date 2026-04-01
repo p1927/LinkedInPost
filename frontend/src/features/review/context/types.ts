@@ -178,6 +178,8 @@ export interface ReviewFlowContextValue {
   postTemplates: PostTemplate[];
   handleSaveGenerationTemplateId: (templateId: string) => Promise<void>;
   savingGenerationTemplateId: boolean;
+  handleSaveGenerationLlm: (llm: LlmRef) => Promise<void>;
+  savingGenerationLlm: boolean;
   handleSaveEmailFields: () => Promise<void>;
   onCancel: () => void;
   researchContextArticles: ResearchArticleRef[];
@@ -215,6 +217,7 @@ export interface ReviewFlowProviderProps {
   onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;
   loadPostTemplates: () => Promise<PostTemplate[]>;
   onSaveGenerationTemplateId: (row: SheetRow, generationTemplateId: string) => Promise<SheetRow>;
+  onSaveGenerationLlm?: (llm: LlmRef) => Promise<void>;
   routed?: ReviewRoutedNavigation;
   editorStartMediaPanel?: boolean;
   pendingScheduledPublish?: PendingScheduledPublish | null;

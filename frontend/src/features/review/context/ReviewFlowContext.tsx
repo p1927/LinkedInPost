@@ -164,6 +164,8 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     postTemplates: restState.postTemplates,
     handleSaveGenerationTemplateId: actions.handleSaveGenerationTemplateId,
     savingGenerationTemplateId: actions.savingGenerationTemplateId,
+    handleSaveGenerationLlm: actions.handleSaveGenerationLlm,
+    savingGenerationLlm: actions.savingGenerationLlm,
     handleSaveEmailFields: actions.handleSaveEmailFields,
     researchContextArticles: restState.researchContextArticles,
     setResearchContextArticles: restState.setResearchContextArticles,

@@ -776,6 +776,30 @@ export function useReviewFlowActions(
     [onSaveGenerationTemplateId, sheetRow, setSheetRow, showAlert],
   );
 
+  const [savingGenerationLlm, setSavingGenerationLlm] = useState(false);
+  const saveGenerationLlmInFlight = useRef(false);
+
+  const handleSaveGenerationLlm = useCallback(
+    async (llm: any) => {
+      if (saveGenerationLlmInFlight.current) return;
+      if (!props.onSaveGenerationLlm) return;
+      saveGenerationLlmInFlight.current = true;
+      setSavingGenerationLlm(true);
+      try {
+        await props.onSaveGenerationLlm(llm);
+        void showAlert({ title: 'Saved', description: 'LLM provider and model selection saved.' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to save LLM selection.';
+        console.error(error);
+        void showAlert({ title: 'Could not save', description: message });
+      } finally {
+        saveGenerationLlmInFlight.current = false;
+        setSavingGenerationLlm(false);
+      }
+    },
+    [props, showAlert],
+  );
+
   return {
     leaveToTopics,
     requestNavigateToVariants,
@@ -804,6 +828,8 @@ export function useReviewFlowActions(
     savingTopicRules,
     handleSaveGenerationTemplateId,
     savingGenerationTemplateId,
+    handleSaveGenerationLlm,
+    savingGenerationLlm,
     handleSaveEmailFields,
     savingEmailFields,
   };

@@ -190,6 +190,7 @@ export interface RunContentReviewRequest {
 export type { ContentReviewReport };
 
 export interface GenWorkerGenerateRequest {
+  topicId: string;
   topic: string;
   channel?: string;
   audience?: string;
