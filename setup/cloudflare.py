@@ -359,6 +359,8 @@ def deploy_generation_worker(worker_bootstrap: WorkerBootstrap) -> str:
         'NEWSDATA_API_KEY',
         'SERPAPI_API_KEY',
         'RESEARCHER_RSS_FEEDS',
+        'PIXAZO_API_KEY',
+        'SEEDANCE_API_KEY',
     ):
         val = os.environ.get(key, '').strip()
         if val:
@@ -408,6 +410,12 @@ def write_generation_worker_dev_vars(worker_bootstrap: WorkerBootstrap) -> None:
 
     # LLM API keys — required for generation
     for key in ('GEMINI_API_KEY', 'XAI_API_KEY'):
+        val = os.environ.get(key, '').strip()
+        if val:
+            values[key] = val
+
+    # Image generation provider keys (optional — at least one provider required for images)
+    for key in ('PIXAZO_API_KEY', 'SEEDANCE_API_KEY'):
         val = os.environ.get(key, '').strip()
         if val:
             values[key] = val
