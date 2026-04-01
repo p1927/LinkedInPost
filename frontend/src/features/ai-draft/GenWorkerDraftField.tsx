@@ -35,10 +35,15 @@ export function GenWorkerDraftField({
 
   const fieldId = `field-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
 
+  /* Override global Input/Textarea focus (ring-3 + border-ring) so all fields match focused vs idle. */
   const inputSurface = cn(
-    'border-border/70 bg-white/90 shadow-sm',
-    'placeholder:text-muted-foreground/80',
-    'focus-visible:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:bg-white',
+    'border border-border/80 bg-white shadow-sm',
+    'placeholder:text-muted-foreground/75',
+    'transition-[border-color,box-shadow,background-color] duration-150',
+    'hover:border-border hover:bg-white',
+    'focus-visible:border-primary/45 focus-visible:bg-white',
+    'focus-visible:ring-0 focus-visible:outline-none',
+    'focus-visible:shadow-[0_0_0_3px_oklch(0.55_0.18_290_/_0.14)]',
   );
 
   return (
@@ -117,16 +122,16 @@ export function GenWorkerDraftField({
               onClick={() => onAddChip(s)}
               title={s}
               className={cn(
-                'inline-flex max-w-[min(100%,200px)] items-center truncate rounded-md border border-dashed px-1.5 py-0.5',
-                'min-h-7 text-[11px] font-medium text-muted-foreground',
-                'border-border/90 bg-white/50 transition-colors duration-150',
-                'hover:border-primary/40 hover:bg-primary/8 hover:text-ink',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
-                'active:bg-primary/12',
+                'inline-flex max-w-full items-baseline rounded-md border border-dashed border-border/70',
+                'bg-muted/20 px-2 py-1 text-left text-[11px] font-medium leading-snug text-muted-foreground',
+                'transition-colors duration-150',
+                'hover:border-primary/35 hover:bg-primary/6 hover:text-ink',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0',
+                'active:bg-primary/10',
                 disabled && 'pointer-events-none cursor-not-allowed opacity-40',
               )}
             >
-              <span className="truncate">+ {s}</span>
+              <span className="break-words [overflow-wrap:anywhere]">+ {s}</span>
             </button>
           ))}
         </div>

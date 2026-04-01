@@ -261,6 +261,7 @@ export class PipelineStore {
   ): Promise<SheetRow> {
     const next: SheetRow = {
       ...row,
+      status: 'Drafted',
       variant1: variants[0] ?? '',
       variant2: variants[1] ?? '',
       variant3: variants[2] ?? '',

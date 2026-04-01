@@ -925,7 +925,10 @@ export function DashboardQueue({
           }
         }}
       >
-        <DialogContent aria-describedby="gen-worker-dialog-desc" className="flex max-h-[min(90vh,720px)] w-full max-w-lg flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl">
+        <DialogContent
+          aria-describedby="gen-worker-dialog-desc"
+          className="flex max-h-[min(92vh,680px)] w-full max-w-lg flex-col gap-0 overflow-hidden p-0 shadow-xl ring-1 ring-black/[0.06] sm:rounded-2xl"
+        >
           {/* Header */}
           <DialogHeader className="shrink-0 border-b border-border/60 px-5 py-4">
             <div className="flex items-center gap-2.5">
@@ -1023,7 +1026,7 @@ export function DashboardQueue({
           </div>
 
           {/* Footer: reset DialogFooter negative margins when content uses p-0 */}
-          <DialogFooter className="mx-0 mb-0 mt-0 shrink-0 flex-row items-center justify-end gap-2 border-t border-border/60 bg-muted/20 px-5 py-3.5 sm:flex-row">
+          <DialogFooter className="mx-0 mb-0 mt-0 shrink-0 flex flex-row flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-muted/25 px-5 py-3.5 sm:flex-nowrap">
             <Button
               variant="outline"
               size="sm"
@@ -1032,7 +1035,7 @@ export function DashboardQueue({
                 setGenWorkerDialogRow(null);
               }}
               disabled={genWorkerBusy}
-              className="h-9 min-w-[5.5rem] px-4"
+              className="h-9 min-h-9 w-full min-w-0 border border-primary/35 sm:w-auto sm:min-w-[9.5rem]"
             >
               Cancel
             </Button>
@@ -1041,7 +1044,7 @@ export function DashboardQueue({
               size="sm"
               disabled={genWorkerBusy}
               onClick={() => void handleGenWorkerSubmit()}
-              className="h-9 min-w-[10.5rem] gap-1.5 px-4"
+              className="h-9 min-h-9 w-full min-w-0 gap-1.5 sm:w-auto sm:min-w-[9.5rem]"
             >
               {genWorkerBusy ? (
                 <>
