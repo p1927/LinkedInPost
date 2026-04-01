@@ -927,7 +927,7 @@ export function DashboardQueue({
       >
         <DialogContent aria-describedby="gen-worker-dialog-desc" className="flex max-h-[min(90vh,720px)] w-full max-w-lg flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl">
           {/* Header */}
-          <DialogHeader className="shrink-0 border-b border-border/60 px-6 py-5">
+          <DialogHeader className="shrink-0 border-b border-border/60 px-5 py-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <Bot className="h-4 w-4 text-primary" aria-hidden />
@@ -946,12 +946,12 @@ export function DashboardQueue({
           </DialogHeader>
 
           {/* Scrollable body */}
-          <div className="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
-            <p id="gen-worker-dialog-desc" className="mb-5 text-sm leading-relaxed text-muted-foreground">
-              All fields are optional. Use quick-add chips tailored to this topic’s channel and content
-              pattern, or type your own. Leave everything blank to use workspace defaults.
+          <div className="custom-scrollbar flex-1 overflow-y-auto px-5 py-4">
+            <p id="gen-worker-dialog-desc" className="mb-4 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+              All fields are optional. Use the tags under each field or type your own. Leave everything blank
+              for workspace defaults.
             </p>
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
               <GenWorkerDraftField
                 label="Audience"
                 placeholder="e.g. senior engineers, startup founders"
@@ -1001,9 +1001,9 @@ export function DashboardQueue({
             </div>
 
             {/* Factual checkbox */}
-            <div className="mt-5 rounded-xl border border-border/70 bg-slate-50/60 px-4 py-3">
+            <div className="mt-4 rounded-lg border border-border/70 bg-muted/30 px-3 py-2.5">
               <label
-                className="flex cursor-pointer select-none items-center gap-3 text-sm font-medium text-ink transition-colors hover:text-ink/80"
+                className="flex cursor-pointer select-none items-center gap-2.5 text-sm font-medium text-ink transition-colors hover:text-ink/80"
                 htmlFor="factual-checkbox"
               >
                 <input
@@ -1012,34 +1012,36 @@ export function DashboardQueue({
                   checked={gwFactual}
                   onChange={(e) => setGwFactual(e.target.checked)}
                   disabled={genWorkerBusy}
-                  className="h-4 w-4 cursor-pointer rounded border border-input bg-background accent-primary transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-4 w-4 shrink-0 cursor-pointer rounded border border-input bg-background accent-primary transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <span>Factual / data-driven post</span>
               </label>
-              <p className="ml-7 mt-1 text-xs leading-relaxed text-muted">
+              <p className="mt-1.5 pl-[1.375rem] text-[11px] leading-relaxed text-muted sm:text-xs">
                 Instructs the AI to prioritise accuracy and cite sources or data points where relevant.
               </p>
             </div>
           </div>
 
-          {/* Footer */}
-          <DialogFooter className="shrink-0 flex-row items-center gap-2 border-t border-border/60 px-6 py-4">
+          {/* Footer: reset DialogFooter negative margins when content uses p-0 */}
+          <DialogFooter className="mx-0 mb-0 mt-0 shrink-0 flex-row items-center justify-end gap-2 border-t border-border/60 bg-muted/20 px-5 py-3.5 sm:flex-row">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => {
                 resetGenWorkerForm();
                 setGenWorkerDialogRow(null);
               }}
               disabled={genWorkerBusy}
-              className="min-w-[80px] transition-colors duration-150 hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="h-9 min-w-[5.5rem] px-4"
             >
               Cancel
             </Button>
             <Button
               variant="primary"
+              size="sm"
               disabled={genWorkerBusy}
               onClick={() => void handleGenWorkerSubmit()}
-              className="flex flex-1 items-center justify-center gap-1.5 transition-all duration-150 active:scale-[0.98] disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="h-9 min-w-[10.5rem] gap-1.5 px-4"
             >
               {genWorkerBusy ? (
                 <>

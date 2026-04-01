@@ -1,4 +1,4 @@
-import { X, Plus } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,38 +33,63 @@ export function GenWorkerDraftField({
   const picked = new Set(chips);
   const available = suggestions.filter((s) => !picked.has(s));
 
+  const fieldId = `field-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+
+  const inputSurface = cn(
+    'border-border/70 bg-white/90 shadow-sm',
+    'placeholder:text-muted-foreground/80',
+    'focus-visible:border-primary/35 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:bg-white',
+  );
+
   return (
-    <div className="flex flex-col gap-3">
-      {/* Field label */}
+    <div className="flex flex-col gap-2">
       <label
-        className="block text-[11px] font-semibold uppercase tracking-widest text-primary/80 select-none"
-        htmlFor={`field-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+        className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground select-none"
+        htmlFor={fieldId}
       >
         {label}
       </label>
 
-      {/* Selected chips */}
-      {chips.length > 0 && (
+      {/* Free-text first so typing is primary; chips stay compact below */}
+      {multiline ? (
+        <Textarea
+          id={fieldId}
+          placeholder={placeholder}
+          value={freeValue}
+          onChange={(e) => onFreeChange(e.target.value)}
+          disabled={disabled}
+          rows={freeRows}
+          className={cn('resize-none text-sm leading-snug', inputSurface)}
+        />
+      ) : (
+        <Input
+          id={fieldId}
+          placeholder={placeholder}
+          value={freeValue}
+          onChange={(e) => onFreeChange(e.target.value)}
+          disabled={disabled}
+          className={cn('h-9 text-sm', inputSurface)}
+        />
+      )}
+
+      {/* Selected + suggestion chips in one tight wrap row */}
+      {(chips.length > 0 || available.length > 0) && (
         <div
-          className="flex flex-wrap gap-1.5"
-          role="list"
-          aria-label={`Selected ${label}`}
+          className="flex flex-wrap gap-1"
+          role="group"
+          aria-label={`${label} tags`}
         >
           {chips.map((c) => (
             <span
               key={c}
-              role="listitem"
               className={cn(
-                'inline-flex max-w-[240px] items-center gap-1 rounded-full border px-3 py-1',
-                'border-primary/25 bg-primary/8 text-xs font-medium text-ink',
-                'shadow-[0_1px_3px_rgba(124,58,237,0.08)]',
-                'transition-all duration-150',
-                disabled
-                  ? 'opacity-50'
-                  : 'hover:border-primary/45 hover:bg-primary/12 hover:shadow-[0_2px_6px_rgba(124,58,237,0.14)]',
+                'inline-flex max-w-[min(100%,220px)] items-center gap-0.5 rounded-md border px-1.5 py-0.5',
+                'border-primary/30 bg-primary/10 text-[11px] font-medium text-ink',
+                'transition-colors duration-150',
+                disabled ? 'opacity-50' : 'hover:border-primary/45 hover:bg-primary/[0.14]',
               )}
             >
-              <span className="min-w-0 truncate leading-none" title={c}>
+              <span className="min-w-0 truncate leading-tight" title={c}>
                 {c}
               </span>
               <button
@@ -72,79 +97,38 @@ export function GenWorkerDraftField({
                 disabled={disabled}
                 onClick={() => onRemoveChip(c)}
                 className={cn(
-                  'shrink-0 rounded-full',
-                  /* Expand hit area to 44×44px via padding while keeping visual size small */
-                  'p-[10px] -m-[10px]',
-                  'text-ink/40 transition-colors duration-150',
-                  'hover:bg-red-100 hover:text-red-600',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1',
-                  'active:bg-red-200 active:text-red-700',
+                  'inline-flex size-5 shrink-0 items-center justify-center rounded text-ink/45',
+                  'transition-colors duration-150',
+                  'hover:bg-red-500/15 hover:text-red-600',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35',
                   disabled && 'pointer-events-none opacity-40',
                 )}
                 aria-label={`Remove ${c}`}
               >
-                <X className="h-3 w-3" strokeWidth={2.5} />
+                <X className="h-3 w-3" strokeWidth={2.25} />
               </button>
             </span>
           ))}
-        </div>
-      )}
-
-      {/* Free-text input / textarea */}
-      {multiline ? (
-        <Textarea
-          id={`field-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
-          placeholder={placeholder}
-          value={freeValue}
-          onChange={(e) => onFreeChange(e.target.value)}
-          disabled={disabled}
-          rows={freeRows}
-          className={cn(
-            'resize-none text-sm leading-relaxed',
-            'placeholder:text-muted/70',
-          )}
-        />
-      ) : (
-        <Input
-          id={`field-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
-          placeholder={placeholder}
-          value={freeValue}
-          onChange={(e) => onFreeChange(e.target.value)}
-          disabled={disabled}
-          className="text-sm"
-        />
-      )}
-
-      {/* Quick-add suggestions */}
-      {available.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted/70 select-none">
-            Quick add
-          </span>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Quick add ${label}`}>
-            {available.map((s) => (
-              <button
-                key={s}
-                type="button"
-                disabled={disabled}
-                onClick={() => onAddChip(s)}
-                title={s}
-                className={cn(
-                  'inline-flex max-w-[200px] items-center gap-1 truncate rounded-full border border-dashed px-2.5',
-                  'min-h-[44px] py-1',
-                  'border-border-strong/80 bg-white/60 text-xs font-medium text-ink/70',
-                  'transition-all duration-150',
-                  'hover:border-primary/50 hover:bg-primary/8 hover:text-ink hover:shadow-[0_1px_4px_rgba(124,58,237,0.12)]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1',
-                  'active:bg-primary/12 active:scale-[0.97]',
-                  disabled && 'pointer-events-none opacity-40 cursor-not-allowed',
-                )}
-              >
-                <Plus className="h-3 w-3 shrink-0 opacity-60" strokeWidth={2.5} />
-                <span className="truncate">{s}</span>
-              </button>
-            ))}
-          </div>
+          {available.map((s) => (
+            <button
+              key={s}
+              type="button"
+              disabled={disabled}
+              onClick={() => onAddChip(s)}
+              title={s}
+              className={cn(
+                'inline-flex max-w-[min(100%,200px)] items-center truncate rounded-md border border-dashed px-1.5 py-0.5',
+                'min-h-7 text-[11px] font-medium text-muted-foreground',
+                'border-border/90 bg-white/50 transition-colors duration-150',
+                'hover:border-primary/40 hover:bg-primary/8 hover:text-ink',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
+                'active:bg-primary/12',
+                disabled && 'pointer-events-none cursor-not-allowed opacity-40',
+              )}
+            >
+              <span className="truncate">+ {s}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>
