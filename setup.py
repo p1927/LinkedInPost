@@ -53,6 +53,7 @@ from setup.cloudflare import (
     install_worker_dependencies,
     provision_d1_database,
     provision_generation_worker_d1,
+    set_worker_secrets,
     update_worker_wrangler_config,
     write_generation_worker_dev_vars,
     write_worker_dev_vars,

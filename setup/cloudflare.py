@@ -39,6 +39,56 @@ def ensure_cloudflare_auth() -> None:
     )
 
 
+def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
+    """Set generation worker auth secrets in Cloudflare for both workers.
+
+    This ensures the main worker can authenticate with the generation worker.
+    Requires CLOUDFLARE_API_TOKEN to be set in environment.
+    """
+    api_token = os.environ.get('CLOUDFLARE_API_TOKEN', '').strip()
+    if not api_token:
+        warn('Worker secrets', 'CLOUDFLARE_API_TOKEN not set — skipping secret configuration. Set manually via Cloudflare Dashboard if needed.')
+        return
+
+    secret_value = worker_bootstrap.generation_worker_secret
+    if not secret_value or not secret_value.strip():
+        warn('Worker secrets', 'generation_worker_secret is empty — cannot set secrets')
+        return
+
+    # Set GENERATION_WORKER_SECRET on main worker
+    try:
+        result = run_command(
+            ['npx', 'wrangler', 'secret', 'put', 'GENERATION_WORKER_SECRET', '--env', ''],
+            cwd=WORKER_DIR,
+            input=secret_value,
+            capture_output=True,
+        )
+        if 'Success' in result.stdout or 'Uploaded' in result.stdout:
+            ok('Main Worker secret', 'GENERATION_WORKER_SECRET set')
+        else:
+            warn('Main Worker secret', f'Set command output: {result.stdout[:200]}')
+    except RuntimeError as e:
+        warn('Main Worker secret', f'Failed to set: {str(e)[:200]}')
+
+    # Set WORKER_SHARED_SECRET on generation worker
+    if not GEN_WORKER_DIR.is_dir():
+        return
+
+    try:
+        result = run_command(
+            ['npx', 'wrangler', 'secret', 'put', 'WORKER_SHARED_SECRET'],
+            cwd=GEN_WORKER_DIR,
+            input=secret_value,
+            capture_output=True,
+        )
+        if 'Success' in result.stdout or 'Uploaded' in result.stdout:
+            ok('Generation Worker secret', 'WORKER_SHARED_SECRET set')
+        else:
+            warn('Generation Worker secret', f'Set command output: {result.stdout[:200]}')
+    except RuntimeError as e:
+        warn('Generation Worker secret', f'Failed to set: {str(e)[:200]}')
+
+
 def install_worker_dependencies() -> None:
     ensure_command('npm', 'Install Node.js and npm so setup.py can install Worker dependencies.')
     package_lock = WORKER_DIR / 'package-lock.json'
@@ -415,6 +465,7 @@ def ensure_worker_deploy(worker_bootstrap: WorkerBootstrap, google_resources: ob
         worker_bootstrap.generation_worker_url = gen_url
         update_worker_wrangler_config(worker_bootstrap)
         ok('Main Worker wrangler.jsonc', 'GENERATION_WORKER_URL set to deployed generation worker')
+        set_worker_secrets(worker_bootstrap)
 
     secret_values = build_worker_secret_values(worker_bootstrap, credentials_json)
 

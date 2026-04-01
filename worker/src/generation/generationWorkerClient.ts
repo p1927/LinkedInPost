@@ -58,19 +58,33 @@ export async function callGenerationWorker(
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (secret) headers['Authorization'] = `Bearer ${secret}`;
 
-  const response = await fetch(`${baseUrl}/v1/generate`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(req),
-    signal: AbortSignal.timeout(60_000),
-  });
+  const endpoint = `${baseUrl}/v1/generate`;
+  console.log(`[callGenerationWorker] Calling ${endpoint} with topic="${req.topic}" channel="${req.channel}"`);
+  console.log(`[callGenerationWorker] Auth header set: ${headers['Authorization'] ? 'YES' : 'NO'}`);
+
+  let response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(req),
+      signal: AbortSignal.timeout(60_000),
+    });
+    console.log(`[callGenerationWorker] Response status: ${response.status}`);
+  } catch (e) {
+    console.log(`[callGenerationWorker] Fetch error: ${String(e)}`);
+    throw e;
+  }
 
   if (!response.ok) {
     const text = await response.text();
+    console.log(`[callGenerationWorker] Error response: ${text.slice(0, 300)}`);
     throw new Error(`Generation worker error ${response.status}: ${text.slice(0, 200)}`);
   }
 
-  return response.json() as Promise<GenWorkerGenerateResponse>;
+  const result = await response.json() as GenWorkerGenerateResponse;
+  console.log(`[callGenerationWorker] Success - got variants count: ${result.variants?.length || 0}`);
+  return result;
 }
 
 export function isGenerationWorkerConfigured(env: Env): boolean {

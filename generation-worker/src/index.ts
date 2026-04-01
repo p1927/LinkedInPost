@@ -58,24 +58,33 @@ async function parseBody<T>(
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const startTime = Date.now();
     const { method, url } = request;
     const { pathname } = new URL(url);
+
+    console.log(`[${new Date().toISOString()}] REQUEST: ${method} ${pathname}`);
 
     if (method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
 
-    if (!checkAuth(request, env)) return unauthorized();
+    if (!checkAuth(request, env)) {
+      console.log(`[${new Date().toISOString()}] AUTH FAILED after ${Date.now() - startTime}ms`);
+      return unauthorized();
+    }
+    console.log(`[${new Date().toISOString()}] AUTH OK after ${Date.now() - startTime}ms`);
 
     // GET /v1/patterns — list available patterns
     if (pathname === '/v1/patterns' && method === 'GET') {
       const repo = loadBundledRepository();
+      console.log(`[${new Date().toISOString()}] PATTERNS endpoint responded in ${Date.now() - startTime}ms`);
       return json({ patterns: repo.compactSummaries() });
     }
 
     // GET /v1/patterns/full — return full pattern objects including outline, fewShotLines, imageHints
     if (pathname === '/v1/patterns/full' && method === 'GET') {
       const repo = loadBundledRepository();
+      console.log(`[${new Date().toISOString()}] PATTERNS/FULL endpoint responded in ${Date.now() - startTime}ms`);
       return json({ patterns: repo.getAll() });
     }
 
@@ -83,8 +92,10 @@ export default {
     if (pathname === '/v1/llm/catalog' && method === 'GET') {
       try {
         const catalog = await getLlmProviderCatalog(env);
+        console.log(`[${new Date().toISOString()}] LLM/CATALOG responded in ${Date.now() - startTime}ms`);
         return json({ providers: catalog });
       } catch (e) {
+        console.log(`[${new Date().toISOString()}] LLM/CATALOG ERROR after ${Date.now() - startTime}ms: ${e}`);
         return json({ error: String(e) }, 500);
       }
     }
@@ -95,13 +106,24 @@ export default {
 
     // POST /v1/generate
     if (pathname === '/v1/generate') {
+      console.log(`[${new Date().toISOString()}] GENERATE: Parsing request body...`);
       const parsed = await parseBody(request, GenerateRequestSchema);
-      if (!parsed.ok) return badRequest(parsed.error);
+      console.log(`[${new Date().toISOString()}] GENERATE: Parse ${parsed.ok ? 'OK' : 'FAILED'} after ${Date.now() - startTime}ms`);
+
+      if (!parsed.ok) {
+        console.log(`[${new Date().toISOString()}] GENERATE: Bad request - ${parsed.error}`);
+        return badRequest(parsed.error);
+      }
       try {
+        console.log(`[${new Date().toISOString()}] GENERATE: Starting pipeline with ${JSON.stringify(parsed.data).substring(0, 100)}...`);
         const result = await runPipeline(parsed.data, env, env.GEN_DB);
+        console.log(`[${new Date().toISOString()}] GENERATE: Pipeline complete after ${Date.now() - startTime}ms`);
         return json(result);
       } catch (e) {
-        return json({ error: String(e) }, 500);
+        const errorMsg = String(e);
+        console.log(`[${new Date().toISOString()}] GENERATE: PIPELINE ERROR after ${Date.now() - startTime}ms`);
+        console.log(`ERROR DETAILS: ${errorMsg.substring(0, 500)}`);
+        return json({ error: errorMsg }, 500);
       }
     }
 

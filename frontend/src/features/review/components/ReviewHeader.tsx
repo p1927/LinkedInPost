@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, LayoutTemplate } from 'lucide-react';
+import { ArrowLeft, LayoutTemplate, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '../../../lib/cn';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
@@ -7,6 +7,7 @@ import { useReviewFlow } from '../context/useReviewFlow';
 import { FEATURE_CONTENT_FLOW } from '../../../generated/features';
 import { TemplateSelector } from '../../content-flow/TemplateSelector';
 import { SelectedPatternCard } from '../../content-flow/SelectedPatternCard';
+import { PostGenerateSettings } from './PostGenerateSettings';
 import type { ContentPattern } from '../../content-flow/types';
 
 export function ReviewHeader() {
@@ -34,6 +35,7 @@ export function ReviewHeader() {
   } = useReviewFlow();
 
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Treat postTemplates as ContentPattern[] — they satisfy the shape (id, name, rules, + optional fields).
   const patterns = postTemplates as ContentPattern[];
@@ -144,6 +146,31 @@ export function ReviewHeader() {
                 >
                   Media
                 </Button>
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSettingsOpen((v) => !v)}
+                    aria-label="Post generation settings"
+                    aria-expanded={settingsOpen}
+                    className="min-h-10 min-w-0 flex-1 sm:min-h-9 sm:w-auto sm:flex-none sm:px-4 gap-1.5"
+                  >
+                    <Settings className="size-3.5 shrink-0" aria-hidden />
+                    Settings
+                  </Button>
+                  {settingsOpen ? (
+                    <div className="absolute right-0 top-full z-50 mt-1 w-96">
+                      <PostGenerateSettings
+                        onSettingsChange={(settings) => {
+                          console.log('Generation settings changed:', settings);
+                          // Settings can be used when making generation requests
+                        }}
+                        className="shadow-lg"
+                      />
+                    </div>
+                  ) : null}
+                </div>
                 <Button
                   type="button"
                   variant="primary"
