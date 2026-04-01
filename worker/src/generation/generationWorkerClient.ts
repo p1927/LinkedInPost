@@ -62,20 +62,21 @@ export async function callGenerationWorker(
   req: GenWorkerGenerateRequest,
 ): Promise<GenWorkerGenerateResponse> {
   const baseUrl = String(env.GENERATION_WORKER_URL || '').trim().replace(/\/$/, '');
-  if (!baseUrl) {
-    throw new Error('GENERATION_WORKER_URL is not configured. Set it in Worker environment.');
+  if (!baseUrl && !env.GENERATION_WORKER) {
+    throw new Error('GENERATION_WORKER_URL or GENERATION_WORKER service binding is not configured. Set it in Worker environment.');
   }
   const secret = String(env.GENERATION_WORKER_SECRET || '').trim();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (secret) headers['Authorization'] = `Bearer ${secret}`;
 
-  const endpoint = `${baseUrl}/v1/generate`;
-  console.log(`[callGenerationWorker] Calling ${endpoint} with topic="${req.topic}" channel="${req.channel}"`);
+  const endpoint = env.GENERATION_WORKER ? 'https://generation-worker/v1/generate' : `${baseUrl}/v1/generate`;
+  console.log(`[callGenerationWorker] Calling ${endpoint} with topic="${req.topic}" channel="${req.channel}" using ${env.GENERATION_WORKER ? 'Service Binding' : 'HTTP fetch'}`);
   console.log(`[callGenerationWorker] Auth header set: ${headers['Authorization'] ? 'YES' : 'NO'}`);
 
   let response;
   try {
-    response = await fetch(endpoint, {
+    const fetcher = env.GENERATION_WORKER || globalThis;
+    response = await fetcher.fetch(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify(req),
@@ -99,5 +100,5 @@ export async function callGenerationWorker(
 }
 
 export function isGenerationWorkerConfigured(env: Env): boolean {
-  return Boolean(String(env.GENERATION_WORKER_URL || '').trim());
+  return Boolean(env.GENERATION_WORKER) || Boolean(String(env.GENERATION_WORKER_URL || '').trim());
 }

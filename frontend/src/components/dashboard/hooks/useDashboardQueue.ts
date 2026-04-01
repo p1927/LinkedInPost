@@ -325,14 +325,14 @@ export function useDashboardQueue({
         llm: workspaceLlm,
         newsResearchConfig: session.config.newsResearch,
         composableAssets: {
-          brandContext: session.config.brandContext || '',
+          brandContext: (session.config as any).brandContext || '',
           globalRules: session.config.generationRules || '',
           fewShotExamples: '',
           reviewChecklist: [],
           authorProfile: session.config.authorProfile || '',
         },
         skipImages: true,
-      };
+      } as any;
       const result = await api.callGenerationWorker(idToken, session.config.spreadsheetId, fullRequest);
       
       if (!result.variants) {

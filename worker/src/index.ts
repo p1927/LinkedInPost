@@ -114,6 +114,8 @@ export interface Env {
   NEWS_SNAPSHOT_MAX_PER_TOPIC?: string;
   /** Optional: delete news_snapshots older than this many days (cron + insert prune) */
   NEWS_SNAPSHOT_MAX_AGE_DAYS?: string;
+  /** Service binding for generation worker */
+  GENERATION_WORKER?: Fetcher;
 }
 
 interface BotConfig {

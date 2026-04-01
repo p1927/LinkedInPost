@@ -55,6 +55,12 @@
     "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
     "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev"
   },
+  "services": [
+    {
+      "binding": "GENERATION_WORKER",
+      "service": "linkedin-generation-worker"
+    }
+  ],
   "env": {
     "local": {
       "durable_objects": {
@@ -89,6 +95,12 @@
         "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
         "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev"
       },
+      "services": [
+        {
+          "binding": "GENERATION_WORKER",
+          "service": "linkedin-generation-worker"
+        }
+      ],
       "kv_namespaces": [
         {
           "binding": "CONFIG_KV",
