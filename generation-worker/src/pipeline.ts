@@ -117,10 +117,12 @@ export async function runPipeline(
     const relatorResults = await Promise.all(
       variants.map((v) => relateImages(v, pattern, report, env, llmRef))
     );
-    perVariantImageCandidates = relatorResults.map((rel, i) => ({
-      variantIndex: i,
-      candidates: buildCandidatesFromRelator(rel, i),
-    }));
+    perVariantImageCandidates = await Promise.all(
+      relatorResults.map(async (rel, i) => ({
+        variantIndex: i,
+        candidates: await buildCandidatesFromRelator(rel, i, env, req.imageGen),
+      })),
+    );
     imageCandidates = perVariantImageCandidates.flatMap((pv) => pv.candidates);
     trace.imageRelator = relatorResults.map((rel, i) => ({
       variantIndex: i,

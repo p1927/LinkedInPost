@@ -8,6 +8,26 @@ import type { LlmModelOption, LlmRef } from '@repo/llm-core';
 
 export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
 
+export type ImageGenProvider = 'pixazo' | 'gemini' | 'seedance';
+
+export const IMAGE_GEN_PROVIDERS: Array<{ value: ImageGenProvider; label: string }> = [
+  { value: 'pixazo', label: 'Pixazo SDXL' },
+  { value: 'gemini', label: 'Google Gemini' },
+  { value: 'seedance', label: 'Seedance (ByteDance)' },
+];
+
+export const IMAGE_GEN_MODELS: Record<ImageGenProvider, Array<{ value: string; label: string }>> = {
+  pixazo: [],  // Pixazo has no model selection
+  gemini: [
+    { value: 'gemini-2.0-flash-preview-image-generation', label: 'Gemini 2.0 Flash (Image)' },
+    { value: 'imagen-3.0-generate-001', label: 'Imagen 3' },
+  ],
+  seedance: [
+    { value: 'seedance-1-lite', label: 'Seedance 1 Lite' },
+    { value: 'seedance-1', label: 'Seedance 1' },
+  ],
+};
+
 export type LlmSettingKey =
   | 'review_generation'
   | 'generation_worker'
@@ -245,6 +265,10 @@ export interface BotConfig {
   llmSettings?: Record<LlmSettingKey, LlmRef>;
   /** Omitted when content review is disabled in features.yaml. */
   contentReview?: ContentReviewStored;
+  imageGen?: {
+    provider: ImageGenProvider;
+    model?: string;
+  };
 }
 
 function normalizeNewsResearchConfig(raw: unknown): NewsResearchStored {
@@ -366,11 +390,12 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     };
   }
   const withLlmSettings = config?.llmSettings ? { ...withLlm, llmSettings: config.llmSettings } : withLlm;
+  const withImageGen = config?.imageGen ? { ...withLlmSettings, imageGen: { provider: (config.imageGen.provider ?? 'pixazo') as ImageGenProvider, model: config.imageGen.model } } : withLlmSettings;
   if (!FEATURE_CONTENT_REVIEW) {
-    return withLlmSettings;
+    return withImageGen;
   }
   return {
-    ...withLlmSettings,
+    ...withImageGen,
     contentReview: normalizeContentReviewStored(config?.contentReview),
   };
 }
@@ -409,4 +434,8 @@ export interface BotConfigUpdate {
     allowedGrokModels?: string[];
   };
   contentReview?: ContentReviewStored;
+  imageGen?: {
+    provider?: ImageGenProvider;
+    model?: string;
+  };
 }

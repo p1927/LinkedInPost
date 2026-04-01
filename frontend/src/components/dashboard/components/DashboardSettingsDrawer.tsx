@@ -31,8 +31,9 @@ import type {
   NewsResearchStored,
   NewsProviderKeys,
   ContentReviewStored,
+  ImageGenProvider,
 } from '../../../services/configService';
-import { LLM_SETTING_KEY_LABELS } from '../../../services/configService';
+import { LLM_SETTING_KEY_LABELS, IMAGE_GEN_PROVIDERS, IMAGE_GEN_MODELS } from '../../../services/configService';
 import { FEATURE_CONTENT_REVIEW, FEATURE_ENRICHMENT, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { PostGenerateSettings } from '../../../features/review/components/PostGenerateSettings';
 import {
@@ -117,6 +118,10 @@ type DashboardSettingsDrawerProps = {
   contentReview?: ContentReviewStored;
   setContentReview?: (next: ContentReviewStored) => void;
   newsResearchEnabledForContentReview?: boolean;
+  imageGenProvider?: ImageGenProvider;
+  setImageGenProvider?: (v: ImageGenProvider) => void;
+  imageGenModel?: string;
+  setImageGenModel?: (v: string) => void;
   llmPrimaryProvider?: LlmProviderId;
   setLlmPrimaryProvider?: (v: LlmProviderId) => void;
   llmModelId?: string;
@@ -484,6 +489,10 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       contentReview,
       setContentReview,
       newsResearchEnabledForContentReview,
+      imageGenProvider,
+      setImageGenProvider,
+      imageGenModel,
+      setImageGenModel,
       llmPrimaryProvider,
       setLlmPrimaryProvider,
       llmModelId,
@@ -524,6 +533,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       }
       if (!FEATURE_ENRICHMENT || !session.isAdmin) {
         s = s.filter((sec) => sec.id !== 'settings-enrichment');
+      }
+      if (!session.isAdmin) {
+        s = s.filter((sec) => sec.id !== 'settings-image-generation');
       }
       return s;
     }, [session.isAdmin]);
@@ -879,6 +891,81 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 adminModelCatalog={adminModelCatalog}
                 grokAdminCatalog={grokAdminCatalog!}
               />
+            </div>
+          </SettingsSectionCard>
+        ) : null}
+
+        {session.isAdmin && imageGenProvider !== undefined && setImageGenProvider && setImageGenModel ? (
+          <SettingsSectionCard id="settings-image-generation" title="Image Generation" variant="canvas">
+            <p className="text-xs leading-relaxed text-muted">
+              Choose the provider and model used for AI-generated images in posts. API keys must be set in the Worker environment.
+            </p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-ink">Provider</label>
+                <Select
+                  value={imageGenProvider}
+                  onValueChange={(v) => {
+                    const prov = v as ImageGenProvider;
+                    setImageGenProvider(prov);
+                    const models = IMAGE_GEN_MODELS[prov];
+                    setImageGenModel(models.length > 0 ? models[0].value : '');
+                  }}
+                  itemToStringLabel={(v) => IMAGE_GEN_PROVIDERS.find((p) => p.value === v)?.label ?? String(v ?? '')}
+                >
+                  <SelectTrigger className="h-auto min-h-10 w-full max-w-xs rounded-xl py-2.5 font-medium">
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IMAGE_GEN_PROVIDERS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="mt-2">
+                  <span className={cn(
+                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                    (() => {
+                      const prov = imageGenProvider;
+                      const hasKey =
+                        prov === 'gemini' ? Boolean(session.config.llmProviderKeys?.gemini) :
+                        prov === 'seedance' ? false : // Seedance key status not exposed to frontend
+                        session.config.hasGenerationWorker;
+                      return hasKey
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-amber-100 text-amber-800';
+                    })(),
+                  )}>
+                    {(() => {
+                      const prov = imageGenProvider;
+                      if (prov === 'gemini') return session.config.llmProviderKeys?.gemini ? 'API key present' : 'GEMINI_API_KEY not set';
+                      if (prov === 'seedance') return 'SEEDANCE_API_KEY (check Worker env)';
+                      return session.config.hasGenerationWorker ? 'PIXAZO_API_KEY (via Worker)' : 'PIXAZO_API_KEY not set';
+                    })()}
+                  </span>
+                </div>
+              </div>
+              {IMAGE_GEN_MODELS[imageGenProvider].length > 0 ? (
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-ink">Model</label>
+                  <Select
+                    value={imageGenModel || IMAGE_GEN_MODELS[imageGenProvider][0]?.value || ''}
+                    onValueChange={(v) => setImageGenModel(v as string)}
+                    itemToStringLabel={(v) => IMAGE_GEN_MODELS[imageGenProvider].find((m) => m.value === v)?.label ?? String(v ?? '')}
+                  >
+                    <SelectTrigger className="h-auto min-h-10 w-full rounded-xl py-2.5 font-medium">
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
+                      {IMAGE_GEN_MODELS[imageGenProvider].map((m) => (
+                        <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
+                          <span className="whitespace-normal leading-snug">{m.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
             </div>
           </SettingsSectionCard>
         ) : null}
