@@ -28,7 +28,8 @@ import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
-import { upsertUser } from './db/users';
+import { upsertUser, completeUserOnboarding, setUserSpreadsheetId } from './db/users';
+import { listSocialIntegrations, deleteSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -325,6 +326,8 @@ interface AppSession {
   email: string;
   isAdmin: boolean;
   config: BotConfig;
+  onboardingCompleted: boolean;
+  integrations: PublicIntegration[];
 }
 
 interface ApiEnvelope<T> {
@@ -814,10 +817,17 @@ async function dispatchAction(
         ? await seedLlmSettingsIfEmpty(env.PIPELINE_DB, storedConfig.spreadsheetId, storedConfig, GOOGLE_MODEL_DEFAULT)
         : undefined;
       const publicConfig = toPublicConfig(storedConfig, env);
+      const [integrations, userRow] = await Promise.all([
+        listSocialIntegrations(env.PIPELINE_DB, session.userId),
+        env.PIPELINE_DB.prepare('SELECT onboarding_completed FROM users WHERE id = ?1')
+          .bind(session.userId).first<{ onboarding_completed: number }>(),
+      ]);
       return {
         email: session.email,
         isAdmin: session.isAdmin,
         config: llmSettings ? { ...publicConfig, llmSettings } : publicConfig,
+        onboardingCompleted: (userRow?.onboarding_completed ?? 0) === 1,
+        integrations,
       } satisfies AppSession;
     }
     case 'getGoogleModels': {
@@ -1274,6 +1284,25 @@ async function dispatchAction(
         patternRationale: patternRationale || '',
       });
     }
+    case 'getIntegrations':
+      return listSocialIntegrations(env.PIPELINE_DB, session.userId);
+
+    case 'deleteIntegration': {
+      const provider = String(payload.provider || '').trim();
+      if (!provider) throw new Error('Missing provider.');
+      await deleteSocialIntegration(env.PIPELINE_DB, session.userId, provider);
+      return { ok: true };
+    }
+
+    case 'completeOnboarding': {
+      await completeUserOnboarding(env.PIPELINE_DB, session.userId);
+      const spreadsheetId = String(payload.spreadsheetId || '').trim();
+      if (spreadsheetId) {
+        await setUserSpreadsheetId(env.PIPELINE_DB, session.userId, spreadsheetId);
+      }
+      return { ok: true };
+    }
+
     default:
       throw new Error(`Unknown action: ${action}`);
   }
