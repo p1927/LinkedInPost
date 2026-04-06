@@ -28,6 +28,7 @@ import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
+import { upsertUser } from './db/users';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -354,6 +355,7 @@ interface RequestPayload {
 
 interface VerifiedSession {
   email: string;
+  userId: string;   // same as email — Google email is the stable user identifier
   isAdmin: boolean;
 }
 
@@ -469,6 +471,8 @@ interface GoogleTokenInfo {
   email?: string;
   email_verified?: string | boolean;
   aud?: string;
+  name?: string;
+  picture?: string;
 }
 
 interface GmailTokenResponse {
@@ -1334,7 +1338,9 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
 
   const bypassSession = tryResolveDevGoogleAuthBypassSession(idToken, env);
   if (bypassSession) {
-    return bypassSession;
+    // Dev bypass: upsert a synthetic user row so the rest of the code works.
+    await upsertUser(env.PIPELINE_DB, bypassSession.email, 'Dev User', '').catch(() => undefined);
+    return { ...bypassSession, userId: bypassSession.email };
   }
 
   const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
@@ -1354,18 +1360,21 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
     throw new Error('Unauthorized: Google token audience does not match this app.');
   }
 
+  // ALLOWED_EMAILS is now optional: if set, acts as an allowlist; if empty, any Google account can log in.
   const allowedEmails = parseEmailList(env.ALLOWED_EMAILS);
-  if (allowedEmails.length === 0) {
-    throw new Error('Access is disabled until ALLOWED_EMAILS is configured in the Worker environment.');
-  }
-
-  if (!allowedEmails.includes(email)) {
+  if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
     throw new Error('Unauthorized: this Google account is not on the allowed users list.');
   }
+
+  // Upsert user into D1 on every login (updates name/avatar if they changed).
+  const displayName = String(tokenInfo.name || '').trim();
+  const avatarUrl = String(tokenInfo.picture || '').trim();
+  await upsertUser(env.PIPELINE_DB, email, displayName, avatarUrl).catch(() => undefined);
 
   const adminEmails = parseEmailList(env.ADMIN_EMAILS);
   return {
     email,
+    userId: email,
     isAdmin: adminEmails.length === 0 || adminEmails.includes(email),
   };
 }
