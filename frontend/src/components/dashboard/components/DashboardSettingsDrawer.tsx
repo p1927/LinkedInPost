@@ -324,13 +324,9 @@ function LlmPerFeatureSettings({
     return base as Record<LlmSettingKey, { provider: string; model: string }>;
   });
   const [saving, setSaving] = useState<LlmSettingKey | null>(null);
-  const [feedback, setFeedback] = useState<Record<LlmSettingKey, string | null>>({
-    review_generation: null,
-    generation_worker: null,
-    content_review_text: null,
-    content_review_vision: null,
-    github_automation: null,
-  });
+  const [feedback, setFeedback] = useState<Record<LlmSettingKey, string | null>>(
+    () => Object.fromEntries(Object.keys(LLM_SETTING_KEY_LABELS).map((k) => [k, null])) as Record<LlmSettingKey, string | null>,
+  );
 
   const handleSave = async (key: LlmSettingKey) => {
     setSaving(key);
