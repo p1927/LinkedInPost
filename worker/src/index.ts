@@ -29,7 +29,7 @@ import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researc
 import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
 import { upsertUser, completeUserOnboarding, setUserSpreadsheetId } from './db/users';
-import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, PublicIntegration } from './db/socialIntegrations';
+import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -1084,7 +1084,7 @@ async function dispatchAction(
       return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
       ensureSpreadsheetConfigured(storedConfig);
-      return publishContent(env, storedConfig, payload, sheets, pipeline);
+      return publishContent(env, session.userId, storedConfig, payload, sheets, pipeline);
     case 'cancelScheduledPublish':
       ensureSpreadsheetConfigured(storedConfig);
       return handleCancelScheduledPublishDispatch(env, payload);
@@ -2867,6 +2867,7 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
 
   await publishContent(
     env,
+    '',
     config,
     {
       row,
@@ -2905,6 +2906,7 @@ function resolvePublishImageUrls(payload: Record<string, unknown>, row: SheetRow
 
 async function publishContent(
   env: Env,
+  userId: string,
   config: StoredConfig,
   payload: Record<string, unknown>,
   _sheets: SheetsGateway,
@@ -2973,35 +2975,53 @@ async function publishContent(
       throw new Error('Instagram publishing requires a selected image.');
     }
 
-    if (!config.instagramUserId || (!config.instagramAccessTokenCiphertext && !config.instagramAccessToken)) {
-      throw new Error('Instagram publishing is not configured. Ask an admin to complete the Instagram settings.');
-    }
-
-    let instagramAccessToken: string;
-    if (config.instagramAccessTokenCiphertext) {
+    // Try per-user D1 token first
+    let instagramAccessToken: string | undefined;
+    let instagramUserId: string | undefined;
+    const userInstagram = await getSocialIntegration(env.PIPELINE_DB, userId, 'instagram');
+    if (userInstagram && !userInstagram.needs_reauth) {
       try {
         instagramAccessToken = await decryptSecret(
-          config.instagramAccessTokenCiphertext,
+          userInstagram.access_token_enc,
           requireSecretEncryptionKey(env),
-          INSTAGRAM_TOKEN_REAUTH_MESSAGE,
+          'Instagram token could not be decrypted.',
         );
-      } catch (error) {
-        if (error instanceof Error && error.message === INSTAGRAM_TOKEN_REAUTH_MESSAGE) {
-          const nextConfig: StoredConfig = {
-            ...config,
-            instagramAccessTokenCiphertext: undefined,
-          };
-          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-        }
-        throw error;
+        instagramUserId = userInstagram.internal_id;
+      } catch {
+        // Fall through to shared config
       }
-    } else {
-      instagramAccessToken = String(config.instagramAccessToken || '').trim();
+    }
+
+    if (!instagramAccessToken) {
+      if (!config.instagramUserId || (!config.instagramAccessTokenCiphertext && !config.instagramAccessToken)) {
+        throw new Error('Instagram publishing is not configured. Ask an admin to complete the Instagram settings.');
+      }
+      if (config.instagramAccessTokenCiphertext) {
+        try {
+          instagramAccessToken = await decryptSecret(
+            config.instagramAccessTokenCiphertext,
+            requireSecretEncryptionKey(env),
+            INSTAGRAM_TOKEN_REAUTH_MESSAGE,
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message === INSTAGRAM_TOKEN_REAUTH_MESSAGE) {
+            const nextConfig: StoredConfig = {
+              ...config,
+              instagramAccessTokenCiphertext: undefined,
+            };
+            await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+          }
+          throw error;
+        }
+      } else {
+        instagramAccessToken = String(config.instagramAccessToken || '').trim();
+      }
+      instagramUserId = config.instagramUserId;
     }
 
     const publishResult = await publishInstagramPost({
       accessToken: instagramAccessToken,
-      instagramUserId: config.instagramUserId,
+      instagramUserId: instagramUserId!,
       caption: message,
       imageUrls,
       altText: row.topic,
@@ -3020,35 +3040,53 @@ async function publishContent(
   }
 
   if (channel === 'linkedin') {
-    if (!config.linkedinPersonUrn || (!config.linkedinAccessTokenCiphertext && !config.linkedinAccessToken)) {
-      throw new Error('LinkedIn publishing is not configured. Ask an admin to complete the LinkedIn settings.');
-    }
-
-    let linkedinAccessToken: string;
-    if (config.linkedinAccessTokenCiphertext) {
+    // Try per-user D1 token first
+    let linkedinAccessToken: string | undefined;
+    let linkedinPersonUrn: string | undefined;
+    const userLinkedin = await getSocialIntegration(env.PIPELINE_DB, userId, 'linkedin');
+    if (userLinkedin && !userLinkedin.needs_reauth) {
       try {
         linkedinAccessToken = await decryptSecret(
-          config.linkedinAccessTokenCiphertext,
+          userLinkedin.access_token_enc,
           requireSecretEncryptionKey(env),
-          LINKEDIN_TOKEN_REAUTH_MESSAGE,
+          'LinkedIn token could not be decrypted.',
         );
-      } catch (error) {
-        if (error instanceof Error && error.message === LINKEDIN_TOKEN_REAUTH_MESSAGE) {
-          const nextConfig: StoredConfig = {
-            ...config,
-            linkedinAccessTokenCiphertext: undefined,
-          };
-          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-        }
-        throw error;
+        linkedinPersonUrn = userLinkedin.internal_id;
+      } catch {
+        // Fall through to shared config
       }
-    } else {
-      linkedinAccessToken = String(config.linkedinAccessToken || '').trim();
+    }
+
+    if (!linkedinAccessToken) {
+      if (!config.linkedinPersonUrn || (!config.linkedinAccessTokenCiphertext && !config.linkedinAccessToken)) {
+        throw new Error('LinkedIn publishing is not configured. Ask an admin to complete the LinkedIn settings.');
+      }
+      if (config.linkedinAccessTokenCiphertext) {
+        try {
+          linkedinAccessToken = await decryptSecret(
+            config.linkedinAccessTokenCiphertext,
+            requireSecretEncryptionKey(env),
+            LINKEDIN_TOKEN_REAUTH_MESSAGE,
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message === LINKEDIN_TOKEN_REAUTH_MESSAGE) {
+            const nextConfig: StoredConfig = {
+              ...config,
+              linkedinAccessTokenCiphertext: undefined,
+            };
+            await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+          }
+          throw error;
+        }
+      } else {
+        linkedinAccessToken = String(config.linkedinAccessToken || '').trim();
+      }
+      linkedinPersonUrn = config.linkedinPersonUrn;
     }
 
     const publishResult = await publishLinkedInPost({
       accessToken: linkedinAccessToken,
-      personUrn: config.linkedinPersonUrn,
+      personUrn: linkedinPersonUrn!,
       text: message,
       imageUrl: imageUrls.length === 1 ? imageUrls[0] : undefined,
       imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
@@ -3094,30 +3132,45 @@ async function publishContent(
   }
 
   if (channel === 'gmail') {
-    if (!config.gmailEmailAddress || (!config.gmailAccessTokenCiphertext && !config.gmailAccessToken)) {
-      throw new Error('Gmail delivery is not configured. Ask an admin to connect a Gmail account.');
-    }
-
-    let accessToken: string;
-    if (config.gmailAccessTokenCiphertext) {
+    // Try per-user D1 token first
+    let accessToken: string | undefined;
+    const userGmail = await getSocialIntegration(env.PIPELINE_DB, userId, 'gmail');
+    if (userGmail && !userGmail.needs_reauth) {
       try {
         accessToken = await decryptSecret(
-          config.gmailAccessTokenCiphertext,
+          userGmail.access_token_enc,
           requireSecretEncryptionKey(env),
-          GMAIL_TOKEN_REAUTH_MESSAGE,
+          'Gmail token could not be decrypted.',
         );
-      } catch (error) {
-        if (error instanceof Error && error.message === GMAIL_TOKEN_REAUTH_MESSAGE) {
-          const nextConfig: StoredConfig = {
-            ...config,
-            gmailAccessTokenCiphertext: undefined,
-          };
-          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-        }
-        throw error;
+      } catch {
+        // Fall through to shared config
       }
-    } else {
-      accessToken = String(config.gmailAccessToken || '').trim();
+    }
+
+    if (!accessToken) {
+      if (!config.gmailEmailAddress || (!config.gmailAccessTokenCiphertext && !config.gmailAccessToken)) {
+        throw new Error('Gmail delivery is not configured. Ask an admin to connect a Gmail account.');
+      }
+      if (config.gmailAccessTokenCiphertext) {
+        try {
+          accessToken = await decryptSecret(
+            config.gmailAccessTokenCiphertext,
+            requireSecretEncryptionKey(env),
+            GMAIL_TOKEN_REAUTH_MESSAGE,
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message === GMAIL_TOKEN_REAUTH_MESSAGE) {
+            const nextConfig: StoredConfig = {
+              ...config,
+              gmailAccessTokenCiphertext: undefined,
+            };
+            await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+          }
+          throw error;
+        }
+      } else {
+        accessToken = String(config.gmailAccessToken || '').trim();
+      }
     }
 
     const gmailRequest: Parameters<typeof sendGmailMessage>[0] = {
