@@ -1375,6 +1375,11 @@ async function dispatchAction(
       return { ok: true, title };
     }
 
+    case 'disconnectSpreadsheet': {
+      await setUserSpreadsheetId(env.PIPELINE_DB, session.userId, '');
+      return { ok: true };
+    }
+
     case 'getSpreadsheetStatus': {
       // Prefer per-user spreadsheet_id from D1, fall back to global config
       const userRowForSheet = await env.PIPELINE_DB

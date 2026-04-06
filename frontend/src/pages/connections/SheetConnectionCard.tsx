@@ -88,7 +88,7 @@ export function SheetConnectionCard({ idToken, api, status, onConnected }: Sheet
   async function handleDisconnect() {
     setLoading(true);
     try {
-      await api.connectSpreadsheet(idToken, '', '').catch(() => {});
+      await api.disconnectSpreadsheet(idToken);
       onConnected('');
     } catch {
       setError('Failed to disconnect. Please try again.');
