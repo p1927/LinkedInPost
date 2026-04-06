@@ -648,7 +648,7 @@ export default {
       }
 
       const storedConfig = await loadStoredConfig(env, session.userId);
-      const { sheets, pipeline } = buildServices(env);
+      const { sheets, pipeline } = buildServices(env, session.userId);
       const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, pipeline, request);
       return jsonResponse({ ok: true, data }, 200, corsHeaders);
     } catch (error) {
@@ -940,9 +940,15 @@ async function dispatchAction(
       await setLlmSettingInD1(env.PIPELINE_DB, storedConfig.spreadsheetId, key, { provider: provider as import('./llm/types').LlmProviderId, model });
       return { ok: true, key, provider, model };
     }
-    case 'getRows':
-      ensureSpreadsheetConfigured(storedConfig);
-      return pipeline.getMergedRows(sheets, storedConfig.spreadsheetId);
+    case 'getRows': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) {
+        // No sheet configured — return rows from D1 only
+        return pipeline.getRowsByUserId();
+      }
+      // Sheet configured — merge Sheets + D1
+      return pipeline.getMergedRows(sheets, sid);
+    }
     case 'generateQuickChange':
       ensureSpreadsheetConfigured(storedConfig);
       return generateQuickChangePreview(env, storedConfig, payload, (templateId) =>
@@ -954,7 +960,6 @@ async function dispatchAction(
         sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
       );
     case 'saveDraftVariants':
-      ensureSpreadsheetConfigured(storedConfig);
       return pipeline.saveDraftVariants(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
@@ -971,11 +976,23 @@ async function dispatchAction(
             }
           : undefined,
       );
-    case 'addTopic':
-      ensureSpreadsheetConfigured(storedConfig);
-      return sheets.addTopic(storedConfig.spreadsheetId, String(payload.topic || '').trim());
+    case 'addTopic': {
+      const topicText = String(payload.topic || '').trim();
+      if (!topicText) throw new Error('topic is required.');
+      const topicId = crypto.randomUUID();
+      const date = String(payload.date || new Date().toISOString().slice(0, 10)).trim();
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      // Always write to D1 first
+      const newRow = await pipeline.addTopicToD1(topicText, date, topicId);
+      // Async Sheets write if configured
+      if (sid) {
+        await sheets.addTopic(sid, topicText).catch((e) =>
+          console.error('[addTopic] Sheets sync failed:', e),
+        );
+      }
+      return newRow;
+    }
     case 'updateRowStatus':
-      ensureSpreadsheetConfigured(storedConfig);
       return pipeline.updateRowStatus(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
@@ -990,7 +1007,6 @@ async function dispatchAction(
         String(payload.selectedImageUrlsJson ?? ''),
       );
     case 'saveEmailFields':
-      ensureSpreadsheetConfigured(storedConfig);
       return pipeline.saveEmailFields(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
@@ -1015,7 +1031,6 @@ async function dispatchAction(
         String(payload.selectedImageUrlsJson ?? ''),
       );
     case 'updatePostSchedule':
-      ensureSpreadsheetConfigured(storedConfig);
       return pipeline.updatePostSchedule(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
@@ -1055,7 +1070,6 @@ async function dispatchAction(
         current: storedConfig.generationRules || '',
       };
     case 'saveTopicGenerationRules':
-      ensureSpreadsheetConfigured(storedConfig);
       return pipeline.saveTopicGenerationRules(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
@@ -1083,14 +1097,12 @@ async function dispatchAction(
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.deletePostTemplate(storedConfig.spreadsheetId, String(payload.templateId || '').trim());
     case 'saveGenerationTemplateId':
-      ensureSpreadsheetConfigured(storedConfig);
       return pipeline.saveGenerationTemplateId(
         storedConfig.spreadsheetId,
         coerceSheetRow(payload.row),
         String(payload.generationTemplateId ?? ''),
       );
     case 'saveTopicDeliveryPreferences':
-      ensureSpreadsheetConfigured(storedConfig);
       return pipeline.saveTopicDeliveryPreferences(storedConfig.spreadsheetId, coerceSheetRow(payload.row), {
         topicDeliveryChannel:
           payload.topicDeliveryChannel !== undefined ? String(payload.topicDeliveryChannel ?? '') : undefined,
@@ -1272,15 +1284,12 @@ async function dispatchAction(
       return genResult;
     }
     case 'getPatternAssignment': {
-      ensureSpreadsheetConfigured(storedConfig);
       return handleGetPatternAssignment(pipeline, storedConfig.spreadsheetId, payload);
     }
     case 'listPatternAssignments': {
-      ensureSpreadsheetConfigured(storedConfig);
       return handleListPatternAssignments(pipeline, storedConfig.spreadsheetId);
     }
     case 'savePatternMetadata': {
-      ensureSpreadsheetConfigured(storedConfig);
       return handleSavePatternMetadata(pipeline, storedConfig.spreadsheetId, payload, async () => {
         const topicId = String(payload.topicId || '').trim();
         if (!topicId) throw new Error('topicId is required.');
@@ -1307,7 +1316,6 @@ async function dispatchAction(
       return (await response.json() as { patterns: unknown[] }).patterns;
     }
     case 'assignPattern': {
-      ensureSpreadsheetConfigured(storedConfig);
       const { row, patternId, patternName, patternRationale, generationRunId } = payload as {
         row: SheetRow;
         patternId: string;
@@ -1378,6 +1386,13 @@ async function dispatchAction(
     case 'disconnectSpreadsheet': {
       await setUserSpreadsheetId(env.PIPELINE_DB, session.userId, '');
       return { ok: true };
+    }
+
+    case 'syncFromSheets': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No Google Sheet is connected. Connect one from the Connections page first.');
+      const rows = await pipeline.getMergedRows(sheets, sid);
+      return { ok: true, count: rows.length };
     }
 
     case 'getSpreadsheetStatus': {
