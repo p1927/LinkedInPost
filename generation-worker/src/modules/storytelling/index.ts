@@ -62,7 +62,8 @@ Return JSON with this exact shape:
 
     const result = await generateLlmParsedJson<LlmStoryResponse>(ctx.env, ctx.llmRef, prompt, {
       temperature: 0.6,
-      maxOutputTokens: 400,
+      // Small caps caused truncated JSON (parse fails on `"structure":...`); keep headroom for verbose models.
+      maxOutputTokens: 1536,
     });
 
     return {

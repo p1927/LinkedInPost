@@ -1081,9 +1081,18 @@ async function dispatchAction(
         coerceSheetRow(payload.row),
         String(payload.topicRules ?? ''),
       );
-    case 'listPostTemplates':
-      ensureSpreadsheetConfigured(storedConfig);
-      return sheets.listPostTemplates(storedConfig.spreadsheetId);
+    case 'listPostTemplates': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) {
+        return [];
+      }
+      try {
+        return await sheets.listPostTemplates(sid);
+      } catch (e) {
+        console.error('[listPostTemplates] Sheets read failed:', e);
+        return [];
+      }
+    }
     case 'createPostTemplate':
       ensureSpreadsheetConfigured(storedConfig);
       return sheets.createPostTemplate(
