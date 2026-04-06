@@ -285,13 +285,13 @@ function App() {
     setIdToken(newToken || null)
   }, [])
 
-  const handleAuthExpired = () => {
+  const handleAuthExpired = useCallback(() => {
     localStorage.removeItem(STORED_ID_TOKEN_KEY)
     googleLogout()
     setIdToken(null)
     setSession(null)
     setErrorMessage('Your Google session expired. Sign in again to continue.')
-  }
+  }, [])
 
   const handleConnect = useCallback(async (provider: 'linkedin' | 'instagram' | 'gmail') => {
     if (!idToken) return

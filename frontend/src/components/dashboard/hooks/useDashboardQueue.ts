@@ -136,6 +136,11 @@ export function useDashboardQueue({
   });
 
   const loadData = useCallback(async (quiet = false) => {
+    if (!session.config.spreadsheetId) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await api.getRows(idToken);
