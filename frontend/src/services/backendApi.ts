@@ -894,6 +894,10 @@ export class BackendApi {
     await this.post<{ ok: true }>('disconnectSpreadsheet', idToken, {});
   }
 
+  async syncFromSheets(idToken: string): Promise<{ ok: boolean; count: number }> {
+    return this.post<{ ok: boolean; count: number }>('syncFromSheets', idToken, {});
+  }
+
   async getSpreadsheetStatus(idToken: string): Promise<SpreadsheetStatus> {
     const data = await this.post<SpreadsheetStatus>('getSpreadsheetStatus', idToken, {});
     return data ?? { accessible: false, title: '' };

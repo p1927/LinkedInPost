@@ -73,7 +73,7 @@ export function useDashboardQueue({
 }) {
   const [rows, setRows] = useState<SheetRow[]>([]);
   /** Start true when a sheet is configured so first paint does not run “loaded” logic before loadData runs. */
-  const [loading, setLoading] = useState(() => Boolean(session.config.spreadsheetId));
+  const [loading, setLoading] = useState(true);
   /** True only while add-topic API + follow-up refresh run (not general queue loads). */
   const [addingTopic, setAddingTopic] = useState(false);
   const [newTopic, setNewTopic] = useState('');
@@ -136,8 +136,6 @@ export function useDashboardQueue({
   });
 
   const loadData = useCallback(async (quiet = false) => {
-    if (!session.config.spreadsheetId) return;
-
     setLoading(true);
     try {
       const data = await api.getRows(idToken);
@@ -154,18 +152,12 @@ export function useDashboardQueue({
   }, [api, idToken, session.config.spreadsheetId, handleFailure, onAuthExpired]);
 
   useEffect(() => {
-    if (!session.config.spreadsheetId) {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-    // Use quiet=false so API/Sheets failures surface instead of leaving an empty queue with no explanation.
     void loadData(false);
   }, [idToken, session.config.spreadsheetId, loadData]);
 
   const handleAddTopic = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTopic.trim() || !session.config.spreadsheetId) return;
+    if (!newTopic.trim()) return;
 
     setAddingTopic(true);
     try {
