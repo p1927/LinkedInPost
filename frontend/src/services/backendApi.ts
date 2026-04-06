@@ -13,6 +13,11 @@ export interface SocialIntegration {
   connectedAt: string;
 }
 
+export interface SpreadsheetStatus {
+  accessible: boolean;
+  title: string;
+}
+
 export interface AppSession {
   email: string;
   isAdmin: boolean;
@@ -872,6 +877,27 @@ export class BackendApi {
 
   async deleteIntegration(idToken: string, provider: string): Promise<void> {
     await this.post<{ ok: true }>('deleteIntegration', idToken, { provider });
+  }
+
+  async connectSpreadsheet(
+    idToken: string,
+    spreadsheetId: string,
+    driveAccessToken: string,
+  ): Promise<{ ok: true; title: string }> {
+    return this.post<{ ok: true; title: string }>('connectSpreadsheet', idToken, {
+      spreadsheetId,
+      driveAccessToken,
+    });
+  }
+
+  async getSpreadsheetStatus(idToken: string): Promise<SpreadsheetStatus> {
+    const data = await this.post<SpreadsheetStatus>('getSpreadsheetStatus', idToken, {});
+    return data ?? { accessible: false, title: '' };
+  }
+
+  async getServiceAccountEmail(idToken: string): Promise<string> {
+    const data = await this.post<{ email: string }>('getServiceAccountEmail', idToken, {});
+    return data?.email ?? '';
   }
 
   async completeOnboarding(idToken: string, spreadsheetId?: string): Promise<void> {
