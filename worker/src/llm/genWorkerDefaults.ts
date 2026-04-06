@@ -20,15 +20,20 @@ export async function resolveGenerationWorkerLlmRef(
 
   const prov = String(override?.provider || '').trim();
   const mod = String(override?.model || '').trim();
-  if (prov && mod && isProviderId(prov) && configured.includes(prov)) {
-    return { provider: prov, model: mod };
-  }
+  const provId = prov && isProviderId(prov) && configured.includes(prov) ? prov : configured[0];
 
-  const primary = configured[0];
-  const models = await listModelsForProvider(env, primary);
+  const models = await listModelsForProvider(env, provId);
   const first = models[0]?.value;
   if (!first) {
-    throw new Error(`No models returned for provider ${primary}. Check API keys and provider status.`);
+    throw new Error(`No models returned for provider ${provId}. Check API keys and provider status.`);
   }
-  return { provider: primary, model: first };
+
+  // Only use the override model if it exists in the provider's catalog.
+  // This prevents stale or invalid model values (e.g. from D1 settings) from
+  // reaching the provider API and causing 400 "unexpected model name format" errors.
+  if (mod && models.some((m) => m.value === mod)) {
+    return { provider: provId, model: mod };
+  }
+
+  return { provider: provId, model: first };
 }

@@ -2,7 +2,6 @@ import type { LlmModelOption, WorkerEnvForLlm } from '../types';
 import type { GeminiGenerateResponse } from '../../generation/types';
 
 export const STATIC_GEMINI_MODELS: LlmModelOption[] = [
-  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', provider: 'gemini' },
   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', provider: 'gemini' },
   { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite', provider: 'gemini' },
   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash', provider: 'gemini' },

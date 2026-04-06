@@ -1,4 +1,4 @@
-export const GOOGLE_MODEL_DEFAULT = 'gemini-2.5-flash';
+export const GOOGLE_MODEL_DEFAULT = 'gemini-2.0-flash';
 
 export interface GoogleModelPolicyConfig {
   googleModel?: string;
