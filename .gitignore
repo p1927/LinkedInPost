@@ -18,4 +18,4 @@ worker/.dev.vars
 .github/prompts/ui-ux**
 
 generation-worker/node_modules
-node_modules
+node_modules.worktrees/
