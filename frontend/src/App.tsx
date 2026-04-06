@@ -356,13 +356,13 @@ function App() {
       }
       await api.completeOnboarding(idToken, spreadsheetId && !driveAccessToken ? spreadsheetId : undefined)
       setShowOnboarding(false)
-      navigate(WORKSPACE_PATHS.connections)
+      window.location.assign(WORKSPACE_PATHS.connections)
     } catch (err) {
       console.error('Complete onboarding failed:', err)
       await api.completeOnboarding(idToken).catch(() => {})
       setShowOnboarding(false)
     }
-  }, [idToken, api, navigate])
+  }, [idToken, api])
 
   const showMarketingHeader = !idToken || !session
   const routerBasename = workspaceRouterBasename()
