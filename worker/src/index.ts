@@ -29,7 +29,7 @@ import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researc
 import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
 import { upsertUser, completeUserOnboarding, setUserSpreadsheetId } from './db/users';
-import { listSocialIntegrations, deleteSocialIntegration, PublicIntegration } from './db/socialIntegrations';
+import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -1794,6 +1794,19 @@ async function handleLinkedInCallback(request: Request, env: Env): Promise<Respo
     const accessToken = await exchangeLinkedInCodeForToken(code, oauthState.redirectUri, env);
     const personUrn = await fetchLinkedInPersonUrn(accessToken);
     await persistLinkedInConnection(env, accessToken, personUrn);
+    // Also store per-user token in D1
+    const encKey = requireSecretEncryptionKey(env);
+    await upsertSocialIntegration(env.PIPELINE_DB, {
+      userId: oauthState.email,
+      provider: 'linkedin',
+      internalId: personUrn,
+      displayName: '',
+      profilePicture: '',
+      accessTokenEnc: await encryptSecret(accessToken, encKey),
+      refreshTokenEnc: '',
+      tokenExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days
+      scopes: 'openid profile w_member_social r_basicprofile',
+    }).catch(() => undefined);
     return oauthPopupResponse(oauthState.origin, {
       source: 'channel-bot-oauth',
       provider: 'linkedin',
@@ -1857,6 +1870,19 @@ async function handleInstagramCallback(request: Request, env: Env): Promise<Resp
     const accessToken = await exchangeInstagramCodeForLongLivedToken(code, oauthState.redirectUri, env);
     const instagramAccount = await fetchInstagramAccount(accessToken);
     await persistInstagramConnection(env, accessToken, instagramAccount.userId, instagramAccount.username);
+    // Also store per-user token in D1
+    const encKey = requireSecretEncryptionKey(env);
+    await upsertSocialIntegration(env.PIPELINE_DB, {
+      userId: oauthState.email,
+      provider: 'instagram',
+      internalId: instagramAccount.userId,
+      displayName: instagramAccount.username,
+      profilePicture: '',
+      accessTokenEnc: await encryptSecret(accessToken, encKey),
+      refreshTokenEnc: '',
+      tokenExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days
+      scopes: 'instagram_basic,instagram_content_publish,pages_show_list',
+    }).catch(() => undefined);
     return oauthPopupResponse(oauthState.origin, {
       source: 'channel-bot-oauth',
       provider: 'instagram',
@@ -2013,6 +2039,20 @@ async function handleGmailCallback(request: Request, env: Env): Promise<Response
     const tokens = await exchangeGmailCodeForToken(code, oauthState.redirectUri, env);
     const profile = await fetchGmailProfile(tokens.access_token);
     await persistGmailConnection(env, tokens.access_token, tokens.refresh_token || '', profile.email);
+    // Also store per-user token in D1
+    const encKey = requireSecretEncryptionKey(env);
+    const refreshToken = tokens.refresh_token || '';
+    await upsertSocialIntegration(env.PIPELINE_DB, {
+      userId: oauthState.email,
+      provider: 'gmail',
+      internalId: profile.email,
+      displayName: profile.email,
+      profilePicture: '',
+      accessTokenEnc: await encryptSecret(tokens.access_token, encKey),
+      refreshTokenEnc: refreshToken ? await encryptSecret(refreshToken, encKey) : '',
+      tokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+      scopes: GMAIL_OAUTH_SCOPES,
+    }).catch(() => undefined);
     return oauthPopupResponse(oauthState.origin, {
       source: 'channel-bot-oauth',
       provider: 'gmail',
