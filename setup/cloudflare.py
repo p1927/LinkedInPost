@@ -11,6 +11,7 @@ from .constants import (
     GEN_WORKER_DEV_VARS,
     GEN_WORKER_DIR,
     GEN_WORKER_WRANGLER_CONFIG,
+    ROOT,
     WORKER_DEV_VARS,
     WORKER_DIR,
     WORKER_WRANGLER_CONFIG,
@@ -324,7 +325,7 @@ def provision_generation_worker_d1() -> None:
 
 
 # Secrets the generation worker accepts for LLM calls (at least one required on deploy).
-GENERATION_WORKER_LLM_SECRET_KEYS = ('GEMINI_API_KEY', 'XAI_API_KEY')
+GENERATION_WORKER_LLM_SECRET_KEYS = ('GEMINI_API_KEY', 'XAI_API_KEY', 'OPENROUTER_API_KEY')
 
 
 def _generation_worker_llm_secrets_from_env() -> dict[str, str]:
@@ -345,7 +346,7 @@ def deploy_generation_worker(worker_bootstrap: WorkerBootstrap) -> str:
     if not llm_secrets:
         raise RuntimeError(
             'Cannot deploy the generation worker: no LLM API key is set. '
-            'Set at least one of GEMINI_API_KEY or XAI_API_KEY in your environment (for example in `.env`) '
+            'Set at least one of GEMINI_API_KEY, XAI_API_KEY, or OPENROUTER_API_KEY in your environment (for example in `.env`) '
             'before running setup.py --deploy-worker or --all.',
         )
 
@@ -409,7 +410,7 @@ def write_generation_worker_dev_vars(worker_bootstrap: WorkerBootstrap) -> None:
     values: dict[str, str] = {}
 
     # LLM API keys — required for generation
-    for key in ('GEMINI_API_KEY', 'XAI_API_KEY'):
+    for key in ('GEMINI_API_KEY', 'XAI_API_KEY', 'OPENROUTER_API_KEY'):
         val = os.environ.get(key, '').strip()
         if val:
             values[key] = val
@@ -427,6 +428,47 @@ def write_generation_worker_dev_vars(worker_bootstrap: WorkerBootstrap) -> None:
     lines = [f'{key}={value}' for key, value in values.items() if value]
     GEN_WORKER_DEV_VARS.write_text('\n'.join(lines) + '\n')
     ok('Generation Worker local env file', str(GEN_WORKER_DEV_VARS))
+
+
+def push_llm_secrets() -> None:
+    """Push LLM API key secrets to main worker and generation worker via wrangler secret put."""
+    api_token = os.environ.get('CLOUDFLARE_API_TOKEN', '').strip()
+    if not api_token:
+        warn('LLM secrets', 'CLOUDFLARE_API_TOKEN not set — skipping secret push')
+        return
+
+    for key in GENERATION_WORKER_LLM_SECRET_KEYS:
+        val = os.environ.get(key, '').strip()
+        if not val:
+            continue
+        for label, cwd in [('Main Worker', WORKER_DIR), ('Generation Worker', GEN_WORKER_DIR)]:
+            if not cwd.is_dir():
+                continue
+            cmd = ['npx', 'wrangler', 'secret', 'put', key]
+            if cwd is WORKER_DIR:
+                cmd += ['--env', '']
+            try:
+                result = run_command(cmd, cwd=cwd, capture_output=True, input_text=val)
+                if 'Success' in result.stdout or 'Uploaded' in result.stdout or 'Created' in result.stdout:
+                    ok(f'{label} secret', f'{key} set')
+                else:
+                    warn(f'{label} secret {key}', result.stdout[:200])
+            except RuntimeError as e:
+                warn(f'{label} secret {key}', str(e)[:200])
+
+
+def run_typescript_dry_run() -> None:
+    """Run tsc --noEmit in worker/ and frontend/ to catch type errors early."""
+    frontend_dir = ROOT / 'frontend'
+    for label, cwd in [('Worker TypeScript', WORKER_DIR), ('Frontend TypeScript', frontend_dir)]:
+        if not (cwd / 'tsconfig.json').is_file():
+            warn(label, 'no tsconfig.json — skipping')
+            continue
+        try:
+            run_command(['npx', 'tsc', '--noEmit'], cwd=cwd, capture_output=True)
+            ok(label, 'no type errors')
+        except RuntimeError as e:
+            raise RuntimeError(f'{label} type check failed:\n{str(e)}') from e
 
 
 class TemporaryPath:

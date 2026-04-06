@@ -26,7 +26,7 @@ Gmail connect: set GMAIL_CLIENT_SECRET in `.env` (and optionally GMAIL_CLIENT_ID
 otherwise the script reuses VITE_GOOGLE_CLIENT_ID). Run `python setup.py --cloudflare`
 so `worker/.dev.vars` and `wrangler.jsonc` include Gmail vars.
 
-Optional LLM and news research: when set in `.env`, `XAI_API_KEY`, `NEWSAPI_KEY`,
+Optional LLM and news research: when set in `.env`, `XAI_API_KEY`, `OPENROUTER_API_KEY`, `NEWSAPI_KEY`,
 `GNEWS_API_KEY`, `NEWSDATA_API_KEY`, and `RESEARCHER_RSS_FEEDS` are copied into
 `worker/.dev.vars`, included in Worker deploy secrets when non-empty, and synced
 to GitHub Actions secrets with `--sync-github-secrets`.
@@ -61,6 +61,8 @@ from setup.cloudflare import (
     install_worker_dependencies,
     provision_d1_database,
     provision_generation_worker_d1,
+    push_llm_secrets,
+    run_typescript_dry_run,
     set_worker_secrets,
     update_worker_wrangler_config,
     write_generation_worker_dev_vars,
@@ -92,6 +94,7 @@ def main() -> None:
         ensure_cloudflare_auth()
     if args.install_worker_deps:
         install_worker_dependencies()
+        run_typescript_dry_run()
 
     google_resources = None if args.skip_google else _create_google_resources(args.share_email)
     if args.skip_google:
@@ -108,6 +111,7 @@ def main() -> None:
         update_worker_wrangler_config(worker_bootstrap)
         write_worker_dev_vars(worker_bootstrap, google_resources)
         write_generation_worker_dev_vars(worker_bootstrap)
+        push_llm_secrets()
 
     if args.deploy_worker:
         ensure_worker_deploy(worker_bootstrap, google_resources)
