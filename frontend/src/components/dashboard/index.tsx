@@ -23,6 +23,7 @@ import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { TopicVariantsPage } from '../../features/topic-navigation/screens/TopicVariantsPage';
 import { TopicEditorPage } from '../../features/topic-navigation/screens/TopicEditorPage';
 import { GlobalRulesPage } from '../../pages/GlobalRulesPage';
+import { UsagePage } from '../../pages/UsagePage';
 import { effectiveChannel, effectiveLlmRef } from '@/lib/topicEffectivePrefs';
 import { findRowByTopicRouteId, normalizeTopicRouteParam } from '../../features/topic-navigation/utils/topicRoute';
 import {
@@ -773,6 +774,10 @@ export function Dashboard({
               <Navigate to={WORKSPACE_PATHS.topics} replace />
             )
           }
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.usage}
+          element={<UsagePage idToken={idToken} session={session} api={api} />}
         />
         <Route path="*" element={<Navigate to={WORKSPACE_PATHS.topics} replace />} />
       </Routes>

@@ -30,6 +30,7 @@ import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
 import { upsertUser, completeUserOnboarding, setUserSpreadsheetId } from './db/users';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
+import { getUsageSummary } from './db/llm-usage';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -891,6 +892,22 @@ async function dispatchAction(
       ensureSpreadsheetConfigured(storedConfig);
       const settings = await seedLlmSettingsIfEmpty(env.PIPELINE_DB, storedConfig.spreadsheetId, storedConfig, GOOGLE_MODEL_DEFAULT);
       return settings;
+    }
+    case 'getUsageSummary': {
+      const isAdminReq = session.isAdmin;
+      const rows = isAdminReq
+        ? await getUsageSummary(env.PIPELINE_DB, { days: 30 })
+        : await getUsageSummary(env.PIPELINE_DB, { spreadsheetId: storedConfig.spreadsheetId, userId: session.email, days: 30 });
+      return rows;
+    }
+    case 'getUsageSummaryByRange': {
+      const { days } = (payload as { days?: number });
+      const daysNum = Math.min(Math.max(Number(days) || 30, 1), 90);
+      const isAdminReq = session.isAdmin;
+      const rows = isAdminReq
+        ? await getUsageSummary(env.PIPELINE_DB, { days: daysNum })
+        : await getUsageSummary(env.PIPELINE_DB, { spreadsheetId: storedConfig.spreadsheetId, userId: session.email, days: daysNum });
+      return rows;
     }
     case 'saveLlmSetting': {
       ensureAdmin(session);

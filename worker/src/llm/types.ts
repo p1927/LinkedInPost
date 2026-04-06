@@ -5,6 +5,7 @@ export type { LlmProviderId, LlmRef, LlmModelOption, GenerationLlmPayload } from
 export type WorkerEnvForLlm = {
   GEMINI_API_KEY?: string;
   XAI_API_KEY?: string;
+  OPENROUTER_API_KEY?: string;
 };
 
 /** Subset of StoredConfig for resolution (no import from index). */
@@ -15,6 +16,7 @@ export interface LlmWorkspaceConfig {
     primary?: import('@repo/llm-core').LlmRef;
     fallback?: import('@repo/llm-core').LlmRef;
     allowedGrokModels?: string[];
+    allowedOpenrouterModels?: string[];
   };
 }
 

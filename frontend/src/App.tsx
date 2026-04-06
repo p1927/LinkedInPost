@@ -92,7 +92,9 @@ function WorkspaceSession({
       ? 'rules'
       : path.startsWith(WORKSPACE_PATHS.campaign)
         ? 'campaign'
-        : 'topics'
+        : path.startsWith(WORKSPACE_PATHS.usage)
+          ? 'usage'
+          : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
   const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
 

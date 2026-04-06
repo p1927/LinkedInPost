@@ -4,6 +4,7 @@ import {
   resolveEffectiveGoogleModel,
 } from '../google-model-policy';
 import { STATIC_GROK_MODELS } from './providers/grok';
+import { STATIC_OPENROUTER_MODELS } from './providers/openrouter';
 import type { GenerationLlmPayload, LlmRef, LlmWorkspaceConfig, LlmProviderId } from './types';
 
 export function resolveAllowedGrokModelIds(config: LlmWorkspaceConfig): string[] {
@@ -14,8 +15,16 @@ export function resolveAllowedGrokModelIds(config: LlmWorkspaceConfig): string[]
   return STATIC_GROK_MODELS.map((m) => m.value);
 }
 
+export function resolveAllowedOpenrouterModelIds(config: LlmWorkspaceConfig): string[] {
+  const raw = config.llm?.allowedOpenrouterModels;
+  if (Array.isArray(raw) && raw.length > 0) {
+    return [...new Set(raw.map((x) => String(x || '').trim()).filter(Boolean))];
+  }
+  return STATIC_OPENROUTER_MODELS.map((m) => m.value);
+}
+
 function isLlmProviderId(v: string): v is LlmProviderId {
-  return v === 'gemini' || v === 'grok';
+  return v === 'gemini' || v === 'grok' || v === 'openrouter';
 }
 
 /** Workspace default primary (after allowlist checks). */
@@ -30,6 +39,13 @@ export function resolveStoredPrimary(config: LlmWorkspaceConfig, multiProvider: 
     const model = p.model.trim();
     if (allow.includes(model)) {
       return { provider: 'grok', model };
+    }
+  }
+  if (p?.provider === 'openrouter' && p.model) {
+    const allow = resolveAllowedOpenrouterModelIds(config);
+    const model = p.model.trim();
+    if (allow.includes(model)) {
+      return { provider: 'openrouter', model };
     }
   }
   if (p?.provider === 'gemini' && p.model) {
@@ -53,6 +69,11 @@ export function resolveStoredFallback(config: LlmWorkspaceConfig, multiProvider:
     if (!allow.includes(model)) return undefined;
     return { provider: 'grok', model };
   }
+  if (f.provider === 'openrouter') {
+    const allow = resolveAllowedOpenrouterModelIds(config);
+    if (!allow.includes(model)) return undefined;
+    return { provider: 'openrouter', model };
+  }
   if (f.provider === 'gemini') {
     return { provider: 'gemini', model: resolveEffectiveGoogleModel(config, model) };
   }
@@ -73,6 +94,9 @@ export function resolveGenerationRef(
     if (isLlmProviderId(prov) && mod) {
       if (prov === 'grok' && resolveAllowedGrokModelIds(config).includes(mod)) {
         return { provider: 'grok', model: mod };
+      }
+      if (prov === 'openrouter' && resolveAllowedOpenrouterModelIds(config).includes(mod)) {
+        return { provider: 'openrouter', model: mod };
       }
       if (prov === 'gemini') {
         return { provider: 'gemini', model: resolveEffectiveGoogleModel(config, mod) };

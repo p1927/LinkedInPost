@@ -310,6 +310,17 @@ export interface GenerationRulesVersion {
   text: string;
 }
 
+export interface UsageSummaryRow {
+  date: string;
+  provider: string;
+  model: string;
+  user_id: string;
+  calls: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  estimated_cost_usd: number;
+}
+
 export interface GenerationRulesHistoryResult {
   versions: GenerationRulesVersion[];
   current: string;
@@ -845,6 +856,10 @@ export class BackendApi {
 
   async completeOnboarding(idToken: string, spreadsheetId?: string): Promise<void> {
     await this.post<{ ok: true }>('completeOnboarding', idToken, { spreadsheetId: spreadsheetId ?? '' });
+  }
+
+  async getUsageSummary(idToken: string, days = 30): Promise<UsageSummaryRow[]> {
+    return this.post<UsageSummaryRow[]>('getUsageSummaryByRange', idToken, { days });
   }
 }
 

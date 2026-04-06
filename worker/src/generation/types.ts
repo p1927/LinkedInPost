@@ -93,7 +93,7 @@ export interface QuickChangePreviewResult {
   scope: GenerationScope;
   model: string;
   /** Provider used for this preview (default gemini). */
-  llmProvider?: 'gemini' | 'grok';
+  llmProvider?: 'gemini' | 'grok' | 'openrouter';
   selection: TextSelectionRange | null;
   replacementText: string;
   fullText: string;
@@ -109,7 +109,7 @@ export interface VariantPreviewResult {
 export interface VariantsPreviewResponse {
   scope: GenerationScope;
   model: string;
-  llmProvider?: 'gemini' | 'grok';
+  llmProvider?: 'gemini' | 'grok' | 'openrouter';
   selection: TextSelectionRange | null;
   variants: VariantPreviewResult[];
 }

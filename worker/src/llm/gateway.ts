@@ -1,6 +1,7 @@
 import { generateGeminiJson, generateGeminiMultimodalJson } from './providers/gemini';
 import type { GeminiInlineImagePart } from './providers/gemini';
 import { generateGrokJson } from './providers/grok';
+import { generateOpenrouterJson } from './providers/openrouter';
 import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
 
 function isRetryableLlmError(err: unknown): boolean {
@@ -24,6 +25,9 @@ export async function generateForRef(
 ): Promise<string> {
   if (ref.provider === 'gemini') {
     return generateGeminiJson(env, ref.model, prompt, opts);
+  }
+  if (ref.provider === 'openrouter') {
+    return generateOpenrouterJson(env, ref.model, prompt, opts);
   }
   return generateGrokJson(env, ref.model, prompt, opts);
 }

@@ -1,16 +1,19 @@
 import { listGeminiModels, STATIC_GEMINI_MODELS } from './providers/gemini';
 import { listGrokModels, STATIC_GROK_MODELS } from './providers/grok';
+import { listOpenrouterModels, STATIC_OPENROUTER_MODELS } from './providers/openrouter';
 import type { LlmModelOption, LlmProviderId, WorkerEnvForLlm } from './types';
 import { LLM_PROVIDER_IDS } from '@repo/llm-core';
 
 const ENV_KEY_MAP: Record<LlmProviderId, keyof WorkerEnvForLlm> = {
   gemini: 'GEMINI_API_KEY',
   grok: 'XAI_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
 };
 
 const STATIC_FALLBACKS: Record<LlmProviderId, LlmModelOption[]> = {
   gemini: STATIC_GEMINI_MODELS,
   grok: STATIC_GROK_MODELS,
+  openrouter: STATIC_OPENROUTER_MODELS,
 };
 
 export function isLlmProviderConfigured(env: WorkerEnvForLlm, provider: LlmProviderId): boolean {
@@ -33,6 +36,7 @@ export async function listModelsForProvider(
   provider: LlmProviderId,
 ): Promise<LlmModelOption[]> {
   if (provider === 'gemini') return listGeminiModels(env);
+  if (provider === 'openrouter') return listOpenrouterModels(env);
   return listGrokModels(env);
 }
 
