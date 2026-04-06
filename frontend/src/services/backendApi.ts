@@ -4,10 +4,21 @@ import type { ChannelId } from '../integrations/channels';
 import type { DraftPreviewSelection, SheetRow } from './sheets';
 import type { ContentReviewReport } from '../features/content-review/types';
 
+export interface SocialIntegration {
+  provider: string;
+  internalId: string;
+  displayName: string;
+  profilePicture: string;
+  needsReauth: boolean;
+  connectedAt: string;
+}
+
 export interface AppSession {
   email: string;
   isAdmin: boolean;
   config: BotConfig;
+  onboardingCompleted: boolean;
+  integrations: SocialIntegration[];
 }
 
 export interface PublishContentRequest {
@@ -819,6 +830,19 @@ export class BackendApi {
 
   async saveLlmSetting(idToken: string, key: LlmSettingKey, ref: { provider: string; model: string }): Promise<void> {
     await this.post<{ ok: boolean }>('saveLlmSetting', idToken, { key, ref });
+  }
+
+  async getIntegrations(idToken: string): Promise<SocialIntegration[]> {
+    const data = await this.post<SocialIntegration[]>('getIntegrations', idToken, {});
+    return data ?? [];
+  }
+
+  async deleteIntegration(idToken: string, provider: string): Promise<void> {
+    await this.post<{ ok: true }>('deleteIntegration', idToken, { provider });
+  }
+
+  async completeOnboarding(idToken: string, spreadsheetId?: string): Promise<void> {
+    await this.post<{ ok: true }>('completeOnboarding', idToken, { spreadsheetId: spreadsheetId ?? '' });
   }
 }
 
