@@ -260,10 +260,12 @@ export interface BotConfig {
     primary: LlmRef;
     fallback?: LlmRef;
     allowedGrokModels: string[];
+    allowedOpenrouterModels: string[];
   };
   llmProviderKeys?: {
     gemini: boolean;
     grok: boolean;
+    openrouter: boolean;
   };
   /** Per-feature chosen LlmRef, loaded from D1 on bootstrap. */
   llmSettings?: Record<LlmSettingKey, LlmRef>;
@@ -388,6 +390,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
         primary: config.llm.primary,
         fallback: config.llm.fallback,
         allowedGrokModels: [...(config.llm.allowedGrokModels || [])],
+        allowedOpenrouterModels: [...(config.llm.allowedOpenrouterModels || [])],
       },
       llmProviderKeys: {
         gemini: Boolean(config.llmProviderKeys?.gemini),
@@ -438,6 +441,7 @@ export interface BotConfigUpdate {
     primary?: LlmRef;
     fallback?: LlmRef | null;
     allowedGrokModels?: string[];
+    allowedOpenrouterModels?: string[];
   };
   contentReview?: ContentReviewStored;
   imageGen?: {

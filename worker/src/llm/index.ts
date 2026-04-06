@@ -4,7 +4,7 @@
 //   - Gateway:  generateTextJsonWithFallback, generateMultimodalForRef, generateForRef
 //   - Catalog:  getLlmProviderCatalog, listModelsForProvider, getConfiguredLlmProviderIds,
 //               hasAnyLlmProvider, isLlmProviderConfigured
-//   - Policy:   resolveAllowedGrokModelIds, resolveStoredPrimary, resolveStoredFallback,
+//   - Policy:   resolveAllowedGrokModelIds, resolveAllowedOpenrouterModelIds, resolveStoredPrimary, resolveStoredFallback,
 //               resolveGenerationRef, resolveFallbackForGeneration,
 //               resolveGithubAutomationGeminiModel, workspaceConfigFromStored
 //   - Helpers:  generateLlmParsedJson, resolveGenerationWorkerLlmRef
@@ -20,6 +20,7 @@
 export type { LlmModelOption, LlmProviderId, LlmRef, LlmWorkspaceConfig, GenerationLlmPayload, WorkerEnvForLlm } from './types';
 export {
   resolveAllowedGrokModelIds,
+  resolveAllowedOpenrouterModelIds,
   resolveStoredPrimary,
   resolveStoredFallback,
   resolveGenerationRef,

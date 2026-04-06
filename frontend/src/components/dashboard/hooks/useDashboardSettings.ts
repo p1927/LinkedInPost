@@ -48,6 +48,16 @@ function normalizeGrokOptions(models: GoogleModelOption[], selected?: string): G
   return deduped;
 }
 
+function normalizeOpenrouterOptions(models: GoogleModelOption[], selected?: string): GoogleModelOption[] {
+  const deduped = Array.from(
+    new Map(models.filter((m) => m.value.trim() && m.label.trim()).map((m) => [m.value.trim(), m])).values(),
+  );
+  if (selected && !deduped.some((m) => m.value === selected)) {
+    deduped.unshift({ value: selected, label: selected, provider: 'openrouter' as const });
+  }
+  return deduped;
+}
+
 export function useDashboardSettings({
   idToken,
   api,
@@ -92,6 +102,12 @@ export function useDashboardSettings({
   );
   const [catalogModels, setCatalogModels] = useState<GoogleModelOption[]>(AVAILABLE_GOOGLE_MODELS);
   const [grokCatalogModels, setGrokCatalogModels] = useState<GoogleModelOption[]>([]);
+  const [openrouterCatalogModels, setOpenrouterCatalogModels] = useState<GoogleModelOption[]>([]);
+  const [allowedOpenrouterModels, setAllowedOpenrouterModels] = useState<string[]>(() =>
+    FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedOpenrouterModels?.length
+      ? [...session.config.llm.allowedOpenrouterModels]
+      : [],
+  );
   const [savingConfig, setSavingConfig] = useState(false);
   const [telegramBotTokenInput, setTelegramBotTokenInput] = useState('');
   const [gmailDefaultTo, setGmailDefaultTo] = useState(session.config.gmailDefaultTo || '');
@@ -138,7 +154,10 @@ export function useDashboardSettings({
     if (FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedGrokModels?.length) {
       setAllowedGrokModels([...session.config.llm.allowedGrokModels]);
     }
-  }, [session.config.allowedGoogleModels, session.config.llm?.allowedGrokModels]);
+    if (FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedOpenrouterModels?.length) {
+      setAllowedOpenrouterModels([...session.config.llm.allowedOpenrouterModels]);
+    }
+  }, [session.config.allowedGoogleModels, session.config.llm?.allowedGrokModels, session.config.llm?.allowedOpenrouterModels]);
 
   const llmSnapshot = JSON.stringify(session.config.llm ?? null);
   useEffect(() => {
@@ -208,16 +227,44 @@ export function useDashboardSettings({
   }, [api, idToken]);
 
   useEffect(() => {
+    if (!FEATURE_MULTI_PROVIDER_LLM) return;
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const models = normalizeOpenrouterOptions(await api.listLlmModels(idToken, 'openrouter'));
+        if (!cancelled) setOpenrouterCatalogModels(models);
+      } catch {
+        if (!cancelled) setOpenrouterCatalogModels([]);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, idToken]);
+
+  useEffect(() => {
     if (!FEATURE_MULTI_PROVIDER_LLM || !session.isAdmin) return;
     if (allowedGrokModels.length > 0) return;
     if (grokCatalogModels.length === 0) return;
     setAllowedGrokModels(grokCatalogModels.map((m) => m.value));
   }, [session.isAdmin, grokCatalogModels, allowedGrokModels.length]);
 
+  useEffect(() => {
+    if (!FEATURE_MULTI_PROVIDER_LLM || !session.isAdmin) return;
+    if (allowedOpenrouterModels.length > 0) return;
+    if (openrouterCatalogModels.length === 0) return;
+    setAllowedOpenrouterModels(openrouterCatalogModels.map((m) => m.value));
+  }, [session.isAdmin, openrouterCatalogModels, allowedOpenrouterModels.length]);
+
   const effectiveAllowedGemini = session.isAdmin ? allowedGoogleModels : session.config.allowedGoogleModels;
   const effectiveAllowedGrok = session.isAdmin
     ? allowedGrokModels
     : session.config.llm?.allowedGrokModels || [];
+
+  const effectiveAllowedOpenrouter = session.isAdmin
+    ? allowedOpenrouterModels
+    : session.config.llm?.allowedOpenrouterModels || [];
 
   const availableModels = useMemo(() => {
     if (FEATURE_MULTI_PROVIDER_LLM && llmPrimaryProvider === 'grok') {
@@ -225,14 +272,21 @@ export function useDashboardSettings({
       const allow = new Set(effectiveAllowedGrok.length > 0 ? effectiveAllowedGrok : catalog.map((m) => m.value));
       return catalog.filter((model) => allow.has(model.value));
     }
+    if (FEATURE_MULTI_PROVIDER_LLM && llmPrimaryProvider === 'openrouter') {
+      const catalog = openrouterCatalogModels.length > 0 ? openrouterCatalogModels : normalizeOpenrouterOptions([], googleModel);
+      const allow = new Set(effectiveAllowedOpenrouter.length > 0 ? effectiveAllowedOpenrouter : catalog.map((m) => m.value));
+      return catalog.filter((model) => allow.has(model.value));
+    }
     const allow = new Set(effectiveAllowedGemini.length > 0 ? effectiveAllowedGemini : [DEFAULT_GOOGLE_MODEL]);
     return catalogModels.filter((model) => allow.has(model.value));
   }, [
     llmPrimaryProvider,
     grokCatalogModels,
+    openrouterCatalogModels,
     catalogModels,
     effectiveAllowedGemini,
     effectiveAllowedGrok,
+    effectiveAllowedOpenrouter,
     googleModel,
   ]);
 
@@ -276,6 +330,28 @@ export function useDashboardSettings({
     });
   }, []);
 
+  const toggleAllowedOpenrouterModel = useCallback((modelId: string, enabled: boolean) => {
+    setAllowedOpenrouterModels((prev) => {
+      if (enabled) {
+        return [...new Set([...prev, modelId])];
+      }
+      if (prev.length <= 1) {
+        return prev;
+      }
+      return prev.filter((id) => id !== modelId);
+    });
+  }, []);
+
+  const refreshOpenrouterModels = useCallback(async () => {
+    if (!FEATURE_MULTI_PROVIDER_LLM) return;
+    try {
+      const models = normalizeOpenrouterOptions(await api.listLlmModels(idToken, 'openrouter'), googleModel);
+      setOpenrouterCatalogModels(models);
+    } catch (error) {
+      handleFailure(error, 'Failed to load OpenRouter models.');
+    }
+  }, [api, idToken, googleModel, handleFailure]);
+
   const serverToolbarModel =
     FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.primary
       ? session.config.llm.primary.model
@@ -298,6 +374,9 @@ export function useDashboardSettings({
       const ag = [...allowedGrokModels].sort();
       const bg = [...(c.llm?.allowedGrokModels || [])].sort();
       if (ag.length !== bg.length || ag.some((id, i) => id !== bg[i])) return true;
+      const ao = [...allowedOpenrouterModels].sort();
+      const bo = [...(c.llm?.allowedOpenrouterModels || [])].sort();
+      if (ao.length !== bo.length || ao.some((id, i) => id !== bo[i])) return true;
     }
     if (githubTokenInput.trim() !== '') return true;
     if (telegramBotTokenInput.trim() !== '') return true;
@@ -387,6 +466,7 @@ export function useDashboardSettings({
                 primary: { provider: llmPrimaryProvider, model: googleModel },
                 fallback: llmFallback,
                 allowedGrokModels,
+                allowedOpenrouterModels,
               },
             }
           : {}),
@@ -427,6 +507,10 @@ export function useDashboardSettings({
     toggleAllowedGrokModel,
     refreshGrokModels,
     grokAdminCatalog: grokCatalogModels.length > 0 ? grokCatalogModels : normalizeGrokOptions([], googleModel),
+    openrouterAdminCatalog: openrouterCatalogModels.length > 0 ? openrouterCatalogModels : normalizeOpenrouterOptions([], googleModel),
+    allowedOpenrouterModels,
+    toggleAllowedOpenrouterModel,
+    refreshOpenrouterModels,
     googleModel,
     setGoogleModel,
     allowedGoogleModels,

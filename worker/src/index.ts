@@ -41,6 +41,7 @@ import {
   getLlmProviderCatalog,
   isLlmProviderConfigured,
   resolveAllowedGrokModelIds,
+  resolveAllowedOpenrouterModelIds,
   resolveGithubAutomationGeminiModel,
   resolveStoredFallback,
   resolveStoredPrimary,
@@ -55,6 +56,7 @@ import {
 import { runGithubAutomationGenerateVariants } from './internal/githubAutomationGenerateVariants';
 import { listGeminiModels, STATIC_GEMINI_MODELS } from './llm/providers/gemini';
 import { listGrokModels, STATIC_GROK_MODELS } from './llm/providers/grok';
+import { listOpenrouterModels, STATIC_OPENROUTER_MODELS } from './llm/providers/openrouter';
 
 import { FEATURE_CAMPAIGN, FEATURE_CONTENT_FLOW, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
 import { normalizeContentReviewStored, runContentReview } from './features/content-review';
@@ -142,10 +144,12 @@ interface BotConfig {
     primary: LlmRef;
     fallback?: LlmRef;
     allowedGrokModels: string[];
+    allowedOpenrouterModels: string[];
   };
   llmProviderKeys?: {
     gemini: boolean;
     grok: boolean;
+    openrouter: boolean;
   };
   generationRules: string;
   /** Workspace author context for LLM; always included when non-empty (not overridden by topic rules). */
@@ -251,6 +255,7 @@ export interface StoredConfig {
     primary?: LlmRef;
     fallback?: LlmRef;
     allowedGrokModels?: string[];
+    allowedOpenrouterModels?: string[];
   };
   contentReview?: {
     textRef?: LlmRef;
@@ -294,6 +299,7 @@ interface BotConfigUpdate {
     primary?: LlmRef;
     fallback?: LlmRef | null;
     allowedGrokModels?: string[];
+    allowedOpenrouterModels?: string[];
   };
   contentReview?: {
     textRef?: LlmRef;
@@ -878,6 +884,16 @@ async function dispatchAction(
         const filtered = full.filter((m) => allow.has(m.value));
         return filtered.length > 0 ? filtered : full.filter((m) => allow.has(m.value));
       }
+      if (provider === 'openrouter') {
+        const full = await listOpenrouterModels(env);
+        if (session.isAdmin) {
+          return full;
+        }
+        const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+        const allow = new Set(resolveAllowedOpenrouterModelIds(ws));
+        const filtered = full.filter((m) => allow.has(m.value));
+        return filtered.length > 0 ? filtered : STATIC_OPENROUTER_MODELS.filter((m) => allow.has(m.value));
+      }
       throw new Error('Unknown LLM provider.');
     }
     case 'getLlmProviderCatalog': {
@@ -885,15 +901,35 @@ async function dispatchAction(
         throw new Error('Multi-provider LLM is disabled for this deployment.');
       }
       const catalog = await getLlmProviderCatalog(env);
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
       return {
-        providers: catalog.map((entry) => ({
-          id: entry.provider,
-          name: getProviderLabel(entry.provider),
-          models: entry.models,
-        })),
+        providers: catalog.map((entry) => {
+          let models = entry.models;
+          if (!session.isAdmin) {
+            if (entry.provider === 'gemini') {
+              const allow = new Set(resolveAllowedGoogleModelIds(storedConfig));
+              models = models.filter((m) => allow.has(m.value));
+              if (models.length === 0) models = STATIC_GEMINI_MODELS.filter((m) => allow.has(m.value));
+            } else if (entry.provider === 'grok') {
+              const allow = new Set(resolveAllowedGrokModelIds(ws));
+              models = models.filter((m) => allow.has(m.value));
+              if (models.length === 0) models = STATIC_GROK_MODELS.filter((m) => allow.has(m.value));
+            } else if (entry.provider === 'openrouter') {
+              const allow = new Set(resolveAllowedOpenrouterModelIds(ws));
+              models = models.filter((m) => allow.has(m.value));
+              if (models.length === 0) models = STATIC_OPENROUTER_MODELS.filter((m) => allow.has(m.value));
+            }
+          }
+          return {
+            id: entry.provider,
+            name: getProviderLabel(entry.provider),
+            models,
+          };
+        }),
         staticFallbacks: {
           gemini: STATIC_GEMINI_MODELS,
           grok: STATIC_GROK_MODELS,
+          openrouter: STATIC_OPENROUTER_MODELS,
         },
       };
     }
@@ -1699,10 +1735,11 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
         primary: resolveStoredPrimary(ws, true),
         fallback: resolveStoredFallback(ws, true),
         allowedGrokModels: resolveAllowedGrokModelIds(ws),
+        allowedOpenrouterModels: resolveAllowedOpenrouterModelIds(ws),
       },
       llmProviderKeys: (() => {
         const ids = getConfiguredLlmProviderIds(env);
-        return { gemini: ids.includes('gemini'), grok: ids.includes('grok') };
+        return { gemini: ids.includes('gemini'), grok: ids.includes('grok'), openrouter: ids.includes('openrouter') };
       })(),
     };
   }
@@ -2739,6 +2776,27 @@ async function normalizeAllowedGrokModelsAgainstCatalog(env: Env, raw: unknown[]
   return picked;
 }
 
+async function normalizeAllowedOpenrouterModelsAgainstCatalog(env: Env, raw: unknown[]): Promise<string[]> {
+  const catalogModels = await listOpenrouterModels(env);
+  const catalog = new Set<string>();
+  for (const m of catalogModels) {
+    catalog.add(m.value);
+  }
+  for (const m of STATIC_OPENROUTER_MODELS) {
+    catalog.add(m.value);
+  }
+  const picked = [...new Set(
+    raw
+      .map((x) => String(x ?? '').trim())
+      .filter(Boolean)
+      .filter((id) => catalog.has(id)),
+  )];
+  if (picked.length === 0) {
+    throw new Error('Choose at least one allowed OpenRouter model from the catalog.');
+  }
+  return picked;
+}
+
 async function normalizeAllowedGoogleModelsAgainstCatalog(env: Env, raw: unknown[]): Promise<string[]> {
   const catalogModels = await listGeminiModels(env);
   const catalog = new Set<string>();
@@ -2787,6 +2845,24 @@ async function computeNextAllowedGrokModels(
   );
 }
 
+async function computeNextAllowedOpenrouterModels(
+  env: Env,
+  current: StoredConfig,
+  update: BotConfigUpdate,
+): Promise<string[]> {
+  if (!FEATURE_MULTI_PROVIDER_LLM) {
+    return resolveAllowedOpenrouterModelIds(
+      workspaceConfigFromStored(current.googleModel, current.allowedGoogleModels, current.llm),
+    );
+  }
+  if (Array.isArray(update.llm?.allowedOpenrouterModels) && update.llm.allowedOpenrouterModels.length > 0) {
+    return normalizeAllowedOpenrouterModelsAgainstCatalog(env, update.llm.allowedOpenrouterModels);
+  }
+  return resolveAllowedOpenrouterModelIds(
+    workspaceConfigFromStored(current.googleModel, current.allowedGoogleModels, current.llm),
+  );
+}
+
 async function computeNextLlmStored(
   env: Env,
   current: StoredConfig,
@@ -2798,14 +2874,19 @@ async function computeNextLlmStored(
     return undefined;
   }
   const grokAllowed = await computeNextAllowedGrokModels(env, current, update, nextAllowedGoogle, resolvedGoogleModel);
+  const openrouterAllowed = await computeNextAllowedOpenrouterModels(env, current, update);
   const geminiPolicy = { googleModel: resolvedGoogleModel, allowedGoogleModels: nextAllowedGoogle };
   const ws = workspaceConfigFromStored(resolvedGoogleModel, nextAllowedGoogle, {
     ...current.llm,
     allowedGrokModels: grokAllowed,
+    allowedOpenrouterModels: openrouterAllowed,
   });
 
   let primary: LlmRef = update.llm?.primary ?? current.llm?.primary ?? resolveStoredPrimary(ws, true);
   if (primary.provider === 'grok' && !grokAllowed.includes(primary.model)) {
+    primary = resolveStoredPrimary(ws, true);
+  }
+  if (primary.provider === 'openrouter' && !openrouterAllowed.includes(primary.model)) {
     primary = resolveStoredPrimary(ws, true);
   }
   if (primary.provider === 'gemini') {
@@ -2820,6 +2901,8 @@ async function computeNextLlmStored(
   if (fallback) {
     if (fallback.provider === 'grok' && !grokAllowed.includes(fallback.model)) {
       fallback = undefined;
+    } else if (fallback.provider === 'openrouter' && !openrouterAllowed.includes(fallback.model)) {
+      fallback = undefined;
     } else if (fallback.provider === 'gemini') {
       fallback = {
         provider: 'gemini',
@@ -2831,7 +2914,7 @@ async function computeNextLlmStored(
     }
   }
 
-  return { primary, fallback, allowedGrokModels: grokAllowed };
+  return { primary, fallback, allowedGrokModels: grokAllowed, allowedOpenrouterModels: openrouterAllowed };
 }
 
 async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpdate, session: VerifiedSession): Promise<BotConfig> {

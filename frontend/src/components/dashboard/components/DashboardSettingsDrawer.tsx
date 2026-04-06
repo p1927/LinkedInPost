@@ -132,6 +132,10 @@ type DashboardSettingsDrawerProps = {
   allowedGrokModels?: string[];
   toggleAllowedGrokModel?: (modelId: string, enabled: boolean) => void;
   refreshGrokModels?: () => void;
+  openrouterAdminCatalog?: GoogleModelOption[];
+  allowedOpenrouterModels?: string[];
+  toggleAllowedOpenrouterModel?: (modelId: string, enabled: boolean) => void;
+  refreshOpenrouterModels?: () => void;
   llmCatalog?: any[] | null;
 };
 
@@ -499,6 +503,10 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       allowedGrokModels,
       toggleAllowedGrokModel,
       refreshGrokModels,
+      openrouterAdminCatalog,
+      allowedOpenrouterModels,
+      toggleAllowedOpenrouterModel,
+      refreshOpenrouterModels,
       llmCatalog,
     },
     ref,
@@ -694,9 +702,14 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                     <RefreshCw className="mr-1.5 size-4" aria-hidden />
                     Refresh Grok models
                   </Button>
+                  <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={() => refreshOpenrouterModels!()}>
+                    <RefreshCw className="mr-1.5 size-4" aria-hidden />
+                    Refresh OpenRouter models
+                  </Button>
                   <span className="text-xs leading-snug text-muted">
                     Gemini: {session.config.llmProviderKeys?.gemini ? 'key present' : 'no key'} · Grok:{' '}
-                    {session.config.llmProviderKeys?.grok ? 'key present' : 'no key'}
+                    {session.config.llmProviderKeys?.grok ? 'key present' : 'no key'} · OpenRouter:{' '}
+                    {session.config.llmProviderKeys?.openrouter ? 'key present' : 'no key'}
                   </span>
                 </div>
                 <div>
@@ -724,7 +737,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                     value={llmModelId!}
                     onValueChange={(v) => setLlmModelId!(v as string)}
                     itemToStringLabel={(v) => {
-                      const cat = llmPrimaryProvider === 'grok' ? grokAdminCatalog! : adminModelCatalog;
+                      const cat = llmPrimaryProvider === 'grok' ? grokAdminCatalog! : llmPrimaryProvider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
                       return cat.find((m) => m.value === v)?.label ?? String(v ?? '');
                     }}
                   >
@@ -732,7 +745,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                       <SelectValue placeholder="Select model" />
                     </SelectTrigger>
                     <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
-                      {(llmPrimaryProvider === 'grok' ? grokAdminCatalog! : adminModelCatalog).map((m) => (
+                      {(llmPrimaryProvider === 'grok' ? grokAdminCatalog! : llmPrimaryProvider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog).map((m) => (
                         <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
                           <span className="whitespace-normal leading-snug">{m.label}</span>
                         </SelectItem>
@@ -754,7 +767,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                           return;
                         }
                         const prov = v as LlmProviderId;
-                        const catalog = prov === 'grok' ? grokAdminCatalog! : adminModelCatalog;
+                        const catalog = prov === 'grok' ? grokAdminCatalog! : prov === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
                         const first = catalog[0]?.value ?? '';
                         setLlmFallback!({
                           provider: prov,
@@ -780,7 +793,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                         value={llmFallback.model}
                         onValueChange={(v) => setLlmFallback!({ ...llmFallback, model: v ?? llmFallback.model })}
                         itemToStringLabel={(v) => {
-                          const cat = llmFallback.provider === 'grok' ? grokAdminCatalog! : adminModelCatalog;
+                          const cat = llmFallback.provider === 'grok' ? grokAdminCatalog! : llmFallback.provider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
                           return cat.find((m) => m.value === v)?.label ?? String(v ?? '');
                         }}
                       >
@@ -788,7 +801,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                           <SelectValue placeholder="Model" />
                         </SelectTrigger>
                         <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
-                          {(llmFallback.provider === 'grok' ? grokAdminCatalog! : adminModelCatalog).map((m) => (
+                          {(llmFallback.provider === 'grok' ? grokAdminCatalog! : llmFallback.provider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog).map((m) => (
                             <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
                               <span className="whitespace-normal leading-snug">{m.label}</span>
                             </SelectItem>
@@ -854,6 +867,36 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                           checked={checked}
                           disabled={soleChecked}
                           onChange={(e) => toggleAllowedGrokModel!(m.value, e.target.checked)}
+                        />
+                        <span className="min-w-0 leading-snug">{m.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+            {multiLlmReady ? (
+              <div className="mt-6">
+                <label className="mb-1 block text-sm font-semibold text-ink">Allowed OpenRouter models</label>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">Non-admins only see models you enable here when OpenRouter is primary.</p>
+                <div className="mt-3 flex max-h-56 flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-canvas px-3 py-2.5">
+                  {(openrouterAdminCatalog ?? []).map((m) => {
+                    const checked = (allowedOpenrouterModels ?? []).includes(m.value);
+                    const soleChecked = checked && (allowedOpenrouterModels ?? []).length <= 1;
+                    return (
+                      <label
+                        key={m.value}
+                        className={cn(
+                          'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm text-ink transition-colors hover:bg-violet-100/40',
+                          soleChecked && 'cursor-default',
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          className="size-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
+                          checked={checked}
+                          disabled={soleChecked}
+                          onChange={(e) => toggleAllowedOpenrouterModel!(m.value, e.target.checked)}
                         />
                         <span className="min-w-0 leading-snug">{m.label}</span>
                       </label>
