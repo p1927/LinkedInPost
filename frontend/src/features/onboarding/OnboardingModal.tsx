@@ -1,14 +1,14 @@
-// frontend/src/features/onboarding/OnboardingModal.tsx
-import { useState } from 'react'
-import { ConnectAccountsGrid } from './ConnectAccountsGrid'
-import type { SocialIntegration } from '@/services/backendApi'
+import { useState } from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { ConnectAccountsGrid } from './ConnectAccountsGrid';
+import type { SocialIntegration } from '@/services/backendApi';
 
 interface OnboardingModalProps {
-  integrations: SocialIntegration[]
-  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void
-  onDisconnect: (provider: string) => void
-  onComplete: (spreadsheetId?: string) => void
-  connecting: string | null
+  integrations: SocialIntegration[];
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void;
+  onDisconnect: (provider: string) => void;
+  onComplete: (spreadsheetId?: string, driveAccessToken?: string) => void;
+  connecting: string | null;
 }
 
 export function OnboardingModal({
@@ -18,28 +18,48 @@ export function OnboardingModal({
   onComplete,
   connecting,
 }: OnboardingModalProps) {
-  const [step, setStep] = useState<1 | 2>(1)
-  const [spreadsheetUrl, setSpreadsheetUrl] = useState('')
+  const [step, setStep] = useState<1 | 2>(1);
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState('');
+  const [shareError, setShareError] = useState<string | null>(null);
 
-  const hasAnyConnected = integrations.length > 0
+  const hasAnyConnected = integrations.length > 0;
 
   function extractSpreadsheetId(url: string): string {
-    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
-    return match?.[1] ?? url.trim()
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    return match?.[1] ?? url.trim();
   }
 
+  const triggerDriveConsent = useGoogleLogin({
+    scope: 'https://www.googleapis.com/auth/drive',
+    flow: 'implicit',
+    onSuccess: (tokenResponse) => {
+      const spreadsheetId = extractSpreadsheetId(spreadsheetUrl);
+      onComplete(spreadsheetId, tokenResponse.access_token);
+    },
+    onError: () => {
+      setShareError(
+        'Drive access was denied. You can connect your sheet later from the Connections page.',
+      );
+      onComplete(undefined, undefined);
+    },
+    onNonOAuthError: () => {
+      setShareError(null);
+      onComplete(undefined, undefined);
+    },
+  });
+
   function handleFinish() {
-    const spreadsheetId = spreadsheetUrl.trim()
-      ? extractSpreadsheetId(spreadsheetUrl)
-      : undefined
-    onComplete(spreadsheetId)
+    if (!spreadsheetUrl.trim()) {
+      onComplete(undefined, undefined);
+      return;
+    }
+    setShareError(null);
+    triggerDriveConsent();
   }
 
   return (
-    /* Backdrop */
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="glass-panel-strong w-full max-w-md rounded-3xl p-8 shadow-2xl">
-        {/* Step indicator */}
         <div className="mb-6 flex items-center gap-2">
           {[1, 2].map((s) => (
             <div key={s} className="flex items-center gap-2">
@@ -67,14 +87,12 @@ export function OnboardingModal({
             <p className="mb-6 text-sm text-muted">
               Connect LinkedIn, Instagram, or Gmail so posts are published from your accounts.
             </p>
-
             <ConnectAccountsGrid
               integrations={integrations}
               onConnect={onConnect}
               onDisconnect={onDisconnect}
               connecting={connecting}
             />
-
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
@@ -93,17 +111,18 @@ export function OnboardingModal({
               Content source
             </h2>
             <p className="mb-6 text-sm text-muted">
-              Optionally paste a Google Spreadsheet URL to import topics from Sheets. You can always add this later in Settings.
+              Optionally paste a Google Spreadsheet URL. We'll request Drive access to share it with our service account automatically.
             </p>
-
             <input
               type="url"
               value={spreadsheetUrl}
-              onChange={(e) => setSpreadsheetUrl(e.target.value)}
+              onChange={(e) => { setSpreadsheetUrl(e.target.value); setShareError(null); }}
               placeholder="https://docs.google.com/spreadsheets/d/..."
               className="glass-inset w-full rounded-xl border border-violet-200/45 bg-white/50 px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
-
+            {shareError ? (
+              <p className="mt-2 text-xs text-amber-600">{shareError}</p>
+            ) : null}
             <div className="mt-6 flex justify-between">
               <button
                 type="button"
@@ -124,5 +143,5 @@ export function OnboardingModal({
         )}
       </div>
     </div>
-  )
+  );
 }

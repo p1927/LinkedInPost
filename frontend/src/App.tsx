@@ -348,15 +348,21 @@ function App() {
     }
   }, [idToken, api])
 
-  const handleCompleteOnboarding = useCallback(async (spreadsheetId?: string) => {
+  const handleCompleteOnboarding = useCallback(async (spreadsheetId?: string, driveAccessToken?: string) => {
     if (!idToken) return
     try {
-      await api.completeOnboarding(idToken, spreadsheetId)
+      if (spreadsheetId && driveAccessToken) {
+        await api.connectSpreadsheet(idToken, spreadsheetId, driveAccessToken)
+      }
+      await api.completeOnboarding(idToken, spreadsheetId && !driveAccessToken ? spreadsheetId : undefined)
       setShowOnboarding(false)
+      navigate(WORKSPACE_PATHS.connections)
     } catch (err) {
       console.error('Complete onboarding failed:', err)
+      await api.completeOnboarding(idToken).catch(() => {})
+      setShowOnboarding(false)
     }
-  }, [idToken, api])
+  }, [idToken, api, navigate])
 
   const showMarketingHeader = !idToken || !session
   const routerBasename = workspaceRouterBasename()
