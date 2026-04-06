@@ -395,6 +395,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
       llmProviderKeys: {
         gemini: Boolean(config.llmProviderKeys?.gemini),
         grok: Boolean(config.llmProviderKeys?.grok),
+        openrouter: Boolean(config.llmProviderKeys?.openrouter),
       },
     };
   }
