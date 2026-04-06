@@ -322,7 +322,7 @@ def build_post_setup_todos(worker_bootstrap: WorkerBootstrap | None) -> list[str
         f'Register the LinkedIn redirect URI: {linkedin_callback}',
         f'Register the Meta redirect URI: {whatsapp_callback}',
         f'Set VITE_WORKER_URL in the frontend build to: {vite_worker_url}',
-        'Open the dashboard as an admin and use Connect Instagram, Connect LinkedIn, Connect WhatsApp Business, and Connect Gmail to store channel access in the Worker.',
+        'Sign in — any verified Google account can now sign up. The onboarding wizard appears on first login: connect LinkedIn, Instagram, and/or Gmail (per-user OAuth). For WhatsApp and Telegram, an admin must set the bot credentials in Settings.',
         'For Telegram, set TELEGRAM_BOT_TOKEN once and save the target chat IDs in dashboard settings.',
         (
             'D1 database: if setup.py --cloudflare did not provision D1 automatically, run: '
@@ -369,7 +369,7 @@ def print_bootstrap_summary(
         print(f'VITE_GOOGLE_CLIENT_ID   = {worker_bootstrap.google_client_id or "<set this value>"}')
         print(f'GOOGLE_CLOUD_STORAGE_BUCKET = {worker_bootstrap.google_cloud_storage_bucket or "<optional: set this value>"}')
         print(f'DELETE_UNUSED_GENERATED_IMAGES = {worker_bootstrap.delete_unused_generated_images or "true"}')
-        print(f'ALLOWED_EMAILS          = {worker_bootstrap.allowed_emails or "<set this value>"}')
+        print(f'ALLOWED_EMAILS          = {worker_bootstrap.allowed_emails or "<optional — leave empty to allow any Google account>"}')
         print(f'ADMIN_EMAILS            = {worker_bootstrap.admin_emails or "<set this value>"}')
         print(f'CORS_ALLOWED_ORIGINS    = {worker_bootstrap.cors_allowed_origins or "<set this value>"}')
         print(f'INSTAGRAM_APP_ID        = {worker_bootstrap.instagram_app_id or "<optional: set this for popup auth>"}')

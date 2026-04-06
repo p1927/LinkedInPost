@@ -65,7 +65,7 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: object |
     )
 
     if not allowed_emails:
-        warn('ALLOWED_EMAILS', 'not provided. Worker access control must be set before deployment.')
+        warn('ALLOWED_EMAILS', 'not provided — any verified Google account can sign up. Set this to restrict access to specific emails.')
     if not google_client_id:
         warn('VITE_GOOGLE_CLIENT_ID', 'not provided. Frontend login and Worker audience checks will remain unconfigured.')
 
