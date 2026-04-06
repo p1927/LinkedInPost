@@ -9,7 +9,7 @@ import { AlertProvider } from './components/AlertProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
-import { BackendApi, isAuthErrorMessage, type AppSession } from './services/backendApi'
+import { BackendApi, isAuthErrorMessage, type AppSession, type SocialIntegration } from './services/backendApi'
 import type { LlmProviderId } from '@repo/llm-core'
 import {
   workspaceRouterBasename,
@@ -30,6 +30,7 @@ import {
   isActiveDevGoogleAuthBypassToken,
   isDevGoogleAuthBypassEnabled,
 } from './plugins/dev-google-auth-bypass'
+import { OnboardingModal } from './features/onboarding/OnboardingModal'
 import { PrivacyPolicy } from './components/PrivacyPolicy'
 import { LegalFooterLinks } from './components/LegalFooterLinks'
 import { TermsOfServicePage } from './pages/TermsOfServicePage'
@@ -64,6 +65,10 @@ function WorkspaceSession({
   setErrorMessage,
   onAuthExpired,
   llmCatalog,
+  integrations,
+  onConnect,
+  onDisconnect,
+  connecting,
 }: {
   idToken: string
   session: AppSession
@@ -74,6 +79,10 @@ function WorkspaceSession({
   setErrorMessage: Dispatch<SetStateAction<string>>
   onAuthExpired: () => void
   llmCatalog: LlmProviderCatalog | null
+  integrations: SocialIntegration[]
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void
+  onDisconnect: (provider: string) => void
+  connecting: string | null
 }) {
   const location = useLocation()
   const path = normalizeWorkspacePathname(location.pathname)
@@ -109,6 +118,10 @@ function WorkspaceSession({
         session={session}
         api={api}
         llmCatalog={llmCatalog}
+        integrations={integrations}
+        onConnect={onConnect}
+        onDisconnect={onDisconnect}
+        connecting={connecting}
         onSaveConfig={async (config) => {
           const updatedConfig = await api.saveConfig(idToken, config)
           setSession((current) => (current ? { ...current, config: updatedConfig } : current))
@@ -216,6 +229,9 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [llmCatalog, setLlmCatalog] = useState<LlmProviderCatalog | null>(null)
+  const [integrations, setIntegrations] = useState<SocialIntegration[]>([])
+  const [connecting, setConnecting] = useState<string | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   useEffect(() => {
     if (!idToken) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -232,6 +248,8 @@ function App() {
       .bootstrap(idToken)
       .then(async (nextSession) => {
         setSession(nextSession)
+        setIntegrations(nextSession.integrations ?? [])
+        setShowOnboarding(!(nextSession.onboardingCompleted ?? true))
 
         // Fetch LLM catalog after session is ready
         try {
@@ -272,6 +290,71 @@ function App() {
     setSession(null)
     setErrorMessage('Your Google session expired. Sign in again to continue.')
   }
+
+  const handleConnect = useCallback(async (provider: 'linkedin' | 'instagram' | 'gmail') => {
+    if (!idToken) return
+    setConnecting(provider)
+    try {
+      const actionMap = {
+        linkedin: 'startLinkedInAuth',
+        instagram: 'startInstagramAuth',
+        gmail: 'startGmailAuth',
+      } as const
+      const method = actionMap[provider]
+      const result = await api[method](idToken)
+      const { authorizationUrl } = result
+
+      const popup = window.open(authorizationUrl, 'oauth', 'width=500,height=700,left=200,top=100')
+
+      await new Promise<void>((resolve, reject) => {
+        const timer = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(timer)
+            resolve()
+          }
+        }, 500)
+
+        function onMessage(event: MessageEvent) {
+          if (event.data?.source !== 'channel-bot-oauth') return
+          window.removeEventListener('message', onMessage)
+          clearInterval(timer)
+          if (event.data.ok) {
+            resolve()
+          } else {
+            reject(new Error(event.data.error || 'Connection failed.'))
+          }
+        }
+        window.addEventListener('message', onMessage)
+      })
+
+      const updated = await api.getIntegrations(idToken)
+      setIntegrations(updated)
+    } catch (err) {
+      console.error('OAuth connect failed:', err)
+    } finally {
+      setConnecting(null)
+    }
+  }, [idToken, api])
+
+  const handleDisconnect = useCallback(async (provider: string) => {
+    if (!idToken) return
+    try {
+      await api.deleteIntegration(idToken, provider)
+      setIntegrations((prev) => prev.filter((i) => i.provider !== provider))
+    } catch (err) {
+      console.error('Disconnect failed:', err)
+    }
+  }, [idToken, api])
+
+  const handleCompleteOnboarding = useCallback(async (spreadsheetId?: string) => {
+    if (!idToken) return
+    try {
+      await api.completeOnboarding(idToken, spreadsheetId)
+      setShowOnboarding(false)
+    } catch (err) {
+      console.error('Complete onboarding failed:', err)
+    }
+  }, [idToken, api])
 
   const showMarketingHeader = !idToken || !session
   const routerBasename = workspaceRouterBasename()
@@ -322,6 +405,16 @@ function App() {
                 ) : null}
 
                 {idToken && session ? (
+                  <>
+                  {showOnboarding && (
+                    <OnboardingModal
+                      integrations={integrations}
+                      onConnect={handleConnect}
+                      onDisconnect={handleDisconnect}
+                      onComplete={handleCompleteOnboarding}
+                      connecting={connecting}
+                    />
+                  )}
                   <WorkspaceSession
                     idToken={idToken}
                     session={session}
@@ -332,7 +425,12 @@ function App() {
                     setErrorMessage={setErrorMessage}
                     onAuthExpired={handleAuthExpired}
                     llmCatalog={llmCatalog}
+                    integrations={integrations}
+                    onConnect={handleConnect}
+                    onDisconnect={handleDisconnect}
+                    connecting={connecting}
                   />
+                  </>
                 ) : (
                   <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pb-12 pt-6 sm:px-6">
                 {!api.isConfigured() ? (

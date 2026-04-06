@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { type AppSession, type BackendApi, type TelegramChatVerificationResult } from '../../services/backendApi';
+import { type AppSession, type BackendApi, type SocialIntegration, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
 import { type BotConfig, type BotConfigUpdate, type LlmRef } from '../../services/configService';
 import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
@@ -57,6 +57,10 @@ export function Dashboard({
   onSaveConfig,
   onAuthExpired,
   llmCatalog,
+  integrations,
+  onConnect,
+  onDisconnect,
+  connecting,
 }: {
   idToken: string;
   session: AppSession;
@@ -64,6 +68,10 @@ export function Dashboard({
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
   llmCatalog: any[] | null;
+  integrations: SocialIntegration[];
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void;
+  onDisconnect: (provider: string) => void;
+  connecting: string | null;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -706,8 +714,10 @@ export function Dashboard({
           <div className="mt-2">{deliveryContent}</div>
         </div>
         <SettingsConnectionsCard
-          health={publishingHealth}
-          onNavigateToSection={(sectionId) => settingsDrawerRef.current?.scrollToSection(sectionId)}
+          integrations={integrations}
+          onConnect={onConnect}
+          onDisconnect={onDisconnect}
+          connecting={connecting}
           className="rounded-2xl bg-white/80 p-0 shadow-card backdrop-blur-md"
         />
       </div>

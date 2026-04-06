@@ -28,6 +28,8 @@ import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
+import { upsertUser, completeUserOnboarding, setUserSpreadsheetId } from './db/users';
+import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -324,6 +326,8 @@ interface AppSession {
   email: string;
   isAdmin: boolean;
   config: BotConfig;
+  onboardingCompleted: boolean;
+  integrations: PublicIntegration[];
 }
 
 interface ApiEnvelope<T> {
@@ -354,6 +358,7 @@ interface RequestPayload {
 
 interface VerifiedSession {
   email: string;
+  userId: string;   // same as email — Google email is the stable user identifier
   isAdmin: boolean;
 }
 
@@ -469,6 +474,8 @@ interface GoogleTokenInfo {
   email?: string;
   email_verified?: string | boolean;
   aud?: string;
+  name?: string;
+  picture?: string;
 }
 
 interface GmailTokenResponse {
@@ -810,10 +817,17 @@ async function dispatchAction(
         ? await seedLlmSettingsIfEmpty(env.PIPELINE_DB, storedConfig.spreadsheetId, storedConfig, GOOGLE_MODEL_DEFAULT)
         : undefined;
       const publicConfig = toPublicConfig(storedConfig, env);
+      const [integrations, userRow] = await Promise.all([
+        listSocialIntegrations(env.PIPELINE_DB, session.userId),
+        env.PIPELINE_DB.prepare('SELECT onboarding_completed FROM users WHERE id = ?1')
+          .bind(session.userId).first<{ onboarding_completed: number }>(),
+      ]);
       return {
         email: session.email,
         isAdmin: session.isAdmin,
         config: llmSettings ? { ...publicConfig, llmSettings } : publicConfig,
+        onboardingCompleted: (userRow?.onboarding_completed ?? 0) === 1,
+        integrations,
       } satisfies AppSession;
     }
     case 'getGoogleModels': {
@@ -1043,16 +1057,13 @@ async function dispatchAction(
           payload.topicGenerationModel !== undefined ? String(payload.topicGenerationModel ?? '') : undefined,
       });
     case 'startLinkedInAuth':
-      ensureAdmin(session);
       return startLinkedInAuth(request, env, session);
     case 'startInstagramAuth':
-      ensureAdmin(session);
       return startInstagramAuth(request, env, session);
     case 'startWhatsAppAuth':
       ensureAdmin(session);
       return startWhatsAppAuth(request, env, session);
     case 'startGmailAuth':
-      ensureAdmin(session);
       return startGmailAuth(request, env, session);
     case 'disconnectChannelAuth':
       ensureAdmin(session);
@@ -1073,7 +1084,7 @@ async function dispatchAction(
       return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
       ensureSpreadsheetConfigured(storedConfig);
-      return publishContent(env, storedConfig, payload, sheets, pipeline);
+      return publishContent(env, session.userId, storedConfig, payload, sheets, pipeline);
     case 'cancelScheduledPublish':
       ensureSpreadsheetConfigured(storedConfig);
       return handleCancelScheduledPublishDispatch(env, payload);
@@ -1270,6 +1281,25 @@ async function dispatchAction(
         patternRationale: patternRationale || '',
       });
     }
+    case 'getIntegrations':
+      return listSocialIntegrations(env.PIPELINE_DB, session.userId);
+
+    case 'deleteIntegration': {
+      const provider = String(payload.provider || '').trim();
+      if (!provider) throw new Error('Missing provider.');
+      await deleteSocialIntegration(env.PIPELINE_DB, session.userId, provider);
+      return { ok: true };
+    }
+
+    case 'completeOnboarding': {
+      await completeUserOnboarding(env.PIPELINE_DB, session.userId);
+      const spreadsheetId = String(payload.spreadsheetId || '').trim();
+      if (spreadsheetId) {
+        await setUserSpreadsheetId(env.PIPELINE_DB, session.userId, spreadsheetId);
+      }
+      return { ok: true };
+    }
+
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -1334,7 +1364,9 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
 
   const bypassSession = tryResolveDevGoogleAuthBypassSession(idToken, env);
   if (bypassSession) {
-    return bypassSession;
+    // Dev bypass: upsert a synthetic user row so the rest of the code works.
+    await upsertUser(env.PIPELINE_DB, bypassSession.email, 'Dev User', '').catch(() => undefined);
+    return { ...bypassSession, userId: bypassSession.email };
   }
 
   const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
@@ -1354,18 +1386,21 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
     throw new Error('Unauthorized: Google token audience does not match this app.');
   }
 
+  // ALLOWED_EMAILS is now optional: if set, acts as an allowlist; if empty, any Google account can log in.
   const allowedEmails = parseEmailList(env.ALLOWED_EMAILS);
-  if (allowedEmails.length === 0) {
-    throw new Error('Access is disabled until ALLOWED_EMAILS is configured in the Worker environment.');
-  }
-
-  if (!allowedEmails.includes(email)) {
+  if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
     throw new Error('Unauthorized: this Google account is not on the allowed users list.');
   }
+
+  // Upsert user into D1 on every login (updates name/avatar if they changed).
+  const displayName = String(tokenInfo.name || '').trim();
+  const avatarUrl = String(tokenInfo.picture || '').trim();
+  await upsertUser(env.PIPELINE_DB, email, displayName, avatarUrl).catch(() => undefined);
 
   const adminEmails = parseEmailList(env.ADMIN_EMAILS);
   return {
     email,
+    userId: email,
     isAdmin: adminEmails.length === 0 || adminEmails.includes(email),
   };
 }
@@ -1759,6 +1794,19 @@ async function handleLinkedInCallback(request: Request, env: Env): Promise<Respo
     const accessToken = await exchangeLinkedInCodeForToken(code, oauthState.redirectUri, env);
     const personUrn = await fetchLinkedInPersonUrn(accessToken);
     await persistLinkedInConnection(env, accessToken, personUrn);
+    // Also store per-user token in D1
+    const encKey = requireSecretEncryptionKey(env);
+    await upsertSocialIntegration(env.PIPELINE_DB, {
+      userId: oauthState.email,
+      provider: 'linkedin',
+      internalId: personUrn,
+      displayName: '',
+      profilePicture: '',
+      accessTokenEnc: await encryptSecret(accessToken, encKey),
+      refreshTokenEnc: '',
+      tokenExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days
+      scopes: 'openid profile w_member_social r_basicprofile',
+    }).catch(() => undefined);
     return oauthPopupResponse(oauthState.origin, {
       source: 'channel-bot-oauth',
       provider: 'linkedin',
@@ -1822,6 +1870,19 @@ async function handleInstagramCallback(request: Request, env: Env): Promise<Resp
     const accessToken = await exchangeInstagramCodeForLongLivedToken(code, oauthState.redirectUri, env);
     const instagramAccount = await fetchInstagramAccount(accessToken);
     await persistInstagramConnection(env, accessToken, instagramAccount.userId, instagramAccount.username);
+    // Also store per-user token in D1
+    const encKey = requireSecretEncryptionKey(env);
+    await upsertSocialIntegration(env.PIPELINE_DB, {
+      userId: oauthState.email,
+      provider: 'instagram',
+      internalId: instagramAccount.userId,
+      displayName: instagramAccount.username,
+      profilePicture: '',
+      accessTokenEnc: await encryptSecret(accessToken, encKey),
+      refreshTokenEnc: '',
+      tokenExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days
+      scopes: 'instagram_basic,instagram_content_publish,pages_show_list',
+    }).catch(() => undefined);
     return oauthPopupResponse(oauthState.origin, {
       source: 'channel-bot-oauth',
       provider: 'instagram',
@@ -1978,6 +2039,20 @@ async function handleGmailCallback(request: Request, env: Env): Promise<Response
     const tokens = await exchangeGmailCodeForToken(code, oauthState.redirectUri, env);
     const profile = await fetchGmailProfile(tokens.access_token);
     await persistGmailConnection(env, tokens.access_token, tokens.refresh_token || '', profile.email);
+    // Also store per-user token in D1
+    const encKey = requireSecretEncryptionKey(env);
+    const refreshToken = tokens.refresh_token || '';
+    await upsertSocialIntegration(env.PIPELINE_DB, {
+      userId: oauthState.email,
+      provider: 'gmail',
+      internalId: profile.email,
+      displayName: profile.email,
+      profilePicture: '',
+      accessTokenEnc: await encryptSecret(tokens.access_token, encKey),
+      refreshTokenEnc: refreshToken ? await encryptSecret(refreshToken, encKey) : '',
+      tokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+      scopes: GMAIL_OAUTH_SCOPES,
+    }).catch(() => undefined);
     return oauthPopupResponse(oauthState.origin, {
       source: 'channel-bot-oauth',
       provider: 'gmail',
@@ -2792,6 +2867,7 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
 
   await publishContent(
     env,
+    '',
     config,
     {
       row,
@@ -2830,6 +2906,7 @@ function resolvePublishImageUrls(payload: Record<string, unknown>, row: SheetRow
 
 async function publishContent(
   env: Env,
+  userId: string,
   config: StoredConfig,
   payload: Record<string, unknown>,
   _sheets: SheetsGateway,
@@ -2898,35 +2975,53 @@ async function publishContent(
       throw new Error('Instagram publishing requires a selected image.');
     }
 
-    if (!config.instagramUserId || (!config.instagramAccessTokenCiphertext && !config.instagramAccessToken)) {
-      throw new Error('Instagram publishing is not configured. Ask an admin to complete the Instagram settings.');
-    }
-
-    let instagramAccessToken: string;
-    if (config.instagramAccessTokenCiphertext) {
+    // Try per-user D1 token first
+    let instagramAccessToken: string | undefined;
+    let instagramUserId: string | undefined;
+    const userInstagram = await getSocialIntegration(env.PIPELINE_DB, userId, 'instagram');
+    if (userInstagram && !userInstagram.needs_reauth) {
       try {
         instagramAccessToken = await decryptSecret(
-          config.instagramAccessTokenCiphertext,
+          userInstagram.access_token_enc,
           requireSecretEncryptionKey(env),
-          INSTAGRAM_TOKEN_REAUTH_MESSAGE,
+          'Instagram token could not be decrypted.',
         );
-      } catch (error) {
-        if (error instanceof Error && error.message === INSTAGRAM_TOKEN_REAUTH_MESSAGE) {
-          const nextConfig: StoredConfig = {
-            ...config,
-            instagramAccessTokenCiphertext: undefined,
-          };
-          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-        }
-        throw error;
+        instagramUserId = userInstagram.internal_id;
+      } catch {
+        // Fall through to shared config
       }
-    } else {
-      instagramAccessToken = String(config.instagramAccessToken || '').trim();
+    }
+
+    if (!instagramAccessToken) {
+      if (!config.instagramUserId || (!config.instagramAccessTokenCiphertext && !config.instagramAccessToken)) {
+        throw new Error('Instagram publishing is not configured. Ask an admin to complete the Instagram settings.');
+      }
+      if (config.instagramAccessTokenCiphertext) {
+        try {
+          instagramAccessToken = await decryptSecret(
+            config.instagramAccessTokenCiphertext,
+            requireSecretEncryptionKey(env),
+            INSTAGRAM_TOKEN_REAUTH_MESSAGE,
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message === INSTAGRAM_TOKEN_REAUTH_MESSAGE) {
+            const nextConfig: StoredConfig = {
+              ...config,
+              instagramAccessTokenCiphertext: undefined,
+            };
+            await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+          }
+          throw error;
+        }
+      } else {
+        instagramAccessToken = String(config.instagramAccessToken || '').trim();
+      }
+      instagramUserId = config.instagramUserId;
     }
 
     const publishResult = await publishInstagramPost({
       accessToken: instagramAccessToken,
-      instagramUserId: config.instagramUserId,
+      instagramUserId: instagramUserId!,
       caption: message,
       imageUrls,
       altText: row.topic,
@@ -2945,35 +3040,53 @@ async function publishContent(
   }
 
   if (channel === 'linkedin') {
-    if (!config.linkedinPersonUrn || (!config.linkedinAccessTokenCiphertext && !config.linkedinAccessToken)) {
-      throw new Error('LinkedIn publishing is not configured. Ask an admin to complete the LinkedIn settings.');
-    }
-
-    let linkedinAccessToken: string;
-    if (config.linkedinAccessTokenCiphertext) {
+    // Try per-user D1 token first
+    let linkedinAccessToken: string | undefined;
+    let linkedinPersonUrn: string | undefined;
+    const userLinkedin = await getSocialIntegration(env.PIPELINE_DB, userId, 'linkedin');
+    if (userLinkedin && !userLinkedin.needs_reauth) {
       try {
         linkedinAccessToken = await decryptSecret(
-          config.linkedinAccessTokenCiphertext,
+          userLinkedin.access_token_enc,
           requireSecretEncryptionKey(env),
-          LINKEDIN_TOKEN_REAUTH_MESSAGE,
+          'LinkedIn token could not be decrypted.',
         );
-      } catch (error) {
-        if (error instanceof Error && error.message === LINKEDIN_TOKEN_REAUTH_MESSAGE) {
-          const nextConfig: StoredConfig = {
-            ...config,
-            linkedinAccessTokenCiphertext: undefined,
-          };
-          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-        }
-        throw error;
+        linkedinPersonUrn = userLinkedin.internal_id;
+      } catch {
+        // Fall through to shared config
       }
-    } else {
-      linkedinAccessToken = String(config.linkedinAccessToken || '').trim();
+    }
+
+    if (!linkedinAccessToken) {
+      if (!config.linkedinPersonUrn || (!config.linkedinAccessTokenCiphertext && !config.linkedinAccessToken)) {
+        throw new Error('LinkedIn publishing is not configured. Ask an admin to complete the LinkedIn settings.');
+      }
+      if (config.linkedinAccessTokenCiphertext) {
+        try {
+          linkedinAccessToken = await decryptSecret(
+            config.linkedinAccessTokenCiphertext,
+            requireSecretEncryptionKey(env),
+            LINKEDIN_TOKEN_REAUTH_MESSAGE,
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message === LINKEDIN_TOKEN_REAUTH_MESSAGE) {
+            const nextConfig: StoredConfig = {
+              ...config,
+              linkedinAccessTokenCiphertext: undefined,
+            };
+            await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+          }
+          throw error;
+        }
+      } else {
+        linkedinAccessToken = String(config.linkedinAccessToken || '').trim();
+      }
+      linkedinPersonUrn = config.linkedinPersonUrn;
     }
 
     const publishResult = await publishLinkedInPost({
       accessToken: linkedinAccessToken,
-      personUrn: config.linkedinPersonUrn,
+      personUrn: linkedinPersonUrn!,
       text: message,
       imageUrl: imageUrls.length === 1 ? imageUrls[0] : undefined,
       imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
@@ -3019,30 +3132,45 @@ async function publishContent(
   }
 
   if (channel === 'gmail') {
-    if (!config.gmailEmailAddress || (!config.gmailAccessTokenCiphertext && !config.gmailAccessToken)) {
-      throw new Error('Gmail delivery is not configured. Ask an admin to connect a Gmail account.');
-    }
-
-    let accessToken: string;
-    if (config.gmailAccessTokenCiphertext) {
+    // Try per-user D1 token first
+    let accessToken: string | undefined;
+    const userGmail = await getSocialIntegration(env.PIPELINE_DB, userId, 'gmail');
+    if (userGmail && !userGmail.needs_reauth) {
       try {
         accessToken = await decryptSecret(
-          config.gmailAccessTokenCiphertext,
+          userGmail.access_token_enc,
           requireSecretEncryptionKey(env),
-          GMAIL_TOKEN_REAUTH_MESSAGE,
+          'Gmail token could not be decrypted.',
         );
-      } catch (error) {
-        if (error instanceof Error && error.message === GMAIL_TOKEN_REAUTH_MESSAGE) {
-          const nextConfig: StoredConfig = {
-            ...config,
-            gmailAccessTokenCiphertext: undefined,
-          };
-          await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-        }
-        throw error;
+      } catch {
+        // Fall through to shared config
       }
-    } else {
-      accessToken = String(config.gmailAccessToken || '').trim();
+    }
+
+    if (!accessToken) {
+      if (!config.gmailEmailAddress || (!config.gmailAccessTokenCiphertext && !config.gmailAccessToken)) {
+        throw new Error('Gmail delivery is not configured. Ask an admin to connect a Gmail account.');
+      }
+      if (config.gmailAccessTokenCiphertext) {
+        try {
+          accessToken = await decryptSecret(
+            config.gmailAccessTokenCiphertext,
+            requireSecretEncryptionKey(env),
+            GMAIL_TOKEN_REAUTH_MESSAGE,
+          );
+        } catch (error) {
+          if (error instanceof Error && error.message === GMAIL_TOKEN_REAUTH_MESSAGE) {
+            const nextConfig: StoredConfig = {
+              ...config,
+              gmailAccessTokenCiphertext: undefined,
+            };
+            await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+          }
+          throw error;
+        }
+      } else {
+        accessToken = String(config.gmailAccessToken || '').trim();
+      }
     }
 
     const gmailRequest: Parameters<typeof sendGmailMessage>[0] = {
