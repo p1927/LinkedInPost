@@ -1492,6 +1492,17 @@ function parseEmailList(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
+/** Used when `ADMIN_EMAILS` is missing or empty so we never treat every user as admin. */
+const DEFAULT_ADMIN_EMAIL = '99pratyush@gmail.com';
+
+function resolveAdminEmailAllowlist(env: Env): string[] {
+  const fromEnv = parseEmailList(env.ADMIN_EMAILS);
+  if (fromEnv.length > 0) {
+    return fromEnv;
+  }
+  return [DEFAULT_ADMIN_EMAIL];
+}
+
 async function verifySession(idToken: string | undefined, env: Env): Promise<VerifiedSession> {
   if (!idToken) {
     throw new Error('Unauthorized: missing Google ID token.');
@@ -1532,11 +1543,11 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
   const avatarUrl = String(tokenInfo.picture || '').trim();
   await upsertUser(env.PIPELINE_DB, email, displayName, avatarUrl).catch(() => undefined);
 
-  const adminEmails = parseEmailList(env.ADMIN_EMAILS);
+  const adminEmails = resolveAdminEmailAllowlist(env);
   return {
     email,
     userId: email,
-    isAdmin: adminEmails.length === 0 || adminEmails.includes(email),
+    isAdmin: adminEmails.includes(email),
   };
 }
 
