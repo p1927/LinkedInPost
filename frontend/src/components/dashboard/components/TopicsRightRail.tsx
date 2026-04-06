@@ -14,6 +14,7 @@ import { useAlert } from '@/components/useAlert';
 import { queueStatusToBadgeVariant, shouldShowDraftedQueueActions } from '@/components/dashboard/utils';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '@/lib/topicDisplay';
 import { Badge } from '@/components/ui/badge';
+import { LlmModelCombobox } from '@/components/llm';
 
 const WORKSPACE_DEFAULT_MODEL = '__workspace_default__';
 const WORKSPACE_DEFAULT_CHANNEL = '__workspace_default_channel__';
@@ -95,23 +96,23 @@ export function TopicsRightRail({
 
   const previewCh = selectedRow ? effectiveChannel(selectedRow, workspaceChannel) : workspaceChannel;
 
-  const modelSelectValue = useMemo(() => {
+  // Plain model-ID value for LlmModelCombobox (workspace-default uses sentinel string).
+  const modelIdValue = useMemo(() => {
     if (!selectedRow) return WORKSPACE_DEFAULT_MODEL;
     const raw = String(selectedRow.topicGenerationModel || '').trim();
     if (!raw) return WORKSPACE_DEFAULT_MODEL;
     if (FEATURE_MULTI_PROVIDER_LLM && raw.startsWith('{')) {
       try {
-        const o = JSON.parse(raw) as { provider?: string; model?: string };
-        const prov = o.provider === 'grok' || o.provider === 'gemini' ? o.provider : workspaceLlm.provider;
+        const o = JSON.parse(raw) as { model?: string };
         const m = String(o.model || '').trim();
-        if (m) return JSON.stringify({ provider: prov, model: m });
+        if (m) return m;
       } catch {
         /* fall through */
       }
-      return raw;
+      return WORKSPACE_DEFAULT_MODEL;
     }
     return raw;
-  }, [selectedRow, workspaceLlm.provider]);
+  }, [selectedRow]);
 
   const channelSelectValue = useMemo(() => {
     if (!selectedRow) return WORKSPACE_DEFAULT_CHANNEL;
@@ -250,63 +251,28 @@ export function TopicsRightRail({
                         <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
                       </button>
                     </div>
-                    <Select
-                      value={modelSelectValue}
+                    <LlmModelCombobox
+                      models={availableModels}
+                      value={modelIdValue}
                       disabled={saving}
-                      onValueChange={(val) => {
-                        if (!selectedRow || val == null) return;
-                        if (FEATURE_MULTI_PROVIDER_LLM) {
-                          if (val === WORKSPACE_DEFAULT_MODEL) {
-                            void persist(selectedRow, { topicGenerationModel: '' });
-                            return;
-                          }
-                          const payload = JSON.stringify({
-                            provider: workspaceLlm.provider,
-                            model: val,
-                          });
-                          scheduleModelSave(selectedRow, payload);
-                          return;
-                        }
+                      size="sm"
+                      prependOptions={[
+                        { value: WORKSPACE_DEFAULT_MODEL, label: workspaceDefaultModelCaption },
+                      ]}
+                      onChange={(val) => {
+                        if (!selectedRow) return;
                         if (val === WORKSPACE_DEFAULT_MODEL) {
                           void persist(selectedRow, { topicGenerationModel: '' });
                           return;
                         }
+                        if (FEATURE_MULTI_PROVIDER_LLM) {
+                          const payload = JSON.stringify({ provider: workspaceLlm.provider, model: val });
+                          scheduleModelSave(selectedRow, payload);
+                          return;
+                        }
                         scheduleModelSave(selectedRow, val);
                       }}
-                      itemToStringLabel={(v) => {
-                        if (v === WORKSPACE_DEFAULT_MODEL) return workspaceDefaultModelCaption;
-                        if (FEATURE_MULTI_PROVIDER_LLM && String(v).startsWith('{')) {
-                          try {
-                            const o = JSON.parse(String(v)) as { model?: string };
-                            const m = String(o.model || '').trim();
-                            return availableModels.find((x) => x.value === m)?.label ?? m;
-                          } catch {
-                            return String(v);
-                          }
-                        }
-                        return availableModels.find((m) => m.value === v)?.label ?? String(v ?? '');
-                      }}
-                    >
-                      <SelectTrigger className="h-9 py-2 text-left text-xs font-medium">
-                        <SelectValue placeholder="Model" />
-                      </SelectTrigger>
-                      <SelectContent className="max-w-[min(100vw-1.5rem,28rem)]">
-                        <SelectItem value={WORKSPACE_DEFAULT_MODEL}>{workspaceDefaultModelCaption}</SelectItem>
-                        {availableModels.map((m) => (
-                          <SelectItem
-                            key={m.value}
-                            value={
-                              FEATURE_MULTI_PROVIDER_LLM
-                                ? JSON.stringify({ provider: workspaceLlm.provider, model: m.value })
-                                : m.value
-                            }
-                            className="items-start py-2"
-                          >
-                            <span className="whitespace-normal leading-snug">{m.label}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
                 ) : (
                   <div className="flex flex-col gap-1.5">

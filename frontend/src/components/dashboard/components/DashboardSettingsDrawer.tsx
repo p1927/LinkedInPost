@@ -20,6 +20,7 @@ import { WORKSPACE_PATHS } from '../../../features/topic-navigation/utils/worksp
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LlmProviderSelect, LlmModelCombobox } from '@/components/llm';
 import { Button } from '@/components/ui/button';
 import { NewsResearchSettingsSection } from '../../../features/news-research';
 import { ContentReviewSettings } from '../../../features/content-review/ContentReviewSettings';
@@ -190,12 +191,14 @@ function EnrichmentLlmSettings({
   idToken,
   adminModelCatalog,
   grokAdminCatalog,
+  openrouterAdminCatalog,
 }: {
   session: import('../../../services/backendApi').AppSession;
   backendApi: import('../../../services/backendApi').BackendApi;
   idToken: string;
   adminModelCatalog: GoogleModelOption[];
   grokAdminCatalog: GoogleModelOption[];
+  openrouterAdminCatalog: GoogleModelOption[];
 }) {
   const [drafts, setDrafts] = useState<Record<string, { provider: string; model: string }>>(() => {
     const base: Record<string, { provider: string; model: string }> = {};
@@ -230,57 +233,43 @@ function EnrichmentLlmSettings({
     }
   };
 
+  const catalogFor = (provider: string): GoogleModelOption[] => {
+    if (provider === 'grok') return grokAdminCatalog;
+    if (provider === 'openrouter') return openrouterAdminCatalog;
+    return adminModelCatalog;
+  };
+
   return (
     <div className="space-y-3">
       {ENRICHMENT_SETTING_KEYS.map((key) => {
         const draft = drafts[key];
-        const catalog = draft.provider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+        const catalog = catalogFor(draft.provider);
         return (
           <div key={key} className="rounded-xl border border-border bg-surface px-4 py-3">
             <p className="mb-2 text-sm font-medium text-ink">{LLM_SETTING_KEY_LABELS[key]}</p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Select
-                value={draft.provider}
-                onValueChange={(v) => {
-                  const newProvider = v as string;
-                  const newCatalog = newProvider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+              <LlmProviderSelect
+                providers={LLM_PROVIDER_IDS.map((p) => ({ id: p, name: getProviderLabel(p) }))}
+                value={draft.provider as LlmProviderId}
+                onChange={(newProvider) => {
+                  const newCatalog = catalogFor(newProvider);
                   setDrafts((prev) => ({
                     ...prev,
                     [key]: { provider: newProvider, model: newCatalog[0]?.value ?? prev[key].model },
                   }));
                 }}
-                itemToStringLabel={(v) => getProviderLabel(v as LlmProviderId) || String(v ?? '')}
-              >
-                <SelectTrigger className="h-auto min-h-9 w-full rounded-xl py-2 font-medium sm:max-w-[10rem]">
-                  <SelectValue placeholder="Provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LLM_PROVIDER_IDS.map((p) => (
-                    <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
+                size="sm"
+                className="sm:max-w-[10rem]"
+              />
+              <LlmModelCombobox
+                models={catalog}
                 value={draft.model}
-                onValueChange={(v) =>
-                  setDrafts((prev) => ({
-                    ...prev,
-                    [key]: { ...prev[key], model: v as string },
-                  }))
+                onChange={(model) =>
+                  setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], model } }))
                 }
-                itemToStringLabel={(v) => catalog.find((m) => m.value === v)?.label ?? String(v ?? '')}
-              >
-                <SelectTrigger className="h-auto min-h-9 min-w-0 w-full flex-1 rounded-xl py-2 font-medium">
-                  <SelectValue placeholder="Model" />
-                </SelectTrigger>
-                <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
-                  {catalog.map((m) => (
-                    <SelectItem key={m.value} value={m.value} className="items-start py-2">
-                      <span className="whitespace-normal leading-snug">{m.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                size="sm"
+                className="flex-1"
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -310,12 +299,14 @@ function LlmPerFeatureSettings({
   idToken,
   adminModelCatalog,
   grokAdminCatalog,
+  openrouterAdminCatalog,
 }: {
   session: import('../../../services/backendApi').AppSession;
   backendApi: import('../../../services/backendApi').BackendApi;
   idToken: string;
   adminModelCatalog: GoogleModelOption[];
   grokAdminCatalog: GoogleModelOption[];
+  openrouterAdminCatalog: GoogleModelOption[];
 }) {
   const [drafts, setDrafts] = useState<Record<LlmSettingKey, { provider: string; model: string }>>(() => {
     const base: Partial<Record<LlmSettingKey, { provider: string; model: string }>> = {};
@@ -329,7 +320,10 @@ function LlmPerFeatureSettings({
   });
   const [saving, setSaving] = useState<LlmSettingKey | null>(null);
   const [feedback, setFeedback] = useState<Record<LlmSettingKey, string | null>>(
-    () => Object.fromEntries(Object.keys(LLM_SETTING_KEY_LABELS).map((k) => [k, null])) as Record<LlmSettingKey, string | null>,
+    () =>
+      Object.fromEntries(
+        Object.keys(LLM_SETTING_KEY_LABELS).map((k) => [k, null]),
+      ) as Record<LlmSettingKey, string | null>,
   );
 
   const handleSave = async (key: LlmSettingKey) => {
@@ -348,60 +342,53 @@ function LlmPerFeatureSettings({
     }
   };
 
+  const catalogFor = (provider: string): GoogleModelOption[] => {
+    if (provider === 'grok') return grokAdminCatalog;
+    if (provider === 'openrouter') return openrouterAdminCatalog;
+    return adminModelCatalog;
+  };
+
   return (
     <div className="mt-6 space-y-4">
       <div>
         <p className="mb-1 text-sm font-semibold text-ink">Model per feature</p>
         <p className="mb-3 text-xs leading-relaxed text-muted">
-          Override the LLM used for each backend feature. Changes take effect on the next request for that feature.
+          Override the LLM used for each backend feature. Changes take effect on the next request
+          for that feature.
         </p>
       </div>
       {LLM_SETTING_KEYS.map((key) => {
         const draft = drafts[key];
-        const catalog = draft.provider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+        const catalog = catalogFor(draft.provider);
         return (
           <div key={key} className="rounded-xl border border-border bg-surface px-4 py-3">
             <p className="mb-2 text-sm font-medium text-ink">{LLM_SETTING_KEY_LABELS[key]}</p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Select
-                value={draft.provider}
-                onValueChange={(v) => {
-                  const newProvider = v as string;
-                  const newCatalog = newProvider === 'grok' ? grokAdminCatalog : adminModelCatalog;
+              <LlmProviderSelect
+                providers={LLM_PROVIDER_IDS.map((p) => ({ id: p, name: getProviderLabel(p) }))}
+                value={draft.provider as LlmProviderId}
+                onChange={(newProvider) => {
+                  const newCatalog = catalogFor(newProvider);
                   setDrafts((prev) => ({
                     ...prev,
-                    [key]: { provider: newProvider, model: newCatalog[0]?.value ?? prev[key].model },
+                    [key]: {
+                      provider: newProvider,
+                      model: newCatalog[0]?.value ?? prev[key].model,
+                    },
                   }));
                 }}
-                itemToStringLabel={(v) => getProviderLabel(v as LlmProviderId) || String(v ?? '')}
-              >
-                <SelectTrigger className="h-auto min-h-9 w-full rounded-xl py-2 font-medium sm:max-w-[10rem]">
-                  <SelectValue placeholder="Provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LLM_PROVIDER_IDS.map((p) => (
-                    <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
+                size="sm"
+                className="sm:max-w-[10rem]"
+              />
+              <LlmModelCombobox
+                models={catalog}
                 value={draft.model}
-                onValueChange={(v) =>
-                  setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], model: v } }))
+                onChange={(model) =>
+                  setDrafts((prev) => ({ ...prev, [key]: { ...prev[key], model } }))
                 }
-                itemToStringLabel={(v) => catalog.find((m) => m.value === v)?.label ?? String(v ?? '')}
-              >
-                <SelectTrigger className="h-auto min-h-9 w-full flex-1 rounded-xl py-2 font-medium">
-                  <SelectValue placeholder="Model" />
-                </SelectTrigger>
-                <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
-                  {catalog.map((m) => (
-                    <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
-                      <span className="whitespace-normal leading-snug">{m.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                size="sm"
+                className="flex-1"
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -414,7 +401,9 @@ function LlmPerFeatureSettings({
               </Button>
             </div>
             {feedback[key] ? (
-              <p className={`mt-1.5 text-xs ${feedback[key] === 'Saved.' ? 'text-green-600' : 'text-rose-600'}`}>
+              <p
+                className={`mt-1.5 text-xs ${feedback[key] === 'Saved.' ? 'text-green-600' : 'text-rose-600'}`}
+              >
                 {feedback[key]}
               </p>
             ) : null}
@@ -714,44 +703,26 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-ink">Primary provider</label>
-                  <Select
+                  <LlmProviderSelect
+                    providers={LLM_PROVIDER_IDS.map((p) => ({ id: p, name: getProviderLabel(p) }))}
                     value={llmPrimaryProvider!}
-                    onValueChange={(v) => setLlmPrimaryProvider!(v as LlmProviderId)}
-                    itemToStringLabel={(v) =>
-                      getProviderLabel(v as LlmProviderId) || String(v ?? '')
-                    }
-                  >
-                    <SelectTrigger className="h-auto min-h-10 w-full max-w-xs rounded-xl py-2.5 font-medium">
-                      <SelectValue placeholder="Select provider" />
-                    </SelectTrigger>
-                    <SelectContent className="max-w-[min(100vw-1.5rem,24rem)]">
-                      {LLM_PROVIDER_IDS.map((p) => (
-                        <SelectItem key={p} value={p}>{getProviderLabel(p)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => setLlmPrimaryProvider!(v)}
+                    className="max-w-xs"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-ink">Primary model</label>
-                  <Select
+                  <LlmModelCombobox
+                    models={
+                      llmPrimaryProvider === 'grok'
+                        ? grokAdminCatalog!
+                        : llmPrimaryProvider === 'openrouter'
+                          ? openrouterAdminCatalog!
+                          : adminModelCatalog
+                    }
                     value={llmModelId!}
-                    onValueChange={(v) => setLlmModelId!(v as string)}
-                    itemToStringLabel={(v) => {
-                      const cat = llmPrimaryProvider === 'grok' ? grokAdminCatalog! : llmPrimaryProvider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
-                      return cat.find((m) => m.value === v)?.label ?? String(v ?? '');
-                    }}
-                  >
-                    <SelectTrigger className="h-auto min-h-10 w-full rounded-xl py-2.5 font-medium">
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
-                      {(llmPrimaryProvider === 'grok' ? grokAdminCatalog! : llmPrimaryProvider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog).map((m) => (
-                        <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
-                          <span className="whitespace-normal leading-snug">{m.label}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => setLlmModelId!(v)}
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-ink">Fallback (optional)</label>
@@ -789,25 +760,18 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                       </SelectContent>
                     </Select>
                     {llmFallback ? (
-                      <Select
+                      <LlmModelCombobox
+                        models={
+                          llmFallback.provider === 'grok'
+                            ? grokAdminCatalog!
+                            : llmFallback.provider === 'openrouter'
+                              ? openrouterAdminCatalog!
+                              : adminModelCatalog
+                        }
                         value={llmFallback.model}
-                        onValueChange={(v) => setLlmFallback!({ ...llmFallback, model: v ?? llmFallback.model })}
-                        itemToStringLabel={(v) => {
-                          const cat = llmFallback.provider === 'grok' ? grokAdminCatalog! : llmFallback.provider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
-                          return cat.find((m) => m.value === v)?.label ?? String(v ?? '');
-                        }}
-                      >
-                        <SelectTrigger className="h-auto min-h-10 min-w-0 w-full flex-1 rounded-xl py-2.5 font-medium">
-                          <SelectValue placeholder="Model" />
-                        </SelectTrigger>
-                        <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
-                          {(llmFallback.provider === 'grok' ? grokAdminCatalog! : llmFallback.provider === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog).map((m) => (
-                            <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
-                              <span className="whitespace-normal leading-snug">{m.label}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(v) => setLlmFallback!({ ...llmFallback, model: v })}
+                        className="flex-1"
+                      />
                     ) : null}
                   </div>
                 </div>
@@ -912,6 +876,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 idToken={idToken}
                 adminModelCatalog={adminModelCatalog}
                 grokAdminCatalog={grokAdminCatalog!}
+                openrouterAdminCatalog={openrouterAdminCatalog ?? []}
               />
             ) : null}
           </SettingsSectionCard>
@@ -929,6 +894,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 idToken={idToken}
                 adminModelCatalog={adminModelCatalog}
                 grokAdminCatalog={grokAdminCatalog!}
+                openrouterAdminCatalog={openrouterAdminCatalog ?? []}
               />
             </div>
           </SettingsSectionCard>
