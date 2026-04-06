@@ -69,7 +69,7 @@ export function ConnectionsPage({
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
           Publishing Channels
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-3">
           {SOCIAL_PROVIDERS.map(({ key, label }) => (
             <SocialAccountCard
               key={key}

@@ -32,6 +32,7 @@ export function SheetConnectionCard({ idToken, api, status, onConnected }: Sheet
   const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showSwitchForm, setShowSwitchForm] = useState(false);
+  const [showConnectForm, setShowConnectForm] = useState(false);
 
   const isConnected = status.accessible;
 
@@ -121,12 +122,20 @@ export function SheetConnectionCard({ idToken, api, status, onConnected }: Sheet
 
   function handleCancelSwitch() {
     setShowSwitchForm(false);
+    setShowConnectForm(false);
     setError(null);
     setServiceAccountEmail(null);
     setUrl('');
   }
 
-  const showConnectForm = !isConnected || showSwitchForm;
+  function handleConnectClick() {
+    setShowConnectForm(true);
+    setError(null);
+    setServiceAccountEmail(null);
+    setUrl('');
+  }
+
+  const shouldShowForm = (showConnectForm && !isConnected) || showSwitchForm;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -184,8 +193,20 @@ export function SheetConnectionCard({ idToken, api, status, onConnected }: Sheet
         </div>
       )}
 
+      {/* Not connected — show connect button */}
+      {!isConnected && !shouldShowForm && (
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleConnectClick}
+          className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+        >
+          Connect sheet
+        </Button>
+      )}
+
       {/* Connect / Switch form */}
-      {showConnectForm && (
+      {shouldShowForm && (
         <div className="flex flex-col gap-3">
           <input
             type="url"
@@ -251,7 +272,7 @@ export function SheetConnectionCard({ idToken, api, status, onConnected }: Sheet
               </Button>
             ) : null}
 
-            {showSwitchForm && (
+            {(showSwitchForm || showConnectForm) && (
               <Button
                 variant="ghost"
                 size="sm"
