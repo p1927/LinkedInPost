@@ -10,6 +10,7 @@ import {
   type BackendApi,
   type GenerationRulesVersion,
   type PostTemplate,
+  type TenantSettingsRow,
   isAuthErrorMessage,
 } from '@/services/backendApi';
 import { type BotConfig, type BotConfigUpdate } from '@/services/configService';
@@ -26,12 +27,14 @@ import { WhoAmISection } from '@/features/who-am-i/WhoAmISection';
 import { PreSaveTextDiff } from '@/features/rules/PreSaveTextDiff';
 import { cn } from '@/lib/cn';
 
-type RulesTabId = 'author' | 'global-rules' | 'post-templates';
+type RulesTabId = 'author' | 'my-rules' | 'global-rules' | 'post-templates' | 'tenant-overview';
 
 const ALL_RULES_TABS: { id: RulesTabId; label: string }[] = [
   { id: 'author', label: 'Who am I' },
+  { id: 'my-rules', label: 'My rules' },
   { id: 'global-rules', label: 'Global rules' },
   { id: 'post-templates', label: 'Post templates' },
+  { id: 'tenant-overview', label: 'All tenants' },
 ];
 
 export function GlobalRulesPage({
@@ -47,6 +50,7 @@ export function GlobalRulesPage({
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
 }) {
+  // Global rules (admin-managed workspace-wide fallback)
   const serverText = session.config.generationRules || '';
   const { value, setValue, undo, redo, canUndo, canRedo } = useTextUndoRedo(serverText);
   const { showAlert } = useAlert();
@@ -56,6 +60,20 @@ export function GlobalRulesPage({
   const [diffLeft, setDiffLeft] = useState<'current' | number>('current');
   const [diffRight, setDiffRight] = useState<'current' | number>(0);
 
+  // My rules (per-user)
+  const myRulesServerText = session.config.userRules || '';
+  const {
+    value: myRulesValue,
+    setValue: setMyRulesValue,
+    undo: myRulesUndo,
+    redo: myRulesRedo,
+    canUndo: myRulesCanUndo,
+    canRedo: myRulesCanRedo,
+  } = useTextUndoRedo(myRulesServerText);
+  const [savingMyRules, setSavingMyRules] = useState(false);
+  const myRulesDirty = myRulesValue.trim() !== myRulesServerText.trim();
+
+  // Post templates
   const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
   const [postTemplatesLoading, setPostTemplatesLoading] = useState(false);
   const [postTemplatesError, setPostTemplatesError] = useState<string | null>(null);
@@ -66,8 +84,17 @@ export function GlobalRulesPage({
   const [templateRulesBaseline, setTemplateRulesBaseline] = useState('');
   const [savingPostTemplate, setSavingPostTemplate] = useState(false);
 
+  // Tenant overview (admin)
+  const [tenantSettings, setTenantSettings] = useState<TenantSettingsRow[]>([]);
+  const [tenantSettingsLoading, setTenantSettingsLoading] = useState(false);
+  const [tenantSettingsError, setTenantSettingsError] = useState<string | null>(null);
+
   const visibleTabs = useMemo(() => {
-    return session.isAdmin ? ALL_RULES_TABS : ALL_RULES_TABS.filter((t) => t.id !== 'post-templates');
+    return ALL_RULES_TABS.filter((t) => {
+      if (t.id === 'post-templates') return session.isAdmin;
+      if (t.id === 'tenant-overview') return session.isAdmin;
+      return true;
+    });
   }, [session.isAdmin]);
 
   const [activeTab, setActiveTab] = useState<RulesTabId>('author');
@@ -83,8 +110,9 @@ export function GlobalRulesPage({
   const handleAuthorDirty = useCallback((d: boolean) => {
     setAuthorDirty(d);
   }, []);
-  useRegisterUnsavedChanges(session.isAdmin && (dirty || authorDirty));
+  useRegisterUnsavedChanges(dirty || authorDirty || myRulesDirty);
 
+  // Load global rules history (admin only)
   useEffect(() => {
     if (!session.isAdmin) {
       setVersions([]);
@@ -112,6 +140,31 @@ export function GlobalRulesPage({
       cancelled = true;
     };
   }, [api, idToken, session.isAdmin, onAuthExpired]);
+
+  // Load tenant settings when admin opens that tab
+  useEffect(() => {
+    if (activeTab !== 'tenant-overview' || !session.isAdmin) return;
+    setTenantSettingsLoading(true);
+    setTenantSettingsError(null);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await api.adminListTenantSettings(idToken);
+        if (cancelled) return;
+        setTenantSettings(result.tenants);
+      } catch (e) {
+        if (cancelled) return;
+        const msg = e instanceof Error ? e.message : 'Failed to load tenant settings.';
+        setTenantSettingsError(msg);
+        if (isAuthErrorMessage(msg)) onAuthExpired();
+      } finally {
+        if (!cancelled) setTenantSettingsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, session.isAdmin, api, idToken, onAuthExpired]);
 
   const loadPostTemplates = useCallback(async () => {
     if (!session.isAdmin || !session.config.spreadsheetId?.trim()) {
@@ -221,11 +274,26 @@ export function GlobalRulesPage({
     return () => window.removeEventListener('keydown', onKey);
   }, [session.isAdmin, redo, undo]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.key.toLowerCase() !== 'z') return;
+      const target = e.target as HTMLElement;
+      if (target?.closest?.('[data-my-rules-editor]')) {
+        e.preventDefault();
+        if (e.shiftKey) myRulesRedo();
+        else myRulesUndo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [myRulesRedo, myRulesUndo]);
+
+  // Save per-user "who am I"
   const handleSaveAuthorProfile = useCallback(
     async (text: string) => {
-      if (!session.isAdmin) return;
       try {
-        await onSaveConfig({ authorProfile: text });
+        await api.saveUserSettings(idToken, { userWhoAmI: text });
         void showAlert({ title: 'Saved', description: 'Author profile was updated.' });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to save.';
@@ -233,9 +301,26 @@ export function GlobalRulesPage({
         else void showAlert({ title: 'Could not save', description: message });
       }
     },
-    [session.isAdmin, onSaveConfig, showAlert, onAuthExpired],
+    [api, idToken, showAlert, onAuthExpired],
   );
 
+  // Save per-user rules
+  const handleSaveMyRules = async () => {
+    if (savingMyRules) return;
+    setSavingMyRules(true);
+    try {
+      await api.saveUserSettings(idToken, { userRules: myRulesValue.trim() });
+      void showAlert({ title: 'Saved', description: 'Your rules were updated.' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save.';
+      if (isAuthErrorMessage(message)) onAuthExpired();
+      else void showAlert({ title: 'Could not save', description: message });
+    } finally {
+      setSavingMyRules(false);
+    }
+  };
+
+  // Save workspace global rules (admin only)
   const handleSave = async () => {
     if (!session.isAdmin || saving) return;
     setSaving(true);
@@ -367,6 +452,7 @@ export function GlobalRulesPage({
         </aside>
 
         <div className="min-w-0 flex-1">
+          {/* Who am I — per-user, editable by all */}
           {activeTab === 'author' ? (
             <div
               role="tabpanel"
@@ -375,14 +461,75 @@ export function GlobalRulesPage({
               className="min-w-0"
             >
               <WhoAmISection
-                serverAuthorProfile={session.config.authorProfile || ''}
-                isAdmin={session.isAdmin}
+                serverAuthorProfile={session.config.userWhoAmI || ''}
+                canEdit={true}
                 onDirtyChange={handleAuthorDirty}
                 onSave={handleSaveAuthorProfile}
               />
             </div>
           ) : null}
 
+          {/* My rules — per-user, editable by all */}
+          {activeTab === 'my-rules' ? (
+            <div
+              role="tabpanel"
+              id="rules-tabpanel-my-rules"
+              aria-labelledby="rules-tab-trigger-my-rules"
+              className="min-w-0"
+            >
+              <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Personal</p>
+                <h2 className="mt-1 font-heading text-xl font-semibold text-ink">My rules</h2>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Your personal generation rules. When set, these override the workspace{' '}
+                  <strong className="text-ink">Global rules</strong> for your account. Topic rules and post templates still
+                  take precedence.
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!myRulesCanUndo}
+                    onClick={() => myRulesUndo()}
+                    className="gap-1.5"
+                  >
+                    <Undo2 className="size-4" aria-hidden />
+                    Undo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!myRulesCanRedo}
+                    onClick={() => myRulesRedo()}
+                    className="gap-1.5"
+                  >
+                    <Redo2 className="size-4" aria-hidden />
+                    Redo
+                  </Button>
+                  <span className="text-xs text-muted">⌘/Ctrl+Z · Shift+⌘/Ctrl+Z in the editor</span>
+                </div>
+                <Textarea
+                  data-my-rules-editor
+                  value={myRulesValue}
+                  onChange={(e) => setMyRulesValue(e.target.value)}
+                  disabled={savingMyRules}
+                  placeholder="Examples: keep the tone crisp, avoid emoji, stay under 180 words…"
+                  className="mt-3 min-h-[220px] w-full rounded-xl border border-border bg-canvas px-4 py-3 text-sm leading-6 text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  aria-label="My generation rules"
+                />
+                <PreSaveTextDiff baseline={myRulesServerText} draft={myRulesValue} title="Changes vs saved rules" />
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button type="button" disabled={!myRulesDirty || savingMyRules} onClick={() => void handleSaveMyRules()}>
+                    {savingMyRules ? 'Saving…' : 'Save my rules'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Global rules — workspace-wide fallback, admin editable */}
           {activeTab === 'global-rules' ? (
             <div
               role="tabpanel"
@@ -394,9 +541,10 @@ export function GlobalRulesPage({
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Workspace</p>
                 <h2 className="mt-1 font-heading text-xl font-semibold text-ink">Global generation rules</h2>
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  These apply to Quick Change and 4-variant previews for every topic, unless the topic uses a{' '}
-                  <strong className="text-ink">post template</strong> or non-empty <strong className="text-ink">Topic rules</strong>{' '}
-                  in the review sidebar (Draft sheet columns U and S).
+                  Workspace-wide fallback rules. These apply when a user has no{' '}
+                  <strong className="text-ink">My rules</strong>, a topic has no{' '}
+                  <strong className="text-ink">post template</strong>, and no{' '}
+                  <strong className="text-ink">Topic rules</strong> are set in the review sidebar.
                 </p>
 
                 {session.isAdmin ? (
@@ -452,6 +600,7 @@ export function GlobalRulesPage({
             </div>
           ) : null}
 
+          {/* Post templates — admin only */}
           {activeTab === 'post-templates' && session.isAdmin ? (
             <div
               role="tabpanel"
@@ -511,6 +660,65 @@ export function GlobalRulesPage({
                     </ul>
                   </>
                 ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {/* All tenants — admin only */}
+          {activeTab === 'tenant-overview' && session.isAdmin ? (
+            <div
+              role="tabpanel"
+              id="rules-tabpanel-tenant-overview"
+              aria-labelledby="rules-tab-trigger-tenant-overview"
+              className="min-w-0"
+            >
+              <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Admin</p>
+                <h2 className="mt-1 font-heading text-xl font-semibold text-ink">All tenants</h2>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Read-only view of every user's personal rules and author profile.
+                </p>
+                {tenantSettingsError ? (
+                  <p className="mt-3 text-sm text-destructive">{tenantSettingsError}</p>
+                ) : tenantSettingsLoading ? (
+                  <p className="mt-4 text-sm text-muted">Loading…</p>
+                ) : tenantSettings.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted">No users found.</p>
+                ) : (
+                  <ul className="mt-4 space-y-4">
+                    {tenantSettings.map((t) => (
+                      <li key={t.id} className="rounded-xl border border-border/80 bg-canvas/50 px-4 py-4 text-sm shadow-sm">
+                        <div className="flex items-center gap-3">
+                          {t.avatar_url ? (
+                            <img src={t.avatar_url} alt="" className="size-8 rounded-full object-cover" />
+                          ) : (
+                            <div className="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                              {(t.display_name || t.id).charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold text-ink">{t.display_name || t.id}</p>
+                            <p className="text-xs text-muted">{t.id}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Who am I</p>
+                            <div className="mt-1 rounded-lg border border-border/60 bg-white/50 px-3 py-2 text-xs leading-5 text-ink whitespace-pre-wrap">
+                              {t.user_who_am_i.trim() || <span className="text-muted/60 italic">Not set</span>}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted">My rules</p>
+                            <div className="mt-1 rounded-lg border border-border/60 bg-white/50 px-3 py-2 text-xs leading-5 text-ink whitespace-pre-wrap">
+                              {t.user_rules.trim() || <span className="text-muted/60 italic">Not set</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           ) : null}

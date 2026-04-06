@@ -326,6 +326,18 @@ export interface GenerationRulesHistoryResult {
   current: string;
 }
 
+export interface TenantSettingsRow {
+  id: string;
+  display_name: string;
+  avatar_url: string;
+  user_rules: string;
+  user_who_am_i: string;
+}
+
+export interface AdminTenantSettingsResult {
+  tenants: TenantSettingsRow[];
+}
+
 interface ApiEnvelope<T> {
   ok: boolean;
   data?: T;
@@ -603,6 +615,14 @@ export class BackendApi {
 
   async getGenerationRulesHistory(idToken: string): Promise<GenerationRulesHistoryResult> {
     return this.post<GenerationRulesHistoryResult>('getGenerationRulesHistory', idToken);
+  }
+
+  async saveUserSettings(idToken: string, settings: { userRules?: string; userWhoAmI?: string }): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('saveUserSettings', idToken, settings as Record<string, unknown>);
+  }
+
+  async adminListTenantSettings(idToken: string): Promise<AdminTenantSettingsResult> {
+    return this.post<AdminTenantSettingsResult>('adminListTenantSettings', idToken);
   }
 
   async getGoogleModels(idToken: string): Promise<GoogleModelOption[]> {

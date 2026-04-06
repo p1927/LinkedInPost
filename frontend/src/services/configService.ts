@@ -225,6 +225,10 @@ export interface BotConfig {
   brandContext: string;
   /** Workspace author context for LLM; always included when non-empty. */
   authorProfile: string;
+  /** Per-user generation rules (empty = fall back to global generationRules). */
+  userRules: string;
+  /** Per-user "who am I" author profile (empty = fall back to global authorProfile). */
+  userWhoAmI: string;
   hasGitHubToken: boolean;
   hasGenerationWorker: boolean;
   defaultChannel: ChannelId;
@@ -337,6 +341,8 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     generationRules: config?.generationRules || '',
     brandContext: typeof config?.brandContext === 'string' ? config.brandContext : '',
     authorProfile: config?.authorProfile || '',
+    userRules: config?.userRules || '',
+    userWhoAmI: config?.userWhoAmI || '',
     hasGitHubToken: Boolean(config?.hasGitHubToken),
     hasGenerationWorker: Boolean(config?.hasGenerationWorker),
     defaultChannel,

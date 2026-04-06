@@ -55,6 +55,50 @@ export async function setUserSpreadsheetId(
     .run();
 }
 
+export interface UserTenantSettingsRow {
+  id: string;
+  display_name: string;
+  avatar_url: string;
+  user_rules: string;
+  user_who_am_i: string;
+}
+
+/** Update per-user generation rules and/or "who am I" author profile. */
+export async function setUserTenantSettings(
+  db: D1Database,
+  userId: string,
+  settings: { userRules?: string; userWhoAmI?: string },
+): Promise<void> {
+  const setClauses: string[] = [];
+  const bindValues: string[] = [];
+
+  if (typeof settings.userRules === 'string') {
+    bindValues.push(settings.userRules.trim());
+    setClauses.push(`user_rules = ?${bindValues.length}`);
+  }
+  if (typeof settings.userWhoAmI === 'string') {
+    bindValues.push(settings.userWhoAmI.trim());
+    setClauses.push(`user_who_am_i = ?${bindValues.length}`);
+  }
+  if (setClauses.length === 0) return;
+
+  setClauses.push("updated_at = datetime('now')");
+  bindValues.push(userId);
+
+  await db
+    .prepare(`UPDATE users SET ${setClauses.join(', ')} WHERE id = ?${bindValues.length}`)
+    .bind(...bindValues)
+    .run();
+}
+
+/** List all users with their per-tenant settings (admin use only). */
+export async function listAllUserTenantSettings(db: D1Database): Promise<UserTenantSettingsRow[]> {
+  const { results } = await db
+    .prepare('SELECT id, display_name, avatar_url, user_rules, user_who_am_i FROM users ORDER BY created_at ASC')
+    .all<UserTenantSettingsRow>();
+  return results ?? [];
+}
+
 /** Mark onboarding complete. */
 export async function completeUserOnboarding(
   db: D1Database,

@@ -104,10 +104,10 @@ export async function generateQuickChangePreview(
   const effectiveRules = resolveEffectiveGenerationRulesWithTemplate(
     row.topicGenerationRules,
     templateRules,
-    storedConfig.generationRules || '',
+    storedConfig.userRules || storedConfig.generationRules || '',
   );
   const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
-  const authorBlock = formatAuthorProfileForPrompt(storedConfig.authorProfile || '');
+  const authorBlock = formatAuthorProfileForPrompt(storedConfig.userWhoAmI || storedConfig.authorProfile || '');
   const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, authorBlock, researchRefs);
   const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
   const replacementText = normalizePlainTextValue(tryParseJson(text));
@@ -147,10 +147,10 @@ export async function generateVariantsPreview(
   const effectiveRules = resolveEffectiveGenerationRulesWithTemplate(
     row.topicGenerationRules,
     templateRules,
-    storedConfig.generationRules || '',
+    storedConfig.userRules || storedConfig.generationRules || '',
   );
   const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
-  const authorBlock = formatAuthorProfileForPrompt(storedConfig.authorProfile || '');
+  const authorBlock = formatAuthorProfileForPrompt(storedConfig.userWhoAmI || storedConfig.authorProfile || '');
   const prompt = buildVariantsPrompt(
     row,
     editorText,

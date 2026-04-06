@@ -8,12 +8,12 @@ import { PreSaveTextDiff } from '@/features/rules/PreSaveTextDiff';
 
 export function WhoAmISection({
   serverAuthorProfile,
-  isAdmin,
+  canEdit,
   onDirtyChange,
   onSave,
 }: {
   serverAuthorProfile: string;
-  isAdmin: boolean;
+  canEdit: boolean;
   onDirtyChange?: (dirty: boolean) => void;
   onSave: (text: string) => Promise<void>;
 }) {
@@ -28,7 +28,7 @@ export function WhoAmISection({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!isAdmin) return;
+      if (!canEdit) return;
       const mod = e.metaKey || e.ctrlKey;
       if (!mod || e.key.toLowerCase() !== 'z') return;
       const target = e.target as HTMLElement;
@@ -40,7 +40,7 @@ export function WhoAmISection({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isAdmin, redo, undo]);
+  }, [canEdit, redo, undo]);
 
   const insertTemplate = useCallback(() => {
     if (value.trim() !== '') return;
@@ -48,7 +48,7 @@ export function WhoAmISection({
   }, [setValue, value]);
 
   const handleSave = async () => {
-    if (!isAdmin || saving) return;
+    if (!canEdit || saving) return;
     setSaving(true);
     try {
       await onSave(value.trim());
@@ -59,15 +59,15 @@ export function WhoAmISection({
 
   return (
     <div className="glass-panel rounded-2xl border border-white/55 p-5 shadow-card sm:p-6">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Workspace</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Personal</p>
       <h2 className="mt-1 font-heading text-xl font-semibold text-ink">Who am I</h2>
       <p className="mt-2 text-sm leading-6 text-muted">
-        Author profile for the model: role, audience, voice, and facts you are willing to have reflected in drafts. When this
-        section is not empty, it is included on <strong className="text-ink">every</strong> Quick Change and 4-variant preview,
-        even when a topic uses its own rules or a post template.
+        Your personal author profile for the model: role, audience, voice, and facts you want reflected in drafts. When
+        non-empty, it is included on <strong className="text-ink">every</strong> Quick Change and 4-variant preview, even
+        when a topic uses its own rules or a post template.
       </p>
 
-      {isAdmin ? (
+      {canEdit ? (
         <>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Button

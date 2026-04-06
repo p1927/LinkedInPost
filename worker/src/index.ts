@@ -28,7 +28,7 @@ import { searchNewsResearch } from './researcher/search';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
-import { upsertUser, completeUserOnboarding, setUserSpreadsheetId } from './db/users';
+import { upsertUser, completeUserOnboarding, setUserSpreadsheetId, setUserTenantSettings, listAllUserTenantSettings } from './db/users';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { getUsageSummary } from './db/llm-usage';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
@@ -149,6 +149,10 @@ interface BotConfig {
   generationRules: string;
   /** Workspace author context for LLM; always included when non-empty (not overridden by topic rules). */
   authorProfile: string;
+  /** Per-user generation rules (empty = fall back to global generationRules). */
+  userRules: string;
+  /** Per-user "who am I" author profile (empty = fall back to global authorProfile). */
+  userWhoAmI: string;
   hasGitHubToken: boolean;
   hasGenerationWorker: boolean;
   defaultChannel: ChannelId;
@@ -209,6 +213,10 @@ export interface StoredConfig {
   generationRules: string;
   /** Author “who am I” context for generations; separate from style rules. */
   authorProfile?: string;
+  /** Per-user generation rules loaded from D1 (not KV-persisted). Overrides generationRules in generation when non-empty. */
+  userRules?: string;
+  /** Per-user “who am I” loaded from D1 (not KV-persisted). Overrides authorProfile in generation when non-empty. */
+  userWhoAmI?: string;
   /** Prior snapshots when global rules change (newest first). */
   generationRulesHistory?: GenerationRulesVersion[];
   disconnectedAuthProviders?: AuthProvider[];
@@ -1026,6 +1034,19 @@ async function dispatchAction(
     case 'saveConfig':
       ensureAdmin(session);
       return saveConfig(env, storedConfig, payload as BotConfigUpdate, session);
+    case 'saveUserSettings': {
+      const p = payload as { userRules?: unknown; userWhoAmI?: unknown };
+      await setUserTenantSettings(env.PIPELINE_DB, session.userId, {
+        userRules: typeof p.userRules === 'string' ? p.userRules : undefined,
+        userWhoAmI: typeof p.userWhoAmI === 'string' ? p.userWhoAmI : undefined,
+      });
+      return { ok: true };
+    }
+    case 'adminListTenantSettings': {
+      ensureAdmin(session);
+      const tenants = await listAllUserTenantSettings(env.PIPELINE_DB);
+      return { tenants };
+    }
     case 'getGenerationRulesHistory':
       ensureAdmin(session);
       return {
@@ -1446,12 +1467,18 @@ async function loadStoredConfig(env: Env, userId?: string): Promise<StoredConfig
   // Per-user spreadsheet: look up the user's own spreadsheet_id from D1 when a userId is provided.
   // This is the tenant identifier — each user sees only their own posts.
   let userSpreadsheetId = '';
-  if (!devSpreadsheetId && userId) {
+  let userRules = '';
+  let userWhoAmI = '';
+  if (userId) {
     const userRow = await env.PIPELINE_DB
-      .prepare('SELECT spreadsheet_id FROM users WHERE id = ?1')
+      .prepare('SELECT spreadsheet_id, user_rules, user_who_am_i FROM users WHERE id = ?1')
       .bind(userId)
-      .first<{ spreadsheet_id: string }>();
-    userSpreadsheetId = String(userRow?.spreadsheet_id || '').trim();
+      .first<{ spreadsheet_id: string; user_rules: string; user_who_am_i: string }>();
+    if (!devSpreadsheetId) {
+      userSpreadsheetId = String(userRow?.spreadsheet_id || '').trim();
+    }
+    userRules = String(userRow?.user_rules || '').trim();
+    userWhoAmI = String(userRow?.user_who_am_i || '').trim();
   }
 
   const spreadsheetId = devSpreadsheetId || userSpreadsheetId || String(config?.spreadsheetId || '').trim();
@@ -1463,6 +1490,8 @@ async function loadStoredConfig(env: Env, userId?: string): Promise<StoredConfig
     allowedGoogleModels: config?.allowedGoogleModels,
     generationRules: config?.generationRules || '',
     authorProfile: config?.authorProfile || '',
+    userRules,
+    userWhoAmI,
     disconnectedAuthProviders,
     githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
     defaultChannel,
@@ -1507,6 +1536,8 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     allowedGoogleModels,
     generationRules: config.generationRules || '',
     authorProfile: config.authorProfile || '',
+    userRules: config.userRules || '',
+    userWhoAmI: config.userWhoAmI || '',
     hasGitHubToken: Boolean(config.githubTokenCiphertext),
     hasGenerationWorker: isGenerationWorkerConfigured(env),
     defaultChannel: config.defaultChannel,

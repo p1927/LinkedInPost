@@ -63,6 +63,18 @@ def normalize_space_delimited(value: str) -> str:
     return ' '.join(part for part in re.split(r'[\s,]+', value.strip()) if part)
 
 
+def _merge_cors_origins(existing: str, incoming: str) -> str:
+    """Merge two space-delimited CORS origin lists, preserving existing order and adding new entries."""
+    existing_parts = [p for p in existing.split() if p]
+    seen = set(existing_parts)
+    merged = list(existing_parts)
+    for p in incoming.split():
+        if p and p not in seen:
+            merged.append(p)
+            seen.add(p)
+    return ' '.join(merged)
+
+
 def normalize_origin(value: str) -> str:
     trimmed = value.strip()
     if not trimmed:
@@ -142,13 +154,16 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         worker_bootstrap.generation_worker_url.strip()
         or _read_existing_var(config, 'GENERATION_WORKER_URL')
     )
+    # Preserve any origins already in wrangler.jsonc (e.g. custom dev ports) and merge with new ones.
+    existing_cors = _read_existing_var(config, 'CORS_ALLOWED_ORIGINS')
+    merged_cors = _merge_cors_origins(existing_cors, worker_bootstrap.cors_allowed_origins)
     config['vars'] = {
         'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
         'GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
         'GOOGLE_CLOUD_STORAGE_BUCKET': worker_bootstrap.google_cloud_storage_bucket,
         'DELETE_UNUSED_GENERATED_IMAGES': worker_bootstrap.delete_unused_generated_images,
-        'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
+        'CORS_ALLOWED_ORIGINS': merged_cors,
         'INSTAGRAM_APP_ID': worker_bootstrap.instagram_app_id,
         'LINKEDIN_CLIENT_ID': worker_bootstrap.linkedin_client_id,
         'LINKEDIN_PERSON_URN': worker_bootstrap.linkedin_person_urn,
