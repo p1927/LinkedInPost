@@ -43,8 +43,7 @@ export function OnboardingModal({
       onComplete(undefined, undefined);
     },
     onNonOAuthError: () => {
-      setShareError(null);
-      onComplete(undefined, undefined);
+      setShareError('Popup was blocked. Please allow popups and try again, or skip this step.');
     },
   });
 

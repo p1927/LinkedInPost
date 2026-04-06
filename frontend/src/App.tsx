@@ -354,13 +354,14 @@ function App() {
       if (spreadsheetId && driveAccessToken) {
         await api.connectSpreadsheet(idToken, spreadsheetId, driveAccessToken)
       }
-      await api.completeOnboarding(idToken, spreadsheetId && !driveAccessToken ? spreadsheetId : undefined)
+      await api.completeOnboarding(idToken)
       setShowOnboarding(false)
       window.location.assign(WORKSPACE_PATHS.connections)
     } catch (err) {
       console.error('Complete onboarding failed:', err)
       await api.completeOnboarding(idToken).catch(() => {})
       setShowOnboarding(false)
+      window.location.assign(WORKSPACE_PATHS.connections)
     }
   }, [idToken, api])
 
