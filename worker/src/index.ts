@@ -647,7 +647,7 @@ export default {
         return withCorsHeaders(response, corsHeaders);
       }
 
-      const storedConfig = await loadStoredConfig(env, session.userId);
+      const storedConfig = await loadStoredConfig(env, session.userId, { isAdmin: session.isAdmin });
       const { sheets, pipeline } = buildServices(env, session.userId);
       const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, pipeline, request);
       return jsonResponse({ ok: true, data }, 200, corsHeaders);
@@ -1401,12 +1401,7 @@ async function dispatchAction(
     }
 
     case 'getSpreadsheetStatus': {
-      // Prefer per-user spreadsheet_id from D1, fall back to global config
-      const userRowForSheet = await env.PIPELINE_DB
-        .prepare('SELECT spreadsheet_id FROM users WHERE id = ?1')
-        .bind(session.userId)
-        .first<{ spreadsheet_id: string }>();
-      const sid = String(userRowForSheet?.spreadsheet_id || storedConfig.spreadsheetId || '').trim();
+      const sid = String(storedConfig.spreadsheetId || '').trim();
       if (!sid) return { accessible: false, title: '' };
       try {
         const saToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
@@ -1545,7 +1540,11 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
   };
 }
 
-async function loadStoredConfig(env: Env, userId?: string): Promise<StoredConfig> {
+async function loadStoredConfig(
+  env: Env,
+  userId?: string,
+  ctx?: { isAdmin?: boolean },
+): Promise<StoredConfig> {
   const config = await env.CONFIG_KV.get<StoredConfig>(CONFIG_KEY, 'json');
   const defaultChannel = config?.defaultChannel === 'whatsapp'
     ? 'whatsapp'
@@ -1563,9 +1562,12 @@ async function loadStoredConfig(env: Env, userId?: string): Promise<StoredConfig
   const gmailDisconnected = disconnectedAuthProviders.includes('gmail');
 
   const devSpreadsheetId = String(env.DEV_SPREADSHEET_ID || '').trim();
+  const kvSpreadsheetId = String(config?.spreadsheetId || '').trim();
 
-  // Per-user spreadsheet: look up the user's own spreadsheet_id from D1 when a userId is provided.
-  // This is the tenant identifier — each user sees only their own posts.
+  // Per-user spreadsheet from D1 when a user session is loaded. Optional Sheets: tenants without a
+  // connected sheet use D1 only — we do not fall back to CONFIG_KV spreadsheetId (that caused
+  // Google 403s when the global sheet was not shared with every tenant). Admins one-time migrate
+  // legacy KV workspace sheet into their D1 row so existing single-tenant setups keep working.
   let userSpreadsheetId = '';
   let userRules = '';
   let userWhoAmI = '';
@@ -1576,12 +1578,18 @@ async function loadStoredConfig(env: Env, userId?: string): Promise<StoredConfig
       .first<{ spreadsheet_id: string; user_rules: string; user_who_am_i: string }>();
     if (!devSpreadsheetId) {
       userSpreadsheetId = String(userRow?.spreadsheet_id || '').trim();
+      if (!userSpreadsheetId && kvSpreadsheetId && ctx?.isAdmin) {
+        await setUserSpreadsheetId(env.PIPELINE_DB, userId, kvSpreadsheetId);
+        userSpreadsheetId = kvSpreadsheetId;
+      }
     }
     userRules = String(userRow?.user_rules || '').trim();
     userWhoAmI = String(userRow?.user_who_am_i || '').trim();
   }
 
-  const spreadsheetId = devSpreadsheetId || userSpreadsheetId || String(config?.spreadsheetId || '').trim();
+  const spreadsheetId = userId
+    ? devSpreadsheetId || userSpreadsheetId
+    : devSpreadsheetId || kvSpreadsheetId;
 
   return {
     spreadsheetId,
@@ -2919,6 +2927,7 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
   }
 
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  await setUserSpreadsheetId(env.PIPELINE_DB, session.userId, String(nextConfig.spreadsheetId || '').trim());
   return toPublicConfig(nextConfig, env);
 }
 
