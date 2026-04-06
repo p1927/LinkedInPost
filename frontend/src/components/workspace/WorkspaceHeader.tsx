@@ -11,6 +11,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   rules: 'Rules',
   campaign: 'Campaign',
   usage: 'Usage',
+  connections: 'Connections',
 };
 
 export function WorkspaceHeader({
