@@ -40,10 +40,19 @@ export function ConnectionsPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 px-4 py-8">
-      <section>
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted">
-          Google Workspace
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Connections</h1>
+        <p className="mt-1 text-sm text-slate-500">Manage your integrations and publishing channels</p>
+      </div>
+
+      <hr className="mb-8 border-slate-200" />
+
+      {/* Section: Content Source */}
+      <section className="mb-8">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+          Content Source
         </h2>
         <SheetConnectionCard
           idToken={idToken}
@@ -55,9 +64,10 @@ export function ConnectionsPage({
         />
       </section>
 
+      {/* Section: Publishing Channels */}
       <section>
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted">
-          Social Publishing
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+          Publishing Channels
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SOCIAL_PROVIDERS.map(({ key, label }) => (
