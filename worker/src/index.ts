@@ -115,6 +115,8 @@ export interface Env {
   WHATSAPP_ACCESS_TOKEN?: string;
   /** Local only (.dev.vars): overrides CONFIG_KV spreadsheetId when preview KV has no config */
   DEV_SPREADSHEET_ID?: string;
+  /** Optional: override the base URL used for OAuth redirect URIs (e.g. https://my-worker.example.com). Must match the registered redirect URI in each provider's developer console. */
+  OAUTH_REDIRECT_BASE_URL?: string;
   /** Local only: shared secret; client sends as idToken to skip Google Sign-In (see dev-google-auth-bypass plugin) */
   DEV_GOOGLE_AUTH_BYPASS_SECRET?: string;
   /** Optional synthetic email for bypass session (default dev-bypass@local.invalid) */
@@ -635,7 +637,7 @@ export default {
         return withCorsHeaders(response, corsHeaders);
       }
 
-      const storedConfig = await loadStoredConfig(env);
+      const storedConfig = await loadStoredConfig(env, session.userId);
       const { sheets, pipeline } = buildServices(env);
       const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, pipeline, request);
       return jsonResponse({ ok: true, data }, 200, corsHeaders);
@@ -1405,7 +1407,7 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
   };
 }
 
-async function loadStoredConfig(env: Env): Promise<StoredConfig> {
+async function loadStoredConfig(env: Env, userId?: string): Promise<StoredConfig> {
   const config = await env.CONFIG_KV.get<StoredConfig>(CONFIG_KEY, 'json');
   const defaultChannel = config?.defaultChannel === 'whatsapp'
     ? 'whatsapp'
@@ -1423,7 +1425,19 @@ async function loadStoredConfig(env: Env): Promise<StoredConfig> {
   const gmailDisconnected = disconnectedAuthProviders.includes('gmail');
 
   const devSpreadsheetId = String(env.DEV_SPREADSHEET_ID || '').trim();
-  const spreadsheetId = devSpreadsheetId || String(config?.spreadsheetId || '').trim();
+
+  // Per-user spreadsheet: look up the user's own spreadsheet_id from D1 when a userId is provided.
+  // This is the tenant identifier — each user sees only their own posts.
+  let userSpreadsheetId = '';
+  if (!devSpreadsheetId && userId) {
+    const userRow = await env.PIPELINE_DB
+      .prepare('SELECT spreadsheet_id FROM users WHERE id = ?1')
+      .bind(userId)
+      .first<{ spreadsheet_id: string }>();
+    userSpreadsheetId = String(userRow?.spreadsheet_id || '').trim();
+  }
+
+  const spreadsheetId = devSpreadsheetId || userSpreadsheetId || String(config?.spreadsheetId || '').trim();
 
   return {
     spreadsheetId,
@@ -1554,7 +1568,9 @@ function hasGmailOAuthConfig(env: Env): boolean {
   return Boolean(String(env.GMAIL_CLIENT_ID || '').trim() && String(env.GMAIL_CLIENT_SECRET || '').trim());
 }
 
-function buildWorkerOrigin(request: Request): string {
+function buildWorkerOrigin(request: Request, env?: Pick<Env, 'OAUTH_REDIRECT_BASE_URL'>): string {
+  const override = String(env?.OAUTH_REDIRECT_BASE_URL || '').trim().replace(/\/$/, '');
+  if (override) return override;
   return new URL(request.url).origin;
 }
 
@@ -1597,7 +1613,7 @@ async function startLinkedInAuth(request: Request, env: Env, session: VerifiedSe
   }
 
   const state = createRandomToken();
-  const callbackOrigin = buildWorkerOrigin(request);
+  const callbackOrigin = buildWorkerOrigin(request, env);
   const redirectUri = `${callbackOrigin}/auth/linkedin/callback`;
   await storeOAuthState(env, state, {
     provider: 'linkedin',
@@ -1626,7 +1642,7 @@ async function startInstagramAuth(request: Request, env: Env, session: VerifiedS
   }
 
   const state = createRandomToken();
-  const callbackOrigin = buildWorkerOrigin(request);
+  const callbackOrigin = buildWorkerOrigin(request, env);
   const redirectUri = `${callbackOrigin}/auth/instagram/callback`;
   await storeOAuthState(env, state, {
     provider: 'instagram',
@@ -1655,7 +1671,7 @@ async function startWhatsAppAuth(request: Request, env: Env, session: VerifiedSe
   }
 
   const state = createRandomToken();
-  const callbackOrigin = buildWorkerOrigin(request);
+  const callbackOrigin = buildWorkerOrigin(request, env);
   const redirectUri = `${callbackOrigin}/auth/whatsapp/callback`;
   await storeOAuthState(env, state, {
     provider: 'whatsapp',
@@ -1684,7 +1700,7 @@ async function startGmailAuth(request: Request, env: Env, session: VerifiedSessi
   }
 
   const state = createRandomToken();
-  const callbackOrigin = buildWorkerOrigin(request);
+  const callbackOrigin = buildWorkerOrigin(request, env);
   const redirectUri = `${callbackOrigin}/auth/gmail/callback`;
   await storeOAuthState(env, state, {
     provider: 'gmail',
@@ -2867,7 +2883,7 @@ export async function executeScheduledPublish(env: Env, task: ScheduledPublishTa
 
   await publishContent(
     env,
-    '',
+    task.userId || '',
     config,
     {
       row,
@@ -2958,6 +2974,7 @@ async function publishContent(
       intent,
       channel,
       recipientId: recipientId || undefined,
+      userId,
     });
     return {
       success: true,

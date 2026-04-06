@@ -7,6 +7,8 @@ export interface ScheduledPublishTask {
   intent?: 'publish' | 'republish';
   channel?: string;
   recipientId?: string;
+  /** The user who scheduled the post — used to resolve per-user social tokens at execution time. */
+  userId?: string;
 }
 
 /** Client + DO `/cancel` body — `scheduledTime` must match the armed task to avoid clearing a newer schedule. */

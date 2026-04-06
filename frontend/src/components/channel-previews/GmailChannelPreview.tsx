@@ -178,11 +178,11 @@ export function GmailChannelPreview({
                 </span>
               </div>
             </div>
-            <div className="flex min-h-[2rem] items-start gap-2 border-b px-2.5 py-1.5 sm:px-3" style={{ borderColor: GM.border }}>
+            <div className="flex items-start gap-2 border-b px-2.5 py-1.5 sm:px-3" style={{ borderColor: GM.border }}>
               <span className="w-12 shrink-0 pt-0.5 text-[0.65rem] font-medium uppercase tracking-wide" style={{ color: GM.muted }}>
                 To
               </span>
-              <span className="min-w-0 flex-1 break-words font-normal leading-snug" style={{ color: GM.text }}>
+              <span className="min-w-0 flex-1 overflow-hidden font-normal leading-snug" style={{ color: GM.text, wordBreak: 'break-all' }}>
                 {toDisplay}
               </span>
             </div>

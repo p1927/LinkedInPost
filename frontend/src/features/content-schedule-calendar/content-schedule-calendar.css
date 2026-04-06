@@ -54,6 +54,7 @@
 
 .csc-wrapper .sx__month-grid-day {
   min-height: 0;
+  overflow: hidden;
 }
 
 .csc-wrapper .sx__month-grid-day__events {
