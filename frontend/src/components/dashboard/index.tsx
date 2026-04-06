@@ -24,6 +24,7 @@ import { TopicVariantsPage } from '../../features/topic-navigation/screens/Topic
 import { TopicEditorPage } from '../../features/topic-navigation/screens/TopicEditorPage';
 import { GlobalRulesPage } from '../../pages/GlobalRulesPage';
 import { UsagePage } from '../../pages/UsagePage';
+import { ConnectionsPage } from '../../pages/connections/ConnectionsPage';
 import { effectiveChannel, effectiveLlmRef } from '@/lib/topicEffectivePrefs';
 import { findRowByTopicRouteId, normalizeTopicRouteParam } from '../../features/topic-navigation/utils/topicRoute';
 import {
@@ -778,6 +779,19 @@ export function Dashboard({
         <Route
           path={WORKSPACE_ROUTE_PATHS.usage}
           element={<UsagePage idToken={idToken} session={session} api={api} />}
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.connections}
+          element={
+            <ConnectionsPage
+              idToken={idToken}
+              api={api}
+              integrations={integrations}
+              onConnect={onConnect}
+              onDisconnect={onDisconnect}
+              connecting={connecting}
+            />
+          }
         />
         <Route path="*" element={<Navigate to={WORKSPACE_PATHS.topics} replace />} />
       </Routes>
