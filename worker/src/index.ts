@@ -1057,16 +1057,13 @@ async function dispatchAction(
           payload.topicGenerationModel !== undefined ? String(payload.topicGenerationModel ?? '') : undefined,
       });
     case 'startLinkedInAuth':
-      ensureAdmin(session);
       return startLinkedInAuth(request, env, session);
     case 'startInstagramAuth':
-      ensureAdmin(session);
       return startInstagramAuth(request, env, session);
     case 'startWhatsAppAuth':
       ensureAdmin(session);
       return startWhatsAppAuth(request, env, session);
     case 'startGmailAuth':
-      ensureAdmin(session);
       return startGmailAuth(request, env, session);
     case 'disconnectChannelAuth':
       ensureAdmin(session);
