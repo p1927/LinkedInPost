@@ -946,8 +946,13 @@ async function dispatchAction(
         // No sheet configured — return rows from D1 only
         return pipeline.getRowsByUserId();
       }
-      // Sheet configured — merge Sheets + D1
-      return pipeline.getMergedRows(sheets, sid);
+      // Sheet configured — merge Sheets + D1; fall back to D1 on access errors (e.g. 403)
+      try {
+        return await pipeline.getMergedRows(sheets, sid);
+      } catch (e) {
+        console.error('[getRows] Sheets merge failed, falling back to D1:', e);
+        return pipeline.getRowsByUserId();
+      }
     }
     case 'generateQuickChange':
       ensureSpreadsheetConfigured(storedConfig);
