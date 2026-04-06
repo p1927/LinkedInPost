@@ -17,10 +17,10 @@ export function getRandomizedTestGroup(rowId: string): string {
   return (Math.abs(hash) % 2) === 0 ? 'A' : 'B';
 }
 
-/** Atomic upsert — INSERT OR REPLACE leverages PRIMARY KEY (spreadsheet_id, topic_id) to replace in one statement. */
+/** Atomic upsert — INSERT OR REPLACE leverages PRIMARY KEY (user_id, topic_id) to replace in one statement. */
 const INSERT_PIPELINE_ROW_SQL = `
 INSERT OR REPLACE INTO pipeline_state (
-  spreadsheet_id, topic_id, topic, date, status,
+  user_id, spreadsheet_id, topic_id, topic_key, topic, date, status,
   variant1, variant2, variant3, variant4,
   image_link1, image_link2, image_link3, image_link4,
   selected_text, selected_image_id, selected_image_urls_json,
@@ -30,22 +30,22 @@ INSERT OR REPLACE INTO pipeline_state (
   content_review_fingerprint, content_review_at, content_review_json,
   generation_run_id, pattern_id, pattern_name, pattern_rationale
 ) VALUES (
-  ?1, ?2, ?3, ?4, ?5,
-  ?6, ?7, ?8, ?9,
-  ?10, ?11, ?12, ?13,
-  ?14, ?15, ?16,
-  ?17, ?18, ?19, ?20, ?21,
-  ?22, ?23, ?24,
-  ?25, ?26,
-  ?27, ?28, ?29,
-  ?30, ?31, ?32, ?33
+  ?1, ?2, ?3, ?4, ?5, ?6, ?7,
+  ?8, ?9, ?10, ?11,
+  ?12, ?13, ?14, ?15,
+  ?16, ?17, ?18,
+  ?19, ?20, ?21, ?22, ?23,
+  ?24, ?25, ?26,
+  ?27, ?28,
+  ?29, ?30, ?31,
+  ?32, ?33, ?34, ?35
 )
 `;
 
 const UPDATE_EMAIL_FIELDS_SQL = `
 UPDATE pipeline_state
 SET email_to = ?1, email_cc = ?2, email_bcc = ?3, email_subject = ?4, updated_at = datetime('now')
-WHERE spreadsheet_id = ?5 AND topic_id = ?6
+WHERE user_id = ?5 AND topic_id = ?6
 `;
 
 function normalizeStatus(value: string | null | undefined): string {
@@ -85,51 +85,54 @@ function pickGoogleSheetFieldsForD1(
   return postF;
 }
 
-function bindPipelineInsert(stmt: D1PreparedStatement, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
+function bindPipelineInsert(stmt: D1PreparedStatement, userId: string, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
   const c = sheetRowToPipelineColumns(spreadsheetId, row);
+  const topicKey = buildTopicKey(row.topic, row.date);
   return stmt.bind(
-    c.spreadsheet_id,
-    c.topic_id,
-    c.topic,
-    c.date,
-    c.status,
-    c.variant1,
-    c.variant2,
-    c.variant3,
-    c.variant4,
-    c.image_link1,
-    c.image_link2,
-    c.image_link3,
-    c.image_link4,
-    c.selected_text,
-    c.selected_image_id,
-    c.selected_image_urls_json,
-    c.post_time,
-    c.email_to,
-    c.email_cc,
-    c.email_bcc,
-    c.email_subject,
-    c.topic_generation_rules,
-    c.generation_template_id,
-    c.published_at,
-    c.topic_delivery_channel,
-    c.topic_generation_model,
-    c.content_review_fingerprint,
-    c.content_review_at,
-    c.content_review_json,
-    c.generation_run_id,
-    c.pattern_id,
-    c.pattern_name,
-    c.pattern_rationale,
+    userId,           // ?1 user_id
+    c.spreadsheet_id, // ?2 spreadsheet_id
+    c.topic_id,       // ?3 topic_id
+    topicKey,         // ?4 topic_key
+    c.topic,          // ?5 topic
+    c.date,           // ?6 date
+    c.status,         // ?7 status
+    c.variant1,       // ?8
+    c.variant2,       // ?9
+    c.variant3,       // ?10
+    c.variant4,       // ?11
+    c.image_link1,    // ?12
+    c.image_link2,    // ?13
+    c.image_link3,    // ?14
+    c.image_link4,    // ?15
+    c.selected_text,  // ?16
+    c.selected_image_id, // ?17
+    c.selected_image_urls_json, // ?18
+    c.post_time,      // ?19
+    c.email_to,       // ?20
+    c.email_cc,       // ?21
+    c.email_bcc,      // ?22
+    c.email_subject,  // ?23
+    c.topic_generation_rules, // ?24
+    c.generation_template_id, // ?25
+    c.published_at,   // ?26
+    c.topic_delivery_channel, // ?27
+    c.topic_generation_model, // ?28
+    c.content_review_fingerprint, // ?29
+    c.content_review_at, // ?30
+    c.content_review_json, // ?31
+    c.generation_run_id, // ?32
+    c.pattern_id,     // ?33
+    c.pattern_name,   // ?34
+    c.pattern_rationale, // ?35
   );
 }
 
-function pipelineUpsertStatement(db: D1Database, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
-  return bindPipelineInsert(db.prepare(INSERT_PIPELINE_ROW_SQL), spreadsheetId, row);
+function pipelineUpsertStatement(db: D1Database, userId: string, spreadsheetId: string, row: SheetRow): D1PreparedStatement {
+  return bindPipelineInsert(db.prepare(INSERT_PIPELINE_ROW_SQL), userId, spreadsheetId, row);
 }
 
 export class PipelineStore {
-  constructor(private readonly db: D1Database) {}
+  constructor(private readonly db: D1Database, private readonly userId: string = '') {}
 
   async ensureWorkspace(spreadsheetId: string): Promise<void> {
     await this.db
@@ -138,17 +141,17 @@ export class PipelineStore {
       .run();
   }
 
-  async deletePipelineRow(spreadsheetId: string, topicId: string): Promise<void> {
+  async deletePipelineRow(_spreadsheetId: string, topicId: string): Promise<void> {
     const id = String(topicId || '').trim();
     if (!id) return;
     await this.db
-      .prepare(`DELETE FROM pipeline_state WHERE spreadsheet_id = ? AND topic_id = ?`)
-      .bind(spreadsheetId, id)
+      .prepare(`DELETE FROM pipeline_state WHERE user_id = ? AND topic_id = ?`)
+      .bind(this.userId, id)
       .run();
   }
 
   private async fetchPipelineMapByTopicIds(
-    spreadsheetId: string,
+    _spreadsheetId: string,
     topicIds: string[],
   ): Promise<Map<string, PipelineStateDbRow>> {
     const map = new Map<string, PipelineStateDbRow>();
@@ -161,9 +164,9 @@ export class PipelineStore {
       const chunk = ids.slice(i, i + chunkSize);
       const ph = chunk.map(() => '?').join(',');
       const stmt = this.db.prepare(
-        `SELECT * FROM pipeline_state WHERE spreadsheet_id = ? AND topic_id IN (${ph})`,
+        `SELECT * FROM pipeline_state WHERE user_id = ? AND topic_id IN (${ph})`,
       );
-      const bound = stmt.bind(spreadsheetId, ...chunk);
+      const bound = stmt.bind(this.userId, ...chunk);
       const res = await bound.all<PipelineStateDbRow>();
       for (const r of res.results ?? []) {
         map.set(r.topic_id, r);
@@ -245,8 +248,8 @@ export class PipelineStore {
   }
 
   async upsertFull(spreadsheetId: string, row: SheetRow): Promise<void> {
-    await this.ensureWorkspace(spreadsheetId);
-    await pipelineUpsertStatement(this.db, spreadsheetId, row).run();
+    if (spreadsheetId) await this.ensureWorkspace(spreadsheetId);
+    await pipelineUpsertStatement(this.db, this.userId, spreadsheetId, row).run();
   }
 
   async saveDraftVariants(
@@ -340,7 +343,7 @@ export class PipelineStore {
   }
 
   async saveEmailFields(
-    spreadsheetId: string,
+    _spreadsheetId: string,
     row: SheetRow,
     emailTo: string,
     emailCc: string,
@@ -350,7 +353,7 @@ export class PipelineStore {
     const topicId = String(row.topicId || '').trim();
     await this.db
       .prepare(UPDATE_EMAIL_FIELDS_SQL)
-      .bind(emailTo, emailCc, emailBcc, emailSubject, spreadsheetId, topicId)
+      .bind(emailTo, emailCc, emailBcc, emailSubject, this.userId, topicId)
       .run();
     return { success: true };
   }
@@ -653,7 +656,7 @@ export class PipelineStore {
         topicDeliveryChannel: '',
         topicGenerationModel: '',
       };
-      stmts.push(pipelineUpsertStatement(this.db, spreadsheetId, row));
+      stmts.push(pipelineUpsertStatement(this.db, this.userId, spreadsheetId, row));
     }
 
     for (let i = 0; i < stmts.length; i += 100) {
@@ -664,7 +667,7 @@ export class PipelineStore {
   }
 
   async updateContentReview(
-    spreadsheetId: string,
+    _spreadsheetId: string,
     topicId: string,
     fingerprint: string,
     reviewedAt: string,
@@ -676,9 +679,86 @@ export class PipelineStore {
       .prepare(
         `UPDATE pipeline_state
          SET content_review_fingerprint = ?1, content_review_at = ?2, content_review_json = ?3, updated_at = datetime('now')
-         WHERE spreadsheet_id = ?4 AND topic_id = ?5`,
+         WHERE user_id = ?4 AND topic_id = ?5`,
       )
-      .bind(fingerprint, reviewedAt, json, spreadsheetId, tid)
+      .bind(fingerprint, reviewedAt, json, this.userId, tid)
       .run();
+  }
+
+  async getRowsByUserId(userId?: string): Promise<SheetRow[]> {
+    const uid = userId ?? this.userId;
+    const { results } = await this.db
+      .prepare(`SELECT * FROM pipeline_state WHERE user_id = ?1 ORDER BY date ASC, topic ASC`)
+      .bind(uid)
+      .all<PipelineStateDbRow>();
+    return (results ?? []).map((row) => ({
+      rowIndex: 0,
+      sourceSheet: (row.status?.toLowerCase() === 'published' ? 'Post' : 'Draft') as SheetRow['sourceSheet'],
+      topicId: row.topic_id,
+      topic: row.topic,
+      date: row.date,
+      status: row.status || 'Pending',
+      variant1: row.variant1 ?? '',
+      variant2: row.variant2 ?? '',
+      variant3: row.variant3 ?? '',
+      variant4: row.variant4 ?? '',
+      imageLink1: row.image_link1 ?? '',
+      imageLink2: row.image_link2 ?? '',
+      imageLink3: row.image_link3 ?? '',
+      imageLink4: row.image_link4 ?? '',
+      selectedText: row.selected_text ?? '',
+      selectedImageId: row.selected_image_id ?? '',
+      selectedImageUrlsJson: row.selected_image_urls_json ?? '',
+      postTime: row.post_time ?? '',
+      emailTo: row.email_to ?? '',
+      emailCc: row.email_cc ?? '',
+      emailBcc: row.email_bcc ?? '',
+      emailSubject: row.email_subject ?? '',
+      topicGenerationRules: row.topic_generation_rules ?? '',
+      generationTemplateId: row.generation_template_id ?? '',
+      publishedAt: row.published_at ?? undefined,
+      topicDeliveryChannel: row.topic_delivery_channel ?? '',
+      topicGenerationModel: row.topic_generation_model ?? '',
+      contentReviewFingerprint: row.content_review_fingerprint ?? '',
+      contentReviewAt: row.content_review_at ?? undefined,
+      contentReviewJson: row.content_review_json ?? '',
+      generationRunId: row.generation_run_id ?? '',
+      patternId: row.pattern_id ?? '',
+      patternName: row.pattern_name ?? '',
+      patternRationale: row.pattern_rationale ?? '',
+    }));
+  }
+
+  async addTopicToD1(topic: string, date: string, topicId: string): Promise<SheetRow> {
+    const topicKey = buildTopicKey(topic, date);
+    await this.db
+      .prepare(INSERT_PIPELINE_ROW_SQL)
+      .bind(
+        this.userId, '', topicId, topicKey, topic, date, 'Pending',
+        '', '', '', '',
+        '', '', '', '',
+        '', '', '',
+        '', '', '', '', '',
+        '', '', null,
+        '', '',
+        '', null, '',
+        '', '', '', '',
+      )
+      .run();
+    return {
+      rowIndex: 0,
+      sourceSheet: 'Topics' as SheetRow['sourceSheet'],
+      topicId,
+      topic,
+      date,
+      status: 'Pending',
+      variant1: '', variant2: '', variant3: '', variant4: '',
+      imageLink1: '', imageLink2: '', imageLink3: '', imageLink4: '',
+      selectedText: '', selectedImageId: '', selectedImageUrlsJson: '',
+      postTime: '',
+      emailTo: '', emailCc: '', emailBcc: '', emailSubject: '',
+      topicGenerationRules: '', generationTemplateId: '',
+      topicDeliveryChannel: '', topicGenerationModel: '',
+    };
   }
 }
