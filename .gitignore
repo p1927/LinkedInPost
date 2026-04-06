@@ -19,3 +19,4 @@ worker/.dev.vars
 
 generation-worker/node_modules
 node_modules.worktrees/
+node_modules

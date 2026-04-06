@@ -146,8 +146,9 @@ export function useReviewFlowActions(
   ]);
 
   const buildGenerationRequest = (): GenerationRequest => {
+    const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(selectedImageUrls);
     const base: GenerationRequest = {
-      row: sheetRow,
+      row: { ...sheetRow, selectedImageId, selectedImageUrlsJson },
       editorText,
       scope: effectiveScope,
       selection: effectiveScope === 'selection' ? selection : null,

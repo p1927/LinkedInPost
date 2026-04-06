@@ -214,6 +214,8 @@ export interface GenWorkerGenerateRequest {
     authorProfile?: string;
   };
   skipImages?: boolean;
+  selectedImageId?: string;
+  selectedImageUrlsJson?: string;
 }
 
 export interface TextVariant {

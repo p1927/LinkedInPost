@@ -27,6 +27,8 @@ export interface GenWorkerGenerateRequest {
   newsResearchConfig?: unknown;
   skipImages?: boolean;
   imageGen?: { provider: string; model?: string };
+  selectedImageId?: string;
+  selectedImageUrlsJson?: string;
 }
 
 export interface TextVariant {

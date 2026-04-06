@@ -636,7 +636,7 @@ export class PipelineStore {
         variant2: p.variant2,
         variant3: p.variant3,
         variant4: p.variant4,
-        imageLink1: '',
+        imageLink1: p.selectedImageId || '',
         imageLink2: '',
         imageLink3: '',
         imageLink4: '',
