@@ -34,6 +34,7 @@ import { getUsageSummary } from './db/llm-usage';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
+import { shareFileWithUser } from './google/drivePermissions';
 import { getProviderLabel } from '@repo/llm-core';
 import {
   getConfiguredLlmProviderIds,
@@ -1329,6 +1330,80 @@ async function dispatchAction(
       if (!provider) throw new Error('Missing provider.');
       await deleteSocialIntegration(env.PIPELINE_DB, session.userId, provider);
       return { ok: true };
+    }
+
+    case 'connectSpreadsheet': {
+      const { spreadsheetId, driveAccessToken } = payload as {
+        spreadsheetId: string;
+        driveAccessToken: string;
+      };
+      if (!String(spreadsheetId || '').trim()) throw new Error('spreadsheetId is required.');
+      if (!String(driveAccessToken || '').trim()) throw new Error('driveAccessToken is required.');
+      const sid = String(spreadsheetId).trim();
+      const token = String(driveAccessToken).trim();
+
+      // Parse service account email from env
+      let saEmail = '';
+      try {
+        const saJson = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}') as { client_email?: string };
+        saEmail = String(saJson.client_email || '').trim();
+      } catch {
+        throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON.');
+      }
+      if (!saEmail) throw new Error('Service account email not configured on this Worker.');
+
+      // Share sheet with service account using user's Drive token
+      await shareFileWithUser(sid, token, saEmail);
+
+      // Verify service account can now access it
+      const saToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+      const verifyRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}?fields=properties.title`,
+        { headers: { Authorization: `Bearer ${saToken}` } },
+      );
+      if (!verifyRes.ok) {
+        throw new Error(
+          `Sheet shared but service account still cannot access it (${verifyRes.status}). ` +
+          `Please verify the URL is correct and try again.`,
+        );
+      }
+      const meta = await verifyRes.json() as { properties?: { title?: string } };
+      const title = String(meta.properties?.title ?? '');
+
+      // Persist spreadsheet ID for this user
+      await setUserSpreadsheetId(env.PIPELINE_DB, session.userId, sid);
+      return { ok: true, title };
+    }
+
+    case 'getSpreadsheetStatus': {
+      // Prefer per-user spreadsheet_id from D1, fall back to global config
+      const userRowForSheet = await env.PIPELINE_DB
+        .prepare('SELECT spreadsheet_id FROM users WHERE id = ?1')
+        .bind(session.userId)
+        .first<{ spreadsheet_id: string }>();
+      const sid = String(userRowForSheet?.spreadsheet_id || storedConfig.spreadsheetId || '').trim();
+      if (!sid) return { accessible: false, title: '' };
+      try {
+        const saToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+        const res = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}?fields=properties.title`,
+          { headers: { Authorization: `Bearer ${saToken}` } },
+        );
+        if (!res.ok) return { accessible: false, title: '' };
+        const meta = await res.json() as { properties?: { title?: string } };
+        return { accessible: true, title: String(meta.properties?.title ?? '') };
+      } catch {
+        return { accessible: false, title: '' };
+      }
+    }
+
+    case 'getServiceAccountEmail': {
+      try {
+        const saJson = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}') as { client_email?: string };
+        return { email: String(saJson.client_email || '').trim() };
+      } catch {
+        return { email: '' };
+      }
     }
 
     case 'completeOnboarding': {
