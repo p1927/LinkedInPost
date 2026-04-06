@@ -37,6 +37,8 @@ export interface TopicEventModalActions {
   onOpenEdit: (topic: CalendarTopic) => void;
   onPublish: (topic: CalendarTopic) => Promise<void>;
   getPublishControl: (topic: CalendarTopic) => TopicEventPublishControl;
+  /** Open the AI Draft dialog for a pending topic. Only present when the generation worker is configured. */
+  onDraft?: (topic: CalendarTopic) => void;
 }
 
 /** Emitted by ContentScheduleCalendar when a drag/resize changes the schedule. */

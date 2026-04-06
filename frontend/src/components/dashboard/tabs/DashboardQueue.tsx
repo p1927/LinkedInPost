@@ -329,6 +329,14 @@ export function DashboardQueue({
         const row = topic.payload as SheetRow | undefined;
         if (row) onOpenTopicReview(row);
       },
+      onDraft: session.config.hasGenerationWorker && onGenerationWorkerDraft
+        ? (topic) => {
+            const row = topic.payload as SheetRow | undefined;
+            if (!row) return;
+            resetGenWorkerForm();
+            setGenWorkerDialogRow(row);
+          }
+        : undefined,
       onPublish: async (topic) => {
         const row = topic.payload as SheetRow | undefined;
         if (!row) return;
@@ -385,6 +393,10 @@ export function DashboardQueue({
       republishRowToSelectedChannel,
       actionLoading,
       pendingScheduledPublish,
+      session.config.hasGenerationWorker,
+      onGenerationWorkerDraft,
+      resetGenWorkerForm,
+      setGenWorkerDialogRow,
     ],
   );
 

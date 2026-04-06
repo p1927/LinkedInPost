@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronRight, Pencil, RefreshCw, RotateCw, Send, Trash2, X } from 'lucide-react';
+import { Bot, ChevronDown, ChevronRight, Pencil, RefreshCw, RotateCw, Send, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -307,6 +307,21 @@ export function EventDetailAndEdit({
                 >
                   Close
                 </Button>
+                {topicQueueModal.onDraft && (topic.status ?? '').toLowerCase() === 'pending' ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="cursor-pointer gap-1.5"
+                    onClick={() => {
+                      topicQueueModal.onDraft!(topic);
+                      onClose();
+                    }}
+                  >
+                    <Bot className="h-3.5 w-3.5" aria-hidden />
+                    AI Draft
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="secondary"
