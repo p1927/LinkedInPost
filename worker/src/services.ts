@@ -12,9 +12,9 @@ export interface Services {
   pipeline: PipelineStore;
 }
 
-export function buildServices(env: Env): Services {
+export function buildServices(env: Env, userId = ''): Services {
   return {
     sheets: new SheetsGateway(env),
-    pipeline: new PipelineStore(env.PIPELINE_DB),
+    pipeline: new PipelineStore(env.PIPELINE_DB, userId),
   };
 }

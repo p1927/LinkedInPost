@@ -1,7 +1,9 @@
 /** Raw row from `pipeline_state` (D1). */
 export interface PipelineStateDbRow {
+  user_id: string;
   spreadsheet_id: string;
   topic_id: string;
+  topic_key: string;
   topic: string;
   date: string;
   status: string;
