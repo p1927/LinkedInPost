@@ -987,13 +987,14 @@ async function dispatchAction(
       const topicId = crypto.randomUUID();
       const date = String(payload.date || new Date().toISOString().slice(0, 10)).trim();
       const sid = String(storedConfig.spreadsheetId || '').trim();
-      // Always write to D1 first
-      const newRow = await pipeline.addTopicToD1(topicText, date, topicId);
-      // Async Sheets write if configured
+      // Always write to D1 first (optional Sheets: never fail the request if Google rejects sync)
+      const newRow = await pipeline.addTopicToD1(topicText, date, topicId, sid);
       if (sid) {
-        await sheets.addTopic(sid, topicText).catch((e) =>
-          console.error('[addTopic] Sheets sync failed:', e),
-        );
+        try {
+          await sheets.addTopic(sid, topicText);
+        } catch (e) {
+          console.error('[addTopic] Sheets sync failed (D1 row already saved):', e);
+        }
       }
       return newRow;
     }

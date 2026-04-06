@@ -729,12 +729,13 @@ export class PipelineStore {
     }));
   }
 
-  async addTopicToD1(topic: string, date: string, topicId: string): Promise<SheetRow> {
+  async addTopicToD1(topic: string, date: string, topicId: string, spreadsheetIdForRow = ''): Promise<SheetRow> {
     const topicKey = buildTopicKey(topic, date);
+    const sid = String(spreadsheetIdForRow || '').trim();
     await this.db
       .prepare(INSERT_PIPELINE_ROW_SQL)
       .bind(
-        this.userId, '', topicId, topicKey, topic, date, 'Pending',
+        this.userId, sid, topicId, topicKey, topic, date, 'Pending',
         '', '', '', '',
         '', '', '', '',
         '', '', '',
