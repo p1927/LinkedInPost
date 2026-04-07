@@ -173,6 +173,66 @@ const LLM_SETTING_KEYS: LlmSettingKey[] = [
   'github_automation',
 ];
 
+function AllowedModelList({
+  catalog,
+  allowedModels,
+  onToggle,
+}: {
+  catalog: GoogleModelOption[];
+  allowedModels: string[];
+  onToggle: (value: string, checked: boolean) => void;
+}) {
+  const [filter, setFilter] = useState('');
+  const visible = filter.trim()
+    ? catalog.filter(
+        (m) =>
+          m.label.toLowerCase().includes(filter.toLowerCase()) ||
+          m.value.toLowerCase().includes(filter.toLowerCase()),
+      )
+    : catalog;
+
+  return (
+    <>
+      {catalog.length > 8 && (
+        <input
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Search models…"
+          className="mb-2 w-full rounded-lg border border-border bg-transparent px-2.5 py-1.5 text-xs text-ink outline-none placeholder:text-muted focus:border-primary/50"
+        />
+      )}
+      <div className="flex max-h-56 flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-canvas px-3 py-2.5">
+        {visible.length === 0 ? (
+          <p className="py-1 text-xs text-muted">No models match</p>
+        ) : (
+          visible.map((m) => {
+            const checked = allowedModels.includes(m.value);
+            const soleChecked = checked && allowedModels.length <= 1;
+            return (
+              <label
+                key={m.value}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm text-ink transition-colors hover:bg-violet-100/40',
+                  soleChecked && 'cursor-default',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  className="size-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
+                  checked={checked}
+                  disabled={soleChecked}
+                  onChange={(e) => onToggle(m.value, e.target.checked)}
+                />
+                <span className="min-w-0 leading-snug">{m.label}</span>
+              </label>
+            );
+          })
+        )}
+      </div>
+    </>
+  );
+}
+
 const ENRICHMENT_SETTING_KEYS: LlmSettingKey[] = [
   'enrichment_persona',
   'enrichment_emotion',
@@ -300,6 +360,7 @@ function LlmPerFeatureSettings({
   adminModelCatalog,
   grokAdminCatalog,
   openrouterAdminCatalog,
+  primaryRef,
 }: {
   session: import('../../../services/backendApi').AppSession;
   backendApi: import('../../../services/backendApi').BackendApi;
@@ -307,6 +368,7 @@ function LlmPerFeatureSettings({
   adminModelCatalog: GoogleModelOption[];
   grokAdminCatalog: GoogleModelOption[];
   openrouterAdminCatalog: GoogleModelOption[];
+  primaryRef?: { provider: LlmProviderId; model: string } | null;
 }) {
   const [drafts, setDrafts] = useState<Record<LlmSettingKey, { provider: string; model: string }>>(() => {
     const base: Partial<Record<LlmSettingKey, { provider: string; model: string }>> = {};
@@ -325,6 +387,36 @@ function LlmPerFeatureSettings({
         Object.keys(LLM_SETTING_KEY_LABELS).map((k) => [k, null]),
       ) as Record<LlmSettingKey, string | null>,
   );
+
+  const [savingAll, setSavingAll] = useState(false);
+
+  const handleSetAllToPrimary = async () => {
+    if (!primaryRef) return;
+    const { provider, model } = primaryRef;
+    const newDraft = { provider, model };
+    setDrafts(
+      Object.fromEntries(LLM_SETTING_KEYS.map((k) => [k, newDraft])) as Record<
+        LlmSettingKey,
+        { provider: string; model: string }
+      >,
+    );
+    setSavingAll(true);
+    setFeedback(
+      Object.fromEntries(LLM_SETTING_KEYS.map((k) => [k, null])) as Record<
+        LlmSettingKey,
+        string | null
+      >,
+    );
+    try {
+      await Promise.all(
+        LLM_SETTING_KEYS.map((k) => backendApi.saveLlmSetting(idToken, k, newDraft)),
+      );
+    } catch {
+      // individual errors surface in the per-key feedback on next manual save
+    } finally {
+      setSavingAll(false);
+    }
+  };
 
   const handleSave = async (key: LlmSettingKey) => {
     setSaving(key);
@@ -350,12 +442,26 @@ function LlmPerFeatureSettings({
 
   return (
     <div className="mt-6 space-y-4">
-      <div>
-        <p className="mb-1 text-sm font-semibold text-ink">Model per feature</p>
-        <p className="mb-3 text-xs leading-relaxed text-muted">
-          Override the LLM used for each backend feature. Changes take effect on the next request
-          for that feature.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="mb-1 text-sm font-semibold text-ink">Model per feature</p>
+          <p className="mb-3 text-xs leading-relaxed text-muted">
+            Override the LLM used for each backend feature. Changes take effect on the next request
+            for that feature.
+          </p>
+        </div>
+        {primaryRef ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-0.5 shrink-0 rounded-xl text-xs"
+            disabled={savingAll}
+            onClick={() => void handleSetAllToPrimary()}
+          >
+            {savingAll ? 'Saving…' : 'Set all to primary'}
+          </Button>
+        ) : null}
       </div>
       {LLM_SETTING_KEYS.map((key) => {
         const draft = drafts[key];
@@ -783,29 +889,12 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 <p className="mt-1.5 text-xs leading-relaxed text-muted">
                   These models are used for GitHub Actions draft workflows and appear in the Home model picker when Gemini is available. Only admins can change this list. Everyone else can choose among allowed models (or use the single model when only one is enabled).
                 </p>
-                <div className="mt-3 flex max-h-56 flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-canvas px-3 py-2.5">
-                  {adminModelCatalog.map((m) => {
-                    const checked = allowedGoogleModels.includes(m.value);
-                    const soleChecked = checked && allowedGoogleModels.length <= 1;
-                    return (
-                      <label
-                        key={m.value}
-                        className={cn(
-                          'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm text-ink transition-colors hover:bg-violet-100/40',
-                          soleChecked && 'cursor-default',
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          className="size-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
-                          checked={checked}
-                          disabled={soleChecked}
-                          onChange={(e) => toggleAllowedGoogleModel(m.value, e.target.checked)}
-                        />
-                        <span className="min-w-0 leading-snug">{m.label}</span>
-                      </label>
-                    );
-                  })}
+                <div className="mt-3">
+                  <AllowedModelList
+                    catalog={adminModelCatalog}
+                    allowedModels={allowedGoogleModels}
+                    onToggle={toggleAllowedGoogleModel}
+                  />
                 </div>
               </div>
             </div>
@@ -813,29 +902,12 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               <div className="mt-6">
                 <label className="mb-1 block text-sm font-semibold text-ink">Allowed Grok models</label>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted">Non-admins only see models you enable here when Grok is primary.</p>
-                <div className="mt-3 flex max-h-56 flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-canvas px-3 py-2.5">
-                  {grokAdminCatalog!.map((m) => {
-                    const checked = allowedGrokModels!.includes(m.value);
-                    const soleChecked = checked && allowedGrokModels!.length <= 1;
-                    return (
-                      <label
-                        key={m.value}
-                        className={cn(
-                          'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm text-ink transition-colors hover:bg-violet-100/40',
-                          soleChecked && 'cursor-default',
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          className="size-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
-                          checked={checked}
-                          disabled={soleChecked}
-                          onChange={(e) => toggleAllowedGrokModel!(m.value, e.target.checked)}
-                        />
-                        <span className="min-w-0 leading-snug">{m.label}</span>
-                      </label>
-                    );
-                  })}
+                <div className="mt-3">
+                  <AllowedModelList
+                    catalog={grokAdminCatalog!}
+                    allowedModels={allowedGrokModels!}
+                    onToggle={toggleAllowedGrokModel!}
+                  />
                 </div>
               </div>
             ) : null}
@@ -843,29 +915,12 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               <div className="mt-6">
                 <label className="mb-1 block text-sm font-semibold text-ink">Allowed OpenRouter models</label>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted">Non-admins only see models you enable here when OpenRouter is primary.</p>
-                <div className="mt-3 flex max-h-56 flex-col gap-2 overflow-y-auto rounded-xl border border-border bg-canvas px-3 py-2.5">
-                  {(openrouterAdminCatalog ?? []).map((m) => {
-                    const checked = (allowedOpenrouterModels ?? []).includes(m.value);
-                    const soleChecked = checked && (allowedOpenrouterModels ?? []).length <= 1;
-                    return (
-                      <label
-                        key={m.value}
-                        className={cn(
-                          'flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm text-ink transition-colors hover:bg-violet-100/40',
-                          soleChecked && 'cursor-default',
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          className="size-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
-                          checked={checked}
-                          disabled={soleChecked}
-                          onChange={(e) => toggleAllowedOpenrouterModel!(m.value, e.target.checked)}
-                        />
-                        <span className="min-w-0 leading-snug">{m.label}</span>
-                      </label>
-                    );
-                  })}
+                <div className="mt-3">
+                  <AllowedModelList
+                    catalog={openrouterAdminCatalog ?? []}
+                    allowedModels={allowedOpenrouterModels ?? []}
+                    onToggle={toggleAllowedOpenrouterModel!}
+                  />
                 </div>
               </div>
             ) : null}
@@ -877,6 +932,11 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 adminModelCatalog={adminModelCatalog}
                 grokAdminCatalog={grokAdminCatalog!}
                 openrouterAdminCatalog={openrouterAdminCatalog ?? []}
+                primaryRef={
+                  llmPrimaryProvider && llmModelId
+                    ? { provider: llmPrimaryProvider, model: llmModelId }
+                    : null
+                }
               />
             ) : null}
           </SettingsSectionCard>

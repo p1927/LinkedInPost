@@ -967,7 +967,7 @@ async function dispatchAction(
       }
       const provider = String(ref.provider).trim();
       const model = String(ref.model).trim();
-      if (provider !== 'gemini' && provider !== 'grok') {
+      if (provider !== 'gemini' && provider !== 'grok' && provider !== 'openrouter') {
         throw new Error(`Unknown provider: ${provider}`);
       }
       if (!isLlmProviderConfigured(env, provider as import('./llm/types').LlmProviderId)) {
