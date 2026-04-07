@@ -2899,11 +2899,7 @@ async function computeNextLlmStored(
   let fallback: LlmRef | undefined =
     update.llm?.fallback === null ? undefined : (update.llm?.fallback ?? current.llm?.fallback);
   if (fallback) {
-    if (fallback.provider === 'grok' && !grokAllowed.includes(fallback.model)) {
-      fallback = undefined;
-    } else if (fallback.provider === 'openrouter' && !openrouterAllowed.includes(fallback.model)) {
-      fallback = undefined;
-    } else if (fallback.provider === 'gemini') {
+    if (fallback.provider === 'gemini') {
       fallback = {
         provider: 'gemini',
         model: resolveEffectiveGoogleModel(geminiPolicy, fallback.model),
