@@ -252,6 +252,7 @@ function EnrichmentLlmSettings({
   adminModelCatalog,
   grokAdminCatalog,
   openrouterAdminCatalog,
+  primaryRef,
 }: {
   session: import('../../../services/backendApi').AppSession;
   backendApi: import('../../../services/backendApi').BackendApi;
@@ -259,6 +260,7 @@ function EnrichmentLlmSettings({
   adminModelCatalog: GoogleModelOption[];
   grokAdminCatalog: GoogleModelOption[];
   openrouterAdminCatalog: GoogleModelOption[];
+  primaryRef?: { provider: LlmProviderId; model: string } | null;
 }) {
   const [drafts, setDrafts] = useState<Record<string, { provider: string; model: string }>>(() => {
     const base: Record<string, { provider: string; model: string }> = {};
@@ -271,11 +273,32 @@ function EnrichmentLlmSettings({
     return base;
   });
   const [saving, setSaving] = useState<string | null>(null);
+  const [savingAll, setSavingAll] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, string | null>>(() => {
     const base: Record<string, string | null> = {};
     for (const key of ENRICHMENT_SETTING_KEYS) base[key] = null;
     return base;
   });
+
+  const handleSetAllToPrimary = async () => {
+    if (!primaryRef) return;
+    const { provider, model } = primaryRef;
+    const newDraft = { provider, model };
+    setDrafts(Object.fromEntries(ENRICHMENT_SETTING_KEYS.map((k) => [k, newDraft])));
+    setSavingAll(true);
+    setFeedback(Object.fromEntries(ENRICHMENT_SETTING_KEYS.map((k) => [k, null])));
+    try {
+      await Promise.all(
+        ENRICHMENT_SETTING_KEYS.map((k) =>
+          backendApi.saveLlmSetting(idToken, k as LlmSettingKey, newDraft),
+        ),
+      );
+    } catch {
+      // individual errors surface in per-key feedback on next manual save
+    } finally {
+      setSavingAll(false);
+    }
+  };
 
   const handleSave = async (key: LlmSettingKey) => {
     setSaving(key);
@@ -300,7 +323,23 @@ function EnrichmentLlmSettings({
   };
 
   return (
-    <div className="space-y-3">
+    <>
+      {primaryRef ? (
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-xs text-muted">Override per enrichment module</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            disabled={savingAll}
+            onClick={handleSetAllToPrimary}
+          >
+            {savingAll ? 'Saving…' : 'Set all to primary'}
+          </Button>
+        </div>
+      ) : null}
+      <div className="space-y-3">
       {ENRICHMENT_SETTING_KEYS.map((key) => {
         const draft = drafts[key];
         const catalog = catalogFor(draft.provider);
@@ -349,7 +388,8 @@ function EnrichmentLlmSettings({
           </div>
         );
       })}
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -955,6 +995,11 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 adminModelCatalog={adminModelCatalog}
                 grokAdminCatalog={grokAdminCatalog!}
                 openrouterAdminCatalog={openrouterAdminCatalog ?? []}
+                primaryRef={
+                  llmPrimaryProvider && llmModelId
+                    ? { provider: llmPrimaryProvider, model: llmModelId }
+                    : null
+                }
               />
             </div>
           </SettingsSectionCard>
