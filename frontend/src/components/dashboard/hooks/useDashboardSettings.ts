@@ -422,6 +422,7 @@ export function useDashboardSettings({
     serverFallbackKey,
     allowedGoogleModels,
     allowedGrokModels,
+    allowedOpenrouterModels,
     githubTokenInput,
     telegramBotTokenInput,
     selectedChannel,

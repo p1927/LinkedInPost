@@ -272,6 +272,16 @@ function EnrichmentLlmSettings({
     }
     return base;
   });
+  const [savedDrafts, setSavedDrafts] = useState<Record<string, { provider: string; model: string }>>(() => {
+    const base: Record<string, { provider: string; model: string }> = {};
+    for (const key of ENRICHMENT_SETTING_KEYS) {
+      const saved = session.config.llmSettings?.[key];
+      base[key] = saved
+        ? { provider: saved.provider, model: saved.model }
+        : { provider: 'gemini', model: adminModelCatalog[0]?.value ?? '' };
+    }
+    return base;
+  });
   const [saving, setSaving] = useState<string | null>(null);
   const [savingAll, setSavingAll] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, string | null>>(() => {
@@ -293,6 +303,7 @@ function EnrichmentLlmSettings({
           backendApi.saveLlmSetting(idToken, k as LlmSettingKey, newDraft),
         ),
       );
+      setSavedDrafts(Object.fromEntries(ENRICHMENT_SETTING_KEYS.map((k) => [k, newDraft])));
     } catch {
       // individual errors surface in per-key feedback on next manual save
     } finally {
@@ -306,6 +317,7 @@ function EnrichmentLlmSettings({
     try {
       await backendApi.saveLlmSetting(idToken, key, drafts[key]);
       setFeedback((prev) => ({ ...prev, [key]: 'Saved.' }));
+      setSavedDrafts((prev) => ({ ...prev, [key]: drafts[key] }));
     } catch (err) {
       setFeedback((prev) => ({
         ...prev,
@@ -374,7 +386,7 @@ function EnrichmentLlmSettings({
                 variant="outline"
                 size="sm"
                 className="shrink-0 rounded-xl"
-                disabled={saving === key}
+                disabled={saving === key || savingAll || (drafts[key].provider === savedDrafts[key]?.provider && drafts[key].model === savedDrafts[key]?.model)}
                 onClick={() => handleSave(key)}
               >
                 {saving === key ? 'Saving...' : 'Save'}
@@ -420,6 +432,16 @@ function LlmPerFeatureSettings({
     }
     return base as Record<LlmSettingKey, { provider: string; model: string }>;
   });
+  const [savedDrafts, setSavedDrafts] = useState<Record<LlmSettingKey, { provider: string; model: string }>>(() => {
+    const base: Partial<Record<LlmSettingKey, { provider: string; model: string }>> = {};
+    for (const key of LLM_SETTING_KEYS) {
+      const saved = session.config.llmSettings?.[key];
+      base[key] = saved
+        ? { provider: saved.provider, model: saved.model }
+        : { provider: 'gemini', model: adminModelCatalog[0]?.value ?? '' };
+    }
+    return base as Record<LlmSettingKey, { provider: string; model: string }>;
+  });
   const [saving, setSaving] = useState<LlmSettingKey | null>(null);
   const [feedback, setFeedback] = useState<Record<LlmSettingKey, string | null>>(
     () =>
@@ -451,6 +473,12 @@ function LlmPerFeatureSettings({
       await Promise.all(
         LLM_SETTING_KEYS.map((k) => backendApi.saveLlmSetting(idToken, k, newDraft)),
       );
+      setSavedDrafts(
+        Object.fromEntries(LLM_SETTING_KEYS.map((k) => [k, newDraft])) as Record<
+          LlmSettingKey,
+          { provider: string; model: string }
+        >,
+      );
     } catch {
       // individual errors surface in the per-key feedback on next manual save
     } finally {
@@ -464,6 +492,7 @@ function LlmPerFeatureSettings({
     try {
       await backendApi.saveLlmSetting(idToken, key, drafts[key]);
       setFeedback((prev) => ({ ...prev, [key]: 'Saved.' }));
+      setSavedDrafts((prev) => ({ ...prev, [key]: drafts[key] }));
     } catch (err) {
       setFeedback((prev) => ({
         ...prev,
@@ -540,7 +569,7 @@ function LlmPerFeatureSettings({
                 variant="outline"
                 size="sm"
                 className="shrink-0 rounded-xl"
-                disabled={saving === key}
+                disabled={saving === key || savingAll || (drafts[key].provider === savedDrafts[key]?.provider && drafts[key].model === savedDrafts[key]?.model)}
                 onClick={() => void handleSave(key)}
               >
                 {saving === key ? 'Saving…' : 'Save'}
@@ -852,7 +881,11 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                   <LlmProviderSelect
                     providers={LLM_PROVIDER_IDS.map((p) => ({ id: p, name: getProviderLabel(p) }))}
                     value={llmPrimaryProvider!}
-                    onChange={(v) => setLlmPrimaryProvider!(v)}
+                    onChange={(v) => {
+                      setLlmPrimaryProvider!(v);
+                      const newCatalog = v === 'grok' ? grokAdminCatalog! : v === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
+                      if (newCatalog[0]?.value) setLlmModelId!(newCatalog[0].value);
+                    }}
                     className="max-w-xs"
                   />
                 </div>
