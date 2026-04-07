@@ -13,12 +13,12 @@ interface LlmGroupResponse {
 }
 
 const CHANNEL_MAX_CHARS: Record<string, number> = {
-  linkedin: 3000,
-  instagram: 2200,
+  linkedin: 1300,
+  instagram: 150,
   email: 5000,
   gmail: 5000,
-  whatsapp: 500,
-  telegram: 4096,
+  whatsapp: 160,
+  telegram: 300,
 };
 
 function buildResearchBlock(articles: ResearchArticleRef[]): string {
@@ -187,7 +187,8 @@ export async function createEnrichedVariants(
       try {
         const result = await generateLlmParsedJson<LlmGroupResponse>(env, llmRef, prompt, {
           temperature: 0.8,
-          maxOutputTokens: 4000,
+          // 3 variants × up to 3000 chars each ≈ 6750 tokens of content + JSON overhead.
+          maxOutputTokens: 16384,
         });
         if (!Array.isArray(result.variants)) return [];
         return result.variants.map((v, i) => ({

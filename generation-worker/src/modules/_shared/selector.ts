@@ -11,12 +11,12 @@ import { buildKnowledgeContext } from './knowledgeLoader';
 // ---------------------------------------------------------------------------
 
 const CHANNEL_MAX_CHARS: Record<string, number> = {
-  linkedin: 3000,
-  instagram: 2200,
+  linkedin: 1300,
+  instagram: 150,
   email: 5000,
   gmail: 5000,
-  whatsapp: 500,
-  telegram: 4096,
+  whatsapp: 160,
+  telegram: 300,
 };
 
 function hasHook(text: string): boolean {
