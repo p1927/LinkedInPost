@@ -13,10 +13,10 @@ interface LlmGroupResponse {
 }
 
 const CHANNEL_MAX_CHARS: Record<string, number> = {
-  linkedin: 1300,
+  linkedin: 800,
   instagram: 150,
-  email: 5000,
-  gmail: 5000,
+  email: 1000,
+  gmail: 1000,
   whatsapp: 160,
   telegram: 300,
 };
