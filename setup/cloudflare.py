@@ -449,10 +449,11 @@ def push_llm_secrets() -> None:
                 cmd += ['--env', '']
             try:
                 result = run_command(cmd, cwd=cwd, capture_output=True, input_text=val)
-                if 'Success' in result.stdout or 'Uploaded' in result.stdout or 'Created' in result.stdout:
+                combined = (result.stdout or '') + (result.stderr or '')
+                if 'Success' in combined or 'Uploaded' in combined or 'Created' in combined:
                     ok(f'{label} secret', f'{key} set')
                 else:
-                    warn(f'{label} secret {key}', result.stdout[:200])
+                    warn(f'{label} secret {key}', combined[:200])
             except RuntimeError as e:
                 warn(f'{label} secret {key}', str(e)[:200])
 
