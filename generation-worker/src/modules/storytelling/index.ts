@@ -60,20 +60,23 @@ Return JSON with this exact shape:
   "resolution": "<the concrete insight or outcome that closes the story>"
 }`;
 
-    const result = await generateLlmParsedJson<LlmStoryResponse>(ctx.env, ctx.llmRef, prompt, {
-      temperature: 0.6,
-      // Small caps caused truncated JSON (parse fails on `"structure":...`); keep headroom for verbose models.
-      maxOutputTokens: 1536,
-    });
+    try {
+      const result = await generateLlmParsedJson<LlmStoryResponse>(ctx.env, ctx.llmRef, prompt, {
+        temperature: 0.6,
+        maxOutputTokens: 4096,
+      });
 
-    return {
-      structure: result.structure ?? DEFAULT_SIGNAL.structure,
-      protagonist: result.protagonist ?? DEFAULT_SIGNAL.protagonist,
-      devices: Array.isArray(result.devices) && result.devices.length > 0
-        ? result.devices
-        : DEFAULT_SIGNAL.devices,
-      tensionPoint: result.tensionPoint ?? DEFAULT_SIGNAL.tensionPoint,
-      resolution: result.resolution ?? DEFAULT_SIGNAL.resolution,
-    };
+      return {
+        structure: result.structure ?? DEFAULT_SIGNAL.structure,
+        protagonist: result.protagonist ?? DEFAULT_SIGNAL.protagonist,
+        devices: Array.isArray(result.devices) && result.devices.length > 0
+          ? result.devices
+          : DEFAULT_SIGNAL.devices,
+        tensionPoint: result.tensionPoint ?? DEFAULT_SIGNAL.tensionPoint,
+        resolution: result.resolution ?? DEFAULT_SIGNAL.resolution,
+      };
+    } catch {
+      return DEFAULT_SIGNAL;
+    }
   },
 };
