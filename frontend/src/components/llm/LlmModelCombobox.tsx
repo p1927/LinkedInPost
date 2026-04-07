@@ -38,7 +38,9 @@ export function LlmModelCombobox({
 }: LlmModelComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const sorted = useMemo(
     () => [...models].sort((a, b) => a.label.localeCompare(b.label)),
@@ -69,24 +71,76 @@ export function LlmModelCombobox({
     [sorted, query],
   );
 
+  const visibleItems = useMemo(
+    () => [...filteredPrepend, ...filteredSorted],
+    [filteredPrepend, filteredSorted],
+  );
+
+  // Reset active index when query or visibility changes
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [query, open]);
+
   useEffect(() => {
     if (open) {
       setQuery('');
-      // Focus search input after popover animation
       const id = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(id);
     }
   }, [open]);
 
+  // Focus the active item button when activeIndex changes
+  useEffect(() => {
+    if (activeIndex >= 0) {
+      itemRefs.current[activeIndex]?.focus();
+    } else if (activeIndex === -1 && open) {
+      inputRef.current?.focus();
+    }
+  }, [activeIndex, open]);
+
   const allOptions = [...prependOptions, ...models];
   const selectedLabel = allOptions.find((m) => m.value === value)?.label ?? value;
+  const hasResults = visibleItems.length > 0;
 
-  const hasResults = filteredPrepend.length + filteredSorted.length > 0;
+  const handleSelect = (modelValue: string) => {
+    onChange(modelValue);
+    setOpen(false);
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (visibleItems.length > 0) setActiveIndex(0);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  const handleItemKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(Math.min(index + 1, visibleItems.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (index === 0) {
+        setActiveIndex(-1);
+      } else {
+        setActiveIndex(index - 1);
+      }
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  const listboxId = 'llm-model-listbox';
 
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
       <PopoverPrimitive.Trigger
         disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-controls={open ? listboxId : undefined}
         className={cn(
           'flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-xl border border-violet-200/55 bg-white/90 px-3.5 text-left font-semibold text-ink shadow-sm outline-none backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-200 select-none',
           'hover:border-primary/40 hover:bg-white hover:shadow-md',
@@ -115,47 +169,39 @@ export function LlmModelCombobox({
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleInputKeyDown}
               placeholder="Search models…"
+              aria-label="Search models"
+              aria-controls={listboxId}
               className="border-b border-border bg-transparent px-3 py-2 text-sm text-ink outline-none placeholder:font-normal placeholder:text-muted"
             />
-            <div className="max-h-64 overflow-y-auto p-1">
+            <div
+              id={listboxId}
+              role="listbox"
+              aria-label="Models"
+              className="max-h-64 overflow-y-auto p-1"
+            >
               {!hasResults ? (
                 <p className="px-3 py-2 text-xs text-muted">No models match</p>
               ) : (
-                <>
-                  {filteredPrepend.map((m) => (
-                    <button
-                      key={m.value}
-                      type="button"
-                      onClick={() => {
-                        onChange(m.value);
-                        setOpen(false);
-                      }}
-                      className={cn(
-                        'w-full rounded-lg px-3 py-2 text-left text-sm text-ink hover:bg-violet-100/70',
-                        m.value === value && 'bg-violet-100/50 font-semibold',
-                      )}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                  {filteredSorted.map((m) => (
-                    <button
-                      key={m.value}
-                      type="button"
-                      onClick={() => {
-                        onChange(m.value);
-                        setOpen(false);
-                      }}
-                      className={cn(
-                        'w-full rounded-lg px-3 py-2 text-left text-sm text-ink hover:bg-violet-100/70',
-                        m.value === value && 'bg-violet-100/50 font-semibold',
-                      )}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </>
+                visibleItems.map((m, index) => (
+                  <button
+                    key={m.value}
+                    ref={(el) => { itemRefs.current[index] = el; }}
+                    type="button"
+                    role="option"
+                    aria-selected={m.value === value}
+                    tabIndex={-1}
+                    onClick={() => handleSelect(m.value)}
+                    onKeyDown={(e) => handleItemKeyDown(e, index)}
+                    className={cn(
+                      'w-full rounded-lg px-3 py-2 text-left text-sm text-ink hover:bg-violet-100/70 focus:bg-violet-100/70 focus:outline-none',
+                      m.value === value && 'bg-violet-100/50 font-semibold',
+                    )}
+                  >
+                    {m.label}
+                  </button>
+                ))
               )}
             </div>
           </PopoverPrimitive.Popup>
