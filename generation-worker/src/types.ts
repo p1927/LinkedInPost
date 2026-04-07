@@ -102,7 +102,7 @@ export const GenerateRequestSchema = z.object({
   /** Optional override; otherwise first model from provider catalog (same as dashboard listLlmModels). */
   llm: z
     .object({
-      provider: z.enum(['gemini', 'grok']),
+      provider: z.enum(['gemini', 'grok', 'openrouter']),
       model: z.string().min(1),
     })
     .optional(),

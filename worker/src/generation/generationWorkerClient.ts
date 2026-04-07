@@ -23,7 +23,7 @@ export interface GenWorkerGenerateRequest {
     reviewChecklist?: string[];
   };
   /** Matches generation worker catalog (`GET /v1/llm/catalog`); omit to use default model for first configured provider. */
-  llm?: { provider: 'gemini' | 'grok'; model: string };
+  llm?: { provider: 'gemini' | 'grok' | 'openrouter'; model: string };
   newsResearchConfig?: unknown;
   skipImages?: boolean;
   imageGen?: { provider: string; model?: string };
