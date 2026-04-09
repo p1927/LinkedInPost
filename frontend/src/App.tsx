@@ -10,7 +10,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { WorkspaceShell } from './components/workspace/WorkspaceShell'
 import { type WorkspaceNavPage } from './components/workspace/AppSidebar'
 import { BackendApi, isAuthErrorMessage, type AppSession, type SocialIntegration } from './services/backendApi'
-import type { LlmProviderId } from '@repo/llm-core'
+import type { LlmProviderId, LlmModelOption as GoogleModelOption } from '@repo/llm-core'
 import {
   workspaceRouterBasename,
   WORKSPACE_PATHS,
@@ -53,7 +53,7 @@ function readInitialIdToken(): string | null {
   }
 }
 
-type LlmProviderCatalog = Array<{ id: LlmProviderId; name: string; models: any[] }>;
+type LlmProviderCatalog = Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }>;
 
 function WorkspaceSession({
   idToken,

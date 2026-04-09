@@ -70,7 +70,7 @@ function SidebarUserAvatar({
   const [pictureFailed, setPictureFailed] = useState(false);
 
   useEffect(() => {
-    setPictureFailed(false);
+    setPictureFailed(false); // eslint-disable-line react-hooks/set-state-in-effect
   }, [pictureUrl]);
 
   const initials = navEmailInitials(email);

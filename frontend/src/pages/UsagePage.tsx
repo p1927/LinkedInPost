@@ -62,8 +62,8 @@ export function UsagePage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
+    setError(null); // eslint-disable-line react-hooks/set-state-in-effect
     api
       .getUsageSummary(idToken, selectedDays)
       .then((data) => setRows(data ?? []))

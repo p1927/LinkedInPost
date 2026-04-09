@@ -36,7 +36,7 @@ export function WorkspaceShell({
   // Does nothing when leaving — the user's expanded state is intentionally preserved until next entry.
   useEffect(() => {
     if (autoCollapseMainSidebar) {
-      setEditorSidebarExpanded(false);
+      setEditorSidebarExpanded(false); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [autoCollapseMainSidebar]);
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ReviewFlowProviderProps } from './types';
+import type { LlmRef } from '../../../services/configService';
 import { type GenerationRequest, isAuthErrorMessage } from '../../../services/backendApi';
 import { useAlert } from '../../../components/useAlert';
 import { applyFormattingAction } from '@/features/draft-selection-target';
@@ -781,7 +782,7 @@ export function useReviewFlowActions(
   const saveGenerationLlmInFlight = useRef(false);
 
   const handleSaveGenerationLlm = useCallback(
-    async (llm: any) => {
+    async (llm: LlmRef) => {
       if (saveGenerationLlmInFlight.current) return;
       if (!props.onSaveGenerationLlm) return;
       saveGenerationLlmInFlight.current = true;

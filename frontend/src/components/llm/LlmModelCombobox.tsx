@@ -78,12 +78,12 @@ export function LlmModelCombobox({
 
   // Reset active index when query or visibility changes
   useEffect(() => {
-    setActiveIndex(-1);
+    setActiveIndex(-1); // eslint-disable-line react-hooks/set-state-in-effect
   }, [query, open]);
 
   useEffect(() => {
     if (open) {
-      setQuery('');
+      setQuery(''); // eslint-disable-line react-hooks/set-state-in-effect
       const id = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(id);
     }

@@ -60,7 +60,7 @@ CONTENT BRIEF:
 - Topic: ${ctx.topic}
 - Channel: ${ctx.channel}
 - Pattern: ${ctx.pattern.name}
-- Emotional hook: ${ctx.report.emotionalHook ?? 'not specified'}
+- Content summary: ${ctx.report.contentSummary || 'not specified'}
 
 Return JSON with this exact shape:
 {

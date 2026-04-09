@@ -13,16 +13,16 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
 
   // Internal-only fields stripped from context (prefixed _ to satisfy noUnusedLocals)
   const {
-    setChrome: _setChrome,
+    setChrome: _setChrome, // eslint-disable-line @typescript-eslint/no-unused-vars
     effectiveGenerationRules,
-    suppressAutoImageSelection: _suppressAutoImageSelection,
-    setSuppressAutoImageSelection: _setSuppressAutoImageSelection,
-    setGenerationLoading: _setGenerationLoading,
-    setAlternateImageOptions: _setAlternateImageOptions,
-    setUploadedImageOptions: _setUploadedImageOptions,
-    setSubmitting: _setSubmitting,
-    setPreviewVariantSaveByIndex: _setPreviewVariantSaveByIndex,
-    setPreviewVariantSaveErrors: _setPreviewVariantSaveErrors,
+    suppressAutoImageSelection: _suppressAutoImageSelection, // eslint-disable-line @typescript-eslint/no-unused-vars
+    setSuppressAutoImageSelection: _setSuppressAutoImageSelection, // eslint-disable-line @typescript-eslint/no-unused-vars
+    setGenerationLoading: _setGenerationLoading, // eslint-disable-line @typescript-eslint/no-unused-vars
+    setAlternateImageOptions: _setAlternateImageOptions, // eslint-disable-line @typescript-eslint/no-unused-vars
+    setUploadedImageOptions: _setUploadedImageOptions, // eslint-disable-line @typescript-eslint/no-unused-vars
+    setSubmitting: _setSubmitting, // eslint-disable-line @typescript-eslint/no-unused-vars
+    setPreviewVariantSaveByIndex: _setPreviewVariantSaveByIndex, // eslint-disable-line @typescript-eslint/no-unused-vars
+    setPreviewVariantSaveErrors: _setPreviewVariantSaveErrors, // eslint-disable-line @typescript-eslint/no-unused-vars
     ...restState
   } = state;
 

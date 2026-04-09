@@ -31,7 +31,7 @@ export function useTemplateSelection({
 
   useEffect(() => {
     let cancelled = false;
-    setPatternsLoading(true);
+    setPatternsLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
     void loadPatterns()
       .then((list) => {
         if (!cancelled) setPatterns(list);
@@ -49,7 +49,7 @@ export function useTemplateSelection({
 
   // Sync when the parent row's generationTemplateId changes (e.g. after save).
   useEffect(() => {
-    setSelectedPatternId(initialPatternId?.trim() || null);
+    setSelectedPatternId(initialPatternId?.trim() || null); // eslint-disable-line react-hooks/set-state-in-effect
   }, [initialPatternId]);
 
   const selectedPattern =

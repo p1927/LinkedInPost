@@ -8,12 +8,12 @@ interface ContentReviewSettingsProps {
   value: ContentReviewStored;
   onChange: (next: ContentReviewStored) => void;
   newsResearchEnabled: boolean;
-  llmCatalog?: any[] | null;
+  llmCatalog?: Array<{ id: LlmProviderId; name: string; models: LlmModelOption[] }> | null;
 }
 
-function modelsForProvider(provider: LlmProviderId, catalog?: any[] | null): LlmModelOption[] {
+function modelsForProvider(provider: LlmProviderId, catalog?: Array<{ id: LlmProviderId; name: string; models: LlmModelOption[] }> | null): LlmModelOption[] {
   if (!catalog || catalog.length === 0) return [];
-  const providerData = catalog.find((p: any) => p.id === provider);
+  const providerData = catalog.find((p) => p.id === provider);
   return providerData?.models ?? [];
 }
 

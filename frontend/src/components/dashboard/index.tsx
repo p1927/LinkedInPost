@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { type AppSession, type BackendApi, type SocialIntegration, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
-import { type BotConfig, type BotConfigUpdate, type LlmRef } from '../../services/configService';
+import { type BotConfig, type BotConfigUpdate, type LlmRef, type GoogleModelOption } from '../../services/configService';
+import type { LlmProviderId } from '@repo/llm-core';
 import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
 import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
@@ -69,7 +70,7 @@ export function Dashboard({
   api: BackendApi;
   onSaveConfig: (config: BotConfigUpdate) => Promise<BotConfig>;
   onAuthExpired: () => void;
-  llmCatalog: any[] | null;
+  llmCatalog: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }> | null;
   integrations: SocialIntegration[];
   onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void;
   onDisconnect: (provider: string) => void;
@@ -441,22 +442,6 @@ export function Dashboard({
     }
   }, [isTopicsMain]);
 
-  if (!session.config.spreadsheetId && !session.isAdmin) {
-    return (
-      <div className="glass-panel mx-auto mt-8 max-w-xl rounded-2xl p-8 text-left shadow-card">
-        <h2 className="font-heading text-xl font-semibold text-ink">Workspace setup pending</h2>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          You are signed in as <strong className="text-ink">{session.email}</strong>. An admin still needs to finish setup before you can use the queue:
-        </p>
-        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-muted">
-          <li>Connect the shared Google Sheet and draft workflow</li>
-          <li>Configure publishing for LinkedIn and Instagram</li>
-          <li>Configure Telegram and WhatsApp delivery in the Worker</li>
-        </ul>
-      </div>
-    );
-  }
-
   const handleBulkDelete = useCallback(async (rows: SheetRow[]) => {
     for (const row of rows) {
       try {
@@ -541,6 +526,22 @@ export function Dashboard({
     },
     [api, idToken, queueHook.rows, queueHook.loadData, queueHook.applyOptimisticPostSchedule],
   );
+
+  if (!session.config.spreadsheetId && !session.isAdmin) {
+    return (
+      <div className="glass-panel mx-auto mt-8 max-w-xl rounded-2xl p-8 text-left shadow-card">
+        <h2 className="font-heading text-xl font-semibold text-ink">Workspace setup pending</h2>
+        <p className="mt-3 text-sm leading-6 text-muted">
+          You are signed in as <strong className="text-ink">{session.email}</strong>. An admin still needs to finish setup before you can use the queue:
+        </p>
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-muted">
+          <li>Connect the shared Google Sheet and draft workflow</li>
+          <li>Configure publishing for LinkedIn and Instagram</li>
+          <li>Configure Telegram and WhatsApp delivery in the Worker</li>
+        </ul>
+      </div>
+    );
+  }
 
   const queueContent = (
     <DashboardQueue

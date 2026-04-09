@@ -65,8 +65,8 @@ export function DraftEditor({
   const [, bumpHistoryUi] = useReducer((n: number) => n + 1, 0);
 
   if (historyRef.current === null) {
-    historyRef.current = [{ value, start: value.length, end: value.length }];
-    historyIndexRef.current = 0;
+    historyRef.current = [{ value, start: value.length, end: value.length }]; // eslint-disable-line react-hooks/refs
+    historyIndexRef.current = 0; // eslint-disable-line react-hooks/refs
   }
 
   const pushHistoryEntry = (nextValue: string, start: number, end: number) => {
@@ -172,9 +172,9 @@ export function DraftEditor({
     }
   };
 
-  const hist = historyRef.current ?? [];
-  const canUndo = hist.length > 0 && historyIndexRef.current > 0;
-  const canRedo = hist.length > 0 && historyIndexRef.current < hist.length - 1;
+  const hist = historyRef.current ?? []; // eslint-disable-line react-hooks/refs
+  const canUndo = hist.length > 0 && historyIndexRef.current > 0; // eslint-disable-line react-hooks/refs
+  const canRedo = hist.length > 0 && historyIndexRef.current < hist.length - 1; // eslint-disable-line react-hooks/refs
 
   const taMin = compact
     ? 'min-h-[140px] max-h-[min(72dvh,34rem)] overflow-y-auto'

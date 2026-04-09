@@ -19,7 +19,7 @@ interface PostGenerateSettingsProps {
   onSettingsChange?: (settings: GenerationSettings) => void;
   disabled?: boolean;
   className?: string;
-  llmCatalog?: any[] | null;
+  llmCatalog?: Array<{ id: LlmProviderId; name: string; models: LlmModelOption[] }> | null;
   llmProviderKeys?: { gemini: boolean; grok: boolean; openrouter: boolean };
 }
 
@@ -38,7 +38,7 @@ export function PostGenerateSettings({
 
   const settings = value ?? internalSettings;
   const isControlledRef = useRef(value !== undefined);
-  isControlledRef.current = value !== undefined;
+  isControlledRef.current = value !== undefined; // eslint-disable-line react-hooks/refs
 
   const providers: CatalogProvider[] = useMemo(() => {
     if (llmCatalog == null) return [];

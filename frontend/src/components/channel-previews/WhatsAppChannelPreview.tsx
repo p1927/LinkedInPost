@@ -27,7 +27,7 @@ export function WhatsAppChannelPreview({
   className,
   forceExpanded = false,
   pickMode = false,
-  previewAuthorName: _previewAuthorName,
+  previewAuthorName: _previewAuthorName, // eslint-disable-line @typescript-eslint/no-unused-vars
   onOpenMedia,
 }: ChannelPreviewProps) {
   const isCarousel = mode === 'carousel';

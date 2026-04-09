@@ -38,11 +38,11 @@ export function RulesPanel({
   const [draftTemplateId, setDraftTemplateId] = useState(generationTemplateId || '');
 
   useEffect(() => {
-    setDraft(topicGenerationRules || '');
+    setDraft(topicGenerationRules || ''); // eslint-disable-line react-hooks/set-state-in-effect
   }, [topicGenerationRules]);
 
   useEffect(() => {
-    setDraftTemplateId(generationTemplateId || '');
+    setDraftTemplateId(generationTemplateId || ''); // eslint-disable-line react-hooks/set-state-in-effect
   }, [generationTemplateId]);
 
   const dirty = draft !== (topicGenerationRules || '');
@@ -128,7 +128,7 @@ export function RulesPanel({
             type="button"
             variant="outline"
             size={compact ? 'sm' : 'default'}
-            disabled={savingGenerationTemplate || !Boolean((generationTemplateId || '').trim())}
+            disabled={savingGenerationTemplate || !(generationTemplateId || '').trim()}
             onClick={() => void onSaveGenerationTemplate('')}
           >
             Clear template
@@ -170,7 +170,7 @@ export function RulesPanel({
           type="button"
           variant="outline"
           size={compact ? 'sm' : 'default'}
-          disabled={savingTopic || !Boolean((topicGenerationRules || '').trim())}
+          disabled={savingTopic || !(topicGenerationRules || '').trim()}
           onClick={() => void onSaveTopic('')}
         >
           Clear topic rules

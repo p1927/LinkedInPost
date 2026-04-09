@@ -42,7 +42,9 @@ export function InstagramChannelPreview({
   const resolvedImageUrl = normalizePreviewImageUrl(urls[0] || '');
   // Keep urls.length in a ref so carousel callbacks don't need it as a dependency
   const urlsLengthRef = useRef(urls.length);
-  urlsLengthRef.current = urls.length;
+  useEffect(() => {
+    urlsLengthRef.current = urls.length;
+  }, [urls.length]);
   const shouldClamp =
     !forceExpanded &&
     (isPickCarousel || text.length > 220 || text.split('\n').length > 4);

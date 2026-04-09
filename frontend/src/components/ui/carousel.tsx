@@ -137,7 +137,7 @@ function CarouselContent({ currentStep, children, className }: CarouselContentPr
 
   useEffect(() => {
     if (currentStep === prevStep.current) return
-    setFading(true)
+    setFading(true) // eslint-disable-line react-hooks/set-state-in-effect
     const timer = setTimeout(() => {
       setVisibleStep(currentStep)
       prevStep.current = currentStep

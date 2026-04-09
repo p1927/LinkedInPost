@@ -137,7 +137,7 @@ type DashboardSettingsDrawerProps = {
   allowedOpenrouterModels?: string[];
   toggleAllowedOpenrouterModel?: (modelId: string, enabled: boolean) => void;
   refreshOpenrouterModels?: () => void;
-  llmCatalog?: any[] | null;
+  llmCatalog?: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }> | null;
 };
 
 function SettingsSectionCard({

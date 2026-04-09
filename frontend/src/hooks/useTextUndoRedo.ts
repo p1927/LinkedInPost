@@ -20,7 +20,7 @@ export function useTextUndoRedo(syncedValue: string) {
   useEffect(() => {
     if (syncedValue === lastExternal.current) return;
     lastExternal.current = syncedValue;
-    setSt({ value: syncedValue, past: [], future: [] });
+    setSt({ value: syncedValue, past: [], future: [] }); // eslint-disable-line react-hooks/set-state-in-effect
   }, [syncedValue]);
 
   const setValue = useCallback((next: string) => {

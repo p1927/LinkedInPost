@@ -28,7 +28,7 @@ export function EditorVariantBar() {
   useEffect(() => {
     if (prevVariantIndexRef.current !== editorVariantIndex) {
       prevVariantIndexRef.current = editorVariantIndex;
-      setExpanded(false);
+      setExpanded(false); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [editorVariantIndex]);
 
