@@ -880,6 +880,63 @@ export class BackendApi {
     });
   }
 
+  async *streamCallGenerationWorker(
+    idToken: string,
+    spreadsheetId: string,
+    request: GenWorkerGenerateRequest,
+  ): AsyncGenerator<
+    | { type: 'progress'; step: string; label: string; ts: number }
+    | { type: 'complete'; result: GenWorkerGenerateResponse }
+    | { type: 'error'; message: string }
+  > {
+    if (!this.endpointUrl) throw new Error('Backend URL not configured');
+    const url = new URL('/api/generate/stream', this.endpointUrl + '/');
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
+        'Accept': 'text/event-stream',
+      },
+      body: JSON.stringify({ spreadsheetId, ...request }),
+    });
+
+    if (!response.ok || !response.body) {
+      const text = await response.text().catch(() => 'Unknown error');
+      throw new Error(`Generation stream error ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const blocks = buffer.split('\n\n');
+      buffer = blocks.pop() ?? '';
+      for (const block of blocks) {
+        if (!block.trim()) continue;
+        const eventMatch = block.match(/^event: (\w+)/m);
+        const dataMatch = block.match(/^data: (.+)$/m);
+        if (!eventMatch || !dataMatch) continue;
+        const type = eventMatch[1];
+        try {
+          const data = JSON.parse(dataMatch[1]);
+          if (type === 'complete') {
+            yield { type: 'complete', result: data as GenWorkerGenerateResponse };
+          } else if (type === 'error') {
+            yield { type: 'error', message: String(data.message ?? data) };
+          } else if (type === 'progress') {
+            yield { type: 'progress', step: String(data.step ?? ''), label: String(data.label ?? ''), ts: Number(data.ts ?? 0) };
+          }
+        } catch { /* ignore malformed */ }
+      }
+    }
+  }
+
   async getLlmSettings(idToken: string): Promise<Record<string, { provider: string; model: string }>> {
     return this.post<Record<string, { provider: string; model: string }>>('getLlmSettings', idToken);
   }

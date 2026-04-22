@@ -98,7 +98,7 @@ export async function callGenerationWorker(
       method: 'POST',
       headers,
       body: JSON.stringify(req),
-      signal: AbortSignal.timeout(120_000), // increased from 60s to 120s
+      signal: AbortSignal.timeout(300_000), // 5 minutes for slow models
     });
     console.log(`[callGenerationWorker] Response status: ${response.status}`);
   } catch (e) {
@@ -119,4 +119,38 @@ export async function callGenerationWorker(
 
 export function isGenerationWorkerConfigured(env: Env): boolean {
   return Boolean(env.GENERATION_WORKER) || Boolean(String(env.GENERATION_WORKER_URL || '').trim());
+}
+
+export async function callGenerationWorkerStream(
+  env: Env,
+  req: GenWorkerGenerateRequest,
+): Promise<Response> {
+  const baseUrl = String(env.GENERATION_WORKER_URL || '').trim().replace(/\/$/, '');
+  if (!baseUrl && !env.GENERATION_WORKER) {
+    throw new Error('GENERATION_WORKER_URL or GENERATION_WORKER service binding is not configured.');
+  }
+  const secret = String(env.GENERATION_WORKER_SECRET || '').trim();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'text/event-stream',
+  };
+  if (secret) headers['Authorization'] = `Bearer ${secret}`;
+
+  const endpoint = env.GENERATION_WORKER ? 'https://generation-worker/v1/generate' : `${baseUrl}/v1/generate`;
+  console.log(`[callGenerationWorkerStream] Calling ${endpoint} (SSE) with topic="${req.topic}"`);
+
+  const fetcher = env.GENERATION_WORKER || globalThis;
+  const response = await fetcher.fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.log(`[callGenerationWorkerStream] Error response: ${text.slice(0, 300)}`);
+    throw new Error(`Generation worker stream error ${response.status}: ${text.slice(0, 200)}`);
+  }
+
+  return response;
 }

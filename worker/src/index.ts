@@ -12,7 +12,8 @@ import {
 } from './scheduled-publish';
 
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
-import { callGenerationWorker, isGenerationWorkerConfigured } from './generation/generationWorkerClient';
+import { callGenerationWorker, callGenerationWorkerStream, isGenerationWorkerConfigured } from './generation/generationWorkerClient';
+import type { GenWorkerGenerateRequest, GenWorkerGenerateResponse } from './generation/generationWorkerClient';
 import { coerceVariantList } from './generation/normalize';
 import { SheetsGateway, coerceBulkCampaignPostsFromPayload } from './persistence/drafts';
 import {
@@ -644,6 +645,139 @@ export default {
 
     if (url.pathname === '/internal/github-automation-generate-variants') {
       return handleInternalGithubAutomationGenerateVariantsRequest(request, env);
+    }
+
+    // SSE streaming generation endpoint
+    if (url.pathname === '/api/generate/stream') {
+      const authHeader = request.headers.get('Authorization') || '';
+      const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+
+      let session: Awaited<ReturnType<typeof verifySession>>;
+      try {
+        session = await verifySession(idToken, env);
+      } catch (e) {
+        return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, corsHeaders);
+      }
+
+      if (!FEATURE_CONTENT_FLOW) {
+        return jsonResponse({ ok: false, error: 'Generation worker integration is disabled.' }, 400, corsHeaders);
+      }
+      if (!isGenerationWorkerConfigured(env)) {
+        return jsonResponse({ ok: false, error: 'GENERATION_WORKER_URL is not configured.' }, 400, corsHeaders);
+      }
+
+      const storedConfig = await loadStoredConfig(env, session.userId, { isAdmin: session.isAdmin });
+      const payload = await request.json() as Record<string, unknown>;
+
+      let genResponse: Response;
+      try {
+        genResponse = await callGenerationWorkerStream(env, {
+          spreadsheetId: storedConfig.spreadsheetId,
+          ...payload,
+          ...(storedConfig.imageGen ? { imageGen: storedConfig.imageGen } : {}),
+        } as GenWorkerGenerateRequest);
+      } catch (e) {
+        return jsonResponse({ ok: false, error: String(e) }, 502, corsHeaders);
+      }
+
+      if (!genResponse.ok || !genResponse.body) {
+        const text = await genResponse.text().catch(() => 'unknown error');
+        return jsonResponse({ ok: false, error: `Generation worker error: ${text.slice(0, 200)}` }, 502, corsHeaders);
+      }
+
+      // Transform stream: intercept 'complete' event to do D1 post-processing
+      const { readable: transformedReadable, writable: transformedWritable } = new TransformStream<Uint8Array, Uint8Array>();
+      const writer = transformedWritable.getWriter();
+      const encoder = new TextEncoder();
+
+      void (async () => {
+        const reader = genResponse.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const blocks = buffer.split('\n\n');
+            buffer = blocks.pop() ?? '';
+            for (const block of blocks) {
+              if (!block.trim()) continue;
+              const eventMatch = block.match(/^event: (\w+)/m);
+              const dataMatch = block.match(/^data: (.+)$/m);
+
+              if (eventMatch?.[1] === 'complete' && dataMatch) {
+                // Do D1 post-processing before forwarding
+                try {
+                  const genResult = JSON.parse(dataMatch[1]) as GenWorkerGenerateResponse;
+                  const topicIdForSave = String((payload as Record<string, unknown>).topicId || '').trim();
+                  if (topicIdForSave && genResult.primaryPatternId) {
+                    try {
+                      const { pipeline, sheets } = buildServices(env, session.userId);
+                      const rowForSave = await pipeline.getRowByTopicId(sheets, storedConfig.spreadsheetId, topicIdForSave);
+                      if (rowForSave) {
+                        await pipeline.savePatternMetadata(storedConfig.spreadsheetId, rowForSave, {
+                          generationRunId: genResult.runId || '',
+                          patternId: genResult.primaryPatternId || '',
+                          patternName: rowForSave.patternName || '',
+                          patternRationale: genResult.patternRationale || '',
+                        });
+                      }
+                    } catch (e) {
+                      console.error('[stream auto-save patternMetadata]', e);
+                    }
+                  }
+                  if (topicIdForSave && genResult.nodeRuns && genResult.nodeRuns.length > 0) {
+                    try {
+                      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                      await env.PIPELINE_DB.prepare(
+                        `DELETE FROM node_runs WHERE expires_at < datetime('now') AND rowid IN
+                         (SELECT rowid FROM node_runs WHERE expires_at < datetime('now') LIMIT 500)`,
+                      ).run();
+                      const stmts = genResult.nodeRuns.map((r) =>
+                        env.PIPELINE_DB.prepare(
+                          `INSERT OR IGNORE INTO node_runs
+                           (id, run_id, topic_id, user_id, node_id, input_json, output_json, model, duration_ms, status, error, expires_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        ).bind(
+                          crypto.randomUUID(),
+                          genResult.runId || '',
+                          topicIdForSave,
+                          session.userId,
+                          r.nodeId,
+                          r.inputJson,
+                          r.outputJson,
+                          r.model,
+                          r.durationMs,
+                          r.status,
+                          r.error ?? null,
+                          expiresAt,
+                        ),
+                      );
+                      await env.PIPELINE_DB.batch(stmts);
+                    } catch (e) {
+                      console.error('[stream auto-save nodeRuns]', e);
+                    }
+                  }
+                } catch (e) {
+                  console.error('[stream complete parse]', e);
+                }
+              }
+
+              // Forward the block
+              await writer.write(encoder.encode(block + '\n\n'));
+            }
+          }
+        } finally {
+          await writer.close();
+        }
+      })();
+
+      const streamHeaders = new Headers(corsHeaders);
+      streamHeaders.set('Content-Type', 'text/event-stream');
+      streamHeaders.set('Cache-Control', 'no-cache');
+      streamHeaders.set('Connection', 'keep-alive');
+      return new Response(transformedReadable, { headers: streamHeaders });
     }
 
     try {

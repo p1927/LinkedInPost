@@ -27,6 +27,7 @@ export async function runPipeline(
   req: GenerateRequest,
   env: Env,
   db: D1Database,
+  onProgress?: (step: string, label: string) => void,
 ): Promise<GenerateResponse> {
   const trace: Record<string, unknown> = {};
   const runId = crypto.randomUUID();
@@ -36,10 +37,12 @@ export async function runPipeline(
   trace.requirementReport = report;
 
   // 1. LLM ref from shared provider catalog
+  onProgress?.('llm_ref', 'Resolving LLM provider...');
   const llmRef = await resolveGenerationWorkerLlmRef(env, req.llm);
   trace.llmRef = llmRef;
 
   // 2. PatternRepository + PatternFinder
+  onProgress?.('pattern', `Finding best content pattern (${llmRef.provider}/${llmRef.model})...`);
   const repo = loadBundledRepository();
   const finder = await findPattern(repo, report, env, llmRef, req.preferPatternId);
   trace.patternFinder = finder;
@@ -48,6 +51,7 @@ export async function runPipeline(
   if (!pattern) throw new Error(`Pattern not found: ${finder.primaryId}`);
 
   // 3. Research (optional — only when factual flag set)
+  onProgress?.('research', 'Running news research...');
   let research: ResearchArticleRef[] = [];
   const researchTask = async () => {
     if (report.factual && req.newsResearchConfig) {
@@ -76,6 +80,7 @@ export async function runPipeline(
   if (FEATURE_ENRICHMENT) {
     // --- ENRICHMENT PATH ---
     // Run research and enrichment in parallel
+    onProgress?.('enrichment', 'Running content enrichment...');
     const [, enrichmentResult] = await Promise.all([
       researchTask(),
       runEnrichment(report, pattern, env, llmRef),
@@ -85,6 +90,7 @@ export async function runPipeline(
     trace.enrichmentBundle = enrichmentBundle;
 
     // Enhanced Creator (4 parallel groups -> 8-12 variants)
+    onProgress?.('creator', 'Generating content variants...');
     const allVariants = await createEnrichedVariants(
       pattern, report, research, enrichmentBundle, assets, env, llmRef,
     );
@@ -92,6 +98,7 @@ export async function runPipeline(
     trace.creatorGroups = [...new Set(allVariants.map((v) => v.emphasisGroup))];
 
     // Selector (rule filter + LLM judge -> top 4)
+    onProgress?.('selector', 'Selecting top variants...');
     const scored = await selectTopVariants(allVariants, enrichmentBundle, report, env, llmRef);
     trace.selectorScores = scored.map((v) => ({ label: v.label, ...v.scores }));
 
@@ -105,11 +112,13 @@ export async function runPipeline(
   } else {
     // --- LEGACY PATH ---
     await researchTask();
+    onProgress?.('creator', 'Generating content variants...');
     variants = await createVariants(pattern, report, research, assets, env, llmRef);
     trace.creatorVariantCount = variants.length;
   }
 
   // 5. Review
+  onProgress?.('review', 'Reviewing content...');
   const review = reviewContent(variants, report);
   trace.review = review;
 
@@ -117,6 +126,7 @@ export async function runPipeline(
   let perVariantImageCandidates: PerVariantImageCandidates[] = [];
   let imageCandidates: ImageCandidate[] = [];
   if (!req.skipImages) {
+    onProgress?.('images', 'Finding relevant images...');
     const relatorResults = await Promise.all(
       variants.map((v) => relateImages(v, pattern, report, env, llmRef))
     );
@@ -137,6 +147,7 @@ export async function runPipeline(
   }
 
   // 7. Persist run to D1
+  onProgress?.('saving', 'Saving run to database...');
   await db
     .prepare(
       `INSERT INTO generation_runs

@@ -555,6 +555,7 @@ export function Dashboard({
       getQueueStatusVariant={queueStatusToBadgeVariant}
       triggerRowGithubAction={queueHook.triggerRowGithubAction}
       onGenerationWorkerDraft={queueHook.draftWithGenerationWorker}
+      generationProgress={queueHook.generationProgress}
       actionLoading={queueHook.actionLoading}
       draftDispatchPendingTopicIds={queueHook.draftDispatchPendingTopicIds}
       session={session}

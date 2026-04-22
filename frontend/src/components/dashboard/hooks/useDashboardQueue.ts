@@ -315,7 +315,11 @@ export function useDashboardQueue({
     }
   };
 
+  type GenerationProgressStep = { step: string; label: string; done: boolean };
+  const [generationProgress, setGenerationProgress] = useState<GenerationProgressStep[]>([]);
+
   const draftWithGenerationWorker = async (row: SheetRow, request: GenWorkerGenerateRequest): Promise<void> => {
+    setGenerationProgress([]);
     try {
       const fullRequest: GenWorkerGenerateRequest = {
         ...request,
@@ -330,9 +334,29 @@ export function useDashboardQueue({
         },
         skipImages: true,
       };
-      const result = await api.callGenerationWorker(idToken, session.config.spreadsheetId, fullRequest);
-      
-      if (!result.variants) {
+
+      let result: import('../../../services/backendApi').GenWorkerGenerateResponse | null = null;
+
+      for await (const event of api.streamCallGenerationWorker(idToken, session.config.spreadsheetId, fullRequest)) {
+        if (event.type === 'progress') {
+          setGenerationProgress((prev) => {
+            const existing = prev.findIndex((s) => s.step === event.step);
+            const updated: GenerationProgressStep[] = prev.map((s) => ({ ...s, done: true }));
+            if (existing >= 0) {
+              updated[existing] = { step: event.step, label: event.label, done: false };
+              return updated;
+            }
+            return [...updated, { step: event.step, label: event.label, done: false }];
+          });
+        } else if (event.type === 'complete') {
+          result = event.result;
+          setGenerationProgress((prev) => prev.map((s) => ({ ...s, done: true })));
+        } else if (event.type === 'error') {
+          throw new Error(event.message);
+        }
+      }
+
+      if (!result || !result.variants) {
         throw new Error('Generation worker returned an invalid response (missing variants).');
       }
 
@@ -346,6 +370,8 @@ export function useDashboardQueue({
     } catch (error) {
       handleFailure(error, 'Failed to generate draft via generation worker.');
       throw error;
+    } finally {
+      setGenerationProgress([]);
     }
   };
 
@@ -867,6 +893,7 @@ export function useDashboardQueue({
     handleSaveEmailFields,
     triggerRowGithubAction,
     draftWithGenerationWorker,
+    generationProgress,
     handleGenerateQuickChange,
     handleGenerateVariantsPreview,
     handleRunContentReview,

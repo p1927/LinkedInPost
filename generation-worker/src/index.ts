@@ -114,6 +114,47 @@ export default {
         console.log(`[${new Date().toISOString()}] GENERATE: Bad request - ${parsed.error}`);
         return badRequest(parsed.error);
       }
+
+      // SSE streaming mode
+      if (request.headers.get('Accept') === 'text/event-stream') {
+        const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+        const writer = writable.getWriter();
+        const encoder = new TextEncoder();
+        const emit = (event: string, data: unknown) =>
+          writer.write(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+
+        // Run pipeline in a detached async IIFE
+        void (async () => {
+          try {
+            console.log(`[${new Date().toISOString()}] GENERATE SSE: Starting pipeline...`);
+            const result = await runPipeline(
+              parsed.data,
+              env,
+              env.GEN_DB,
+              (step, label) => void emit('progress', { step, label, ts: Date.now() }),
+            );
+            console.log(`[${new Date().toISOString()}] GENERATE SSE: Pipeline complete after ${Date.now() - startTime}ms`);
+            await emit('complete', result);
+          } catch (e) {
+            const errorMsg = String(e);
+            console.log(`[${new Date().toISOString()}] GENERATE SSE: PIPELINE ERROR after ${Date.now() - startTime}ms`);
+            console.log(`ERROR DETAILS: ${errorMsg.substring(0, 500)}`);
+            await emit('error', { message: errorMsg });
+          } finally {
+            await writer.close();
+          }
+        })();
+
+        return new Response(readable, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        });
+      }
+
       try {
         console.log(`[${new Date().toISOString()}] GENERATE: Starting pipeline with ${JSON.stringify(parsed.data).substring(0, 100)}...`);
         const result = await runPipeline(parsed.data, env, env.GEN_DB);

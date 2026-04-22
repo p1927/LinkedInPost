@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit, LayoutList, CalendarDays } from 'lucide-react';
+import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
@@ -79,6 +79,7 @@ export function DashboardQueue({
   onUpdatePostSchedule,
   onCalendarRescheduleCommit,
   onGenerationWorkerDraft,
+  generationProgress = [],
   /** Patterns for the row’s generation template — used to tailor AI Draft quick picks. */
   contentPatterns = [],
 }: {
@@ -112,6 +113,7 @@ export function DashboardQueue({
   onUpdatePostSchedule: (row: SheetRow, postTime: string) => Promise<void>;
   onCalendarRescheduleCommit: (payload: TopicRescheduleCommitPayload) => Promise<void>;
   onGenerationWorkerDraft?: (row: SheetRow, request: GenWorkerGenerateRequest) => Promise<void>;
+  generationProgress?: Array<{ step: string; label: string; done: boolean }>;
   contentPatterns?: ContentPattern[];
 }) {
   useEffect(() => {
@@ -1116,6 +1118,31 @@ export function DashboardQueue({
               </p>
             </div>
           </div>
+
+          {/* Progress steps — shown when generation is running */}
+          {genWorkerBusy && generationProgress.length > 0 && (
+            <div className="shrink-0 border-t border-border bg-violet-50/40 px-5 py-3">
+              <ul className="flex flex-col gap-1.5">
+                {generationProgress.map((step, i) => {
+                  const isActive = !step.done && i === generationProgress.length - 1;
+                  return (
+                    <li key={step.step} className="flex items-center gap-2 text-xs">
+                      {step.done ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" aria-hidden />
+                      ) : isActive ? (
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" aria-hidden />
+                      ) : (
+                        <Circle className="h-3.5 w-3.5 shrink-0 text-muted" aria-hidden />
+                      )}
+                      <span className={cn(step.done ? 'text-muted line-through' : isActive ? 'font-medium text-ink' : 'text-muted')}>
+                        {step.label}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           {/* Footer: reset DialogFooter negative margins when content uses p-0 */}
           <DialogFooter className="mx-0 mb-0 mt-0 shrink-0 flex flex-row flex-wrap items-center justify-end gap-2 border-t border-border bg-gradient-to-t from-violet-50/80 via-primary/[0.06] to-white px-5 py-3.5 sm:flex-nowrap">

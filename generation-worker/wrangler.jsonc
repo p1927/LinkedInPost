@@ -2,6 +2,7 @@
   "name": "linkedin-generation-worker",
   "main": "src/index.ts",
   "compatibility_date": "2024-09-23",
+  "usage_model": "unbound",
   "compatibility_flags": [
     "nodejs_compat"
   ],
