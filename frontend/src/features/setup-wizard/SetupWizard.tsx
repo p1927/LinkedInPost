@@ -1,13 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DirectorySelector } from './DirectorySelector';
 import { SetupProgress } from './SetupProgress';
 import { IntegrationStep } from './IntegrationStep';
 import { EnvVarsStep } from './EnvVarsStep';
 import { FinalStep } from './FinalStep';
+import { StatusDashboard } from './StatusDashboard';
 import { setupService } from './setupService';
+import { SetupStateService } from './setupStateService';
+import type { SetupState } from './types';
 
-export type SetupStep = 'welcome' | 'directory' | 'progress' | 'integrations' | 'envvars' | 'final';
+export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'envvars' | 'final';
 
 export interface SetupConfig {
   projectDir: string;
@@ -56,6 +59,55 @@ export function SetupWizard() {
   const [config, setConfig] = useState<SetupConfig>(DEFAULT_CONFIG);
   const [progressLogs, setProgressLogs] = useState<{ message: string; status: 'pending' | 'running' | 'done' | 'error' }[]>([]);
   const [currentProgressIndex, setCurrentProgressIndex] = useState(0);
+  const [setupState, setSetupState] = useState<SetupState | null>(null);
+  const [isDetectingState, setIsDetectingState] = useState(true);
+
+  // Detect existing setup state on mount
+  useEffect(() => {
+    const detectState = async () => {
+      try {
+        // Try to auto-detect project directory
+        const possiblePaths = [
+          '/home/openclaw/workspaces/projects/LinkedInPost',
+          window.location.origin === 'http://localhost:3456' ? '/workspace' : '',
+        ].filter(Boolean);
+
+        let projectDir = '';
+        for (const path of possiblePaths) {
+          try {
+            const response = await fetch(`${path}/frontend/.env`);
+            if (response.ok) {
+              projectDir = path || '/workspace';
+              break;
+            }
+          } catch {
+            // Continue to next path
+          }
+        }
+
+        if (!projectDir) {
+          setIsDetectingState(false);
+          return;
+        }
+
+        const stateService = new SetupStateService(projectDir);
+        const state = await stateService.readState();
+        setSetupState(state);
+        updateConfig({ projectDir });
+
+        // If setup is partially complete, show status dashboard first
+        if (state.overallProgress > 0) {
+          setStep('status');
+        }
+      } catch (error) {
+        console.warn('Failed to detect setup state:', error);
+      } finally {
+        setIsDetectingState(false);
+      }
+    };
+
+    detectState();
+  }, []);
 
   const updateConfig = useCallback((updates: Partial<SetupConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -113,15 +165,27 @@ export function SetupWizard() {
     setStep('integrations');
   }, [config, addLog, updateLog, setCurrentProgressIndex]);
 
-  const handleIntegrationsComplete = useCallback((integrations: SetupConfig['integrations']) => {
+  const handleIntegrationsComplete = useCallback(async (integrations: SetupConfig['integrations']) => {
     updateConfig({ integrations });
+    // Refresh state after completing integrations
+    if (config.projectDir) {
+      const stateService = new SetupStateService(config.projectDir);
+      const state = await stateService.readState();
+      setSetupState(state);
+    }
     setStep('envvars');
-  }, [updateConfig]);
+  }, [updateConfig, config.projectDir]);
 
-  const handleEnvVarsComplete = useCallback((envVars: Record<string, string>) => {
+  const handleEnvVarsComplete = useCallback(async (envVars: Record<string, string>) => {
     updateConfig({ envVars });
+    // Refresh state after completing env vars
+    if (config.projectDir) {
+      const stateService = new SetupStateService(config.projectDir);
+      const state = await stateService.readState();
+      setSetupState(state);
+    }
     setStep('final');
-  }, [updateConfig]);
+  }, [updateConfig, config.projectDir]);
 
   const handleRestart = useCallback(() => {
     setConfig(DEFAULT_CONFIG);
@@ -129,11 +193,45 @@ export function SetupWizard() {
     setStep('welcome');
   }, []);
 
+  const handleStatusContinue = useCallback((targetStep: 'envVars' | 'integrations' | 'final') => {
+    if (targetStep === 'envVars') {
+      setStep('envvars');
+    } else if (targetStep === 'integrations') {
+      setStep('integrations');
+    } else {
+      setStep('final');
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <AnimatePresence mode="wait">
-          {step === 'welcome' && (
+          {isDetectingState && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-20"
+            >
+              <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
+              <p className="mt-4 text-muted">Detecting setup state...</p>
+            </motion.div>
+          )}
+
+          {!isDetectingState && step === 'status' && setupState && (
+            <motion.div
+              key="status"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <StatusDashboard state={setupState} onContinue={handleStatusContinue} />
+            </motion.div>
+          )}
+
+          {!isDetectingState && step === 'welcome' && (
             <motion.div
               key="welcome"
               initial={{ opacity: 0, y: 20 }}

@@ -4,5 +4,8 @@ export { SetupProgress } from './SetupProgress';
 export { IntegrationStep } from './IntegrationStep';
 export { EnvVarsStep } from './EnvVarsStep';
 export { FinalStep } from './FinalStep';
+export { StatusDashboard } from './StatusDashboard';
 export { setupService } from './setupService';
+export { SetupStateService } from './setupStateService';
 export type { SetupStep, SetupConfig } from './SetupWizard';
+export type { SetupState, EnvVar, Integration, Worker } from './types';
