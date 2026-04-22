@@ -12,7 +12,7 @@ import { createEnrichedVariants } from './modules/_shared/creator';
 import { selectTopVariants } from './modules/_shared/selector';
 import { formatForChannel } from './modules/channel-adapter/index';
 import { FEATURE_ENRICHMENT } from '../../worker/src/generated/features';
-import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates, ImageCandidate, TextVariant } from './types';
+import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates, ImageCandidate, TextVariant, NodeRunRecord } from './types';
 import { resolveGenerationWorkerLlmRef } from './llmFromWorker';
 
 const EMPTY_ASSETS: ComposableAssets = {
@@ -70,15 +70,18 @@ export async function runPipeline(
   };
 
   let variants: TextVariant[];
+  let nodeRunRecords: NodeRunRecord[] = [];
   const assets = req.composableAssets ?? EMPTY_ASSETS;
 
   if (FEATURE_ENRICHMENT) {
     // --- ENRICHMENT PATH ---
     // Run research and enrichment in parallel
-    const [, enrichmentBundle] = await Promise.all([
+    const [, enrichmentResult] = await Promise.all([
       researchTask(),
       runEnrichment(report, pattern, env, llmRef),
     ]);
+    const enrichmentBundle = enrichmentResult.bundle;
+    nodeRunRecords = enrichmentResult.records;
     trace.enrichmentBundle = enrichmentBundle;
 
     // Enhanced Creator (4 parallel groups -> 8-12 variants)
@@ -170,5 +173,6 @@ export async function runPipeline(
     perVariantImageCandidates,
     review,
     trace,
+    nodeRuns: nodeRunRecords,
   };
 }

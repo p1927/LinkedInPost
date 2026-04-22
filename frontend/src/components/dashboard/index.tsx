@@ -806,7 +806,7 @@ export function Dashboard({
           path={WORKSPACE_ROUTE_PATHS.enrichment}
           element={
             session.isAdmin ? (
-              <EnrichmentFlowPage session={session} llmCatalog={llmCatalog} rows={queueHook.rows} />
+              <EnrichmentFlowPage session={session} llmCatalog={llmCatalog} rows={queueHook.rows} idToken={idToken} api={api} />
             ) : (
               <Navigate to={WORKSPACE_PATHS.topics} replace />
             )

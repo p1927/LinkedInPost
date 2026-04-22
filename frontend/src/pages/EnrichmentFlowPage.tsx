@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X,
   ChevronDown,
@@ -9,10 +9,11 @@ import {
   RotateCcw,
   Clock,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import type { LlmProviderId } from '@repo/llm-core';
 import type { GoogleModelOption } from '../services/configService';
-import type { AppSession } from '../services/backendApi';
+import type { AppSession, BackendApi, NodeRunItem } from '../services/backendApi';
 import type { SheetRow } from '../services/sheets';
 import { cn } from '../lib/cn';
 
@@ -36,14 +37,18 @@ interface NodeRun {
   output: string;
   model: string;
   durationMs: number;
+  status: 'completed' | 'failed';
+  error?: string;
 }
 
 interface TopicRun {
   id: string;
+  topicId: string;
   topic: string;
   runAt: string;
   status: 'completed';
-  nodeRuns: NodeRun[];
+  /** Populated after fetch */
+  nodeRuns?: NodeRun[];
 }
 
 interface TopicGroup {
@@ -298,56 +303,39 @@ function formatDate(dateStr: string): string {
   }
 }
 
-// ─── Real data mapping ─────────────────────────────────────────────────────────
-
-function buildNodeRunsFromRow(row: SheetRow): NodeRun[] {
-  const runs: NodeRun[] = [];
-
-  if (row.variant1?.trim()) {
-    const variants = [row.variant1, row.variant2, row.variant3, row.variant4].filter(Boolean);
-    const output = variants.map((v, i) => `[Variant ${i + 1}]\n${v}`).join('\n\n---\n\n');
-    runs.push({
-      nodeId: 'generation_worker',
-      input: [
-        `Topic: ${row.topic}`,
-        row.topicDeliveryChannel ? `Channel: ${row.topicDeliveryChannel}` : null,
-        row.topicGenerationRules ? `Rules: ${row.topicGenerationRules}` : null,
-      ].filter(Boolean).join('\n'),
-      output,
-      model: row.topicGenerationModel || 'primary LLM',
-      durationMs: 0,
-    });
-  }
-
-  if (row.selectedText?.trim()) {
-    runs.push({
-      nodeId: 'review_generation',
-      input: `Topic: ${row.topic}`,
-      output: row.selectedText,
-      model: row.topicGenerationModel || 'primary LLM',
-      durationMs: 0,
-    });
-  }
-
-  return runs;
+function mapNodeRunItems(items: NodeRunItem[]): NodeRun[] {
+  return items.map(item => ({
+    nodeId: item.node_id,
+    input: (() => {
+      try { return JSON.stringify(JSON.parse(item.input_json), null, 2); } catch { return item.input_json; }
+    })(),
+    output: (() => {
+      try { return JSON.stringify(JSON.parse(item.output_json), null, 2); } catch { return item.output_json; }
+    })(),
+    model: item.model,
+    durationMs: item.duration_ms,
+    status: (item.status === 'failed' ? 'failed' : 'completed') as 'completed' | 'failed',
+    error: item.error ?? undefined,
+  }));
 }
 
-function buildTopicGroups(rows: SheetRow[]): TopicGroup[] {
-  const completed = rows
-    .filter(r => r.variant1?.trim())
-    .sort((a, b) => b.date.localeCompare(a.date));
+// ─── Real data mapping ─────────────────────────────────────────────────────────
 
-  return completed.map(row => ({
-    topicId: row.topicId,
-    topic: row.topic,
-    runs: [{
-      id: row.generationRunId || row.topicId,
+function buildTopicGroups(rows: SheetRow[]): TopicGroup[] {
+  return rows
+    .filter(r => r.variant1?.trim())
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(row => ({
+      topicId: row.topicId,
       topic: row.topic,
-      runAt: row.date,
-      status: 'completed' as const,
-      nodeRuns: buildNodeRunsFromRow(row),
-    }],
-  }));
+      runs: [{
+        id: row.generationRunId || row.topicId,
+        topicId: row.topicId,
+        topic: row.topic,
+        runAt: row.date,
+        status: 'completed' as const,
+      }],
+    }));
 }
 
 // ─── DraggableCanvas ───────────────────────────────────────────────────────────
@@ -462,6 +450,7 @@ function RunsPanel({
   onToggle,
   isEmpty,
   hasPendingOnly,
+  loadingTopicId,
 }: {
   topicGroups: TopicGroup[];
   selectedRunId: string | null;
@@ -470,6 +459,7 @@ function RunsPanel({
   onToggle: () => void;
   isEmpty: boolean;
   hasPendingOnly: boolean;
+  loadingTopicId: string | null;
 }) {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(
     new Set([topicGroups[0]?.topicId]),
@@ -487,12 +477,7 @@ function RunsPanel({
   if (!isOpen) {
     return (
       <div className="flex flex-col items-center gap-3 border-r border-border bg-surface px-3 py-4 shrink-0 w-12">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="rounded-lg p-1.5 text-muted hover:bg-border/40 hover:text-ink transition-colors"
-          title="Open runs panel"
-        >
+        <button type="button" onClick={onToggle} className="rounded-lg p-1.5 text-muted hover:bg-border/40 hover:text-ink transition-colors" title="Open runs panel">
           <ChevronRight className="h-4 w-4" />
         </button>
         <Activity className="h-4 w-4 text-muted mt-1" />
@@ -507,12 +492,7 @@ function RunsPanel({
           <Activity className="h-4 w-4 text-muted" />
           <span className="text-sm font-semibold text-ink">Pipeline Runs</span>
         </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors"
-          title="Collapse runs panel"
-        >
+        <button type="button" onClick={onToggle} className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors" title="Collapse">
           <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
@@ -534,6 +514,7 @@ function RunsPanel({
           topicGroups.map((group) => {
             const isExpanded = expandedTopics.has(group.topicId);
             const hasSelected = group.runs.some(r => r.id === selectedRunId);
+            const isLoading = loadingTopicId === group.topicId;
 
             return (
               <div key={group.topicId}>
@@ -549,13 +530,13 @@ function RunsPanel({
                   )}
                 >
                   <span className="mt-0.5 shrink-0">
-                    {isExpanded
-                      ? <ChevronDown className="h-3.5 w-3.5 text-muted" />
-                      : <ChevronRight className="h-3.5 w-3.5 text-muted" />}
+                    {isLoading
+                      ? <Loader2 className="h-3.5 w-3.5 text-muted animate-spin" />
+                      : isExpanded
+                        ? <ChevronDown className="h-3.5 w-3.5 text-muted" />
+                        : <ChevronRight className="h-3.5 w-3.5 text-muted" />}
                   </span>
-                  <span className="text-xs font-medium text-ink leading-snug line-clamp-2">
-                    {group.topic}
-                  </span>
+                  <span className="text-xs font-medium text-ink leading-snug line-clamp-2">{group.topic}</span>
                 </button>
 
                 {isExpanded && (
@@ -579,7 +560,9 @@ function RunsPanel({
                             </span>
                           </div>
                           <span className="text-[10px] text-muted/70">
-                            {run.nodeRuns.length} node{run.nodeRuns.length !== 1 ? 's' : ''} logged
+                            {run.nodeRuns
+                              ? `${run.nodeRuns.length} node${run.nodeRuns.length !== 1 ? 's' : ''} logged`
+                              : 'Click to load'}
                           </span>
                         </div>
                       </button>
@@ -601,6 +584,7 @@ function NodeDetailPanel({
   node,
   nodeRun,
   hasRunSelected,
+  isLoadingRuns,
   session,
   isCollapsed,
   onToggleCollapse,
@@ -609,6 +593,7 @@ function NodeDetailPanel({
   node: FlowNode | null;
   nodeRun: NodeRun | null;
   hasRunSelected: boolean;
+  isLoadingRuns: boolean;
   session: AppSession;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -623,19 +608,11 @@ function NodeDetailPanel({
   if (isCollapsed) {
     return (
       <div className="flex flex-col items-center gap-3 border-l border-border bg-surface px-3 py-4 shrink-0 w-12">
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className="rounded-lg p-1.5 text-muted hover:bg-border/40 hover:text-ink transition-colors"
-          title="Expand node details"
-        >
+        <button type="button" onClick={onToggleCollapse} className="rounded-lg p-1.5 text-muted hover:bg-border/40 hover:text-ink transition-colors" title="Expand">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="flex-1 flex items-center justify-center overflow-hidden">
-          <span
-            className="text-[10px] font-semibold text-muted"
-            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }}
-          >
+          <span className="text-[10px] font-semibold text-muted" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }}>
             {node.label}
           </span>
         </div>
@@ -646,23 +623,19 @@ function NodeDetailPanel({
     );
   }
 
-  const isNotLogged = hasRunSelected && !nodeRun && node.type === 'llm';
+  const isNotLogged = hasRunSelected && !nodeRun && !isLoadingRuns && node.type === 'llm';
 
   return (
     <div className="flex flex-col border-l border-border bg-surface shrink-0 w-96">
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border shrink-0">
         <div className="min-w-0">
           <h2 className="font-heading text-sm font-bold text-ink truncate">{node.label}</h2>
-          {nodeRun && <span className="text-[10px] text-emerald-600 font-medium">● Output logged</span>}
+          {isLoadingRuns && <span className="text-[10px] text-muted">Loading run data…</span>}
+          {!isLoadingRuns && nodeRun && <span className="text-[10px] text-emerald-600 font-medium">● Output logged</span>}
           {isNotLogged && <span className="text-[10px] text-amber-600 font-medium">● Output not logged</span>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors"
-            title="Collapse panel"
-          >
+          <button type="button" onClick={onToggleCollapse} className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors" title="Collapse panel">
             <ChevronRight className="h-4 w-4" />
           </button>
           <button type="button" onClick={onClose} className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors">
@@ -680,9 +653,31 @@ function NodeDetailPanel({
             <p className="mt-1 text-sm font-medium text-ink">
               {nodeRun ? nodeRun.model : getLlmLabel(node.settingKey, session)}
             </p>
+            {nodeRun && nodeRun.durationMs > 0 && (
+              <p className="mt-0.5 text-[10px] text-muted">
+                {nodeRun.durationMs < 1000 ? `${nodeRun.durationMs}ms` : `${(nodeRun.durationMs / 1000).toFixed(1)}s`} inference time
+              </p>
+            )}
             {!nodeRun && (
               <p className="mt-0.5 text-[10px] text-muted">Configure in Settings → AI / LLM</p>
             )}
+          </div>
+        )}
+
+        {isLoadingRuns && node.type === 'llm' && (
+          <div className="flex items-center gap-2 text-muted py-2">
+            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+            <span className="text-xs">Loading run data…</span>
+          </div>
+        )}
+
+        {nodeRun?.status === 'failed' && (
+          <div className="flex gap-2.5 rounded-xl border border-red-200 bg-red-50/60 px-3 py-2.5">
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-medium text-red-800">Node failed</p>
+              <p className="text-[11px] text-red-700 mt-0.5 font-mono">{nodeRun.error}</p>
+            </div>
           </div>
         )}
 
@@ -692,13 +687,13 @@ function NodeDetailPanel({
             <div>
               <p className="text-xs font-medium text-amber-800">Output not logged</p>
               <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
-                This node's inputs and outputs are computed in-memory and not persisted to the database. Only the final generated variants are stored.
+                This node's output was not persisted for this run. Outputs are logged starting from the next generation.
               </p>
             </div>
           </div>
         )}
 
-        {nodeRun ? (
+        {nodeRun && nodeRun.status === 'completed' ? (
           <>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Prompt Input</p>
@@ -730,14 +725,14 @@ function NodeDetailPanel({
               )}
             </div>
           </>
-        ) : (
+        ) : !isLoadingRuns ? (
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Prompt Template</p>
             <pre className="max-h-64 overflow-y-auto rounded-xl border border-border bg-canvas p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
               {node.promptTemplate}
             </pre>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -747,9 +742,13 @@ function NodeDetailPanel({
 
 export function EnrichmentFlowPage({
   session,
+  idToken,
+  api,
   rows = [],
 }: {
   session: AppSession;
+  idToken: string;
+  api: BackendApi;
   llmCatalog?: LlmCatalog | null;
   rows?: SheetRow[];
 }) {
@@ -761,19 +760,42 @@ export function EnrichmentFlowPage({
   const [runsOpen, setRunsOpen] = useState(true);
   const [detailCollapsed, setDetailCollapsed] = useState(false);
   const [canvasResetKey, setCanvasResetKey] = useState(0);
-
-  // Update default selection when rows load
-  useEffect(() => {
-    if (!selectedRunId && defaultRun) {
-      setSelectedRunId(defaultRun.id);
-    }
-  }, [defaultRun?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [nodeRunsCache, setNodeRunsCache] = useState<Map<string, NodeRun[]>>(new Map());
+  const [loadingTopicId, setLoadingTopicId] = useState<string | null>(null);
 
   const allRuns = topicGroups.flatMap(g => g.runs);
   const selectedRun = allRuns.find(r => r.id === selectedRunId) ?? null;
 
-  const getNodeRun = (nodeId: string) =>
-    selectedRun?.nodeRuns.find(nr => nr.nodeId === nodeId) ?? null;
+  const fetchNodeRuns = useCallback(async (topicId: string) => {
+    if (nodeRunsCache.has(topicId)) return;
+    setLoadingTopicId(topicId);
+    try {
+      const items = await api.getNodeRuns(idToken, topicId);
+      setNodeRunsCache(prev => new Map(prev).set(topicId, mapNodeRunItems(items)));
+    } catch (e) {
+      console.error('[getNodeRuns]', e);
+      setNodeRunsCache(prev => new Map(prev).set(topicId, []));
+    } finally {
+      setLoadingTopicId(null);
+    }
+  }, [api, idToken, nodeRunsCache]);
+
+  useEffect(() => {
+    if (selectedRun?.topicId) {
+      void fetchNodeRuns(selectedRun.topicId);
+    }
+  }, [selectedRun?.topicId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Default selection when rows load
+  useEffect(() => {
+    if (!selectedRunId && defaultRun) setSelectedRunId(defaultRun.id);
+  }, [defaultRun?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadedNodeRuns = selectedRun ? nodeRunsCache.get(selectedRun.topicId) : undefined;
+  const isLoadingRuns = loadingTopicId !== null && loadingTopicId === selectedRun?.topicId;
+
+  const getNodeRun = (nodeId: string): NodeRun | null =>
+    loadedNodeRuns?.find(nr => nr.nodeId === nodeId) ?? null;
 
   const handleSelectRun = (run: TopicRun) => {
     setSelectedRunId(run.id);
@@ -807,16 +829,26 @@ export function EnrichmentFlowPage({
   const isEmpty = rows.length === 0;
   const hasPendingOnly = !isEmpty && topicGroups.length === 0;
 
+  // Enrich topicGroups with cached nodeRuns for the runs panel
+  const enrichedGroups = topicGroups.map(g => ({
+    ...g,
+    runs: g.runs.map(r => ({
+      ...r,
+      nodeRuns: nodeRunsCache.get(g.topicId),
+    })),
+  }));
+
   return (
     <div className="flex h-full overflow-hidden">
       <RunsPanel
-        topicGroups={topicGroups}
+        topicGroups={enrichedGroups}
         selectedRunId={selectedRunId}
         onSelectRun={handleSelectRun}
         isOpen={runsOpen}
         onToggle={() => setRunsOpen(p => !p)}
         isEmpty={isEmpty}
         hasPendingOnly={hasPendingOnly}
+        loadingTopicId={loadingTopicId}
       />
 
       <div className="flex flex-col flex-1 min-w-0">
@@ -878,7 +910,6 @@ export function EnrichmentFlowPage({
 
               <NodeCard {...cardProps(reviewGenNode)} />
               <Arrow />
-
               <NodeCard {...cardProps(genWorkerNode)} />
               <Arrow />
 
@@ -898,6 +929,7 @@ export function EnrichmentFlowPage({
             node={selectedNode}
             nodeRun={selectedNode ? getNodeRun(selectedNode.id) : null}
             hasRunSelected={!!selectedRun}
+            isLoadingRuns={isLoadingRuns}
             session={session}
             isCollapsed={detailCollapsed}
             onToggleCollapse={() => setDetailCollapsed(p => !p)}

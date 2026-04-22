@@ -146,6 +146,16 @@ export interface ReviewResult {
   summary: string;
 }
 
+export interface NodeRunRecord {
+  nodeId: string;
+  inputJson: string;
+  outputJson: string;
+  model: string;
+  durationMs: number;
+  status: 'completed' | 'failed';
+  error?: string;
+}
+
 export interface GenerateResponse {
   runId: string;
   requirementReport: RequirementReport;
@@ -157,6 +167,7 @@ export interface GenerateResponse {
   perVariantImageCandidates: PerVariantImageCandidates[];
   review: ReviewResult;
   trace: Record<string, unknown>;
+  nodeRuns: NodeRunRecord[];
 }
 
 // -- Feedback ---------------------------------------------------------------

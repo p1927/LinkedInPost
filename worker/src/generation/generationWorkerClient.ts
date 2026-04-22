@@ -52,6 +52,16 @@ export interface PerVariantImageCandidates {
   candidates: ImageCandidate[];
 }
 
+export interface GenWorkerNodeRunRecord {
+  nodeId: string;
+  inputJson: string;
+  outputJson: string;
+  model: string;
+  durationMs: number;
+  status: 'completed' | 'failed';
+  error?: string;
+}
+
 export interface GenWorkerGenerateResponse {
   runId: string;
   primaryPatternId: string;
@@ -62,6 +72,7 @@ export interface GenWorkerGenerateResponse {
   perVariantImageCandidates: PerVariantImageCandidates[];
   review: { passed: boolean; verdict: string; summary: string };
   trace: Record<string, unknown>;
+  nodeRuns?: GenWorkerNodeRunRecord[];
 }
 
 export async function callGenerationWorker(

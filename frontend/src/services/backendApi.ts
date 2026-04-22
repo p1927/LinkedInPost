@@ -266,6 +266,19 @@ export interface GenWorkerGenerateResponse {
   review: { passed: boolean; verdict: string; summary: string };
 }
 
+export interface NodeRunItem {
+  id: string;
+  run_id: string;
+  node_id: string;
+  input_json: string;
+  output_json: string;
+  model: string;
+  duration_ms: number;
+  status: string;
+  error: string | null;
+  created_at: string;
+}
+
 export interface QuickChangePreviewResult {
   scope: GenerationScope;
   model: string;
@@ -520,6 +533,11 @@ export class BackendApi {
 
   async getRows(idToken: string): Promise<SheetRow[]> {
     return this.post<SheetRow[]>('getRows', idToken);
+  }
+
+  async getNodeRuns(idToken: string, topicId: string): Promise<NodeRunItem[]> {
+    const res = await this.post<{ nodeRuns: NodeRunItem[] }>('getNodeRuns', idToken, { topicId });
+    return res.nodeRuns ?? [];
   }
 
   async generateQuickChange(idToken: string, request: GenerationRequest): Promise<QuickChangePreviewResult> {

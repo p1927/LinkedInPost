@@ -1349,7 +1349,63 @@ async function dispatchAction(
         }
       }
 
+      // C5: Persist node_runs for pipeline observability (30-day TTL)
+      if (topicIdForSave && genResult.nodeRuns && genResult.nodeRuns.length > 0) {
+        try {
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          // Purge expired rows (best-effort, limit 500 per call)
+          await env.PIPELINE_DB.prepare(
+            `DELETE FROM node_runs WHERE expires_at < datetime('now') AND rowid IN
+             (SELECT rowid FROM node_runs WHERE expires_at < datetime('now') LIMIT 500)`,
+          ).run();
+          const stmts = genResult.nodeRuns.map((r) =>
+            env.PIPELINE_DB.prepare(
+              `INSERT OR IGNORE INTO node_runs
+               (id, run_id, topic_id, user_id, node_id, input_json, output_json, model, duration_ms, status, error, expires_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ).bind(
+              crypto.randomUUID(),
+              genResult.runId || '',
+              topicIdForSave,
+              session.userId,
+              r.nodeId,
+              r.inputJson,
+              r.outputJson,
+              r.model,
+              r.durationMs,
+              r.status,
+              r.error ?? null,
+              expiresAt,
+            ),
+          );
+          await env.PIPELINE_DB.batch(stmts);
+        } catch (e) {
+          console.error('[auto-save nodeRuns]', e);
+        }
+      }
+
       return genResult;
+    }
+    case 'getNodeRuns': {
+      const topicId = String((payload as Record<string, unknown>).topicId || '').trim();
+      if (!topicId) return { nodeRuns: [] };
+      // Purge expired rows on read too (best-effort)
+      void env.PIPELINE_DB.prepare(
+        `DELETE FROM node_runs WHERE expires_at < datetime('now') AND rowid IN
+         (SELECT rowid FROM node_runs WHERE expires_at < datetime('now') LIMIT 500)`,
+      ).run().catch(() => undefined);
+      const result = await env.PIPELINE_DB.prepare(
+        `SELECT id, run_id, node_id, input_json, output_json, model, duration_ms, status, error, created_at
+         FROM node_runs
+         WHERE user_id = ? AND topic_id = ? AND expires_at > datetime('now')
+         ORDER BY created_at DESC
+         LIMIT 500`,
+      ).bind(session.userId, topicId).all<{
+        id: string; run_id: string; node_id: string;
+        input_json: string; output_json: string; model: string;
+        duration_ms: number; status: string; error: string | null; created_at: string;
+      }>();
+      return { nodeRuns: result.results ?? [] };
     }
     case 'getPatternAssignment': {
       return handleGetPatternAssignment(pipeline, storedConfig.spreadsheetId, payload);
