@@ -14,15 +14,16 @@ export const STATIC_MINIMAX_MODELS: LlmModelOption[] = [
 ];
 
 // M2.7 and M2.5 are thinking models — their <think> tokens count against
-// max_completion_tokens. Callers that request small limits (400-600) can get
-// their JSON truncated when the model burns the budget on reasoning.
+// max_completion_tokens. We add a fixed overhead on top of whatever the caller
+// requests so the model can finish reasoning AND still produce the full JSON.
+// The <think> block is stripped before the caller ever sees the response.
 const THINKING_MODELS = ['MiniMax-M2.7', 'MiniMax-M2.5'];
-const THINKING_MODEL_MIN_TOKENS = 4000;
+const THINKING_TOKEN_OVERHEAD = 4000;
 
 function resolveMaxTokens(model: string, requested?: number): number | undefined {
   if (requested === undefined) return undefined;
   if (THINKING_MODELS.some((m) => model.startsWith(m))) {
-    return Math.max(requested, THINKING_MODEL_MIN_TOKENS);
+    return requested + THINKING_TOKEN_OVERHEAD;
   }
   return requested;
 }
