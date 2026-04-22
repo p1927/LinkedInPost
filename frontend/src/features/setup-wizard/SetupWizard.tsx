@@ -8,9 +8,15 @@ import { FinalStep } from './FinalStep';
 import { StatusDashboard } from './StatusDashboard';
 import { setupService } from './setupService';
 import { SetupStateService } from './setupStateService';
+import { TrendingApiStep } from './TrendingApiStep';
 import type { SetupState } from './types';
 
-export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'envvars' | 'final';
+export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'trending' | 'envvars' | 'final';
+
+export type YouTubeAdapterType = 'youtube-official' | 'apify-youtube';
+export type InstagramAdapterType = 'instagram-official' | 'sociavault';
+export type LinkedInAdapterType = 'linkedin-official' | 'apify-linkedin' | 'sociavault' | 'phantombuster';
+export type NewsAdapterType = 'newsdata' | 'guardian' | 'gnews';
 
 // Dry run mode: enabled for setup wizard (port 3456), disabled for main app
 const isSetupWizard = typeof window !== 'undefined' && window.location.port === '3456';
@@ -33,6 +39,12 @@ export interface SetupConfig {
     enabled: boolean;
     provider: string;
   };
+  trendingApis: {
+    youtube: { adapter: YouTubeAdapterType };
+    instagram: { adapter: InstagramAdapterType };
+    linkedin: { adapter: LinkedInAdapterType };
+    news: { adapter: NewsAdapterType };
+  };
   envVars: Record<string, string>;
 }
 
@@ -53,6 +65,12 @@ const DEFAULT_CONFIG: SetupConfig = {
   videoGeneration: {
     enabled: false,
     provider: '',
+  },
+  trendingApis: {
+    youtube: { adapter: 'youtube-official' as YouTubeAdapterType },
+    instagram: { adapter: 'instagram-official' as InstagramAdapterType },
+    linkedin: { adapter: 'linkedin-official' as LinkedInAdapterType },
+    news: { adapter: 'newsdata' as NewsAdapterType },
   },
   envVars: {},
 };
@@ -181,8 +199,13 @@ export function SetupWizard() {
       const state = await stateService.readState();
       setSetupState(state);
     }
-    setStep('envvars');
+    setStep('trending');
   }, [updateConfig, config.projectDir]);
+
+  const handleTrendingComplete = useCallback(async (trendingApis: SetupConfig['trendingApis']) => {
+    updateConfig({ trendingApis });
+    setStep('envvars');
+  }, [updateConfig]);
 
   const handleEnvVarsComplete = useCallback(async (envVars: Record<string, string>) => {
     updateConfig({ envVars });
@@ -360,6 +383,22 @@ export function SetupWizard() {
                 onUpdate={updateConfig}
                 onComplete={handleIntegrationsComplete}
                 onSkip={() => handleIntegrationsComplete(DEFAULT_CONFIG.integrations)}
+              />
+            </motion.div>
+          )}
+
+          {step === 'trending' && (
+            <motion.div
+              key="trending"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <TrendingApiStep
+                config={config}
+                onUpdate={updateConfig}
+                onComplete={handleTrendingComplete}
+                onBack={() => setStep('integrations')}
               />
             </motion.div>
           )}
