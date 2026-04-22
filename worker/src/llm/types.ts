@@ -6,6 +6,7 @@ export type WorkerEnvForLlm = {
   GEMINI_API_KEY?: string;
   XAI_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
+  MINIMAX_API_KEY?: string;
 };
 
 /** Subset of StoredConfig for resolution (no import from index). */
@@ -17,6 +18,7 @@ export interface LlmWorkspaceConfig {
     fallback?: import('@repo/llm-core').LlmRef;
     allowedGrokModels?: string[];
     allowedOpenrouterModels?: string[];
+    allowedMinimaxModels?: string[];
   };
 }
 

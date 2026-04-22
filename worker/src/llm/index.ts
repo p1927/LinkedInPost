@@ -21,6 +21,7 @@ export type { LlmModelOption, LlmProviderId, LlmRef, LlmWorkspaceConfig, Generat
 export {
   resolveAllowedGrokModelIds,
   resolveAllowedOpenrouterModelIds,
+  resolveAllowedMinimaxModelIds,
   resolveStoredPrimary,
   resolveStoredFallback,
   resolveGenerationRef,

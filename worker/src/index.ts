@@ -42,6 +42,7 @@ import {
   isLlmProviderConfigured,
   resolveAllowedGrokModelIds,
   resolveAllowedOpenrouterModelIds,
+  resolveAllowedMinimaxModelIds,
   resolveGithubAutomationGeminiModel,
   resolveStoredFallback,
   resolveStoredPrimary,
@@ -57,6 +58,7 @@ import { runGithubAutomationGenerateVariants } from './internal/githubAutomation
 import { listGeminiModels, STATIC_GEMINI_MODELS } from './llm/providers/gemini';
 import { listGrokModels, STATIC_GROK_MODELS } from './llm/providers/grok';
 import { listOpenrouterModels, STATIC_OPENROUTER_MODELS } from './llm/providers/openrouter';
+import { listMinimaxModels, STATIC_MINIMAX_MODELS } from './llm/providers/minimax';
 
 import { FEATURE_CAMPAIGN, FEATURE_CONTENT_FLOW, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
 import { normalizeContentReviewStored, runContentReview } from './features/content-review';
@@ -145,11 +147,13 @@ interface BotConfig {
     fallback?: LlmRef;
     allowedGrokModels: string[];
     allowedOpenrouterModels: string[];
+    allowedMinimaxModels: string[];
   };
   llmProviderKeys?: {
     gemini: boolean;
     grok: boolean;
     openrouter: boolean;
+    minimax: boolean;
   };
   generationRules: string;
   /** Workspace author context for LLM; always included when non-empty (not overridden by topic rules). */
@@ -256,6 +260,7 @@ export interface StoredConfig {
     fallback?: LlmRef;
     allowedGrokModels?: string[];
     allowedOpenrouterModels?: string[];
+    allowedMinimaxModels?: string[];
   };
   contentReview?: {
     textRef?: LlmRef;
@@ -300,6 +305,7 @@ interface BotConfigUpdate {
     fallback?: LlmRef | null;
     allowedGrokModels?: string[];
     allowedOpenrouterModels?: string[];
+    allowedMinimaxModels?: string[];
   };
   contentReview?: {
     textRef?: LlmRef;
@@ -894,6 +900,16 @@ async function dispatchAction(
         const filtered = full.filter((m) => allow.has(m.value));
         return filtered.length > 0 ? filtered : STATIC_OPENROUTER_MODELS.filter((m) => allow.has(m.value));
       }
+      if (provider === 'minimax') {
+        const full = listMinimaxModels(env);
+        if (session.isAdmin) {
+          return full;
+        }
+        const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+        const allow = new Set(resolveAllowedMinimaxModelIds(ws));
+        const filtered = full.filter((m) => allow.has(m.value));
+        return filtered.length > 0 ? filtered : STATIC_MINIMAX_MODELS.filter((m) => allow.has(m.value));
+      }
       throw new Error('Unknown LLM provider.');
     }
     case 'getLlmProviderCatalog': {
@@ -918,6 +934,10 @@ async function dispatchAction(
               const allow = new Set(resolveAllowedOpenrouterModelIds(ws));
               models = models.filter((m) => allow.has(m.value));
               if (models.length === 0) models = STATIC_OPENROUTER_MODELS.filter((m) => allow.has(m.value));
+            } else if (entry.provider === 'minimax') {
+              const allow = new Set(resolveAllowedMinimaxModelIds(ws));
+              models = models.filter((m) => allow.has(m.value));
+              if (models.length === 0) models = STATIC_MINIMAX_MODELS.filter((m) => allow.has(m.value));
             }
           }
           return {
@@ -930,6 +950,7 @@ async function dispatchAction(
           gemini: STATIC_GEMINI_MODELS,
           grok: STATIC_GROK_MODELS,
           openrouter: STATIC_OPENROUTER_MODELS,
+          minimax: STATIC_MINIMAX_MODELS,
         },
       };
     }
@@ -967,7 +988,7 @@ async function dispatchAction(
       }
       const provider = String(ref.provider).trim();
       const model = String(ref.model).trim();
-      if (provider !== 'gemini' && provider !== 'grok' && provider !== 'openrouter') {
+      if (provider !== 'gemini' && provider !== 'grok' && provider !== 'openrouter' && provider !== 'minimax') {
         throw new Error(`Unknown provider: ${provider}`);
       }
       if (!isLlmProviderConfigured(env, provider as import('./llm/types').LlmProviderId)) {
@@ -1736,10 +1757,11 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
         fallback: resolveStoredFallback(ws, true),
         allowedGrokModels: resolveAllowedGrokModelIds(ws),
         allowedOpenrouterModels: resolveAllowedOpenrouterModelIds(ws),
+        allowedMinimaxModels: resolveAllowedMinimaxModelIds(ws),
       },
       llmProviderKeys: (() => {
         const ids = getConfiguredLlmProviderIds(env);
-        return { gemini: ids.includes('gemini'), grok: ids.includes('grok'), openrouter: ids.includes('openrouter') };
+        return { gemini: ids.includes('gemini'), grok: ids.includes('grok'), openrouter: ids.includes('openrouter'), minimax: ids.includes('minimax') };
       })(),
     };
   }
@@ -2797,6 +2819,23 @@ async function normalizeAllowedOpenrouterModelsAgainstCatalog(env: Env, raw: unk
   return picked;
 }
 
+function normalizeAllowedMinimaxModelsAgainstCatalog(env: Env, raw: unknown[]): string[] {
+  const catalog = new Set<string>(STATIC_MINIMAX_MODELS.map((m) => m.value));
+  for (const m of listMinimaxModels(env)) {
+    catalog.add(m.value);
+  }
+  const picked = [...new Set(
+    raw
+      .map((x) => String(x ?? '').trim())
+      .filter(Boolean)
+      .filter((id) => catalog.has(id)),
+  )];
+  if (picked.length === 0) {
+    throw new Error('Choose at least one allowed MiniMax model from the catalog.');
+  }
+  return picked;
+}
+
 async function normalizeAllowedGoogleModelsAgainstCatalog(env: Env, raw: unknown[]): Promise<string[]> {
   const catalogModels = await listGeminiModels(env);
   const catalog = new Set<string>();
@@ -2863,6 +2902,24 @@ async function computeNextAllowedOpenrouterModels(
   );
 }
 
+async function computeNextAllowedMinimaxModels(
+  env: Env,
+  current: StoredConfig,
+  update: BotConfigUpdate,
+): Promise<string[]> {
+  if (!FEATURE_MULTI_PROVIDER_LLM) {
+    return resolveAllowedMinimaxModelIds(
+      workspaceConfigFromStored(current.googleModel, current.allowedGoogleModels, current.llm),
+    );
+  }
+  if (Array.isArray(update.llm?.allowedMinimaxModels) && update.llm.allowedMinimaxModels.length > 0) {
+    return normalizeAllowedMinimaxModelsAgainstCatalog(env, update.llm.allowedMinimaxModels);
+  }
+  return resolveAllowedMinimaxModelIds(
+    workspaceConfigFromStored(current.googleModel, current.allowedGoogleModels, current.llm),
+  );
+}
+
 async function computeNextLlmStored(
   env: Env,
   current: StoredConfig,
@@ -2875,11 +2932,13 @@ async function computeNextLlmStored(
   }
   const grokAllowed = await computeNextAllowedGrokModels(env, current, update, nextAllowedGoogle, resolvedGoogleModel);
   const openrouterAllowed = await computeNextAllowedOpenrouterModels(env, current, update);
+  const minimaxAllowed = await computeNextAllowedMinimaxModels(env, current, update);
   const geminiPolicy = { googleModel: resolvedGoogleModel, allowedGoogleModels: nextAllowedGoogle };
   const ws = workspaceConfigFromStored(resolvedGoogleModel, nextAllowedGoogle, {
     ...current.llm,
     allowedGrokModels: grokAllowed,
     allowedOpenrouterModels: openrouterAllowed,
+    allowedMinimaxModels: minimaxAllowed,
   });
 
   let primary: LlmRef = update.llm?.primary ?? current.llm?.primary ?? resolveStoredPrimary(ws, true);
@@ -2887,6 +2946,9 @@ async function computeNextLlmStored(
     primary = resolveStoredPrimary(ws, true);
   }
   if (primary.provider === 'openrouter' && !openrouterAllowed.includes(primary.model)) {
+    primary = resolveStoredPrimary(ws, true);
+  }
+  if (primary.provider === 'minimax' && !minimaxAllowed.includes(primary.model)) {
     primary = resolveStoredPrimary(ws, true);
   }
   if (primary.provider === 'gemini') {
@@ -2910,7 +2972,7 @@ async function computeNextLlmStored(
     }
   }
 
-  return { primary, fallback, allowedGrokModels: grokAllowed, allowedOpenrouterModels: openrouterAllowed };
+  return { primary, fallback, allowedGrokModels: grokAllowed, allowedOpenrouterModels: openrouterAllowed, allowedMinimaxModels: minimaxAllowed };
 }
 
 async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpdate, session: VerifiedSession): Promise<BotConfig> {

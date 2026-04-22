@@ -1,6 +1,6 @@
 // frontend/src/components/llm/LlmModelCombobox.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import { cn } from '@/lib/cn';
 
@@ -26,6 +26,41 @@ interface LlmModelComboboxProps {
   prependOptions?: ModelOption[];
 }
 
+const GROUP_DISPLAY_NAMES: Record<string, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  'meta-llama': 'Meta Llama',
+  mistralai: 'Mistral AI',
+  cohere: 'Cohere',
+  deepseek: 'DeepSeek',
+  qwen: 'Qwen',
+  'x-ai': 'xAI',
+  nvidia: 'NVIDIA',
+  microsoft: 'Microsoft',
+  amazon: 'Amazon',
+  '01-ai': '01.AI',
+  perplexity: 'Perplexity',
+  nousresearch: 'Nous Research',
+};
+
+function getGroupDisplayName(groupKey: string): string {
+  return GROUP_DISPLAY_NAMES[groupKey] ?? groupKey;
+}
+
+/** Returns group key if value is in "provider/model" format, else null. */
+function extractGroup(value: string): string | null {
+  const idx = value.indexOf('/');
+  if (idx <= 0) return null;
+  return value.slice(0, idx);
+}
+
+interface ModelGroup {
+  key: string;
+  label: string;
+  models: ModelOption[];
+}
+
 export function LlmModelCombobox({
   models,
   value,
@@ -39,6 +74,7 @@ export function LlmModelCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -46,6 +82,22 @@ export function LlmModelCombobox({
     () => [...models].sort((a, b) => a.label.localeCompare(b.label)),
     [models],
   );
+
+  // Detect if models use grouped format (provider/model-id)
+  const hasGroups = useMemo(() => sorted.some((m) => extractGroup(m.value) !== null), [sorted]);
+
+  const groups = useMemo<ModelGroup[]>(() => {
+    if (!hasGroups) return [];
+    const map = new Map<string, ModelOption[]>();
+    for (const m of sorted) {
+      const key = extractGroup(m.value) ?? '__ungrouped__';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(m);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => getGroupDisplayName(a).localeCompare(getGroupDisplayName(b)))
+      .map(([key, ms]) => ({ key, label: getGroupDisplayName(key), models: ms }));
+  }, [sorted, hasGroups]);
 
   const filteredPrepend = useMemo(
     () =>
@@ -71,10 +123,20 @@ export function LlmModelCombobox({
     [sorted, query],
   );
 
-  const visibleItems = useMemo(
+  // Flat visible items for keyboard navigation (search mode or no-group mode)
+  const visibleItemsFlat = useMemo(
     () => [...filteredPrepend, ...filteredSorted],
     [filteredPrepend, filteredSorted],
   );
+
+  // Visible items in grouped mode (respects collapsed state, no search)
+  const visibleGroupedItems = useMemo(() => {
+    if (!hasGroups || query.trim()) return null;
+    return groups.map((g) => ({
+      ...g,
+      collapsed: collapsedGroups.has(g.key),
+    }));
+  }, [hasGroups, query, groups, collapsedGroups]);
 
   // Reset active index when query or visibility changes
   useEffect(() => {
@@ -100,17 +162,28 @@ export function LlmModelCombobox({
 
   const allOptions = [...prependOptions, ...models];
   const selectedLabel = allOptions.find((m) => m.value === value)?.label ?? value;
-  const hasResults = visibleItems.length > 0;
+  const hasResults = visibleGroupedItems
+    ? visibleGroupedItems.some((g) => g.models.length > 0)
+    : visibleItemsFlat.length > 0;
 
   const handleSelect = (modelValue: string) => {
     onChange(modelValue);
     setOpen(false);
   };
 
+  const toggleGroup = (key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (visibleItems.length > 0) setActiveIndex(0);
+      if (visibleItemsFlat.length > 0) setActiveIndex(0);
     } else if (e.key === 'Escape') {
       setOpen(false);
     }
@@ -119,7 +192,7 @@ export function LlmModelCombobox({
   const handleItemKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIndex(Math.min(index + 1, visibleItems.length - 1));
+      setActiveIndex(Math.min(index + 1, visibleItemsFlat.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (index === 0) {
@@ -183,8 +256,66 @@ export function LlmModelCombobox({
             >
               {!hasResults ? (
                 <p className="px-3 py-2 text-xs text-muted">No models match</p>
+              ) : visibleGroupedItems ? (
+                // Grouped rendering (OpenRouter-style models, no active search)
+                <>
+                  {filteredPrepend.map((m, index) => (
+                    <button
+                      key={m.value}
+                      ref={(el) => { itemRefs.current[index] = el; }}
+                      type="button"
+                      role="option"
+                      aria-selected={m.value === value}
+                      tabIndex={-1}
+                      onClick={() => handleSelect(m.value)}
+                      onKeyDown={(e) => handleItemKeyDown(e, index)}
+                      className={cn(
+                        'w-full rounded-lg px-3 py-2 text-left text-sm text-ink hover:bg-violet-100/70 focus:bg-violet-100/70 focus:outline-none',
+                        m.value === value && 'bg-violet-100/50 font-semibold',
+                      )}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                  {visibleGroupedItems.map((g) => (
+                    <div key={g.key}>
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(g.key)}
+                        className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-muted hover:bg-violet-50 focus:outline-none"
+                      >
+                        {g.collapsed ? (
+                          <ChevronRight className="size-3 shrink-0" />
+                        ) : (
+                          <ChevronDown className="size-3 shrink-0" />
+                        )}
+                        {g.label}
+                        <span className="ml-auto font-normal normal-case tracking-normal opacity-60">
+                          {g.models.length}
+                        </span>
+                      </button>
+                      {!g.collapsed && g.models.map((m) => (
+                        <button
+                          key={m.value}
+                          type="button"
+                          role="option"
+                          aria-selected={m.value === value}
+                          tabIndex={-1}
+                          onClick={() => handleSelect(m.value)}
+                          className={cn(
+                            'w-full rounded-lg px-3 py-1.5 text-left text-sm text-ink hover:bg-violet-100/70 focus:bg-violet-100/70 focus:outline-none',
+                            m.value === value && 'bg-violet-100/50 font-semibold',
+                          )}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </>
               ) : (
-                visibleItems.map((m, index) => (
+                // Flat rendering (search results or non-grouped providers)
+                visibleItemsFlat.map((m, index) => (
                   <button
                     key={m.value}
                     ref={(el) => { itemRefs.current[index] = el; }}

@@ -2,6 +2,7 @@ import { generateGeminiJson, generateGeminiMultimodalJson } from './providers/ge
 import type { GeminiInlineImagePart } from './providers/gemini';
 import { generateGrokJson } from './providers/grok';
 import { generateOpenrouterJson } from './providers/openrouter';
+import { generateMinimaxJson } from './providers/minimax';
 import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
 
 function isRetryableLlmError(err: unknown): boolean {
@@ -28,6 +29,9 @@ export async function generateForRef(
   }
   if (ref.provider === 'openrouter') {
     return generateOpenrouterJson(env, ref.model, prompt, opts);
+  }
+  if (ref.provider === 'minimax') {
+    return generateMinimaxJson(env, ref.model, prompt, opts);
   }
   return generateGrokJson(env, ref.model, prompt, opts);
 }

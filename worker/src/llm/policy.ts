@@ -5,6 +5,7 @@ import {
 } from '../google-model-policy';
 import { STATIC_GROK_MODELS } from './providers/grok';
 import { STATIC_OPENROUTER_MODELS } from './providers/openrouter';
+import { STATIC_MINIMAX_MODELS } from './providers/minimax';
 import type { GenerationLlmPayload, LlmRef, LlmWorkspaceConfig, LlmProviderId } from './types';
 
 export function resolveAllowedGrokModelIds(config: LlmWorkspaceConfig): string[] {
@@ -23,8 +24,16 @@ export function resolveAllowedOpenrouterModelIds(config: LlmWorkspaceConfig): st
   return STATIC_OPENROUTER_MODELS.map((m) => m.value);
 }
 
+export function resolveAllowedMinimaxModelIds(config: LlmWorkspaceConfig): string[] {
+  const raw = config.llm?.allowedMinimaxModels;
+  if (Array.isArray(raw) && raw.length > 0) {
+    return [...new Set(raw.map((x) => String(x || '').trim()).filter(Boolean))];
+  }
+  return STATIC_MINIMAX_MODELS.map((m) => m.value);
+}
+
 function isLlmProviderId(v: string): v is LlmProviderId {
-  return v === 'gemini' || v === 'grok' || v === 'openrouter';
+  return v === 'gemini' || v === 'grok' || v === 'openrouter' || v === 'minimax';
 }
 
 /** Workspace default primary (after allowlist checks). */
@@ -46,6 +55,13 @@ export function resolveStoredPrimary(config: LlmWorkspaceConfig, multiProvider: 
     const model = p.model.trim();
     if (allow.includes(model)) {
       return { provider: 'openrouter', model };
+    }
+  }
+  if (p?.provider === 'minimax' && p.model) {
+    const allow = resolveAllowedMinimaxModelIds(config);
+    const model = p.model.trim();
+    if (allow.includes(model)) {
+      return { provider: 'minimax', model };
     }
   }
   if (p?.provider === 'gemini' && p.model) {
@@ -74,6 +90,11 @@ export function resolveStoredFallback(config: LlmWorkspaceConfig, multiProvider:
     if (!allow.includes(model)) return undefined;
     return { provider: 'openrouter', model };
   }
+  if (f.provider === 'minimax') {
+    const allow = resolveAllowedMinimaxModelIds(config);
+    if (!allow.includes(model)) return undefined;
+    return { provider: 'minimax', model };
+  }
   if (f.provider === 'gemini') {
     return { provider: 'gemini', model: resolveEffectiveGoogleModel(config, model) };
   }
@@ -97,6 +118,9 @@ export function resolveGenerationRef(
       }
       if (prov === 'openrouter' && resolveAllowedOpenrouterModelIds(config).includes(mod)) {
         return { provider: 'openrouter', model: mod };
+      }
+      if (prov === 'minimax' && resolveAllowedMinimaxModelIds(config).includes(mod)) {
+        return { provider: 'minimax', model: mod };
       }
       if (prov === 'gemini') {
         return { provider: 'gemini', model: resolveEffectiveGoogleModel(config, mod) };
