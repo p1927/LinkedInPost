@@ -3,6 +3,8 @@ import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
 
 function stripJsonCodeFences(text: string): string {
   let s = text.trim();
+  // Strip <think>...</think> blocks emitted by reasoning models (e.g. MiniMax-M2.7)
+  s = s.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   if (s.startsWith('```')) {
     s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
   }
