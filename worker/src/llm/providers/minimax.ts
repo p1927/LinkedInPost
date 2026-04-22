@@ -47,7 +47,7 @@ export async function generateMinimaxJson(
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       ...(opts?.temperature !== undefined && { temperature: opts.temperature }),
-      ...(opts?.maxOutputTokens !== undefined && { max_tokens: opts.maxOutputTokens }),
+      ...(opts?.maxOutputTokens !== undefined && { max_completion_tokens: opts.maxOutputTokens }),
     }),
   });
   if (!response.ok) {

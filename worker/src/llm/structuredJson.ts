@@ -25,6 +25,7 @@ export async function generateLlmParsedJson<T>(
       toParse.startsWith('{') && !toParse.trimEnd().endsWith('}')
         ? ' (response looks truncated — try raising maxOutputTokens)'
         : '';
+    console.error(`[LLM ${ref.provider}/${ref.model}] JSON_PARSE_FAIL${hint} raw_chars=${toParse.length} raw=${JSON.stringify(toParse.slice(0, 400))}`);
     throw new Error(`LLM returned non-JSON${hint}: ${toParse.slice(0, 200)}`);
   }
 }

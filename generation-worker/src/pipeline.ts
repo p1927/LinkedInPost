@@ -108,6 +108,9 @@ export async function runPipeline(
       text: formatForChannel(v, enrichmentBundle.typography, report.channel).formattedText,
     }));
 
+    if (formatted.length === 0) {
+      throw new Error('Content generation produced no usable variants. All generation groups failed — check LLM provider configuration and try again.');
+    }
     variants = formatted;
   } else {
     // --- LEGACY PATH ---

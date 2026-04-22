@@ -24,16 +24,26 @@ export async function generateForRef(
   prompt: string,
   opts?: LlmGenerationOptions,
 ): Promise<string> {
-  if (ref.provider === 'gemini') {
-    return generateGeminiJson(env, ref.model, prompt, opts);
+  const tag = `[LLM ${ref.provider}/${ref.model}]`;
+  const start = Date.now();
+  console.log(`${tag} REQUEST prompt_chars=${prompt.length} temp=${opts?.temperature ?? 'default'} max_tokens=${opts?.maxOutputTokens ?? 'default'}`);
+  try {
+    let text: string;
+    if (ref.provider === 'gemini') {
+      text = await generateGeminiJson(env, ref.model, prompt, opts);
+    } else if (ref.provider === 'openrouter') {
+      text = await generateOpenrouterJson(env, ref.model, prompt, opts);
+    } else if (ref.provider === 'minimax') {
+      text = await generateMinimaxJson(env, ref.model, prompt, opts);
+    } else {
+      text = await generateGrokJson(env, ref.model, prompt, opts);
+    }
+    console.log(`${tag} OK duration_ms=${Date.now() - start} response_chars=${text.length} preview=${JSON.stringify(text.slice(0, 120))}`);
+    return text;
+  } catch (err) {
+    console.error(`${tag} ERROR duration_ms=${Date.now() - start} error=${String(err)}`);
+    throw err;
   }
-  if (ref.provider === 'openrouter') {
-    return generateOpenrouterJson(env, ref.model, prompt, opts);
-  }
-  if (ref.provider === 'minimax') {
-    return generateMinimaxJson(env, ref.model, prompt, opts);
-  }
-  return generateGrokJson(env, ref.model, prompt, opts);
 }
 
 export async function generateTextJsonWithFallback(

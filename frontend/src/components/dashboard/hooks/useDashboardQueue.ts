@@ -360,7 +360,10 @@ export function useDashboardQueue({
         throw new Error('Generation worker returned an invalid response (missing variants).');
       }
 
-      const variantTexts = result.variants.map((v) => v.text);
+      const variantTexts = result.variants.map((v) => v.text).filter(Boolean);
+      if (variantTexts.length === 0) {
+        throw new Error('Content generation produced no usable variants. Please check your LLM configuration and try again.');
+      }
       const updated = await api.saveDraftVariants(idToken, row, variantTexts);
       setRows((prev) => prev.map((r) => (isSameTopicId(r, updated) ? updated : r)));
       void showAlert({
