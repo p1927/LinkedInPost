@@ -1,11 +1,24 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import {
+  X,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Activity,
+  CheckCircle,
+  RotateCcw,
+  Clock,
+  AlertTriangle,
+} from 'lucide-react';
 import type { LlmProviderId } from '@repo/llm-core';
 import type { GoogleModelOption } from '../services/configService';
 import type { AppSession } from '../services/backendApi';
+import type { SheetRow } from '../services/sheets';
 import { cn } from '../lib/cn';
 
 type LlmCatalog = Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }>;
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface FlowNode {
   id: string;
@@ -16,6 +29,30 @@ interface FlowNode {
   promptTemplate: string;
   group?: string;
 }
+
+interface NodeRun {
+  nodeId: string;
+  input: string;
+  output: string;
+  model: string;
+  durationMs: number;
+}
+
+interface TopicRun {
+  id: string;
+  topic: string;
+  runAt: string;
+  status: 'completed';
+  nodeRuns: NodeRun[];
+}
+
+interface TopicGroup {
+  topicId: string;
+  topic: string;
+  runs: TopicRun[];
+}
+
+// ─── FLOW_NODES ────────────────────────────────────────────────────────────────
 
 const FLOW_NODES: FlowNode[] = [
   {
@@ -231,6 +268,8 @@ Return JSON: { scores, issues: [], approved: boolean, suggestions: [] }`,
   },
 ];
 
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
 function getNodeColor(node: FlowNode) {
   if (node.type === 'trigger') return 'bg-violet-100 border-violet-300 text-violet-800';
   if (node.type === 'output') return 'bg-emerald-100 border-emerald-300 text-emerald-800';
@@ -238,10 +277,7 @@ function getNodeColor(node: FlowNode) {
   return 'bg-amber-50 border-amber-200 text-amber-800';
 }
 
-function getLlmLabel(
-  settingKey: string | undefined,
-  session: AppSession,
-): string {
+function getLlmLabel(settingKey: string | undefined, session: AppSession): string {
   if (!settingKey) return '';
   const llmSettings = session.config.llmSettings as Record<string, { provider: string; model: string }> | undefined;
   const saved = llmSettings?.[settingKey];
@@ -254,30 +290,121 @@ function getLlmLabel(
   return `${saved.provider} / ${saved.model}`;
 }
 
-interface NodeCardProps {
-  node: FlowNode;
-  isSelected: boolean;
-  onClick: () => void;
+function formatDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
 }
 
-function NodeCard({ node, isSelected, onClick }: NodeCardProps) {
+// ─── Real data mapping ─────────────────────────────────────────────────────────
+
+function buildNodeRunsFromRow(row: SheetRow): NodeRun[] {
+  const runs: NodeRun[] = [];
+
+  if (row.variant1?.trim()) {
+    const variants = [row.variant1, row.variant2, row.variant3, row.variant4].filter(Boolean);
+    const output = variants.map((v, i) => `[Variant ${i + 1}]\n${v}`).join('\n\n---\n\n');
+    runs.push({
+      nodeId: 'generation_worker',
+      input: [
+        `Topic: ${row.topic}`,
+        row.topicDeliveryChannel ? `Channel: ${row.topicDeliveryChannel}` : null,
+        row.topicGenerationRules ? `Rules: ${row.topicGenerationRules}` : null,
+      ].filter(Boolean).join('\n'),
+      output,
+      model: row.topicGenerationModel || 'primary LLM',
+      durationMs: 0,
+    });
+  }
+
+  if (row.selectedText?.trim()) {
+    runs.push({
+      nodeId: 'review_generation',
+      input: `Topic: ${row.topic}`,
+      output: row.selectedText,
+      model: row.topicGenerationModel || 'primary LLM',
+      durationMs: 0,
+    });
+  }
+
+  return runs;
+}
+
+function buildTopicGroups(rows: SheetRow[]): TopicGroup[] {
+  const completed = rows
+    .filter(r => r.variant1?.trim())
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  return completed.map(row => ({
+    topicId: row.topicId,
+    topic: row.topic,
+    runs: [{
+      id: row.generationRunId || row.topicId,
+      topic: row.topic,
+      runAt: row.date,
+      status: 'completed' as const,
+      nodeRuns: buildNodeRunsFromRow(row),
+    }],
+  }));
+}
+
+// ─── DraggableCanvas ───────────────────────────────────────────────────────────
+
+function DraggableCanvas({ children, resetKey }: { children: React.ReactNode; resetKey: number }) {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const isDragging = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
+
+  useEffect(() => { setPos({ x: 0, y: 0 }); }, [resetKey]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    isDragging.current = true;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+  };
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const dx = e.clientX - lastMouse.current.x;
+      const dy = e.clientY - lastMouse.current.y;
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+      setPos(p => ({ x: p.x + dx, y: p.y + dy }));
+    };
+    const onUp = () => { isDragging.current = false; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex flex-col items-center justify-center gap-1 rounded-xl border-2 px-4 py-3 text-center shadow-sm transition-all duration-150 hover:shadow-md cursor-pointer min-w-[140px]',
-        getNodeColor(node),
-        isSelected && 'ring-2 ring-offset-2 ring-primary shadow-lg scale-105',
-      )}
+    <div
+      className="relative flex-1 min-w-0 overflow-hidden rounded-xl border border-border bg-canvas cursor-grab active:cursor-grabbing select-none"
+      onMouseDown={handleMouseDown}
     >
-      <span className="text-xs font-semibold leading-snug">{node.label}</span>
-      {node.type === 'llm' && (
-        <span className="text-[10px] opacity-60 font-medium">LLM call</span>
-      )}
-    </button>
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+      <div
+        className="absolute left-1/2 top-1/2"
+        style={{ transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))` }}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
+
+// ─── Arrow ─────────────────────────────────────────────────────────────────────
 
 function Arrow({ horizontal = false }: { horizontal?: boolean }) {
   if (horizontal) {
@@ -296,143 +423,486 @@ function Arrow({ horizontal = false }: { horizontal?: boolean }) {
   );
 }
 
-export function EnrichmentFlowPage({
-  session,
-}: {
-  session: AppSession;
-  llmCatalog?: LlmCatalog | null;
+// ─── NodeCard ──────────────────────────────────────────────────────────────────
+
+function NodeCard({ node, isSelected, hasRunData, onClick }: {
+  node: FlowNode;
+  isSelected: boolean;
+  hasRunData: boolean;
+  onClick: () => void;
 }) {
-  const [selectedNode, setSelectedNode] = useState<FlowNode | null>(null);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'relative flex flex-col items-center justify-center gap-1 rounded-xl border-2 px-4 py-3 text-center shadow-sm transition-all duration-150 hover:shadow-md cursor-pointer min-w-[140px]',
+        getNodeColor(node),
+        isSelected && 'ring-2 ring-offset-2 ring-primary shadow-lg scale-105',
+      )}
+    >
+      <span className="text-xs font-semibold leading-snug">{node.label}</span>
+      {node.type === 'llm' && (
+        <span className="text-[10px] opacity-60 font-medium">LLM call</span>
+      )}
+      {hasRunData && (
+        <span className="absolute -top-1.5 -right-1.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white shadow-sm" />
+      )}
+    </button>
+  );
+}
 
-  const enrichmentNodes = FLOW_NODES.filter((n) => n.group === 'enrichment');
-  const triggerNode = FLOW_NODES.find((n) => n.id === 'topic_created')!;
-  const reviewGenNode = FLOW_NODES.find((n) => n.id === 'review_generation')!;
-  const genWorkerNode = FLOW_NODES.find((n) => n.id === 'generation_worker')!;
-  const textReviewNode = FLOW_NODES.find((n) => n.id === 'content_review_text')!;
-  const visionReviewNode = FLOW_NODES.find((n) => n.id === 'content_review_vision')!;
-  const outputNode = FLOW_NODES.find((n) => n.id === 'post_published')!;
+// ─── RunsPanel ─────────────────────────────────────────────────────────────────
 
-  const handleNodeClick = (node: FlowNode) => {
-    setSelectedNode((prev) => (prev?.id === node.id ? null : node));
+function RunsPanel({
+  topicGroups,
+  selectedRunId,
+  onSelectRun,
+  isOpen,
+  onToggle,
+  isEmpty,
+  hasPendingOnly,
+}: {
+  topicGroups: TopicGroup[];
+  selectedRunId: string | null;
+  onSelectRun: (run: TopicRun) => void;
+  isOpen: boolean;
+  onToggle: () => void;
+  isEmpty: boolean;
+  hasPendingOnly: boolean;
+}) {
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(
+    new Set([topicGroups[0]?.topicId]),
+  );
+
+  const toggleTopic = (topicId: string) => {
+    setExpandedTopics(prev => {
+      const next = new Set(prev);
+      if (next.has(topicId)) next.delete(topicId);
+      else next.add(topicId);
+      return next;
+    });
   };
 
+  if (!isOpen) {
+    return (
+      <div className="flex flex-col items-center gap-3 border-r border-border bg-surface px-3 py-4 shrink-0 w-12">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="rounded-lg p-1.5 text-muted hover:bg-border/40 hover:text-ink transition-colors"
+          title="Open runs panel"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+        <Activity className="h-4 w-4 text-muted mt-1" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-full flex-col gap-6">
-      <div>
-        <h1 className="font-heading text-xl font-bold text-ink">Enrichment Flow</h1>
-        <p className="mt-1 text-sm text-muted">
-          The LLM pipeline from topic creation to post publication. Click any node to inspect its prompt and model.
-        </p>
+    <div className="flex flex-col border-r border-border bg-surface shrink-0 w-64">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-muted" />
+          <span className="text-sm font-semibold text-ink">Pipeline Runs</span>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors"
+          title="Collapse runs panel"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
       </div>
 
-      <div className="flex flex-1 flex-col gap-6 lg:flex-row lg:items-start">
-        {/* Flow diagram */}
-        <div className="min-w-0 flex-1 overflow-x-auto rounded-2xl border border-border bg-canvas p-6 shadow-sm">
-          <div className="flex flex-col items-center gap-0 min-w-max mx-auto">
-
-            {/* Trigger */}
-            <NodeCard node={triggerNode} isSelected={selectedNode?.id === triggerNode.id} onClick={() => handleNodeClick(triggerNode)} />
-            <Arrow />
-
-            {/* Enrichment group */}
-            <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
-              <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
-                Enrichment Modules (parallel)
-              </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                {enrichmentNodes.map((node) => (
-                  <NodeCard
-                    key={node.id}
-                    node={node}
-                    isSelected={selectedNode?.id === node.id}
-                    onClick={() => handleNodeClick(node)}
-                  />
-                ))}
-              </div>
-            </div>
-            <Arrow />
-
-            {/* Review Generation */}
-            <NodeCard node={reviewGenNode} isSelected={selectedNode?.id === reviewGenNode.id} onClick={() => handleNodeClick(reviewGenNode)} />
-            <Arrow />
-
-            {/* Generation Worker */}
-            <NodeCard node={genWorkerNode} isSelected={selectedNode?.id === genWorkerNode.id} onClick={() => handleNodeClick(genWorkerNode)} />
-            <Arrow />
-
-            {/* Content Review row */}
-            <div className="flex items-center gap-0">
-              <NodeCard node={textReviewNode} isSelected={selectedNode?.id === textReviewNode.id} onClick={() => handleNodeClick(textReviewNode)} />
-              <Arrow horizontal />
-              <NodeCard node={visionReviewNode} isSelected={selectedNode?.id === visionReviewNode.id} onClick={() => handleNodeClick(visionReviewNode)} />
-            </div>
-            <Arrow />
-
-            {/* Output */}
-            <NodeCard node={outputNode} isSelected={selectedNode?.id === outputNode.id} onClick={() => handleNodeClick(outputNode)} />
+      <div className="flex-1 overflow-y-auto py-1">
+        {isEmpty ? (
+          <div className="px-4 py-6 text-center">
+            <Activity className="h-8 w-8 text-muted/40 mx-auto mb-2" />
+            <p className="text-xs font-medium text-muted">No topics yet</p>
+            <p className="text-[10px] text-muted/70 mt-1">Add topics to your Google Sheet to start generating posts.</p>
           </div>
-        </div>
-
-        {/* Node detail panel */}
-        {selectedNode ? (
-          <div className="w-full lg:w-[360px] shrink-0 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="font-heading text-base font-bold text-ink">{selectedNode.label}</h2>
-              <button
-                type="button"
-                onClick={() => setSelectedNode(null)}
-                className="rounded-lg p-1 text-muted hover:bg-border/30 hover:text-ink transition-colors"
-                aria-label="Close panel"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <p className="mt-2 text-xs leading-relaxed text-muted">{selectedNode.description}</p>
-
-            {selectedNode.settingKey && (
-              <div className="mt-4 rounded-xl border border-border bg-canvas px-3 py-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted">LLM Configuration</p>
-                <p className="mt-1 text-sm font-medium text-ink">
-                  {getLlmLabel(selectedNode.settingKey, session)}
-                </p>
-                <p className="mt-0.5 text-[10px] text-muted">
-                  Configure in Settings → AI / LLM → Model per feature
-                </p>
-              </div>
-            )}
-
-            <div className="mt-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Prompt Template</p>
-              <pre className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border bg-canvas p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
-                {selectedNode.promptTemplate}
-              </pre>
-            </div>
+        ) : hasPendingOnly ? (
+          <div className="px-4 py-6 text-center">
+            <Clock className="h-8 w-8 text-muted/40 mx-auto mb-2" />
+            <p className="text-xs font-medium text-muted">No completed runs</p>
+            <p className="text-[10px] text-muted/70 mt-1">Topics exist but none have been generated yet.</p>
           </div>
         ) : (
-          <div className="hidden lg:flex w-[360px] shrink-0 items-center justify-center rounded-2xl border border-dashed border-border bg-canvas/50 p-8">
-            <p className="text-center text-sm text-muted">Click a node to inspect its prompt template and LLM configuration</p>
+          topicGroups.map((group) => {
+            const isExpanded = expandedTopics.has(group.topicId);
+            const hasSelected = group.runs.some(r => r.id === selectedRunId);
+
+            return (
+              <div key={group.topicId}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleTopic(group.topicId);
+                    if (group.runs[0]) onSelectRun(group.runs[0]);
+                  }}
+                  className={cn(
+                    'w-full flex items-start gap-2 px-4 py-2.5 text-left hover:bg-border/30 transition-colors',
+                    hasSelected && 'bg-primary/5',
+                  )}
+                >
+                  <span className="mt-0.5 shrink-0">
+                    {isExpanded
+                      ? <ChevronDown className="h-3.5 w-3.5 text-muted" />
+                      : <ChevronRight className="h-3.5 w-3.5 text-muted" />}
+                  </span>
+                  <span className="text-xs font-medium text-ink leading-snug line-clamp-2">
+                    {group.topic}
+                  </span>
+                </button>
+
+                {isExpanded && (
+                  <div className="pl-8 pb-1">
+                    {group.runs.map((run) => (
+                      <button
+                        key={run.id}
+                        type="button"
+                        onClick={() => onSelectRun(run)}
+                        className={cn(
+                          'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors hover:bg-border/30 mx-1',
+                          run.id === selectedRunId && 'bg-primary/10',
+                        )}
+                      >
+                        <CheckCircle className={cn('h-3 w-3 shrink-0', run.id === selectedRunId ? 'text-primary' : 'text-emerald-500')} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-2.5 w-2.5 text-muted shrink-0" />
+                            <span className={cn('text-[11px]', run.id === selectedRunId ? 'text-primary font-medium' : 'text-muted')}>
+                              {formatDate(run.runAt)}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-muted/70">
+                            {run.nodeRuns.length} node{run.nodeRuns.length !== 1 ? 's' : ''} logged
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── NodeDetailPanel ───────────────────────────────────────────────────────────
+
+function NodeDetailPanel({
+  node,
+  nodeRun,
+  hasRunSelected,
+  session,
+  isCollapsed,
+  onToggleCollapse,
+  onClose,
+}: {
+  node: FlowNode | null;
+  nodeRun: NodeRun | null;
+  hasRunSelected: boolean;
+  session: AppSession;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+  onClose: () => void;
+}) {
+  const [showTemplate, setShowTemplate] = useState(false);
+
+  useEffect(() => { setShowTemplate(false); }, [node?.id]);
+
+  if (!node) return null;
+
+  if (isCollapsed) {
+    return (
+      <div className="flex flex-col items-center gap-3 border-l border-border bg-surface px-3 py-4 shrink-0 w-12">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="rounded-lg p-1.5 text-muted hover:bg-border/40 hover:text-ink transition-colors"
+          title="Expand node details"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <div className="flex-1 flex items-center justify-center overflow-hidden">
+          <span
+            className="text-[10px] font-semibold text-muted"
+            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }}
+          >
+            {node.label}
+          </span>
+        </div>
+        <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-muted hover:bg-border/40 hover:text-ink transition-colors">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  const isNotLogged = hasRunSelected && !nodeRun && node.type === 'llm';
+
+  return (
+    <div className="flex flex-col border-l border-border bg-surface shrink-0 w-96">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border shrink-0">
+        <div className="min-w-0">
+          <h2 className="font-heading text-sm font-bold text-ink truncate">{node.label}</h2>
+          {nodeRun && <span className="text-[10px] text-emerald-600 font-medium">● Output logged</span>}
+          {isNotLogged && <span className="text-[10px] text-amber-600 font-medium">● Output not logged</span>}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors"
+            title="Collapse panel"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={onClose} className="rounded-lg p-1 text-muted hover:bg-border/40 hover:text-ink transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <p className="text-xs leading-relaxed text-muted">{node.description}</p>
+
+        {node.settingKey && (
+          <div className="rounded-xl border border-border bg-canvas px-3 py-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted">LLM Configuration</p>
+            <p className="mt-1 text-sm font-medium text-ink">
+              {nodeRun ? nodeRun.model : getLlmLabel(node.settingKey, session)}
+            </p>
+            {!nodeRun && (
+              <p className="mt-0.5 text-[10px] text-muted">Configure in Settings → AI / LLM</p>
+            )}
+          </div>
+        )}
+
+        {isNotLogged && (
+          <div className="flex gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-medium text-amber-800">Output not logged</p>
+              <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                This node's inputs and outputs are computed in-memory and not persisted to the database. Only the final generated variants are stored.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {nodeRun ? (
+          <>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Prompt Input</p>
+              <pre className="max-h-48 overflow-y-auto rounded-xl border border-border bg-canvas p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
+                {nodeRun.input}
+              </pre>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Output</p>
+              <pre className="max-h-64 overflow-y-auto rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
+                {nodeRun.output}
+              </pre>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowTemplate(p => !p)}
+                className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-muted hover:text-ink transition-colors"
+              >
+                <ChevronRight className={cn('h-3 w-3 transition-transform', showTemplate && 'rotate-90')} />
+                Prompt Template
+              </button>
+              {showTemplate && (
+                <pre className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-border bg-canvas p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
+                  {node.promptTemplate}
+                </pre>
+              )}
+            </div>
+          </>
+        ) : (
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Prompt Template</p>
+            <pre className="max-h-64 overflow-y-auto rounded-xl border border-border bg-canvas p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
+              {node.promptTemplate}
+            </pre>
           </div>
         )}
       </div>
+    </div>
+  );
+}
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 rounded-xl border border-border bg-canvas px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded border-2 border-violet-300 bg-violet-100" />
-          <span className="text-xs text-muted">Trigger / Input</span>
+// ─── EnrichmentFlowPage ────────────────────────────────────────────────────────
+
+export function EnrichmentFlowPage({
+  session,
+  rows = [],
+}: {
+  session: AppSession;
+  llmCatalog?: LlmCatalog | null;
+  rows?: SheetRow[];
+}) {
+  const topicGroups = buildTopicGroups(rows);
+  const defaultRun = topicGroups[0]?.runs[0] ?? null;
+
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(defaultRun?.id ?? null);
+  const [selectedNode, setSelectedNode] = useState<FlowNode | null>(null);
+  const [runsOpen, setRunsOpen] = useState(true);
+  const [detailCollapsed, setDetailCollapsed] = useState(false);
+  const [canvasResetKey, setCanvasResetKey] = useState(0);
+
+  // Update default selection when rows load
+  useEffect(() => {
+    if (!selectedRunId && defaultRun) {
+      setSelectedRunId(defaultRun.id);
+    }
+  }, [defaultRun?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const allRuns = topicGroups.flatMap(g => g.runs);
+  const selectedRun = allRuns.find(r => r.id === selectedRunId) ?? null;
+
+  const getNodeRun = (nodeId: string) =>
+    selectedRun?.nodeRuns.find(nr => nr.nodeId === nodeId) ?? null;
+
+  const handleSelectRun = (run: TopicRun) => {
+    setSelectedRunId(run.id);
+    setSelectedNode(null);
+  };
+
+  const handleNodeClick = (node: FlowNode) => {
+    if (selectedNode?.id === node.id) {
+      setSelectedNode(null);
+    } else {
+      setSelectedNode(node);
+      setDetailCollapsed(false);
+    }
+  };
+
+  const enrichmentNodes = FLOW_NODES.filter(n => n.group === 'enrichment');
+  const triggerNode = FLOW_NODES.find(n => n.id === 'topic_created')!;
+  const reviewGenNode = FLOW_NODES.find(n => n.id === 'review_generation')!;
+  const genWorkerNode = FLOW_NODES.find(n => n.id === 'generation_worker')!;
+  const textReviewNode = FLOW_NODES.find(n => n.id === 'content_review_text')!;
+  const visionReviewNode = FLOW_NODES.find(n => n.id === 'content_review_vision')!;
+  const outputNode = FLOW_NODES.find(n => n.id === 'post_published')!;
+
+  const cardProps = (node: FlowNode) => ({
+    node,
+    isSelected: selectedNode?.id === node.id,
+    hasRunData: !!getNodeRun(node.id),
+    onClick: () => handleNodeClick(node),
+  });
+
+  const isEmpty = rows.length === 0;
+  const hasPendingOnly = !isEmpty && topicGroups.length === 0;
+
+  return (
+    <div className="flex h-full overflow-hidden">
+      <RunsPanel
+        topicGroups={topicGroups}
+        selectedRunId={selectedRunId}
+        onSelectRun={handleSelectRun}
+        isOpen={runsOpen}
+        onToggle={() => setRunsOpen(p => !p)}
+        isEmpty={isEmpty}
+        hasPendingOnly={hasPendingOnly}
+      />
+
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-canvas shrink-0">
+          <div className="min-w-0">
+            <h1 className="font-heading text-base font-bold text-ink">Enrichment Flow</h1>
+            <p className="text-[11px] text-muted truncate">
+              {selectedRun
+                ? `Viewing: ${selectedRun.topic.length > 48 ? selectedRun.topic.slice(0, 48) + '…' : selectedRun.topic}`
+                : 'Drag to pan · click a node to inspect'}
+            </p>
+          </div>
+          <div className="ml-auto flex items-center gap-3 shrink-0">
+            <div className="hidden lg:flex items-center gap-3">
+              {[
+                { color: 'border-violet-300 bg-violet-100', label: 'Trigger' },
+                { color: 'border-blue-200 bg-blue-50', label: 'Enrichment' },
+                { color: 'border-amber-200 bg-amber-50', label: 'Generation' },
+                { color: 'border-emerald-300 bg-emerald-100', label: 'Output' },
+              ].map(({ color, label }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className={cn('h-2.5 w-2.5 rounded border-2', color)} />
+                  <span className="text-[10px] text-muted">{label}</span>
+                </div>
+              ))}
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 inline-block" />
+                <span className="text-[10px] text-muted">Has output</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCanvasResetKey(k => k + 1)}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:bg-border/30 hover:text-ink transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset view
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded border-2 border-blue-200 bg-blue-50" />
-          <span className="text-xs text-muted">Enrichment (parallel LLM calls)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded border-2 border-amber-200 bg-amber-50" />
-          <span className="text-xs text-muted">Generation / Review</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded border-2 border-emerald-300 bg-emerald-100" />
-          <span className="text-xs text-muted">Output</span>
+
+        <div className="flex flex-1 min-h-0 p-3 gap-3">
+          <DraggableCanvas resetKey={canvasResetKey}>
+            <div className="flex flex-col items-center gap-0 p-8">
+              <NodeCard {...cardProps(triggerNode)} />
+              <Arrow />
+
+              <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
+                <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                  Enrichment Modules (parallel)
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {enrichmentNodes.map(node => (
+                    <NodeCard key={node.id} {...cardProps(node)} />
+                  ))}
+                </div>
+              </div>
+              <Arrow />
+
+              <NodeCard {...cardProps(reviewGenNode)} />
+              <Arrow />
+
+              <NodeCard {...cardProps(genWorkerNode)} />
+              <Arrow />
+
+              <div className="flex items-center gap-0">
+                <NodeCard {...cardProps(textReviewNode)} />
+                <Arrow horizontal />
+                <NodeCard {...cardProps(visionReviewNode)} />
+              </div>
+              <Arrow />
+
+              <NodeCard {...cardProps(outputNode)} />
+            </div>
+          </DraggableCanvas>
+
+          <NodeDetailPanel
+            key={selectedNode?.id}
+            node={selectedNode}
+            nodeRun={selectedNode ? getNodeRun(selectedNode.id) : null}
+            hasRunSelected={!!selectedRun}
+            session={session}
+            isCollapsed={detailCollapsed}
+            onToggleCollapse={() => setDetailCollapsed(p => !p)}
+            onClose={() => setSelectedNode(null)}
+          />
         </div>
       </div>
     </div>
