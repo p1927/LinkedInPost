@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, ListOrdered, Megaphone, PlugZap, ScrollText, Settings } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlugZap, ScrollText, Settings } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
 import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections';
+export type WorkspaceNavPage = 'topics' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -139,7 +139,9 @@ export function AppSidebar({
               ? WORKSPACE_PATHS.usage
               : page === 'connections'
                 ? WORKSPACE_PATHS.connections
-                : WORKSPACE_PATHS.settings;
+                : page === 'enrichment'
+                  ? WORKSPACE_PATHS.enrichment
+                  : WORKSPACE_PATHS.settings;
     return (
       <li key={page}>
         <NavLink
@@ -256,6 +258,7 @@ export function AppSidebar({
             {link('rules', <ScrollText aria-hidden />, 'Rules')}
             {link('usage', <BarChart2 aria-hidden />, 'Usage')}
             {link('connections', <PlugZap aria-hidden />, 'Connections')}
+            {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
           </ul>
         </nav>

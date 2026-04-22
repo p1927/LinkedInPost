@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, RefreshCw, MessageCircle, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, MessageCircle, Trash2, ChevronDown } from 'lucide-react';
 import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
 import { type GoogleModelOption } from '../../../services/configService';
 import { type ChannelId } from '../../../integrations/channels';
@@ -236,6 +236,40 @@ function AllowedModelList({
   );
 }
 
+function CollapsibleAllowedModels({
+  title,
+  description,
+  catalog,
+  allowedModels,
+  onToggle,
+}: {
+  title: string;
+  description: string;
+  catalog: GoogleModelOption[];
+  allowedModels: string[];
+  onToggle: (modelId: string, enabled: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className="flex w-full items-center justify-between rounded-lg px-1 py-1 hover:bg-violet-100/30 transition-colors"
+      >
+        <span className="text-sm font-semibold text-ink">{title}</span>
+        <ChevronDown className={cn('h-4 w-4 text-muted transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+      <p className="mt-1 text-xs leading-relaxed text-muted">{description}</p>
+      {open ? (
+        <div className="mt-3">
+          <AllowedModelList catalog={catalog} allowedModels={allowedModels} onToggle={onToggle} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 const ENRICHMENT_SETTING_KEYS: LlmSettingKey[] = [
   'enrichment_persona',
   'enrichment_emotion',
@@ -255,6 +289,7 @@ function EnrichmentLlmSettings({
   adminModelCatalog,
   grokAdminCatalog,
   openrouterAdminCatalog,
+  minimaxAdminCatalog,
   primaryRef,
 }: {
   session: import('../../../services/backendApi').AppSession;
@@ -417,6 +452,7 @@ function LlmPerFeatureSettings({
   adminModelCatalog,
   grokAdminCatalog,
   openrouterAdminCatalog,
+  minimaxAdminCatalog,
   primaryRef,
 }: {
   session: import('../../../services/backendApi').AppSession;
@@ -971,57 +1007,45 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               </div>
             ) : null}
             <div className={multiLlmReady ? 'mt-6 space-y-4' : 'mt-4 space-y-4'}>
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-ink">Allowed Gemini models</label>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted">
-                  These models are used for GitHub Actions draft workflows and appear in the Home model picker when Gemini is available. Only admins can change this list. Everyone else can choose among allowed models (or use the single model when only one is enabled).
-                </p>
-                <div className="mt-3">
-                  <AllowedModelList
-                    catalog={adminModelCatalog}
-                    allowedModels={allowedGoogleModels}
-                    onToggle={toggleAllowedGoogleModel}
-                  />
-                </div>
-              </div>
+              <CollapsibleAllowedModels
+                title="Allowed Gemini models"
+                description="These models are used for GitHub Actions draft workflows and appear in the Home model picker when Gemini is available. Only admins can change this list. Everyone else can choose among allowed models (or use the single model when only one is enabled)."
+                catalog={adminModelCatalog}
+                allowedModels={allowedGoogleModels}
+                onToggle={toggleAllowedGoogleModel}
+              />
             </div>
             {multiLlmReady ? (
               <div className="mt-6">
-                <label className="mb-1 block text-sm font-semibold text-ink">Allowed Grok models</label>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted">Non-admins only see models you enable here when Grok is primary.</p>
-                <div className="mt-3">
-                  <AllowedModelList
-                    catalog={grokAdminCatalog!}
-                    allowedModels={allowedGrokModels!}
-                    onToggle={toggleAllowedGrokModel!}
-                  />
-                </div>
+                <CollapsibleAllowedModels
+                  title="Allowed Grok models"
+                  description="Non-admins only see models you enable here when Grok is primary."
+                  catalog={grokAdminCatalog!}
+                  allowedModels={allowedGrokModels!}
+                  onToggle={toggleAllowedGrokModel!}
+                />
               </div>
             ) : null}
             {multiLlmReady ? (
               <div className="mt-6">
-                <label className="mb-1 block text-sm font-semibold text-ink">Allowed OpenRouter models</label>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted">Non-admins only see models you enable here when OpenRouter is primary.</p>
-                <div className="mt-3">
-                  <AllowedModelList
-                    catalog={openrouterAdminCatalog ?? []}
-                    allowedModels={allowedOpenrouterModels ?? []}
-                    onToggle={toggleAllowedOpenrouterModel!}
-                  />
-                </div>
+                <CollapsibleAllowedModels
+                  title="Allowed OpenRouter models"
+                  description="Non-admins only see models you enable here when OpenRouter is primary."
+                  catalog={openrouterAdminCatalog ?? []}
+                  allowedModels={allowedOpenrouterModels ?? []}
+                  onToggle={toggleAllowedOpenrouterModel!}
+                />
               </div>
             ) : null}
             {multiLlmReady && (minimaxAdminCatalog ?? []).length > 0 ? (
               <div className="mt-6">
-                <label className="mb-1 block text-sm font-semibold text-ink">Allowed MiniMax models</label>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted">Non-admins only see models you enable here when MiniMax is primary.</p>
-                <div className="mt-3">
-                  <AllowedModelList
-                    catalog={minimaxAdminCatalog ?? []}
-                    allowedModels={allowedMinimaxModels ?? []}
-                    onToggle={toggleAllowedMinimaxModel!}
-                  />
-                </div>
+                <CollapsibleAllowedModels
+                  title="Allowed MiniMax models"
+                  description="Non-admins only see models you enable here when MiniMax is primary."
+                  catalog={minimaxAdminCatalog ?? []}
+                  allowedModels={allowedMinimaxModels ?? []}
+                  onToggle={toggleAllowedMinimaxModel!}
+                />
               </div>
             ) : null}
             {multiLlmReady ? (
