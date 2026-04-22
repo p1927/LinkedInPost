@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Instagram, Mail, Send, MessageCircle } from 'lucide-react';
+import { Link2, Camera, Mail, Send, MessageCircle } from 'lucide-react';
 import type { SetupConfig } from './SetupWizard';
 
 interface IntegrationStepProps {
@@ -15,14 +15,14 @@ const SOCIAL_INTEGRATIONS = [
     id: 'linkedin' as const,
     name: 'LinkedIn',
     description: 'Publish posts directly to LinkedIn',
-    icon: Linkedin,
+    icon: Link2,
     color: 'bg-blue-600',
   },
   {
     id: 'instagram' as const,
     name: 'Instagram',
     description: 'Share images and posts on Instagram',
-    icon: Instagram,
+    icon: Camera,
     color: 'bg-gradient-to-br from-purple-600 to-pink-500',
   },
   {
@@ -72,9 +72,6 @@ export function IntegrationStep({ config, onUpdate, onComplete, onSkip }: Integr
     };
     onUpdate({ imageGeneration: newImageGen });
   };
-
-  const hasAnySelection = Object.values(config.integrations).some(v => v) ||
-    Object.values(config.imageGeneration).some(v => v);
 
   return (
     <div className="glass-panel-strong rounded-3xl p-8 shadow-2xl">

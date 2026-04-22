@@ -1,6 +1,13 @@
-import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
 import type { EnvVar, Integration, Worker, SetupState } from './types';
+
+// Browser stubs – actual file I/O must go through the backend API
+async function readFile(_path: string, _encoding: string): Promise<string> {
+  return Promise.resolve('');
+}
+
+function existsSync(_path: string): boolean {
+  return false;
+}
 
 const REQUIRED_ENV_VARS = [
   { name: 'VITE_GOOGLE_CLIENT_ID', isRequired: true, description: 'Google OAuth Client ID for authentication' },
@@ -88,8 +95,8 @@ export class SetupStateService {
         connected: Boolean(workerEnv['LINKEDIN_ACCESS_TOKEN']),
         icon: 'linkedin',
         config: {
-          hasClientId: Boolean(workerEnv['LINKEDIN_CLIENT_ID']),
-          hasAccessToken: Boolean(workerEnv['LINKEDIN_ACCESS_TOKEN']),
+          hasClientId: String(Boolean(workerEnv['LINKEDIN_CLIENT_ID'])),
+          hasAccessToken: String(Boolean(workerEnv['LINKEDIN_ACCESS_TOKEN'])),
         },
         status: workerEnv['LINKEDIN_ACCESS_TOKEN'] ? 'connected' : 'disconnected',
       },

@@ -13,7 +13,7 @@ interface SetupProgressProps {
 }
 
 export function SetupProgress({ title, logs, currentIndex }: SetupProgressProps) {
-  const getIcon = (status: LogEntry['status'], index: number) => {
+  const getIcon = (status: LogEntry['status'], _index: number) => {
     switch (status) {
       case 'done':
         return <CheckCircle2 className="h-5 w-5 text-green-600" />;

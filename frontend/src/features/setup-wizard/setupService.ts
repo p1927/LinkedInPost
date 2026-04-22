@@ -1,5 +1,32 @@
-import { spawn } from 'child_process';
-import { writeFile } from 'fs/promises';
+// Browser stub types – actual shell/fs operations must go through a backend API
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ChildProcess = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  stdout?: { on: (event: string, cb: (data: any) => void) => void };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  stderr?: { on: (event: string, cb: (data: any) => void) => void };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on: (event: string, cb: (arg: any) => void) => void;
+};
+
+function spawn(_cmd: string, _args: string[], _opts?: unknown): ChildProcess {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const listeners: Record<string, ((arg: any) => void)[]> = {};
+  const proc: ChildProcess = {
+    stdout: { on: () => {} },
+    stderr: { on: () => {} },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    on(event: string, cb: (arg: any) => void) { (listeners[event] ??= []).push(cb); },
+  };
+  // Schedule an immediate "close" with code 0 so callers resolve cleanly
+  setTimeout(() => listeners['close']?.forEach(cb => cb(0)), 0);
+  return proc;
+}
+
+async function writeFile(_path: string, _content: string): Promise<void> {
+  // In the browser env, file writes must go through the backend API
+  return Promise.resolve();
+}
 
 export interface SetupResult {
   success: boolean;

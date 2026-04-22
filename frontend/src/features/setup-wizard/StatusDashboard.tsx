@@ -14,8 +14,6 @@ import {
   ChevronRight,
   Zap,
   Globe,
-  Cloud,
-  Shield,
 } from 'lucide-react';
 import type { SetupState } from './types';
 
@@ -144,7 +142,7 @@ function StatusCard({ title, icon, items, onAction, actionLabel }: StatusCardPro
   );
 }
 
-export function StatusDashboard({ state, onContinue, onResetDb, onClearCache }: StatusDashboardProps) {
+export function StatusDashboard({ state, onContinue, onResetDb, onClearCache, onRegenerateFeatures }: StatusDashboardProps) {
   const { envVars, integrations, workers, overallProgress } = state;
 
   const requiredVars = envVars.filter(v => v.isRequired);
