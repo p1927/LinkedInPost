@@ -42,7 +42,7 @@ interface LlmSettingRow {
 }
 
 function toRef(row: LlmSettingRow): LlmRef | null {
-  if ((row.provider === 'gemini' || row.provider === 'grok' || row.provider === 'openrouter') && row.model.trim()) {
+  if ((row.provider === 'gemini' || row.provider === 'grok' || row.provider === 'openrouter' || row.provider === 'minimax') && row.model.trim()) {
     return { provider: row.provider, model: row.model.trim() };
   }
   return null;

@@ -131,6 +131,8 @@ export function ResearcherPanel({
       setWarnings(res.warnings || []);
       setSelectedUrls(new Set());
       onSelectedRefsChange([]);
+    } catch (err) {
+      setWarnings([err instanceof Error ? err.message : String(err)]);
     } finally {
       setLoading(false);
     }

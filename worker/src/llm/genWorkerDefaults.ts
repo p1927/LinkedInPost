@@ -2,7 +2,7 @@ import { getConfiguredLlmProviderIds, listModelsForProvider } from './catalog';
 import type { LlmProviderId, LlmRef, WorkerEnvForLlm } from './types';
 
 function isProviderId(v: string): v is LlmProviderId {
-  return v === 'gemini' || v === 'grok' || v === 'openrouter';
+  return v === 'gemini' || v === 'grok' || v === 'openrouter' || v === 'minimax';
 }
 
 /**
