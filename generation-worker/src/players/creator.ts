@@ -64,9 +64,9 @@ ${pattern.fewShotLines?.length ? `Example lines:\n${pattern.fewShotLines.map((l:
 POST REQUIREMENTS:
 - Topic: ${report.topic}
 - Channel: ${report.channel}
-- Audience: ${report.audience || 'general professionals'}
-- Tone: ${report.tone || 'professional'}
-- Job-to-be-done: ${report.jtbd || 'not specified'}
+${report.audience ? `- Audience: ${report.audience}` : ''}
+${report.tone ? `- Tone: ${report.tone}` : ''}
+${report.jtbd ? `- Job-to-be-done: ${report.jtbd}` : ''}
 ${report.mustInclude?.length ? `- Must include: ${report.mustInclude.join(', ')}` : ''}
 ${report.mustAvoid?.length ? `- Must avoid: ${report.mustAvoid.join(', ')}` : ''}
 ${report.cta ? `- CTA: ${report.cta}` : ''}

@@ -145,8 +145,8 @@ Trend confidence: ${bundle.trending.trendConfidence}/10
 POST REQUIREMENTS:
 - Topic: ${report.topic}
 - Channel: ${report.channel}
-- Audience: ${report.audience || 'general professionals'}
-- Tone: ${report.tone || 'professional'}
+${report.audience ? `- Audience: ${report.audience}` : ''}
+${report.tone ? `- Tone: ${report.tone}` : ''}
 ${report.mustInclude?.length ? `- Must include: ${report.mustInclude.join(', ')}` : ''}
 ${report.mustAvoid?.length ? `- Must avoid: ${report.mustAvoid.join(', ')}` : ''}
 ${report.cta ? `- CTA: ${report.cta}` : ''}
