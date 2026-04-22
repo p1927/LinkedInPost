@@ -75,7 +75,7 @@ Return JSON with this exact shape:
     try {
       const result = await generateLlmParsedJson<LlmImageStrategyResponse>(ctx.env, ctx.llmRef, prompt, {
         temperature: 0.6,
-        maxOutputTokens: 500,
+        maxOutputTokens: 2000,
       });
 
       return {

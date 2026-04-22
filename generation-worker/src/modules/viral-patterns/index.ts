@@ -56,7 +56,7 @@ Return ONLY a JSON object with these exact fields:
       prompt,
       {
         temperature: 0.5,
-        maxOutputTokens: 400,
+        maxOutputTokens: 2000,
       },
     );
 

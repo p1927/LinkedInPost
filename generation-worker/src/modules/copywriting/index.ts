@@ -56,7 +56,7 @@ Respond with ONLY valid JSON matching this exact shape:
     try {
       const result = await generateLlmParsedJson<CopySignal>(ctx.env, ctx.llmRef, prompt, {
         temperature: 0.7,
-        maxOutputTokens: 500,
+        maxOutputTokens: 2000,
       });
 
       return {

@@ -68,7 +68,7 @@ Return JSON with this exact shape:
   try {
     const result = await generateLlmParsedJson<LlmImageRelatorResponse>(env, effectiveLlmRef, prompt, {
       temperature: 0.5,
-      maxOutputTokens: 512,
+      maxOutputTokens: 2000,
     });
 
     return {

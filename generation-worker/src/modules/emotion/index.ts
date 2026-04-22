@@ -71,7 +71,7 @@ Select emotions and arc that are:
     try {
       const result = await generateLlmParsedJson<LlmEmotionResponse>(ctx.env, ctx.llmRef, prompt, {
         temperature: 0.6,
-        maxOutputTokens: 400,
+        maxOutputTokens: 2000,
       });
 
       return {

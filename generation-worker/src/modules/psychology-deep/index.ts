@@ -65,7 +65,7 @@ Select the optimal psychology signals for this post. Return JSON with this exact
     try {
       const result = await generateLlmParsedJson<PsychologySignal>(ctx.env, ctx.llmRef, prompt, {
         temperature: 0.5,
-        maxOutputTokens: 500,
+        maxOutputTokens: 2000,
       });
 
       return {

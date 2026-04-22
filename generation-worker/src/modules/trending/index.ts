@@ -102,7 +102,7 @@ Return JSON:
     try {
       const result = await generateLlmParsedJson<TrendingSignal>(ctx.env, ctx.llmRef, prompt, {
         temperature: 0.6,
-        maxOutputTokens: 600,
+        maxOutputTokens: 2000,
       });
       return {
         trendingTopics: Array.isArray(result.trendingTopics) ? result.trendingTopics : [],

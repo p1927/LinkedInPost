@@ -72,7 +72,7 @@ Select vocabulary that is:
     try {
       const result = await generateLlmParsedJson<LlmVocabularyResponse>(ctx.env, ctx.llmRef, prompt, {
         temperature: 0.5,
-        maxOutputTokens: 500,
+        maxOutputTokens: 2000,
       });
 
       return {

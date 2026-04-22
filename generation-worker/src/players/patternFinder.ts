@@ -82,7 +82,7 @@ Return JSON with this exact shape:
   try {
     const result = await generateLlmParsedJson<LlmRankResponse>(env, llmRef, prompt, {
       temperature: 0.2,
-      maxOutputTokens: 512,
+      maxOutputTokens: 2000,
     });
 
     const primary = repo.getById(result.primaryId) ? result.primaryId : candidates[0].id;

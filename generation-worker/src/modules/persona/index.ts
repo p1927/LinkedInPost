@@ -175,7 +175,7 @@ Make each field specific to the audience description. Return valid JSON only.`;
   try {
     const result = await generateLlmParsedJson<LlmPersonaResponse>(ctx.env, ctx.llmRef, prompt, {
       temperature: 0.5,
-      maxOutputTokens: 800,
+      maxOutputTokens: 2000,
     });
 
     const isStringArray = (v: unknown): v is string[] =>
