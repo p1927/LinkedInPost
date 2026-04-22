@@ -4,7 +4,13 @@ const MINIMAX_API_BASE = 'https://api.minimax.io/v1';
 
 export const STATIC_MINIMAX_MODELS: LlmModelOption[] = [
   { value: 'MiniMax-M2.7', label: 'MiniMax M2.7', provider: 'minimax' },
+  { value: 'MiniMax-M2.7-highspeed', label: 'MiniMax M2.7 Highspeed', provider: 'minimax' },
+  { value: 'MiniMax-M2.5', label: 'MiniMax M2.5', provider: 'minimax' },
+  { value: 'MiniMax-M2.5-highspeed', label: 'MiniMax M2.5 Highspeed', provider: 'minimax' },
+  { value: 'MiniMax-M2.1', label: 'MiniMax M2.1', provider: 'minimax' },
+  { value: 'MiniMax-M2.1-lightning', label: 'MiniMax M2.1 Lightning', provider: 'minimax' },
   { value: 'MiniMax-M2', label: 'MiniMax M2', provider: 'minimax' },
+  { value: 'MiniMax-Text-01', label: 'MiniMax Text-01', provider: 'minimax' },
 ];
 
 interface MinimaxChatResponse {

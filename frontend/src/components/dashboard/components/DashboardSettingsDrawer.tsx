@@ -137,6 +137,9 @@ type DashboardSettingsDrawerProps = {
   allowedOpenrouterModels?: string[];
   toggleAllowedOpenrouterModel?: (modelId: string, enabled: boolean) => void;
   refreshOpenrouterModels?: () => void;
+  minimaxAdminCatalog?: GoogleModelOption[];
+  allowedMinimaxModels?: string[];
+  toggleAllowedMinimaxModel?: (modelId: string, enabled: boolean) => void;
   llmCatalog?: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }> | null;
 };
 
@@ -260,6 +263,7 @@ function EnrichmentLlmSettings({
   adminModelCatalog: GoogleModelOption[];
   grokAdminCatalog: GoogleModelOption[];
   openrouterAdminCatalog: GoogleModelOption[];
+  minimaxAdminCatalog: GoogleModelOption[];
   primaryRef?: { provider: LlmProviderId; model: string } | null;
 }) {
   const [drafts, setDrafts] = useState<Record<string, { provider: string; model: string }>>(() => {
@@ -331,6 +335,7 @@ function EnrichmentLlmSettings({
   const catalogFor = (provider: string): GoogleModelOption[] => {
     if (provider === 'grok') return grokAdminCatalog;
     if (provider === 'openrouter') return openrouterAdminCatalog;
+    if (provider === 'minimax') return minimaxAdminCatalog;
     return adminModelCatalog;
   };
 
@@ -420,6 +425,7 @@ function LlmPerFeatureSettings({
   adminModelCatalog: GoogleModelOption[];
   grokAdminCatalog: GoogleModelOption[];
   openrouterAdminCatalog: GoogleModelOption[];
+  minimaxAdminCatalog: GoogleModelOption[];
   primaryRef?: { provider: LlmProviderId; model: string } | null;
 }) {
   const [drafts, setDrafts] = useState<Record<LlmSettingKey, { provider: string; model: string }>>(() => {
@@ -506,6 +512,7 @@ function LlmPerFeatureSettings({
   const catalogFor = (provider: string): GoogleModelOption[] => {
     if (provider === 'grok') return grokAdminCatalog;
     if (provider === 'openrouter') return openrouterAdminCatalog;
+    if (provider === 'minimax') return minimaxAdminCatalog;
     return adminModelCatalog;
   };
 
@@ -671,6 +678,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       allowedOpenrouterModels,
       toggleAllowedOpenrouterModel,
       refreshOpenrouterModels,
+      minimaxAdminCatalog,
+      allowedMinimaxModels,
+      toggleAllowedMinimaxModel,
       llmCatalog,
     },
     ref,
@@ -883,7 +893,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                     value={llmPrimaryProvider!}
                     onChange={(v) => {
                       setLlmPrimaryProvider!(v);
-                      const newCatalog = v === 'grok' ? grokAdminCatalog! : v === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
+                      const newCatalog = v === 'grok' ? grokAdminCatalog! : v === 'openrouter' ? openrouterAdminCatalog! : v === 'minimax' ? (minimaxAdminCatalog ?? []) : adminModelCatalog;
                       if (newCatalog[0]?.value) setLlmModelId!(newCatalog[0].value);
                     }}
                     className="max-w-xs"
@@ -897,7 +907,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                         ? grokAdminCatalog!
                         : llmPrimaryProvider === 'openrouter'
                           ? openrouterAdminCatalog!
-                          : adminModelCatalog
+                          : llmPrimaryProvider === 'minimax'
+                            ? (minimaxAdminCatalog ?? [])
+                            : adminModelCatalog
                     }
                     value={llmModelId!}
                     onChange={(v) => setLlmModelId!(v)}
@@ -917,7 +929,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                           return;
                         }
                         const prov = v as LlmProviderId;
-                        const catalog = prov === 'grok' ? grokAdminCatalog! : prov === 'openrouter' ? openrouterAdminCatalog! : adminModelCatalog;
+                        const catalog = prov === 'grok' ? grokAdminCatalog! : prov === 'openrouter' ? openrouterAdminCatalog! : prov === 'minimax' ? (minimaxAdminCatalog ?? []) : adminModelCatalog;
                         const first = catalog[0]?.value ?? '';
                         setLlmFallback!({
                           provider: prov,
@@ -945,7 +957,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                             ? grokAdminCatalog!
                             : llmFallback.provider === 'openrouter'
                               ? openrouterAdminCatalog!
-                              : adminModelCatalog
+                              : llmFallback.provider === 'minimax'
+                                ? (minimaxAdminCatalog ?? [])
+                                : adminModelCatalog
                         }
                         value={llmFallback.model}
                         onChange={(v) => setLlmFallback!({ ...llmFallback, model: v })}
@@ -997,6 +1011,19 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 </div>
               </div>
             ) : null}
+            {multiLlmReady && (minimaxAdminCatalog ?? []).length > 0 ? (
+              <div className="mt-6">
+                <label className="mb-1 block text-sm font-semibold text-ink">Allowed MiniMax models</label>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">Non-admins only see models you enable here when MiniMax is primary.</p>
+                <div className="mt-3">
+                  <AllowedModelList
+                    catalog={minimaxAdminCatalog ?? []}
+                    allowedModels={allowedMinimaxModels ?? []}
+                    onToggle={toggleAllowedMinimaxModel!}
+                  />
+                </div>
+              </div>
+            ) : null}
             {multiLlmReady ? (
               <LlmPerFeatureSettings
                 session={session}
@@ -1005,6 +1032,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 adminModelCatalog={adminModelCatalog}
                 grokAdminCatalog={grokAdminCatalog!}
                 openrouterAdminCatalog={openrouterAdminCatalog ?? []}
+                minimaxAdminCatalog={minimaxAdminCatalog ?? []}
                 primaryRef={
                   llmPrimaryProvider && llmModelId
                     ? { provider: llmPrimaryProvider, model: llmModelId }
@@ -1028,6 +1056,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                 adminModelCatalog={adminModelCatalog}
                 grokAdminCatalog={grokAdminCatalog!}
                 openrouterAdminCatalog={openrouterAdminCatalog ?? []}
+                minimaxAdminCatalog={minimaxAdminCatalog ?? []}
                 primaryRef={
                   llmPrimaryProvider && llmModelId
                     ? { provider: llmPrimaryProvider, model: llmModelId }

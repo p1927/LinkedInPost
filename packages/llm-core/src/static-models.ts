@@ -15,6 +15,12 @@ export const STATIC_MODELS_BY_PROVIDER: Record<string, LlmModelOption[]> = {
   ],
   minimax: [
     { value: 'MiniMax-M2.7', label: 'MiniMax M2.7', provider: 'minimax' },
+    { value: 'MiniMax-M2.7-highspeed', label: 'MiniMax M2.7 Highspeed', provider: 'minimax' },
+    { value: 'MiniMax-M2.5', label: 'MiniMax M2.5', provider: 'minimax' },
+    { value: 'MiniMax-M2.5-highspeed', label: 'MiniMax M2.5 Highspeed', provider: 'minimax' },
+    { value: 'MiniMax-M2.1', label: 'MiniMax M2.1', provider: 'minimax' },
+    { value: 'MiniMax-M2.1-lightning', label: 'MiniMax M2.1 Lightning', provider: 'minimax' },
     { value: 'MiniMax-M2', label: 'MiniMax M2', provider: 'minimax' },
+    { value: 'MiniMax-Text-01', label: 'MiniMax Text-01', provider: 'minimax' },
   ],
 };

@@ -58,6 +58,16 @@ function normalizeOpenrouterOptions(models: GoogleModelOption[], selected?: stri
   return deduped;
 }
 
+function normalizeMinimaxOptions(models: GoogleModelOption[], selected?: string): GoogleModelOption[] {
+  const deduped = Array.from(
+    new Map(models.filter((m) => m.value.trim() && m.label.trim()).map((m) => [m.value.trim(), m])).values(),
+  );
+  if (selected && !deduped.some((m) => m.value === selected)) {
+    deduped.unshift({ value: selected, label: selected, provider: 'minimax' as const });
+  }
+  return deduped;
+}
+
 export function useDashboardSettings({
   idToken,
   api,
@@ -106,6 +116,12 @@ export function useDashboardSettings({
   const [allowedOpenrouterModels, setAllowedOpenrouterModels] = useState<string[]>(() =>
     FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedOpenrouterModels?.length
       ? [...session.config.llm.allowedOpenrouterModels]
+      : [],
+  );
+  const [minimaxCatalogModels, setMinimaxCatalogModels] = useState<GoogleModelOption[]>([]);
+  const [allowedMinimaxModels, setAllowedMinimaxModels] = useState<string[]>(() =>
+    FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedMinimaxModels?.length
+      ? [...session.config.llm.allowedMinimaxModels]
       : [],
   );
   const [savingConfig, setSavingConfig] = useState(false);
@@ -157,7 +173,10 @@ export function useDashboardSettings({
     if (FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedOpenrouterModels?.length) {
       setAllowedOpenrouterModels([...session.config.llm.allowedOpenrouterModels]);
     }
-  }, [session.config.allowedGoogleModels, session.config.llm?.allowedGrokModels, session.config.llm?.allowedOpenrouterModels]);
+    if (FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.allowedMinimaxModels?.length) {
+      setAllowedMinimaxModels([...session.config.llm.allowedMinimaxModels]);
+    }
+  }, [session.config.allowedGoogleModels, session.config.llm?.allowedGrokModels, session.config.llm?.allowedOpenrouterModels, session.config.llm?.allowedMinimaxModels]);
 
   const llmSnapshot = JSON.stringify(session.config.llm ?? null);
   useEffect(() => {
@@ -257,6 +276,30 @@ export function useDashboardSettings({
     setAllowedOpenrouterModels(openrouterCatalogModels.map((m) => m.value));
   }, [session.isAdmin, openrouterCatalogModels, allowedOpenrouterModels.length]);
 
+  useEffect(() => {
+    if (!FEATURE_MULTI_PROVIDER_LLM) return;
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const models = normalizeMinimaxOptions(await api.listLlmModels(idToken, 'minimax'));
+        if (!cancelled) setMinimaxCatalogModels(models);
+      } catch {
+        if (!cancelled) setMinimaxCatalogModels([]);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, idToken]);
+
+  useEffect(() => {
+    if (!FEATURE_MULTI_PROVIDER_LLM || !session.isAdmin) return;
+    if (allowedMinimaxModels.length > 0) return;
+    if (minimaxCatalogModels.length === 0) return;
+    setAllowedMinimaxModels(minimaxCatalogModels.map((m) => m.value));
+  }, [session.isAdmin, minimaxCatalogModels, allowedMinimaxModels.length]);
+
   const effectiveAllowedGemini = session.isAdmin ? allowedGoogleModels : session.config.allowedGoogleModels;
   const effectiveAllowedGrok = session.isAdmin
     ? allowedGrokModels
@@ -265,6 +308,10 @@ export function useDashboardSettings({
   const effectiveAllowedOpenrouter = session.isAdmin
     ? allowedOpenrouterModels
     : session.config.llm?.allowedOpenrouterModels || [];
+
+  const effectiveAllowedMinimax = session.isAdmin
+    ? allowedMinimaxModels
+    : session.config.llm?.allowedMinimaxModels || [];
 
   const availableModels = useMemo(() => {
     if (FEATURE_MULTI_PROVIDER_LLM && llmPrimaryProvider === 'grok') {
@@ -277,16 +324,23 @@ export function useDashboardSettings({
       const allow = new Set(effectiveAllowedOpenrouter.length > 0 ? effectiveAllowedOpenrouter : catalog.map((m) => m.value));
       return catalog.filter((model) => allow.has(model.value));
     }
+    if (FEATURE_MULTI_PROVIDER_LLM && llmPrimaryProvider === 'minimax') {
+      const catalog = minimaxCatalogModels.length > 0 ? minimaxCatalogModels : normalizeMinimaxOptions([], googleModel);
+      const allow = new Set(effectiveAllowedMinimax.length > 0 ? effectiveAllowedMinimax : catalog.map((m) => m.value));
+      return catalog.filter((model) => allow.has(model.value));
+    }
     const allow = new Set(effectiveAllowedGemini.length > 0 ? effectiveAllowedGemini : [DEFAULT_GOOGLE_MODEL]);
     return catalogModels.filter((model) => allow.has(model.value));
   }, [
     llmPrimaryProvider,
     grokCatalogModels,
     openrouterCatalogModels,
+    minimaxCatalogModels,
     catalogModels,
     effectiveAllowedGemini,
     effectiveAllowedGrok,
     effectiveAllowedOpenrouter,
+    effectiveAllowedMinimax,
     googleModel,
   ]);
 
@@ -342,6 +396,18 @@ export function useDashboardSettings({
     });
   }, []);
 
+  const toggleAllowedMinimaxModel = useCallback((modelId: string, enabled: boolean) => {
+    setAllowedMinimaxModels((prev) => {
+      if (enabled) {
+        return [...new Set([...prev, modelId])];
+      }
+      if (prev.length <= 1) {
+        return prev;
+      }
+      return prev.filter((id) => id !== modelId);
+    });
+  }, []);
+
   const refreshOpenrouterModels = useCallback(async () => {
     if (!FEATURE_MULTI_PROVIDER_LLM) return;
     try {
@@ -377,6 +443,9 @@ export function useDashboardSettings({
       const ao = [...allowedOpenrouterModels].sort();
       const bo = [...(c.llm?.allowedOpenrouterModels || [])].sort();
       if (ao.length !== bo.length || ao.some((id, i) => id !== bo[i])) return true;
+      const am = [...allowedMinimaxModels].sort();
+      const bm = [...(c.llm?.allowedMinimaxModels || [])].sort();
+      if (am.length !== bm.length || am.some((id, i) => id !== bm[i])) return true;
     }
     if (githubTokenInput.trim() !== '') return true;
     if (telegramBotTokenInput.trim() !== '') return true;
@@ -423,6 +492,7 @@ export function useDashboardSettings({
     allowedGoogleModels,
     allowedGrokModels,
     allowedOpenrouterModels,
+    allowedMinimaxModels,
     githubTokenInput,
     telegramBotTokenInput,
     selectedChannel,
@@ -468,6 +538,7 @@ export function useDashboardSettings({
                 fallback: llmFallback,
                 allowedGrokModels,
                 allowedOpenrouterModels,
+                allowedMinimaxModels,
               },
             }
           : {}),
@@ -512,6 +583,9 @@ export function useDashboardSettings({
     allowedOpenrouterModels,
     toggleAllowedOpenrouterModel,
     refreshOpenrouterModels,
+    minimaxAdminCatalog: minimaxCatalogModels.length > 0 ? minimaxCatalogModels : normalizeMinimaxOptions([]),
+    allowedMinimaxModels,
+    toggleAllowedMinimaxModel,
     googleModel,
     setGoogleModel,
     allowedGoogleModels,
