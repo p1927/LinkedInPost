@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlugZap, ScrollText, Settings } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlugZap, ScrollText, Settings, TrendingUp } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
 import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment';
+export type WorkspaceNavPage = 'topics' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -141,7 +141,9 @@ export function AppSidebar({
                 ? WORKSPACE_PATHS.connections
                 : page === 'enrichment'
                   ? WORKSPACE_PATHS.enrichment
-                  : WORKSPACE_PATHS.settings;
+                  : page === 'trending'
+                    ? WORKSPACE_PATHS.trending
+                    : WORKSPACE_PATHS.settings;
     return (
       <li key={page}>
         <NavLink
@@ -259,6 +261,7 @@ export function AppSidebar({
             {link('usage', <BarChart2 aria-hidden />, 'Usage')}
             {link('connections', <PlugZap aria-hidden />, 'Connections')}
             {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
+            {link('trending', <TrendingUp aria-hidden />, 'Trending')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
           </ul>
         </nav>

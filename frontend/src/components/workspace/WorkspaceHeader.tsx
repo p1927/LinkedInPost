@@ -13,6 +13,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   usage: 'Usage',
   connections: 'Connections',
   enrichment: 'Enrichment',
+  trending: 'Trending',
 };
 
 export function WorkspaceHeader({
