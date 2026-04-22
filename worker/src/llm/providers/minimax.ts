@@ -17,7 +17,7 @@ export const STATIC_MINIMAX_MODELS: LlmModelOption[] = [
 // max_completion_tokens. Callers that request small limits (400-600) can get
 // their JSON truncated when the model burns the budget on reasoning.
 const THINKING_MODELS = ['MiniMax-M2.7', 'MiniMax-M2.5'];
-const THINKING_MODEL_MIN_TOKENS = 2000;
+const THINKING_MODEL_MIN_TOKENS = 4000;
 
 function resolveMaxTokens(model: string, requested?: number): number | undefined {
   if (requested === undefined) return undefined;

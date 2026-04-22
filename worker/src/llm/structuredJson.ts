@@ -3,8 +3,11 @@ import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
 
 function stripJsonCodeFences(text: string): string {
   let s = text.trim();
-  // Strip <think>...</think> blocks emitted by reasoning models (e.g. MiniMax-M2.7)
+  // Strip thinking blocks emitted by reasoning models (e.g. MiniMax-M2.7).
+  // Two passes: closed blocks first, then any unclosed <think> that extends to end of string
+  // (model ran out of tokens mid-thought, so no closing tag is present).
   s = s.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  s = s.replace(/<think>[\s\S]*/i, '').trim();
   if (s.startsWith('```')) {
     s = s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
   }
