@@ -58,6 +58,15 @@
     "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
     "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev"
   },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false
+    }
+  },
   "services": [
     {
       "binding": "GENERATION_WORKER",
