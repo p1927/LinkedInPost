@@ -392,6 +392,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
         fallback: config.llm.fallback,
         allowedGrokModels: [...(config.llm.allowedGrokModels || [])],
         allowedOpenrouterModels: [...(config.llm.allowedOpenrouterModels || [])],
+        allowedMinimaxModels: [...(config.llm.allowedMinimaxModels || [])],
       },
       llmProviderKeys: {
         gemini: Boolean(config.llmProviderKeys?.gemini),
