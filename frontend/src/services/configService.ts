@@ -267,6 +267,7 @@ export interface BotConfig {
     gemini: boolean;
     grok: boolean;
     openrouter: boolean;
+    minimax: boolean;
   };
   /** Per-feature chosen LlmRef, loaded from D1 on bootstrap. */
   llmSettings?: Record<LlmSettingKey, LlmRef>;
@@ -398,6 +399,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
         gemini: Boolean(config.llmProviderKeys?.gemini),
         grok: Boolean(config.llmProviderKeys?.grok),
         openrouter: Boolean(config.llmProviderKeys?.openrouter),
+        minimax: Boolean(config.llmProviderKeys?.minimax),
       },
     };
   }

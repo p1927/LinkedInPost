@@ -20,7 +20,7 @@ interface PostGenerateSettingsProps {
   disabled?: boolean;
   className?: string;
   llmCatalog?: Array<{ id: LlmProviderId; name: string; models: LlmModelOption[] }> | null;
-  llmProviderKeys?: { gemini: boolean; grok: boolean; openrouter: boolean };
+  llmProviderKeys?: { gemini: boolean; grok: boolean; openrouter: boolean; minimax: boolean };
 }
 
 export function PostGenerateSettings({
@@ -99,7 +99,7 @@ export function PostGenerateSettings({
   if (providers.length === 0) {
     const hasWorkerKeys =
       llmProviderKeys &&
-      (llmProviderKeys.gemini || llmProviderKeys.grok || llmProviderKeys.openrouter);
+      (llmProviderKeys.gemini || llmProviderKeys.grok || llmProviderKeys.openrouter || llmProviderKeys.minimax);
     return (
       <div className={clsx('space-y-2 p-4 bg-gray-50 rounded-lg border border-gray-200', className)}>
         <p className="text-sm font-medium text-gray-800">No LLM providers available</p>

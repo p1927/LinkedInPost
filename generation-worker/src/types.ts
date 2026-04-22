@@ -5,6 +5,8 @@ export interface Env {
   GEN_DB: D1Database;
   GEMINI_API_KEY?: string;
   XAI_API_KEY?: string;
+  OPENROUTER_API_KEY?: string;
+  MINIMAX_API_KEY?: string;
   WORKER_SHARED_SECRET?: string;
   NEWSAPI_KEY?: string;
   GNEWS_API_KEY?: string;

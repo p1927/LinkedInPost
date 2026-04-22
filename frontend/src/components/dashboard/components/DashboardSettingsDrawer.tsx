@@ -919,7 +919,8 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                   <span className="text-xs leading-snug text-muted">
                     Gemini: {session.config.llmProviderKeys?.gemini ? 'key present' : 'no key'} · Grok:{' '}
                     {session.config.llmProviderKeys?.grok ? 'key present' : 'no key'} · OpenRouter:{' '}
-                    {session.config.llmProviderKeys?.openrouter ? 'key present' : 'no key'}
+                    {session.config.llmProviderKeys?.openrouter ? 'key present' : 'no key'} · MiniMax:{' '}
+                    {session.config.llmProviderKeys?.minimax ? 'key present' : 'no key'}
                   </span>
                 </div>
                 <div>
