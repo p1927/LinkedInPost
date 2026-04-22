@@ -4543,7 +4543,7 @@ function buildCorsHeaders(request: Request, env: Env): Headers {
       : '';
 
   const headers = new Headers({
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
