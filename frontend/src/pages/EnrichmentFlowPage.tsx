@@ -298,10 +298,9 @@ function Arrow({ horizontal = false }: { horizontal?: boolean }) {
 
 export function EnrichmentFlowPage({
   session,
-  llmCatalog,
 }: {
   session: AppSession;
-  llmCatalog: LlmCatalog | null;
+  llmCatalog?: LlmCatalog | null;
 }) {
   const [selectedNode, setSelectedNode] = useState<FlowNode | null>(null);
 

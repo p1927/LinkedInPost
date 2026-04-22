@@ -261,6 +261,7 @@ export interface BotConfig {
     fallback?: LlmRef;
     allowedGrokModels: string[];
     allowedOpenrouterModels: string[];
+    allowedMinimaxModels: string[];
   };
   llmProviderKeys?: {
     gemini: boolean;
@@ -443,6 +444,7 @@ export interface BotConfigUpdate {
     fallback?: LlmRef | null;
     allowedGrokModels?: string[];
     allowedOpenrouterModels?: string[];
+    allowedMinimaxModels?: string[];
   };
   contentReview?: ContentReviewStored;
   imageGen?: {
