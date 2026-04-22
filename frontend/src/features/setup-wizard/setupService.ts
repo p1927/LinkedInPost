@@ -137,4 +137,73 @@ export const setupService = {
       });
     });
   },
+
+  /**
+   * Reset D1 database
+   */
+  async resetDatabase(projectDir: string): Promise<SetupResult> {
+    return new Promise((resolve) => {
+      const child = spawn('bash', ['-c', `cd "${projectDir}/worker" && npx wrangler d1 execute github_automation --command="DELETE FROM drafts" --local 2>/dev/null; npx wrangler d1 execute github_automation --command="DELETE FROM posts" --local 2>/dev/null`], { shell: true });
+      let stderr = '';
+
+      child.stderr?.on('data', (data: string) => {
+        stderr += data.toString();
+      });
+
+      child.on('close', (code: number | null) => {
+        if (code === 0) {
+          resolve({ success: true, message: 'Database reset complete' });
+        } else {
+          resolve({ success: false, message: 'Failed to reset database', error: stderr });
+        }
+      });
+
+      child.on('error', (err: Error) => {
+        resolve({ success: false, message: 'Error resetting database', error: err.message });
+      });
+    });
+  },
+
+  /**
+   * Clear cache directories
+   */
+  async clearCache(projectDir: string): Promise<SetupResult> {
+    return new Promise((resolve) => {
+      const child = spawn('bash', ['-c', `rm -rf "${projectDir}/.cache" "${projectDir}/frontend/.vite" "${projectDir}/frontend/node_modules/.cache" 2>/dev/null; echo "done"`], { shell: true });
+
+      child.on('close', () => {
+        resolve({ success: true, message: 'Cache cleared' });
+      });
+
+      child.on('error', (err: Error) => {
+        resolve({ success: false, message: 'Error clearing cache', error: err.message });
+      });
+    });
+  },
+
+  /**
+   * Regenerate feature flags
+   */
+  async regenerateFeatures(projectDir: string): Promise<SetupResult> {
+    return new Promise((resolve) => {
+      const child = spawn('python3', ['scripts/generate_features.py'], { cwd: projectDir, shell: true });
+      let stderr = '';
+
+      child.stderr?.on('data', (data: string) => {
+        stderr += data.toString();
+      });
+
+      child.on('close', (code: number | null) => {
+        if (code === 0) {
+          resolve({ success: true, message: 'Features regenerated' });
+        } else {
+          resolve({ success: false, message: 'Failed to regenerate features', error: stderr });
+        }
+      });
+
+      child.on('error', (err: Error) => {
+        resolve({ success: false, message: 'Error regenerating features', error: err.message });
+      });
+    });
+  },
 };

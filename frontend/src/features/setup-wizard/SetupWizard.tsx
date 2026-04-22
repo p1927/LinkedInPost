@@ -203,6 +203,37 @@ export function SetupWizard() {
     }
   }, []);
 
+  const handleResetDb = useCallback(async () => {
+    if (!config.projectDir) return;
+    try {
+      await setupService.resetDatabase(config.projectDir);
+      // Refresh state
+      const stateService = new SetupStateService(config.projectDir);
+      const state = await stateService.readState();
+      setSetupState(state);
+    } catch (error) {
+      console.warn('Failed to reset database:', error);
+    }
+  }, [config.projectDir]);
+
+  const handleClearCache = useCallback(async () => {
+    if (!config.projectDir) return;
+    try {
+      await setupService.clearCache(config.projectDir);
+    } catch (error) {
+      console.warn('Failed to clear cache:', error);
+    }
+  }, [config.projectDir]);
+
+  const handleRegenerateFeatures = useCallback(async () => {
+    if (!config.projectDir) return;
+    try {
+      await setupService.regenerateFeatures(config.projectDir);
+    } catch (error) {
+      console.warn('Failed to regenerate features:', error);
+    }
+  }, [config.projectDir]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
@@ -227,7 +258,12 @@ export function SetupWizard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <StatusDashboard state={setupState} onContinue={handleStatusContinue} />
+              <StatusDashboard
+                state={setupState}
+                onContinue={handleStatusContinue}
+                onResetDb={handleResetDb}
+                onClearCache={handleClearCache}
+              />
             </motion.div>
           )}
 
