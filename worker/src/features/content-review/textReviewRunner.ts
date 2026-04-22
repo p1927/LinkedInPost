@@ -33,24 +33,32 @@ function parseTextReviewJson(raw: string): TextReviewResult {
   }
 }
 
+export interface TextReviewResultWithUsage {
+  result: TextReviewResult;
+  usage: { promptTokens: number; completionTokens: number };
+}
+
 export async function runTextReview(
   env: WorkerEnvForLlm,
   ref: LlmRef,
   topic: string,
   postText: string,
   channel: string,
-): Promise<TextReviewResult> {
+): Promise<TextReviewResultWithUsage> {
   const prompt = buildTextGuardrailsPrompt({ topic, postText, channel });
   try {
-    const raw = await generateForRef(env, ref, prompt);
-    return parseTextReviewJson(raw);
+    const { text: raw, usage } = await generateForRef(env, ref, prompt);
+    return { result: parseTextReviewJson(raw), usage };
   } catch (err) {
     return {
-      guardrailsOk: false,
-      doubleMeanings: [],
-      severityTier: 'none',
-      summary: `Text review failed: ${err instanceof Error ? err.message : String(err)}`,
-      verdict: 'flag',
+      result: {
+        guardrailsOk: false,
+        doubleMeanings: [],
+        severityTier: 'none',
+        summary: `Text review failed: ${err instanceof Error ? err.message : String(err)}`,
+        verdict: 'flag',
+      },
+      usage: { promptTokens: 0, completionTokens: 0 },
     };
   }
 }

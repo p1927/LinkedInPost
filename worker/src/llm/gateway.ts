@@ -23,23 +23,23 @@ export async function generateForRef(
   ref: LlmRef,
   prompt: string,
   opts?: LlmGenerationOptions,
-): Promise<string> {
+): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number } }> {
   const tag = `[LLM ${ref.provider}/${ref.model}]`;
   const start = Date.now();
   console.log(`${tag} REQUEST prompt_chars=${prompt.length} temp=${opts?.temperature ?? 'default'} max_tokens=${opts?.maxOutputTokens ?? 'default'}`);
   try {
-    let text: string;
+    let result: { text: string; usage: { promptTokens: number; completionTokens: number } };
     if (ref.provider === 'gemini') {
-      text = await generateGeminiJson(env, ref.model, prompt, opts);
+      result = await generateGeminiJson(env, ref.model, prompt, opts);
     } else if (ref.provider === 'openrouter') {
-      text = await generateOpenrouterJson(env, ref.model, prompt, opts);
+      result = await generateOpenrouterJson(env, ref.model, prompt, opts);
     } else if (ref.provider === 'minimax') {
-      text = await generateMinimaxJson(env, ref.model, prompt, opts);
+      result = await generateMinimaxJson(env, ref.model, prompt, opts);
     } else {
-      text = await generateGrokJson(env, ref.model, prompt, opts);
+      result = await generateGrokJson(env, ref.model, prompt, opts);
     }
-    console.log(`${tag} OK duration_ms=${Date.now() - start} response_chars=${text.length} preview=${JSON.stringify(text.slice(0, 120))}`);
-    return text;
+    console.log(`${tag} OK duration_ms=${Date.now() - start} response_chars=${result.text.length} usage=${JSON.stringify(result.usage)} preview=${JSON.stringify(result.text.slice(0, 120))}`);
+    return result;
   } catch (err) {
     console.error(`${tag} ERROR duration_ms=${Date.now() - start} error=${String(err)}`);
     throw err;
@@ -51,17 +51,17 @@ export async function generateTextJsonWithFallback(
   primary: LlmRef,
   fallback: LlmRef | undefined,
   prompt: string,
-): Promise<{ text: string; used: LlmRef }> {
+): Promise<{ text: string; used: LlmRef; usage: { promptTokens: number; completionTokens: number } }> {
   try {
-    const text = await generateForRef(env, primary, prompt);
-    return { text, used: primary };
+    const { text, usage } = await generateForRef(env, primary, prompt);
+    return { text, used: primary, usage };
   } catch (firstErr) {
     if (!fallback || !isRetryableLlmError(firstErr)) {
       throw firstErr;
     }
     try {
-      const text = await generateForRef(env, fallback, prompt);
-      return { text, used: fallback };
+      const { text, usage } = await generateForRef(env, fallback, prompt);
+      return { text, used: fallback, usage };
     } catch {
       throw firstErr;
     }
@@ -85,23 +85,23 @@ export async function generateMultimodalForRef(
   ref: LlmRef,
   image: GeminiInlineImagePart,
   prompt: string,
-): Promise<{ text: string; used: LlmRef }> {
+): Promise<{ text: string; used: LlmRef; usage: { promptTokens: number; completionTokens: number } }> {
   if (ref.provider === 'gemini') {
     try {
-      const text = await generateGeminiMultimodalJson(env, ref.model, image, prompt);
-      return { text, used: ref };
+      const { text, usage } = await generateGeminiMultimodalJson(env, ref.model, image, prompt);
+      return { text, used: ref, usage };
     } catch (err) {
       if (isAuthError(err)) throw err;
       if (!isRetryableLlmError(err)) throw err;
       // Retry with the default Gemini multimodal model if the chosen model fails transiently
       const fallbackRef: LlmRef = { provider: 'gemini', model: GEMINI_MULTIMODAL_FALLBACK_MODEL };
-      const text = await generateGeminiMultimodalJson(env, fallbackRef.model, image, prompt);
-      return { text, used: fallbackRef };
+      const { text, usage } = await generateGeminiMultimodalJson(env, fallbackRef.model, image, prompt);
+      return { text, used: fallbackRef, usage };
     }
   }
 
   // Provider does not support multimodal — fall back to Gemini vision
   const fallbackRef: LlmRef = { provider: 'gemini', model: GEMINI_MULTIMODAL_FALLBACK_MODEL };
-  const text = await generateGeminiMultimodalJson(env, fallbackRef.model, image, prompt);
-  return { text, used: fallbackRef };
+  const { text, usage } = await generateGeminiMultimodalJson(env, fallbackRef.model, image, prompt);
+  return { text, used: fallbackRef, usage };
 }

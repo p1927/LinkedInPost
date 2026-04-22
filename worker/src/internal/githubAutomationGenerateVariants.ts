@@ -182,11 +182,11 @@ export async function runGithubAutomationGenerateVariants(
     imageSearchQueryMaxChars,
   });
 
-  let rawText = await generateForRef(env, ref, prompt);
+  let { text: rawText } = await generateForRef(env, ref, prompt);
   try {
     return tryParseAndAssert(rawText);
   } catch {
-    rawText = await generateForRef(env, ref, prompt + REPAIR_SUFFIX);
+    ({ text: rawText } = await generateForRef(env, ref, prompt + REPAIR_SUFFIX));
     return tryParseAndAssert(rawText);
   }
 }

@@ -29,6 +29,11 @@ function parseImageReviewJson(raw: string, imageUrl: string): ImageReviewResult 
   }
 }
 
+export interface ImageReviewResultWithUsage {
+  results: ImageReviewResult[];
+  totalUsage: { promptTokens: number; completionTokens: number };
+}
+
 export async function runImageReview(
   env: WorkerEnvForLlm,
   ref: LlmRef,
@@ -36,8 +41,10 @@ export async function runImageReview(
   topic: string,
   postText: string,
   channel: string,
-): Promise<ImageReviewResult[]> {
+): Promise<ImageReviewResultWithUsage> {
   const results: ImageReviewResult[] = [];
+  let totalPromptTokens = 0;
+  let totalCompletionTokens = 0;
   for (let i = 0; i < imageUrls.length; i++) {
     const url = imageUrls[i]!;
     try {
@@ -64,7 +71,9 @@ export async function runImageReview(
       const mimeType = contentType.split(';')[0]?.trim() || 'image/jpeg';
 
       const prompt = buildImageMultimodalPrompt({ topic, postText, channel, imageIndex: i });
-      const { text: raw } = await generateMultimodalForRef(env, ref, { mimeType, data: base64 }, prompt);
+      const { text: raw, usage } = await generateMultimodalForRef(env, ref, { mimeType, data: base64 }, prompt);
+      totalPromptTokens += usage.promptTokens;
+      totalCompletionTokens += usage.completionTokens;
       results.push(parseImageReviewJson(raw, url));
     } catch (err) {
       results.push({
@@ -77,5 +86,5 @@ export async function runImageReview(
       });
     }
   }
-  return results;
+  return { results, totalUsage: { promptTokens: totalPromptTokens, completionTokens: totalCompletionTokens } };
 }

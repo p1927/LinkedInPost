@@ -15,6 +15,7 @@ interface GrokModelsResponse {
 interface GrokChatResponse {
   choices?: Array<{ message?: { content?: string } }>;
   error?: { message?: string };
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
 export async function listGrokModels(env: WorkerEnvForLlm): Promise<LlmModelOption[]> {
@@ -46,7 +47,7 @@ export async function generateGrokJson(
   model: string,
   prompt: string,
   opts?: { temperature?: number; maxOutputTokens?: number },
-): Promise<string> {
+): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number } }> {
   const key = String(env.XAI_API_KEY || '').trim();
   if (!key) {
     throw new Error('Missing XAI_API_KEY in the Worker environment. Add it to use Grok.');
@@ -77,5 +78,11 @@ export async function generateGrokJson(
   if (!text) {
     throw new Error('Grok returned an empty generation response.');
   }
-  return text;
+  return {
+    text,
+    usage: {
+      promptTokens: payload.usage?.prompt_tokens ?? 0,
+      completionTokens: payload.usage?.completion_tokens ?? 0,
+    },
+  };
 }

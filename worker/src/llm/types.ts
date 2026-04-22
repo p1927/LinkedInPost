@@ -26,3 +26,8 @@ export interface LlmGenerationOptions {
   temperature?: number;
   maxOutputTokens?: number;
 }
+
+export interface LlmUsage {
+  promptTokens: number;
+  completionTokens: number;
+}

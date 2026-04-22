@@ -1145,12 +1145,14 @@ async function dispatchAction(
       ensureSpreadsheetConfigured(storedConfig);
       return generateQuickChangePreview(env, storedConfig, payload, (templateId) =>
         sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
-      );
+      session.userId,
+    );
     case 'generateVariantsPreview':
       ensureSpreadsheetConfigured(storedConfig);
       return generateVariantsPreview(env, storedConfig, payload, (templateId) =>
         sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
-      );
+      session.userId,
+    );
     case 'saveDraftVariants':
       return pipeline.saveDraftVariants(
         storedConfig.spreadsheetId,

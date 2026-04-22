@@ -128,6 +128,10 @@ export interface GeminiGenerateResponse {
         text?: string;
       }>;
     };
+    usageMetadata?: {
+      promptTokenCount?: number;
+      candidatesTokenCount?: number;
+    };
   }>;
   promptFeedback?: {
     blockReason?: string;

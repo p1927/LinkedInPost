@@ -76,7 +76,7 @@ export async function generateGeminiMultimodalJson(
   model: string,
   image: GeminiInlineImagePart,
   prompt: string,
-): Promise<string> {
+): Promise<GeminiGenerationResult> {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
   if (!apiKey) {
     throw new Error('Missing GEMINI_API_KEY in the Worker environment.');
@@ -112,7 +112,12 @@ export async function generateGeminiMultimodalJson(
   if (!text) {
     throw new Error('Gemini returned an empty multimodal generation response.');
   }
-  return text;
+  const usageMeta = payload.candidates?.[0]?.usageMetadata;
+  const usage = {
+    promptTokens: usageMeta?.promptTokenCount ?? 0,
+    completionTokens: usageMeta?.candidatesTokenCount ?? 0,
+  };
+  return { text, usage };
 }
 
 export interface GeminiTextGenerationOptions {
@@ -121,12 +126,17 @@ export interface GeminiTextGenerationOptions {
   systemInstruction?: string;
 }
 
+export interface GeminiGenerationResult {
+  text: string;
+  usage: { promptTokens: number; completionTokens: number };
+}
+
 export async function generateGeminiJson(
   env: WorkerEnvForLlm,
   model: string,
   prompt: string,
   opts?: GeminiTextGenerationOptions,
-): Promise<string> {
+): Promise<GeminiGenerationResult> {
   const apiKey = String(env.GEMINI_API_KEY || '').trim();
   if (!apiKey) {
     throw new Error('Missing GEMINI_API_KEY in the Worker environment. Add it before using preview generation.');
@@ -164,5 +174,10 @@ export async function generateGeminiJson(
   if (!text) {
     throw new Error('Gemini returned an empty generation response.');
   }
-  return text;
+  const usageMeta = payload.candidates?.[0]?.usageMetadata;
+  const usage = {
+    promptTokens: usageMeta?.promptTokenCount ?? 0,
+    completionTokens: usageMeta?.candidatesTokenCount ?? 0,
+  };
+  return { text, usage };
 }

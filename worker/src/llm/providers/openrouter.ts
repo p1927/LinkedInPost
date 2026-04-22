@@ -19,6 +19,7 @@ interface OpenrouterModelsResponse {
 interface OpenrouterChatResponse {
   choices?: Array<{ message?: { content?: string } }>;
   error?: { message?: string };
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
 export async function listOpenrouterModels(env: WorkerEnvForLlm): Promise<LlmModelOption[]> {
@@ -57,7 +58,7 @@ export async function generateOpenrouterJson(
   model: string,
   prompt: string,
   opts?: { temperature?: number; maxOutputTokens?: number },
-): Promise<string> {
+): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number } }> {
   const key = String(env.OPENROUTER_API_KEY || '').trim();
   if (!key) {
     throw new Error('Missing OPENROUTER_API_KEY in the Worker environment. Add it to use OpenRouter.');
@@ -89,5 +90,11 @@ export async function generateOpenrouterJson(
   if (!text) {
     throw new Error('OpenRouter returned an empty generation response.');
   }
-  return text;
+  return {
+    text,
+    usage: {
+      promptTokens: payload.usage?.prompt_tokens ?? 0,
+      completionTokens: payload.usage?.completion_tokens ?? 0,
+    },
+  };
 }

@@ -18,7 +18,7 @@ export async function generateLlmParsedJson<T>(
   prompt: string,
   opts?: LlmGenerationOptions,
 ): Promise<T> {
-  const raw = await generateForRef(env, ref, prompt, opts);
+  const { text: raw } = await generateForRef(env, ref, prompt, opts);
   const toParse = stripJsonCodeFences(raw);
   try {
     return JSON.parse(toParse) as T;

@@ -7,6 +7,7 @@ import { runTextReview } from './textReviewRunner';
 import { runImageReview } from './imageReviewRunner';
 import { buildNewsContext } from './newsContextBuilder';
 import { parseRowImageUrls } from '../../media/selectedImageUrls';
+import { logLlmUsage } from '../../db/llm-usage';
 
 function computeFingerprint(row: SheetRow): string {
   const parts = [
@@ -51,13 +52,33 @@ export async function runContentReview(
   const channel = String(row.topicDeliveryChannel || 'linkedin');
 
   // Text review
-  const textResult = await runTextReview(env, cfg.textRef, topic, postText, channel);
+  const { result: textResult, usage: textUsage } = await runTextReview(env, cfg.textRef, topic, postText, channel);
+  await logLlmUsage(env.PIPELINE_DB, {
+    spreadsheetId,
+    userId: row.topicId,
+    provider: cfg.textRef.provider,
+    model: cfg.textRef.model,
+    settingKey: 'content_review_text',
+    promptTokens: textUsage.promptTokens,
+    completionTokens: textUsage.completionTokens,
+  });
 
   // Image review (cap at maxImages)
   const imageUrls = parseRowImageUrls(row).slice(0, cfg.maxImages);
-  const imageResults = imageUrls.length > 0
+  const imageReview = imageUrls.length > 0
     ? await runImageReview(env, cfg.visionRef, imageUrls, topic, postText, channel)
-    : [];
+    : { results: [], totalUsage: { promptTokens: 0, completionTokens: 0 } };
+  if (imageReview.totalUsage.promptTokens > 0 || imageReview.totalUsage.completionTokens > 0) {
+    await logLlmUsage(env.PIPELINE_DB, {
+      spreadsheetId,
+      userId: row.topicId,
+      provider: cfg.visionRef.provider,
+      model: cfg.visionRef.model,
+      settingKey: 'content_review_vision',
+      promptTokens: imageReview.totalUsage.promptTokens,
+      completionTokens: imageReview.totalUsage.completionTokens,
+    });
+  }
 
   // News context
   const newsContext = await buildNewsContext(
@@ -69,7 +90,7 @@ export async function runContentReview(
 
   const verdicts: ContentReviewVerdict[] = [
     textResult.verdict,
-    ...imageResults.map((r) => r.verdict),
+    ...imageReview.results.map((r) => r.verdict),
   ];
   const overallVerdict = mergeVerdict(verdicts);
 
@@ -77,7 +98,7 @@ export async function runContentReview(
     fingerprint,
     reviewedAt: new Date().toISOString(),
     textResult,
-    imageResults,
+    imageResults: imageReview.results,
     newsModeUsed: cfg.newsMode,
     newsSnippet: newsContext,
     overallVerdict,

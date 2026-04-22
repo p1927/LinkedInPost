@@ -30,6 +30,7 @@ function resolveMaxTokens(model: string, requested?: number): number | undefined
 interface MinimaxChatResponse {
   choices?: Array<{ message?: { content?: string } }>;
   error?: { message?: string };
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
 export function listMinimaxModels(env: WorkerEnvForLlm): LlmModelOption[] {
@@ -45,7 +46,7 @@ export async function generateMinimaxJson(
   model: string,
   prompt: string,
   opts?: { temperature?: number; maxOutputTokens?: number },
-): Promise<string> {
+): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number } }> {
   const key = String(env.MINIMAX_API_KEY || '').trim();
   if (!key) {
     throw new Error('Missing MINIMAX_API_KEY in the Worker environment. Add it to use MiniMax.');
@@ -77,5 +78,11 @@ export async function generateMinimaxJson(
   if (!text) {
     throw new Error('MiniMax returned an empty generation response.');
   }
-  return text;
+  return {
+    text,
+    usage: {
+      promptTokens: payload.usage?.prompt_tokens ?? 0,
+      completionTokens: payload.usage?.completion_tokens ?? 0,
+    },
+  };
 }
