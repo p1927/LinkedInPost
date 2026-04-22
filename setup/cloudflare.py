@@ -325,7 +325,7 @@ def provision_generation_worker_d1() -> None:
 
 
 # Secrets the generation worker accepts for LLM calls (at least one required on deploy).
-GENERATION_WORKER_LLM_SECRET_KEYS = ('GEMINI_API_KEY', 'XAI_API_KEY', 'OPENROUTER_API_KEY')
+GENERATION_WORKER_LLM_SECRET_KEYS = ('GEMINI_API_KEY', 'XAI_API_KEY', 'OPENROUTER_API_KEY', 'MINIMAX_API_KEY')
 
 
 def _generation_worker_llm_secrets_from_env() -> dict[str, str]:

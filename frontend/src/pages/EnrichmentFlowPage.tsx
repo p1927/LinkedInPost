@@ -329,7 +329,7 @@ function buildTopicGroups(rows: SheetRow[]): TopicGroup[] {
       topicId: row.topicId,
       topic: row.topic,
       runs: [{
-        id: row.generationRunId || row.topicId,
+        id: row.topicId,
         topicId: row.topicId,
         topic: row.topic,
         runAt: row.date,
