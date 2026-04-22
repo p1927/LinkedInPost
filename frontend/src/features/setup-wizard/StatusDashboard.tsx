@@ -24,6 +24,7 @@ interface StatusDashboardProps {
   onContinue: (step: 'envVars' | 'integrations' | 'final') => void;
   onResetDb?: () => void;
   onClearCache?: () => void;
+  onRegenerateFeatures?: () => void;
 }
 
 interface QuickActionProps {
@@ -310,7 +311,7 @@ export function StatusDashboard({ state, onContinue, onResetDb, onClearCache }: 
           icon={<RefreshCw className="h-5 w-5" />}
           title="Regenerate Features"
           description="Rebuild feature flags from features.yaml"
-          action={() => {}}
+          action={onRegenerateFeatures || (() => {})}
           variant="default"
         />
       </div>

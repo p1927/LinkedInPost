@@ -12,6 +12,9 @@ import type { SetupState } from './types';
 
 export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'envvars' | 'final';
 
+// Dry run mode: enabled for setup wizard (port 3456), disabled for main app
+const isSetupWizard = typeof window !== 'undefined' && window.location.port === '3456';
+
 export interface SetupConfig {
   projectDir: string;
   integrations: {
@@ -64,6 +67,11 @@ export function SetupWizard() {
 
   // Detect existing setup state on mount
   useEffect(() => {
+    // Enable dry run for setup wizard to prevent accidental destructive actions
+    if (isSetupWizard) {
+      setupService.setDryRun(true);
+    }
+
     const detectState = async () => {
       try {
         // Try to auto-detect project directory
@@ -205,6 +213,10 @@ export function SetupWizard() {
 
   const handleResetDb = useCallback(async () => {
     if (!config.projectDir) return;
+    if (setupService.isDryRun()) {
+      console.log('[SetupWizard] handleResetDb: dry run - simulating success');
+      return;
+    }
     try {
       await setupService.resetDatabase(config.projectDir);
       // Refresh state
@@ -218,6 +230,10 @@ export function SetupWizard() {
 
   const handleClearCache = useCallback(async () => {
     if (!config.projectDir) return;
+    if (setupService.isDryRun()) {
+      console.log('[SetupWizard] handleClearCache: dry run - simulating success');
+      return;
+    }
     try {
       await setupService.clearCache(config.projectDir);
     } catch (error) {
@@ -227,6 +243,10 @@ export function SetupWizard() {
 
   const handleRegenerateFeatures = useCallback(async () => {
     if (!config.projectDir) return;
+    if (setupService.isDryRun()) {
+      console.log('[SetupWizard] handleRegenerateFeatures: dry run - simulating success');
+      return;
+    }
     try {
       await setupService.regenerateFeatures(config.projectDir);
     } catch (error) {
@@ -263,6 +283,7 @@ export function SetupWizard() {
                 onContinue={handleStatusContinue}
                 onResetDb={handleResetDb}
                 onClearCache={handleClearCache}
+                onRegenerateFeatures={handleRegenerateFeatures}
               />
             </motion.div>
           )}
