@@ -24,6 +24,7 @@ import { normalizePhoneNumber } from '../../integrations/whatsapp';
 import { TopicVariantsPage } from '../../features/topic-navigation/screens/TopicVariantsPage';
 import { TopicEditorPage } from '../../features/topic-navigation/screens/TopicEditorPage';
 import { GlobalRulesPage } from '../../pages/GlobalRulesPage';
+import { EnrichmentFlowPage } from '../../pages/EnrichmentFlowPage';
 import { UsagePage } from '../../pages/UsagePage';
 import { ConnectionsPage } from '../../pages/connections/ConnectionsPage';
 import { effectiveChannel, effectiveLlmRef } from '@/lib/topicEffectivePrefs';
@@ -799,6 +800,16 @@ export function Dashboard({
               onDisconnect={onDisconnect}
               connecting={connecting}
             />
+          }
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.enrichment}
+          element={
+            session.isAdmin ? (
+              <EnrichmentFlowPage session={session} llmCatalog={llmCatalog} />
+            ) : (
+              <Navigate to={WORKSPACE_PATHS.topics} replace />
+            )
           }
         />
         <Route path="*" element={<Navigate to={WORKSPACE_PATHS.topics} replace />} />
