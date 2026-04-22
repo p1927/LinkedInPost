@@ -39,7 +39,6 @@ import { getProviderLabel } from '@repo/llm-core';
 import {
   getConfiguredLlmProviderIds,
   getLlmProviderCatalog,
-  isLlmProviderConfigured,
   resolveAllowedGrokModelIds,
   resolveAllowedOpenrouterModelIds,
   resolveAllowedMinimaxModelIds,
@@ -990,9 +989,6 @@ async function dispatchAction(
       const model = String(ref.model).trim();
       if (provider !== 'gemini' && provider !== 'grok' && provider !== 'openrouter' && provider !== 'minimax') {
         throw new Error(`Unknown provider: ${provider}`);
-      }
-      if (!isLlmProviderConfigured(env, provider as import('./llm/types').LlmProviderId)) {
-        throw new Error(`Provider "${provider}" is not configured in this Worker environment.`);
       }
       await setLlmSettingInD1(env.PIPELINE_DB, storedConfig.spreadsheetId, key, { provider: provider as import('./llm/types').LlmProviderId, model });
       return { ok: true, key, provider, model };
