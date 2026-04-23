@@ -180,7 +180,7 @@ export async function getImageGenCatalog(
     .all<{ provider: string; model_value: string; model_label: string }>();
 
   if (!rows.results || rows.results.length === 0) {
-    return CURATED_MODELS;
+    return { ...CURATED_MODELS };
   }
 
   const result: Record<string, ModelOption[]> = {};
@@ -188,6 +188,12 @@ export async function getImageGenCatalog(
     if (!result[row.provider]) result[row.provider] = [];
     result[row.provider].push({ value: row.model_value, label: row.model_label });
   }
+
+  // Always include every known provider, even those with no models (e.g. pixazo)
+  for (const provider of ALL_PROVIDERS) {
+    if (!result[provider]) result[provider] = CURATED_MODELS[provider] ?? [];
+  }
+
   return result;
 }
 
