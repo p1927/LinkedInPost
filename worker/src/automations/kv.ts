@@ -41,7 +41,10 @@ export async function setChannelRule(
   channelId: string,
   rule: Omit<AutomationRule, 'updatedAt'>,
 ): Promise<void> {
-  await kv.put(kvKeys.channelRule(platform, channelId), JSON.stringify({ ...rule, updatedAt: new Date().toISOString() }));
+  // 30-day TTL: rules expire if not refreshed within 30 days
+  await kv.put(kvKeys.channelRule(platform, channelId), JSON.stringify({ ...rule, updatedAt: new Date().toISOString() }), {
+    expirationTtl: 30 * 24 * 60 * 60,
+  });
 }
 
 export async function setTopicRule(
@@ -51,7 +54,10 @@ export async function setTopicRule(
   topicId: string,
   rule: Omit<AutomationRule, 'updatedAt'>,
 ): Promise<void> {
-  await kv.put(kvKeys.topicRule(platform, channelId, topicId), JSON.stringify({ ...rule, updatedAt: new Date().toISOString() }));
+  // 30-day TTL: rules expire if not refreshed within 30 days
+  await kv.put(kvKeys.topicRule(platform, channelId, topicId), JSON.stringify({ ...rule, updatedAt: new Date().toISOString() }), {
+    expirationTtl: 30 * 24 * 60 * 60,
+  });
 }
 
 export async function deleteRule(
@@ -97,7 +103,10 @@ export async function getYouTubeSchedule(kv: KVNamespace, channelId: string): Pr
 }
 
 export async function setYouTubeSchedule(kv: KVNamespace, channelId: string, schedule: YouTubeSchedule): Promise<void> {
-  await kv.put(kvKeys.youtubeSchedule(channelId), JSON.stringify(schedule));
+  // 30-day TTL: schedules expire if not refreshed within 30 days
+  await kv.put(kvKeys.youtubeSchedule(channelId), JSON.stringify(schedule), {
+    expirationTtl: 30 * 24 * 60 * 60,
+  });
 }
 
 export async function getWebhookRegistration(

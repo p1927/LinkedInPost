@@ -39,12 +39,13 @@ export async function insertNewsSnapshotAndPrune(
   },
 ): Promise<void> {
   const id = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   const insert = db
     .prepare(
       `INSERT INTO news_snapshots (
         id, spreadsheet_id, topic_id, fetched_at, window_start, window_end,
-        custom_query, providers_summary, articles, dedupe_removed
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        custom_query, providers_summary, articles, dedupe_removed, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       id,
@@ -57,6 +58,7 @@ export async function insertNewsSnapshotAndPrune(
       input.providersSummary,
       input.articlesJson,
       input.dedupeRemoved,
+      expiresAt,
     );
 
   const prune = db
@@ -117,12 +119,18 @@ export async function getNewsResearchSnapshotById(
   return row ?? null;
 }
 
-/** Cron / scheduled: drop snapshots older than maxAgeDays (if set) and enforce max per topic. */
+/** Cron / scheduled: drop snapshots older than maxAgeDays (if set) or expired TTL, and enforce max per topic. */
 export async function pruneOldNewsSnapshots(
   db: D1Database,
   maxPerTopic: number,
   maxAgeDays?: number,
 ): Promise<void> {
+  // Always enforce 30-day TTL first (expires_at column)
+  await db
+    .prepare(`DELETE FROM news_snapshots WHERE expires_at < datetime('now')`)
+    .run();
+
+  // Additional maxAgeDays cleanup if configured (uses fetched_at for backward compat)
   if (maxAgeDays !== undefined && maxAgeDays > 0) {
     await db
       .prepare(`DELETE FROM news_snapshots WHERE fetched_at < datetime('now', ?)`)

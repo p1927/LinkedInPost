@@ -31,7 +31,7 @@ import type { NewsResearchStored } from './researcher/types';
 import type { SheetRow } from './generation/types';
 import { upsertUser, completeUserOnboarding, setUserSpreadsheetId, setUserTenantSettings, listAllUserTenantSettings } from './db/users';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
-import { getUsageSummary } from './db/llm-usage';
+import { getUsageSummary, pruneOldLlmUsageLog } from './db/llm-usage';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -951,6 +951,9 @@ export default {
         newsSnapshotMaxPerTopicFromEnv(env),
         newsSnapshotMaxAgeDaysFromEnv(env),
       ).catch(() => undefined),
+    );
+    ctx.waitUntil(
+      pruneOldLlmUsageLog(env.PIPELINE_DB).catch(() => undefined),
     );
   },
 } satisfies ExportedHandler<Env>;

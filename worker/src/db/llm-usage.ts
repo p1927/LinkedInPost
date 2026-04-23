@@ -21,10 +21,11 @@ function nanoid16(): string {
 
 export async function logLlmUsage(db: D1Database, entry: UsageLogEntry): Promise<void> {
   const cost = estimateCostUsd(entry.provider, entry.model, entry.promptTokens, entry.completionTokens);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await db
     .prepare(
-      `INSERT INTO llm_usage_log (id, spreadsheet_id, user_id, provider, model, setting_key, prompt_tokens, completion_tokens, estimated_cost_usd, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+      `INSERT INTO llm_usage_log (id, spreadsheet_id, user_id, provider, model, setting_key, prompt_tokens, completion_tokens, estimated_cost_usd, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)`,
     )
     .bind(
       nanoid16(),
@@ -36,6 +37,7 @@ export async function logLlmUsage(db: D1Database, entry: UsageLogEntry): Promise
       entry.promptTokens,
       entry.completionTokens,
       cost,
+      expiresAt,
     )
     .run();
 }
@@ -91,4 +93,13 @@ export async function getUsageSummary(
 
   const result = await db.prepare(sql).bind(...binds).all<UsageSummaryRow>();
   return result.results;
+}
+
+/** Cron / scheduled: drop llm_usage_log rows older than 30 days based on expires_at TTL. */
+export async function pruneOldLlmUsageLog(db: D1Database): Promise<{ deleted: number }> {
+  // Purge expired rows (30-day TTL)
+  const result = await db
+    .prepare(`DELETE FROM llm_usage_log WHERE expires_at < datetime('now')`)
+    .run();
+  return { deleted: result.meta?.changes ?? 0 };
 }
