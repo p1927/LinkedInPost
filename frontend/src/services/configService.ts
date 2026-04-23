@@ -2,9 +2,9 @@ import type { ChannelId } from '../integrations/channels';
 import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../generated/features';
 import { normalizeTelegramRecipients, type TelegramRecipient } from '../integrations/telegram';
 import { normalizeWhatsAppRecipients, type WhatsAppRecipient } from '../integrations/whatsapp';
-import { STATIC_MODELS_BY_PROVIDER } from '@repo/llm-core';
+import { STATIC_MODELS_BY_PROVIDER, LLM_PROVIDER_IDS } from '@repo/llm-core';
 export type { LlmProviderId, LlmRef, LlmModelOption as GoogleModelOption } from '@repo/llm-core';
-import type { LlmModelOption, LlmRef } from '@repo/llm-core';
+import type { LlmModelOption, LlmProviderId, LlmRef } from '@repo/llm-core';
 
 export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
 
@@ -244,7 +244,10 @@ export const DEFAULT_CONTENT_REVIEW_STORED: ContentReviewStored = {
 function normalizeLlmRef(raw: unknown, fallbackModel: string): LlmRef {
   if (raw && typeof raw === 'object') {
     const r = raw as Record<string, unknown>;
-    const provider = (r.provider === 'gemini' || r.provider === 'grok') ? r.provider : 'gemini';
+    const rawProvider = String(r.provider ?? '');
+    const provider: LlmProviderId = (LLM_PROVIDER_IDS as readonly string[]).includes(rawProvider)
+      ? (rawProvider as LlmProviderId)
+      : 'gemini';
     const model = String(r.model ?? '').trim() || fallbackModel;
     return { provider, model };
   }
