@@ -192,6 +192,56 @@ test.describe('Database Cleanup (UI)', () => {
   });
 });
 
+test.describe('STT Setup Step', () => {
+  test('STT config endpoint returns valid shape', async ({ page }) => {
+    const response = await page.request.get('http://localhost:3456/api/setup/stt/config');
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toHaveProperty('enabled');
+    expect(body).toHaveProperty('model');
+    expect(body).toHaveProperty('shortcut');
+  });
+
+  test('STT disable endpoint writes config', async ({ page }) => {
+    const response = await page.request.post('http://localhost:3456/api/setup/stt/disable');
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+
+    const configResp = await page.request.get('http://localhost:3456/api/setup/stt/config');
+    const config = await configResp.json();
+    expect(config.enabled).toBe(false);
+  });
+
+  test('STT download rejects unknown model', async ({ page }) => {
+    const response = await page.request.post('http://localhost:3456/api/setup/stt/download', {
+      data: { projectDir: '/tmp', model: 'unknown-model' },
+    });
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('unknown model');
+  });
+
+  test('STT download rejects missing projectDir', async ({ page }) => {
+    const response = await page.request.post('http://localhost:3456/api/setup/stt/download', {
+      data: { model: 'base.en' },
+    });
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('projectDir required');
+  });
+
+  test('STT status endpoint returns progress shape', async ({ page }) => {
+    const response = await page.request.get('http://localhost:3456/api/setup/stt/status');
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body).toHaveProperty('inProgress');
+    expect(body).toHaveProperty('downloaded');
+    expect(body).toHaveProperty('total');
+    expect(body).toHaveProperty('done');
+  });
+});
+
 test.describe('Dry Run Mode', () => {
   test('setup wizard runs in dry run mode', async ({ page }) => {
     await page.goto('http://localhost:3456/setup');
