@@ -26,10 +26,10 @@ def yt_get(path: str, params: dict) -> dict:
 
 def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
     url = (
-        f"{worker_url}/automations/rules/lookup"
+        f"{worker_url}/automations/internal/rules/lookup"
         f"?platform=youtube&channelId={urllib.parse.quote(channel_id)}"
     )
-    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {secret}"})
+    req = urllib.request.Request(url, headers={"X-Scheduler-Secret": secret})
     try:
         with urllib.request.urlopen(req) as r:
             body = json.loads(r.read())
@@ -69,12 +69,12 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
 
 
 def record_poll(worker_url: str, channel_id: str, secret: str) -> None:
-    url = f"{worker_url}/automations/youtube/poll"
+    url = f"{worker_url}/automations/internal/youtube/poll"
     payload = json.dumps({"channelId": channel_id}).encode()
     req = urllib.request.Request(
         url,
         data=payload,
-        headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
+        headers={"X-Scheduler-Secret": secret, "Content-Type": "application/json"},
         method="POST",
     )
     try:

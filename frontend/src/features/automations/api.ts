@@ -13,6 +13,19 @@ async function authFetch(idToken: string, path: string, options: RequestInit = {
   });
 }
 
+async function checkedFetch(idToken: string, path: string, options: RequestInit = {}): Promise<Response> {
+  const res = await authFetch(idToken, path, options);
+  if (!res.ok) {
+    let errMsg = `Request failed: ${res.status}`;
+    try {
+      const body = await res.clone().json() as any;
+      if (body?.error) errMsg = body.error;
+    } catch { /* ignore */ }
+    throw new Error(errMsg);
+  }
+  return res;
+}
+
 export async function listRules(idToken: string): Promise<RuleEntry[]> {
   const res = await authFetch(idToken, '/automations/rules', { method: 'GET' });
   const body = await res.json();
@@ -26,7 +39,7 @@ export async function upsertRule(
   rule: Omit<AutomationRule, 'updatedAt'>,
   topicId?: string,
 ): Promise<void> {
-  await authFetch(idToken, '/automations/rules', {
+  await checkedFetch(idToken, '/automations/rules', {
     method: 'POST',
     body: JSON.stringify({ platform, channelId, topicId, ...rule }),
   });
@@ -38,7 +51,7 @@ export async function deleteRule(
   channelId: string,
   topicId?: string,
 ): Promise<void> {
-  await authFetch(idToken, '/automations/rules', {
+  await checkedFetch(idToken, '/automations/rules', {
     method: 'DELETE',
     body: JSON.stringify({ platform, channelId, topicId }),
   });
@@ -63,14 +76,14 @@ export async function getYouTubeSchedule(idToken: string, channelId: string): Pr
 }
 
 export async function saveYouTubeSchedule(idToken: string, channelId: string, cronExpression: string): Promise<void> {
-  await authFetch(idToken, '/automations/youtube/schedule', {
+  await checkedFetch(idToken, '/automations/youtube/schedule', {
     method: 'PUT',
     body: JSON.stringify({ channelId, cronExpression }),
   });
 }
 
 export async function registerWebhooks(idToken: string, platform: AutomationPlatform, channelId: string): Promise<void> {
-  await authFetch(idToken, '/automations/webhooks/register', {
+  await checkedFetch(idToken, '/automations/webhooks/register', {
     method: 'POST',
     body: JSON.stringify({ platform, channelId }),
   });

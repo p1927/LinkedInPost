@@ -30,7 +30,7 @@ export async function handleTelegramWebhookEvent(
   env: Env,
 ): Promise<void> {
   const expectedToken = await env.CONFIG_KV.get(kvKeys.telegramSecret());
-  if (expectedToken && !verifyTelegramSecretToken(secretTokenHeader, expectedToken)) return;
+  if (!expectedToken || !verifyTelegramSecretToken(secretTokenHeader, expectedToken)) return;
 
   let payload: any;
   try { payload = JSON.parse(body); } catch { return; }

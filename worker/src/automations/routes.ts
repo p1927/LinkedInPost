@@ -4,9 +4,9 @@ import {
   handleInstagramWebhookEvent,
   registerInstagramWebhook,
 } from './platforms/instagram';
-import { handleLinkedInWebhookEvent } from './platforms/linkedin';
+import { handleLinkedInWebhookEvent, registerLinkedInWebhook } from './platforms/linkedin';
 import { handleTelegramWebhookEvent, registerTelegramWebhook } from './platforms/telegram';
-import { handleGmailPushEvent } from './platforms/gmail';
+import { handleGmailPushEvent, registerGmailWatch } from './platforms/gmail';
 import { recordPollTimestamp, saveChannelSchedule } from './platforms/youtube';
 import {
   deleteRule,
@@ -21,7 +21,7 @@ import { runAutomationCleanup } from './cleanup';
 import type { AutomationPlatform, AutomationRule } from './types';
 
 function resolveWorkerUrl(request: Request, env: Env): string {
-  return (env as any).OAUTH_REDIRECT_BASE_URL || `https://${new URL(request.url).hostname}`;
+  return env.OAUTH_REDIRECT_BASE_URL || `https://${new URL(request.url).hostname}`;
 }
 
 // ─── Public webhook receivers (no session auth) ─────────────────────────────
@@ -168,7 +168,11 @@ export async function handleAutomationsAdminRoute(
       return Response.json({ ok: false, error: 'platform and channelId required' }, { status: 400 });
     }
     const workerUrl = resolveWorkerUrl(request, env);
-    await registerPlatformWebhook(platform, channelId, workerUrl, env);
+    try {
+      await registerPlatformWebhook(platform, channelId, workerUrl, env);
+    } catch (err: any) {
+      return Response.json({ ok: false, error: err?.message ?? 'Registration failed.' }, { status: 400 });
+    }
     return Response.json({ ok: true });
   }
 
@@ -181,35 +185,87 @@ export async function handleAutomationsAdminRoute(
   return null;
 }
 
+// ─── Internal scheduler routes (WORKER_SCHEDULER_SECRET auth, not session auth) ─
+// Called by the YouTube poller Python script and other machine callers.
+export async function handleAutomationsSchedulerRoute(
+  request: Request,
+  env: Env,
+  url: URL,
+): Promise<Response | null> {
+  const path = url.pathname;
+  const method = request.method;
+
+  // GET /automations/internal/rules/lookup — resolve effective rule (used by YouTube poller)
+  if (path === '/automations/internal/rules/lookup' && method === 'GET') {
+    const platform = url.searchParams.get('platform') as AutomationPlatform;
+    const channelId = url.searchParams.get('channelId') ?? '';
+    const topicId = url.searchParams.get('topicId') ?? undefined;
+    const rule = await getRule(env.CONFIG_KV, platform, channelId, topicId);
+    return Response.json({ ok: true, data: rule });
+  }
+
+  // POST /automations/internal/youtube/poll — record poll timestamp (used by YouTube poller)
+  if (path === '/automations/internal/youtube/poll' && method === 'POST') {
+    const body: any = await request.json().catch(() => null);
+    const channelId = String(body?.channelId || '').trim();
+    if (!channelId) return Response.json({ ok: false, error: 'channelId required' }, { status: 400 });
+    await recordPollTimestamp(env.CONFIG_KV, channelId);
+    return Response.json({ ok: true });
+  }
+
+  return null;
+}
+
 export async function registerPlatformWebhook(
   platform: AutomationPlatform,
   channelId: string,
   workerUrl: string,
   env: Env,
 ): Promise<void> {
+  const reg = { platform, channelId, registeredAt: new Date().toISOString() };
+
   switch (platform) {
     case 'instagram': {
       const appId = env.INSTAGRAM_APP_ID ?? '';
       const appSecret = env.INSTAGRAM_APP_SECRET ?? '';
-      if (!appId || !appSecret) return;
+      if (!appId || !appSecret) throw new Error('INSTAGRAM_APP_ID and INSTAGRAM_APP_SECRET are required.');
       await registerInstagramWebhook(channelId, appId, appSecret, workerUrl);
+      await setWebhookRegistration(env.CONFIG_KV, platform, channelId, reg);
       break;
     }
     case 'telegram': {
       const botToken = env.TELEGRAM_BOT_TOKEN ?? '';
-      if (!botToken) return;
+      if (!botToken) throw new Error('TELEGRAM_BOT_TOKEN is required.');
       const secretToken = crypto.randomUUID().replace(/-/g, '');
       await registerTelegramWebhook(botToken, workerUrl, secretToken, env.CONFIG_KV);
+      await setWebhookRegistration(env.CONFIG_KV, platform, channelId, reg);
       break;
     }
-    // LinkedIn and Gmail registration is triggered explicitly by the admin after OAuth
+    case 'linkedin': {
+      // channelId is the organization URN (e.g. urn:li:organization:12345)
+      const accessToken = env.LINKEDIN_ACCESS_TOKEN ?? '';
+      if (!accessToken) throw new Error('LinkedIn access token is not configured. Complete the LinkedIn OAuth flow in Settings first.');
+      await registerLinkedInWebhook(accessToken, channelId, workerUrl);
+      await setWebhookRegistration(env.CONFIG_KV, platform, channelId, reg);
+      break;
+    }
+    case 'gmail': {
+      // channelId is the Gmail address (e.g. user@example.com)
+      const storedOAuth = await env.CONFIG_KV.get<{ accessToken?: string }>(
+        `oauth:gmail:${channelId}`, 'json'
+      );
+      const accessToken = storedOAuth?.accessToken ?? '';
+      if (!accessToken) throw new Error('Gmail access token not found. Complete the Gmail OAuth flow in Settings first.');
+      const pubsubTopic = (env as any).GMAIL_PUBSUB_TOPIC ?? '';
+      if (!pubsubTopic) throw new Error('GMAIL_PUBSUB_TOPIC is not configured.');
+      await registerGmailWatch(accessToken, pubsubTopic, channelId, env.CONFIG_KV);
+      await setWebhookRegistration(env.CONFIG_KV, platform, channelId, reg);
+      break;
+    }
+    case 'youtube':
+      // YouTube has no push webhooks — uses polling via youtube_poller.py.
+      throw new Error('YouTube does not support push webhooks. Use the YouTube poller script instead.');
     default:
-      return;
+      throw new Error(`Unsupported platform: ${platform}`);
   }
-
-  await setWebhookRegistration(env.CONFIG_KV, platform, channelId, {
-    platform,
-    channelId,
-    registeredAt: new Date().toISOString(),
-  });
 }

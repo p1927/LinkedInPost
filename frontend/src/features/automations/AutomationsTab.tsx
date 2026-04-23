@@ -19,6 +19,7 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
   const [registeringWebhook, setRegisteringWebhook] = useState(false);
   const [webhookMsg, setWebhookMsg] = useState('');
 
+  const [webhookChannelId, setWebhookChannelId] = useState('');
   const [newChannelId, setNewChannelId] = useState('');
   const [newTopicId, setNewTopicId] = useState('');
 
@@ -48,23 +49,32 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
   }
 
   async function handleRegisterWebhook() {
-    if (!newChannelId) return;
+    if (!webhookChannelId) return;
     setRegisteringWebhook(true);
     setWebhookMsg('');
     try {
-      await registerWebhooks(idToken, activePlatform, newChannelId);
+      await registerWebhooks(idToken, activePlatform, webhookChannelId);
       setWebhookMsg('Webhook registered successfully.');
-    } catch {
-      setWebhookMsg('Webhook registration failed — check platform credentials.');
+    } catch (err: any) {
+      setWebhookMsg(err?.message ?? 'Webhook registration failed — check platform credentials.');
     } finally {
       setRegisteringWebhook(false);
     }
   }
 
   function parseKeyParts(key: string): { channelId: string; topicId?: string } {
-    // key format: automation:rule:<platform>:<channelId>[:<topicId>]
-    const parts = key.split(':');
-    return { channelId: parts[3] ?? '', topicId: parts[4] };
+    // Keys use format: automation:rule:<platform>:<encodedChannelId>[:<encodedTopicId>]
+    // channelId and topicId are URL-encoded so colons inside URNs do not corrupt parsing.
+    const prefix = `automation:rule:${activePlatform}:`;
+    const rest = key.startsWith(prefix) ? key.slice(prefix.length) : key;
+    const sepIdx = rest.indexOf(':');
+    if (sepIdx === -1) {
+      return { channelId: decodeURIComponent(rest) };
+    }
+    return {
+      channelId: decodeURIComponent(rest.slice(0, sepIdx)),
+      topicId: decodeURIComponent(rest.slice(sepIdx + 1)),
+    };
   }
 
   return (
@@ -103,14 +113,14 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             type="text"
-            value={newChannelId}
-            onChange={(e) => setNewChannelId(e.target.value)}
+            value={webhookChannelId}
+            onChange={(e) => setWebhookChannelId(e.target.value)}
             placeholder="Channel ID"
             style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }}
           />
           <button
             onClick={handleRegisterWebhook}
-            disabled={registeringWebhook || !newChannelId}
+            disabled={registeringWebhook || !webhookChannelId}
             style={{ padding: '6px 14px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
           >
             {registeringWebhook ? 'Registering…' : 'Register webhook'}

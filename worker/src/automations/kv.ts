@@ -2,17 +2,22 @@ import type { AutomationPlatform, AutomationRule, GmailWatchState, WebhookRegist
 
 const P = 'automation';
 
+// Exported so cleanup.ts can list rules without duplicating the prefix.
+export const RULE_KEY_PREFIX = `${P}:rule:`;
+
 export const kvKeys = {
+  // channelId and topicId are URL-encoded so that values containing ":" (e.g. LinkedIn URNs)
+  // do not corrupt the colon-delimited key scheme.
   channelRule: (platform: AutomationPlatform, channelId: string) =>
-    `${P}:rule:${platform}:${channelId}`,
+    `${P}:rule:${platform}:${encodeURIComponent(channelId)}`,
   topicRule: (platform: AutomationPlatform, channelId: string, topicId: string) =>
-    `${P}:rule:${platform}:${channelId}:${topicId}`,
+    `${P}:rule:${platform}:${encodeURIComponent(channelId)}:${encodeURIComponent(topicId)}`,
   webhookReg: (platform: AutomationPlatform, channelId: string) =>
-    `${P}:webhook:${platform}:${channelId}`,
+    `${P}:webhook:${platform}:${encodeURIComponent(channelId)}`,
   gmailWatch: (channelId: string) =>
-    `${P}:gmail:watch:${channelId}`,
+    `${P}:gmail:watch:${encodeURIComponent(channelId)}`,
   youtubeSchedule: (channelId: string) =>
-    `${P}:youtube:schedule:${channelId}`,
+    `${P}:youtube:schedule:${encodeURIComponent(channelId)}`,
   telegramSecret: () =>
     `${P}:telegram:secret`,
 };
@@ -64,12 +69,18 @@ export async function deleteRule(
 export async function listAllRules(
   kv: KVNamespace,
 ): Promise<Array<{ key: string; rule: AutomationRule }>> {
-  const listed = await kv.list({ prefix: `${P}:rule:` });
   const results: Array<{ key: string; rule: AutomationRule }> = [];
-  for (const { name } of listed.keys) {
-    const rule = await kv.get<AutomationRule>(name, 'json');
-    if (rule) results.push({ key: name, rule });
-  }
+  let cursor: string | undefined;
+  do {
+    const listed: KVNamespaceListResult<unknown, string> = cursor
+      ? await kv.list({ prefix: RULE_KEY_PREFIX, cursor })
+      : await kv.list({ prefix: RULE_KEY_PREFIX });
+    for (const { name } of listed.keys) {
+      const rule = await kv.get<AutomationRule>(name, 'json');
+      if (rule) results.push({ key: name, rule });
+    }
+    cursor = listed.list_complete ? undefined : listed.cursor;
+  } while (cursor);
   return results;
 }
 

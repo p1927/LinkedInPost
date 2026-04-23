@@ -24,9 +24,13 @@ export async function registerGmailWatch(
     throw new Error(`Gmail watch registration failed: ${await res.text()}`);
   }
   const data: any = await res.json();
+  const expiration = Number(data.expiration);
+  if (!expiration || expiration <= 0) {
+    throw new Error('Gmail watch registration returned an invalid expiration timestamp.');
+  }
   await setGmailWatch(kv, channelId, {
     historyId: String(data.historyId || ''),
-    expiration: Number(data.expiration || 0),
+    expiration,
     channelId,
   });
 }
@@ -49,8 +53,11 @@ export async function handleGmailPushEvent(body: string, env: Env): Promise<void
   if (!accessToken) return;
 
   const watchState = await getGmailWatch(env.CONFIG_KV, channelId);
-  if (watchState && watchState.expiration - Date.now() < RENEWAL_THRESHOLD_MS) {
-    await registerGmailWatch(accessToken, `projects/${channelId}/topics/gmail-automations`, channelId, env.CONFIG_KV).catch(() => undefined);
+  if (watchState && watchState.expiration > 0 && watchState.expiration - Date.now() < RENEWAL_THRESHOLD_MS) {
+    const topic = await env.CONFIG_KV.get('automation:gmail:pubsub_topic') ?? '';
+    if (topic) {
+      await registerGmailWatch(accessToken, topic, channelId, env.CONFIG_KV).catch(() => undefined);
+    }
   }
 
   const histRes = await fetch(
@@ -95,8 +102,11 @@ export async function handleGmailPushEvent(body: string, env: Env): Promise<void
     });
   }
 
+  // Use the historyId returned by the history API as the continuation cursor,
+  // not the one from the push notification (which may be older).
+  const nextHistoryId = String(histData.historyId || historyId);
   if (watchState) {
-    await setGmailWatch(env.CONFIG_KV, channelId, { ...watchState, historyId });
+    await setGmailWatch(env.CONFIG_KV, channelId, { ...watchState, historyId: nextHistoryId });
   }
 }
 

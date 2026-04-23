@@ -29,8 +29,32 @@ export async function registerLinkedInWebhook(
   }
 }
 
+
+async function resolveLinkedInName(actorUrn: string, accessToken: string): Promise<string> {
+  try {
+    const encoded = encodeURIComponent(actorUrn);
+    const res = await fetch(
+      `https://api.linkedin.com/v2/people/${encoded}?projection=(firstName,lastName)`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Linkedin-Version': LI_VERSION,
+        },
+      },
+    );
+    if (!res.ok) return 'there';
+    const data: any = await res.json();
+    const first = (data.firstName?.localized?.en_US ?? '') as string;
+    const last = (data.lastName?.localized?.en_US ?? '') as string;
+    return (first + ' ' + last).trim() || 'there';
+  } catch {
+    return 'there';
+  }
+}
+
 export async function handleLinkedInWebhookEvent(body: string, signature: string, env: Env): Promise<void> {
-  if (env.LINKEDIN_CLIENT_SECRET && !(await verifyLinkedInSignature(body, signature, env.LINKEDIN_CLIENT_SECRET))) {
+  if (!env.LINKEDIN_CLIENT_SECRET || !(await verifyLinkedInSignature(body, signature, env.LINKEDIN_CLIENT_SECRET))) {
     return;
   }
 
@@ -46,9 +70,13 @@ export async function handleLinkedInWebhookEvent(body: string, signature: string
     const actorUrn = String(payload.actor || '');
     const postUrn = String(payload.object || '') || undefined;
 
+    const senderName = actorUrn && accessToken
+      ? await resolveLinkedInName(actorUrn, accessToken)
+      : 'there';
+
     const rule = await getRule(env.CONFIG_KV, 'linkedin', channelId, postUrn);
     if (rule && shouldFire(rule, 'comment') && postUrn) {
-      const text = resolveTemplate(rule, 'comment', 'there');
+      const text = resolveTemplate(rule, 'comment', senderName);
       if (text && accessToken) {
         await fetch(`https://api.linkedin.com/rest/socialActions/${encodeURIComponent(postUrn)}/comments`, {
           method: 'POST',
@@ -68,16 +96,19 @@ export async function handleLinkedInWebhookEvent(body: string, signature: string
     }
 
     if (rule && shouldFire(rule, 'comment_to_dm') && actorUrn) {
-      const dmText = resolveTemplate(rule, 'comment_to_dm', 'there');
+      const dmText = resolveTemplate(rule, 'comment_to_dm', senderName);
       if (dmText && accessToken) await sendLinkedInDm(actorUrn, dmText, accessToken);
     }
   }
 
   if (eventType === 'MESSAGE_RECEIVED') {
     const senderUrn = String(payload.sender || '');
+    const dmSenderName = senderUrn && accessToken
+      ? await resolveLinkedInName(senderUrn, accessToken)
+      : 'there';
     const rule = await getRule(env.CONFIG_KV, 'linkedin', channelId);
     if (!rule || !shouldFire(rule, 'dm')) return;
-    const text = resolveTemplate(rule, 'dm', 'there');
+    const text = resolveTemplate(rule, 'dm', dmSenderName);
     if (text && senderUrn && accessToken) await sendLinkedInDm(senderUrn, text, accessToken);
   }
 }

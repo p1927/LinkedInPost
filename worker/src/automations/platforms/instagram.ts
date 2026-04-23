@@ -40,7 +40,7 @@ export function handleInstagramChallenge(url: URL, channelId: string): Response 
 }
 
 export async function handleInstagramWebhookEvent(body: string, signature: string, env: Env): Promise<void> {
-  if (env.INSTAGRAM_APP_SECRET && !(await verifyInstagramSignature(body, signature, env.INSTAGRAM_APP_SECRET))) {
+  if (!env.INSTAGRAM_APP_SECRET || !(await verifyInstagramSignature(body, signature, env.INSTAGRAM_APP_SECRET))) {
     return;
   }
 

@@ -1,16 +1,18 @@
-async function hmacHex(secret: string, body: string): Promise<string> {
+// Timing-safe HMAC verification using crypto.subtle.verify (native constant-time).
+async function hmacVerify(secret: string, body: string, providedHex: string): Promise<boolean> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
     enc.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign'],
+    ['verify'],
   );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(body));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  // Decode hex string to bytes; malformed hex returns false without throwing.
+  const hexPairs = providedHex.match(/.{2}/g);
+  if (!hexPairs || hexPairs.length !== 32) return false;
+  const sigBytes = new Uint8Array(hexPairs.map((h) => parseInt(h, 16)));
+  return crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(body));
 }
 
 export async function verifyInstagramSignature(
@@ -18,8 +20,8 @@ export async function verifyInstagramSignature(
   signature: string,
   appSecret: string,
 ): Promise<boolean> {
-  const expected = `sha256=${await hmacHex(appSecret, body)}`;
-  return signature === expected;
+  const hex = signature.startsWith('sha256=') ? signature.slice(7) : signature;
+  return hmacVerify(appSecret, body, hex);
 }
 
 export async function verifyLinkedInSignature(
@@ -27,10 +29,14 @@ export async function verifyLinkedInSignature(
   signature: string,
   clientSecret: string,
 ): Promise<boolean> {
-  const expected = await hmacHex(clientSecret, body);
-  return signature === expected;
+  return hmacVerify(clientSecret, body, signature);
 }
 
 export function verifyTelegramSecretToken(header: string, expectedToken: string): boolean {
-  return header === expectedToken;
+  if (header.length !== expectedToken.length) return false;
+  let diff = 0;
+  for (let i = 0; i < header.length; i++) {
+    diff |= header.charCodeAt(i) ^ expectedToken.charCodeAt(i);
+  }
+  return diff === 0;
 }

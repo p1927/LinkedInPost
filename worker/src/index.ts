@@ -36,7 +36,7 @@ import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from '.
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
 import { shareFileWithUser } from './google/drivePermissions';
-import { handleWebhookRoute, handleAutomationsAdminRoute, runAutomationCleanup } from './automations';
+import { handleWebhookRoute, handleAutomationsAdminRoute, handleAutomationsSchedulerRoute, runAutomationCleanup } from './automations';
 import { getProviderLabel } from '@repo/llm-core';
 import {
   getConfiguredLlmProviderIds,
@@ -111,6 +111,7 @@ export interface Env {
   LINKEDIN_ACCESS_TOKEN?: string;
   GMAIL_CLIENT_ID?: string;
   GMAIL_CLIENT_SECRET?: string;
+  GMAIL_PUBSUB_TOPIC?: string;
   TELEGRAM_BOT_TOKEN?: string;
   META_APP_ID?: string;
   META_APP_SECRET?: string;
@@ -605,6 +606,14 @@ export default {
     if (url.pathname.startsWith('/webhooks/')) {
       const webhookResp = await handleWebhookRoute(request, env, url);
       if (webhookResp) return webhookResp;
+    }
+
+    // Automations internal routes (machine callers, scheduler secret auth)
+    if (url.pathname.startsWith('/automations/internal/')) {
+      const authError = await verifySchedulerSecret(request, env);
+      if (authError) return authError;
+      const schedulerResp = await handleAutomationsSchedulerRoute(request, env, url);
+      return schedulerResp ?? jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
     }
 
     // Automations admin routes (GET/POST/PUT/DELETE, Bearer auth, admin only)

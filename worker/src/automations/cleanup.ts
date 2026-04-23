@@ -1,14 +1,19 @@
 import type { AutomationRule } from './types';
+import { RULE_KEY_PREFIX } from './kv';
 
-const RULE_PREFIX = 'automation:rule:';
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function runAutomationCleanup(kv: KVNamespace): Promise<{ removed: number }> {
   const now = Date.now();
-  const listed = await kv.list({ prefix: RULE_PREFIX });
   let removed = 0;
+  let cursor: string | undefined;
 
-  for (const { name } of listed.keys) {
+  do {
+    const listed: KVNamespaceListResult<unknown, string> = cursor
+      ? await kv.list({ prefix: RULE_KEY_PREFIX, cursor })
+      : await kv.list({ prefix: RULE_KEY_PREFIX });
+
+    for (const { name } of listed.keys) {
     const rule = await kv.get<AutomationRule>(name, 'json');
 
     if (!rule) {
@@ -24,7 +29,10 @@ export async function runAutomationCleanup(kv: KVNamespace): Promise<{ removed: 
         removed++;
       }
     }
-  }
+    }
+
+    cursor = listed.list_complete ? undefined : listed.cursor;
+  } while (cursor);
 
   return { removed };
 }
