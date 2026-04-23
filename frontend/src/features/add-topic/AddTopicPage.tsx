@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Newspaper, Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type BackendApi } from '../../services/backendApi';
@@ -82,6 +82,12 @@ export function AddTopicPage({
   api: BackendApi;
 }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // TODO: pre-fill form from existing draft when API supports fetching a single topic by ID.
+  // The topicId query param is passed from "Continue editing" on the dashboard card.
+  // When a getTopicById endpoint is available in backendApi.ts, read searchParams.get('topicId')
+  // on mount and hydrate topic/about/meaning/style/notes/pros/cons from the returned row.
+  void searchParams; // topicId param accepted; hydration is a follow-up task
 
   const [topic, setTopic] = useState('');
   const [about, setAbout] = useState('');
@@ -334,7 +340,7 @@ export function AddTopicPage({
               size="md"
               disabled={submitting || !topic.trim()}
             >
-              {submitting ? 'Adding…' : 'Add to Queue'}
+              {submitting ? 'Saving…' : 'Save Draft'}
             </Button>
             <Button
               type="button"

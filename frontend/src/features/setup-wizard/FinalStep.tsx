@@ -7,9 +7,16 @@ interface FinalStepProps {
   onRestart: () => void;
 }
 
+const IMAGE_GEN_KEYS = ['FAL_API_KEY', 'OPENAI_API_KEY', 'STABILITY_API_KEY', 'RUNWAY_API_KEY'];
+const NEWS_API_KEYS = ['NEWSDATA_API_KEY', 'GUARDIAN_API_KEY', 'GNEWS_API_KEY', 'NEWS_API_KEY'];
+
 export function FinalStep({ config, onRestart }: FinalStepProps) {
   const hasIntegrations = Object.values(config.integrations).some(v => v);
   const hasEnvVars = Object.keys(config.envVars).length > 0;
+  const hasImageGen = IMAGE_GEN_KEYS.some(k => config.envVars[k]?.trim());
+  const hasTrending =
+    NEWS_API_KEYS.some(k => config.envVars[k]?.trim()) ||
+    !!(config.trendingApis?.news?.adapter);
 
   const nextSteps = [
     {
@@ -62,6 +69,27 @@ export function FinalStep({ config, onRestart }: FinalStepProps) {
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
           {config.projectDir || 'Local'} directory
         </span>
+      </div>
+
+      {/* Optional module status */}
+      <div className="mb-6 rounded-xl border border-border bg-white p-4 text-left space-y-2">
+        <h3 className="text-xs font-semibold text-ink uppercase tracking-wide mb-2">Optional Modules</h3>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-ink">Image generation</span>
+          {hasImageGen ? (
+            <span className="text-green-600 font-medium">configured</span>
+          ) : (
+            <span className="text-muted">not configured <span className="text-xs">(add FAL_API_KEY to enable)</span></span>
+          )}
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-ink">News / trending</span>
+          {hasTrending ? (
+            <span className="text-green-600 font-medium">configured</span>
+          ) : (
+            <span className="text-muted">not configured <span className="text-xs">(add news API keys to enable)</span></span>
+          )}
+        </div>
       </div>
 
       {/* Next steps */}

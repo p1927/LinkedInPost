@@ -729,13 +729,13 @@ export class PipelineStore {
     }));
   }
 
-  async addTopicToD1(topic: string, date: string, topicId: string, spreadsheetIdForRow = '', topicGenerationRules = ''): Promise<SheetRow> {
+  async addTopicToD1(topic: string, date: string, topicId: string, spreadsheetIdForRow = '', topicGenerationRules = '', status = 'Pending'): Promise<SheetRow> {
     const topicKey = buildTopicKey(topic, date);
     const sid = String(spreadsheetIdForRow || '').trim();
     await this.db
       .prepare(INSERT_PIPELINE_ROW_SQL)
       .bind(
-        this.userId, sid, topicId, topicKey, topic, date, 'Pending',
+        this.userId, sid, topicId, topicKey, topic, date, status,
         '', '', '', '',
         '', '', '', '',
         '', '', '',
@@ -752,7 +752,7 @@ export class PipelineStore {
       topicId,
       topic,
       date,
-      status: 'Pending',
+      status,
       variant1: '', variant2: '', variant3: '', variant4: '',
       imageLink1: '', imageLink2: '', imageLink3: '', imageLink4: '',
       selectedText: '', selectedImageId: '', selectedImageUrlsJson: '',

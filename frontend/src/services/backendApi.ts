@@ -953,6 +953,26 @@ export class BackendApi {
     }
   }
 
+  /**
+   * Transitions a Draft topic to generation. Returns a raw SSE Response.
+   * Callers MUST check response.ok and response.body before reading the stream.
+   * On non-ok, read response.text() for the error message.
+   */
+  async sendTopicToGeneration(idToken: string, topicId: string): Promise<Response> {
+    if (!this.endpointUrl) {
+      throw new Error('Missing VITE_WORKER_URL. Add your deployed Cloudflare Worker URL to the frontend environment.');
+    }
+    const response = await fetch(this.endpointUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
+      body: JSON.stringify({ action: 'sendTopicToGeneration', idToken, payload: { topicId } }),
+    });
+    return response;
+  }
+
   async getLlmSettings(idToken: string): Promise<Record<string, { provider: string; model: string }>> {
     return this.post<Record<string, { provider: string; model: string }>>('getLlmSettings', idToken);
   }
