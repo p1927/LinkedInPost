@@ -19,6 +19,7 @@ self.onmessage = async (e: MessageEvent<InMsg>) => {
     workerReady = false;
     try {
       transcriber = await pipeline('automatic-speech-recognition', msg.model, {
+        dtype: 'q8',
         progress_callback: (p: Record<string, unknown>) => post({ type: 'progress', ...p }),
       });
       workerReady = true;

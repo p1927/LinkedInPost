@@ -866,15 +866,15 @@ const WASM_MODEL_KEY = 'stt_wasm_model';
 const WASM_READY_KEY = 'stt_wasm_ready';
 
 const WASM_MODELS = [
-  { id: 'Xenova/whisper-tiny.en', label: 'Tiny (~40 MB) — fastest' },
-  { id: 'Xenova/whisper-base.en', label: 'Base (~75 MB) — recommended' },
-  { id: 'Xenova/whisper-small.en', label: 'Small (~235 MB) — most accurate' },
+  { id: 'onnx-community/whisper-tiny.en', label: 'Tiny (~40 MB) — fastest' },
+  { id: 'onnx-community/whisper-base.en', label: 'Base (~75 MB) — recommended' },
+  { id: 'onnx-community/whisper-small.en', label: 'Small (~235 MB) — most accurate' },
 ] as const;
 
 function SpeechToTextSettingsSection() {
   // ── WASM (browser) state ──
   const [wasmModel, setWasmModel] = useState<string>(
-    () => localStorage.getItem(WASM_MODEL_KEY) ?? 'Xenova/whisper-base.en',
+    () => localStorage.getItem(WASM_MODEL_KEY) ?? 'onnx-community/whisper-base.en',
   );
   const [wasmReady, setWasmReady] = useState(() => localStorage.getItem(WASM_READY_KEY) === 'true');
   const [wasmDownloading, setWasmDownloading] = useState(false);
