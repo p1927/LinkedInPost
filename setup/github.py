@@ -75,6 +75,14 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: object |
     if gmail_client_id and not args.gmail_client_secret.strip():
         warn('GMAIL_CLIENT_SECRET', 'not set. Gmail OAuth token exchange requires the Web application client secret in the Worker.')
 
+    # Automations — YouTube comment poller (optional, GitHub Actions only)
+    if not os.environ.get('YOUTUBE_API_KEY', '').strip():
+        warn('YOUTUBE_API_KEY', 'not set — YouTube comment polling will be skipped. Get a key at Google Cloud Console → YouTube Data API v3.')
+    if not os.environ.get('YOUTUBE_OAUTH_TOKEN', '').strip():
+        warn('YOUTUBE_OAUTH_TOKEN', 'not set — YouTube comment replies cannot be posted. Generate via Google OAuth Playground with youtube.force-ssl scope.')
+    if not os.environ.get('YOUTUBE_CHANNEL_ID', '').strip():
+        warn('YOUTUBE_CHANNEL_ID', 'not set — YouTube poller will not know which channel to poll.')
+
     return WorkerBootstrap(
         allowed_emails=allowed_emails,
         admin_emails=admin_emails,
@@ -128,6 +136,10 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
         'LINKEDIN_PERSON_URN': getattr(google_resources, 'linkedin_person_urn', None) or os.environ.get('LINKEDIN_PERSON_URN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_PHONE_NUMBER_ID': os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip(),
+        # Automations: YouTube comment poller (GitHub Actions only)
+        'YOUTUBE_API_KEY': os.environ.get('YOUTUBE_API_KEY', '').strip(),
+        'YOUTUBE_OAUTH_TOKEN': os.environ.get('YOUTUBE_OAUTH_TOKEN', '').strip(),
+        'YOUTUBE_CHANNEL_ID': os.environ.get('YOUTUBE_CHANNEL_ID', '').strip(),
     }
 
     for name, value in secrets_to_sync.items():
