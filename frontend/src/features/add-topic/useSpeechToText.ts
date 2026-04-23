@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const STT_URL = 'http://localhost:3457';
 const CHUNK_INTERVAL_MS = 5000;
@@ -14,9 +14,7 @@ export interface SpeechToTextState {
   toggle: () => void;
 }
 
-export function useSpeechToText(
-  textareaRef: RefObject<HTMLTextAreaElement | null>,
-): SpeechToTextState {
+export function useSpeechToText(): SpeechToTextState {
   const [isAvailable, setIsAvailable] = useState(false);
   const [unavailableReason, setUnavailableReason] = useState<UnavailableReason>('sidecar_offline');
   const [isRecording, setIsRecording] = useState(false);
@@ -26,6 +24,7 @@ export function useSpeechToText(
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const activeElRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const cursorPositionRef = useRef<number | null>(null);
 
   // Check sidecar availability on mount, with retries while sidecar warms up
@@ -62,9 +61,9 @@ export function useSpeechToText(
     return () => { cancelled = true; };
   }, []);
 
-  // Insert text at saved cursor position (or append if lost)
+  // Insert text at saved cursor position into the element active when recording started
   const insertText = useCallback((text: string) => {
-    const el = textareaRef.current;
+    const el = activeElRef.current;
     if (!el || !text) return;
 
     const pos = cursorPositionRef.current ?? el.value.length;
@@ -72,23 +71,20 @@ export function useSpeechToText(
     const after = el.value.slice(pos);
     const separator = before.length > 0 && !before.endsWith(' ') ? ' ' : '';
     const inserted = separator + text + ' ';
-
-    el.value = before + inserted + after;
+    const newValue = before + inserted + after;
     const newPos = pos + inserted.length;
-    el.selectionStart = newPos;
-    el.selectionEnd = newPos;
-    cursorPositionRef.current = newPos;
 
-    // Trigger React synthetic onChange
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-      window.HTMLTextAreaElement.prototype,
-      'value',
-    )?.set;
+    // Trigger React synthetic onChange via native setter
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
     if (nativeInputValueSetter) {
-      nativeInputValueSetter.call(el, el.value);
+      nativeInputValueSetter.call(el, newValue);
+      el.selectionStart = newPos;
+      el.selectionEnd = newPos;
+      cursorPositionRef.current = newPos;
       el.dispatchEvent(new Event('input', { bubbles: true }));
     }
-  }, [textareaRef]);
+  }, []);
 
   // Send an audio blob to the sidecar and insert the result
   const transcribeChunk = useCallback(async (blob: Blob) => {
@@ -141,7 +137,15 @@ export function useSpeechToText(
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      cursorPositionRef.current = textareaRef.current?.selectionStart ?? null;
+      // Capture whichever input/textarea currently has focus
+      const active = document.activeElement;
+      if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
+        activeElRef.current = active;
+        cursorPositionRef.current = active.selectionStart ?? active.value.length;
+      } else {
+        activeElRef.current = null;
+        cursorPositionRef.current = null;
+      }
 
       startChunk(stream);
       setIsRecording(true);
@@ -194,19 +198,6 @@ export function useSpeechToText(
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isAvailable, shortcut, toggle]);
-
-  // Track cursor position while textarea has focus
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const save = () => { cursorPositionRef.current = el.selectionStart; };
-    el.addEventListener('click', save);
-    el.addEventListener('keyup', save);
-    return () => {
-      el.removeEventListener('click', save);
-      el.removeEventListener('keyup', save);
-    };
-  }, [textareaRef]);
 
   // Cleanup on unmount
   useEffect(() => stopRecording, [stopRecording]);

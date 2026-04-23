@@ -688,6 +688,184 @@ function LlmPerFeatureSettings({
   );
 }
 
+const STT_SETUP_URL = 'http://localhost:3456';
+const STT_MODEL_LABELS: Record<string, string> = {
+  'base.en': 'Whisper base.en (~142 MB)',
+  'small.en': 'Whisper small.en (~466 MB)',
+};
+
+function SpeechToTextSettingsSection() {
+  const [model, setModel] = useState<string>('base.en');
+  const [enabled, setEnabled] = useState(false);
+  const [modelDownloaded, setModelDownloaded] = useState(false);
+  const [serverOnline, setServerOnline] = useState<boolean | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState<{ downloaded: number; total: number } | null>(null);
+  const [downloadDone, setDownloadDone] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    fetch(`${STT_SETUP_URL}/api/setup/stt/config`)
+      .then((r) => r.json())
+      .then((cfg) => {
+        setServerOnline(true);
+        setModel(cfg.model ?? 'base.en');
+        setEnabled(cfg.enabled ?? false);
+        setModelDownloaded(Boolean(cfg.modelLoaded));
+      })
+      .catch(() => setServerOnline(false));
+  }, []);
+
+  const stopPoll = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  const startDownload = async () => {
+    setDownloadError(null);
+    setDownloadDone(false);
+    setProgress(null);
+    setDownloading(true);
+
+    try {
+      await fetch(`${STT_SETUP_URL}/api/setup/stt/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model }),
+      });
+    } catch {
+      setDownloadError('Could not reach the setup server. Make sure the dev server is running.');
+      setDownloading(false);
+      return;
+    }
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`${STT_SETUP_URL}/api/setup/stt/status`);
+        const s = await r.json();
+        if (s.error) {
+          setDownloadError(s.error);
+          setDownloading(false);
+          stopPoll();
+          return;
+        }
+        if (s.total > 0) setProgress({ downloaded: s.downloaded, total: s.total });
+        if (s.done) {
+          setDownloadDone(true);
+          setModelDownloaded(true);
+          setEnabled(true);
+          setDownloading(false);
+          stopPoll();
+        }
+      } catch { /* keep polling */ }
+    }, 500);
+  };
+
+  useEffect(() => () => stopPoll(), []);
+
+  const fmt = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(0)} MB`;
+
+  if (serverOnline === false) {
+    return (
+      <p className="text-xs text-muted">
+        The setup server is offline. Start the dev server (<code className="rounded bg-border/40 px-1">npm run dev</code>) to manage speech-to-text here.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-ink">Model</p>
+          <p className="text-xs text-muted">{STT_MODEL_LABELS[model] ?? model}</p>
+        </div>
+        <span className={cn(
+          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+          modelDownloaded ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800',
+        )}>
+          {modelDownloaded ? 'Downloaded' : 'Not downloaded'}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <p className="text-sm text-ink flex-1">Enable voice input</p>
+        <button
+          type="button"
+          disabled={!modelDownloaded}
+          onClick={async () => {
+            const next = !enabled;
+            setEnabled(next);
+            if (!next) {
+              try { await fetch(`${STT_SETUP_URL}/api/setup/stt/disable`, { method: 'POST' }); } catch { /* best effort */ }
+            }
+          }}
+          title={!modelDownloaded ? 'Download the model first' : undefined}
+          className={cn(
+            'relative h-6 w-11 rounded-full transition-colors',
+            enabled && modelDownloaded ? 'bg-violet-500' : 'bg-slate-300',
+            !modelDownloaded ? 'cursor-not-allowed opacity-50' : '',
+          )}
+        >
+          <span className={cn(
+            'absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform',
+            enabled && modelDownloaded ? 'translate-x-6' : 'translate-x-1',
+          )} />
+        </button>
+      </div>
+
+      {!modelDownloaded && (
+        <div className="rounded-xl border border-border bg-canvas p-3 space-y-3">
+          <div className="flex gap-3">
+            {(['base.en', 'small.en'] as const).map((m) => (
+              <label key={m} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="stt-model"
+                  value={m}
+                  checked={model === m}
+                  onChange={() => setModel(m)}
+                  className="text-primary focus:ring-primary/30"
+                />
+                <span className="text-xs text-ink">{STT_MODEL_LABELS[m]}</span>
+              </label>
+            ))}
+          </div>
+
+          {progress && (
+            <div className="space-y-1">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                <div
+                  className="h-full rounded-full bg-violet-500 transition-all duration-300"
+                  style={{ width: `${Math.round((progress.downloaded / progress.total) * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted">{fmt(progress.downloaded)} / {fmt(progress.total)}</p>
+            </div>
+          )}
+
+          {downloadError && <p className="text-xs text-red-600">{downloadError}</p>}
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            disabled={downloading}
+            onClick={() => void startDownload()}
+          >
+            {downloading ? 'Downloading…' : 'Download model'}
+          </Button>
+        </div>
+      )}
+
+      {downloadDone && (
+        <p className="text-xs text-green-600 font-medium">Model downloaded. Voice input is ready.</p>
+      )}
+    </div>
+  );
+}
+
 export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle, DashboardSettingsDrawerProps>(
   function DashboardSettingsDrawer(
     {
@@ -911,6 +1089,13 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               <p className="mt-1.5 text-xs text-muted">Found in the URL of your Google Sheet.</p>
             </div>
           </div>
+        </SettingsSectionCard>
+
+        <SettingsSectionCard id="settings-speech-to-text" title="Speech to Text">
+          <p className="mb-4 text-xs leading-relaxed text-muted">
+            On-device voice transcription for the New Topic page. Speak into any field — the mic button appears at the top of the page when the model is ready.
+          </p>
+          <SpeechToTextSettingsSection />
         </SettingsSectionCard>
 
         <SettingsSectionCard id="settings-github-actions" title="GitHub Actions">

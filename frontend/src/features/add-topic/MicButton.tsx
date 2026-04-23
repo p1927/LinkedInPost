@@ -16,8 +16,8 @@ const UNAVAILABLE_LABELS: Record<NonNullable<UnavailableReason>, string> = {
 };
 
 export function MicButton({ isRecording, isAvailable, unavailableReason, shortcut: _shortcut, onClick }: Props) {
-  // Completely hidden when feature is disabled
-  if (!isAvailable && unavailableReason === 'disabled') return null;
+  // Hidden when disabled or sidecar not running (production / dev without sidecar)
+  if (!isAvailable && (unavailableReason === 'disabled' || unavailableReason === 'sidecar_offline')) return null;
 
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
   const shortcutLabel = isMac ? '⌘⇧M' : 'Ctrl+Shift+M';

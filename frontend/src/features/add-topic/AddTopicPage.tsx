@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -84,8 +84,7 @@ export function AddTopicPage({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   void searchParams; // topicId param accepted; hydration is a follow-up task
-  const notesRef = useRef<HTMLTextAreaElement>(null);
-  const stt = useSpeechToText(notesRef);
+  const stt = useSpeechToText();
 
   const [topic, setTopic] = useState('');
   const [about, setAbout] = useState('');
@@ -156,19 +155,30 @@ export function AddTopicPage({
       <div className="custom-scrollbar flex-1 overflow-y-auto">
         <form onSubmit={handleSubmit} className="mx-auto max-w-2xl px-8 py-10">
 
-          {/* Document title */}
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Untitled topic…"
-            autoFocus
-            className={[
-              'w-full bg-transparent font-heading text-3xl font-bold text-ink',
-              'placeholder:text-muted/30 outline-none border-none mb-8',
-              'transition-colors duration-150',
-            ].join(' ')}
-          />
+          {/* Document title + voice button */}
+          <div className="mb-8 flex items-start gap-3">
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Untitled topic…"
+              autoFocus
+              className={[
+                'min-w-0 flex-1 bg-transparent font-heading text-3xl font-bold text-ink',
+                'placeholder:text-muted/30 outline-none border-none',
+                'transition-colors duration-150',
+              ].join(' ')}
+            />
+            <div className="mt-2 shrink-0">
+              <MicButton
+                isRecording={stt.isRecording}
+                isAvailable={stt.isAvailable}
+                unavailableReason={stt.unavailableReason}
+                shortcut={stt.shortcut}
+                onClick={stt.toggle}
+              />
+            </div>
+          </div>
 
           {/* About */}
           <div className="mb-6">
@@ -220,21 +230,9 @@ export function AddTopicPage({
 
           {/* Research notes — main scratchpad */}
           <div className="mb-6">
-            <SectionDivider
-              label="Research notes"
-              action={
-                <MicButton
-                  isRecording={stt.isRecording}
-                  isAvailable={stt.isAvailable}
-                  unavailableReason={stt.unavailableReason}
-                  shortcut={stt.shortcut}
-                  onClick={stt.toggle}
-                />
-              }
-            />
+            <SectionDivider label="Research notes" />
             <div className="pt-3">
               <DocTextarea
-                ref={notesRef}
                 value={notes}
                 onChange={setNotes}
                 placeholder="Paste links, quotes, stats, anecdotes, or anything you want to remember. This is your scratchpad…"

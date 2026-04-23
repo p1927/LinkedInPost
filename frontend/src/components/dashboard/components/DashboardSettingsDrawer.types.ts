@@ -6,6 +6,7 @@ const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-enrichment', label: 'Enrichment' },
   { id: 'settings-image-generation', label: 'Image Generation' },
   { id: 'settings-generate-posts', label: 'Generate Posts' },
+  { id: 'settings-speech-to-text', label: 'Speech to Text' },
   { id: 'settings-github-actions', label: 'GitHub Actions' },
   { id: 'settings-instagram', label: 'Instagram' },
   { id: 'settings-linkedin', label: 'LinkedIn' },
