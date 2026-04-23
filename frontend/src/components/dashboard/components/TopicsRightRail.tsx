@@ -108,16 +108,16 @@ export function TopicsRightRail({
     if (!raw) return WORKSPACE_DEFAULT_MODEL;
     if (FEATURE_MULTI_PROVIDER_LLM && raw.startsWith('{')) {
       try {
-        const o = JSON.parse(raw) as { model?: string };
+        const o = JSON.parse(raw) as { provider?: string; model?: string };
         const m = String(o.model || '').trim();
-        if (m) return m;
+        if (m && o.provider === workspaceLlm.provider) return m;
       } catch {
         /* fall through */
       }
       return WORKSPACE_DEFAULT_MODEL;
     }
     return raw;
-  }, [selectedRow]);
+  }, [selectedRow, workspaceLlm.provider]);
 
   const channelSelectValue = useMemo(() => {
     if (!selectedRow) return WORKSPACE_DEFAULT_CHANNEL;
