@@ -28,12 +28,16 @@ export function useSpeechToText(
   const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cursorPositionRef = useRef<number | null>(null);
 
-  // Check sidecar availability on mount
+  // Check sidecar availability on mount, with retries while sidecar warms up
   useEffect(() => {
     let cancelled = false;
-    fetch(`${STT_URL}/health`)
-      .then((r) => r.json())
-      .then((data) => {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 1000;
+
+    const checkHealth = async (attempt: number) => {
+      try {
+        const r = await fetch(`${STT_URL}/health`);
+        const data = await r.json();
         if (cancelled) return;
         setShortcut(data.shortcut ?? 'Mod+Shift+M');
         if (data.enabled && data.modelLoaded) {
@@ -43,12 +47,18 @@ export function useSpeechToText(
           setIsAvailable(false);
           setUnavailableReason(data.unavailableReason ?? 'disabled');
         }
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
-        setIsAvailable(false);
-        setUnavailableReason('sidecar_offline');
-      });
+        if (attempt < MAX_RETRIES) {
+          setTimeout(() => { if (!cancelled) checkHealth(attempt + 1); }, RETRY_DELAY_MS);
+        } else {
+          setIsAvailable(false);
+          setUnavailableReason('sidecar_offline');
+        }
+      }
+    };
+
+    checkHealth(0);
     return () => { cancelled = true; };
   }, []);
 
@@ -162,15 +172,20 @@ export function useSpeechToText(
     }
   }, [isAvailable, isRecording, startRecording, stopRecording]);
 
-  // Keyboard shortcut listener
+  // Keyboard shortcut listener — key combo derived from shortcut state (e.g. "Mod+Shift+M")
   useEffect(() => {
     if (!isAvailable) return;
 
     const isMac = navigator.platform.toUpperCase().includes('MAC');
+    const parts = shortcut.split('+');
+    const keyLetter = parts[parts.length - 1].toLowerCase();
+    const needsMod = parts.includes('Mod');
+    const needsShift = parts.includes('Shift');
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const modHeld = isMac ? e.metaKey : e.ctrlKey;
-      if (modHeld && e.shiftKey && e.key.toLowerCase() === 'm') {
+      const modHeld = needsMod ? (isMac ? e.metaKey : e.ctrlKey) : true;
+      const shiftHeld = needsShift ? e.shiftKey : true;
+      if (modHeld && shiftHeld && e.key.toLowerCase() === keyLetter) {
         e.preventDefault();
         toggle();
       }
@@ -178,7 +193,7 @@ export function useSpeechToText(
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAvailable, toggle]);
+  }, [isAvailable, shortcut, toggle]);
 
   // Track cursor position while textarea has focus
   useEffect(() => {
