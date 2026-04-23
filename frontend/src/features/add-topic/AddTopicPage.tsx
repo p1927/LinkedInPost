@@ -109,8 +109,8 @@ export function AddTopicPage({
       if (typeof meta.about === 'string') setAbout(meta.about);
       if (typeof meta.meaning === 'string') setMeaning(meta.meaning);
       if (typeof meta.style === 'string') setStyle(meta.style);
-      if (Array.isArray(meta.pros)) setPros(meta.pros as string[]);
-      if (Array.isArray(meta.cons)) setCons(meta.cons as string[]);
+      if (Array.isArray(meta.pros)) setPros(meta.pros.filter((x): x is string => typeof x === 'string'));
+      if (Array.isArray(meta.cons)) setCons(meta.cons.filter((x): x is string => typeof x === 'string'));
       if (typeof meta.notes === 'string') setNotes(meta.notes);
     }
   }, [editRow?.topicId]); // eslint-disable-line react-hooks/exhaustive-deps

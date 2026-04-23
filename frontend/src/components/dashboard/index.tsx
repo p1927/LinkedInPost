@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { type AppSession, type BackendApi, type SocialIntegration, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
 import { type BotConfig, type BotConfigUpdate, type LlmRef, type GoogleModelOption, type EnrichmentSkillConfig, type EnrichmentSkillId } from '../../services/configService';
@@ -58,7 +58,8 @@ function AddTopicPageWithEdit({
   api: BackendApi;
   rows: SheetRow[];
 }) {
-  const editTopicId = new URLSearchParams(window.location.search).get('edit') ?? '';
+  const [searchParams] = useSearchParams();
+  const editTopicId = searchParams.get('edit') ?? '';
   const editRow = editTopicId
     ? findRowByTopicRouteId(rows, editTopicId) ?? rows.find((r) => String(r.topicId).trim() === editTopicId.trim())
     : undefined;

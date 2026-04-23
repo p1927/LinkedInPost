@@ -273,6 +273,8 @@ Return JSON: { scores, issues: [], approved: boolean, suggestions: [] }`,
   },
 ];
 
+const ENRICHMENT_NODES = FLOW_NODES.filter(n => n.group === 'enrichment');
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function getNodeColor(node: FlowNode) {
@@ -811,8 +813,6 @@ export function EnrichmentFlowPage({
     }
   };
 
-  const enrichmentNodes = FLOW_NODES.filter(n => n.group === 'enrichment');
-
   const executedEnrichmentNodeIds = useMemo(() => {
     if (!loadedNodeRuns || loadedNodeRuns.length === 0) return null;
     return loadedNodeRuns
@@ -823,14 +823,14 @@ export function EnrichmentFlowPage({
       });
   }, [loadedNodeRuns]);
 
-  const enrichmentNodesToRender = useMemo(() => {
+  const ENRICHMENT_NODESToRender = useMemo(() => {
     if (!executedEnrichmentNodeIds || executedEnrichmentNodeIds.length === 0) {
-      return enrichmentNodes;
+      return ENRICHMENT_NODES;
     }
     return executedEnrichmentNodeIds
       .map(id => FLOW_NODES.find(n => n.id === id))
       .filter((n): n is FlowNode => n !== undefined);
-  }, [executedEnrichmentNodeIds, enrichmentNodes]);
+  }, [executedEnrichmentNodeIds, ENRICHMENT_NODES]);
   const triggerNode = FLOW_NODES.find(n => n.id === 'topic_created')!;
   const reviewGenNode = FLOW_NODES.find(n => n.id === 'review_generation')!;
   const genWorkerNode = FLOW_NODES.find(n => n.id === 'generation_worker')!;
@@ -922,7 +922,7 @@ export function EnrichmentFlowPage({
                     : 'Enrichment Modules (parallel)'}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3">
-                  {enrichmentNodesToRender.map(node => (
+                  {ENRICHMENT_NODESToRender.map(node => (
                     <NodeCard key={node.id} {...cardProps(node)} />
                   ))}
                 </div>
