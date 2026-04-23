@@ -953,6 +953,11 @@ export class BackendApi {
     }
   }
 
+  /**
+   * Transitions a Draft topic to generation. Returns a raw SSE Response.
+   * Callers MUST check response.ok and response.body before reading the stream.
+   * On non-ok, read response.text() for the error message.
+   */
   async sendTopicToGeneration(idToken: string, topicId: string): Promise<Response> {
     if (!this.endpointUrl) {
       throw new Error('Missing VITE_WORKER_URL. Add your deployed Cloudflare Worker URL to the frontend environment.');

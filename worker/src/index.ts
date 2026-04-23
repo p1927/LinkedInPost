@@ -808,11 +808,6 @@ export default {
         const row = await pipeline.getRowByTopicId(sheets, storedConfig.spreadsheetId, topicId);
         if (!row) return jsonResponse({ ok: false, error: 'Topic not found.' }, 404, corsHeaders);
 
-        // Update status to Pending
-        await env.PIPELINE_DB.prepare(
-          `UPDATE pipeline_rows SET status = 'Pending' WHERE user_id = ? AND topic_id = ?`,
-        ).bind(session.userId, topicId).run();
-
         // Build generation request from topicGenerationRules metadata
         const genReq: GenWorkerGenerateRequest = {
           spreadsheetId: storedConfig.spreadsheetId,
@@ -822,27 +817,42 @@ export default {
         if (row.topicGenerationRules) {
           try {
             const meta = JSON.parse(row.topicGenerationRules) as Record<string, unknown>;
+            const asStr = (v: unknown): string | null =>
+              typeof v === 'string' && v.trim() ? v.trim() : null;
             const constraintParts: string[] = [];
-            if (meta.about) constraintParts.push(`About this post: ${String(meta.about)}`);
-            if (meta.meaning) constraintParts.push(`Message to convey: ${String(meta.meaning)}`);
-            if (meta.notes) constraintParts.push(`Research notes: ${String(meta.notes)}`);
+            if (asStr(meta.about)) constraintParts.push(`About this post: ${asStr(meta.about)}`);
+            if (asStr(meta.meaning)) constraintParts.push(`Message to convey: ${asStr(meta.meaning)}`);
+            if (asStr(meta.notes)) constraintParts.push(`Research notes: ${asStr(meta.notes)}`);
             if (Array.isArray(meta.pros) && meta.pros.length > 0) constraintParts.push(`Arguments for this topic: ${(meta.pros as unknown[]).map(String).join(', ')}`);
             if (Array.isArray(meta.cons) && meta.cons.length > 0) constraintParts.push(`Watch out for: ${(meta.cons as unknown[]).map(String).join(', ')}`);
             if (constraintParts.length > 0) genReq.constraints = constraintParts.join('\n');
-            if (meta.style) genReq.tone = String(meta.style);
+            if (asStr(meta.style)) genReq.tone = asStr(meta.style)!;
           } catch {
             // ignore malformed JSON
           }
         }
 
+        // 1. Call generation worker first — may throw on non-ok response
         let genResponse: Response;
         try {
           genResponse = await callGenerationWorkerStream(env, genReq);
         } catch (e) {
+          // Revert status back to Draft so the topic isn't stuck in Pending
+          await env.PIPELINE_DB.prepare(
+            `UPDATE pipeline_rows SET status = 'Draft' WHERE user_id = ? AND topic_id = ?`,
+          ).bind(session.userId, topicId).run();
           return jsonResponse({ ok: false, error: String(e) }, 502, corsHeaders);
         }
 
-        if (!genResponse.ok || !genResponse.body) {
+        // 2. Only flip to Pending after we have a good response
+        const updateResult = await env.PIPELINE_DB.prepare(
+          `UPDATE pipeline_rows SET status = 'Pending' WHERE user_id = ? AND topic_id = ?`,
+        ).bind(session.userId, topicId).run();
+        if (updateResult.meta.changes === 0) {
+          console.warn('[sendTopicToGeneration] No D1 row updated for topicId:', topicId, '— topic may be Sheet-only');
+        }
+
+        if (!genResponse.body) {
           const text = await genResponse.text().catch(() => 'unknown error');
           return jsonResponse({ ok: false, error: `Generation worker error: ${text.slice(0, 200)}` }, 502, corsHeaders);
         }
