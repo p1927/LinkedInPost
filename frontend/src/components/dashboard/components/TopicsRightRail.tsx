@@ -8,6 +8,7 @@ import type { GoogleModelOption, LlmRef } from '@/services/configService';
 import { FEATURE_MULTI_PROVIDER_LLM } from '@/generated/features';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TopicPostPreviewCard } from './TopicPostPreviewCard';
+import type { BackendApi } from '@/services/backendApi';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAlert } from '@/components/useAlert';
@@ -70,6 +71,8 @@ export function TopicsRightRail({
   previewAuthorName,
   onSaveTopicDeliveryPreferences,
   onOpenEditor,
+  idToken,
+  api,
 }: {
   workspaceChannel: ChannelId;
   workspaceLlm: LlmRef;
@@ -84,6 +87,8 @@ export function TopicsRightRail({
     prefs: { topicDeliveryChannel?: string; topicGenerationModel?: string },
   ) => Promise<SheetRow>;
   onOpenEditor: (row: SheetRow) => void;
+  idToken?: string;
+  api?: BackendApi;
 }) {
   const { showAlert } = useAlert();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -228,6 +233,8 @@ export function TopicsRightRail({
                     ? () => onOpenEditor(selectedRow)
                     : undefined
                 }
+                idToken={idToken}
+                api={api}
               />
             ) : null}
           </RailSection>

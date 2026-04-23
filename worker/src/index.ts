@@ -807,6 +807,9 @@ export default {
         if (!topicId) return jsonResponse({ ok: false, error: 'topicId is required.' }, 400, corsHeaders);
         const row = await pipeline.getRowByTopicId(sheets, storedConfig.spreadsheetId, topicId);
         if (!row) return jsonResponse({ ok: false, error: 'Topic not found.' }, 404, corsHeaders);
+        if (row.status?.trim().toLowerCase() !== 'draft') {
+          return jsonResponse({ ok: false, error: 'Only Draft topics can be sent to generation.' }, 409, corsHeaders);
+        }
 
         // Build generation request from topicGenerationRules metadata
         const genReq: GenWorkerGenerateRequest = {
@@ -880,6 +883,11 @@ export default {
                 await writer.write(encoder.encode(block + '\n\n'));
               }
             }
+            if (buffer.trim()) {
+              await writer.write(encoder.encode(buffer + '\n\n'));
+            }
+          } catch (streamErr) {
+            console.error('[sendTopicToGeneration] SSE relay error:', streamErr);
           } finally {
             await writer.close();
           }

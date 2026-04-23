@@ -594,6 +594,8 @@ export function Dashboard({
       previewAuthorName={previewAuthorDisplayName(session.email)}
       onSaveTopicDeliveryPreferences={queueHook.handleSaveTopicDeliveryPreferences}
       onOpenEditor={(row) => navigate(topicEditorPathForRow(row))}
+      idToken={idToken}
+      api={api}
     />
   );
 
