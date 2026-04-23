@@ -8,7 +8,7 @@ export async function runwayRequest(
   // Create generation task
   const body: Record<string, unknown> = { textPrompt: prompt, model, duration };
   if (referenceImage) body.promptImage = referenceImage;
-  const createResp = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
+  const createResp = await fetch('https://api.runwayml.com/v1/image_to_video', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ export async function runwayRequest(
   const deadline = Date.now() + 120_000;
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, 5000));
-    const pollResp = await fetch(`https://api.dev.runwayml.com/v1/tasks/${task.id}`, {
+    const pollResp = await fetch(`https://api.runwayml.com/v1/tasks/${task.id}`, {
       headers: { 'Authorization': `Bearer ${apiKey}`, 'X-Runway-Version': '2024-11-06' },
     });
     const status = await pollResp.json() as { status: string; output?: string[] };

@@ -10,6 +10,7 @@ export interface ImageGenRequest {
 }
 
 export interface ImageGenResult {
+  /** Publicly accessible URL. Note: the Stability AI provider may return a data: URI (base64 JPEG). Callers that need a real URL should upload it to GCS before use. */
   url: string;                  // publicly accessible URL (GCS-uploaded or direct from provider)
   generationPrompt: string;     // the prompt actually sent to the model
   provider: ImageProvider;

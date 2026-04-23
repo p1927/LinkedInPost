@@ -8,10 +8,10 @@ export const veoProvider: VideoGenProvider = {
 
     // Submit generation request
     const createResp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateVideo?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateVideo`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           instances: [{ prompt: req.prompt }],
           parameters: { aspectRatio: '16:9', sampleCount: 1 },
@@ -29,7 +29,8 @@ export const veoProvider: VideoGenProvider = {
     while (Date.now() < deadline) {
       await new Promise(r => setTimeout(r, 5000));
       const pollResp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/${operation.name}?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/${operation.name}`,
+        { headers: { 'x-goog-api-key': apiKey } },
       );
       const status = await pollResp.json() as {
         done?: boolean;

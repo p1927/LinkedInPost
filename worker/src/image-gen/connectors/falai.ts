@@ -11,7 +11,7 @@ export async function falaiRequest(
       'Content-Type': 'application/json',
       'Authorization': `Key ${apiKey}`,
     },
-    body: JSON.stringify({ input }),
+    body: JSON.stringify(input),
   });
   if (!resp.ok) {
     const err = await resp.text().catch(() => resp.statusText);
