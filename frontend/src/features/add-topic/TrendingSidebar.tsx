@@ -1,8 +1,29 @@
-import { ExternalLink, Newspaper, Lightbulb, SearchX } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Newspaper, Lightbulb, SearchX, RefreshCw } from 'lucide-react';
 import { useTrending } from '../trending/hooks/useTrending';
 
-export function TrendingSidebar({ topic, idToken }: { topic: string; idToken?: string }) {
-  const { data, loading, error } = useTrending(topic, idToken);
+export function TrendingSidebar({ topic, onRefresh }: { topic: string; onRefresh?: () => void }) {
+  const [fetchedTopic, setFetchedTopic] = useState('');
+  const { data, loading, error, refetch } = useTrending(fetchedTopic);
+
+  // Fetch on mount if topic is non-empty and we haven't fetched yet
+  useEffect(() => {
+    if (topic.trim() && !fetchedTopic) {
+      setFetchedTopic(topic);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleRefresh = () => {
+    if (topic.trim()) {
+      setFetchedTopic(topic);
+      void refetch();
+      onRefresh?.();
+    }
+  };
+
+  // Topic changed since last fetch — show placeholder asking for refresh
+  const needsRefresh = topic.trim() && topic !== fetchedTopic;
 
   const news = data?.news ?? [];
   const recommended = data?.recommendedTopics ?? [];
@@ -12,6 +33,22 @@ export function TrendingSidebar({ topic, idToken }: { topic: string; idToken?: s
       <div className="flex flex-col items-center justify-center gap-3 py-12 text-center text-muted">
         <Newspaper className="h-8 w-8 opacity-40" />
         <p className="text-sm">Type a topic to see related news and trends</p>
+      </div>
+    );
+  }
+
+  if (needsRefresh && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-12 text-center text-muted">
+        <RefreshCw className="h-8 w-8 opacity-40" />
+        <p className="text-sm">Click refresh to load research for "{topic}"</p>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          className="rounded-full border border-white/40 bg-white/30 px-4 py-2 text-xs font-medium text-ink backdrop-blur-sm transition-colors hover:bg-white/50"
+        >
+          Refresh
+        </button>
       </div>
     );
   }
@@ -39,6 +76,20 @@ export function TrendingSidebar({ topic, idToken }: { topic: string; idToken?: s
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Live Research header with refresh button */}
+      <div className="mb-3 flex items-center gap-2">
+        <Newspaper className="h-3.5 w-3.5 text-primary" />
+        <span className="flex-1 text-xs font-semibold uppercase tracking-wide text-muted/60">Live Research</span>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={loading}
+          className="rounded p-1 text-muted transition-colors hover:bg-white/40 hover:text-ink disabled:opacity-50"
+          aria-label="Refresh research"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
       {news.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">

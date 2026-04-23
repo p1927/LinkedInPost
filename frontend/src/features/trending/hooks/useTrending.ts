@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { TrendingData } from '../types';
 import { DEFAULT_CONFIG, isAnyApiEnabled } from '../api/config';
 import type { TrendingApiConfig } from '../api';
@@ -153,6 +153,7 @@ interface UseTrendingResult {
     linkedin: boolean;
     news: boolean;
   };
+  refetch: () => void;
 }
 
 /**
@@ -259,6 +260,10 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
     return () => clearTimeout(timer);
   }, [topic, useRealApis]);
 
+  const refetch = useCallback(() => {
+    news.refetch();
+  }, [news.refetch]);
+
   return {
     data,
     loading,
@@ -271,5 +276,6 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
       linkedin: config.linkedin.config.enabled,
       news: config.news.config.enabled,
     },
+    refetch,
   };
 }

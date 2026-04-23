@@ -99,13 +99,6 @@ export function AddTopicPage({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  // Debounced topic for sidebar (600 ms)
-  const [debouncedTopic, setDebouncedTopic] = useState('');
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedTopic(topic), 600);
-    return () => clearTimeout(t);
-  }, [topic]);
-
   const handleGenerateInsights = useCallback(async () => {
     if (!topic.trim()) return;
     setGeneratingInsights(true);
@@ -369,14 +362,7 @@ export function AddTopicPage({
 
       {/* ── Right: trending sidebar ── */}
       <aside className="custom-scrollbar hidden w-72 shrink-0 overflow-y-auto border-l border-white/30 bg-white/5 p-4 backdrop-blur-sm lg:block">
-        <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted/60">
-          <Newspaper className="h-3.5 w-3.5 text-primary" />
-          Live Research
-        </div>
-        <p className="mb-4 text-[11px] leading-relaxed text-muted/50">
-          Updates as you type your topic.
-        </p>
-        <TrendingSidebar topic={debouncedTopic} idToken={idToken} />
+        <TrendingSidebar topic={topic} onRefresh={() => {}} />
       </aside>
     </div>
   );
