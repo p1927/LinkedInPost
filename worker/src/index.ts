@@ -36,6 +36,7 @@ import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from '.
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
 import { shareFileWithUser } from './google/drivePermissions';
+import { handleWebhookRoute, handleAutomationsAdminRoute, runAutomationCleanup } from './automations';
 import { getProviderLabel } from '@repo/llm-core';
 import {
   getConfiguredLlmProviderIds,
@@ -600,6 +601,26 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
+    // Automations: webhook receivers (GET for challenge, POST for events)
+    if (url.pathname.startsWith('/webhooks/')) {
+      const webhookResp = await handleWebhookRoute(request, env, url);
+      if (webhookResp) return webhookResp;
+    }
+
+    // Automations admin routes (GET/POST/PUT/DELETE, Bearer auth, admin only)
+    if (url.pathname.startsWith('/automations/')) {
+      const authHeader = request.headers.get('Authorization') || '';
+      const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+      try {
+        const s = await verifySession(idToken, env);
+        if (!s.isAdmin) return jsonResponse({ ok: false, error: 'Forbidden' }, 403, corsHeaders);
+      } catch {
+        return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, corsHeaders);
+      }
+      const adminResp = await handleAutomationsAdminRoute(request, env, url);
+      return adminResp ?? jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
+    }
+
     if (request.method === 'GET') {
       if (url.pathname === '/') {
         return jsonResponse({ ok: true, data: { status: 'ok', backend: 'cloudflare-worker' } }, 200, corsHeaders);
@@ -803,6 +824,7 @@ export default {
     }
   },
   scheduled(_event, env, ctx) {
+    ctx.waitUntil(runAutomationCleanup(env.CONFIG_KV).catch(() => undefined));
     ctx.waitUntil(
       pruneOldNewsSnapshots(
         env.PIPELINE_DB,

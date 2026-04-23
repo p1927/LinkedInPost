@@ -1,0 +1,22 @@
+{
+  "run_id": "abeb6f0c-07db-41ca-ab0a-7c2627afee1d",
+  "story_id": null,
+  "goal": "Add state detection and progress tracking to the setup wizard system.\n\nGoal: When LinkedInPost is already configured, the setup wizard should show the current state instead of walking through everything from scratch.\n\nRequirements:\n1. Create a SetupStateService that detects and persists setup state:\n   - Check which environment variables are set/unset by parsing .env files (frontend/.env, worker/.dev.vars)\n   - Detect which social media accounts are connected (LinkedIn token, etc.)\n   - Detect worker/cloudflare deployment status\n   - Detect if generation-worker is configured\n\n2. Add SetupState type with fields:\n   - envVars: { name, value, isSet }[] for all required env vars\n   - integrations: { name, connected, config }[] for LinkedIn, etc.\n   - workers: { name, deployed, status }[] for generation-worker, etc.\n   - overallProgress: percentage complete\n\n3. Modify SetupWizard to:\n   - Load current state on init\n   - Show status dashboard instead of step-by-step if already configured\n   - Allow jumping to specific incomplete sections\n   - Display green checkmarks for completed items, warnings for missing\n\n4. Add setupStateService.ts in frontend/src/features/setup-wizard/:\n   - readState() - reads current config from filesystem/API\n   - saveState() - persists state to localStorage or config file\n   - detectEnvVars() - parses .env files to detect configured vars\n   - detectIntegrations() - checks API for connected accounts\n\n5. Create modular code with separation of concerns:\n   - Types in types.ts\n   - State detection in service classes\n   - UI components purely presentational\n\nClaimed scope: frontend/src/features/setup-wizard/**",
+  "rounds": 1,
+  "current_round": 1,
+  "context_pack": null,
+  "research": [],
+  "verdict": null,
+  "clarify_answers": {},
+  "spec": "",
+  "candidates": [],
+  "winner_id": null,
+  "diff_files": [],
+  "verify_report": {},
+  "commit_sha": null,
+  "pr_url": null,
+  "heal_retries": 0,
+  "max_heal_retries": 3,
+  "blocked_reason": null,
+  "replay_parent_run_id": null
+}
