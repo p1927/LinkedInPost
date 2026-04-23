@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type BackendApi } from '../../services/backendApi';
+import { type SheetRow } from '../../services/sheets';
 import { WORKSPACE_PATHS } from '../topic-navigation/utils/workspaceRoutes';
 import { TrendingSidebar } from './TrendingSidebar';
 import { useSpeechToText } from './useSpeechToText';
@@ -77,13 +78,15 @@ function SectionDivider({ label, action }: { label: string; action?: React.React
 export function AddTopicPage({
   idToken,
   api,
+  editRow,
 }: {
   idToken: string;
   api: BackendApi;
+  editRow?: SheetRow;
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  void searchParams; // topicId param accepted; hydration is a follow-up task
+  void searchParams;
   const stt = useSpeechToText();
 
   const [topic, setTopic] = useState('');
@@ -93,6 +96,25 @@ export function AddTopicPage({
   const [notes, setNotes] = useState('');
   const [pros, setPros] = useState<string[]>([]);
   const [cons, setCons] = useState<string[]>([]);
+  useEffect(() => {
+    if (!editRow) return;
+    setTopic(editRow.topic);
+    const meta = editRow.topicGenerationRules
+      ? (() => {
+          try { return JSON.parse(editRow.topicGenerationRules) as Record<string, unknown>; }
+          catch { return null; }
+        })()
+      : null;
+    if (meta) {
+      if (typeof meta.about === 'string') setAbout(meta.about);
+      if (typeof meta.meaning === 'string') setMeaning(meta.meaning);
+      if (typeof meta.style === 'string') setStyle(meta.style);
+      if (Array.isArray(meta.pros)) setPros(meta.pros.filter((x): x is string => typeof x === 'string'));
+      if (Array.isArray(meta.cons)) setCons(meta.cons.filter((x): x is string => typeof x === 'string'));
+      if (typeof meta.notes === 'string') setNotes(meta.notes);
+    }
+  }, [editRow?.topicId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [generatingInsights, setGeneratingInsights] = useState(false);
   const [insightsError, setInsightsError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -360,7 +382,7 @@ export function AddTopicPage({
 
       {/* ── Right: trending sidebar ── */}
       <aside className="custom-scrollbar hidden w-72 shrink-0 overflow-y-auto border-l border-white/30 bg-white/5 p-4 backdrop-blur-sm lg:block">
-        <TrendingSidebar topic={topic} idToken={idToken} onRefresh={() => {}} />
+        <TrendingSidebar topic={topic} idToken={idToken} api={api} onRefresh={() => {}} />
       </aside>
     </div>
   );

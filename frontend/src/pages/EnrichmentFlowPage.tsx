@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   X,
   ChevronDown,
@@ -272,6 +272,8 @@ Return JSON: { scores, issues: [], approved: boolean, suggestions: [] }`,
     promptTemplate: '(No LLM call — this is the final output step)',
   },
 ];
+
+const ENRICHMENT_NODES = FLOW_NODES.filter(n => n.group === 'enrichment');
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -811,7 +813,24 @@ export function EnrichmentFlowPage({
     }
   };
 
-  const enrichmentNodes = FLOW_NODES.filter(n => n.group === 'enrichment');
+  const executedEnrichmentNodeIds = useMemo(() => {
+    if (!loadedNodeRuns || loadedNodeRuns.length === 0) return null;
+    return loadedNodeRuns
+      .map(nr => nr.nodeId)
+      .filter(id => {
+        const node = FLOW_NODES.find(n => n.id === id);
+        return node?.group === 'enrichment';
+      });
+  }, [loadedNodeRuns]);
+
+  const ENRICHMENT_NODESToRender = useMemo(() => {
+    if (!executedEnrichmentNodeIds || executedEnrichmentNodeIds.length === 0) {
+      return ENRICHMENT_NODES;
+    }
+    return executedEnrichmentNodeIds
+      .map(id => FLOW_NODES.find(n => n.id === id))
+      .filter((n): n is FlowNode => n !== undefined);
+  }, [executedEnrichmentNodeIds, ENRICHMENT_NODES]);
   const triggerNode = FLOW_NODES.find(n => n.id === 'topic_created')!;
   const reviewGenNode = FLOW_NODES.find(n => n.id === 'review_generation')!;
   const genWorkerNode = FLOW_NODES.find(n => n.id === 'generation_worker')!;
@@ -898,10 +917,12 @@ export function EnrichmentFlowPage({
 
               <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
                 <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
-                  Enrichment Modules (parallel)
+                  {executedEnrichmentNodeIds && executedEnrichmentNodeIds.length > 0
+                    ? 'Enrichment Modules (execution order)'
+                    : 'Enrichment Modules (parallel)'}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3">
-                  {enrichmentNodes.map(node => (
+                  {ENRICHMENT_NODESToRender.map(node => (
                     <NodeCard key={node.id} {...cardProps(node)} />
                   ))}
                 </div>

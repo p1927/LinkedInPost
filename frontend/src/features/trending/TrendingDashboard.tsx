@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingSearchBar } from './components/TrendingSearchBar';
 import { YouTubePanel } from './components/YouTubePanel';
@@ -9,8 +9,10 @@ import { RecommendationsPanel } from './components/RecommendationsPanel';
 import { TrendingGraph } from './components/TrendingGraph';
 import { PanelToggle, type PanelConfig } from './components/PanelToggle';
 import { useTrending } from './hooks/useTrending';
-import { Sparkles, Settings } from 'lucide-react';
+import { Sparkles, Settings, PlugZap } from 'lucide-react';
 import type { GraphNode } from './types';
+import type { BackendApi } from '@/services/backendApi';
+import type { NewsProviderKeys } from '@/services/configService';
 
 const ALL_PANELS: PanelConfig[] = [
   { id: 'youtube', label: 'YouTube' },
@@ -21,13 +23,39 @@ const ALL_PANELS: PanelConfig[] = [
 
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
 
-export function TrendingDashboard({ idToken }: { idToken?: string } = {}) {
+export function TrendingDashboard({
+  idToken,
+  api,
+  newsProviderKeys,
+}: {
+  idToken?: string;
+  api?: BackendApi;
+  newsProviderKeys?: NewsProviderKeys | null;
+} = {}) {
   const [topic, setTopic] = useState('');
   const [searchTopic, setSearchTopic] = useState('');
   const [enabledPanels, setEnabledPanels] = useState<string[]>(DEFAULT_ENABLED);
   const [showSettings, setShowSettings] = useState(false);
 
-  const { data, loading, error, config, enabledPlatforms } = useTrending(searchTopic, idToken);
+  const { data, loading, error, config, setConfig, enabledPlatforms } = useTrending(searchTopic, idToken, api);
+
+  const hasNewsApis = Boolean(
+    newsProviderKeys?.newsapi ||
+    newsProviderKeys?.gnews ||
+    newsProviderKeys?.newsdata ||
+    newsProviderKeys?.serpapi
+  );
+
+  // Enable news in config when APIs are available
+  useEffect(() => {
+    setConfig(prev => ({
+      ...prev,
+      news: {
+        ...prev.news,
+        config: { ...prev.news.config, enabled: hasNewsApis },
+      },
+    }));
+  }, [hasNewsApis, setConfig]);
 
   const handleSearch = () => {
     setSearchTopic(topic);
@@ -135,6 +163,20 @@ export function TrendingDashboard({ idToken }: { idToken?: string } = {}) {
             <p className="text-xs text-muted">
               API keys are configured via environment variables. Update the backend to enable different APIs.
             </p>
+          </div>
+        )}
+
+        {/* No news APIs banner */}
+        {!hasNewsApis && (
+          <div className="rounded-xl border border-amber-200/60 bg-amber-50/60 p-4 flex items-start gap-3">
+            <PlugZap className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">No news APIs connected</p>
+              <p className="text-xs text-amber-700 mt-1">
+                Connect NewsAPI, GNews, or other providers in{' '}
+                <strong>Settings → News</strong> to see real trending articles.
+              </p>
+            </div>
           </div>
         )}
 
