@@ -1,9 +1,9 @@
 import express from 'express';
 import { createServer } from 'http';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import path, { dirname, join } from 'path';
 import https from 'https';
-import { createWriteStream, existsSync } from 'fs';
+import { createWriteStream, existsSync, unlink } from 'fs';
 import { mkdir } from 'fs/promises';
 import { readSttConfig, writeSttConfig } from './sttConfig.js';
 
@@ -59,8 +59,14 @@ app.post('/api/setup/stt/download', (req, res) => {
 
   if (downloadState.inProgress) return res.status(409).json({ error: 'download_in_progress' });
 
+  // Sanitize projectDir: must be absolute, no traversal
+  const resolvedProject = path.resolve(projectDir);
+  if (!path.isAbsolute(resolvedProject) || resolvedProject.includes('..')) {
+    return res.status(400).json({ error: 'invalid projectDir' });
+  }
+
   const destDir = join(
-    projectDir,
+    resolvedProject,
     'frontend/node_modules/nodejs-whisper/cpp/whisper.cpp/models',
   );
   const destPath = join(destDir, `ggml-${model}.bin`);
@@ -119,6 +125,7 @@ app.post('/api/setup/stt/download', (req, res) => {
 
           writer.on('error', (err) => {
             downloadState = { ...downloadState, inProgress: false, error: err.message };
+            unlink(destPath, () => {}); // clean up partial download
           });
         })
         .catch((err) => {
