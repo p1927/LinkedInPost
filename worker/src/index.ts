@@ -866,6 +866,7 @@ export default {
             if (Array.isArray(meta.cons) && meta.cons.length > 0) constraintParts.push(`Watch out for: ${(meta.cons as unknown[]).map(String).join(', ')}`);
             if (constraintParts.length > 0) genReq.constraints = constraintParts.join('\n');
             if (asStr(meta.style)) genReq.tone = asStr(meta.style)!;
+            if (asStr(meta.audience)) genReq.audience = asStr(meta.audience)!;
           } catch {
             // ignore malformed JSON
           }
@@ -1335,6 +1336,32 @@ async function dispatchAction(
         }
       }
       return newRow;
+    }
+    case 'listCustomPersonas': {
+      const personas = await pipeline.listCustomPersonas(storedConfig.spreadsheetId);
+      return personas;
+    }
+    case 'createCustomPersona': {
+      const name = String(payload.name || '').trim();
+      if (!name) throw new Error('name is required.');
+      const concerns = Array.isArray(payload.concerns) ? payload.concerns : [];
+      const ambitions = Array.isArray(payload.ambitions) ? payload.ambitions : [];
+      const currentFocus = String(payload.currentFocus || '');
+      const habits = Array.isArray(payload.habits) ? payload.habits : [];
+      const language = String(payload.language || '');
+      const decisionDrivers = Array.isArray(payload.decisionDrivers) ? payload.decisionDrivers : [];
+      const painPoints = Array.isArray(payload.painPoints) ? payload.painPoints : [];
+      const id = crypto.randomUUID();
+      await pipeline.createCustomPersona(storedConfig.spreadsheetId, {
+        id, name, concerns, ambitions, currentFocus, habits, language, decisionDrivers, painPoints,
+      });
+      return { id, name, concerns, ambitions, currentFocus, habits, language, decisionDrivers, painPoints };
+    }
+    case 'deleteCustomPersona': {
+      const personaId = String(payload.personaId || '').trim();
+      if (!personaId) throw new Error('personaId is required.');
+      await pipeline.deleteCustomPersona(storedConfig.spreadsheetId, personaId);
+      return { success: true };
     }
     case 'analyzeTopicInsights': {
       const topicText = String(payload.topic || '').trim();

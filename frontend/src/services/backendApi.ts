@@ -687,6 +687,30 @@ export class BackendApi {
     return this.post<SheetRow>('addTopic', idToken, { topic, topicMeta });
   }
 
+  async listCustomPersonas(idToken: string) {
+    return this.post<Array<{
+      id: string; name: string; concerns: string[]; ambitions: string[];
+      currentFocus: string; habits: string[]; language: string;
+      decisionDrivers: string[]; painPoints: string[];
+    }>>('listCustomPersonas', idToken);
+  }
+
+  async createCustomPersona(idToken: string, persona: {
+    name: string; concerns: string[]; ambitions: string[];
+    currentFocus: string; habits: string[]; language: string;
+    decisionDrivers: string[]; painPoints: string[];
+  }) {
+    return this.post<{
+      id: string; name: string; concerns: string[]; ambitions: string[];
+      currentFocus: string; habits: string[]; language: string;
+      decisionDrivers: string[]; painPoints: string[];
+    }>('createCustomPersona', idToken, persona);
+  }
+
+  async deleteCustomPersona(idToken: string, personaId: string) {
+    return this.post('deleteCustomPersona', idToken, { personaId });
+  }
+
   async analyzeTopicInsights(idToken: string, payload: {
     topic: string;
     about?: string;

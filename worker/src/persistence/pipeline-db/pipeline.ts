@@ -762,4 +762,75 @@ export class PipelineStore {
       topicDeliveryChannel: '', topicGenerationModel: '',
     };
   }
+
+  async listCustomPersonas(userId: string) {
+    interface CustomPersonaRow {
+      id: string;
+      name: string;
+      concerns: string;
+      ambitions: string;
+      current_focus: string;
+      habits: string;
+      language: string;
+      decision_drivers: string;
+      pain_points: string;
+    }
+    const rows = await this.db
+      .prepare('SELECT * FROM custom_personas WHERE user_id = ? ORDER BY name ASC')
+      .bind(userId)
+      .all<CustomPersonaRow>();
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      concerns: JSON.parse(r.concerns),
+      ambitions: JSON.parse(r.ambitions),
+      currentFocus: r.current_focus,
+      habits: JSON.parse(r.habits),
+      language: r.language,
+      decisionDrivers: JSON.parse(r.decision_drivers),
+      painPoints: JSON.parse(r.pain_points),
+    }));
+  }
+
+  async createCustomPersona(
+    userId: string,
+    p: {
+      id: string;
+      name: string;
+      concerns: string[];
+      ambitions: string[];
+      currentFocus: string;
+      habits: string[];
+      language: string;
+      decisionDrivers: string[];
+      painPoints: string[];
+    },
+  ) {
+    await this.db
+      .prepare(
+        `INSERT INTO custom_personas
+           (id, user_id, name, concerns, ambitions, current_focus, habits, language, decision_drivers, pain_points)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`,
+      )
+      .bind(
+        p.id,
+        userId,
+        p.name,
+        JSON.stringify(p.concerns),
+        JSON.stringify(p.ambitions),
+        p.currentFocus,
+        JSON.stringify(p.habits),
+        p.language,
+        JSON.stringify(p.decisionDrivers),
+        JSON.stringify(p.painPoints),
+      )
+      .run();
+  }
+
+  async deleteCustomPersona(userId: string, personaId: string) {
+    await this.db
+      .prepare('DELETE FROM custom_personas WHERE user_id = ? AND id = ?')
+      .bind(userId, personaId)
+      .run();
+  }
 }

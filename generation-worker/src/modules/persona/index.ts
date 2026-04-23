@@ -127,6 +127,18 @@ interface LlmPersonaResponse {
   painPoints: string[];
 }
 
+const GENERIC_PERSONA: PersonaSignal = {
+  id: 'general-public',
+  name: 'General Public',
+  concerns: [],
+  ambitions: [],
+  currentFocus: '',
+  habits: [],
+  language: '',
+  decisionDrivers: [],
+  painPoints: [],
+};
+
 async function generatePersona(ctx: ModuleContext): Promise<PersonaSignal> {
   const audience = ctx.report.audience ?? ctx.topic;
 
@@ -218,6 +230,8 @@ export const personaModule: EnrichmentModule<PersonaSignal> = {
 
   async enrich(ctx: ModuleContext): Promise<PersonaSignal> {
     const audience = ctx.report.audience ?? '';
+
+    if (!audience) return GENERIC_PERSONA;
 
     // 1. Fuzzy match against pre-built library
     const matched = fuzzyMatch(audience);

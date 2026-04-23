@@ -1,12 +1,27 @@
 import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Newspaper, Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Newspaper, Sparkles, Loader2, ThumbsUp, ThumbsDown, X as XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ChipToggle } from '@/components/ui/ChipToggle';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { type BackendApi } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../topic-navigation/utils/workspaceRoutes';
 import { TrendingSidebar } from './TrendingSidebar';
 import { useSpeechToText } from './useSpeechToText';
 import { MicButton } from './MicButton';
+
+const BUILT_IN_PERSONAS = [
+  { id: 'startup-founder', name: 'Startup Founder' },
+  { id: 'engineering-manager', name: 'Engineering Manager' },
+  { id: 'product-manager', name: 'Product Manager' },
+  { id: 'senior-developer', name: 'Senior Developer' },
+] as const;
+
+type CustomPersona = {
+  id: string; name: string; concerns: string[]; ambitions: string[];
+  currentFocus: string; habits: string[]; language: string;
+  decisionDrivers: string[]; painPoints: string[];
+};
 
 const STYLE_OPTIONS = [
   'Professional',
@@ -99,12 +114,24 @@ export function AddTopicPage({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  const [selectedAudience, setSelectedAudience] = useState('');
+  const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
+  const [showPersonaDialog, setShowPersonaDialog] = useState(false);
+  const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null);
+
   // Debounced topic for sidebar (600 ms)
   const [debouncedTopic, setDebouncedTopic] = useState('');
   useEffect(() => {
     const t = setTimeout(() => setDebouncedTopic(topic), 600);
     return () => clearTimeout(t);
   }, [topic]);
+
+  // Load custom personas on mount
+  useEffect(() => {
+    api.listCustomPersonas(idToken).then(setCustomPersonas).catch(() => {
+      // Non-fatal: custom personas are optional
+    });
+  }, [idToken, api]);
 
   const handleGenerateInsights = useCallback(async () => {
     if (!topic.trim()) return;
@@ -143,6 +170,7 @@ export function AddTopicPage({
           pros: pros.length ? pros : undefined,
           cons: cons.length ? cons : undefined,
           notes: notes.trim() || undefined,
+          audience: selectedAudience || undefined,
         };
         await api.addTopic(idToken, topic.trim(), topicMeta);
         navigate(WORKSPACE_PATHS.topics);
@@ -152,7 +180,7 @@ export function AddTopicPage({
         setSubmitting(false);
       }
     },
-    [idToken, api, topic, about, meaning, style, pros, cons, notes, navigate],
+    [idToken, api, topic, about, meaning, style, pros, cons, notes, selectedAudience, navigate],
   );
 
   const hasInsights = pros.length > 0 || cons.length > 0;
@@ -200,6 +228,57 @@ export function AddTopicPage({
                 placeholder="What should readers walk away thinking or feeling? What's the core takeaway?"
                 minRows={2}
               />
+            </div>
+          </div>
+
+          {/* Persona */}
+          <div className="mb-6">
+            <SectionDivider
+              label="Target audience"
+              action={
+                <button
+                  type="button"
+                  onClick={() => setShowPersonaDialog(true)}
+                  className="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-all duration-150"
+                >
+                  + New persona
+                </button>
+              }
+            />
+            <div className="flex flex-wrap gap-2 pt-3">
+              {[...BUILT_IN_PERSONAS, ...customPersonas.map((p) => ({ id: p.id, name: p.name }))].map((p) => (
+                <div key={p.id} className="relative group">
+                  <ChipToggle
+                    selected={selectedAudience === p.id}
+                    onClick={() => setSelectedAudience(selectedAudience === p.id ? '' : p.id)}
+                    aria-label={p.name}
+                  >
+                    {p.name}
+                  </ChipToggle>
+                  {!BUILT_IN_PERSONAS.some((bp) => bp.id === p.id) && (
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (deletingPersonaId === p.id) return;
+                        setDeletingPersonaId(p.id);
+                        try {
+                          await api.deleteCustomPersona(idToken, p.id);
+                          setCustomPersonas((prev) => prev.filter((cp) => cp.id !== p.id));
+                          setSelectedAudience((prev) => (prev === p.id ? '' : prev));
+                        } finally {
+                          setDeletingPersonaId(null);
+                        }
+                      }}
+                      disabled={deletingPersonaId === p.id}
+                      className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                      aria-label={`Delete ${p.name}`}
+                    >
+                      <XIcon className="h-2.5 w-2.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -364,6 +443,19 @@ export function AddTopicPage({
               Cancel
             </Button>
           </div>
+
+          {/* Create Persona Dialog */}
+          <CreatePersonaDialog
+            open={showPersonaDialog}
+            onClose={() => setShowPersonaDialog(false)}
+            onCreated={(persona) => {
+              setCustomPersonas((prev) => [...prev, persona]);
+              setSelectedAudience(persona.id);
+              setShowPersonaDialog(false);
+            }}
+            api={api}
+            idToken={idToken}
+          />
         </form>
       </div>
 
@@ -379,5 +471,166 @@ export function AddTopicPage({
         <TrendingSidebar topic={debouncedTopic} idToken={idToken} />
       </aside>
     </div>
+  );
+}
+
+function parseCommaList(value: string): string[] {
+  return value.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+function CreatePersonaDialog({
+  open,
+  onClose,
+  onCreated,
+  api,
+  idToken,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (persona: CustomPersona) => void;
+  api: BackendApi;
+  idToken: string;
+}) {
+  const [name, setName] = useState('');
+  const [currentFocus, setCurrentFocus] = useState('');
+  const [language, setLanguage] = useState('');
+  const [concerns, setConcerns] = useState('');
+  const [ambitions, setAmbitions] = useState('');
+  const [habits, setHabits] = useState('');
+  const [decisionDrivers, setDecisionDrivers] = useState('');
+  const [painPoints, setPainPoints] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) {
+      setName(''); setCurrentFocus(''); setLanguage('');
+      setConcerns(''); setAmbitions(''); setHabits('');
+      setDecisionDrivers(''); setPainPoints(''); setError('');
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) { setError('Name is required.'); return; }
+    setError('');
+    setSaving(true);
+    try {
+      const created = await api.createCustomPersona(idToken, {
+        name: name.trim(),
+        currentFocus: currentFocus.trim(),
+        language: language.trim(),
+        concerns: parseCommaList(concerns),
+        ambitions: parseCommaList(ambitions),
+        habits: parseCommaList(habits),
+        decisionDrivers: parseCommaList(decisionDrivers),
+        painPoints: parseCommaList(painPoints),
+      });
+      onCreated(created);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create persona.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create custom persona</DialogTitle>
+          <DialogDescription>Define the audience profile for your content.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Name *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Growth-stage SaaS founder"
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Current focus</label>
+            <input
+              type="text"
+              value={currentFocus}
+              onChange={(e) => setCurrentFocus(e.target.value)}
+              placeholder="What are they focused on right now?"
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Language / tone</label>
+            <input
+              type="text"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              placeholder="e.g. Direct, first-principles, opinionated"
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Concerns (comma-separated)</label>
+            <textarea
+              value={concerns}
+              onChange={(e) => setConcerns(e.target.value)}
+              placeholder="e.g. Extending runway, finding PMF, hiring the right people"
+              rows={2}
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Ambitions (comma-separated)</label>
+            <textarea
+              value={ambitions}
+              onChange={(e) => setAmbitions(e.target.value)}
+              placeholder="e.g. Building category-defining products, reaching Series A"
+              rows={2}
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Habits (comma-separated)</label>
+            <textarea
+              value={habits}
+              onChange={(e) => setHabits(e.target.value)}
+              placeholder="e.g. Reviews metrics every morning, attends 3-5 coffees per week"
+              rows={2}
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Decision drivers (comma-separated)</label>
+            <textarea
+              value={decisionDrivers}
+              onChange={(e) => setDecisionDrivers(e.target.value)}
+              placeholder="e.g. Speed and reversibility, signal vs noise, leverage"
+              rows={2}
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Pain points (comma-separated)</label>
+            <textarea
+              value={painPoints}
+              onChange={(e) => setPainPoints(e.target.value)}
+              placeholder="e.g. Too many priorities, advice is abundant but not actionable"
+              rows={2}
+              className="w-full rounded border border-white/30 bg-white/10 px-3 py-2 text-sm text-ink outline-none focus:border-primary/50"
+            />
+          </div>
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={saving || !name.trim()}>
+              {saving ? 'Creating…' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
