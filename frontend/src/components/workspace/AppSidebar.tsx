@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlugZap, ScrollText, Settings, TrendingUp } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, ScrollText, Settings, TrendingUp } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
 import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending';
+export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -131,19 +131,21 @@ export function AppSidebar({
     const to =
       page === 'topics'
         ? WORKSPACE_PATHS.topics
-        : page === 'rules'
-          ? WORKSPACE_PATHS.rules
-          : page === 'campaign'
-            ? WORKSPACE_PATHS.campaign
-            : page === 'usage'
-              ? WORKSPACE_PATHS.usage
-              : page === 'connections'
-                ? WORKSPACE_PATHS.connections
-                : page === 'enrichment'
-                  ? WORKSPACE_PATHS.enrichment
-                  : page === 'trending'
-                    ? WORKSPACE_PATHS.trending
-                    : WORKSPACE_PATHS.settings;
+        : page === 'add-topic'
+          ? WORKSPACE_PATHS.addTopic
+          : page === 'rules'
+            ? WORKSPACE_PATHS.rules
+            : page === 'campaign'
+              ? WORKSPACE_PATHS.campaign
+              : page === 'usage'
+                ? WORKSPACE_PATHS.usage
+                : page === 'connections'
+                  ? WORKSPACE_PATHS.connections
+                  : page === 'enrichment'
+                    ? WORKSPACE_PATHS.enrichment
+                    : page === 'trending'
+                      ? WORKSPACE_PATHS.trending
+                      : WORKSPACE_PATHS.settings;
     return (
       <li key={page}>
         <NavLink
@@ -256,6 +258,7 @@ export function AppSidebar({
             className="custom-scrollbar shrink-0 list-none flex flex-col gap-1.5 overflow-y-auto p-2"
           >
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
+            {link('add-topic', <PlusCircle aria-hidden />, 'New Topic')}
             {FEATURE_CAMPAIGN ? link('campaign', <Megaphone aria-hidden />, 'Campaign') : null}
             {link('rules', <ScrollText aria-hidden />, 'Rules')}
             {link('usage', <BarChart2 aria-hidden />, 'Usage')}

@@ -5,6 +5,7 @@ import { encodeTopicIdForPath, encodeTopicRouteId } from './topicRoute';
 /** Logged-in app paths (relative to optional {@link import.meta.env.BASE_URL}). */
 export const WORKSPACE_PATHS = {
   topics: '/topics',
+  addTopic: '/topics/new',
   settings: '/settings',
   rules: '/rules',
   campaign: '/campaign',
@@ -27,6 +28,7 @@ export function normalizeWorkspacePathname(pathname: string): string {
  * Use with `Routes` inside `BrowserRouter basename={…}`.
  */
 export const WORKSPACE_ROUTE_PATHS = {
+  addTopic: '/topics/new',
   topicEditor: '/topics/:topicId/editor/:variantSlot',
   topicVariants: '/topics/:topicId',
   topics: '/topics',

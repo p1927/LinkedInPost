@@ -1176,8 +1176,11 @@ async function dispatchAction(
       const topicId = crypto.randomUUID();
       const date = String(payload.date || new Date().toISOString().slice(0, 10)).trim();
       const sid = String(storedConfig.spreadsheetId || '').trim();
+      const topicMeta = payload.topicMeta && typeof payload.topicMeta === 'object' ? payload.topicMeta : null;
+      const topicGenerationRules = topicMeta ? JSON.stringify(topicMeta) : '';
+      if (topicGenerationRules.length > 8000) throw new Error('Topic metadata is too large.');
       // Always write to D1 first (optional Sheets: never fail the request if Google rejects sync)
-      const newRow = await pipeline.addTopicToD1(topicText, date, topicId, sid);
+      const newRow = await pipeline.addTopicToD1(topicText, date, topicId, sid, topicGenerationRules);
       if (sid) {
         try {
           await sheets.addTopic(sid, topicText);

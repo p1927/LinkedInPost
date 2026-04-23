@@ -729,7 +729,7 @@ export class PipelineStore {
     }));
   }
 
-  async addTopicToD1(topic: string, date: string, topicId: string, spreadsheetIdForRow = ''): Promise<SheetRow> {
+  async addTopicToD1(topic: string, date: string, topicId: string, spreadsheetIdForRow = '', topicGenerationRules = ''): Promise<SheetRow> {
     const topicKey = buildTopicKey(topic, date);
     const sid = String(spreadsheetIdForRow || '').trim();
     await this.db
@@ -740,7 +740,7 @@ export class PipelineStore {
         '', '', '', '',
         '', '', '',
         '', '', '', '', '',
-        '', '', null,
+        topicGenerationRules, '', null,
         '', '',
         '', null, '',
         '', '', '', '',
@@ -758,7 +758,7 @@ export class PipelineStore {
       selectedText: '', selectedImageId: '', selectedImageUrlsJson: '',
       postTime: '',
       emailTo: '', emailCc: '', emailBcc: '', emailSubject: '',
-      topicGenerationRules: '', generationTemplateId: '',
+      topicGenerationRules, generationTemplateId: '',
       topicDeliveryChannel: '', topicGenerationModel: '',
     };
   }

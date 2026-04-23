@@ -671,8 +671,15 @@ export class BackendApi {
     }>('getLlmProviderCatalog', idToken);
   }
 
-  async addTopic(idToken: string, topic: string): Promise<void> {
-    await this.post<{ success: true }>('addTopic', idToken, { topic });
+  async addTopic(idToken: string, topic: string, topicMeta?: {
+    about?: string;
+    meaning?: string;
+    style?: string;
+    pros?: string[];
+    cons?: string[];
+    notes?: string;
+  }): Promise<SheetRow | void> {
+    return this.post<SheetRow>('addTopic', idToken, { topic, topicMeta });
   }
 
   /** One field per post; optional fields omitted when empty. Sent to `bulkImportCampaign`. */

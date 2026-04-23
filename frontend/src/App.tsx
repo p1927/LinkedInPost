@@ -86,19 +86,21 @@ function WorkspaceSession({
 }) {
   const location = useLocation()
   const path = normalizeWorkspacePathname(location.pathname)
-  const workspacePage: WorkspaceNavPage = path.startsWith(WORKSPACE_PATHS.settings)
-    ? 'settings'
-    : path.startsWith(WORKSPACE_PATHS.rules)
-      ? 'rules'
-      : path.startsWith(WORKSPACE_PATHS.campaign)
-        ? 'campaign'
-        : path.startsWith(WORKSPACE_PATHS.usage)
-          ? 'usage'
-          : path.startsWith(WORKSPACE_PATHS.enrichment)
-            ? 'enrichment'
-            : path.startsWith(WORKSPACE_PATHS.trending)
-              ? 'trending'
-              : 'topics'
+  const workspacePage: WorkspaceNavPage = path === WORKSPACE_PATHS.addTopic
+    ? 'add-topic'
+    : path.startsWith(WORKSPACE_PATHS.settings)
+      ? 'settings'
+      : path.startsWith(WORKSPACE_PATHS.rules)
+        ? 'rules'
+        : path.startsWith(WORKSPACE_PATHS.campaign)
+          ? 'campaign'
+          : path.startsWith(WORKSPACE_PATHS.usage)
+            ? 'usage'
+            : path.startsWith(WORKSPACE_PATHS.enrichment)
+              ? 'enrichment'
+              : path.startsWith(WORKSPACE_PATHS.trending)
+                ? 'trending'
+                : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
   const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
 
