@@ -56,12 +56,14 @@ export function ContentReviewSettings({
   );
 
   const handleTextProviderChange = (provider: LlmProviderId) => {
+    if (!llmCatalog || llmCatalog.length === 0) return;
     const models = modelsForProvider(provider, llmCatalog);
     const firstModel = models[0]?.value ?? '';
     onChange({ ...value, textRef: { provider, model: firstModel } });
   };
 
   const handleVisionProviderChange = (provider: LlmProviderId) => {
+    if (!llmCatalog || llmCatalog.length === 0) return;
     const models = modelsForProvider(provider, llmCatalog);
     const firstModel = models[0]?.value ?? '';
     onChange({ ...value, visionRef: { provider, model: firstModel } });
