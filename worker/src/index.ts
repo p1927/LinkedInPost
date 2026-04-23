@@ -1518,6 +1518,8 @@ Rules:
       return promoteDraftImageUrl(env, payload);
     case 'uploadDraftImage':
       return uploadDraftImage(env, payload);
+    case 'generateImageWithReference':
+      return generateImageWithReference(env, storedConfig, payload);
     case 'triggerGithubAction':
       return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
@@ -4602,6 +4604,78 @@ async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Pro
   }
 
   const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, decoded.bytes, contentType, fileName);
+  return { imageUrl };
+}
+
+async function generateImageWithReference(
+  env: Env,
+  storedConfig: StoredConfig,
+  payload: Record<string, unknown>,
+): Promise<DraftImageUploadResult> {
+  const referenceImageUrl = String(payload.referenceImageUrl || '').trim();
+  const instructions = String(payload.instructions || '').trim();
+  const topicId = String(payload.topicId || '').trim();
+
+  if (!referenceImageUrl) throw new Error('referenceImageUrl is required.');
+  if (!instructions) throw new Error('instructions are required.');
+  if (!topicId) throw new Error('topicId is required.');
+
+  const provider = storedConfig.imageGen?.provider;
+  if (provider !== 'gemini') {
+    throw new Error(`Reference image generation is only supported for the Gemini provider, not "${provider ?? 'unknown'}".`);
+  }
+
+  const model = storedConfig.imageGen?.model ?? 'gemini-2.0-flash-preview-image-generation';
+  const apiKey = String(env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured for image generation.');
+
+  // Fetch reference image and convert to base64
+  const refAsset = await fetchImageAsset(normalizeDeliveryImageUrl(referenceImageUrl));
+  const refBase64 = bytesToBase64(new Uint8Array(refAsset.bytes));
+
+  // Call Gemini image generation API with reference image + instructions
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inlineData: { mimeType: refAsset.contentType || 'image/jpeg', data: refBase64 } },
+              { text: instructions },
+            ],
+          },
+        ],
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Gemini image generation failed with status ${response.status}: ${message.slice(0, 280)}`);
+  }
+
+  const result = (await response.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string } }> } }>;
+    promptFeedback?: { blockReason?: string };
+  };
+
+  if (result.promptFeedback?.blockReason) {
+    throw new Error(`Gemini blocked the image generation request: ${result.promptFeedback.blockReason}.`);
+  }
+
+  const imagePart = result.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+  if (!imagePart?.inlineData?.data) {
+    throw new Error('Gemini did not return an image in the response.');
+  }
+
+  const imgContentType = imagePart.inlineData.mimeType ?? 'image/png';
+  const imgBytes = Uint8Array.from(atob(imagePart.inlineData.data), (c) => c.charCodeAt(0));
+  const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, imgBytes.buffer, imgContentType);
   return { imageUrl };
 }
 

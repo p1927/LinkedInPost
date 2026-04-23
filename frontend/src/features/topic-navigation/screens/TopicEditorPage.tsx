@@ -75,6 +75,8 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         onFetchMoreImages={(searchQuery) => p.onFetchMoreImages(row, searchQuery)}
         onPromoteRemoteImage={(sourceUrl) => p.onPromoteRemoteImage(row, sourceUrl)}
         onUploadImage={(file) => p.onUploadImage(row, file)}
+        onGenerateReferenceImage={p.onGenerateReferenceImage ? (ref, instructions) => p.onGenerateReferenceImage!(row, ref, instructions) : undefined}
+        imageGenConfig={p.imageGenConfig}
         onDownloadImage={p.onDownloadImage}
         onCancel={handleCancel}
         isAdmin={p.isAdmin}

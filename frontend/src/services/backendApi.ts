@@ -117,6 +117,10 @@ export interface DraftImagePromoteResult {
   imageUrl: string;
 }
 
+export interface GenerateImageWithReferenceResult {
+  imageUrl: string;
+}
+
 export type GenerationScope = 'selection' | 'whole-post';
 
 export interface TextSelectionRange {
@@ -850,6 +854,19 @@ export class BackendApi {
       fileName: file.name,
       contentType: file.type,
       dataUrl,
+      topicId,
+    });
+  }
+
+  async generateImageWithReference(
+    idToken: string,
+    referenceImageUrl: string,
+    instructions: string,
+    topicId: string,
+  ): Promise<GenerateImageWithReferenceResult> {
+    return this.post<GenerateImageWithReferenceResult>('generateImageWithReference', idToken, {
+      referenceImageUrl,
+      instructions,
       topicId,
     });
   }

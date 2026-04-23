@@ -12,7 +12,7 @@ import {
 } from '../../services/backendApi';
 import { type ChannelId } from '../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
-import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../services/configService';
+import type { LlmRef, NewsResearchStored, NewsProviderKeys, ImageGenProvider } from '../../services/configService';
 
 export type TopicReviewPagesBaseProps = {
   rows: SheetRow[];
@@ -35,6 +35,8 @@ export type TopicReviewPagesBaseProps = {
   onFetchMoreImages: (row: SheetRow, searchQuery?: string) => Promise<string[]>;
   onPromoteRemoteImage: (row: SheetRow, sourceUrl: string) => Promise<string>;
   onUploadImage: (row: SheetRow, file: File) => Promise<string>;
+  onGenerateReferenceImage?: (row: SheetRow, referenceImageUrl: string, instructions: string) => Promise<string>;
+  imageGenConfig?: { provider: ImageGenProvider; model?: string };
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   queueLoading: boolean;
   isAdmin: boolean;

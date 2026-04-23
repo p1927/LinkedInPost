@@ -6,6 +6,7 @@ import { MAX_IMAGES_PER_POST } from '../services/selectedImageUrls';
 import { useAlert } from './useAlert';
 import { Input } from './ui/input';
 import { Button } from '@/components/ui/button';
+import { ImageGenReferencePanel } from './ImageGenReferencePanel';
 
 export interface ImageAssetOption {
   id: string;
@@ -30,6 +31,12 @@ interface Props {
   onClearSelectedImage?: () => void;
   /** Narrow sidebar: horizontal image carousel, contained thumbnails, stacked actions. */
   compact?: boolean;
+  /** When true, shows the "Generate with Reference" panel (model supports multimodal image input). */
+  supportsReferenceImage?: boolean;
+  /** Upload a reference image and return its GCS URL (reuses the upload endpoint). */
+  onUploadReferenceImage?: (file: File) => Promise<string>;
+  /** Generate a new image from a reference URL + instructions; result is added to imageOptions by the caller. */
+  onGenerateReferenceImage?: (referenceImageUrl: string, instructions: string) => Promise<void>;
 }
 
 function buildDownloadName(topic: string, option: ImageAssetOption): string {
@@ -59,6 +66,9 @@ export function ImageAssetManager({
   onDownloadImage,
   onClearSelectedImage,
   compact = false,
+  supportsReferenceImage = false,
+  onUploadReferenceImage,
+  onGenerateReferenceImage,
 }: Props) {
   const { showAlert } = useAlert();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -180,6 +190,16 @@ export function ImageAssetManager({
           />
         </div>
       </div>
+
+      {supportsReferenceImage && onUploadReferenceImage && onGenerateReferenceImage && (
+        <div className="mt-4">
+          <ImageGenReferencePanel
+            imageOptions={images}
+            onUploadReferenceImage={onUploadReferenceImage}
+            onGenerate={onGenerateReferenceImage}
+          />
+        </div>
+      )}
 
       {images.length === 0 ? (
         <div className="mt-4 rounded-3xl border border-dashed border-border bg-canvas px-5 py-8 text-center">

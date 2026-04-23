@@ -532,6 +532,11 @@ export function useDashboardQueue({
     return result.imageUrl;
   };
 
+  const handleGenerateReferenceImage = async (row: SheetRow, referenceImageUrl: string, instructions: string) => {
+    const result = await api.generateImageWithReference(idToken, referenceImageUrl, instructions, row.topicId);
+    return result.imageUrl;
+  };
+
   const handleDownloadReviewImage = async (imageUrl: string, fileName: string) => {
     const blob = await api.downloadDraftImage(idToken, imageUrl, fileName);
     const downloadUrl = URL.createObjectURL(blob);
@@ -908,6 +913,7 @@ export function useDashboardQueue({
     handleFetchReviewImages,
     handlePromoteReviewImage,
     handleUploadReviewImage,
+    handleGenerateReferenceImage,
     handleDownloadReviewImage,
     publishRowToSelectedChannel,
     publishFromReviewEditor,

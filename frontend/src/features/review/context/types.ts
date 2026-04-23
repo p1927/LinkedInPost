@@ -18,7 +18,7 @@ import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
 import { type ChannelId } from '../../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
-import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../../services/configService';
+import type { LlmRef, NewsResearchStored, NewsProviderKeys, ImageGenProvider } from '../../../services/configService';
 import { type SheetVariantForReview } from './utils';
 
 export interface CompareState {
@@ -159,11 +159,16 @@ export interface ReviewFlowContextValue {
   // Refs
   topicHeadingRef: React.RefObject<HTMLHeadingElement | HTMLParagraphElement | null>;
 
+  // Image gen
+  imageGenConfig?: { provider: ImageGenProvider; model?: string };
+
   // Functions
   leaveToTopics: () => void;
   requestNavigateToVariants: () => void;
   handleFetchMoreImageOptions: (searchQuery?: string) => Promise<void>;
   handleUploadImageOption: (file: File) => Promise<void>;
+  handleUploadReferenceImage: (file: File) => Promise<string>;
+  handleGenerateReferenceImage: (referenceImageUrl: string, instructions: string) => Promise<void>;
   handleSaveDraft: () => Promise<void>;
   savingDraft: boolean;
   handleApprove: () => Promise<void>;
@@ -212,6 +217,8 @@ export interface ReviewFlowProviderProps {
   /** Copy a remote image to workspace storage before approve/publish when the URL is not already hosted for delivery. */
   onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;
+  onGenerateReferenceImage?: (referenceImageUrl: string, instructions: string) => Promise<string>;
+  imageGenConfig?: { provider: ImageGenProvider; model?: string };
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
   onSaveTopicGenerationRules: (row: SheetRow, topicRules: string) => Promise<SheetRow>;

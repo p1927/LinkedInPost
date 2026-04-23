@@ -5,6 +5,7 @@ import { ImageAssetManager } from '../../../components/ImageAssetManager';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 import { ResearcherPanel } from '../../news-research';
+import { getImageGenCapabilities } from '../../../services/configService';
 
 export function EditorSidebar() {
   const {
@@ -17,6 +18,9 @@ export function EditorSidebar() {
     handleClearSelectedImage,
     handleFetchMoreImageOptions,
     handleUploadImageOption,
+    handleUploadReferenceImage,
+    handleGenerateReferenceImage,
+    imageGenConfig,
     onDownloadImage,
     sharedRules,
     globalGenerationRules,
@@ -159,6 +163,9 @@ export function EditorSidebar() {
               onDownloadImage={onDownloadImage}
               onClearSelectedImage={handleClearSelectedImage}
               compact
+              supportsReferenceImage={getImageGenCapabilities(imageGenConfig?.provider ?? 'pixazo', imageGenConfig?.model).supportsReferenceImage}
+              onUploadReferenceImage={handleUploadReferenceImage}
+              onGenerateReferenceImage={handleGenerateReferenceImage}
             />
           </section>
         ) : null}

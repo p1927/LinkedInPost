@@ -30,6 +30,7 @@ export function useReviewFlowActions(
     onFetchMoreImages,
     onPromoteRemoteImage,
     onUploadImage,
+    onGenerateReferenceImage,
     onCancel,
     routed,
     googleModel,
@@ -434,6 +435,28 @@ export function useReviewFlowActions(
     );
   };
 
+  const handleUploadReferenceImage = async (file: File): Promise<string> => {
+    return onUploadImage(file);
+  };
+
+  const handleGenerateReferenceImage = async (referenceImageUrl: string, instructions: string): Promise<void> => {
+    if (!onGenerateReferenceImage) return;
+    const imageUrl = await onGenerateReferenceImage(referenceImageUrl, instructions);
+    const generatedOption: ImageAssetOption = {
+      id: `generated-ref-${Date.now()}`,
+      imageUrl,
+      label: 'AI Generated',
+      kind: 'generated',
+    };
+    setUploadedImageOptions((current) =>
+      mergeUniqueImageOptions([generatedOption, ...current]).slice(0, DRAFT_IMAGE_SEARCH_CHOICE_COUNT),
+    );
+    setSuppressAutoImageSelection(false);
+    setSelectedImageUrls((prev) =>
+      prev.length >= MAX_IMAGES_PER_POST ? prev : prev.includes(imageUrl) ? prev : [...prev, imageUrl],
+    );
+  };
+
   const handleApprove = async () => {
     if (!(editorText || '').trim()) {
       void showAlert({ title: 'Notice', description: 'Post text cannot be empty.' });
@@ -816,6 +839,8 @@ export function useReviewFlowActions(
     handleSelectImageOption,
     handleClearSelectedImage,
     handleUploadImageOption,
+    handleUploadReferenceImage,
+    handleGenerateReferenceImage,
     handleSaveDraft,
     savingDraft,
     handleApprove,

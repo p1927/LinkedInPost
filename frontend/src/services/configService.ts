@@ -28,6 +28,19 @@ export const IMAGE_GEN_MODELS: Record<ImageGenProvider, Array<{ value: string; l
   ],
 };
 
+export const IMAGE_GEN_MODEL_CAPABILITIES: Record<string, { supportsReferenceImage: boolean }> = {
+  'gemini-2.0-flash-preview-image-generation': { supportsReferenceImage: true },
+  'imagen-3.0-generate-001': { supportsReferenceImage: false },
+};
+
+export function getImageGenCapabilities(
+  _provider: ImageGenProvider,
+  model?: string,
+): { supportsReferenceImage: boolean } {
+  if (!model) return { supportsReferenceImage: false };
+  return IMAGE_GEN_MODEL_CAPABILITIES[model] ?? { supportsReferenceImage: false };
+}
+
 export type LlmSettingKey =
   | 'review_generation'
   | 'generation_worker'

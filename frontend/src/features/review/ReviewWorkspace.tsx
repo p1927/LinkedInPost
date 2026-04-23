@@ -1,5 +1,5 @@
 import { type DraftPreviewSelection, type SheetRow } from '../../services/sheets';
-import type { LlmRef, NewsResearchStored, NewsProviderKeys } from '../../services/configService';
+import type { LlmRef, NewsResearchStored, NewsProviderKeys, ImageGenProvider } from '../../services/configService';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import {
   type ContentReviewReport,
@@ -46,6 +46,8 @@ export interface ReviewWorkspaceProps {
   onFetchMoreImages: (searchQuery?: string) => Promise<string[]>;
   onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;
+  onGenerateReferenceImage?: (referenceImageUrl: string, instructions: string) => Promise<string>;
+  imageGenConfig?: { provider: ImageGenProvider; model?: string };
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;
   isAdmin: boolean;
