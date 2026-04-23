@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Newspaper, Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type BackendApi } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../topic-navigation/utils/workspaceRoutes';
