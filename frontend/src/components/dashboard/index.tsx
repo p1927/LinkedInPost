@@ -78,9 +78,7 @@ function TopicVariantsOrDetail(p: Parameters<typeof TopicVariantsPage>[0] & { ro
       </div>
     );
   }
-  const { rows: _rows, ...rest } = p;
-  void _rows;
-  return <TopicVariantsPage {...rest} />;
+  return <TopicVariantsPage {...p} />;
 }
 
 function getProviderDisplayLabel(provider: string): string {
