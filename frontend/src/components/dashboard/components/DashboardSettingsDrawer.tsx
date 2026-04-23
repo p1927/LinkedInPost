@@ -162,7 +162,8 @@ function getApiKeyBadge(provider: string, session: AppSession): { text: string; 
   if (provider === 'dall-e') return { text: 'OPENAI_API_KEY (check Worker env)', hasKey: false };
   if (provider === 'stability') return { text: 'STABILITY_API_KEY (check Worker env)', hasKey: false };
   if (provider === 'seedance') return { text: 'SEEDANCE_API_KEY (check Worker env)', hasKey: false };
-  return { text: 'PIXAZO_API_KEY (check Worker env)', hasKey: false };
+  const pixazoHasKey = Boolean(session.config.hasGenerationWorker);
+  return { text: pixazoHasKey ? 'PIXAZO_API_KEY (via Worker)' : 'PIXAZO_API_KEY not set', hasKey: pixazoHasKey };
 }
 
 function ImageGenAccordionSection({
@@ -209,13 +210,17 @@ function ImageGenAccordionSection({
     setExpandedProvider(imageGenProvider);
   }, [imageGenProvider]);
 
-  const entries = catalog.length > 0
+  const allEntries = catalog.length > 0
     ? catalog
     : IMAGE_GEN_PROVIDERS.map((p) => ({
         provider: p.value,
         label: p.label,
         models: IMAGE_GEN_MODELS[p.value] ?? [],
       }));
+
+  const entries = allEntries.filter((e) => e.provider !== 'pixazo');
+  const pixazoIsSelected = imageGenProvider === 'pixazo';
+  const pixazoBadge = getApiKeyBadge('pixazo', session);
 
   return (
     <SettingsSectionCard id="settings-image-generation" title="Image Generation" variant="canvas">
@@ -315,6 +320,36 @@ function ImageGenAccordionSection({
             </div>
           );
         })}
+      </div>
+
+      {/* Pixazo: API-only provider, no model selection */}
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className={cn('text-sm font-semibold', pixazoIsSelected ? 'text-ink' : 'text-muted-foreground')}>
+            Pixazo SDXL
+          </span>
+          {pixazoIsSelected && (
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              active
+            </span>
+          )}
+          <span className={cn(
+            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+            pixazoBadge.hasKey ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800',
+          )}>
+            {pixazoBadge.text}
+          </span>
+        </div>
+        <button
+          type="button"
+          className={cn(
+            'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+            pixazoIsSelected ? 'bg-primary/10 text-primary' : 'bg-canvas-subtle text-muted-foreground hover:bg-primary/10 hover:text-primary',
+          )}
+          onClick={() => { setImageGenProvider('pixazo'); setImageGenModel(''); }}
+        >
+          {pixazoIsSelected ? 'Selected' : 'Select'}
+        </button>
       </div>
     </SettingsSectionCard>
   );
