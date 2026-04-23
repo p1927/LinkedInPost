@@ -9,9 +9,10 @@ import { StatusDashboard } from './StatusDashboard';
 import { setupService } from './setupService';
 import { SetupStateService } from './setupStateService';
 import { TrendingApiStep } from './TrendingApiStep';
+import { ImageGenStep } from './ImageGenStep';
 import type { SetupState } from './types';
 
-export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'trending' | 'envvars' | 'final';
+export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'trending' | 'imagegen' | 'envvars' | 'final';
 
 export type YouTubeAdapterType = 'youtube-official' | 'apify-youtube';
 export type InstagramAdapterType = 'instagram-official' | 'sociavault';
@@ -204,6 +205,11 @@ export function SetupWizard() {
 
   const handleTrendingComplete = useCallback(async (trendingApis: SetupConfig['trendingApis']) => {
     updateConfig({ trendingApis });
+    setStep('imagegen');
+  }, [updateConfig]);
+
+  const handleImageGenComplete = useCallback(async (envVars: Record<string, string>) => {
+    updateConfig({ envVars });
     setStep('envvars');
   }, [updateConfig]);
 
@@ -398,7 +404,25 @@ export function SetupWizard() {
                 config={config}
                 onUpdate={updateConfig}
                 onComplete={handleTrendingComplete}
+                onSkip={() => setStep('imagegen')}
                 onBack={() => setStep('integrations')}
+              />
+            </motion.div>
+          )}
+
+          {step === 'imagegen' && (
+            <motion.div
+              key="imagegen"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <ImageGenStep
+                config={config}
+                onUpdate={updateConfig}
+                onComplete={handleImageGenComplete}
+                onSkip={() => setStep('envvars')}
+                onBack={() => setStep('trending')}
               />
             </motion.div>
           )}

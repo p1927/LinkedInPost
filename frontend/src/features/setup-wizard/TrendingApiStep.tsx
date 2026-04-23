@@ -6,6 +6,7 @@ interface TrendingApiStepProps {
   config: SetupConfig;
   onUpdate: (updates: Partial<SetupConfig>) => void;
   onComplete: (apiKeys: SetupConfig['trendingApis']) => void;
+  onSkip: () => void;
   onBack: () => void;
 }
 
@@ -32,7 +33,7 @@ const NEWS_APIS = [
   { id: 'gnews' as const, name: 'GNews API', description: '100 requests/day free. Good general news coverage.' },
 ];
 
-export function TrendingApiStep({ config, onUpdate, onComplete, onBack }: TrendingApiStepProps) {
+export function TrendingApiStep({ config, onUpdate, onComplete, onSkip, onBack }: TrendingApiStepProps) {
   const [selectedYoutube, setSelectedYoutube] = useState(config.trendingApis.youtube.adapter);
   const [selectedInstagram, setSelectedInstagram] = useState(config.trendingApis.instagram.adapter);
   const [selectedLinkedIn, setSelectedLinkedIn] = useState(config.trendingApis.linkedin.adapter);
@@ -89,11 +90,19 @@ export function TrendingApiStep({ config, onUpdate, onComplete, onBack }: Trendi
         Back
       </button>
 
-      <h2 className="font-heading text-xl font-semibold text-ink mb-1">
-        Trending APIs
-      </h2>
-      <p className="text-sm text-muted mb-5">
-        Configure APIs for discovering trending content. You can skip or configure later in settings.
+      <div className="flex items-center gap-2 mb-1">
+        <h2 className="font-heading text-xl font-semibold text-ink">
+          Trending APIs
+        </h2>
+        <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+          Optional
+        </span>
+      </div>
+      <p className="text-sm text-muted mb-1">
+        Configure APIs for discovering trending content.
+      </p>
+      <p className="text-xs text-muted/70 mb-5">
+        Without news APIs, the trending sidebar and research features won't work — but you can still create and publish posts.
       </p>
 
       <div className="space-y-6">
@@ -141,12 +150,20 @@ export function TrendingApiStep({ config, onUpdate, onComplete, onBack }: Trendi
         >
           Back
         </button>
-        <button
-          onClick={handleComplete}
-          className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 transition-colors"
-        >
-          Continue
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onSkip}
+            className="rounded-xl px-5 py-2.5 text-sm font-medium text-muted hover:text-ink transition-colors"
+          >
+            Skip for now
+          </button>
+          <button
+            onClick={handleComplete}
+            className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 transition-colors"
+          >
+            Save & Continue
+          </button>
+        </div>
       </div>
     </div>
   );
