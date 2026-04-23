@@ -16,6 +16,8 @@ import {
   normalizeContentReviewStored,
   type NewsResearchStored,
   type ContentReviewStored,
+  type EnrichmentSkillConfig,
+  type EnrichmentSkillId,
 } from '../../../services/configService';
 import { FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { type ChannelId } from '../../../integrations/channels';
@@ -143,6 +145,9 @@ export function useDashboardSettings({
   );
   const [imageGenModel, setImageGenModel] = useState<string>(
     () => session.config.imageGen?.model ?? '',
+  );
+  const [enrichmentSkills, setEnrichmentSkills] = useState<EnrichmentSkillConfig[]>(
+    () => session.config.enrichmentSkills ?? [],
   );
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
@@ -616,5 +621,22 @@ export function useDashboardSettings({
     hasUnsavedSettingsChanges,
     reviewGenerationLlm,
     generationWorkerLlm,
+    enrichmentSkills,
+    handleToggleEnrichmentSkill,
   };
+
+  async function handleToggleEnrichmentSkill(id: EnrichmentSkillId, enabled: boolean) {
+    const current = enrichmentSkills;
+    const existing = current.find((s) => s.id === id);
+    const updated: EnrichmentSkillConfig[] = existing
+      ? current.map((s) => (s.id === id ? { ...s, enabled } : s))
+      : [...current, { id, enabled }];
+    setEnrichmentSkills(updated);
+    try {
+      await onSaveConfig({ enrichmentSkills: updated });
+    } catch (error) {
+      setEnrichmentSkills(current);
+      handleFailure(error, 'Failed to update enrichment skill.');
+    }
+  }
 }

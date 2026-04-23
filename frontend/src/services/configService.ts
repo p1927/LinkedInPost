@@ -28,17 +28,25 @@ export const IMAGE_GEN_MODELS: Record<ImageGenProvider, Array<{ value: string; l
   ],
 };
 
-export const IMAGE_GEN_MODEL_CAPABILITIES: Record<string, { supportsReferenceImage: boolean }> = {
-  'gemini-2.0-flash-preview-image-generation': { supportsReferenceImage: true },
-  'imagen-3.0-generate-001': { supportsReferenceImage: false },
+export interface ImageGenModelCapabilities {
+  supportsReferenceImage: boolean;
+}
+
+export const IMAGE_GEN_MODEL_CAPABILITIES: Record<ImageGenProvider, Record<string, ImageGenModelCapabilities>> = {
+  gemini: {
+    'gemini-2.0-flash-preview-image-generation': { supportsReferenceImage: true },
+    'imagen-3.0-generate-001': { supportsReferenceImage: false },
+  },
+  pixazo: {},
+  seedance: {
+    'seedance-1-lite': { supportsReferenceImage: false },
+    'seedance-1': { supportsReferenceImage: false },
+  },
 };
 
-export function getImageGenCapabilities(
-  _provider: ImageGenProvider,
-  model?: string,
-): { supportsReferenceImage: boolean } {
+export function getImageGenCapabilities(provider: ImageGenProvider, model?: string): ImageGenModelCapabilities {
   if (!model) return { supportsReferenceImage: false };
-  return IMAGE_GEN_MODEL_CAPABILITIES[model] ?? { supportsReferenceImage: false };
+  return IMAGE_GEN_MODEL_CAPABILITIES[provider]?.[model] ?? { supportsReferenceImage: false };
 }
 
 export type LlmSettingKey =
@@ -72,6 +80,39 @@ export const LLM_SETTING_KEY_LABELS: Record<LlmSettingKey, string> = {
   enrichment_image_strategy: 'Enrichment: Image Strategy',
   enrichment_vocabulary: 'Enrichment: Vocabulary',
   enrichment_trending: 'Enrichment: Trending',
+};
+
+export const ENRICHMENT_SKILL_IDS = [
+  'persona', 'emotion', 'psychology', 'persuasion', 'copywriting',
+  'storytelling', 'typography', 'vocabulary', 'trending',
+  'color-emotion', 'image-strategy',
+] as const;
+
+export type EnrichmentSkillId = typeof ENRICHMENT_SKILL_IDS[number];
+
+export interface EnrichmentSkillConfig {
+  id: EnrichmentSkillId;
+  enabled: boolean;
+  llmRef?: LlmRef;
+}
+
+export const ENRICHMENT_SKILL_METADATA: Record<EnrichmentSkillId, {
+  label: string;
+  description: string;
+  icon: string;
+  required: boolean;
+}> = {
+  persona:          { label: 'Persona',        description: 'Builds target audience persona',                     icon: '👤', required: true  },
+  emotion:          { label: 'Emotion',         description: 'Maps emotional arc and primary hook',               icon: '🎭', required: false },
+  psychology:       { label: 'Psychology',      description: 'Cognitive bias and motivation framing',             icon: '🧠', required: false },
+  persuasion:       { label: 'Persuasion',      description: 'Selects persuasion framework and proof type',       icon: '🎯', required: false },
+  copywriting:      { label: 'Copywriting',     description: 'Hook, power words, and CTA style',                 icon: '✍️', required: false },
+  storytelling:     { label: 'Storytelling',    description: 'Narrative structure and tension arc',              icon: '📖', required: false },
+  typography:       { label: 'Typography',      description: 'Line breaks, whitespace, and emoji usage',         icon: '🔤', required: false },
+  vocabulary:       { label: 'Vocabulary',      description: 'Industry terms, register level, avoid-words',      icon: '📝', required: false },
+  trending:         { label: 'Trending',        description: 'Trending topics and cultural references',           icon: '📈', required: false },
+  'color-emotion':  { label: 'Color Emotion',   description: 'Color palette derived from emotional signal',      icon: '🎨', required: false },
+  'image-strategy': { label: 'Image Strategy',  description: 'Visual style, composition, generation prompt',     icon: '🖼️', required: false },
 };
 
 export const AVAILABLE_GOOGLE_MODELS: LlmModelOption[] = STATIC_MODELS_BY_PROVIDER.gemini ?? [];
@@ -290,6 +331,7 @@ export interface BotConfig {
     provider: ImageGenProvider;
     model?: string;
   };
+  enrichmentSkills?: EnrichmentSkillConfig[];
 }
 
 function normalizeNewsResearchConfig(raw: unknown): NewsResearchStored {
@@ -418,11 +460,27 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
   }
   const withLlmSettings = config?.llmSettings ? { ...withLlm, llmSettings: config.llmSettings } : withLlm;
   const withImageGen = config?.imageGen ? { ...withLlmSettings, imageGen: { provider: (config.imageGen.provider ?? 'pixazo') as ImageGenProvider, model: config.imageGen.model } } : withLlmSettings;
+  const normalizedSkills = (() => {
+    const raw = (config as { enrichmentSkills?: unknown })?.enrichmentSkills;
+    if (!Array.isArray(raw) || raw.length === 0) return undefined;
+    return raw
+      .filter((s): s is { id: string; enabled?: unknown; llmRef?: LlmRef } =>
+        Boolean(s) && typeof s === 'object' && typeof (s as { id?: unknown }).id === 'string' &&
+        (ENRICHMENT_SKILL_IDS as readonly string[]).includes((s as { id: string }).id))
+      .map((s): EnrichmentSkillConfig => ({
+        id: s.id as EnrichmentSkillId,
+        enabled: s.enabled !== false,
+        llmRef: s.llmRef ?? undefined,
+      }));
+  })();
+  const withSkills = normalizedSkills !== undefined
+    ? { ...withImageGen, enrichmentSkills: normalizedSkills }
+    : withImageGen;
   if (!FEATURE_CONTENT_REVIEW) {
-    return withImageGen;
+    return withSkills;
   }
   return {
-    ...withImageGen,
+    ...withSkills,
     contentReview: normalizeContentReviewStored(config?.contentReview),
   };
 }
@@ -467,4 +525,5 @@ export interface BotConfigUpdate {
     provider?: ImageGenProvider;
     model?: string;
   };
+  enrichmentSkills?: EnrichmentSkillConfig[];
 }

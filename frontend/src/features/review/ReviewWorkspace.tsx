@@ -72,6 +72,7 @@ export interface ReviewWorkspaceProps {
     deliveryChannel: ChannelId,
   ) => Promise<ContentReviewReport>;
   onAfterContentReview?: () => Promise<void>;
+  onUploadContextDocument?: (params: { name: string; contentBase64: string; mimeType: string }) => Promise<{ documentId: string; extractedText: string; charCount: number }>;
 }
 
 function ReviewWorkspaceLayout() {

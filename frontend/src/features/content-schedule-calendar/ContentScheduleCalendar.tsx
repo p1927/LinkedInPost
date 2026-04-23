@@ -73,6 +73,29 @@ function resolveRescheduleTopicIds(
   return [id];
 }
 
+function CalendarStatusLegend() {
+  const entries = [
+    { id: 'pending',   label: 'Pending',   color: '#6366F1' },
+    { id: 'drafted',   label: 'Drafted',   color: '#F97316' },
+    { id: 'approved',  label: 'Approved',  color: '#22C55E' },
+    { id: 'published', label: 'Published', color: '#94A3B8' },
+    { id: 'blocked',   label: 'Blocked',   color: '#EF4444' },
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 text-[0.6875rem] font-medium text-slate-500 border-b border-border/50">
+      {entries.map((e) => (
+        <span key={e.id} className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: e.color }}
+          />
+          {e.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export type CalendarView = 'week' | 'month-grid' | 'day';
 
 export interface ContentScheduleCalendarProps {
@@ -404,11 +427,25 @@ export function ContentScheduleCalendar({
     );
   }, [calendarApp, topics, fallbackSlotTime, selectedTopicIds]);
 
+  useEffect(() => {
+    if (!calendarApp) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === '1') calendarApp.setView('month-grid');
+      else if (e.key === '2') calendarApp.setView('week');
+      else if (e.key === '3') calendarApp.setView('day');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [calendarApp]);
+
   return (
     <div
       ref={wrapperRef}
       className={`csc-wrapper ${canDrag ? 'csc-draggable' : ''} ${className ?? ''}`.trim()}
     >
+      <CalendarStatusLegend />
       {calendarApp && (
         <ScheduleXCalendar
           calendarApp={calendarApp}

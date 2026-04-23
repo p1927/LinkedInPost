@@ -1,5 +1,6 @@
 import { generateLlmParsedJson, hasAnyLlmProvider } from '../../llmFromWorker';
 import { buildKnowledgeContext } from '../_shared/knowledgeLoader';
+import { documentContextBlock } from '../_shared/documentContextBlock';
 import type { EnrichmentModule, ModuleContext, PersonaSignal } from '../_shared/types';
 import frameworkMd from './knowledge/persona-framework.md';
 import startupFounderMd from './knowledge/personas/startup-founder.md';
@@ -147,6 +148,7 @@ async function generatePersona(ctx: ModuleContext): Promise<PersonaSignal> {
     'Persona Framework': frameworkMd,
   });
 
+  const docContext = documentContextBlock(ctx);
   const prompt = `You are an expert content strategist. Using the persona framework below, generate a detailed persona signal for the described audience.
 
 ${knowledgeContext}
@@ -155,7 +157,7 @@ ${knowledgeContext}
 
 AUDIENCE DESCRIPTION: ${audience}
 TOPIC: ${ctx.topic}
-CHANNEL: ${ctx.channel}
+CHANNEL: ${ctx.channel}${docContext}
 
 Generate a PersonaSignal JSON object with this exact shape:
 {

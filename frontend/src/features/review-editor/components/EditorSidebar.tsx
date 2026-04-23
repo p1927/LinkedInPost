@@ -6,6 +6,7 @@ import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 import { ResearcherPanel } from '../../news-research';
 import { getImageGenCapabilities } from '../../../services/configService';
+import { ContextDocumentsPanel } from '../../review/components/ContextDocumentsPanel';
 
 export function EditorSidebar() {
   const {
@@ -42,6 +43,10 @@ export function EditorSidebar() {
     onSearchNewsResearch,
     onListNewsResearchHistory,
     onGetNewsResearchSnapshot,
+    contextDocuments,
+    uploadingContextDocument,
+    uploadContextDocument,
+    removeContextDocument,
   } = useReviewFlow();
   const {
     instruction,
@@ -151,6 +156,15 @@ export function EditorSidebar() {
           />
         ) : null}
 
+        {activeWorkspacePanel === 'refine' ? (
+          <ContextDocumentsPanel
+            documents={contextDocuments}
+            onUpload={(file) => uploadContextDocument(file)}
+            onRemove={removeContextDocument}
+            uploading={uploadingContextDocument}
+          />
+        ) : null}
+
         {activeWorkspacePanel === 'media' ? (
           <section className="rounded-xl border border-border bg-white p-3 shadow-sm">
             <ImageAssetManager
@@ -166,6 +180,7 @@ export function EditorSidebar() {
               supportsReferenceImage={getImageGenCapabilities(imageGenConfig?.provider ?? 'pixazo', imageGenConfig?.model).supportsReferenceImage}
               onUploadReferenceImage={handleUploadReferenceImage}
               onGenerateReferenceImage={handleGenerateReferenceImage}
+              channel={deliveryChannel}
             />
           </section>
         ) : null}

@@ -29,6 +29,8 @@ export interface GenWorkerGenerateRequest {
   imageGen?: { provider: string; model?: string };
   selectedImageId?: string;
   selectedImageUrlsJson?: string;
+  enrichmentSkills?: Array<{ id: string; enabled?: boolean }>;
+  contextDocuments?: Array<{ name: string; content: string }>;
 }
 
 export interface TextVariant {

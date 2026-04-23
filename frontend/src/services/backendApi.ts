@@ -197,6 +197,7 @@ export interface GenerationRequest {
   googleModel?: string;
   llm?: { provider: LlmProviderId; model: string };
   researchArticles?: ResearchArticleRef[];
+  contextDocuments?: Array<{ name: string; content: string }>;
 }
 
 export interface RunContentReviewRequest {
@@ -1042,6 +1043,30 @@ export class BackendApi {
 
   async getUsageSummary(idToken: string, days = 30): Promise<UsageSummaryRow[]> {
     return this.post<UsageSummaryRow[]>('getUsageSummaryByRange', idToken, { days });
+  }
+
+  async uploadContextDocument(
+    idToken: string,
+    params: { name: string; contentBase64: string; mimeType: string },
+  ): Promise<{ documentId: string; extractedText: string; charCount: number }> {
+    return this.post<{ documentId: string; extractedText: string; charCount: number }>(
+      'uploadContextDocument',
+      idToken,
+      { ...params },
+    );
+  }
+
+  static async fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix (e.g., "data:text/plain;base64,")
+        resolve(result.split(',')[1] ?? result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 }
 

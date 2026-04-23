@@ -150,7 +150,7 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     requestNavigateToVariants: actions.requestNavigateToVariants,
     handleFetchMoreImageOptions: actions.handleFetchMoreImageOptions,
     handleUploadImageOption: actions.handleUploadImageOption,
-    handleUploadReferenceImage: actions.handleUploadReferenceImage,
+    handleUploadReferenceImage: props.onUploadImage,
     handleGenerateReferenceImage: actions.handleGenerateReferenceImage,
     imageGenConfig: props.imageGenConfig,
     handleSaveDraft: actions.handleSaveDraft,
@@ -172,6 +172,10 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     handleSaveEmailFields: actions.handleSaveEmailFields,
     researchContextArticles: restState.researchContextArticles,
     setResearchContextArticles: restState.setResearchContextArticles,
+    contextDocuments: actions.contextDocuments,
+    uploadingContextDocument: actions.uploadingContextDocument,
+    uploadContextDocument: actions.uploadContextDocument,
+    removeContextDocument: actions.removeContextDocument,
   };
 
   return (

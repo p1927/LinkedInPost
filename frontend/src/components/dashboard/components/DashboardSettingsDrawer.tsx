@@ -33,8 +33,10 @@ import type {
   NewsProviderKeys,
   ContentReviewStored,
   ImageGenProvider,
+  EnrichmentSkillConfig,
+  EnrichmentSkillId,
 } from '../../../services/configService';
-import { LLM_SETTING_KEY_LABELS, IMAGE_GEN_PROVIDERS, IMAGE_GEN_MODELS } from '../../../services/configService';
+import { LLM_SETTING_KEY_LABELS, IMAGE_GEN_PROVIDERS, IMAGE_GEN_MODELS, ENRICHMENT_SKILL_IDS, ENRICHMENT_SKILL_METADATA } from '../../../services/configService';
 import { FEATURE_CONTENT_REVIEW, FEATURE_ENRICHMENT, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { PostGenerateSettings } from '../../../features/review/components/PostGenerateSettings';
 import {
@@ -141,6 +143,8 @@ type DashboardSettingsDrawerProps = {
   allowedMinimaxModels?: string[];
   toggleAllowedMinimaxModel?: (modelId: string, enabled: boolean) => void;
   llmCatalog?: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }> | null;
+  enrichmentSkills?: EnrichmentSkillConfig[];
+  onToggleEnrichmentSkill?: (id: EnrichmentSkillId, enabled: boolean) => void;
 };
 
 function SettingsSectionCard({
@@ -266,6 +270,58 @@ function CollapsibleAllowedModels({
           <AllowedModelList catalog={catalog} allowedModels={allowedModels} onToggle={onToggle} />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function EnrichmentSkillsCard({
+  skills,
+  onToggle,
+}: {
+  skills: EnrichmentSkillConfig[];
+  onToggle: (id: EnrichmentSkillId, enabled: boolean) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {ENRICHMENT_SKILL_IDS.map((id) => {
+        const meta = ENRICHMENT_SKILL_METADATA[id];
+        const skillConfig = skills.find((s) => s.id === id);
+        const enabled = skillConfig?.enabled ?? true;
+        const isRequired = meta.required;
+        return (
+          <div
+            key={id}
+            className={[
+              'flex flex-col gap-1 rounded-xl border p-3 transition-colors',
+              enabled ? 'border-violet-200 bg-violet-50/40' : 'border-border bg-white opacity-60',
+            ].join(' ')}
+          >
+            <div className="flex items-start justify-between">
+              <span className="text-base leading-none">{meta.icon}</span>
+              <button
+                type="button"
+                disabled={isRequired}
+                onClick={() => onToggle(id, !enabled)}
+                className={[
+                  'relative h-5 w-9 rounded-full transition-colors',
+                  enabled ? 'bg-violet-500' : 'bg-slate-300',
+                  isRequired ? 'cursor-not-allowed opacity-50' : '',
+                ].join(' ')}
+                title={isRequired ? 'Required — cannot be disabled' : enabled ? 'Disable skill' : 'Enable skill'}
+              >
+                <span
+                  className={[
+                    'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
+                    enabled ? 'translate-x-4' : 'translate-x-0.5',
+                  ].join(' ')}
+                />
+              </button>
+            </div>
+            <p className="text-xs font-semibold text-ink leading-snug">{meta.label}</p>
+            <p className="text-[0.65rem] text-muted leading-snug">{meta.description}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -718,6 +774,8 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       allowedMinimaxModels,
       toggleAllowedMinimaxModel,
       llmCatalog,
+      enrichmentSkills,
+      onToggleEnrichmentSkill,
     },
     ref,
   ) {
@@ -1073,6 +1131,15 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             <p className="text-xs leading-relaxed text-muted">
               Override the LLM provider and model for each enrichment module. These modules run during content generation to add emotional, psychological, and persuasion signals to your posts.
             </p>
+            {enrichmentSkills !== undefined && onToggleEnrichmentSkill ? (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs text-muted">Enable or disable AI enrichment modules. Persona is always required.</p>
+                <EnrichmentSkillsCard
+                  skills={enrichmentSkills}
+                  onToggle={onToggleEnrichmentSkill}
+                />
+              </div>
+            ) : null}
             <div className="mt-4">
               <EnrichmentLlmSettings
                 session={session}

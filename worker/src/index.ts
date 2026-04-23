@@ -210,6 +210,7 @@ interface BotConfig {
     provider: string;
     model?: string;
   };
+  enrichmentSkills?: Array<{ id: string; enabled?: boolean }>;
 }
 
 interface GenerationRulesVersion {
@@ -276,6 +277,7 @@ export interface StoredConfig {
     provider?: string;
     model?: string;
   };
+  enrichmentSkills?: Array<{ id: string; enabled?: boolean }>;
 }
 
 interface BotConfigUpdate {
@@ -321,6 +323,7 @@ interface BotConfigUpdate {
     provider?: string;
     model?: string;
   };
+  enrichmentSkills?: Array<{ id: string; enabled?: boolean }>;
 }
 
 function normalizeDisconnectedAuthProviders(value: unknown): AuthProvider[] {
@@ -708,6 +711,7 @@ export default {
           spreadsheetId: storedConfig.spreadsheetId,
           ...payload,
           ...(storedConfig.imageGen ? { imageGen: storedConfig.imageGen } : {}),
+          ...(storedConfig.enrichmentSkills ? { enrichmentSkills: storedConfig.enrichmentSkills } : {}),
         } as GenWorkerGenerateRequest);
       } catch (e) {
         return jsonResponse({ ok: false, error: String(e) }, 502, corsHeaders);
@@ -1520,6 +1524,8 @@ Rules:
       return promoteDraftImageUrl(env, payload);
     case 'uploadDraftImage':
       return uploadDraftImage(env, payload);
+    case 'uploadContextDocument':
+      return handleUploadContextDocument(payload);
     case 'generateImageWithReference':
       return generateImageWithReference(env, storedConfig, payload);
     case 'triggerGithubAction':
@@ -1650,6 +1656,7 @@ Rules:
         spreadsheetId: storedConfig.spreadsheetId,
         ...(payload as Record<string, unknown>),
         ...(storedConfig.imageGen ? { imageGen: storedConfig.imageGen } : {}),
+        ...(storedConfig.enrichmentSkills ? { enrichmentSkills: storedConfig.enrichmentSkills } : {}),
       } as Parameters<typeof callGenerationWorker>[1]);
 
       // C4: Auto-save generation results to D1
@@ -2215,6 +2222,9 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
   }
   if (config.imageGen) {
     out = { ...out, imageGen: { provider: config.imageGen.provider ?? 'pixazo', model: config.imageGen.model } };
+  }
+  if (config.enrichmentSkills) {
+    out = { ...out, enrichmentSkills: config.enrichmentSkills };
   }
   return out;
 }
@@ -3485,6 +3495,9 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
     imageGen: update.imageGen !== undefined
       ? { provider: update.imageGen.provider || current.imageGen?.provider, model: update.imageGen.model }
       : current.imageGen,
+    enrichmentSkills: update.enrichmentSkills !== undefined
+      ? update.enrichmentSkills
+      : current.enrichmentSkills,
   };
 
   if (update.githubToken) {
@@ -4665,6 +4678,67 @@ async function uploadDraftImage(env: Env, payload: Record<string, unknown>): Pro
 
   const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, decoded.bytes, contentType, fileName);
   return { imageUrl };
+}
+
+async function handleUploadContextDocument(payload: Record<string, unknown>): Promise<{ documentId: string; extractedText: string; charCount: number }> {
+  // Fix 1: Size check before allocating (base64 encodes ~4/3 ratio)
+  const MAX_CONTEXT_DOC_BYTES = 2 * 1024 * 1024; // 2 MB
+  const contentBase64 = String(payload.contentBase64 ?? '').trim();
+  if (!contentBase64) {
+    throw new Error('contentBase64 is required.');
+  }
+  const estimatedBytes = Math.ceil(contentBase64.length * 3 / 4);
+  if (estimatedBytes > MAX_CONTEXT_DOC_BYTES) {
+    throw new Error(`File too large (${(estimatedBytes / 1024 / 1024).toFixed(1)} MB). Maximum is 2 MB.`);
+  }
+
+  // Fix 3: mimeType allowlist
+  const ALLOWED_MIME_TYPES = new Set(['text/plain', 'text/markdown', 'application/pdf', 'text/x-markdown']);
+  const mimeType = String(payload.mimeType ?? 'text/plain').trim();
+  if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+    throw new Error(`Unsupported file type: ${mimeType}. Allowed: txt, md, pdf.`);
+  }
+
+  const bytes = Uint8Array.from(atob(contentBase64), c => c.charCodeAt(0));
+  let text: string;
+
+  if (mimeType === 'application/pdf') {
+    // Simple PDF text extraction: find runs of printable ASCII chars
+    const decoder = new TextDecoder('latin1');
+    const raw = decoder.decode(bytes);
+    // Extract text runs between PDF stream markers
+    const runs: string[] = [];
+    // Fix 2: ReDoS-safe linear indexOf approach instead of backtracking regex
+    let pos = 0;
+    while (pos < raw.length) {
+      const streamStart = raw.indexOf('stream', pos);
+      if (streamStart === -1) break;
+      const contentStart = streamStart + 6;
+      const streamEnd = raw.indexOf('endstream', contentStart);
+      if (streamEnd === -1) break;
+      const chunk = raw.slice(contentStart, streamEnd);
+      const printable = chunk.match(/[ -~]{4,}/g) ?? [];
+      runs.push(...printable);
+      pos = streamEnd + 9;
+    }
+    // Also extract parenthesized strings (PDF text objects)
+    const parenRegex = /\(([^)]{3,})\)/g;
+    let match;
+    while ((match = parenRegex.exec(raw)) !== null) {
+      runs.push(match[1]);
+    }
+    text = runs.join(' ').replace(/\s+/g, ' ').trim();
+  } else {
+    // Plain text / markdown
+    text = new TextDecoder('utf-8').decode(bytes);
+  }
+
+  const truncated = text.slice(0, 8000);
+  return {
+    documentId: crypto.randomUUID(),
+    extractedText: truncated,
+    charCount: truncated.length,
+  };
 }
 
 async function generateImageWithReference(

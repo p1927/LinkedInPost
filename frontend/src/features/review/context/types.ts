@@ -14,6 +14,7 @@ import {
   type TextSelectionRange,
   type VariantsPreviewResponse,
 } from '../../../services/backendApi';
+import type { ContextDocument } from '../components/ContextDocumentsPanel';
 import { type ImageAssetOption } from '../../../components/ImageAssetManager';
 import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
 import { type ChannelId } from '../../../integrations/channels';
@@ -195,6 +196,10 @@ export interface ReviewFlowContextValue {
     deliveryChannel: ChannelId,
   ) => Promise<ContentReviewReport>;
   onAfterContentReview?: () => Promise<void>;
+  contextDocuments: ContextDocument[];
+  uploadingContextDocument: boolean;
+  uploadContextDocument: (file: File) => Promise<void>;
+  removeContextDocument: (id: string) => void;
 }
 
 export interface ReviewFlowProviderProps {
@@ -241,4 +246,5 @@ export interface ReviewFlowProviderProps {
     deliveryChannel: ChannelId,
   ) => Promise<ContentReviewReport>;
   onAfterContentReview?: () => Promise<void>;
+  onUploadContextDocument?: (params: { name: string; contentBase64: string; mimeType: string }) => Promise<{ documentId: string; extractedText: string; charCount: number }>;
 }

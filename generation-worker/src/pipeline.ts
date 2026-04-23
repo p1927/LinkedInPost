@@ -81,9 +81,13 @@ export async function runPipeline(
     // --- ENRICHMENT PATH ---
     // Run research and enrichment in parallel
     onProgress?.('enrichment', 'Running content enrichment...');
+    const enabledSkillIds = req.enrichmentSkills && req.enrichmentSkills.length > 0
+      ? new Set(req.enrichmentSkills.filter((s) => s.enabled !== false).map((s) => s.id))
+      : undefined;
+    const localDocuments = req.contextDocuments?.map(d => ({ name: d.name, content: d.content }));
     const [, enrichmentResult] = await Promise.all([
       researchTask(),
-      runEnrichment(report, pattern, env, llmRef),
+      runEnrichment(report, pattern, env, llmRef, enabledSkillIds, localDocuments),
     ]);
     const enrichmentBundle = enrichmentResult.bundle;
     nodeRunRecords = enrichmentResult.records;

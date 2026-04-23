@@ -1,7 +1,20 @@
 import type { LlmRef } from '../../llmFromWorker';
 import type { Env, Pattern, RequirementReport } from '../../types';
 import type { NodeRunRecord } from '../../types';
-import type { EnrichmentBundle, ModuleContext } from './types';
+import type {
+  EnrichmentBundle,
+  ModuleContext,
+  EmotionSignal,
+  PsychologySignal,
+  PersuasionSignal,
+  CopySignal,
+  StorySignal,
+  TypographySignal,
+  ImageStrategySignal,
+  VocabularySignal,
+  TrendingSignal,
+  ColorSignal,
+} from './types';
 
 import { personaModule } from '../persona/index';
 import { emotionModule } from '../emotion/index';
@@ -53,14 +66,58 @@ async function timeModule<T>(
   }
 }
 
+// Fallback empty signals for disabled skills — preserve typed EnrichmentBundle contract.
+const EMPTY_EMOTION: EmotionSignal = {
+  primaryEmotion: '', secondaryEmotion: '', intensity: 0, arc: '', emotionalHook: '',
+};
+const EMPTY_PSYCHOLOGY: PsychologySignal = {
+  maslowLevel: '', primaryBias: '', secondaryBias: '', motivationType: '',
+  behavioralTrigger: '', psychologicalFrame: '',
+};
+const EMPTY_PERSUASION: PersuasionSignal = {
+  framework: '', frameworkSteps: [], principles: [], objectionPreempt: '', proofType: '',
+};
+const EMPTY_COPY: CopySignal = {
+  hookType: '', hookExample: '', powerWords: [], ctaStyle: '', ctaPhrase: '',
+  readabilityTarget: '', sentenceRhythm: '',
+};
+const EMPTY_STORY: StorySignal = {
+  structure: '', protagonist: '', devices: [], tensionPoint: '', resolution: '',
+};
+const EMPTY_TYPOGRAPHY: TypographySignal = {
+  lineBreakStrategy: '', whitespaceRatio: '', emojiUsage: '', formattingElements: [],
+  maxLineLength: 0, fontWeight: '',
+};
+const EMPTY_IMAGE_STRATEGY: ImageStrategySignal = {
+  visualStyle: '', composition: '', subjectMatter: '', searchQueries: [],
+  generationPrompt: '', textOverlayZone: '',
+};
+const EMPTY_VOCABULARY: VocabularySignal = {
+  industryTerms: [], powerPhrases: [], avoidWords: [], registerLevel: '',
+  toneWords: [], jargonBudget: 0,
+};
+const EMPTY_TRENDING: TrendingSignal = {
+  trendingTopics: [], buzzwords: [], genZSlang: [], culturalReferences: [],
+  timelySuggestion: '', trendConfidence: 0,
+};
+const EMPTY_COLOR: ColorSignal = {
+  primaryColor: '', secondaryColor: '', palette: [], paletteStrategy: '',
+  mood: '', contrastLevel: '',
+};
+
 export async function runEnrichment(
   report: RequirementReport,
   pattern: Pattern,
   env: Env,
   llmRef: LlmRef,
+  enabledSkillIds?: Set<string>,
+  localDocuments?: import('./types').LocalDocument[],
 ): Promise<EnrichmentResult> {
   const records: NodeRunRecord[] = [];
   const model = `${llmRef.provider}/${llmRef.model}`;
+
+  const skillEnabled = (id: string): boolean =>
+    !enabledSkillIds || enabledSkillIds.size === 0 || enabledSkillIds.has(id);
 
   const baseCtx: ModuleContext = {
     report,
@@ -70,9 +127,10 @@ export async function runEnrichment(
     topic: report.topic,
     env,
     llmRef,
+    ...(localDocuments && localDocuments.length > 0 ? { localDocuments } : {}),
   };
 
-  // Phase 1: Persona (must run first — all other modules depend on it)
+  // Phase 1: Persona (must run first — all other modules depend on it, always required)
   const personaInput = JSON.stringify({
     topic: report.topic,
     channel: report.channel,
@@ -89,7 +147,7 @@ export async function runEnrichment(
     records,
   );
 
-  // Phase 2: Run 9 enrichment modules in parallel (all get persona context)
+  // Phase 2: Run enrichment modules in parallel (gated by enabledSkillIds)
   const ctxWithPersona: ModuleContext = { ...baseCtx, persona };
 
   const sharedInput = JSON.stringify({
@@ -101,19 +159,37 @@ export async function runEnrichment(
 
   const [emotion, psychology, persuasion, copy, story, typography, imageStrategy, vocabulary, trending] =
     await Promise.all([
-      timeModule('enrichment_emotion',         model, sharedInput, () => emotionModule.enrich(ctxWithPersona),        records),
-      timeModule('enrichment_psychology',      model, sharedInput, () => psychologyDeepModule.enrich(ctxWithPersona), records),
-      timeModule('enrichment_persuasion',      model, sharedInput, () => persuasionModule.enrich(ctxWithPersona),     records),
-      timeModule('enrichment_copywriting',     model, sharedInput, () => copywritingModule.enrich(ctxWithPersona),    records),
-      timeModule('enrichment_storytelling',    model, sharedInput, () => storytellingModule.enrich(ctxWithPersona),   records),
-      timeModule('enrichment_typography',      model, sharedInput, () => typographyModule.enrich(ctxWithPersona),     records),
-      timeModule('enrichment_image_strategy',  model, sharedInput, () => imageStrategyModule.enrich(ctxWithPersona),  records),
-      timeModule('enrichment_vocabulary',      model, sharedInput, () => vocabularyModule.enrich(ctxWithPersona),     records),
-      timeModule('enrichment_trending',        model, sharedInput, () => trendingModule.enrich(ctxWithPersona),       records),
+      skillEnabled('emotion')
+        ? timeModule('enrichment_emotion',         model, sharedInput, () => emotionModule.enrich(ctxWithPersona),        records)
+        : Promise.resolve(EMPTY_EMOTION),
+      skillEnabled('psychology')
+        ? timeModule('enrichment_psychology',      model, sharedInput, () => psychologyDeepModule.enrich(ctxWithPersona), records)
+        : Promise.resolve(EMPTY_PSYCHOLOGY),
+      skillEnabled('persuasion')
+        ? timeModule('enrichment_persuasion',      model, sharedInput, () => persuasionModule.enrich(ctxWithPersona),     records)
+        : Promise.resolve(EMPTY_PERSUASION),
+      skillEnabled('copywriting')
+        ? timeModule('enrichment_copywriting',     model, sharedInput, () => copywritingModule.enrich(ctxWithPersona),    records)
+        : Promise.resolve(EMPTY_COPY),
+      skillEnabled('storytelling')
+        ? timeModule('enrichment_storytelling',    model, sharedInput, () => storytellingModule.enrich(ctxWithPersona),   records)
+        : Promise.resolve(EMPTY_STORY),
+      skillEnabled('typography')
+        ? timeModule('enrichment_typography',      model, sharedInput, () => typographyModule.enrich(ctxWithPersona),     records)
+        : Promise.resolve(EMPTY_TYPOGRAPHY),
+      skillEnabled('image-strategy')
+        ? timeModule('enrichment_image_strategy',  model, sharedInput, () => imageStrategyModule.enrich(ctxWithPersona),  records)
+        : Promise.resolve(EMPTY_IMAGE_STRATEGY),
+      skillEnabled('vocabulary')
+        ? timeModule('enrichment_vocabulary',      model, sharedInput, () => vocabularyModule.enrich(ctxWithPersona),     records)
+        : Promise.resolve(EMPTY_VOCABULARY),
+      skillEnabled('trending')
+        ? timeModule('enrichment_trending',        model, sharedInput, () => trendingModule.enrich(ctxWithPersona),       records)
+        : Promise.resolve(EMPTY_TRENDING),
     ]);
 
   // Phase 3: Color-emotion (pure logic, no LLM call — not logged)
-  const color = buildColorSignal(emotion);
+  const color = skillEnabled('color-emotion') ? buildColorSignal(emotion) : EMPTY_COLOR;
 
   return {
     bundle: { persona, emotion, psychology, persuasion, copy, story, typography, color, imageStrategy, vocabulary, trending },

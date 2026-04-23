@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ReviewFlowProviderProps } from './types';
 import type { LlmRef } from '../../../services/configService';
-import { type GenerationRequest, isAuthErrorMessage } from '../../../services/backendApi';
+import { type GenerationRequest, isAuthErrorMessage, BackendApi } from '../../../services/backendApi';
+import type { ContextDocument } from '../components/ContextDocumentsPanel';
 import { useAlert } from '../../../components/useAlert';
 import { applyFormattingAction } from '@/features/draft-selection-target';
 import { rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
@@ -92,6 +93,8 @@ export function useReviewFlowActions(
   const { showAlert } = useAlert();
   const [publishSubmitting, setPublishSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [contextDocuments, setContextDocuments] = useState<ContextDocument[]>([]);
+  const [uploadingContextDocument, setUploadingContextDocument] = useState(false);
 
   const leaveToTopics = useCallback(() => {
     if (hasUnsavedReviewState) {
@@ -156,6 +159,9 @@ export function useReviewFlowActions(
       selection: effectiveScope === 'selection' ? selection : null,
       instruction,
       ...(researchContextArticles.length > 0 ? { researchArticles: researchContextArticles } : {}),
+      ...(contextDocuments.length > 0
+        ? { contextDocuments: contextDocuments.map(d => ({ name: d.name, content: d.content })) }
+        : {}),
     };
     if (FEATURE_MULTI_PROVIDER_LLM && generationLlm) {
       base.llm = { provider: generationLlm.provider, model: generationLlm.model };
@@ -417,6 +423,13 @@ export function useReviewFlowActions(
     return next;
   };
 
+  const autoSelectNewImage = (imageUrl: string) => {
+    setSuppressAutoImageSelection(false);
+    setSelectedImageUrls((prev) =>
+      prev.length >= MAX_IMAGES_PER_POST ? prev : prev.includes(imageUrl) ? prev : [...prev, imageUrl],
+    );
+  };
+
   const handleUploadImageOption = async (file: File) => {
     const imageUrl = await onUploadImage(file);
     const uploadedOption: ImageAssetOption = {
@@ -425,22 +438,16 @@ export function useReviewFlowActions(
       label: file.name ? file.name.replace(/\.[^.]+$/, '') : 'Uploaded image',
       kind: 'upload',
     };
-
     setUploadedImageOptions((current) =>
       mergeUniqueImageOptions([uploadedOption, ...current]).slice(0, DRAFT_IMAGE_SEARCH_CHOICE_COUNT),
     );
-    setSuppressAutoImageSelection(false);
-    setSelectedImageUrls((prev) =>
-      prev.length >= MAX_IMAGES_PER_POST ? prev : prev.includes(imageUrl) ? prev : [...prev, imageUrl],
-    );
-  };
-
-  const handleUploadReferenceImage = async (file: File): Promise<string> => {
-    return onUploadImage(file);
+    autoSelectNewImage(imageUrl);
   };
 
   const handleGenerateReferenceImage = async (referenceImageUrl: string, instructions: string): Promise<void> => {
-    if (!onGenerateReferenceImage) return;
+    if (!onGenerateReferenceImage) {
+      throw new Error('Reference image generation is not configured for this workspace.');
+    }
     const imageUrl = await onGenerateReferenceImage(referenceImageUrl, instructions);
     const generatedOption: ImageAssetOption = {
       id: `generated-ref-${Date.now()}`,
@@ -451,10 +458,7 @@ export function useReviewFlowActions(
     setUploadedImageOptions((current) =>
       mergeUniqueImageOptions([generatedOption, ...current]).slice(0, DRAFT_IMAGE_SEARCH_CHOICE_COUNT),
     );
-    setSuppressAutoImageSelection(false);
-    setSelectedImageUrls((prev) =>
-      prev.length >= MAX_IMAGES_PER_POST ? prev : prev.includes(imageUrl) ? prev : [...prev, imageUrl],
-    );
+    autoSelectNewImage(imageUrl);
   };
 
   const handleApprove = async () => {
@@ -825,6 +829,33 @@ export function useReviewFlowActions(
     [props, showAlert],
   );
 
+  const uploadContextDocument = async (file: File) => {
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File "${file.name}" exceeds the 2 MB limit.`);
+    }
+    setUploadingContextDocument(true);
+    try {
+      const contentBase64 = await BackendApi.fileToBase64(file);
+      const result = await props.onUploadContextDocument?.({
+        name: file.name,
+        contentBase64,
+        mimeType: file.type || 'text/plain',
+      });
+      if (!result) return;
+      setContextDocuments(prev => [
+        ...prev,
+        { id: result.documentId, name: file.name, charCount: result.charCount, content: result.extractedText },
+      ]);
+    } finally {
+      setUploadingContextDocument(false);
+    }
+  };
+
+  const removeContextDocument = (id: string) => {
+    setContextDocuments(prev => prev.filter(d => d.id !== id));
+  };
+
   return {
     leaveToTopics,
     requestNavigateToVariants,
@@ -839,7 +870,6 @@ export function useReviewFlowActions(
     handleSelectImageOption,
     handleClearSelectedImage,
     handleUploadImageOption,
-    handleUploadReferenceImage,
     handleGenerateReferenceImage,
     handleSaveDraft,
     savingDraft,
@@ -859,5 +889,9 @@ export function useReviewFlowActions(
     savingGenerationLlm,
     handleSaveEmailFields,
     savingEmailFields,
+    contextDocuments,
+    uploadingContextDocument,
+    uploadContextDocument,
+    removeContextDocument,
   };
 }

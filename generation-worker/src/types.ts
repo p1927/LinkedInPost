@@ -114,6 +114,14 @@ export const GenerateRequestSchema = z.object({
     provider: z.enum(['pixazo', 'gemini', 'seedance']).default('pixazo'),
     model: z.string().optional(),
   }).optional(),
+  enrichmentSkills: z.array(z.object({
+    id: z.string(),
+    enabled: z.boolean().optional(),
+  })).optional(),
+  contextDocuments: z.array(z.object({
+    name: z.string(),
+    content: z.string(),
+  })).optional(),
 });
 
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;

@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { type AppSession, type BackendApi, type SocialIntegration, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
-import { type BotConfig, type BotConfigUpdate, type LlmRef, type GoogleModelOption } from '../../services/configService';
+import { type BotConfig, type BotConfigUpdate, type LlmRef, type GoogleModelOption, type EnrichmentSkillConfig, type EnrichmentSkillId } from '../../services/configService';
 import type { LlmProviderId } from '@repo/llm-core';
 import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
 import { type QueueFilter, type DeliverySummary } from './types';
@@ -131,6 +131,15 @@ export function Dashboard({
     telegramRecipientsInput: channelsHook.telegramRecipientsInput,
     whatsappRecipientsInput: channelsHook.whatsappRecipientsInput,
   });
+
+  const handleToggleEnrichmentSkill = useCallback(async (id: EnrichmentSkillId, enabled: boolean) => {
+    const currentSkills: EnrichmentSkillConfig[] = session.config.enrichmentSkills ?? [];
+    const existing = currentSkills.find((s) => s.id === id);
+    const updated = existing
+      ? currentSkills.map((s) => s.id === id ? { ...s, enabled } : s)
+      : [...currentSkills, { id, enabled }];
+    await onSaveConfig({ enrichmentSkills: updated });
+  }, [session.config.enrichmentSkills, onSaveConfig]);
 
   const [telegramVerification, setTelegramVerification] = useState<{ kind: 'success' | 'error'; message: string; result?: TelegramChatVerificationResult; } | null>(null);
 
@@ -358,6 +367,7 @@ export function Dashboard({
     onListNewsResearchHistory: FEATURE_NEWS_RESEARCH ? queueHook.handleListNewsResearchHistory : undefined,
     onGetNewsResearchSnapshot: FEATURE_NEWS_RESEARCH ? queueHook.handleGetNewsResearchSnapshot : undefined,
     onGenerateReferenceImage: queueHook.handleGenerateReferenceImage,
+    onUploadContextDocument: queueHook.handleUploadContextDocument,
     imageGenConfig: session.config.imageGen,
     ...(FEATURE_CONTENT_REVIEW
       ? {
@@ -719,6 +729,8 @@ export function Dashboard({
           }
         : {})}
       llmCatalog={llmCatalog}
+      enrichmentSkills={session.config.enrichmentSkills}
+      onToggleEnrichmentSkill={handleToggleEnrichmentSkill}
     />
   );
 

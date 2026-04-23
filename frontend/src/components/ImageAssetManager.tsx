@@ -7,6 +7,7 @@ import { useAlert } from './useAlert';
 import { Input } from './ui/input';
 import { Button } from '@/components/ui/button';
 import { ImageGenReferencePanel } from './ImageGenReferencePanel';
+import { ChannelImageRequirements } from '../features/review/components/ChannelImageRequirements';
 
 export interface ImageAssetOption {
   id: string;
@@ -37,6 +38,10 @@ interface Props {
   onUploadReferenceImage?: (file: File) => Promise<string>;
   /** Generate a new image from a reference URL + instructions; result is added to imageOptions by the caller. */
   onGenerateReferenceImage?: (referenceImageUrl: string, instructions: string) => Promise<void>;
+  /** Channel identifier used to show channel-specific image dimension requirements. */
+  channel?: string;
+  /** AI-suggested generation prompt surfaced from enrichment data. */
+  aiGenerationPrompt?: string;
 }
 
 function buildDownloadName(topic: string, option: ImageAssetOption): string {
@@ -69,6 +74,8 @@ export function ImageAssetManager({
   supportsReferenceImage = false,
   onUploadReferenceImage,
   onGenerateReferenceImage,
+  channel,
+  aiGenerationPrompt,
 }: Props) {
   const { showAlert } = useAlert();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -191,12 +198,19 @@ export function ImageAssetManager({
         </div>
       </div>
 
+      {channel && (
+        <div className="mt-4">
+          <ChannelImageRequirements channel={channel} />
+        </div>
+      )}
+
       {supportsReferenceImage && onUploadReferenceImage && onGenerateReferenceImage && (
         <div className="mt-4">
           <ImageGenReferencePanel
             imageOptions={images}
             onUploadReferenceImage={onUploadReferenceImage}
-            onGenerate={onGenerateReferenceImage}
+            onGenerateReferenceImage={onGenerateReferenceImage}
+            aiGenerationPrompt={aiGenerationPrompt}
           />
         </div>
       )}

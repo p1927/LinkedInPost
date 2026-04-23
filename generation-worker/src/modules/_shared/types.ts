@@ -2,6 +2,15 @@ import type { LlmRef } from '../../llmFromWorker';
 import type { Env, Pattern, RequirementReport, TextVariant } from '../../types';
 
 // ---------------------------------------------------------------------------
+// Local Document — user-uploaded context document passed to enrichment modules
+// ---------------------------------------------------------------------------
+export interface LocalDocument {
+  name: string;
+  content: string;
+  mimeType?: string;
+}
+
+// ---------------------------------------------------------------------------
 // Module Context — passed to every module's enrich() function
 // ---------------------------------------------------------------------------
 export interface ModuleContext {
@@ -12,6 +21,7 @@ export interface ModuleContext {
   topic: string;
   env: Env;
   llmRef: LlmRef;
+  localDocuments?: LocalDocument[];
 }
 
 // ---------------------------------------------------------------------------

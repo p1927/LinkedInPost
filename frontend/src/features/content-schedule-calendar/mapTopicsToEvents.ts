@@ -66,6 +66,7 @@ export function mapTopicsToEvents(
         end,
         calendarId: statusToCalendarId(topic.status),
         description: topic.channels?.join(', '),
+        channels: topic.channels,
         ...(Object.keys(eventOptions).length ? { _options: eventOptions } : {}),
       });
     } catch {

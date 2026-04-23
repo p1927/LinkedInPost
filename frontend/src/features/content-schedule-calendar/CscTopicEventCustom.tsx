@@ -1,6 +1,14 @@
 import type { CalendarEvent } from '@schedule-x/calendar';
 import { cn } from '@/lib/cn';
 
+const CHANNEL_COLOR_MAP: Record<string, string> = {
+  linkedin: '#0A66C2',
+  instagram: '#E1306C',
+  telegram: '#2CA5E0',
+  whatsapp: '#25D366',
+  gmail: '#EA4335',
+};
+
 const KNOWN_CALENDAR_COLORS = new Set([
   'pending',
   'drafted',
@@ -37,6 +45,8 @@ type InnerProps = {
 function CscTopicEventInner({ calendarEvent, variant }: InnerProps) {
   const color = calendarColorName(calendarEvent.calendarId);
   const title = (calendarEvent.title ?? '').trim() || '(no title)';
+  const channels = (calendarEvent as unknown as { channels?: string[] }).channels;
+  const primaryChannel = channels?.[0]?.toLowerCase();
 
   let timeLabel: string | null = null;
   if (
@@ -70,6 +80,20 @@ function CscTopicEventInner({ calendarEvent, variant }: InnerProps) {
           )}
         >
           {timeLabel}
+        </span>
+      ) : null}
+      {variant === 'month' && primaryChannel && CHANNEL_COLOR_MAP[primaryChannel] ? (
+        <span
+          className="shrink-0 inline-block rounded-full mr-1"
+          style={{ width: 7, height: 7, backgroundColor: CHANNEL_COLOR_MAP[primaryChannel], display: 'inline-block', verticalAlign: 'middle' }}
+        />
+      ) : null}
+      {(variant === 'time' || variant === 'date') && primaryChannel && CHANNEL_COLOR_MAP[primaryChannel] ? (
+        <span
+          className="shrink-0 rounded px-0.5 text-[0.55rem] font-bold leading-none text-white"
+          style={{ backgroundColor: CHANNEL_COLOR_MAP[primaryChannel] }}
+        >
+          {primaryChannel.slice(0, 2).toUpperCase()}
         </span>
       ) : null}
       <span

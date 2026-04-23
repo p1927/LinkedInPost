@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, LoaderCircle, Upload, Wand2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, LoaderCircle, Sparkles, Upload, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { normalizePreviewImageUrl } from '../services/imageUrls';
@@ -9,10 +9,11 @@ import type { ImageAssetOption } from './ImageAssetManager';
 interface Props {
   imageOptions: ImageAssetOption[];
   onUploadReferenceImage: (file: File) => Promise<string>;
-  onGenerate: (referenceImageUrl: string, instructions: string) => Promise<void>;
+  onGenerateReferenceImage: (referenceImageUrl: string, instructions: string) => Promise<void>;
+  aiGenerationPrompt?: string;
 }
 
-export function ImageGenReferencePanel({ imageOptions, onUploadReferenceImage, onGenerate }: Props) {
+export function ImageGenReferencePanel({ imageOptions, onUploadReferenceImage, onGenerateReferenceImage, aiGenerationPrompt }: Props) {
   const { showAlert } = useAlert();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -54,7 +55,7 @@ export function ImageGenReferencePanel({ imageOptions, onUploadReferenceImage, o
     setError('');
     setGenerating(true);
     try {
-      await onGenerate(referenceUrl, instructions.trim());
+      await onGenerateReferenceImage(referenceUrl, instructions.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed.');
     } finally {
@@ -138,6 +139,22 @@ export function ImageGenReferencePanel({ imageOptions, onUploadReferenceImage, o
           </div>
 
           <div>
+            {aiGenerationPrompt && (
+              <div className="flex items-start gap-2 rounded-lg border border-violet-200 bg-violet-50/40 p-2.5 mb-2">
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-violet-500 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.65rem] font-semibold text-violet-700 mb-0.5">AI-suggested prompt</p>
+                  <p className="text-[0.65rem] text-slate-600 line-clamp-2">{aiGenerationPrompt}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInstructions(aiGenerationPrompt)}
+                  className="shrink-0 rounded-lg bg-violet-600 px-2 py-1 text-[0.65rem] font-semibold text-white hover:bg-violet-700 transition-colors"
+                >
+                  Use
+                </button>
+              </div>
+            )}
             <label className="mb-1.5 block text-xs font-medium text-ink">
               Instructions
             </label>

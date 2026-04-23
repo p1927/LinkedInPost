@@ -549,6 +549,10 @@ export function useDashboardQueue({
     URL.revokeObjectURL(downloadUrl);
   };
 
+  const handleUploadContextDocument = async (params: { name: string; contentBase64: string; mimeType: string }) => {
+    return api.uploadContextDocument(idToken, params);
+  };
+
   const describePublishPrerequisiteFailure = useMemo(
     () =>
       (message: string, rowForImages: SheetRow, emailToForGmail: string, emptyTextHint: 'queue' | 'editor'): string | null => {
@@ -915,6 +919,7 @@ export function useDashboardQueue({
     handleUploadReviewImage,
     handleGenerateReferenceImage,
     handleDownloadReviewImage,
+    handleUploadContextDocument,
     publishRowToSelectedChannel,
     publishFromReviewEditor,
     republishRowToSelectedChannel,

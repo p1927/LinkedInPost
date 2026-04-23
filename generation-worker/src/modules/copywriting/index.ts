@@ -1,5 +1,6 @@
 import { generateLlmParsedJson, hasAnyLlmProvider } from '../../llmFromWorker';
 import { buildKnowledgeContext } from '../_shared/knowledgeLoader';
+import { documentContextBlock } from '../_shared/documentContextBlock';
 import type { EnrichmentModule, ModuleContext, CopySignal } from '../_shared/types';
 import hooksMd from './knowledge/hooks.md';
 import powerWordsMd from './knowledge/power-words.md';
@@ -29,6 +30,7 @@ export const copywritingModule: EnrichmentModule<CopySignal> = {
       'CTA Patterns': ctaPatternsMd,
     });
 
+    const docContext = documentContextBlock(ctx);
     const prompt = `You are a senior LinkedIn copywriter selecting the optimal hook, power words, and CTA for a post.
 
 ${knowledge}
@@ -37,7 +39,7 @@ ${knowledge}
 Topic: ${ctx.topic}
 Channel: ${ctx.channel}
 Pattern: ${ctx.pattern.id}
-Audience: ${ctx.report.audience ?? 'general professional'}
+Audience: ${ctx.report.audience ?? 'general professional'}${docContext}
 
 ## Task
 Choose the copywriting approach that maximizes engagement and readability for this content and audience.
