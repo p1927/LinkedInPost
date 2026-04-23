@@ -137,10 +137,16 @@ export function useSpeechToText(
       setIsRecording(true);
 
       chunkTimerRef.current = setInterval(() => {
-        if (mediaRecorderRef.current?.state === 'recording') {
-          mediaRecorderRef.current.stop();
-        }
-        startChunk(stream);
+        const old = mediaRecorderRef.current;
+        if (old?.state !== 'recording') return;
+        // Chain: start next chunk only after old recorder's onstop fires,
+        // ensuring all buffered data is flushed before the new recorder starts.
+        const origStop = old.onstop as (() => void) | null;
+        old.onstop = () => {
+          origStop?.();
+          startChunk(stream);
+        };
+        old.stop();
       }, CHUNK_INTERVAL_MS);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Microphone access denied');
