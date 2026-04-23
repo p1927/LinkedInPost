@@ -23,3 +23,7 @@ public/google-models.json
 *.njsproj
 *.sln
 *.sw?
+
+# Speech-to-text local model and config
+models/
+.stt-config.json
