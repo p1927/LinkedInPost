@@ -44,6 +44,7 @@ import {
 import { CampaignPage } from '../../features/campaign';
 import { TrendingDashboard } from '../../features/trending';
 import { AddTopicPage } from '../../features/add-topic/AddTopicPage';
+import { AutomationsTab } from '../../features/automations';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 import type { TopicRescheduleCommitPayload } from '@/features/content-schedule-calendar';
 
@@ -820,6 +821,16 @@ export function Dashboard({
           }
         />
         <Route path={WORKSPACE_ROUTE_PATHS.trending} element={<TrendingDashboard />} />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.automations}
+          element={
+            session.isAdmin ? (
+              <AutomationsTab idToken={idToken} isAdmin={session.isAdmin} />
+            ) : (
+              <Navigate to={WORKSPACE_PATHS.topics} replace />
+            )
+          }
+        />
         <Route path="*" element={<Navigate to={WORKSPACE_PATHS.topics} replace />} />
       </Routes>
 

@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, ScrollText, Settings, TrendingUp } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, ScrollText, Settings, TrendingUp, Zap } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
 import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending';
+export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'automations';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -266,6 +266,7 @@ export function AppSidebar({
             {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
             {link('trending', <TrendingUp aria-hidden />, 'Trending')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
+            {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}
           </ul>
         </nav>
 

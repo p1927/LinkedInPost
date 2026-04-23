@@ -100,6 +100,8 @@ function WorkspaceSession({
               ? 'enrichment'
               : path.startsWith(WORKSPACE_PATHS.trending)
                 ? 'trending'
+                : path.startsWith(WORKSPACE_PATHS.automations)
+                  ? 'automations'
                 : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
   const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
