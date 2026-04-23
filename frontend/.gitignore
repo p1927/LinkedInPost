@@ -27,3 +27,8 @@ public/google-models.json
 # Speech-to-text local model and config
 models/
 .stt-config.json
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+
