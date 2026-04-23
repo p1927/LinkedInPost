@@ -853,6 +853,9 @@ export default {
         }
 
         if (!genResponse.body) {
+          await env.PIPELINE_DB.prepare(
+            `UPDATE pipeline_rows SET status = 'Draft' WHERE user_id = ? AND topic_id = ?`,
+          ).bind(session.userId, topicId).run();
           const text = await genResponse.text().catch(() => 'unknown error');
           return jsonResponse({ ok: false, error: `Generation worker error: ${text.slice(0, 200)}` }, 502, corsHeaders);
         }
