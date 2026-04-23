@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Newspaper, Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type BackendApi } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../topic-navigation/utils/workspaceRoutes';
 import { TrendingSidebar } from './TrendingSidebar';
+import { useSpeechToText } from './useSpeechToText';
+import { MicButton } from './MicButton';
 
 const STYLE_OPTIONS = [
   'Professional',
@@ -24,28 +26,26 @@ function autoResize(el: HTMLTextAreaElement | null) {
 }
 
 /** Transparent, borderless textarea that grows with content — feels like a document. */
-function DocTextarea({
-  value,
-  onChange,
-  placeholder,
-  minRows = 2,
-  className = '',
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  minRows?: number;
-  className?: string;
-}) {
-  const ref = useRef<HTMLTextAreaElement>(null);
+const DocTextarea = forwardRef<
+  HTMLTextAreaElement,
+  {
+    value: string;
+    onChange: (v: string) => void;
+    placeholder: string;
+    minRows?: number;
+    className?: string;
+  }
+>(function DocTextarea({ value, onChange, placeholder, minRows = 2, className = '' }, ref) {
+  const innerRef = useRef<HTMLTextAreaElement>(null);
+  useImperativeHandle(ref, () => innerRef.current as HTMLTextAreaElement);
 
   useEffect(() => {
-    autoResize(ref.current);
+    autoResize(innerRef.current);
   }, [value]);
 
   return (
     <textarea
-      ref={ref}
+      ref={innerRef}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onInput={(e) => autoResize(e.currentTarget)}
@@ -59,7 +59,7 @@ function DocTextarea({
       ].join(' ')}
     />
   );
-}
+});
 
 /** Subtle section divider with label. */
 function SectionDivider({ label, action }: { label: string; action?: React.ReactNode }) {
@@ -83,11 +83,9 @@ export function AddTopicPage({
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // TODO: pre-fill form from existing draft when API supports fetching a single topic by ID.
-  // The topicId query param is passed from "Continue editing" on the dashboard card.
-  // When a getTopicById endpoint is available in backendApi.ts, read searchParams.get('topicId')
-  // on mount and hydrate topic/about/meaning/style/notes/pros/cons from the returned row.
   void searchParams; // topicId param accepted; hydration is a follow-up task
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const stt = useSpeechToText(notesRef);
 
   const [topic, setTopic] = useState('');
   const [about, setAbout] = useState('');
@@ -229,14 +227,29 @@ export function AddTopicPage({
 
           {/* Research notes — main scratchpad */}
           <div className="mb-6">
-            <SectionDivider label="Research notes" />
+            <SectionDivider
+              label="Research notes"
+              action={
+                <MicButton
+                  isRecording={stt.isRecording}
+                  isAvailable={stt.isAvailable}
+                  unavailableReason={stt.unavailableReason}
+                  shortcut={stt.shortcut}
+                  onClick={stt.toggle}
+                />
+              }
+            />
             <div className="pt-3">
               <DocTextarea
+                ref={notesRef}
                 value={notes}
                 onChange={setNotes}
                 placeholder="Paste links, quotes, stats, anecdotes, or anything you want to remember. This is your scratchpad…"
                 minRows={5}
               />
+              {stt.error && (
+                <p className="mt-1 text-xs text-red-500">{stt.error}</p>
+              )}
             </div>
           </div>
 

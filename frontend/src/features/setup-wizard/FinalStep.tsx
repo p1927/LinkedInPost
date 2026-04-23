@@ -54,6 +54,19 @@ export function FinalStep({ config, onRestart }: FinalStepProps) {
         LinkedIn Post is ready to use. Here's what to do next.
       </p>
 
+      {/* STT status */}
+      <div className="flex items-center justify-between py-2">
+        <span className="text-sm text-muted">Speech-to-text</span>
+        <span className={[
+          'text-sm font-medium',
+          config.speechToText?.enabled ? 'text-emerald-600' : 'text-gray-400',
+        ].join(' ')}>
+          {config.speechToText?.enabled
+            ? `Enabled (${config.speechToText.model})`
+            : 'Disabled'}
+        </span>
+      </div>
+
       {/* Setup summary */}
       <div className="flex flex-wrap justify-center gap-2 mb-8">
         {hasIntegrations && (

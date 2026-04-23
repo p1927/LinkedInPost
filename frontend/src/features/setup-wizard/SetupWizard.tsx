@@ -10,9 +10,10 @@ import { setupService } from './setupService';
 import { SetupStateService } from './setupStateService';
 import { TrendingApiStep } from './TrendingApiStep';
 import { ImageGenStep } from './ImageGenStep';
+import { SpeechToTextStep } from './SpeechToTextStep';
 import type { SetupState } from './types';
 
-export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'trending' | 'imagegen' | 'envvars' | 'final';
+export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'trending' | 'imagegen' | 'stt' | 'envvars' | 'final';
 
 export type YouTubeAdapterType = 'youtube-official' | 'apify-youtube';
 export type InstagramAdapterType = 'instagram-official' | 'sociavault';
@@ -46,6 +47,11 @@ export interface SetupConfig {
     linkedin: { adapter: LinkedInAdapterType };
     news: { adapter: NewsAdapterType };
   };
+  speechToText: {
+    enabled: boolean;
+    model: 'base.en' | 'small.en';
+    shortcut: string;
+  };
   envVars: Record<string, string>;
 }
 
@@ -72,6 +78,11 @@ const DEFAULT_CONFIG: SetupConfig = {
     instagram: { adapter: 'instagram-official' as InstagramAdapterType },
     linkedin: { adapter: 'linkedin-official' as LinkedInAdapterType },
     news: { adapter: 'newsdata' as NewsAdapterType },
+  },
+  speechToText: {
+    enabled: false,
+    model: 'base.en' as const,
+    shortcut: 'Mod+Shift+M',
   },
   envVars: {},
 };
@@ -210,6 +221,11 @@ export function SetupWizard() {
 
   const handleImageGenComplete = useCallback(async (envVars: Record<string, string>) => {
     updateConfig({ envVars });
+    setStep('stt');
+  }, [updateConfig]);
+
+  const handleSttComplete = useCallback((speechToText: SetupConfig['speechToText']) => {
+    updateConfig({ speechToText });
     setStep('envvars');
   }, [updateConfig]);
 
@@ -421,8 +437,23 @@ export function SetupWizard() {
                 config={config}
                 onUpdate={updateConfig}
                 onComplete={handleImageGenComplete}
-                onSkip={() => setStep('envvars')}
+                onSkip={() => setStep('stt')}
                 onBack={() => setStep('trending')}
+              />
+            </motion.div>
+          )}
+
+          {step === 'stt' && (
+            <motion.div
+              key="stt"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <SpeechToTextStep
+                projectDir={config.projectDir}
+                onComplete={handleSttComplete}
+                onBack={() => setStep('imagegen')}
               />
             </motion.div>
           )}
@@ -438,7 +469,7 @@ export function SetupWizard() {
                 config={config}
                 onUpdate={updateConfig}
                 onComplete={handleEnvVarsComplete}
-                onBack={() => setStep('integrations')}
+                onBack={() => setStep('stt')}
               />
             </motion.div>
           )}

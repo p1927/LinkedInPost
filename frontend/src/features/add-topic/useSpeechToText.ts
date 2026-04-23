@@ -1,0 +1,200 @@
+import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
+
+const STT_URL = 'http://localhost:3457';
+const CHUNK_INTERVAL_MS = 5000;
+
+export type UnavailableReason = 'disabled' | 'model_missing' | 'sidecar_offline' | null;
+
+export interface SpeechToTextState {
+  isRecording: boolean;
+  isAvailable: boolean;
+  unavailableReason: UnavailableReason;
+  shortcut: string;
+  error: string | null;
+  toggle: () => void;
+}
+
+export function useSpeechToText(
+  textareaRef: RefObject<HTMLTextAreaElement | null>,
+): SpeechToTextState {
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [unavailableReason, setUnavailableReason] = useState<UnavailableReason>('sidecar_offline');
+  const [isRecording, setIsRecording] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [shortcut, setShortcut] = useState('Mod+Shift+M');
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cursorPositionRef = useRef<number | null>(null);
+
+  // Check sidecar availability on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${STT_URL}/health`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        setShortcut(data.shortcut ?? 'Mod+Shift+M');
+        if (data.enabled && data.modelLoaded) {
+          setIsAvailable(true);
+          setUnavailableReason(null);
+        } else {
+          setIsAvailable(false);
+          setUnavailableReason(data.unavailableReason ?? 'disabled');
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setIsAvailable(false);
+        setUnavailableReason('sidecar_offline');
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Insert text at saved cursor position (or append if lost)
+  const insertText = useCallback((text: string) => {
+    const el = textareaRef.current;
+    if (!el || !text) return;
+
+    const pos = cursorPositionRef.current ?? el.value.length;
+    const before = el.value.slice(0, pos);
+    const after = el.value.slice(pos);
+    const separator = before.length > 0 && !before.endsWith(' ') ? ' ' : '';
+    const inserted = separator + text + ' ';
+
+    el.value = before + inserted + after;
+    const newPos = pos + inserted.length;
+    el.selectionStart = newPos;
+    el.selectionEnd = newPos;
+    cursorPositionRef.current = newPos;
+
+    // Trigger React synthetic onChange
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      'value',
+    )?.set;
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(el, el.value);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }, [textareaRef]);
+
+  // Send an audio blob to the sidecar and insert the result
+  const transcribeChunk = useCallback(async (blob: Blob) => {
+    if (blob.size < 1000) return;
+    const form = new FormData();
+    form.append('audio', blob, 'chunk.webm');
+    try {
+      const r = await fetch(`${STT_URL}/transcribe`, { method: 'POST', body: form });
+      if (!r.ok) return;
+      const { text } = await r.json();
+      if (text) insertText(text);
+    } catch {
+      // Network error — sidecar may have stopped
+    }
+  }, [insertText]);
+
+  const stopRecording = useCallback(() => {
+    if (chunkTimerRef.current) {
+      clearInterval(chunkTimerRef.current);
+      chunkTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
+    setIsRecording(false);
+  }, []);
+
+  const startChunk = useCallback((stream: MediaStream) => {
+    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    const chunks: Blob[] = [];
+
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      transcribeChunk(blob);
+    };
+
+    recorder.start();
+    mediaRecorderRef.current = recorder;
+  }, [transcribeChunk]);
+
+  const startRecording = useCallback(async () => {
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      cursorPositionRef.current = textareaRef.current?.selectionStart ?? null;
+
+      startChunk(stream);
+      setIsRecording(true);
+
+      chunkTimerRef.current = setInterval(() => {
+        const old = mediaRecorderRef.current;
+        if (old?.state !== 'recording') return;
+        // Chain: start next chunk only after old recorder's onstop fires,
+        // ensuring all buffered data is flushed before the new recorder starts.
+        const origStop = old.onstop as (() => void) | null;
+        old.onstop = () => {
+          origStop?.();
+          startChunk(stream);
+        };
+        old.stop();
+      }, CHUNK_INTERVAL_MS);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Microphone access denied');
+    }
+  }, [startChunk, textareaRef]);
+
+  const toggle = useCallback(() => {
+    if (!isAvailable) return;
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isAvailable, isRecording, startRecording, stopRecording]);
+
+  // Keyboard shortcut listener
+  useEffect(() => {
+    if (!isAvailable) return;
+
+    const isMac = navigator.platform.toUpperCase().includes('MAC');
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const modHeld = isMac ? e.metaKey : e.ctrlKey;
+      if (modHeld && e.shiftKey && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        toggle();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAvailable, toggle]);
+
+  // Track cursor position while textarea has focus
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const save = () => { cursorPositionRef.current = el.selectionStart; };
+    el.addEventListener('click', save);
+    el.addEventListener('keyup', save);
+    return () => {
+      el.removeEventListener('click', save);
+      el.removeEventListener('keyup', save);
+    };
+  }, [textareaRef]);
+
+  // Cleanup on unmount
+  useEffect(() => stopRecording, [stopRecording]);
+
+  return { isRecording, isAvailable, unavailableReason, shortcut, error, toggle };
+}
