@@ -1,0 +1,9 @@
+{
+  "campaign_id": "default",
+  "current_story_id": null,
+  "current_run_id": null,
+  "round": 1,
+  "usd_spent": 0.0,
+  "max_rounds": 10,
+  "failure_digest": []
+}

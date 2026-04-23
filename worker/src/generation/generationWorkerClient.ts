@@ -1,0 +1,156 @@
+import type { Env } from '../index';
+
+export interface GenWorkerGenerateRequest {
+  spreadsheetId: string;
+  topicId?: string;
+  topic: string;
+  channel?: string;
+  audience?: string;
+  tone?: string;
+  jtbd?: string;
+  factual?: boolean;
+  mustInclude?: string[];
+  mustAvoid?: string[];
+  cta?: string;
+  constraints?: string;
+  newsWindowStart?: string;
+  newsWindowEnd?: string;
+  composableAssets?: {
+    brandContext?: string;
+    globalRules?: string;
+    fewShotExamples?: string;
+    authorProfile?: string;
+    reviewChecklist?: string[];
+  };
+  /** Matches generation worker catalog (`GET /v1/llm/catalog`); omit to use default model for first configured provider. */
+  llm?: { provider: 'gemini' | 'grok' | 'openrouter' | 'minimax'; model: string };
+  newsResearchConfig?: unknown;
+  skipImages?: boolean;
+  imageGen?: { provider: string; model?: string };
+  selectedImageId?: string;
+  selectedImageUrlsJson?: string;
+}
+
+export interface TextVariant {
+  index: number;
+  label: string;
+  text: string;
+}
+
+export interface ImageCandidate {
+  id: string;
+  url?: string;
+  searchQuery?: string;
+  generationPrompt?: string;
+  visualBrief: string;
+  score: number;
+  variantIndex?: number;
+}
+
+export interface PerVariantImageCandidates {
+  variantIndex: number;
+  candidates: ImageCandidate[];
+}
+
+export interface GenWorkerNodeRunRecord {
+  nodeId: string;
+  inputJson: string;
+  outputJson: string;
+  model: string;
+  durationMs: number;
+  status: 'completed' | 'failed';
+  error?: string;
+}
+
+export interface GenWorkerGenerateResponse {
+  runId: string;
+  primaryPatternId: string;
+  runnerUpPatternId: string;
+  patternRationale: string;
+  variants: TextVariant[];
+  imageCandidates: ImageCandidate[];
+  perVariantImageCandidates: PerVariantImageCandidates[];
+  review: { passed: boolean; verdict: string; summary: string };
+  trace: Record<string, unknown>;
+  nodeRuns?: GenWorkerNodeRunRecord[];
+}
+
+export async function callGenerationWorker(
+  env: Env,
+  req: GenWorkerGenerateRequest,
+): Promise<GenWorkerGenerateResponse> {
+  const baseUrl = String(env.GENERATION_WORKER_URL || '').trim().replace(/\/$/, '');
+  if (!baseUrl && !env.GENERATION_WORKER) {
+    throw new Error('GENERATION_WORKER_URL or GENERATION_WORKER service binding is not configured. Set it in Worker environment.');
+  }
+  const secret = String(env.GENERATION_WORKER_SECRET || '').trim();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (secret) headers['Authorization'] = `Bearer ${secret}`;
+
+  const endpoint = env.GENERATION_WORKER ? 'https://generation-worker/v1/generate' : `${baseUrl}/v1/generate`;
+  console.log(`[callGenerationWorker] Calling ${endpoint} with topic="${req.topic}" channel="${req.channel}" using ${env.GENERATION_WORKER ? 'Service Binding' : 'HTTP fetch'}`);
+  console.log(`[callGenerationWorker] Auth header set: ${headers['Authorization'] ? 'YES' : 'NO'}`);
+
+  let response;
+  try {
+    const fetcher = env.GENERATION_WORKER || globalThis;
+    response = await fetcher.fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(req),
+      signal: AbortSignal.timeout(300_000), // 5 minutes for slow models
+    });
+    console.log(`[callGenerationWorker] Response status: ${response.status}`);
+  } catch (e) {
+    console.log(`[callGenerationWorker] Fetch error: ${String(e)}`);
+    throw e;
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.log(`[callGenerationWorker] Error response: ${text.slice(0, 300)}`);
+    throw new Error(`Generation worker error ${response.status}: ${text.slice(0, 200)}`);
+  }
+
+  const result = await response.json() as GenWorkerGenerateResponse;
+  console.log(`[callGenerationWorker] Success - got variants count: ${result.variants?.length || 0}`);
+  return result;
+}
+
+export function isGenerationWorkerConfigured(env: Env): boolean {
+  return Boolean(env.GENERATION_WORKER) || Boolean(String(env.GENERATION_WORKER_URL || '').trim());
+}
+
+export async function callGenerationWorkerStream(
+  env: Env,
+  req: GenWorkerGenerateRequest,
+): Promise<Response> {
+  const baseUrl = String(env.GENERATION_WORKER_URL || '').trim().replace(/\/$/, '');
+  if (!baseUrl && !env.GENERATION_WORKER) {
+    throw new Error('GENERATION_WORKER_URL or GENERATION_WORKER service binding is not configured.');
+  }
+  const secret = String(env.GENERATION_WORKER_SECRET || '').trim();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'text/event-stream',
+  };
+  if (secret) headers['Authorization'] = `Bearer ${secret}`;
+
+  const endpoint = env.GENERATION_WORKER ? 'https://generation-worker/v1/generate' : `${baseUrl}/v1/generate`;
+  console.log(`[callGenerationWorkerStream] Calling ${endpoint} (SSE) with topic="${req.topic}"`);
+
+  const fetcher = env.GENERATION_WORKER || globalThis;
+  const response = await fetcher.fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(req),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.log(`[callGenerationWorkerStream] Error response: ${text.slice(0, 300)}`);
+    throw new Error(`Generation worker stream error ${response.status}: ${text.slice(0, 200)}`);
+  }
+
+  return response;
+}

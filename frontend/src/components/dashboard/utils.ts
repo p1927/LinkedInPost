@@ -1,0 +1,263 @@
+import { type BadgeVariant } from '@/components/ui/badge';
+import { type SheetRow } from '../../services/sheets';
+import { type ChannelId } from '../../integrations/channels';
+import { type BotConfig } from '../../services/configService';
+import { parseTelegramRecipientsInput, type TelegramRecipient } from '../../integrations/telegram';
+import { type PopupProvider, type OAuthPopupMessage, type RecipientOption } from './types';
+import { type OAuthStartResult } from '../../services/backendApi';
+
+export function buildRowActionKey(action: 'draft' | 'publish', row: SheetRow): string {
+  return `${action}:${(row.topicId || '').trim()}`;
+}
+
+export function getNormalizedRowStatus(status?: string): string {
+  return (status || '').trim().toLowerCase() || 'pending';
+}
+
+/** True when the merged row already has text in the pipeline fields (D1 / sheet merge). */
+export function rowHasPipelineDraftText(row: SheetRow): boolean {
+  for (const p of [row.selectedText, row.variant1, row.variant2, row.variant3, row.variant4]) {
+    if (String(p ?? '').trim()) return true;
+  }
+  return false;
+}
+
+/**
+ * Queue + topics rail treat "drafted" as: status Drafted, or Pending with variant/selected text.
+ * The latter covers pipeline rows where content was saved but status stayed Pending (e.g. partial sync).
+ */
+export function shouldShowDraftedQueueActions(row: SheetRow): boolean {
+  const s = getNormalizedRowStatus(row.status);
+  if (s === 'approved' || s === 'published' || s === 'blocked') return false;
+  if (s === 'drafted') return true;
+  return s === 'pending' && rowHasPipelineDraftText(row);
+}
+
+export function queueStatusToBadgeVariant(status?: string): BadgeVariant {
+  switch (getNormalizedRowStatus(status)) {
+    case 'pending':
+      return 'pending';
+    case 'drafted':
+      return 'drafted';
+    case 'approved':
+      return 'approved';
+    case 'published':
+      return 'published';
+    case 'blocked':
+      return 'neutral';
+    default:
+      return 'neutral';
+  }
+}
+
+export function canPreviewPublishedContent(row: SheetRow): boolean {
+  const status = getNormalizedRowStatus(row.status);
+  return status === 'approved' || status === 'published';
+}
+
+/** Prefer matching pipeline rows by stable topicId (authoritative after D1). */
+export function isSameTopicId(left: SheetRow, right: SheetRow): boolean {
+  const a = (left.topicId || '').trim();
+  const b = (right.topicId || '').trim();
+  return Boolean(a && b && a === b);
+}
+
+export function isSameTopicDate(left: SheetRow, right: SheetRow): boolean {
+  return isSameTopicId(left, right);
+}
+
+/** After createDraftFromPublished, select the new row by topicId returned from the API. */
+export function findRowByTopicId(rows: SheetRow[], topicId: string): SheetRow | undefined {
+  const id = topicId.trim();
+  if (!id) return undefined;
+  return rows.find((r) => (r.topicId || '').trim() === id);
+}
+
+/** Single-line queue date for compact list rows (ISO yyyy-mm-dd or parseable string). */
+export function formatQueueDate(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '—';
+
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const d = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  }
+
+  const d = new Date(t);
+  if (!Number.isNaN(d.getTime())) {
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  return t;
+}
+
+/**
+ * Time-only label for the queue when `row.date` already shows the calendar date.
+ * Accepts sheet-style `YYYY-MM-DD HH:mm`, `datetime-local`, time-only, or other parseable strings.
+ */
+export function formatQueuePostTime(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '—';
+
+  const ymdTime = t.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (ymdTime) {
+    const dt = new Date(
+      Number(ymdTime[1]),
+      Number(ymdTime[2]) - 1,
+      Number(ymdTime[3]),
+      Number(ymdTime[4]),
+      Number(ymdTime[5]),
+    );
+    if (!Number.isNaN(dt.getTime())) {
+      return dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+  }
+
+  const timeOnly = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*(am|pm))?$/i);
+  if (timeOnly) {
+    let h = parseInt(timeOnly[1]!, 10);
+    const mi = parseInt(timeOnly[2]!, 10);
+    const ampm = timeOnly[4]?.toLowerCase();
+    if (ampm === 'pm' && h !== 12) h += 12;
+    if (ampm === 'am' && h === 12) h = 0;
+    const dt = new Date(2000, 0, 1, h, mi);
+    if (!Number.isNaN(dt.getTime())) {
+      return dt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+  }
+
+  const parsed = new Date(t.includes('T') ? t : t.replace(' ', 'T'));
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  return t;
+}
+
+export function getRecipientOptions(channel: ChannelId, config: BotConfig): RecipientOption[] {
+  if (channel === 'telegram') {
+    return config.telegramRecipients.map((recipient) => ({
+      label: recipient.label,
+      value: recipient.chatId,
+    }));
+  }
+
+  if (channel === 'whatsapp') {
+    return config.whatsappRecipients.map((recipient) => ({
+      label: recipient.label,
+      value: recipient.phoneNumber,
+    }));
+  }
+
+  return [];
+}
+
+export function getDefaultRecipientMode(channel: ChannelId, config: BotConfig): 'saved' | 'manual' {
+  return getRecipientOptions(channel, config).length > 0 ? 'saved' : 'manual';
+}
+
+export function getDefaultRecipientValue(channel: ChannelId, config: BotConfig): string {
+  return getRecipientOptions(channel, config)[0]?.value || '';
+}
+
+export function tryParseTelegramRecipients(input: string): TelegramRecipient[] {
+  try {
+    return parseTelegramRecipientsInput(input);
+  } catch {
+    return [];
+  }
+}
+
+export function isOAuthPopupMessage(value: unknown): value is OAuthPopupMessage {
+  return Boolean(
+    value
+      && typeof value === 'object'
+      && (value as OAuthPopupMessage).source === 'channel-bot-oauth'
+      && ((value as OAuthPopupMessage).provider === 'instagram'
+        || (value as OAuthPopupMessage).provider === 'linkedin'
+        || (value as OAuthPopupMessage).provider === 'whatsapp'
+        || (value as OAuthPopupMessage).provider === 'gmail')
+  );
+}
+
+const OAUTH_POPUP_ABANDON_MS = 15 * 60 * 1000;
+
+function tryReadPopupClosed(popup: Window): boolean | null {
+  try {
+    return popup.closed;
+  } catch {
+    // Google (and others) may use COOP so the opener cannot read popup state; rely on postMessage + timeout.
+    return null;
+  }
+}
+
+function tryClosePopup(popup: Window): void {
+  try {
+    popup.close();
+  } catch {
+    // COOP can block parent-driven close; the callback page already calls window.close().
+  }
+}
+
+export async function openOAuthPopup(
+  loadAuthUrl: () => Promise<OAuthStartResult>,
+  provider: PopupProvider,
+): Promise<OAuthPopupMessage> {
+  const { authorizationUrl, callbackOrigin } = await loadAuthUrl();
+  const expectedOrigin = callbackOrigin;
+  const popup = window.open(authorizationUrl, `${provider}-connect`, 'popup=yes,width=620,height=760');
+  if (!popup) {
+    throw new Error('The browser blocked the connection popup. Allow popups for this site and try again.');
+  }
+
+  popup.focus();
+
+  return new Promise<OAuthPopupMessage>((resolve, reject) => {
+    let settled = false;
+    let popupPoll = 0;
+    let abandonTimer = 0;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (settled) return;
+      if (event.origin !== expectedOrigin || !isOAuthPopupMessage(event.data)) {
+        return;
+      }
+
+      if (event.data.provider !== provider) {
+        return;
+      }
+
+      cleanup();
+      tryClosePopup(popup);
+      resolve(event.data);
+    };
+
+    const cleanup = () => {
+      if (settled) return;
+      settled = true;
+      window.clearInterval(popupPoll);
+      window.clearTimeout(abandonTimer);
+      window.removeEventListener('message', handleMessage);
+    };
+
+    abandonTimer = window.setTimeout(() => {
+      if (settled) return;
+      cleanup();
+      reject(new Error('The connection timed out. Close any stuck popup and try again.'));
+    }, OAUTH_POPUP_ABANDON_MS);
+
+    popupPoll = window.setInterval(() => {
+      if (settled) return;
+      const closed = tryReadPopupClosed(popup);
+      if (closed === true) {
+        cleanup();
+        reject(new Error('The connection popup was closed before the channel finished connecting.'));
+      }
+    }, 300);
+
+    window.addEventListener('message', handleMessage);
+  });
+}

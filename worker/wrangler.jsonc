@@ -1,0 +1,127 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "linkedin-bot-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-25",
+  "alias": {
+    "zod": "./node_modules/zod"
+  },
+  "d1_databases": [
+    {
+      "binding": "PIPELINE_DB",
+      "database_name": "linkedin-pipeline-db",
+      "database_id": "4dee8b3f-5366-4adf-85e0-38c7960e9e00",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "0 3 * * *"
+    ]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "CONFIG_KV",
+      "id": "3d0846f350e448e5b9fc9d5ff7721fba",
+      "preview_id": "66555d70f03b45d9aadae69aa1d08c67"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SCHEDULED_LINKEDIN_PUBLISH",
+        "class_name": "ScheduledPublishAlarm"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ScheduledPublishAlarm"
+      ]
+    }
+  ],
+  "vars": {
+    "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
+    "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
+    "GOOGLE_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+    "GOOGLE_CLOUD_STORAGE_BUCKET": "linkedin-image-archive-742",
+    "DELETE_UNUSED_GENERATED_IMAGES": "true",
+    "CORS_ALLOWED_ORIGINS": "http://localhost:5173 http://localhost:5174 https://p1927.github.io",
+    "INSTAGRAM_APP_ID": "2367592213744797",
+    "LINKEDIN_CLIENT_ID": "86ht5xld6204vy",
+    "LINKEDIN_PERSON_URN": "",
+    "META_APP_ID": "2059399091272282",
+    "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
+    "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+    "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
+    "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev"
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false
+    }
+  },
+  "services": [
+    {
+      "binding": "GENERATION_WORKER",
+      "service": "linkedin-generation-worker"
+    }
+  ],
+  "env": {
+    "local": {
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "SCHEDULED_LINKEDIN_PUBLISH",
+            "class_name": "ScheduledPublishAlarm"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": [
+            "ScheduledPublishAlarm"
+          ]
+        }
+      ],
+      "vars": {
+        "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
+        "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
+        "GOOGLE_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+        "GOOGLE_CLOUD_STORAGE_BUCKET": "linkedin-image-archive-742",
+        "DELETE_UNUSED_GENERATED_IMAGES": "true",
+        "CORS_ALLOWED_ORIGINS": "http://localhost:5173 http://localhost:5174 https://p1927.github.io",
+        "INSTAGRAM_APP_ID": "2367592213744797",
+        "LINKEDIN_CLIENT_ID": "86ht5xld6204vy",
+        "LINKEDIN_PERSON_URN": "",
+        "META_APP_ID": "2059399091272282",
+        "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
+        "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
+        "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
+        "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev"
+      },
+      "kv_namespaces": [
+        {
+          "binding": "CONFIG_KV",
+          "id": "66555d70f03b45d9aadae69aa1d08c67",
+          "preview_id": "66555d70f03b45d9aadae69aa1d08c67"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "PIPELINE_DB",
+          "database_name": "linkedin-pipeline-db",
+          "database_id": "4dee8b3f-5366-4adf-85e0-38c7960e9e00",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
+}

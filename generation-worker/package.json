@@ -1,0 +1,21 @@
+{
+  "name": "linkedin-generation-worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8788 --inspector-port 9230",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/llm-core": "*",
+    "@linkedinpost/researcher": "*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260317.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.78.0"
+  }
+}

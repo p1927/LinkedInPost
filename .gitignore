@@ -1,1 +1,23 @@
-.shard/
+.env
+health*.json
+__pycache__/
+*.py[cod]
+frontend/dist/
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
+.cursor
+.claude
+.omc
+.github/prompts/ui-ux**
+
+generation-worker/node_modules
+node_modules.worktrees/
+node_modules
+.worktrees/

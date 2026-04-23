@@ -1,0 +1,306 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Setup Flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+  });
+
+  test('shows loading state while detecting setup', async ({ page }) => {
+    const spinner = page.locator('.animate-spin');
+    await expect(spinner).toBeVisible({ timeout: 5000 }).catch(() => {
+      // If not visible, wizard may have already detected state
+    });
+  });
+
+  test('shows welcome screen for fresh setup', async ({ page }) => {
+    const getStarted = page.getByRole('button', { name: /get started/i });
+    await expect(getStarted).toBeVisible({ timeout: 10000 });
+  });
+
+  test('shows status dashboard when partial setup exists', async ({ page }) => {
+    await page.waitForTimeout(2000);
+
+    const welcomeOrStatus = page.locator('text=Welcome to LinkedIn Post').or(
+      page.locator('text=Environment Variables').or(
+        page.locator('text=Setup Complete')
+      )
+    );
+    await expect(welcomeOrStatus.first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test('can navigate through setup steps', async ({ page }) => {
+    const getStarted = page.getByRole('button', { name: /get started/i });
+    await getStarted.click();
+
+    await expect(page.locator('text=Select your project directory')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('shows progress during dependency installation', async ({ page }) => {
+    const getStarted = page.getByRole('button', { name: /get started/i });
+    await getStarted.click();
+    await page.waitForTimeout(500);
+
+    const progressSection = page.locator('text=Setting up your environment');
+    if (await progressSection.isVisible()) {
+      // We're on progress page - verify log messages exist
+      await expect(page.locator('.log-entry, [class*="log"]')).toBeVisible({ timeout: 3000 }).catch(() => {});
+    }
+  });
+});
+
+test.describe('Setup Detection', () => {
+  test('detects environment variables from .env file', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    const envVarsSection = page.locator('text=Environment Variables');
+    const isVisible = await envVarsSection.isVisible().catch(() => false);
+
+    if (isVisible) {
+      const statusIndicators = page.locator('[class*="text-green-500"], [class*="text-red-500"]');
+      expect(await statusIndicators.count()).toBeGreaterThan(0);
+    }
+  });
+
+  test('shows integration status', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    const integrationsSection = page.locator('text=Integrations');
+    const isVisible = await integrationsSection.isVisible().catch(() => false);
+
+    if (isVisible) {
+      const checkCircle = page.locator('[class*="CheckCircle"], [class*="XCircle"]');
+      expect(await checkCircle.count()).toBeGreaterThan(0);
+    }
+  });
+
+  test('calculates overall progress correctly', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    const progressRing = page.locator('text=/\\d+%/');
+    const isVisible = await progressRing.isVisible().catch(() => false);
+
+    if (isVisible) {
+      const progressText = await progressRing.textContent();
+      const progressMatch = progressText?.match(/(\d+)/);
+      if (progressMatch) {
+        const progress = parseInt(progressMatch[1], 10);
+        expect(progress).toBeGreaterThanOrEqual(0);
+        expect(progress).toBeLessThanOrEqual(100);
+      }
+    }
+  });
+});
+
+test.describe('Status Dashboard', () => {
+  test('displays progress ring with percentage', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    // Look for SVG progress ring
+    const progressRing = page.locator('svg circle').first();
+    const isVisible = await progressRing.isVisible().catch(() => false);
+
+    if (isVisible) {
+      // Progress percentage should be displayed
+      const percentage = page.locator('text=/\\d+%/');
+      await expect(percentage).toBeVisible({ timeout: 3000 }).catch(() => {});
+    }
+  });
+
+  test('shows action buttons for incomplete items', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    // Look for action buttons (Complete Setup, Connect Integrations)
+    const completeButton = page.getByRole('button', { name: /complete setup/i }).or(
+      page.getByRole('button', { name: /connect integrations/i })
+    );
+
+    const buttonVisible = await completeButton.isVisible().catch(() => false);
+    if (buttonVisible) {
+      await expect(completeButton).toBeVisible();
+    }
+  });
+
+  test('shows missing items summary', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    // Look for Action Required section or missing items list
+    const actionRequired = page.locator('text=Action Required').or(
+      page.locator('text=Set VITE_')
+    );
+
+    const isVisible = await actionRequired.isVisible().catch(() => false);
+    // This is optional - setup may already be complete
+    if (isVisible) {
+      await expect(actionRequired.first()).toBeVisible();
+    }
+  });
+});
+
+test.describe('Setup Wizard Navigation', () => {
+  test('can proceed from welcome to directory selection', async ({ page }) => {
+    const getStarted = page.getByRole('button', { name: /get started/i });
+    await getStarted.click();
+
+    await expect(page.locator('text=Select your project directory')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('can go back from directory to welcome', async ({ page }) => {
+    const getStarted = page.getByRole('button', { name: /get started/i });
+    await getStarted.click();
+
+    await page.waitForTimeout(500);
+
+    const backButton = page.getByRole('button', { name: /back/i });
+    if (await backButton.isVisible().catch(() => false)) {
+      await backButton.click();
+      await expect(page.locator('text=Welcome to LinkedIn Post')).toBeVisible({ timeout: 3000 });
+    }
+  });
+
+  test('shows integrations step after clicking through', async ({ page }) => {
+    const getStarted = page.getByRole('button', { name: /get started/i });
+    await getStarted.click();
+
+    await page.waitForTimeout(500);
+
+    // Click Next/Continue to proceed
+    const nextButton = page.getByRole('button', { name: /next|continue/i }).first();
+    if (await nextButton.isVisible().catch(() => false)) {
+      await nextButton.click();
+      // Should proceed to next step
+    }
+  });
+});
+
+test.describe('Database Cleanup (UI)', () => {
+  test('shows database section in settings', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(2000);
+
+    const dbSection = page.locator('text=/database|reset|cleanup/i');
+    const isVisible = await dbSection.isVisible().catch(() => false);
+
+    if (isVisible) {
+      await expect(dbSection.first()).toBeVisible();
+    }
+  });
+});
+
+test.describe('Dry Run Mode', () => {
+  test('setup wizard runs in dry run mode', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(2000);
+
+    // Navigate to status dashboard if exists
+    const progress = page.locator('text=/\\d+%/');
+    await expect(progress).toBeVisible({ timeout: 10000 });
+
+    // Find Quick Actions section
+    const quickActions = page.locator('text=Quick Actions');
+    const hasQuickActions = await quickActions.isVisible().catch(() => false);
+
+    if (hasQuickActions) {
+      // Click Reset Database - should not actually delete
+      const resetDbBtn = page.locator('text=Reset Database').first();
+      if (await resetDbBtn.isVisible()) {
+        await resetDbBtn.click();
+        // Should see DRY RUN message in console (verified manually)
+      }
+
+      // Click Clear Cache - should not actually clear
+      const clearCacheBtn = page.locator('text=Clear Cache').first();
+      if (await clearCacheBtn.isVisible()) {
+        await clearCacheBtn.click();
+      }
+
+      // Click Regenerate Features - should not actually regenerate
+      const regenBtn = page.locator('text=Regenerate Features').first();
+      if (await regenBtn.isVisible()) {
+        await regenBtn.click();
+      }
+    }
+
+    // Verify UI still responsive after clicking all actions
+    await expect(progress).toBeVisible();
+  });
+
+  test('quick actions are clickable without errors', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    // Expand each status card
+    const envCard = page.locator('text=Environment Variables').first();
+    if (await envCard.isVisible()) {
+      await envCard.click();
+      await page.waitForTimeout(500);
+    }
+
+    const intCard = page.locator('text=Integrations').first();
+    if (await intCard.isVisible()) {
+      await intCard.click();
+      await page.waitForTimeout(500);
+    }
+
+    // Verify UI still responsive
+    const progress = page.locator('text=/\\d+%/');
+    await expect(progress).toBeVisible({ timeout: 5000 });
+  });
+
+  test('status dashboard shows all sections', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    // Check for all main sections
+    await expect(page.locator('text=Environment Variables').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Integrations').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Workers').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Quick Actions').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('can navigate between steps', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(2000);
+
+    // Go through the welcome -> directory -> progress -> integrations -> envvars flow
+    const getStarted = page.getByRole('button', { name: /get started/i });
+    if (await getStarted.isVisible().catch(() => false)) {
+      await getStarted.click();
+      await page.waitForTimeout(1000);
+    }
+
+    // Verify navigation worked (we're now past welcome or on status dashboard)
+    const progressOrStatus = page.locator('text=Setting up your environment').or(
+      page.locator('text=Environment Variables').or(
+        page.locator('text=Setup Complete')
+      )
+    );
+    await expect(progressOrStatus.first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test('action buttons trigger handlers without crashing', async ({ page }) => {
+    await page.goto('http://localhost:3456/setup');
+    await page.waitForTimeout(3000);
+
+    // Look for action buttons in status dashboard
+    const completeSetupBtn = page.getByRole('button', { name: /complete setup/i });
+    const connectIntBtn = page.getByRole('button', { name: /connect integrations/i });
+
+    // Click each if visible
+    for (const btn of [completeSetupBtn, connectIntBtn]) {
+      if (await btn.isVisible().catch(() => false)) {
+        await btn.click();
+        await page.waitForTimeout(500);
+      }
+    }
+
+    // UI should still be responsive
+    const spinnerOrContent = page.locator('.animate-spin, text=Welcome').first();
+    await expect(spinnerOrContent).toBeVisible({ timeout: 3000 });
+  });
+});

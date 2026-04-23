@@ -1,0 +1,17 @@
+# Feature toggles for this deployment. After editing, run:
+#   python3 scripts/generate_features.py
+# or `python3 setup.py` (regenerates TypeScript for worker + frontend).
+#
+# When a feature is false, related UI and Worker RPCs are disabled; generation
+# ignores related client payloads.
+
+newsResearch: true
+# Bulk campaign import (Topics + Draft rows, Claude JSON paste).
+campaign: true
+# Gemini + Grok (xAI) workspace LLM gateway and Settings → AI / LLM. Set false to hide UI and RPCs.
+multiProviderLlm: true
+contentReview: true
+# Content flow: pattern-based template selector in the review workspace.
+contentFlow: true
+# Modular content enrichment layer — emotion, psychology, persuasion, etc.
+enrichment: true

@@ -1,0 +1,3 @@
+{"at": 1776890378.7467067, "run_id": "abeb6f0c-07db-41ca-ab0a-7c2627afee1d", "campaign_id": "default", "provider": "anthropic", "model": "MiniMax-M2.7", "tokens_in": 2343, "tokens_out": 442, "usd": 0.002785}
+{"at": 1776890384.0624592, "run_id": "abeb6f0c-07db-41ca-ab0a-7c2627afee1d", "campaign_id": "default", "provider": "anthropic", "model": "MiniMax-M2.7", "tokens_in": 2343, "tokens_out": 1081, "usd": 0.003424}
+{"at": 1776890392.102711, "run_id": "abeb6f0c-07db-41ca-ab0a-7c2627afee1d", "campaign_id": "default", "provider": "anthropic", "model": "MiniMax-M2.7", "tokens_in": 2344, "tokens_out": 1411, "usd": 0.003755}

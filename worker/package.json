@@ -1,0 +1,22 @@
+{
+  "name": "linkedin-bot-worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "pretypecheck": "python3 ../scripts/generate_features.py",
+    "dev": "NODE_OPTIONS=--use-system-ca wrangler dev --env local --port 8787",
+    "dev:default": "NODE_OPTIONS=--use-system-ca wrangler dev",
+    "dev:remote": "NODE_OPTIONS=--use-system-ca wrangler dev --env local --remote --port 8787",
+    "deploy": "NODE_OPTIONS=--use-system-ca wrangler deploy --env \"\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260317.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.78.0"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "linkedin-generation-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-09-23",
+  "usage_model": "unbound",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "GEN_DB",
+      "database_name": "linkedin-gen-worker-db",
+      "database_id": "d531101b-8697-4308-8715-83fa28f5a3ce",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false
+    }
+  },
+  "vars": {},
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.md"],
+      "fallthrough": false
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { TrendingSearchBar } from './components/TrendingSearchBar';
+import { YouTubePanel } from './components/YouTubePanel';
+import { InstagramPanel } from './components/InstagramPanel';
+import { NewsPanel } from './components/NewsPanel';
+import { LinkedInPanel } from './components/LinkedInPanel';
+import { RecommendationsPanel } from './components/RecommendationsPanel';
+import { TrendingGraph } from './components/TrendingGraph';
+import { PanelToggle, type PanelConfig } from './components/PanelToggle';
+import { useTrending } from './hooks/useTrending';
+import { Sparkles, Settings } from 'lucide-react';
+import type { GraphNode } from './types';
+
+const ALL_PANELS: PanelConfig[] = [
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'instagram', label: 'Instagram' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'news', label: 'News' },
+];
+
+const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
+
+export function TrendingDashboard() {
+  const [topic, setTopic] = useState('');
+  const [searchTopic, setSearchTopic] = useState('');
+  const [enabledPanels, setEnabledPanels] = useState<string[]>(DEFAULT_ENABLED);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const { data, loading, error, config, enabledPlatforms } = useTrending(searchTopic);
+
+  const handleSearch = () => {
+    setSearchTopic(topic);
+  };
+
+  const handleNodeClick = (node: GraphNode) => {
+    let newTopic = '';
+    if (node.type === 'youtube') {
+      const video = node.data as { title: string };
+      newTopic = video.title.split(' ').slice(0, 3).join(' ');
+    } else if (node.type === 'news') {
+      const article = node.data as { title: string };
+      newTopic = article.title.split(' ').slice(0, 3).join(' ');
+    } else if (node.type === 'instagram') {
+      const post = node.data as { caption: string };
+      const hashtagMatch = post.caption.match(/#[a-zA-Z]+/);
+      if (hashtagMatch) {
+        newTopic = hashtagMatch[0].slice(1);
+      }
+    }
+
+    if (newTopic) {
+      setTopic(newTopic);
+      setSearchTopic(newTopic);
+    }
+  };
+
+  const handleTogglePanel = (id: string, enabled: boolean) => {
+    setEnabledPanels(prev =>
+      enabled ? [...prev, id] : prev.filter(p => p !== id)
+    );
+  };
+
+  // Get available panels based on config
+  const availablePanels = useMemo(() => {
+    return ALL_PANELS.filter(panel => {
+      switch (panel.id) {
+        case 'youtube': return true; // Always show YouTube option
+        case 'instagram': return true;
+        case 'linkedin': return true;
+        case 'news': return true;
+        default: return false;
+      }
+    });
+  }, []);
+
+  // Filter to only show panels with data
+  const visiblePanels = useMemo(() => {
+    if (!data) return [];
+    return enabledPanels.filter(id => {
+      if (id === 'youtube') return data.youtube.length > 0;
+      if (id === 'instagram') return data.instagram.length > 0;
+      if (id === 'linkedin') return data.linkedin && data.linkedin.length > 0;
+      if (id === 'news') return data.news.length > 0;
+      return false;
+    });
+  }, [data, enabledPanels]);
+
+  return (
+    <div className="h-full overflow-auto p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-ink">Trending Topics</h1>
+            <p className="text-muted mt-1">
+              Discover what's viral across platforms
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            title="API Settings"
+          >
+            <Settings className="text-muted" size={20} />
+          </button>
+        </div>
+
+        {/* Settings Panel */}
+        {showSettings && (
+          <div className="bg-white rounded-xl border border-border p-4 space-y-4">
+            <h3 className="font-medium text-ink">API Configuration</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${enabledPlatforms.youtube ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span>YouTube ({config.youtube.adapter})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${enabledPlatforms.instagram ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span>Instagram ({config.instagram.adapter})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${enabledPlatforms.linkedin ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span>LinkedIn ({config.linkedin.adapter})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${enabledPlatforms.news ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <span>News ({config.news.adapter})</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted">
+              API keys are configured via environment variables. Update the backend to enable different APIs.
+            </p>
+          </div>
+        )}
+
+        {/* Search Bar */}
+        <TrendingSearchBar value={topic} onChange={setTopic} onSearch={handleSearch} />
+
+        {/* Panel Toggle */}
+        <PanelToggle
+          panels={availablePanels}
+          enabled={enabledPanels}
+          onToggle={handleTogglePanel}
+        />
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Data Display */}
+        {data && !loading && (
+          <>
+            {/* Recommendations */}
+            {(data.recommendedTopics.length > 0 ||
+              data.relatedNewsTopics.length > 0) && (
+              <RecommendationsPanel
+                topics={[
+                  ...data.recommendedTopics,
+                  ...data.relatedNewsTopics,
+                ].slice(0, 10)}
+                onSelectTopic={(t) => {
+                  setTopic(t);
+                  setSearchTopic(t);
+                }}
+              />
+            )}
+
+            {/* Platform Panels Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {visiblePanels.includes('youtube') && data.youtube.length > 0 && (
+                <div>
+                  <YouTubePanel videos={data.youtube} />
+                </div>
+              )}
+
+              {visiblePanels.includes('instagram') && data.instagram.length > 0 && (
+                <div>
+                  <InstagramPanel posts={data.instagram} />
+                </div>
+              )}
+
+              {visiblePanels.includes('linkedin') && data.linkedin && data.linkedin.length > 0 && (
+                <div>
+                  <LinkedInPanel posts={data.linkedin} />
+                </div>
+              )}
+
+              {visiblePanels.includes('news') && data.news.length > 0 && (
+                <div className={visiblePanels.length === 1 ? 'xl:col-span-2' : ''}>
+                  <NewsPanel articles={data.news} />
+                </div>
+              )}
+            </div>
+
+            {/* Graph - show if we have multiple platforms */}
+            {visiblePanels.length > 1 && (
+              <TrendingGraph data={data} onNodeClick={handleNodeClick} />
+            )}
+          </>
+        )}
+
+        {/* Empty State */}
+        {!data && !loading && !error && !searchTopic && (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary mb-4">
+              <Sparkles className="text-primary" size={32} />
+            </div>
+            <h3 className="text-ink text-lg font-medium mb-2">
+              Explore Trending Content
+            </h3>
+            <p className="text-muted max-w-md mx-auto">
+              Enter a topic above to discover viral videos, posts, and news
+              articles across multiple platforms.
+            </p>
+          </div>
+        )}
+
+        {/* No Results State */}
+        {!data && !loading && !error && searchTopic && (
+          <div className="text-center py-12">
+            <p className="text-muted">
+              No trending data found for &quot;{searchTopic}&quot;. Try a
+              different topic.
+            </p>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+}

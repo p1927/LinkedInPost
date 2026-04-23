@@ -1,0 +1,86 @@
+name: LinkedIn Bot Workflow
+
+on:
+  schedule:
+    # Run every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [trigger-draft, trigger-publish]
+
+jobs:
+  draft-posts:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.ENVIRONMENT_STAGE || 'production' }}
+    if: github.event_name != 'repository_dispatch' || github.event.action == 'trigger-draft'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Draft Script
+        env:
+          GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID || secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CLOUD_STORAGE_BUCKET: ${{ vars.GOOGLE_CLOUD_STORAGE_BUCKET || secrets.GOOGLE_CLOUD_STORAGE_BUCKET }}
+          GOOGLE_CLOUD_STORAGE_PREFIX: ${{ vars.GOOGLE_CLOUD_STORAGE_PREFIX || secrets.GOOGLE_CLOUD_STORAGE_PREFIX || 'linkedin-images' }}
+          DELETE_UNUSED_GENERATED_IMAGES: ${{ vars.DELETE_UNUSED_GENERATED_IMAGES || secrets.DELETE_UNUSED_GENERATED_IMAGES || 'true' }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON || vars.GOOGLE_CREDENTIALS_JSON }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_MODEL: ${{ github.event.client_payload.google_model || vars.GOOGLE_MODEL || secrets.GOOGLE_MODEL }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY || vars.SERPAPI_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN || vars.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ vars.LINKEDIN_PERSON_URN || secrets.LINKEDIN_PERSON_URN }}
+          DRAFT_MODE: ${{ github.event.client_payload.draft_mode || '' }}
+          TARGET_TOPIC: ${{ github.event.client_payload.target_topic || '' }}
+          TARGET_DATE: ${{ github.event.client_payload.target_date || '' }}
+          REFINE_TOPIC: ${{ github.event.client_payload.refine_topic || '' }}
+          REFINE_DATE: ${{ github.event.client_payload.refine_date || '' }}
+          REFINE_BASE_TEXT: ${{ github.event.client_payload.refine_base_text || '' }}
+          REFINE_INSTRUCTIONS: ${{ github.event.client_payload.refine_instructions || '' }}
+          VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || secrets.VITE_WORKER_URL }}
+          WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET || vars.WORKER_SCHEDULER_SECRET }}
+          LINKEDIN_BOT_MIRROR_SHEET: ${{ vars.LINKEDIN_BOT_MIRROR_SHEET || secrets.LINKEDIN_BOT_MIRROR_SHEET || 'true' }}
+        run: python linkedin_bot.py draft
+
+  publish-posts:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.ENVIRONMENT_STAGE || 'production' }}
+    if: github.event_name != 'repository_dispatch' || github.event.action == 'trigger-publish'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Publish Script
+        env:
+          GOOGLE_SHEET_ID: ${{ vars.GOOGLE_SHEET_ID || secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CLOUD_STORAGE_BUCKET: ${{ vars.GOOGLE_CLOUD_STORAGE_BUCKET || secrets.GOOGLE_CLOUD_STORAGE_BUCKET }}
+          GOOGLE_CLOUD_STORAGE_PREFIX: ${{ vars.GOOGLE_CLOUD_STORAGE_PREFIX || secrets.GOOGLE_CLOUD_STORAGE_PREFIX || 'linkedin-images' }}
+          DELETE_UNUSED_GENERATED_IMAGES: ${{ vars.DELETE_UNUSED_GENERATED_IMAGES || secrets.DELETE_UNUSED_GENERATED_IMAGES || 'true' }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON || vars.GOOGLE_CREDENTIALS_JSON }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_MODEL: ${{ github.event.client_payload.google_model || vars.GOOGLE_MODEL || secrets.GOOGLE_MODEL }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY || vars.SERPAPI_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN || vars.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ vars.LINKEDIN_PERSON_URN || secrets.LINKEDIN_PERSON_URN }}
+          GOOGLE_DOC_ID: ${{ vars.GOOGLE_DOC_ID || secrets.GOOGLE_DOC_ID }}
+          VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || secrets.VITE_WORKER_URL }}
+          WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET || vars.WORKER_SCHEDULER_SECRET }}
+          LINKEDIN_BOT_MIRROR_SHEET: ${{ vars.LINKEDIN_BOT_MIRROR_SHEET || secrets.LINKEDIN_BOT_MIRROR_SHEET || 'true' }}
+          TARGET_TOPIC: ${{ github.event.client_payload.target_topic || '' }}
+          TARGET_DATE: ${{ github.event.client_payload.target_date || '' }}
+        run: python linkedin_bot.py publish

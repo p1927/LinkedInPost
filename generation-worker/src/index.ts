@@ -1,0 +1,211 @@
+import { runPipeline } from './pipeline';
+import { buildRequirementReportFromSuggest } from './players/requirementReport';
+import { loadBundledRepository } from './players/patternRepository';
+import { findPattern } from './players/patternFinder';
+import { saveFeedback } from './players/feedback';
+import {
+  GenerateRequestSchema,
+  FeedbackRequestSchema,
+  SuggestPatternRequestSchema,
+} from './types';
+import type { Env } from './types';
+import { getLlmProviderCatalog, resolveGenerationWorkerLlmRef } from './llmFromWorker';
+
+function corsHeaders(): HeadersInit {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+  });
+}
+
+function unauthorized(): Response {
+  return json({ error: 'Unauthorized' }, 401);
+}
+
+function badRequest(message: string): Response {
+  return json({ error: message }, 400);
+}
+
+function checkAuth(request: Request, env: Env): boolean {
+  const secret = String(env.WORKER_SHARED_SECRET ?? '').trim();
+  if (!secret) return true;
+  const auth = request.headers.get('Authorization') ?? '';
+  return auth === `Bearer ${secret}` || auth === secret;
+}
+
+type ParseResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+async function parseBody<T>(
+  request: Request,
+  schema: { parse: (v: unknown) => T },
+): Promise<ParseResult<T>> {
+  try {
+    const raw = await request.json();
+    const data = schema.parse(raw);
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const startTime = Date.now();
+    const { method, url } = request;
+    const { pathname } = new URL(url);
+
+    console.log(`[${new Date().toISOString()}] REQUEST: ${method} ${pathname}`);
+
+    if (method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders() });
+    }
+
+    if (!checkAuth(request, env)) {
+      console.log(`[${new Date().toISOString()}] AUTH FAILED after ${Date.now() - startTime}ms`);
+      return unauthorized();
+    }
+    console.log(`[${new Date().toISOString()}] AUTH OK after ${Date.now() - startTime}ms`);
+
+    // GET /v1/patterns — list available patterns
+    if (pathname === '/v1/patterns' && method === 'GET') {
+      const repo = loadBundledRepository();
+      console.log(`[${new Date().toISOString()}] PATTERNS endpoint responded in ${Date.now() - startTime}ms`);
+      return json({ patterns: repo.compactSummaries() });
+    }
+
+    // GET /v1/patterns/full — return full pattern objects including outline, fewShotLines, imageHints
+    if (pathname === '/v1/patterns/full' && method === 'GET') {
+      const repo = loadBundledRepository();
+      console.log(`[${new Date().toISOString()}] PATTERNS/FULL endpoint responded in ${Date.now() - startTime}ms`);
+      return json({ patterns: repo.getAll() });
+    }
+
+    // GET /v1/llm/catalog — providers + model lists (same discovery as main Worker listLlmModels)
+    if (pathname === '/v1/llm/catalog' && method === 'GET') {
+      try {
+        const catalog = await getLlmProviderCatalog(env);
+        console.log(`[${new Date().toISOString()}] LLM/CATALOG responded in ${Date.now() - startTime}ms`);
+        return json({ providers: catalog });
+      } catch (e) {
+        console.log(`[${new Date().toISOString()}] LLM/CATALOG ERROR after ${Date.now() - startTime}ms: ${e}`);
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    if (method !== 'POST') {
+      return json({ error: 'Method not allowed' }, 405);
+    }
+
+    // POST /v1/generate
+    if (pathname === '/v1/generate') {
+      console.log(`[${new Date().toISOString()}] GENERATE: Parsing request body...`);
+      const parsed = await parseBody(request, GenerateRequestSchema);
+      console.log(`[${new Date().toISOString()}] GENERATE: Parse ${parsed.ok ? 'OK' : 'FAILED'} after ${Date.now() - startTime}ms`);
+
+      if (!parsed.ok) {
+        console.log(`[${new Date().toISOString()}] GENERATE: Bad request - ${parsed.error}`);
+        return badRequest(parsed.error);
+      }
+
+      // SSE streaming mode
+      if (request.headers.get('Accept') === 'text/event-stream') {
+        const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+        const writer = writable.getWriter();
+        const encoder = new TextEncoder();
+        const emit = (event: string, data: unknown) =>
+          writer.write(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+
+        // Run pipeline in a detached async IIFE
+        void (async () => {
+          try {
+            console.log(`[${new Date().toISOString()}] GENERATE SSE: Starting pipeline...`);
+            const result = await runPipeline(
+              parsed.data,
+              env,
+              env.GEN_DB,
+              (step, label) => void emit('progress', { step, label, ts: Date.now() }),
+            );
+            console.log(`[${new Date().toISOString()}] GENERATE SSE: Pipeline complete after ${Date.now() - startTime}ms`);
+            await emit('complete', result);
+          } catch (e) {
+            const errorMsg = String(e);
+            console.log(`[${new Date().toISOString()}] GENERATE SSE: PIPELINE ERROR after ${Date.now() - startTime}ms`);
+            console.log(`ERROR DETAILS: ${errorMsg.substring(0, 500)}`);
+            await emit('error', { message: errorMsg });
+          } finally {
+            await writer.close();
+          }
+        })();
+
+        return new Response(readable, {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        });
+      }
+
+      try {
+        console.log(`[${new Date().toISOString()}] GENERATE: Starting pipeline with ${JSON.stringify(parsed.data).substring(0, 100)}...`);
+        const result = await runPipeline(parsed.data, env, env.GEN_DB);
+        console.log(`[${new Date().toISOString()}] GENERATE: Pipeline complete after ${Date.now() - startTime}ms`);
+        return json(result);
+      } catch (e) {
+        const errorMsg = String(e);
+        console.log(`[${new Date().toISOString()}] GENERATE: PIPELINE ERROR after ${Date.now() - startTime}ms`);
+        console.log(`ERROR DETAILS: ${errorMsg.substring(0, 500)}`);
+        return json({ error: errorMsg }, 500);
+      }
+    }
+
+    // POST /v1/feedback
+    if (pathname === '/v1/feedback') {
+      const parsed = await parseBody(request, FeedbackRequestSchema);
+      if (!parsed.ok) return badRequest(parsed.error);
+
+      let patternId = '';
+      try {
+        const row = await env.GEN_DB
+          .prepare('SELECT pattern_id FROM generation_runs WHERE run_id = ?')
+          .bind(parsed.data.runId)
+          .first<{ pattern_id: string }>();
+        patternId = row?.pattern_id ?? '';
+      } catch { /* non-critical */ }
+
+      try {
+        const id = await saveFeedback(env.GEN_DB, parsed.data, patternId);
+        return json({ id, ok: true });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    // POST /v1/suggest-pattern
+    if (pathname === '/v1/suggest-pattern') {
+      const parsed = await parseBody(request, SuggestPatternRequestSchema);
+      if (!parsed.ok) return badRequest(parsed.error);
+
+      try {
+        const report = buildRequirementReportFromSuggest(parsed.data);
+        const repo = loadBundledRepository();
+        const llmRef = await resolveGenerationWorkerLlmRef(env);
+        const finder = await findPattern(repo, report, env, llmRef);
+        return json({ requirementReport: report, ...finder });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
+    return json({ error: 'Not found' }, 404);
+  },
+} satisfies ExportedHandler<Env>;

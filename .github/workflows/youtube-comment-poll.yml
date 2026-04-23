@@ -1,0 +1,31 @@
+name: YouTube Comment Poll
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel_id:
+        description: YouTube Channel ID to poll
+        required: true
+  schedule:
+    # Disabled by default — enable by uncommenting and setting your cron
+    # - cron: '0 */6 * * *'
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run YouTube comment poller
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CHANNEL_ID: ${{ github.event.inputs.channel_id || secrets.YOUTUBE_CHANNEL_ID }}
+          YOUTUBE_OAUTH_TOKEN: ${{ secrets.YOUTUBE_OAUTH_TOKEN }}
+          WORKER_URL: ${{ secrets.VITE_WORKER_URL }}
+          WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET }}
+        run: python3 automations/youtube_poller.py

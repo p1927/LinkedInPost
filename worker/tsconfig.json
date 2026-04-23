@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "ES2022"
+    ],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    "types": [
+      "@cloudflare/workers-types"
+    ],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@repo/llm-core": ["../packages/llm-core/src"],
+      "@repo/llm-core/*": ["../packages/llm-core/src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "../packages/llm-core/src/**/*.ts"
+  ]
+}

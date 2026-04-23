@@ -1,0 +1,189 @@
+import { X } from 'lucide-react';
+import { useEffect } from 'react';
+import type { GenerationScope } from '../../services/backendApi';
+import { Button } from '@/components/ui/button';
+
+interface CompareDialogProps {
+  open: boolean;
+  scope: GenerationScope;
+  title: string;
+  currentText: string;
+  proposedText: string;
+  resultingText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+interface DiffSegment {
+  value: string;
+  status: 'same' | 'added' | 'removed';
+}
+
+function tokenize(value: string): string[] {
+  return value.match(/\S+\s*|\n/g) || [];
+}
+
+function buildDiff(before: string, after: string): { beforeSegments: DiffSegment[]; afterSegments: DiffSegment[] } {
+  const beforeTokens = tokenize(before);
+  const afterTokens = tokenize(after);
+  const matrix = Array.from({ length: beforeTokens.length + 1 }, () => Array(afterTokens.length + 1).fill(0));
+
+  for (let i = beforeTokens.length - 1; i >= 0; i -= 1) {
+    for (let j = afterTokens.length - 1; j >= 0; j -= 1) {
+      if (beforeTokens[i] === afterTokens[j]) {
+        matrix[i][j] = matrix[i + 1][j + 1] + 1;
+      } else {
+        matrix[i][j] = Math.max(matrix[i + 1][j], matrix[i][j + 1]);
+      }
+    }
+  }
+
+  const beforeSegments: DiffSegment[] = [];
+  const afterSegments: DiffSegment[] = [];
+  let i = 0;
+  let j = 0;
+
+  while (i < beforeTokens.length && j < afterTokens.length) {
+    if (beforeTokens[i] === afterTokens[j]) {
+      beforeSegments.push({ value: beforeTokens[i], status: 'same' });
+      afterSegments.push({ value: afterTokens[j], status: 'same' });
+      i += 1;
+      j += 1;
+      continue;
+    }
+
+    if (matrix[i + 1][j] >= matrix[i][j + 1]) {
+      beforeSegments.push({ value: beforeTokens[i], status: 'removed' });
+      i += 1;
+      continue;
+    }
+
+    afterSegments.push({ value: afterTokens[j], status: 'added' });
+    j += 1;
+  }
+
+  while (i < beforeTokens.length) {
+    beforeSegments.push({ value: beforeTokens[i], status: 'removed' });
+    i += 1;
+  }
+
+  while (j < afterTokens.length) {
+    afterSegments.push({ value: afterTokens[j], status: 'added' });
+    j += 1;
+  }
+
+  return { beforeSegments, afterSegments };
+}
+
+function renderSegments(segments: DiffSegment[]) {
+  return segments.map((segment, index) => {
+    const className = segment.status === 'added'
+      ? 'border border-emerald-400/60 bg-emerald-100/80 text-emerald-900 font-medium'
+      : segment.status === 'removed'
+        ? 'border border-rose-400/60 bg-rose-100/80 text-rose-900 line-through font-medium'
+        : '';
+
+    return (
+      <span key={`${segment.status}-${index}`} className={className}>
+        {segment.value}
+      </span>
+    );
+  });
+}
+
+export function CompareDialog({
+  open,
+  scope,
+  title,
+  currentText,
+  proposedText,
+  resultingText,
+  onConfirm,
+  onCancel,
+}: CompareDialogProps) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onCancel]);
+
+  if (!open) {
+    return null;
+  }
+
+  const { beforeSegments, afterSegments } = buildDiff(currentText, proposedText);
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-slate-900/25 px-4 py-6 backdrop-blur-xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="compare-dialog-title"
+        className="glass-panel-strong my-auto flex w-full max-h-[min(92dvh,calc(100dvh-3rem))] max-w-6xl flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-white/95 to-indigo-50/80 shadow-2xl ring-1 ring-white/30 backdrop-blur-xl"
+      >
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-indigo-200/30 bg-gradient-to-r from-indigo-50/50 to-white/50 px-8 py-6 backdrop-blur-sm">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-600/80">Compare before apply</p>
+            <h3 id="compare-dialog-title" className="mt-3 font-heading text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-indigo-700">{title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {scope === 'selection'
+                ? 'Only the selected passage will change if you apply this preview.'
+                : 'Applying this preview will replace the full editor draft.'}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-lg"
+            onClick={onCancel}
+            className="size-10 shrink-0 rounded-full text-muted hover:bg-violet-100/70 hover:text-ink"
+            aria-label="Close compare dialog"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/90 to-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-700/90">Current target</p>
+              <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900">
+                {renderSegments(beforeSegments)}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-700/90">Proposed target</p>
+              <div className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-900">
+                {renderSegments(afterSegments)}
+              </div>
+            </section>
+          </div>
+
+          <div className="mt-6">
+            <section className="glass-panel rounded-2xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50/70 to-white/60 p-6 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-indigo-700/90">Resulting editor draft</p>
+              <div className="mt-4 whitespace-pre-wrap break-words rounded-xl border border-indigo-200/40 bg-white/70 px-5 py-4 text-sm leading-7 text-slate-900 backdrop-blur-sm transition-all duration-200 hover:border-indigo-200/60">
+                {resultingText}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 flex-col-reverse gap-3 border-t border-indigo-200/30 bg-gradient-to-r from-indigo-50/30 to-white/30 px-8 py-6 backdrop-blur-sm sm:flex-row sm:justify-end">
+          <Button type="button" variant="secondary" size="md" onClick={onCancel} className="rounded-xl">
+            Cancel
+          </Button>
+          <Button type="button" variant="primary" size="md" onClick={onConfirm} className="rounded-xl">
+            Apply to editor
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
