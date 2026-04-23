@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, RefreshCw, MessageCircle, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, RefreshCw, MessageCircle, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
 import { type GoogleModelOption } from '../../../services/configService';
 import { type ChannelId } from '../../../integrations/channels';
@@ -146,6 +146,179 @@ type DashboardSettingsDrawerProps = {
   enrichmentSkills?: EnrichmentSkillConfig[];
   onToggleEnrichmentSkill?: (id: EnrichmentSkillId, enabled: boolean) => void;
 };
+
+interface ImageGenCatalogEntry {
+  provider: string;
+  label: string;
+  models: Array<{ value: string; label: string }>;
+}
+
+function getApiKeyBadge(provider: string, session: AppSession): { text: string; hasKey: boolean } {
+  if (provider === 'gemini') {
+    const hasKey = Boolean(session.config.llmProviderKeys?.gemini);
+    return { text: hasKey ? 'API key present' : 'GEMINI_API_KEY not set', hasKey };
+  }
+  if (provider === 'flux-kontext' || provider === 'ideogram') return { text: 'FAL_API_KEY (check Worker env)', hasKey: false };
+  if (provider === 'dall-e') return { text: 'OPENAI_API_KEY (check Worker env)', hasKey: false };
+  if (provider === 'stability') return { text: 'STABILITY_API_KEY (check Worker env)', hasKey: false };
+  if (provider === 'seedance') return { text: 'SEEDANCE_API_KEY (check Worker env)', hasKey: false };
+  return { text: 'PIXAZO_API_KEY (check Worker env)', hasKey: false };
+}
+
+function ImageGenAccordionSection({
+  session,
+  backendApi,
+  idToken,
+  imageGenProvider,
+  setImageGenProvider,
+  imageGenModel,
+  setImageGenModel,
+}: {
+  session: AppSession;
+  backendApi: import('../../../services/backendApi').BackendApi;
+  idToken: string;
+  imageGenProvider: ImageGenProvider;
+  setImageGenProvider: (v: ImageGenProvider) => void;
+  imageGenModel?: string;
+  setImageGenModel: (v: string) => void;
+}) {
+  const [catalog, setCatalog] = useState<ImageGenCatalogEntry[]>([]);
+  const [expandedProvider, setExpandedProvider] = useState<string>(imageGenProvider);
+
+  useEffect(() => {
+    let cancelled = false;
+    backendApi.loadImageGenModelCatalog(idToken).then((providers) => {
+      if (!cancelled) setCatalog(providers);
+    }).catch(() => {
+      // Fall back to static config
+      if (!cancelled) {
+        setCatalog(
+          IMAGE_GEN_PROVIDERS.map((p) => ({
+            provider: p.value,
+            label: p.label,
+            models: IMAGE_GEN_MODELS[p.value] ?? [],
+          })),
+        );
+      }
+    });
+    return () => { cancelled = true; };
+  }, [backendApi, idToken]);
+
+  // Auto-expand the currently selected provider on mount
+  useEffect(() => {
+    setExpandedProvider(imageGenProvider);
+  }, [imageGenProvider]);
+
+  const entries = catalog.length > 0
+    ? catalog
+    : IMAGE_GEN_PROVIDERS.map((p) => ({
+        provider: p.value,
+        label: p.label,
+        models: IMAGE_GEN_MODELS[p.value] ?? [],
+      }));
+
+  return (
+    <SettingsSectionCard id="settings-image-generation" title="Image Generation" variant="canvas">
+      <p className="text-xs leading-relaxed text-muted">
+        Choose the provider and model used for AI-generated images in posts. API keys must be set in the Worker environment.
+      </p>
+      <div className="mt-4 divide-y divide-border rounded-xl border border-border overflow-hidden">
+        {entries.map((entry) => {
+          const isExpanded = expandedProvider === entry.provider;
+          const isSelected = imageGenProvider === entry.provider;
+          const badge = getApiKeyBadge(entry.provider, session);
+          return (
+            <div key={entry.provider}>
+              <button
+                type="button"
+                className={cn(
+                  'flex w-full items-center justify-between px-4 py-3 text-left transition-colors',
+                  isExpanded ? 'bg-canvas-subtle' : 'hover:bg-canvas-subtle/60',
+                )}
+                onClick={() => setExpandedProvider(isExpanded ? '' : entry.provider)}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className={cn('text-sm font-semibold', isSelected ? 'text-ink' : 'text-muted-foreground')}>
+                    {entry.label}
+                  </span>
+                  {isSelected && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      active
+                    </span>
+                  )}
+                  <span className={cn(
+                    'ml-auto mr-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                    badge.hasKey ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800',
+                  )}>
+                    {badge.text}
+                  </span>
+                </div>
+                {isExpanded
+                  ? <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  : <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                }
+              </button>
+              {isExpanded && (
+                <div className="px-4 py-3 bg-canvas">
+                  {entry.models.length === 0 ? (
+                    <p className="text-xs text-muted">No model selection for this provider.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {entry.models.map((model) => {
+                        const modelSelected = isSelected && (imageGenModel === model.value || (!imageGenModel && entry.models[0]?.value === model.value));
+                        return (
+                          <label
+                            key={model.value}
+                            className={cn(
+                              'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                              modelSelected ? 'bg-primary/10' : 'hover:bg-canvas-subtle',
+                            )}
+                          >
+                            <input
+                              type="radio"
+                              name="imageGenModel"
+                              value={model.value}
+                              checked={modelSelected}
+                              onChange={() => {
+                                setImageGenProvider(entry.provider as ImageGenProvider);
+                                setImageGenModel(model.value);
+                              }}
+                              className="h-4 w-4 accent-primary"
+                            />
+                            <span className={cn('text-sm', modelSelected ? 'font-semibold text-ink' : 'text-muted-foreground')}>
+                              {model.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {entry.models.length === 0 && (
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className={cn(
+                          'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                          isSelected ? 'bg-primary/10 text-primary' : 'bg-canvas-subtle text-muted-foreground hover:bg-primary/10 hover:text-primary',
+                        )}
+                        onClick={() => {
+                          setImageGenProvider(entry.provider as ImageGenProvider);
+                          setImageGenModel('');
+                        }}
+                      >
+                        {isSelected ? 'Selected' : 'Select this provider'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </SettingsSectionCard>
+  );
+}
 
 function SettingsSectionCard({
   id,
@@ -689,179 +862,198 @@ function LlmPerFeatureSettings({
 }
 
 const STT_SETUP_URL = 'http://localhost:3456';
-const STT_MODEL_LABELS: Record<string, string> = {
-  'base.en': 'Whisper base.en (~142 MB)',
-  'small.en': 'Whisper small.en (~466 MB)',
-};
+const WASM_MODEL_KEY = 'stt_wasm_model';
+const WASM_READY_KEY = 'stt_wasm_ready';
+
+const WASM_MODELS = [
+  { id: 'Xenova/whisper-tiny.en', label: 'Tiny (~40 MB) — fastest' },
+  { id: 'Xenova/whisper-base.en', label: 'Base (~75 MB) — recommended' },
+  { id: 'Xenova/whisper-small.en', label: 'Small (~235 MB) — most accurate' },
+] as const;
 
 function SpeechToTextSettingsSection() {
-  const [model, setModel] = useState<string>('base.en');
-  const [enabled, setEnabled] = useState(false);
-  const [modelDownloaded, setModelDownloaded] = useState(false);
-  const [serverOnline, setServerOnline] = useState<boolean | null>(null);
-  const [downloading, setDownloading] = useState(false);
-  const [progress, setProgress] = useState<{ downloaded: number; total: number } | null>(null);
-  const [downloadDone, setDownloadDone] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ── WASM (browser) state ──
+  const [wasmModel, setWasmModel] = useState<string>(
+    () => localStorage.getItem(WASM_MODEL_KEY) ?? 'Xenova/whisper-base.en',
+  );
+  const [wasmReady, setWasmReady] = useState(() => localStorage.getItem(WASM_READY_KEY) === 'true');
+  const [wasmDownloading, setWasmDownloading] = useState(false);
+  const [wasmProgress, setWasmProgress] = useState<number | null>(null);
+  const [wasmError, setWasmError] = useState<string | null>(null);
+  const wasmWorkerRef = useRef<Worker | null>(null);
+
+  // ── Sidecar (local dev) state ──
+  const [sidecarOnline, setSidecarOnline] = useState<boolean | null>(null);
+  const [sidecarModel, setSidecarModel] = useState<string>('');
+  const [sidecarOpen, setSidecarOpen] = useState(false);
 
   useEffect(() => {
     fetch(`${STT_SETUP_URL}/api/setup/stt/config`)
       .then((r) => r.json())
-      .then((cfg) => {
-        setServerOnline(true);
-        setModel(cfg.model ?? 'base.en');
-        setEnabled(cfg.enabled ?? false);
-        setModelDownloaded(Boolean(cfg.modelLoaded));
+      .then((cfg: { model?: string; modelLoaded?: boolean }) => {
+        setSidecarOnline(true);
+        setSidecarModel(cfg.model ?? '');
       })
-      .catch(() => setServerOnline(false));
+      .catch(() => setSidecarOnline(false));
   }, []);
 
-  const stopPoll = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-  };
+  useEffect(() => () => { wasmWorkerRef.current?.terminate(); }, []);
 
-  const startDownload = async () => {
-    setDownloadError(null);
-    setDownloadDone(false);
-    setProgress(null);
-    setDownloading(true);
+  const startWasmDownload = () => {
+    setWasmError(null);
+    setWasmProgress(null);
+    setWasmDownloading(true);
 
-    try {
-      await fetch(`${STT_SETUP_URL}/api/setup/stt/download`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model }),
-      });
-    } catch {
-      setDownloadError('Could not reach the setup server. Make sure the dev server is running.');
-      setDownloading(false);
-      return;
-    }
-
-    pollRef.current = setInterval(async () => {
-      try {
-        const r = await fetch(`${STT_SETUP_URL}/api/setup/stt/status`);
-        const s = await r.json();
-        if (s.error) {
-          setDownloadError(s.error);
-          setDownloading(false);
-          stopPoll();
-          return;
-        }
-        if (s.total > 0) setProgress({ downloaded: s.downloaded, total: s.total });
-        if (s.done) {
-          setDownloadDone(true);
-          setModelDownloaded(true);
-          setEnabled(true);
-          setDownloading(false);
-          stopPoll();
-        }
-      } catch { /* keep polling */ }
-    }, 500);
-  };
-
-  useEffect(() => () => stopPoll(), []);
-
-  const fmt = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(0)} MB`;
-
-  if (serverOnline === false) {
-    return (
-      <p className="text-xs text-muted">
-        The setup server is offline. Start the dev server (<code className="rounded bg-border/40 px-1">npm run dev</code>) to manage speech-to-text here.
-      </p>
+    const worker = new Worker(
+      new URL('../../../features/add-topic/whisperWorker.ts', import.meta.url),
+      { type: 'module' },
     );
-  }
+    wasmWorkerRef.current = worker;
+
+    worker.onmessage = (e: MessageEvent) => {
+      const msg = e.data as { type: string; status?: string; progress?: number; text?: string; error?: string };
+      if (msg.type === 'progress' && msg.status === 'downloading' && typeof msg.progress === 'number') {
+        setWasmProgress(Math.round(msg.progress));
+      }
+      if (msg.type === 'ready') {
+        localStorage.setItem(WASM_MODEL_KEY, wasmModel);
+        localStorage.setItem(WASM_READY_KEY, 'true');
+        setWasmReady(true);
+        setWasmDownloading(false);
+        setWasmProgress(null);
+        worker.terminate();
+        wasmWorkerRef.current = null;
+        window.dispatchEvent(new CustomEvent('stt-wasm-ready'));
+      }
+      if (msg.type === 'error') {
+        setWasmError(msg.error ?? 'Download failed');
+        setWasmDownloading(false);
+        setWasmProgress(null);
+        worker.terminate();
+        wasmWorkerRef.current = null;
+      }
+    };
+    worker.onerror = (e) => {
+      setWasmError(e.message);
+      setWasmDownloading(false);
+      worker.terminate();
+      wasmWorkerRef.current = null;
+    };
+
+    worker.postMessage({ type: 'load', model: wasmModel });
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-ink">Model</p>
-          <p className="text-xs text-muted">{STT_MODEL_LABELS[model] ?? model}</p>
+    <div className="space-y-5">
+      {/* ── Browser (WASM) ── */}
+      <div className="rounded-xl border border-border bg-canvas p-4 space-y-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold text-ink">Browser model</p>
+            <p className="text-xs text-muted mt-0.5">Runs entirely in your browser — works on GitHub Pages and everywhere else.</p>
+          </div>
+          <span className={cn(
+            'shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+            wasmReady ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800',
+          )}>
+            {wasmReady ? 'Ready' : 'Not downloaded'}
+          </span>
         </div>
-        <span className={cn(
-          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-          modelDownloaded ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800',
-        )}>
-          {modelDownloaded ? 'Downloaded' : 'Not downloaded'}
-        </span>
+
+        {!wasmReady && (
+          <div className="space-y-3">
+            <div className="flex flex-col gap-2">
+              {WASM_MODELS.map((m) => (
+                <label key={m.id} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="wasm-model"
+                    value={m.id}
+                    checked={wasmModel === m.id}
+                    onChange={() => setWasmModel(m.id)}
+                    disabled={wasmDownloading}
+                    className="text-primary focus:ring-primary/30"
+                  />
+                  <span className="text-xs text-ink">{m.label}</span>
+                </label>
+              ))}
+            </div>
+
+            {wasmProgress !== null && (
+              <div className="space-y-1">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-violet-500 transition-all duration-300"
+                    style={{ width: `${wasmProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted">{wasmProgress}%</p>
+              </div>
+            )}
+
+            {wasmError && <p className="text-xs text-red-600">{wasmError}</p>}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              disabled={wasmDownloading}
+              onClick={startWasmDownload}
+            >
+              {wasmDownloading ? 'Downloading…' : 'Download model'}
+            </Button>
+          </div>
+        )}
+
+        {wasmReady && (
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted">{WASM_MODELS.find((m) => m.id === wasmModel)?.label ?? wasmModel}</p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted hover:text-red-600"
+              onClick={() => {
+                localStorage.removeItem(WASM_MODEL_KEY);
+                localStorage.removeItem(WASM_READY_KEY);
+                setWasmReady(false);
+              }}
+            >
+              Remove
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center gap-3">
-        <p className="text-sm text-ink flex-1">Enable voice input</p>
+      {/* ── Local sidecar (dev only, collapsible) ── */}
+      <div>
         <button
           type="button"
-          disabled={!modelDownloaded}
-          onClick={async () => {
-            const next = !enabled;
-            setEnabled(next);
-            if (!next) {
-              try { await fetch(`${STT_SETUP_URL}/api/setup/stt/disable`, { method: 'POST' }); } catch { /* best effort */ }
-            }
-          }}
-          title={!modelDownloaded ? 'Download the model first' : undefined}
-          className={cn(
-            'relative h-6 w-11 rounded-full transition-colors',
-            enabled && modelDownloaded ? 'bg-violet-500' : 'bg-slate-300',
-            !modelDownloaded ? 'cursor-not-allowed opacity-50' : '',
-          )}
+          onClick={() => setSidecarOpen((p) => !p)}
+          className="flex w-full items-center justify-between rounded-lg px-1 py-1 text-sm text-muted hover:text-ink transition-colors"
         >
-          <span className={cn(
-            'absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform',
-            enabled && modelDownloaded ? 'translate-x-6' : 'translate-x-1',
-          )} />
+          <span className="font-medium">Local sidecar <span className="text-xs font-normal">(dev server only)</span></span>
+          <ChevronRight className={cn('h-4 w-4 transition-transform duration-150', sidecarOpen && 'rotate-90')} />
         </button>
-      </div>
 
-      {!modelDownloaded && (
-        <div className="rounded-xl border border-border bg-canvas p-3 space-y-3">
-          <div className="flex gap-3">
-            {(['base.en', 'small.en'] as const).map((m) => (
-              <label key={m} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="stt-model"
-                  value={m}
-                  checked={model === m}
-                  onChange={() => setModel(m)}
-                  className="text-primary focus:ring-primary/30"
-                />
-                <span className="text-xs text-ink">{STT_MODEL_LABELS[m]}</span>
-              </label>
-            ))}
-          </div>
-
-          {progress && (
-            <div className="space-y-1">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
-                <div
-                  className="h-full rounded-full bg-violet-500 transition-all duration-300"
-                  style={{ width: `${Math.round((progress.downloaded / progress.total) * 100)}%` }}
-                />
-              </div>
-              <p className="text-xs text-muted">{fmt(progress.downloaded)} / {fmt(progress.total)}</p>
+        {sidecarOpen && (
+          <div className="mt-2 rounded-xl border border-border bg-canvas p-3 space-y-2">
+            <p className="text-xs text-muted">
+              When running locally, the sidecar at <code className="rounded bg-border/40 px-1">localhost:3457</code> is used automatically and takes priority over the browser model.
+            </p>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                'inline-flex h-2 w-2 rounded-full',
+                sidecarOnline === null ? 'bg-slate-300' : sidecarOnline ? 'bg-green-500' : 'bg-slate-300',
+              )} />
+              <span className="text-xs text-ink">
+                {sidecarOnline === null ? 'Checking…' : sidecarOnline ? `Online${sidecarModel ? ` · ${sidecarModel}` : ''}` : 'Offline'}
+              </span>
             </div>
-          )}
-
-          {downloadError && <p className="text-xs text-red-600">{downloadError}</p>}
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-xl"
-            disabled={downloading}
-            onClick={() => void startDownload()}
-          >
-            {downloading ? 'Downloading…' : 'Download model'}
-          </Button>
-        </div>
-      )}
-
-      {downloadDone && (
-        <p className="text-xs text-green-600 font-medium">Model downloaded. Voice input is ready.</p>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1345,78 +1537,15 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
         ) : null}
 
         {session.isAdmin && imageGenProvider !== undefined && setImageGenProvider && setImageGenModel ? (
-          <SettingsSectionCard id="settings-image-generation" title="Image Generation" variant="canvas">
-            <p className="text-xs leading-relaxed text-muted">
-              Choose the provider and model used for AI-generated images in posts. API keys must be set in the Worker environment.
-            </p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-ink">Provider</label>
-                <Select
-                  value={imageGenProvider}
-                  onValueChange={(v) => {
-                    const prov = v as ImageGenProvider;
-                    setImageGenProvider(prov);
-                    const models = IMAGE_GEN_MODELS[prov];
-                    setImageGenModel(models.length > 0 ? models[0].value : '');
-                  }}
-                  itemToStringLabel={(v) => IMAGE_GEN_PROVIDERS.find((p) => p.value === v)?.label ?? String(v ?? '')}
-                >
-                  <SelectTrigger className="h-auto min-h-10 w-full max-w-xs rounded-xl py-2.5 font-medium">
-                    <SelectValue placeholder="Select provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {IMAGE_GEN_PROVIDERS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="mt-2">
-                  <span className={cn(
-                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    (() => {
-                      const prov = imageGenProvider;
-                      const hasKey =
-                        prov === 'gemini' ? Boolean(session.config.llmProviderKeys?.gemini) :
-                        prov === 'seedance' ? false : // Seedance key status not exposed to frontend
-                        session.config.hasGenerationWorker;
-                      return hasKey
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-amber-100 text-amber-800';
-                    })(),
-                  )}>
-                    {(() => {
-                      const prov = imageGenProvider;
-                      if (prov === 'gemini') return session.config.llmProviderKeys?.gemini ? 'API key present' : 'GEMINI_API_KEY not set';
-                      if (prov === 'seedance') return 'SEEDANCE_API_KEY (check Worker env)';
-                      return session.config.hasGenerationWorker ? 'PIXAZO_API_KEY (via Worker)' : 'PIXAZO_API_KEY not set';
-                    })()}
-                  </span>
-                </div>
-              </div>
-              {IMAGE_GEN_MODELS[imageGenProvider].length > 0 ? (
-                <div>
-                  <label className="mb-1 block text-sm font-semibold text-ink">Model</label>
-                  <Select
-                    value={imageGenModel || IMAGE_GEN_MODELS[imageGenProvider][0]?.value || ''}
-                    onValueChange={(v) => setImageGenModel(v as string)}
-                    itemToStringLabel={(v) => IMAGE_GEN_MODELS[imageGenProvider].find((m) => m.value === v)?.label ?? String(v ?? '')}
-                  >
-                    <SelectTrigger className="h-auto min-h-10 w-full rounded-xl py-2.5 font-medium">
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent className="max-w-[min(100vw-1.5rem,36rem)]">
-                      {IMAGE_GEN_MODELS[imageGenProvider].map((m) => (
-                        <SelectItem key={m.value} value={m.value} className="items-start py-2.5">
-                          <span className="whitespace-normal leading-snug">{m.label}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : null}
-            </div>
-          </SettingsSectionCard>
+          <ImageGenAccordionSection
+            session={session}
+            backendApi={backendApi}
+            idToken={idToken}
+            imageGenProvider={imageGenProvider}
+            setImageGenProvider={setImageGenProvider}
+            imageGenModel={imageGenModel}
+            setImageGenModel={setImageGenModel}
+          />
         ) : null}
 
         <SettingsSectionCard id="settings-generate-posts" title="Generate Posts">

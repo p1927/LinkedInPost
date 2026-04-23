@@ -1,4 +1,4 @@
-import { Mic, MicOff } from 'lucide-react';
+import { Loader2, Mic, MicOff } from 'lucide-react';
 import type { UnavailableReason } from './useSpeechToText';
 
 interface Props {
@@ -9,20 +9,27 @@ interface Props {
   onClick: () => void;
 }
 
-const UNAVAILABLE_LABELS: Record<NonNullable<UnavailableReason>, string> = {
-  disabled: '',
-  model_missing: 'Run setup to download the voice model',
-  sidecar_offline: 'Start the dev server to enable voice input',
-};
-
 export function MicButton({ isRecording, isAvailable, unavailableReason, shortcut: _shortcut, onClick }: Props) {
-  // Hidden when disabled or sidecar not running (production / dev without sidecar)
+  // Hidden when explicitly disabled or sidecar offline (production / no dev server)
   if (!isAvailable && (unavailableReason === 'disabled' || unavailableReason === 'sidecar_offline')) return null;
+
+  // Show spinner while WASM model is loading into the browser worker
+  if (unavailableReason === 'wasm_loading') {
+    return (
+      <span
+        title="Loading voice model…"
+        className="flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-muted/40"
+      >
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Loading…
+      </span>
+    );
+  }
 
   const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
   const shortcutLabel = isMac ? '⌘⇧M' : 'Ctrl+Shift+M';
   const tooltipText = !isAvailable
-    ? (unavailableReason ? UNAVAILABLE_LABELS[unavailableReason] : '')
+    ? 'Go to Settings → Speech to Text to download the voice model'
     : isRecording
       ? `Stop recording (${shortcutLabel})`
       : `Start voice input (${shortcutLabel})`;
