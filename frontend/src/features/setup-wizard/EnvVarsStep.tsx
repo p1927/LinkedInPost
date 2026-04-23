@@ -59,8 +59,8 @@ export function EnvVarsStep({ config, onUpdate, onComplete, onBack }: EnvVarsSte
         filteredEnvVars[key] = value;
       }
     });
-    onUpdate({ envVars: filteredEnvVars });
-    onComplete(filteredEnvVars);
+    onUpdate({ envVars: { ...config.envVars, ...filteredEnvVars } });
+    onComplete({ ...config.envVars, ...filteredEnvVars });
   };
 
   const copyToClipboard = async (key: string) => {
