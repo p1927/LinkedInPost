@@ -795,6 +795,90 @@ export default {
 
       const storedConfig = await loadStoredConfig(env, session.userId, { isAdmin: session.isAdmin });
       const { sheets, pipeline } = buildServices(env, session.userId);
+
+      if (action === 'sendTopicToGeneration') {
+        if (!FEATURE_CONTENT_FLOW) {
+          return jsonResponse({ ok: false, error: 'Generation worker integration is disabled.' }, 400, corsHeaders);
+        }
+        if (!isGenerationWorkerConfigured(env)) {
+          return jsonResponse({ ok: false, error: 'GENERATION_WORKER_URL is not configured.' }, 400, corsHeaders);
+        }
+        const topicId = String((payload ?? {}).topicId || '').trim();
+        if (!topicId) return jsonResponse({ ok: false, error: 'topicId is required.' }, 400, corsHeaders);
+        const row = await pipeline.getRowByTopicId(sheets, storedConfig.spreadsheetId, topicId);
+        if (!row) return jsonResponse({ ok: false, error: 'Topic not found.' }, 404, corsHeaders);
+
+        // Update status to Pending
+        await env.PIPELINE_DB.prepare(
+          `UPDATE pipeline_rows SET status = 'Pending' WHERE user_id = ? AND topic_id = ?`,
+        ).bind(session.userId, topicId).run();
+
+        // Build generation request from topicGenerationRules metadata
+        const genReq: GenWorkerGenerateRequest = {
+          spreadsheetId: storedConfig.spreadsheetId,
+          topicId,
+          topic: row.topic,
+        };
+        if (row.topicGenerationRules) {
+          try {
+            const meta = JSON.parse(row.topicGenerationRules) as Record<string, unknown>;
+            const constraintParts: string[] = [];
+            if (meta.about) constraintParts.push(`About this post: ${String(meta.about)}`);
+            if (meta.meaning) constraintParts.push(`Message to convey: ${String(meta.meaning)}`);
+            if (meta.notes) constraintParts.push(`Research notes: ${String(meta.notes)}`);
+            if (Array.isArray(meta.pros) && meta.pros.length > 0) constraintParts.push(`Arguments for this topic: ${(meta.pros as unknown[]).map(String).join(', ')}`);
+            if (Array.isArray(meta.cons) && meta.cons.length > 0) constraintParts.push(`Watch out for: ${(meta.cons as unknown[]).map(String).join(', ')}`);
+            if (constraintParts.length > 0) genReq.constraints = constraintParts.join('\n');
+            if (meta.style) genReq.tone = String(meta.style);
+          } catch {
+            // ignore malformed JSON
+          }
+        }
+
+        let genResponse: Response;
+        try {
+          genResponse = await callGenerationWorkerStream(env, genReq);
+        } catch (e) {
+          return jsonResponse({ ok: false, error: String(e) }, 502, corsHeaders);
+        }
+
+        if (!genResponse.ok || !genResponse.body) {
+          const text = await genResponse.text().catch(() => 'unknown error');
+          return jsonResponse({ ok: false, error: `Generation worker error: ${text.slice(0, 200)}` }, 502, corsHeaders);
+        }
+
+        const { readable: transformedReadable, writable: transformedWritable } = new TransformStream<Uint8Array, Uint8Array>();
+        const writer = transformedWritable.getWriter();
+        const encoder = new TextEncoder();
+
+        void (async () => {
+          const reader = genResponse.body!.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const blocks = buffer.split('\n\n');
+              buffer = blocks.pop() ?? '';
+              for (const block of blocks) {
+                if (!block.trim()) continue;
+                await writer.write(encoder.encode(block + '\n\n'));
+              }
+            }
+          } finally {
+            await writer.close();
+          }
+        })();
+
+        const streamHeaders = new Headers(corsHeaders);
+        streamHeaders.set('Content-Type', 'text/event-stream');
+        streamHeaders.set('Cache-Control', 'no-cache');
+        streamHeaders.set('Connection', 'keep-alive');
+        return new Response(transformedReadable, { headers: streamHeaders });
+      }
+
       const data = await dispatchAction(action, payload ?? {}, session, storedConfig, env, sheets, pipeline, request);
       return jsonResponse({ ok: true, data }, 200, corsHeaders);
     } catch (error) {
@@ -1181,7 +1265,7 @@ async function dispatchAction(
       const topicGenerationRules = topicMeta ? JSON.stringify(topicMeta) : '';
       if (topicGenerationRules.length > 8000) throw new Error('Topic metadata is too large.');
       // Always write to D1 first (optional Sheets: never fail the request if Google rejects sync)
-      const newRow = await pipeline.addTopicToD1(topicText, date, topicId, sid, topicGenerationRules);
+      const newRow = await pipeline.addTopicToD1(topicText, date, topicId, sid, topicGenerationRules, 'Draft');
       if (sid) {
         try {
           await sheets.addTopic(sid, topicText);
