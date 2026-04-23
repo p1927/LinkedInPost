@@ -8,15 +8,36 @@ import type { LlmModelOption, LlmRef } from '@repo/llm-core';
 
 export const DEFAULT_GOOGLE_MODEL = 'gemini-2.5-flash';
 
-export type ImageGenProvider = 'pixazo' | 'gemini' | 'seedance';
+export type ImageGenProvider = 'pixazo' | 'gemini' | 'seedance' | 'flux-kontext' | 'ideogram' | 'dall-e' | 'stability';
 
 export const IMAGE_GEN_PROVIDERS: Array<{ value: ImageGenProvider; label: string }> = [
-  { value: 'pixazo', label: 'Pixazo SDXL' },
+  { value: 'flux-kontext', label: 'FLUX Kontext (FAL)' },
+  { value: 'ideogram', label: 'Ideogram (FAL)' },
+  { value: 'dall-e', label: 'DALL-E / GPT Image (OpenAI)' },
+  { value: 'stability', label: 'Stability AI' },
   { value: 'gemini', label: 'Google Gemini' },
   { value: 'seedance', label: 'Seedance (ByteDance)' },
+  { value: 'pixazo', label: 'Pixazo SDXL' },
 ];
 
 export const IMAGE_GEN_MODELS: Record<ImageGenProvider, Array<{ value: string; label: string }>> = {
+  'flux-kontext': [
+    { value: 'fal-ai/flux-kontext-pro', label: 'FLUX Kontext Pro' },
+    { value: 'fal-ai/flux-kontext-max', label: 'FLUX Kontext Max' },
+  ],
+  ideogram: [
+    { value: 'fal-ai/ideogram/v3', label: 'Ideogram v3' },
+    { value: 'fal-ai/ideogram/v2', label: 'Ideogram v2' },
+  ],
+  'dall-e': [
+    { value: 'gpt-image-1', label: 'GPT Image 1' },
+    { value: 'dall-e-3', label: 'DALL-E 3' },
+  ],
+  stability: [
+    { value: 'sd3.5-large', label: 'SD 3.5 Large' },
+    { value: 'sd3.5-large-turbo', label: 'SD 3.5 Large Turbo' },
+    { value: 'sd3.5-medium', label: 'SD 3.5 Medium' },
+  ],
   pixazo: [],  // Pixazo has no model selection
   gemini: [
     { value: 'gemini-2.0-flash-preview-image-generation', label: 'Gemini 2.0 Flash (Image)' },
@@ -33,6 +54,23 @@ export interface ImageGenModelCapabilities {
 }
 
 export const IMAGE_GEN_MODEL_CAPABILITIES: Record<ImageGenProvider, Record<string, ImageGenModelCapabilities>> = {
+  'flux-kontext': {
+    'fal-ai/flux-kontext-pro': { supportsReferenceImage: true },
+    'fal-ai/flux-kontext-max': { supportsReferenceImage: true },
+  },
+  ideogram: {
+    'fal-ai/ideogram/v3': { supportsReferenceImage: false },
+    'fal-ai/ideogram/v2': { supportsReferenceImage: false },
+  },
+  'dall-e': {
+    'gpt-image-1': { supportsReferenceImage: false },
+    'dall-e-3': { supportsReferenceImage: false },
+  },
+  stability: {
+    'sd3.5-large': { supportsReferenceImage: false },
+    'sd3.5-large-turbo': { supportsReferenceImage: false },
+    'sd3.5-medium': { supportsReferenceImage: false },
+  },
   gemini: {
     'gemini-2.0-flash-preview-image-generation': { supportsReferenceImage: true },
     'imagen-3.0-generate-001': { supportsReferenceImage: false },

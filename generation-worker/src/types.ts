@@ -14,6 +14,9 @@ export interface Env {
   SERPAPI_API_KEY?: string;
   PIXAZO_API_KEY?: string;
   SEEDANCE_API_KEY?: string;
+  FAL_API_KEY?: string;
+  OPENAI_API_KEY?: string;
+  STABILITY_API_KEY?: string;
   RESEARCHER_RSS_FEEDS?: string;
 }
 
@@ -111,7 +114,7 @@ export const GenerateRequestSchema = z.object({
   skipImages: z.boolean().optional(),
   personaId: z.string().optional(),
   imageGen: z.object({
-    provider: z.enum(['pixazo', 'gemini', 'seedance']).default('pixazo'),
+    provider: z.enum(['pixazo', 'gemini', 'seedance', 'flux-kontext', 'ideogram', 'dall-e', 'stability']).default('pixazo'),
     model: z.string().optional(),
   }).optional(),
   enrichmentSkills: z.array(z.object({
