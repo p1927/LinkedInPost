@@ -12,7 +12,7 @@ let workerReady = false;
 
 const post = (msg: object) => self.postMessage(msg);
 
-(self as DedicatedWorkerGlobalScope).onmessage = async (e: MessageEvent<InMsg>) => {
+self.onmessage = async (e: MessageEvent<InMsg>) => {
   const msg = e.data;
 
   if (msg.type === 'load') {
@@ -35,7 +35,8 @@ const post = (msg: object) => self.postMessage(msg);
       return;
     }
     try {
-      const out = await transcriber(msg.audio, { language: 'english', task: 'transcribe' });
+      type ASRPipeline = (input: Float32Array, opts: Record<string, unknown>) => Promise<unknown>;
+      const out = await (transcriber as unknown as ASRPipeline)(msg.audio, { language: 'english', task: 'transcribe' });
       const item = Array.isArray(out) ? out[0] : out;
       const text = ((item as { text?: string })?.text ?? '').trim();
       post({ type: 'result', text });
