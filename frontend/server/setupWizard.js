@@ -51,9 +51,13 @@ app.get('/api/setup/stt/status', (req, res) => {
 app.post('/api/setup/stt/download', (req, res) => {
   const { projectDir, model, shortcut } = req.body || {};
 
+  if (!projectDir) return res.status(400).json({ error: 'projectDir required' });
+
   if (!MODEL_URLS[model]) {
-    return res.json({ error: 'unknown model' });
+    return res.status(400).json({ error: 'unknown model' });
   }
+
+  if (downloadState.inProgress) return res.status(409).json({ error: 'download_in_progress' });
 
   const destDir = join(
     projectDir,
