@@ -145,12 +145,14 @@ export function AppSidebar({
                     ? WORKSPACE_PATHS.enrichment
                     : page === 'trending'
                       ? WORKSPACE_PATHS.trending
-                      : WORKSPACE_PATHS.settings;
+                      : page === 'settings'
+                        ? WORKSPACE_PATHS.settings
+                        : WORKSPACE_PATHS.automations; // explicit — not a fallthrough
     return (
       <li key={page}>
         <NavLink
           to={to}
-          end={page !== 'topics'}
+          end={page === 'topics'}
           onClick={(e) => {
             if (hasUnsavedChanges) {
               if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
