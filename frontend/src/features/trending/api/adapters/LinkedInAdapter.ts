@@ -10,7 +10,7 @@ export class LinkedInAdapter extends BaseAdapter {
     if (this.config.workerProxyUrl && this.config.idToken) {
       return this.searchViaProxy(topic);
     }
-    const _topic = topic;
+    void topic;
 
     const apiKey = this.config.apiKey;
     const orgId = this.config.options?.orgId as string;

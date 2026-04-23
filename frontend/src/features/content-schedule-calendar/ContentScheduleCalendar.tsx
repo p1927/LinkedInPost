@@ -432,9 +432,9 @@ export function ContentScheduleCalendar({
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === '1') calendarApp.setView('month-grid');
-      else if (e.key === '2') calendarApp.setView('week');
-      else if (e.key === '3') calendarApp.setView('day');
+      if (e.key === '1') (calendarApp as { setView?: (v: string) => void }).setView?.('month-grid');
+      else if (e.key === '2') (calendarApp as { setView?: (v: string) => void }).setView?.('week');
+      else if (e.key === '3') (calendarApp as { setView?: (v: string) => void }).setView?.('day');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

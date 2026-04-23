@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { deleteRule, listRules, registerWebhooks, upsertRule } from './api';
 import { RuleEditor } from './RuleEditor';
 import { YouTubeScheduler } from './YouTubeScheduler';
@@ -191,8 +191,8 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
             platform={activePlatform}
             channelId={newChannelId}
             topicId={newTopicId || undefined}
-            onSave={(rule) => {
-              handleSave(newChannelId, rule, newTopicId || undefined);
+            onSave={async (rule) => {
+              await handleSave(newChannelId, rule, newTopicId || undefined);
               setNewChannelId('');
               setNewTopicId('');
             }}

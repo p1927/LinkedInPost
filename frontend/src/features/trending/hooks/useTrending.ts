@@ -170,7 +170,7 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
   const workerUrl = import.meta.env.VITE_WORKER_URL as string | undefined;
   const enrichedConfig = useMemo((): TrendingApiConfig => {
     if (!idToken || !workerUrl) return config;
-    const inject = (cfg: typeof config.youtube) => ({
+    const inject = <T>(cfg: { config: { workerProxyUrl?: string; idToken?: string } } & T) => ({
       ...cfg,
       config: { ...cfg.config, workerProxyUrl: workerUrl, idToken },
     });

@@ -15,7 +15,7 @@ const UNAVAILABLE_LABELS: Record<NonNullable<UnavailableReason>, string> = {
   sidecar_offline: 'Start the dev server to enable voice input',
 };
 
-export function MicButton({ isRecording, isAvailable, unavailableReason, shortcut, onClick }: Props) {
+export function MicButton({ isRecording, isAvailable, unavailableReason, shortcut: _shortcut, onClick }: Props) {
   // Completely hidden when feature is disabled
   if (!isAvailable && unavailableReason === 'disabled') return null;
 

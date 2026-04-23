@@ -76,7 +76,7 @@ export function Dashboard({
   onAuthExpired: () => void;
   llmCatalog: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }> | null;
   integrations: SocialIntegration[];
-  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void;
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp') => void;
   onDisconnect: (provider: string) => void;
   connecting: string | null;
 }) {

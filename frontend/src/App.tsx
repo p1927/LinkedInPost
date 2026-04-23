@@ -317,11 +317,11 @@ function App() {
 
       const popup = window.open(authorizationUrl, 'oauth', 'width=500,height=700,left=200,top=100')
 
-      const oauthPayload = await new Promise<Record<string, unknown> | undefined>((resolve, reject) => {
+      const oauthPayload = await new Promise<Record<string, unknown> | undefined | void>((resolve, reject) => {
         const timer = setInterval(() => {
           if (popup?.closed) {
             clearInterval(timer)
-            resolve()
+            resolve(undefined as void)
           }
         }, 500)
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { AutomationPlatform, AutomationRule, AutomationTrigger } from './types';
 import { TRIGGER_LABELS } from './types';
 
@@ -13,7 +13,7 @@ interface Props {
   onDelete?: () => Promise<void>;
 }
 
-export function RuleEditor({ platform, channelId, topicId, initial, onSave, onDelete }: Props) {
+export function RuleEditor({ platform: _platform, channelId: _channelId, topicId, initial, onSave, onDelete }: Props) {
   const [triggers, setTriggers] = useState<AutomationTrigger[]>(initial?.triggers ?? []);
   const [commentTemplate, setCommentTemplate] = useState(initial?.comment_reply_template ?? '');
   const [dmTemplate, setDmTemplate] = useState(initial?.dm_reply_template ?? '');

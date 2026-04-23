@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
+import { useState, useEffect, useRef, useCallback, type RefObject } from 'react';
 
 const STT_URL = 'http://localhost:3457';
 const CHUNK_INTERVAL_MS = 5000;
