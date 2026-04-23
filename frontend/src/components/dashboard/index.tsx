@@ -48,6 +48,15 @@ import { AutomationsTab } from '../../features/automations';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 import type { TopicRescheduleCommitPayload } from '@/features/content-schedule-calendar';
 
+function getProviderDisplayLabel(provider: string): string {
+  switch (provider) {
+    case 'grok': return 'Grok (xAI)';
+    case 'openrouter': return 'OpenRouter';
+    case 'minimax': return 'Minimax';
+    default: return 'Google Gemini';
+  }
+}
+
 function previewAuthorDisplayName(email: string): string {
   const local = email.split('@')[0]?.trim() ?? '';
   if (!local) {
@@ -406,21 +415,6 @@ export function Dashboard({
 
   const isTopicsMain = pathNorm === WORKSPACE_PATHS.topics;
 
-  const addTopicForm = useMemo(
-    () =>
-      isTopicsMain && !topicIdFromPath
-        ? {
-            newTopic: queueHook.newTopic,
-            setNewTopic: queueHook.setNewTopic,
-            handleAddTopic: queueHook.handleAddTopic,
-            addingTopic: queueHook.addingTopic,
-            loading: queueHook.loading,
-          }
-        : null,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isTopicsMain, topicIdFromPath, queueHook.newTopic, queueHook.addingTopic, queueHook.loading],
-  );
-
   useRegisterWorkspaceChrome({
     onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,
     queueLoading: queueHook.loading,
@@ -428,7 +422,6 @@ export function Dashboard({
     health: publishingHealth,
     headerOverride,
     clearTopicReviewHeader: !topicIdFromPath,
-    addTopicForm,
   });
 
   const parsedTelegramRecipientsForSettings = useMemo(() => {
@@ -603,7 +596,7 @@ export function Dashboard({
       rows={queueHook.rows}
       availableModels={settingsHook.availableModels}
       modelPickerLocked={settingsHook.modelPickerLocked}
-      providerLabel={settingsHook.llmPrimaryProvider === 'grok' ? 'Grok (xAI)' : 'Google Gemini'}
+      providerLabel={getProviderDisplayLabel(settingsHook.llmPrimaryProvider)}
       previewAuthorName={previewAuthorDisplayName(session.email)}
       onSaveTopicDeliveryPreferences={queueHook.handleSaveTopicDeliveryPreferences}
       onOpenEditor={(row) => navigate(topicEditorPathForRow(row))}
