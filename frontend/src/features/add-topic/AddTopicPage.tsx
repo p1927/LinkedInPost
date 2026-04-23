@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useCallback, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
