@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ExternalLink, Newspaper, Lightbulb, SearchX, RefreshCw } from 'lucide-react';
 import { useTrending } from '../trending/hooks/useTrending';
+import type { BackendApi } from '@/services/backendApi';
 
-export function TrendingSidebar({ topic, idToken, onRefresh }: { topic: string; idToken?: string; onRefresh?: () => void }) {
+export function TrendingSidebar({ topic, idToken, onRefresh, api }: { topic: string; idToken?: string; onRefresh?: () => void; api?: BackendApi }) {
   const [fetchedTopic, setFetchedTopic] = useState('');
-  const { data, loading, error, refetch } = useTrending(fetchedTopic, idToken);
+  const { data, loading, error, refetch } = useTrending(fetchedTopic, idToken, api);
 
   // Fetch on mount if topic is non-empty and we haven't fetched yet
   useEffect(() => {

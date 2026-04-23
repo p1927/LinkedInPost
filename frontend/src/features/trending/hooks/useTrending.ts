@@ -6,6 +6,7 @@ import { useYouTubeTrending } from './useYouTubeTrending';
 import { useInstagramTrending } from './useInstagramTrending';
 import { useLinkedInTrending } from './useLinkedInTrending';
 import { useNewsTrending } from './useNewsTrending';
+import type { BackendApi } from '@/services/backendApi';
 
 // Mock data for development when no APIs are configured
 const MOCK_TRENDING_DATA: TrendingData = {
@@ -146,7 +147,7 @@ interface UseTrendingResult {
   loading: boolean;
   error: string | null;
   config: TrendingApiConfig;
-  setConfig: (config: TrendingApiConfig) => void;
+  setConfig: (updater: TrendingApiConfig | ((prev: TrendingApiConfig) => TrendingApiConfig)) => void;
   enabledPlatforms: {
     youtube: boolean;
     instagram: boolean;
@@ -160,7 +161,7 @@ interface UseTrendingResult {
  * Main trending hook that coordinates all platform-specific hooks.
  * Falls back to mock data when no APIs are configured.
  */
-export function useTrending(topic: string, idToken?: string): UseTrendingResult {
+export function useTrending(topic: string, idToken?: string, api?: BackendApi): UseTrendingResult {
   const [config, setConfig] = useState<TrendingApiConfig>(DEFAULT_CONFIG);
   const [mockLoading, setMockLoading] = useState(false);
   const [mockError, setMockError] = useState<string | null>(null);
@@ -187,7 +188,7 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
   const youtube = useYouTubeTrending(topic, enrichedConfig);
   const instagram = useInstagramTrending(topic, enrichedConfig);
   const linkedin = useLinkedInTrending(topic, enrichedConfig);
-  const news = useNewsTrending(topic, enrichedConfig);
+  const news = useNewsTrending(topic, enrichedConfig, api, idToken);
 
   // Aggregate data based on what's enabled
   const data = useMemo((): TrendingData | null => {

@@ -360,7 +360,7 @@ export function AddTopicPage({
 
       {/* ── Right: trending sidebar ── */}
       <aside className="custom-scrollbar hidden w-72 shrink-0 overflow-y-auto border-l border-white/30 bg-white/5 p-4 backdrop-blur-sm lg:block">
-        <TrendingSidebar topic={topic} idToken={idToken} onRefresh={() => {}} />
+        <TrendingSidebar topic={topic} idToken={idToken} api={api} onRefresh={() => {}} />
       </aside>
     </div>
   );

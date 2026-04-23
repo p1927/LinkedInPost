@@ -829,7 +829,16 @@ export function Dashboard({
             )
           }
         />
-        <Route path={WORKSPACE_ROUTE_PATHS.trending} element={<TrendingDashboard idToken={idToken} />} />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.trending}
+          element={
+            <TrendingDashboard
+              idToken={idToken}
+              api={api}
+              newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
+            />
+          }
+        />
         <Route
           path={WORKSPACE_ROUTE_PATHS.automations}
           element={

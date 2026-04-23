@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { NewsArticle } from '../types';
 import type { TrendingApiConfig } from '../api';
+import type { BackendApi } from '@/services/backendApi';
 
 interface UseNewsTrendingResult {
   data: NewsArticle[];
@@ -10,10 +11,11 @@ interface UseNewsTrendingResult {
   refetch: () => void;
 }
 
-// Mock news implementation - can be extended with real APIs
 export function useNewsTrending(
   topic: string,
-  config: TrendingApiConfig
+  config: TrendingApiConfig,
+  api?: BackendApi,
+  idToken?: string,
 ): UseNewsTrendingResult {
   const [data, setData] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export function useNewsTrending(
   const refetch = useCallback(() => setTick(t => t + 1), []);
 
   useEffect(() => {
-    if (!topic.trim() || !available) {
+    if (!topic.trim() || !available || !api || !idToken) {
       setData([]);
       setError(null);
       return;
@@ -37,36 +39,32 @@ export function useNewsTrending(
 
     async function fetchData() {
       try {
-        // Placeholder - implement news API adapter here
-        // Options: NewsData.io, Guardian API, GNews, etc.
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const today = new Date();
+        const windowStart = new Date(today);
+        windowStart.setDate(today.getDate() - 7);
+        const dateStr = today.toISOString().slice(0, 10);
+        const windowStartStr = windowStart.toISOString().slice(0, 10);
 
-        // Mock data for now
-        const mockArticles: NewsArticle[] = [
-          {
-            id: '1',
-            title: `${topic}: Latest News and Updates`,
-            description: `Recent developments around ${topic} that are trending across major news outlets.`,
-            source: 'News',
-            publishedAt: '2 hours ago',
-            url: '#',
-            imageUrl: undefined,
-            platform: 'news',
-          },
-          {
-            id: '2',
-            title: `How ${topic} is Shaping the Industry`,
-            description: `Analysis and insights on ${topic} and its growing impact.`,
-            source: 'Industry Weekly',
-            publishedAt: '5 hours ago',
-            url: '#',
-            imageUrl: undefined,
-            platform: 'news',
-          },
-        ];
+        const result = await api!.searchNewsResearch(idToken!, {
+          topicId: 'trending',
+          topic,
+          date: dateStr,
+          windowStart: windowStartStr,
+          windowEnd: dateStr,
+        });
 
         if (!cancelled) {
-          setData(mockArticles);
+          const articles: NewsArticle[] = (result.articles ?? []).map((a, i) => ({
+            id: a.url || String(i),
+            title: a.title,
+            description: a.snippet ?? '',
+            source: a.source ?? '',
+            publishedAt: a.publishedAt ?? '',
+            url: a.url,
+            imageUrl: undefined,
+            platform: 'news' as const,
+          }));
+          setData(articles);
         }
       } catch (err) {
         if (!cancelled) {
@@ -79,12 +77,12 @@ export function useNewsTrending(
       }
     }
 
-    fetchData();
+    void fetchData();
 
     return () => {
       cancelled = true;
     };
-  }, [topic, available, tick, config]);
+  }, [topic, available, tick, api, idToken]);
 
   return { data, loading, error, available, refetch };
 }
