@@ -152,7 +152,7 @@ export function AppSidebar({
       <li key={page}>
         <NavLink
           to={to}
-          end={page === 'topics'}
+          end
           onClick={(e) => {
             if (hasUnsavedChanges) {
               if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
