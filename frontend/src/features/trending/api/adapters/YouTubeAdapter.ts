@@ -6,6 +6,11 @@ export class YouTubeAdapter extends BaseAdapter {
   name = 'YouTube Data API v3';
 
   async search(topic: string): Promise<TrendingItem[]> {
+    // Proxy through worker when configured (keeps API key server-side)
+    if (this.config.workerProxyUrl && this.config.idToken) {
+      return this.searchViaProxy(topic);
+    }
+
     const apiKey = this.config.apiKey;
     if (!apiKey) {
       throw new Error('YouTube API key not configured');
@@ -80,5 +85,20 @@ export class YouTubeAdapter extends BaseAdapter {
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
     return `${Math.floor(diffDays / 365)} years ago`;
+  }
+
+  private async searchViaProxy(topic: string): Promise<TrendingItem[]> {
+    const res = await fetch(this.config.workerProxyUrl!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.config.idToken}`,
+      },
+      body: JSON.stringify({ action: 'trendingYouTube', idToken: this.config.idToken, payload: { query: topic } }),
+    });
+    if (!res.ok) throw new Error(`YouTube proxy error: ${res.status}`);
+    const body = await res.json() as { ok: boolean; data?: { items?: unknown[] }; error?: string };
+    if (!body.ok) throw new Error(body.error ?? 'YouTube proxy request failed');
+    return (body.data?.items ?? []) as TrendingItem[];
   }
 }

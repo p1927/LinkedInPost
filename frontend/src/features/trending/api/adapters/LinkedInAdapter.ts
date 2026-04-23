@@ -5,7 +5,13 @@ export class LinkedInAdapter extends BaseAdapter {
   platform = 'linkedin' as const;
   name = 'LinkedIn Posts API';
 
-  async search(_topic: string): Promise<TrendingItem[]> {
+  async search(topic: string): Promise<TrendingItem[]> {
+    // Proxy through worker when configured (keeps API key server-side)
+    if (this.config.workerProxyUrl && this.config.idToken) {
+      return this.searchViaProxy(topic);
+    }
+    const _topic = topic;
+
     const apiKey = this.config.apiKey;
     const orgId = this.config.options?.orgId as string;
 
@@ -63,5 +69,21 @@ export class LinkedInAdapter extends BaseAdapter {
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     return `${Math.floor(diffDays / 30)} months ago`;
+  }
+
+  private async searchViaProxy(_topic: string): Promise<TrendingItem[]> {
+    const orgId = this.config.options?.orgId as string | undefined;
+    const res = await fetch(this.config.workerProxyUrl!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.config.idToken}`,
+      },
+      body: JSON.stringify({ action: 'trendingLinkedIn', idToken: this.config.idToken, payload: { orgId } }),
+    });
+    if (!res.ok) throw new Error(`LinkedIn proxy error: ${res.status}`);
+    const body = await res.json() as { ok: boolean; data?: { elements?: unknown[] }; error?: string };
+    if (!body.ok) throw new Error(body.error ?? 'LinkedIn proxy request failed');
+    return (body.data?.elements ?? []) as TrendingItem[];
   }
 }

@@ -5,6 +5,10 @@ export interface ApiConfig {
   apiKey?: string;
   apiSecret?: string;
   options?: Record<string, unknown>;
+  /** When set, the adapter proxies calls through the worker at this URL instead of calling the external API directly. */
+  workerProxyUrl?: string;
+  /** Auth token for worker proxy requests. */
+  idToken?: string;
 }
 
 export type YouTubeAdapterType = 'youtube-official' | 'apify-youtube';

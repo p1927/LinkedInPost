@@ -159,18 +159,34 @@ interface UseTrendingResult {
  * Main trending hook that coordinates all platform-specific hooks.
  * Falls back to mock data when no APIs are configured.
  */
-export function useTrending(topic: string): UseTrendingResult {
+export function useTrending(topic: string, idToken?: string): UseTrendingResult {
   const [config, setConfig] = useState<TrendingApiConfig>(DEFAULT_CONFIG);
   const [mockLoading, setMockLoading] = useState(false);
   const [mockError, setMockError] = useState<string | null>(null);
 
   const useRealApis = isAnyApiEnabled(config);
 
+  // Inject worker proxy credentials into each platform config when idToken is available
+  const workerUrl = import.meta.env.VITE_WORKER_URL as string | undefined;
+  const enrichedConfig = useMemo((): TrendingApiConfig => {
+    if (!idToken || !workerUrl) return config;
+    const inject = (cfg: typeof config.youtube) => ({
+      ...cfg,
+      config: { ...cfg.config, workerProxyUrl: workerUrl, idToken },
+    });
+    return {
+      youtube: inject(config.youtube),
+      instagram: inject(config.instagram),
+      linkedin: inject(config.linkedin),
+      news: config.news,
+    };
+  }, [config, idToken, workerUrl]);
+
   // Platform-specific hooks (only active when their API is enabled)
-  const youtube = useYouTubeTrending(topic, config);
-  const instagram = useInstagramTrending(topic, config);
-  const linkedin = useLinkedInTrending(topic, config);
-  const news = useNewsTrending(topic, config);
+  const youtube = useYouTubeTrending(topic, enrichedConfig);
+  const instagram = useInstagramTrending(topic, enrichedConfig);
+  const linkedin = useLinkedInTrending(topic, enrichedConfig);
+  const news = useNewsTrending(topic, enrichedConfig);
 
   // Aggregate data based on what's enabled
   const data = useMemo((): TrendingData | null => {

@@ -21,13 +21,13 @@ const ALL_PANELS: PanelConfig[] = [
 
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
 
-export function TrendingDashboard() {
+export function TrendingDashboard({ idToken }: { idToken?: string } = {}) {
   const [topic, setTopic] = useState('');
   const [searchTopic, setSearchTopic] = useState('');
   const [enabledPanels, setEnabledPanels] = useState<string[]>(DEFAULT_ENABLED);
   const [showSettings, setShowSettings] = useState(false);
 
-  const { data, loading, error, config, enabledPlatforms } = useTrending(searchTopic);
+  const { data, loading, error, config, enabledPlatforms } = useTrending(searchTopic, idToken);
 
   const handleSearch = () => {
     setSearchTopic(topic);

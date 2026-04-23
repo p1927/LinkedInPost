@@ -27,8 +27,8 @@ async function checkedFetch(idToken: string, path: string, options: RequestInit 
 }
 
 export async function listRules(idToken: string): Promise<RuleEntry[]> {
-  const res = await authFetch(idToken, '/automations/rules', { method: 'GET' });
-  const body = await res.json();
+  const res = await checkedFetch(idToken, '/automations/rules', { method: 'GET' });
+  const body = await res.json() as { data?: RuleEntry[] };
   return body.data ?? [];
 }
 
@@ -64,14 +64,14 @@ export async function lookupEffectiveRule(
   topicId?: string,
 ): Promise<AutomationRule | null> {
   const params = new URLSearchParams({ platform, channelId, ...(topicId ? { topicId } : {}) });
-  const res = await authFetch(idToken, `/automations/rules/lookup?${params}`, { method: 'GET' });
-  const body = await res.json();
+  const res = await checkedFetch(idToken, `/automations/rules/lookup?${params}`, { method: 'GET' });
+  const body = await res.json() as { data?: AutomationRule };
   return body.data ?? null;
 }
 
 export async function getYouTubeSchedule(idToken: string, channelId: string): Promise<YouTubeSchedule | null> {
-  const res = await authFetch(idToken, `/automations/youtube/schedule?channelId=${encodeURIComponent(channelId)}`, { method: 'GET' });
-  const body = await res.json();
+  const res = await checkedFetch(idToken, `/automations/youtube/schedule?channelId=${encodeURIComponent(channelId)}`, { method: 'GET' });
+  const body = await res.json() as { data?: YouTubeSchedule };
   return body.data ?? null;
 }
 
@@ -90,7 +90,7 @@ export async function registerWebhooks(idToken: string, platform: AutomationPlat
 }
 
 export async function triggerCleanup(idToken: string): Promise<{ removed: number }> {
-  const res = await authFetch(idToken, '/automations/cleanup', { method: 'POST' });
-  const body = await res.json();
+  const res = await checkedFetch(idToken, '/automations/cleanup', { method: 'POST' });
+  const body = await res.json() as { data?: { removed: number } };
   return body.data ?? { removed: 0 };
 }

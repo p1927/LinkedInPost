@@ -80,7 +80,7 @@ function WorkspaceSession({
   onAuthExpired: () => void
   llmCatalog: LlmProviderCatalog | null
   integrations: SocialIntegration[]
-  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp') => void
   onDisconnect: (provider: string) => void
   connecting: string | null
 }) {
@@ -301,7 +301,7 @@ function App() {
     setErrorMessage('Your Google session expired. Sign in again to continue.')
   }, [])
 
-  const handleConnect = useCallback(async (provider: 'linkedin' | 'instagram' | 'gmail') => {
+  const handleConnect = useCallback(async (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp') => {
     if (!idToken) return
     setConnecting(provider)
     try {
@@ -309,6 +309,7 @@ function App() {
         linkedin: 'startLinkedInAuth',
         instagram: 'startInstagramAuth',
         gmail: 'startGmailAuth',
+        whatsapp: 'startWhatsAppAuth',
       } as const
       const method = actionMap[provider]
       const result = await api[method](idToken)
@@ -316,7 +317,7 @@ function App() {
 
       const popup = window.open(authorizationUrl, 'oauth', 'width=500,height=700,left=200,top=100')
 
-      await new Promise<void>((resolve, reject) => {
+      const oauthPayload = await new Promise<Record<string, unknown> | undefined>((resolve, reject) => {
         const timer = setInterval(() => {
           if (popup?.closed) {
             clearInterval(timer)
@@ -329,7 +330,7 @@ function App() {
           window.removeEventListener('message', onMessage)
           clearInterval(timer)
           if (event.data.ok) {
-            resolve()
+            resolve(event.data.payload)
           } else {
             reject(new Error(event.data.error || 'Connection failed.'))
           }
@@ -337,6 +338,16 @@ function App() {
         window.addEventListener('message', onMessage)
       })
 
+      // WhatsApp multi-phone: if popup sent connectionId + options, auto-select the first phone
+      if (provider === 'whatsapp' && oauthPayload && typeof oauthPayload === 'object') {
+        const { connectionId, options } = oauthPayload as {
+          connectionId: string;
+          options: Array<{ phoneNumberId: string; verifiedName: string; displayPhoneNumber: string }>;
+        };
+        if (connectionId && options?.length > 0) {
+          await api.completeWhatsAppConnection(idToken, connectionId, options[0].phoneNumberId);
+        }
+      }
       const updated = await api.getIntegrations(idToken)
       setIntegrations(updated)
     } catch (err) {

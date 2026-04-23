@@ -824,7 +824,7 @@ export function Dashboard({
             )
           }
         />
-        <Route path={WORKSPACE_ROUTE_PATHS.trending} element={<TrendingDashboard />} />
+        <Route path={WORKSPACE_ROUTE_PATHS.trending} element={<TrendingDashboard idToken={idToken} />} />
         <Route
           path={WORKSPACE_ROUTE_PATHS.automations}
           element={

@@ -376,7 +376,7 @@ export function AddTopicPage({
         <p className="mb-4 text-[11px] leading-relaxed text-muted/50">
           Updates as you type your topic.
         </p>
-        <TrendingSidebar topic={debouncedTopic} />
+        <TrendingSidebar topic={debouncedTopic} idToken={idToken} />
       </aside>
     </div>
   );

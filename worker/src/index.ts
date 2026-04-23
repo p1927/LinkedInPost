@@ -93,6 +93,8 @@ export interface Env {
   /** xAI Grok API key (optional; multi-provider LLM). */
   XAI_API_KEY?: string;
   SERPAPI_API_KEY?: string;
+  /** YouTube Data API v3 key for trending proxy. */
+  YOUTUBE_API_KEY?: string;
   NEWSAPI_KEY?: string;
   GNEWS_API_KEY?: string;
   NEWSDATA_API_KEY?: string;
@@ -1747,7 +1749,7 @@ Rules:
     case 'listPatterns': {
       const baseUrl = String(env.GENERATION_WORKER_URL || '').trim().replace(/\/$/, '');
       if (!baseUrl) {
-        throw new Error('GENERATION_WORKER_URL is not configured. Set it in Worker environment.');
+        return [];
       }
       const secret = String(env.GENERATION_WORKER_SECRET || '').trim();
       const response = await fetch(`${baseUrl}/v1/patterns/full`, {
@@ -1773,6 +1775,64 @@ Rules:
         patternRationale: patternRationale || '',
       });
     }
+    case 'trendingYouTube': {
+      const apiKey = String(env.YOUTUBE_API_KEY || '').trim();
+      if (!apiKey) return { items: [] };
+      const { query } = payload as { query: string };
+      const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
+      searchUrl.searchParams.set('part', 'snippet');
+      searchUrl.searchParams.set('q', String(query || ''));
+      searchUrl.searchParams.set('type', 'video');
+      searchUrl.searchParams.set('order', 'viewCount');
+      searchUrl.searchParams.set('maxResults', '10');
+      searchUrl.searchParams.set('key', apiKey);
+      const res = await fetch(searchUrl.toString());
+      if (!res.ok) throw new Error(`YouTube API error: ${res.status}`);
+      const data = await res.json() as { items?: unknown[] };
+      return { items: data.items ?? [] };
+    }
+
+    case 'trendingLinkedIn': {
+      const apiKey = String(env.LINKEDIN_ACCESS_TOKEN || '').trim();
+      const orgId = String(payload?.orgId || '').trim();
+      if (!apiKey || !orgId) return { elements: [] };
+      const liUrl = new URL('https://api.linkedin.com/v2/organizationalEntityShareStatistics');
+      liUrl.searchParams.set('q', 'organizationalEntity');
+      liUrl.searchParams.set('organizationalEntity', `urn:li:organization:${orgId}`);
+      liUrl.searchParams.set('count', '10');
+      const res = await fetch(liUrl.toString(), {
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'X-Restli-Protocol-Version': '2.0.0' },
+      });
+      if (!res.ok) throw new Error(`LinkedIn API error: ${res.status}`);
+      const data = await res.json() as { elements?: unknown[] };
+      return { elements: data.elements ?? [] };
+    }
+
+    case 'trendingInstagram': {
+      const accessToken = String(env.INSTAGRAM_ACCESS_TOKEN || '').trim();
+      const userId = String(env.INSTAGRAM_USER_ID || '').trim();
+      const { query } = payload as { query: string };
+      if (!accessToken || !userId) return { data: [] };
+      const hashtagUrl = new URL('https://graph.instagram.com/v18.0/ig_hashtag_search');
+      hashtagUrl.searchParams.set('user_id', userId);
+      hashtagUrl.searchParams.set('q', String(query || ''));
+      const hashRes = await fetch(hashtagUrl.toString(), {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+      });
+      if (!hashRes.ok) throw new Error(`Instagram API error: ${hashRes.status}`);
+      const hashData = await hashRes.json() as { data?: Array<{ id: string }> };
+      const hashtagId = hashData.data?.[0]?.id;
+      if (!hashtagId) return { data: [] };
+      const mediaUrl = new URL(`https://graph.instagram.com/v18.0/${hashtagId}/recent_media`);
+      mediaUrl.searchParams.set('user_id', userId);
+      mediaUrl.searchParams.set('fields', 'id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count');
+      mediaUrl.searchParams.set('access_token', accessToken);
+      const mediaRes = await fetch(mediaUrl.toString());
+      if (!mediaRes.ok) throw new Error(`Instagram media API error: ${mediaRes.status}`);
+      const mediaData = await mediaRes.json() as { data?: unknown[] };
+      return { data: mediaData.data ?? [] };
+    }
+
     case 'getIntegrations':
       return listSocialIntegrations(env.PIPELINE_DB, session.userId);
 

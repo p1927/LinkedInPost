@@ -19,15 +19,16 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
   const [registeringWebhook, setRegisteringWebhook] = useState(false);
   const [webhookMsg, setWebhookMsg] = useState('');
 
+  const [loadError, setLoadError] = useState('');
   const [webhookChannelId, setWebhookChannelId] = useState('');
   const [newChannelId, setNewChannelId] = useState('');
   const [newTopicId, setNewTopicId] = useState('');
 
   const reload = useCallback(() => {
-    listRules(idToken).then((r) => {
-      setRules(r);
-      setLoading(false);
-    });
+    setLoadError('');
+    listRules(idToken)
+      .then((r) => { setRules(r); setLoading(false); })
+      .catch((err: unknown) => { setLoadError((err as Error)?.message ?? 'Failed to load rules'); setLoading(false); });
   }, [idToken]);
 
   useEffect(() => { reload(); }, [reload]);
@@ -63,8 +64,6 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
   }
 
   function parseKeyParts(key: string): { channelId: string; topicId?: string } {
-    // Keys use format: automation:rule:<platform>:<encodedChannelId>[:<encodedTopicId>]
-    // channelId and topicId are URL-encoded so colons inside URNs do not corrupt parsing.
     const prefix = `automation:rule:${activePlatform}:`;
     const rest = key.startsWith(prefix) ? key.slice(prefix.length) : key;
     const sepIdx = rest.indexOf(':');
@@ -108,30 +107,41 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
       </div>
 
       {/* Webhook registration */}
-      <div style={{ background: '#f9fafb', borderRadius: 8, padding: 14, marginBottom: 20 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Register webhook</div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            type="text"
-            value={webhookChannelId}
-            onChange={(e) => setWebhookChannelId(e.target.value)}
-            placeholder="Channel ID"
-            style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }}
-          />
-          <button
-            onClick={handleRegisterWebhook}
-            disabled={registeringWebhook || !webhookChannelId}
-            style={{ padding: '6px 14px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
-          >
-            {registeringWebhook ? 'Registering…' : 'Register webhook'}
-          </button>
-        </div>
-        {webhookMsg && (
-          <div style={{ marginTop: 8, fontSize: 13, color: webhookMsg.includes('failed') ? '#b91c1c' : '#047857' }}>
-            {webhookMsg}
+      {activePlatform === 'youtube' ? (
+        <p style={{ fontSize: 13, color: '#6b7280', padding: '12px 0', marginBottom: 8 }}>
+          YouTube uses scheduled polling — no webhook registration needed.
+        </p>
+      ) : (
+        <div style={{ background: '#f9fafb', borderRadius: 8, padding: 14, marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Register webhook</div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              type="text"
+              value={webhookChannelId}
+              onChange={(e) => setWebhookChannelId(e.target.value)}
+              placeholder="Channel ID"
+              style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 13 }}
+            />
+            <button
+              onClick={handleRegisterWebhook}
+              disabled={registeringWebhook || !webhookChannelId}
+              style={{ padding: '6px 14px', background: '#059669', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}
+            >
+              {registeringWebhook ? 'Registering…' : 'Register webhook'}
+            </button>
           </div>
-        )}
-      </div>
+          {webhookMsg && (
+            <div style={{ marginTop: 8, fontSize: 13, color: webhookMsg.includes('failed') ? '#b91c1c' : '#047857' }}>
+              {webhookMsg}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Load error — shown regardless of loading state */}
+      {loadError && (
+        <div style={{ fontSize: 13, color: '#b91c1c', marginBottom: 16 }}>{loadError}</div>
+      )}
 
       {/* Existing rules */}
       {loading ? (
@@ -190,7 +200,17 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
         )}
       </div>
 
-      {/* YouTube-specific schedule */}
+      {/* YouTube-specific schedule — show for each existing YouTube channel rule */}
+      {activePlatform === 'youtube' && !loading && (() => {
+        const existingChannelIds = Array.from(
+          new Set(platformRules.map((r) => parseKeyParts(r.key).channelId)),
+        );
+        return existingChannelIds.map((cid) => (
+          <YouTubeScheduler key={cid} idToken={idToken} channelId={cid} />
+        ));
+      })()}
+
+      {/* YouTube-specific schedule — show for the new channel being added */}
       {activePlatform === 'youtube' && newChannelId && (
         <YouTubeScheduler idToken={idToken} channelId={newChannelId} />
       )}

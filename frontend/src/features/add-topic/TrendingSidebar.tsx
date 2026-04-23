@@ -1,8 +1,8 @@
 import { ExternalLink, Newspaper, Lightbulb, SearchX } from 'lucide-react';
 import { useTrending } from '../trending/hooks/useTrending';
 
-export function TrendingSidebar({ topic }: { topic: string }) {
-  const { data, loading, error } = useTrending(topic);
+export function TrendingSidebar({ topic, idToken }: { topic: string; idToken?: string }) {
+  const { data, loading, error } = useTrending(topic, idToken);
 
   const news = data?.news ?? [];
   const recommended = data?.recommendedTopics ?? [];
