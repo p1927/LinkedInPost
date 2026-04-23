@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { type AppSession, type BackendApi, type SocialIntegration, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
 import { type BotConfig, type BotConfigUpdate, type LlmRef, type GoogleModelOption, type EnrichmentSkillConfig, type EnrichmentSkillId } from '../../services/configService';
@@ -44,9 +44,42 @@ import {
 import { CampaignPage } from '../../features/campaign';
 import { TrendingDashboard } from '../../features/trending';
 import { AddTopicPage } from '../../features/add-topic/AddTopicPage';
+import { TopicDetailView } from '../../features/add-topic/TopicDetailView';
 import { AutomationsTab } from '../../features/automations';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 import type { TopicRescheduleCommitPayload } from '@/features/content-schedule-calendar';
+
+function AddTopicPageWithEdit({
+  idToken,
+  api,
+  rows,
+}: {
+  idToken: string;
+  api: BackendApi;
+  rows: SheetRow[];
+}) {
+  const editTopicId = new URLSearchParams(window.location.search).get('edit') ?? '';
+  const editRow = editTopicId
+    ? findRowByTopicRouteId(rows, editTopicId) ?? rows.find((r) => String(r.topicId).trim() === editTopicId.trim())
+    : undefined;
+  return <AddTopicPage idToken={idToken} api={api} editRow={editRow} />;
+}
+
+function TopicVariantsOrDetail(p: Parameters<typeof TopicVariantsPage>[0] & { rows: SheetRow[] }) {
+  const { topicId } = useParams<{ topicId: string }>();
+  const row = topicId ? findRowByTopicRouteId(p.rows, topicId) : undefined;
+  const isPending = row && !row.variant1?.trim() && !row.variant2?.trim();
+  if (isPending) {
+    return (
+      <div className="flex h-full min-h-0 flex-1">
+        <TopicDetailView row={row} editPath={WORKSPACE_PATHS.addTopic} />
+      </div>
+    );
+  }
+  const { rows: _rows, ...rest } = p;
+  void _rows;
+  return <TopicVariantsPage {...rest} />;
+}
 
 function getProviderDisplayLabel(provider: string): string {
   switch (provider) {
@@ -758,7 +791,7 @@ export function Dashboard({
       <Routes>
         <Route
           path={WORKSPACE_ROUTE_PATHS.addTopic}
-          element={<AddTopicPage idToken={idToken} api={api} />}
+          element={<AddTopicPageWithEdit idToken={idToken} api={api} rows={queueHook.rows} />}
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.topicEditor}
@@ -766,7 +799,7 @@ export function Dashboard({
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.topicVariants}
-          element={<TopicVariantsPage {...topicReviewBase} />}
+          element={<TopicVariantsOrDetail {...topicReviewBase} rows={queueHook.rows} />}
         />
         <Route path={WORKSPACE_ROUTE_PATHS.topics} element={topicsHome} />
         <Route path={`${WORKSPACE_PATHS.topics}/`} element={topicsHome} />
