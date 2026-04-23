@@ -47,6 +47,7 @@ import {
   resolveStoredFallback,
   resolveStoredPrimary,
   workspaceConfigFromStored,
+  generateTextJsonWithFallback,
   setLlmSettingInD1,
   seedLlmSettingsIfEmpty,
   LLM_SETTING_KEYS,
@@ -1189,6 +1190,47 @@ async function dispatchAction(
         }
       }
       return newRow;
+    }
+    case 'analyzeTopicInsights': {
+      const topicText = String(payload.topic || '').trim();
+      if (!topicText) throw new Error('topic is required.');
+      const about = String(payload.about || '').trim();
+      const meaning = String(payload.meaning || '').trim();
+      const notes = String(payload.notes || '').trim();
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const contextParts = [
+        `Topic: ${topicText}`,
+        about ? `About: ${about}` : '',
+        meaning ? `Meaning to convey: ${meaning}` : '',
+        notes ? `Research notes: ${notes}` : '',
+      ].filter(Boolean).join('\n');
+      const prompt = `You are a content strategy assistant. Analyze the following LinkedIn post topic and generate a balanced list of pros (arguments for writing this post) and cons (potential challenges or counterpoints).
+
+${contextParts}
+
+Return ONLY valid JSON matching this exact shape:
+{"pros": ["string", ...], "cons": ["string", ...]}
+
+Rules:
+- 3–5 items each
+- Each item is a short, punchy insight (max 12 words)
+- Pros: reasons this topic will resonate, angles that could go viral, strategic value
+- Cons: risks, counterarguments, things to be careful about
+- No markdown, no explanation, just the JSON object`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: { pros: string[]; cons: string[] };
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch {
+        throw new Error('AI returned unexpected format. Please try again.');
+      }
+      return {
+        pros: Array.isArray(parsed.pros) ? parsed.pros.map(String).slice(0, 6) : [],
+        cons: Array.isArray(parsed.cons) ? parsed.cons.map(String).slice(0, 6) : [],
+      };
     }
     case 'updateRowStatus':
       return pipeline.updateRowStatus(

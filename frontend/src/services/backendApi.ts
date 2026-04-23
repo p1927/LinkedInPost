@@ -682,6 +682,15 @@ export class BackendApi {
     return this.post<SheetRow>('addTopic', idToken, { topic, topicMeta });
   }
 
+  async analyzeTopicInsights(idToken: string, payload: {
+    topic: string;
+    about?: string;
+    meaning?: string;
+    notes?: string;
+  }): Promise<{ pros: string[]; cons: string[] }> {
+    return this.post<{ pros: string[]; cons: string[] }>('analyzeTopicInsights', idToken, payload);
+  }
+
   /** One field per post; optional fields omitted when empty. Sent to `bulkImportCampaign`. */
   async bulkImportCampaign(
     idToken: string,
