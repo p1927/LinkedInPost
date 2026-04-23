@@ -445,7 +445,7 @@ export function SetupWizard() {
                 config={config}
                 onUpdate={updateConfig}
                 onComplete={handleEnvVarsComplete}
-                onBack={() => setStep('integrations')}
+                onBack={() => setStep('stt')}
               />
             </motion.div>
           )}
