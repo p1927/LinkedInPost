@@ -2,19 +2,21 @@ import express from 'express';
 import { createServer } from 'http';
 import multer from 'multer';
 import { tmpdir } from 'os';
-import { join, basename } from 'path';
+import { join, basename, dirname } from 'path';
 import { unlink } from 'fs/promises';
 import { existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 import ffmpegStatic from 'ffmpeg-static';
 import Ffmpeg from 'fluent-ffmpeg';
 import { nodewhisper } from 'nodejs-whisper';
-import { readSttConfig, modelExists } from './sttConfig.js';
+import { readSttConfig, getLibraryModelPath } from './sttConfig.js';
 
 Ffmpeg.setFfmpegPath(ffmpegStatic);
 
 const app = express();
 const PORT = 3457;
-const upload = multer({ dest: tmpdir() });
+const upload = multer({ dest: tmpdir(), limits: { fileSize: 25 * 1024 * 1024 } });
+const SERVER_DIR = dirname(fileURLToPath(import.meta.url));
 
 // CORS for any localhost origin
 app.use((req, res, next) => {
@@ -30,10 +32,10 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-const config = readSttConfig();
-
 app.get('/health', (req, res) => {
-  const modelLoaded = config.enabled && modelExists(config.modelPath);
+  const config = readSttConfig();
+  const modelPath = getLibraryModelPath(SERVER_DIR, config.model);
+  const modelLoaded = config.enabled && existsSync(modelPath);
   res.json({
     ok: true,
     enabled: config.enabled,
@@ -42,7 +44,7 @@ app.get('/health', (req, res) => {
     shortcut: config.shortcut,
     unavailableReason: !config.enabled
       ? 'disabled'
-      : !modelExists(config.modelPath)
+      : !existsSync(modelPath)
         ? 'model_missing'
         : null,
   });
@@ -62,10 +64,13 @@ function convertToWav(inputPath, outputPath) {
 }
 
 app.post('/transcribe', upload.single('audio'), async (req, res) => {
+  const config = readSttConfig();
+  const modelPath = getLibraryModelPath(SERVER_DIR, config.model);
+
   if (!config.enabled) {
     return res.status(503).json({ error: 'stt_disabled' });
   }
-  if (!modelExists(config.modelPath)) {
+  if (!existsSync(modelPath)) {
     return res.status(503).json({ error: 'model_missing' });
   }
   if (!req.file) {
@@ -80,16 +85,13 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
 
     const transcript = await nodewhisper(wavPath, {
       modelName: config.model,
-      modelPath: config.modelPath,
       whisperOptions: {
         outputInText: true,
         language: 'en',
       },
     });
 
-    const text = typeof transcript === 'string'
-      ? transcript.trim()
-      : (transcript?.text ?? '').trim();
+    const text = typeof transcript === 'string' ? transcript.trim() : '';
 
     res.json({ text });
   } catch (err) {
@@ -106,5 +108,6 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
 const server = createServer(app);
 server.listen(PORT, () => {
   console.log(`[stt-server] Running on http://localhost:${PORT}`);
+  const config = readSttConfig();
   if (!config.enabled) console.log('[stt-server] STT disabled — run setup wizard to enable');
 });

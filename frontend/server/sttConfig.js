@@ -28,3 +28,14 @@ export function writeSttConfig(config) {
 export function modelExists(modelPath) {
   return modelPath && existsSync(modelPath);
 }
+
+// Returns the path where nodejs-whisper stores its models internally.
+// nodejs-whisper resolves models at <pkg>/cpp/whisper.cpp/models/ggml-<name>.bin
+// (see frontend/node_modules/nodejs-whisper/dist/autoDownloadModel.js).
+export function getLibraryModelPath(serverDir, modelName) {
+  return join(
+    serverDir,
+    '../node_modules/nodejs-whisper/cpp/whisper.cpp/models',
+    `ggml-${modelName}.bin`,
+  );
+}
