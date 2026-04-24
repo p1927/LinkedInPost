@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { deleteRule, listRules, registerWebhooks, upsertRule } from './api';
 import { RuleEditor } from './RuleEditor';
 import { YouTubeScheduler } from './YouTubeScheduler';
+import { InstagramSetupGuide } from './InstagramSetupGuide';
+import { LinkedInSetupGuide } from './LinkedInSetupGuide';
 import type { AutomationPlatform, AutomationRule, RuleEntry } from './types';
 import { PLATFORM_LABELS } from './types';
 
@@ -105,6 +107,12 @@ export function AutomationsTab({ idToken, isAdmin }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Instagram setup guide */}
+      <InstagramSetupGuide platform={activePlatform} />
+
+      {/* LinkedIn setup guide */}
+      <LinkedInSetupGuide platform={activePlatform} />
 
       {/* Webhook registration */}
       {activePlatform === 'youtube' ? (

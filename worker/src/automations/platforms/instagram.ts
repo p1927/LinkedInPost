@@ -20,7 +20,7 @@ export async function registerInstagramWebhook(
       object: 'instagram',
       callback_url: `${workerUrl}/webhooks/instagram`,
       verify_token: verifyToken,
-      fields: ['comments', 'messages'],
+      fields: ['comments', 'messages', 'follows'],
       access_token: `${appId}|${appSecret}`,
     }),
   });
@@ -53,15 +53,23 @@ export async function handleInstagramWebhookEvent(body: string, signature: strin
     const channelId = String(entry.id || '');
 
     for (const change of (entry.changes || []) as any[]) {
-      if (change.field !== 'comments') continue;
       const v = change.value || {};
-      const commentId = String(v.id || '');
-      const senderId = String(v.from?.id || '');
-      const senderName = String(v.from?.name || 'there');
-      const postId = String(v.media?.id || '') || undefined;
 
-      await fireCommentReply(env.CONFIG_KV, channelId, postId, commentId, senderName, accessToken);
-      await fireCommentToDm(env.CONFIG_KV, channelId, postId, senderId, senderName, accessToken);
+      if (change.field === 'comments') {
+        const commentId = String(v.id || '');
+        const senderId = String(v.from?.id || '');
+        const senderName = String(v.from?.name || 'there');
+        const postId = String(v.media?.id || '') || undefined;
+
+        await fireCommentReply(env.CONFIG_KV, channelId, postId, commentId, senderName, accessToken);
+        await fireCommentToDm(env.CONFIG_KV, channelId, postId, senderId, senderName, accessToken);
+      }
+
+      if (change.field === 'follows') {
+        const senderId = String(v.from?.id || '');
+        const senderName = String(v.from?.name || 'there');
+        await fireFollowDm(env.CONFIG_KV, channelId, senderId, senderName, accessToken);
+      }
     }
 
     for (const msg of (entry.messaging || []) as any[]) {
@@ -124,6 +132,28 @@ async function fireDmReply(
   const rule = await getRule(kv, 'instagram', channelId);
   if (!rule || !shouldFire(rule, 'dm')) return;
   const text = resolveTemplate(rule, 'dm', senderName);
+  if (!text || !recipientId || !accessToken) return;
+  await fetch(`${GRAPH_BASE}/me/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipient: { id: recipientId },
+      message: { text },
+      access_token: accessToken,
+    }),
+  });
+}
+
+async function fireFollowDm(
+  kv: KVNamespace,
+  channelId: string,
+  recipientId: string,
+  senderName: string,
+  accessToken: string,
+): Promise<void> {
+  const rule = await getRule(kv, 'instagram', channelId);
+  if (!rule || !shouldFire(rule, 'follow')) return;
+  const text = resolveTemplate(rule, 'follow', senderName);
   if (!text || !recipientId || !accessToken) return;
   await fetch(`${GRAPH_BASE}/me/messages`, {
     method: 'POST',

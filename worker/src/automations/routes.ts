@@ -97,6 +97,7 @@ export async function handleAutomationsAdminRoute(
       comment_reply_template: body.comment_reply_template || undefined,
       dm_reply_template: body.dm_reply_template || undefined,
       comment_to_dm_template: body.comment_to_dm_template || undefined,
+      follow_reply_template: body.follow_reply_template || undefined,
       enabled: body.enabled !== false,
     };
 

@@ -22,6 +22,10 @@ export function resolveTemplate(
       return rule.comment_to_dm_template
         ? applyTemplate(rule.comment_to_dm_template, senderName)
         : null;
+    case 'follow':
+      return rule.follow_reply_template
+        ? applyTemplate(rule.follow_reply_template, senderName)
+        : null;
   }
 }
 
