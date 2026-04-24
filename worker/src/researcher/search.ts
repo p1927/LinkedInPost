@@ -51,7 +51,6 @@ function parsePayload(payload: Record<string, unknown>): NewsResearchSearchPaylo
   return { topicId, topic, date, windowStart, windowEnd, customQuery: customQuery || undefined };
 }
 
-
 export async function searchNewsResearch(
   env: Env,
   stored: NewsResearchStored,
