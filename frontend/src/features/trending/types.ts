@@ -72,3 +72,25 @@ export interface GraphEdge {
   target: string;
   weight: number;
 }
+
+export interface TrendingSearchRequest {
+  topic: string;
+  region: string;
+  genre: string;
+  windowDays: number;
+}
+
+export interface TrendingWord {
+  word: string;
+  count: number;
+  tier: 'high' | 'mid' | 'low';
+}
+
+export interface TrendingSearchResult {
+  articles: NewsArticle[];
+  relatedTopics: string[];
+  trendingWords: TrendingWord[];
+  keywords: string[];
+  searchIntent: string;
+  sources: string[];
+}

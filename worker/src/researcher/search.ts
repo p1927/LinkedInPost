@@ -4,6 +4,7 @@ import { buildServices } from '../services';
 import { collectEnabledRssUrls, normalizeNewsResearchStored } from './config';
 import { dedupeArticles } from './dedupe';
 import { trimArticleSnippet } from './trim';
+import { mapLimit } from './utils';
 import type {
   NewsApiProviderId,
   NewsResearchSearchPayload,
@@ -50,15 +51,6 @@ function parsePayload(payload: Record<string, unknown>): NewsResearchSearchPaylo
   return { topicId, topic, date, windowStart, windowEnd, customQuery: customQuery || undefined };
 }
 
-async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = [];
-  for (let i = 0; i < items.length; i += limit) {
-    const chunk = items.slice(i, i + limit);
-    const part = await Promise.all(chunk.map(fn));
-    out.push(...part);
-  }
-  return out;
-}
 
 export async function searchNewsResearch(
   env: Env,

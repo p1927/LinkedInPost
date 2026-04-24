@@ -1,4 +1,12 @@
-export type NewsApiProviderId = 'rss' | 'newsapi' | 'gnews' | 'newsdata' | 'serpapi_news';
+export type NewsApiProviderId =
+  | 'rss'
+  | 'newsapi'
+  | 'gnews'
+  | 'newsdata'
+  | 'serpapi_news'
+  | 'google_trends'
+  | 'hackernews'
+  | 'reddit';
 
 export interface NewsResearchFeedEntry {
   id: string;
@@ -27,6 +35,7 @@ export interface ResearchArticle {
   publishedAt: string;
   snippet: string;
   provider: NewsApiProviderId;
+  imageUrl?: string;
 }
 
 export interface NewsResearchSearchPayload {
@@ -70,3 +79,37 @@ export const MAX_RSS_FEEDS = 40;
 export const MAX_URL_LEN = 2048;
 export const MAX_SNIPPET_CHARS = 480;
 export const MAX_TOTAL_RESEARCH_CHARS = 8000;
+
+export interface TrendingSearchRequest {
+  topic: string;
+  region: string;
+  genre: string;
+  windowDays: number;
+}
+
+export interface TrendingArticle {
+  id: string;
+  title: string;
+  description: string;
+  source: string;
+  publishedAt: string;
+  url: string;
+  imageUrl?: string;
+  provider: NewsApiProviderId;
+  platform: 'news';
+}
+
+export interface TrendingWord {
+  word: string;
+  count: number;
+  tier: 'high' | 'mid' | 'low';
+}
+
+export interface TrendingSearchResponse {
+  articles: TrendingArticle[];
+  relatedTopics: string[];
+  trendingWords: TrendingWord[];
+  keywords: string[];
+  searchIntent: string;
+  sources: string[];
+}
