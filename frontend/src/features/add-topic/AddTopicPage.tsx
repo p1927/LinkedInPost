@@ -140,6 +140,12 @@ export function AddTopicPage({
   const [showPersonaDialog, setShowPersonaDialog] = useState(false);
   const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null);
 
+  // Debounced topic for sidebar (600 ms)
+  const [debouncedTopic, setDebouncedTopic] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedTopic(topic), 600);
+    return () => clearTimeout(t);
+  }, [topic]);
 
   // Load custom personas on mount
   useEffect(() => {
@@ -475,7 +481,7 @@ export function AddTopicPage({
 
       {/* ── Right: trending sidebar ── */}
       <aside className="custom-scrollbar hidden w-72 shrink-0 overflow-y-auto border-l border-white/30 bg-white/5 p-4 backdrop-blur-sm lg:block">
-        <TrendingSidebar topic={topic} idToken={idToken} api={api} onRefresh={() => {}} />
+        <TrendingSidebar topic={debouncedTopic} idToken={idToken} api={api} onRefresh={() => {}} />
       </aside>
     </div>
   );
