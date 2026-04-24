@@ -6,7 +6,7 @@ on:
       channel_id:
         description: YouTube Channel ID to poll
         required: true
-  schedule:
+  # schedule:
     # Disabled by default — enable by uncommenting and setting your cron
     # - cron: '0 */6 * * *'
 

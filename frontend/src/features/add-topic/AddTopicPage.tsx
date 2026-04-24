@@ -153,6 +153,7 @@ export function AddTopicPage({
       // Non-fatal: custom personas are optional
     });
   }, [idToken, api]);
+
   const handleGenerateInsights = useCallback(async () => {
     if (!topic.trim()) return;
     setGeneratingInsights(true);
