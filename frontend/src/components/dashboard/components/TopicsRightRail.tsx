@@ -7,10 +7,12 @@ import type { SheetRow } from '@/services/sheets';
 import type { GoogleModelOption, LlmRef } from '@/services/configService';
 import { FEATURE_MULTI_PROVIDER_LLM } from '@/generated/features';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
+import { TopicPostPreviewCard } from './TopicPostPreviewCard';
+import type { BackendApi } from '@/services/backendApi';
+import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAlert } from '@/components/useAlert';
-import { queueStatusToBadgeVariant } from '@/components/dashboard/utils';
+import { queueStatusToBadgeVariant, shouldShowDraftedQueueActions } from '@/components/dashboard/utils';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '@/lib/topicDisplay';
 import { Badge } from '@/components/ui/badge';
 import { LlmModelCombobox } from '@/components/llm';
@@ -68,7 +70,11 @@ export function TopicsRightRail({
   availableModels,
   modelPickerLocked,
   providerLabel,
+  previewAuthorName,
   onSaveTopicDeliveryPreferences,
+  onOpenEditor,
+  idToken,
+  api,
 }: {
   workspaceChannel: ChannelId;
   workspaceLlm: LlmRef;
@@ -77,10 +83,14 @@ export function TopicsRightRail({
   availableModels: GoogleModelOption[];
   modelPickerLocked: boolean;
   providerLabel?: string;
+  previewAuthorName?: string;
   onSaveTopicDeliveryPreferences: (
     row: SheetRow,
     prefs: { topicDeliveryChannel?: string; topicGenerationModel?: string },
   ) => Promise<SheetRow>;
+  onOpenEditor: (row: SheetRow) => void;
+  idToken?: string;
+  api?: BackendApi;
 }) {
   const { showAlert } = useAlert();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -90,6 +100,8 @@ export function TopicsRightRail({
   );
 
   const hasSelection = Boolean(selectedRow);
+
+  const previewCh = selectedRow ? effectiveChannel(selectedRow, workspaceChannel) : workspaceChannel;
 
   // Plain model-ID value for LlmModelCombobox (workspace-default uses sentinel string).
   const modelIdValue = useMemo(() => {
@@ -210,15 +222,34 @@ export function TopicsRightRail({
             </div>
           )}
 
-          {/* Preview — shows topic details when selected */}
-          <RailSection title="Topic Details" className="mb-5">
+          {/* Channel preview */}
+          <RailSection title="Preview" className="mb-5">
             {selectedRow ? (
+              <TopicPostPreviewCard
+                row={selectedRow}
+                previewChannel={previewCh}
+                previewAuthorName={previewAuthorName}
+                compact
+                onOpenEditor={
+                  shouldShowDraftedQueueActions(selectedRow)
+                    ? () => onOpenEditor(selectedRow)
+                    : undefined
+                }
+                idToken={idToken}
+                api={api}
+              />
+            ) : null}
+          </RailSection>
+
+          {/* Topic details from Notion-like editor */}
+          {selectedRow && (
+            <RailSection title="Topic Details" className="mb-5">
               <TopicDetailView
                 row={selectedRow}
                 editPath={WORKSPACE_PATHS.addTopic}
               />
-            ) : null}
-          </RailSection>
+            </RailSection>
+          )}
 
           {/* Settings — compact 2-col grid, always visible */}
           {selectedRow ? (
