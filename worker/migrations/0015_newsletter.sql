@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS newsletter_configs (
   emotion_target TEXT NOT NULL DEFAULT '',
   color_emotion_target TEXT NOT NULL DEFAULT '',
   story_framework TEXT NOT NULL DEFAULT '',
+  -- Preview delivery
+  preview_channel TEXT NOT NULL DEFAULT 'email',
+  admin_email TEXT NOT NULL DEFAULT '',
   active INTEGER NOT NULL DEFAULT 1
 );
 

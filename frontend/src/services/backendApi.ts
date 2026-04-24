@@ -102,6 +102,8 @@ export interface NewsletterConfig {
   emotion_target: string;
   color_emotion_target: string;
   story_framework: string;
+  preview_channel: string;
+  admin_email: string;
   active: number;
   created_at: string;
   updated_at: string;

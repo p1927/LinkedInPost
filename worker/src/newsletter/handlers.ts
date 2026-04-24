@@ -29,6 +29,8 @@ export async function handleSaveNewsletterConfig(
     emotionTarget: string;
     colorEmotionTarget: string;
     storyFramework: string;
+    previewChannel: 'email' | 'telegram';
+    adminEmail: string;
   },
 ): Promise<void> {
   await saveNewsletterConfig(db, spreadsheetId, config);

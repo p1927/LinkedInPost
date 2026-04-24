@@ -31,6 +31,11 @@ export const CHANNEL_OPTIONS = [
   { value: 'gmail', label: 'Email' },
 ] as const;
 
+export const PREVIEW_CHANNEL_OPTIONS = [
+  { value: 'email', label: 'Email' },
+  { value: 'telegram', label: 'Telegram' },
+] as const;
+
 export const EMOTION_OPTIONS = [
   { value: 'optimistic', label: 'Optimistic' },
   { value: 'anxious', label: 'Anxious' },
@@ -73,5 +78,7 @@ export function emptyNewsletterConfig(): NewsletterConfigInput {
     emotionTarget: '',
     colorEmotionTarget: '',
     storyFramework: '',
+    previewChannel: 'email',
+    adminEmail: '',
   };
 }

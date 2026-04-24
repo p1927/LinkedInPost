@@ -1155,6 +1155,74 @@ def process_refinement(sheets_service, storage_bucket):
             print("Appended refined draft to Draft sheet (no existing row to update).")
 
 
+def process_newsletter_draft():
+    """Trigger newsletter draft creation via worker API."""
+    import linkedin_d1
+    worker_url = os.environ.get('VITE_WORKER_URL', '').strip()
+    secret = os.environ.get('WORKER_SCHEDULER_SECRET', '').strip()
+    if not worker_url:
+        print("VITE_WORKER_URL not configured — skipping newsletter draft.")
+        return
+    if not secret:
+        print("WORKER_SCHEDULER_SECRET not configured — skipping newsletter draft.")
+        return
+
+    spreadsheet_id = linkedin_d1.get_spreadsheet_id()
+    if not spreadsheet_id:
+        print("No spreadsheet ID configured — skipping newsletter draft.")
+        return
+
+    url = f"{worker_url.rstrip('/')}/api/v1"
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Schcheduler-Secret': secret,
+    }
+    payload = {
+        'action': 'newsletter.createDraftNow',
+        'idToken': '',  # scheduler route uses secret auth, not session
+        'payload': {'spreadsheetId': spreadsheet_id},
+    }
+    resp = requests.post(url, json=payload, headers=headers, timeout=60)
+    if resp.ok:
+        print(f"Newsletter draft created: {resp.json()}")
+    else:
+        print(f"Newsletter draft failed ({resp.status_code}): {resp.text}")
+
+
+def process_newsletter_send():
+    """Send approved newsletter issues via worker API."""
+    import linkedin_d1
+    worker_url = os.environ.get('VITE_WORKER_URL', '').strip()
+    secret = os.environ.get('WORKER_SCHEDULER_SECRET', '').strip()
+    if not worker_url:
+        print("VITE_WORKER_URL not configured — skipping newsletter send.")
+        return
+    if not secret:
+        print("WORKER_SCHEDULER_SECRET not configured — skipping newsletter send.")
+        return
+
+    spreadsheet_id = linkedin_d1.get_spreadsheet_id()
+    if not spreadsheet_id:
+        print("No spreadsheet ID configured — skipping newsletter send.")
+        return
+
+    url = f"{worker_url.rstrip('/')}/api/v1"
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Schcheduler-Secret': secret,
+    }
+    payload = {
+        'action': 'newsletter.sendApproved',
+        'idToken': '',
+        'payload': {'spreadsheetId': spreadsheet_id},
+    }
+    resp = requests.post(url, json=payload, headers=headers, timeout=120)
+    if resp.ok:
+        print(f"Newsletter send result: {resp.json()}")
+    else:
+        print(f"Newsletter send failed ({resp.status_code}): {resp.text}")
+
+
 def process_publishing(sheets_service, docs_service, storage_bucket):
     """Publish from D1-backed merged rows; optionally mirror Draft/Post sheet updates."""
     mirror = linkedin_d1.mirror_sheet_enabled()
@@ -1325,5 +1393,9 @@ if __name__ == "__main__":
             process_drafts(sheets_service, storage_bucket)
     elif action == 'publish':
         process_publishing(sheets_service, docs_service, storage_bucket)
+    elif action == 'newsletter-draft':
+        process_newsletter_draft()
+    elif action == 'newsletter-send':
+        process_newsletter_send()
     else:
-        print("Unknown action. Use 'draft' or 'publish'.")
+        print("Unknown action. Use 'draft', 'publish', 'newsletter-draft', or 'newsletter-send'.")

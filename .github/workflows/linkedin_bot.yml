@@ -84,3 +84,47 @@ jobs:
           TARGET_TOPIC: ${{ github.event.client_payload.target_topic || '' }}
           TARGET_DATE: ${{ github.event.client_payload.target_date || '' }}
         run: python linkedin_bot.py publish
+
+  newsletter-draft:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.ENVIRONMENT_STAGE || 'production' }}
+    if: github.event_name != 'repository_dispatch' || github.event.action == 'trigger-newsletter-draft'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Newsletter Draft Script
+        env:
+          VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || secrets.VITE_WORKER_URL }}
+          WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET || vars.WORKER_SCHEDULER_SECRET }}
+        run: python linkedin_bot.py newsletter-draft
+
+  newsletter-send:
+    runs-on: ubuntu-latest
+    environment: ${{ vars.ENVIRONMENT_STAGE || 'production' }}
+    if: github.event_name != 'repository_dispatch' || github.event.action == 'trigger-newsletter-send'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Newsletter Send Script
+        env:
+          VITE_WORKER_URL: ${{ vars.VITE_WORKER_URL || secrets.VITE_WORKER_URL }}
+          WORKER_SCHEDULER_SECRET: ${{ secrets.WORKER_SCHEDULER_SECRET || vars.WORKER_SCHEDULER_SECRET }}
+        run: python linkedin_bot.py newsletter-send

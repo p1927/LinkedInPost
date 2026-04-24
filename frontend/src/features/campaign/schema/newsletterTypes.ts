@@ -14,6 +14,8 @@ export interface NewsletterConfigInput {
   emotionTarget: string;
   colorEmotionTarget: string;
   storyFramework: string;
+  previewChannel: 'email' | 'telegram';
+  adminEmail: string;
 }
 
 export interface NewsletterIssueRow {
@@ -53,5 +55,7 @@ export function parseNewsletterConfig(raw: Partial<NewsletterConfigInput>): News
     emotionTarget: String(raw.emotionTarget || ''),
     colorEmotionTarget: String(raw.colorEmotionTarget || ''),
     storyFramework: String(raw.storyFramework || ''),
+    previewChannel: ['email', 'telegram'].includes(raw.previewChannel as string) ? (raw.previewChannel as 'email' | 'telegram') : 'email',
+    adminEmail: String(raw.adminEmail || ''),
   };
 }

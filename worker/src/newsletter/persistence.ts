@@ -23,9 +23,9 @@ export async function saveNewsletterConfig(
         item_count, schedule_days_json, schedule_times_json, schedule_frequency,
         email_recipients_json, subject_template, channel_targets_json,
         processing_template, processing_note, emotion_target, color_emotion_target,
-        story_framework, active, updated_at
+        story_framework, preview_channel, admin_email, active, updated_at
       ) VALUES (
-        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, 1, datetime('now')
+        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, 1, datetime('now')
       )`,
     )
     .bind(
@@ -45,6 +45,8 @@ export async function saveNewsletterConfig(
       config.emotionTarget,
       config.colorEmotionTarget,
       config.storyFramework,
+      config.previewChannel,
+      config.adminEmail,
     )
     .run();
 }

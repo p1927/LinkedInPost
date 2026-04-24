@@ -4,7 +4,7 @@ import type { BackendApi } from '@/services/backendApi';
 import type { AppSession } from '@/services/backendApi';
 import type { NewsletterConfigInput, NewsletterIssueRow } from '../../schema/newsletterTypes';
 import { parseNewsletterConfig } from '../../schema/newsletterTypes';
-import { emptyNewsletterConfig, NEWSLETTER_TEMPLATES, WEEKDAYS, FREQUENCIES, CHANNEL_OPTIONS, EMOTION_OPTIONS, COLOR_OPTIONS, STORY_OPTIONS } from '../components/newsletter/constants';
+import { emptyNewsletterConfig, NEWSLETTER_TEMPLATES, WEEKDAYS, FREQUENCIES, CHANNEL_OPTIONS, PREVIEW_CHANNEL_OPTIONS, EMOTION_OPTIONS, COLOR_OPTIONS, STORY_OPTIONS } from '../components/newsletter/constants';
 import { Loader2, Plus, Trash2, Mail, Clock, Rss, Newspaper, Settings2, Send } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -50,6 +50,8 @@ export function NewsletterTab({ idToken, session, api }: Props) {
           emotionTarget: raw.emotion_target,
           colorEmotionTarget: raw.color_emotion_target,
           storyFramework: raw.story_framework,
+          previewChannel: raw.preview_channel as 'email' | 'telegram' || 'email',
+          adminEmail: raw.admin_email || '',
         }));
       }
       const issueList = await api.listNewsletterIssues(idToken);
@@ -386,6 +388,39 @@ export function NewsletterTab({ idToken, session, api }: Props) {
                   {ch.label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <Send className="h-4 w-4" /> Preview Delivery
+            </h3>
+            <div className="flex gap-3">
+              {PREVIEW_CHANNEL_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setConfig(prev => ({ ...prev, previewChannel: opt.value as 'email' | 'telegram' }))}
+                  className={clsx(
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer',
+                    config.previewChannel === opt.value
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 mb-1">Admin email or Telegram chat ID</p>
+              <input
+                type="text"
+                value={config.adminEmail}
+                onChange={e => setConfig(prev => ({ ...prev, adminEmail: e.target.value }))}
+                placeholder={config.previewChannel === 'telegram' ? 'Telegram chat ID' : 'admin@example.com'}
+                className="w-full h-9 rounded-lg border border-slate-200 px-3 text-sm"
+              />
             </div>
           </div>
         </div>

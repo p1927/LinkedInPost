@@ -15,6 +15,8 @@ export interface NewsletterConfigRow {
   emotion_target: string;
   color_emotion_target: string;
   story_framework: string;
+  preview_channel: string;
+  admin_email: string;
   active: number;
   created_at: string;
   updated_at: string;
@@ -54,6 +56,8 @@ export interface NewsletterConfigInput {
   emotionTarget: string;
   colorEmotionTarget: string;
   storyFramework: string;
+  previewChannel: 'email' | 'telegram';
+  adminEmail: string;
 }
 
 export interface NewsletterIssue {

@@ -60,9 +60,8 @@ export async function createNewsletterDraft(
     scheduledFor,
   });
 
-  const adminEmails = (env.ADMIN_EMAILS || '').split(/[,\n]/).filter(Boolean);
-  if (adminEmails.length > 0) {
-    await sendAdminPreview(env, issue.id, subject, selectedArticles, adminEmails);
+  if (config.preview_channel && config.admin_email) {
+    await sendAdminPreview(env, issue.id, subject, selectedArticles, config.preview_channel as 'email' | 'telegram', config.admin_email);
   }
 
   return { id: issue.id, subject, status: issue.status };
@@ -125,11 +124,10 @@ async function sendAdminPreview(
   issueId: string,
   subject: string,
   articles: ResearchArticle[],
-  adminEmails: string[],
+  previewChannel: 'email' | 'telegram',
+  adminEmail: string,
 ): Promise<void> {
-  const { sendTelegramMessage } = await import('../integrations/telegram');
-
-  const preview = [
+  const previewText = [
     `*Newsletter Preview*`,
     ``,
     `Subject: ${subject}`,
@@ -142,19 +140,33 @@ async function sendAdminPreview(
     `Reply with /newsletter approve ${issueId} or /newsletter reject ${issueId}`,
   ].join('\n');
 
-  const botToken = String(env.TELEGRAM_BOT_TOKEN || '').trim();
-  if (!botToken) return;
-
-  for (const chatId of adminEmails) {
-    if (chatId.includes('@')) continue;
+  if (previewChannel === 'telegram') {
+    const { sendTelegramMessage } = await import('../integrations/telegram');
+    const botToken = String(env.TELEGRAM_BOT_TOKEN || '').trim();
+    if (!botToken || !adminEmail) return;
     try {
       await sendTelegramMessage({
         botToken,
-        chatId,
-        text: preview,
+        chatId: adminEmail,
+        text: previewText,
       });
     } catch (err) {
-      console.error(`Failed to send Telegram preview to ${chatId}:`, err);
+      console.error(`Failed to send Telegram preview to ${adminEmail}:`, err);
+    }
+  } else {
+    // email preview — send via Gmail
+    const { sendGmailMessage } = await import('../integrations/gmail');
+    const accessToken = String(env.GMAIL_CLIENT_ID || '').trim();
+    if (!accessToken || !adminEmail) return;
+    try {
+      await sendGmailMessage({
+        accessToken,
+        to: adminEmail,
+        subject: `Newsletter Preview: ${subject}`,
+        body: previewText,
+      });
+    } catch (err) {
+      console.error(`Failed to send email preview to ${adminEmail}:`, err);
     }
   }
 }
