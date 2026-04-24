@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, Newspaper, Lightbulb, SearchX, RefreshCw, Youtube, Instagram, Linkedin } from 'lucide-react';
+import { ExternalLink, Newspaper, Lightbulb, SearchX, RefreshCw } from 'lucide-react';
+import { YouTubeIcon, InstagramIcon, LinkedInIcon } from '@/components/SocialIcons';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import type { BackendApi } from '@/services/backendApi';
 
@@ -134,7 +135,7 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities }
       {youtubeItems.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
-            <Youtube className="h-3.5 w-3.5" />
+            <YouTubeIcon className="h-3.5 w-3.5" />
             YouTube
           </div>
           <ul className="flex flex-col gap-2 list-none p-0 m-0">
@@ -164,7 +165,7 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities }
       {instagramItems.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
-            <Instagram className="h-3.5 w-3.5" />
+            <InstagramIcon className="h-3.5 w-3.5" />
             Instagram
           </div>
           <ul className="flex flex-col gap-2 list-none p-0 m-0">
@@ -191,7 +192,7 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities }
       {linkedinItems.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
-            <Linkedin className="h-3.5 w-3.5" />
+            <LinkedInIcon className="h-3.5 w-3.5" />
             LinkedIn
           </div>
           <ul className="flex flex-col gap-2 list-none p-0 m-0">
