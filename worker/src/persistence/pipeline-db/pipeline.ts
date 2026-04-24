@@ -779,7 +779,7 @@ export class PipelineStore {
       .prepare('SELECT * FROM custom_personas WHERE user_id = ? ORDER BY name ASC')
       .bind(userId)
       .all<CustomPersonaRow>();
-    return rows.map((r) => ({
+    return rows.results.map((r) => ({
       id: r.id,
       name: r.name,
       concerns: JSON.parse(r.concerns),

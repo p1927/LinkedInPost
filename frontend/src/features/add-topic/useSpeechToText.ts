@@ -240,12 +240,12 @@ export function useSpeechToText(): SpeechToTextState {
 
   const startRecording = useCallback(async () => {
     setError(null);
+    // Capture focus before getUserMedia — clicking MicButton steals focus
+    const active = document.activeElement;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Capture whichever input/textarea currently has focus
-      const active = document.activeElement;
       if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
         activeElRef.current = active;
         cursorPositionRef.current = active.selectionStart ?? active.value.length;
