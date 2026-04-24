@@ -5,7 +5,7 @@ import type { SocialIntegration } from '../../../services/backendApi'
 
 interface SettingsConnectionsCardProps {
   integrations: SocialIntegration[]
-  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'youtube') => void
   onDisconnect: (provider: string) => void
   connecting: string | null
   className?: string

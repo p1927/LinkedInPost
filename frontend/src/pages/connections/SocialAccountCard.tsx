@@ -1,10 +1,10 @@
 import clsx from 'clsx';
 import { Button } from '@/components/ui/button';
 import type { SocialIntegration } from '@/services/backendApi';
-import { LinkedInLogo, InstagramLogo, GmailLogo, TelegramLogo, WhatsAppLogo } from './providerLogos';
+import { LinkedInLogo, InstagramLogo, GmailLogo, TelegramLogo, WhatsAppLogo, YouTubeLogo } from './providerLogos';
 
 interface SocialAccountCardProps {
-  provider: 'linkedin' | 'instagram' | 'gmail' | 'telegram' | 'whatsapp';
+  provider: 'linkedin' | 'instagram' | 'gmail' | 'telegram' | 'whatsapp' | 'youtube';
   label: string;
   integration: SocialIntegration | undefined;
   onConnect: () => void;
@@ -20,14 +20,16 @@ const PROVIDER_LOGO: Record<string, React.ComponentType<{ className?: string }>>
   gmail: GmailLogo,
   telegram: TelegramLogo,
   whatsapp: WhatsAppLogo,
+  youtube: YouTubeLogo,
 };
 
 const PROVIDER_ICON_CLASS: Record<string, string> = {
   linkedin: 'bg-[#0A66C2] text-white',
   instagram: 'bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white',
   gmail: 'bg-[#EA4335] text-white',
-  telegram: 'bg-[#2AABEE] text-white',
+  telegram: 'bg-[#26A5E4] text-white',
   whatsapp: 'bg-[#25D366] text-white',
+  youtube: 'bg-[#FF0000] text-white',
 };
 
 export function SocialAccountCard({

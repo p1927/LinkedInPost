@@ -13,6 +13,7 @@ const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-telegram', label: 'Telegram' },
   { id: 'settings-whatsapp', label: 'WhatsApp' },
   { id: 'settings-gmail', label: 'Gmail' },
+  { id: 'settings-youtube', label: 'YouTube' },
   { id: 'settings-news', label: 'News' },
   { id: 'settings-content-review', label: 'Content review' },
 ] as const;

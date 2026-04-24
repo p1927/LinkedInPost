@@ -347,6 +347,7 @@ export interface BotConfig {
   gmailDefaultCc: string;
   gmailDefaultBcc: string;
   gmailDefaultSubject: string;
+  youtubeAuthAvailable: boolean;
   /** Omitted when news research is disabled in features.yaml. */
   newsResearch?: NewsResearchStored;
   newsProviderKeys?: NewsProviderKeys;
@@ -466,6 +467,7 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     gmailDefaultCc: config?.gmailDefaultCc || '',
     gmailDefaultBcc: config?.gmailDefaultBcc || '',
     gmailDefaultSubject: config?.gmailDefaultSubject || '',
+    youtubeAuthAvailable: Boolean(config?.youtubeAuthAvailable),
   };
   let withNews = base;
   if (FEATURE_NEWS_RESEARCH) {

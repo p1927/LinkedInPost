@@ -1,9 +1,9 @@
 import { cn } from '@/lib/cn'
-import { LinkedInLogo, InstagramLogo, GmailLogo } from '@/pages/connections/providerLogos'
+import { LinkedInLogo, InstagramLogo, GmailLogo, YouTubeLogo } from '@/pages/connections/providerLogos'
 import type { SocialIntegration } from '@/services/backendApi'
 
 interface Platform {
-  id: 'linkedin' | 'instagram' | 'gmail'
+  id: 'linkedin' | 'instagram' | 'gmail' | 'youtube'
   label: string
   /** CSS background value — supports gradients for Instagram. */
   background: string
@@ -32,11 +32,17 @@ const PLATFORMS: Platform[] = [
     lightBg: true,
     icon: <GmailLogo className="h-6 w-5" />,
   },
+  {
+    id: 'youtube',
+    label: 'YouTube',
+    background: '#FF0000',
+    icon: <YouTubeLogo className="h-6 w-6" />,
+  },
 ]
 
 interface ConnectAccountsGridProps {
   integrations: SocialIntegration[]
-  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'youtube') => void
   onDisconnect: (provider: string) => void
   connecting: string | null
 }

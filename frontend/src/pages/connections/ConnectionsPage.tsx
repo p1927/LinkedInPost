@@ -13,13 +13,14 @@ interface ConnectionsPageProps {
 }
 
 const SOCIAL_PROVIDERS: Array<{
-  key: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp';
+  key: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp' | 'youtube';
   label: string;
 }> = [
   { key: 'linkedin', label: 'LinkedIn' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'gmail', label: 'Gmail' },
   { key: 'whatsapp', label: 'WhatsApp' },
+  { key: 'youtube', label: 'YouTube' },
 ];
 
 export function ConnectionsPage({

@@ -2087,6 +2087,65 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           </div>
         </SettingsSectionCard>
 
+        <SettingsSectionCard id="settings-youtube" title="YouTube Automations">
+          <p className="text-xs leading-5 text-muted">
+            Configure YouTube API credentials and comment polling schedule. The Worker uses a YouTube Data API key to poll for new comments and apply auto-reply rules.
+          </p>
+          <div className="mt-4 space-y-4">
+            <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
+              <div className="flex items-center gap-3">
+                <div
+                  className={`h-2.5 w-2.5 rounded-full ${session.config.youtubeAuthAvailable ? 'bg-[#FF0000]' : 'bg-border-strong'}`}
+                />
+                <p className="text-sm font-medium text-ink">
+                  {session.config.youtubeAuthAvailable
+                    ? 'YouTube API key is configured in the Worker.'
+                    : 'YouTube API key is not configured in the Worker environment.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">How it works</p>
+              <div className="space-y-2 text-xs text-muted leading-relaxed">
+                <p>
+                  <strong className="text-ink">YouTube automations</strong> use scheduled polling (not webhooks) via a Python script that runs on a cron schedule. Set{' '}
+                  <code className="rounded bg-border/40 px-1 font-mono text-[0.65rem]">YOUTUBE_API_KEY</code> in your Worker environment to enable the YouTube channel in the Automations tab.
+                </p>
+                <p>
+                  Once configured, add channel IDs in the <strong className="text-ink">Automations</strong> page and set a cron schedule for each channel. The poller fetches new comments and applies your configured auto-reply rules.
+                </p>
+                <p>
+                  The YouTube API key should be a server key with YouTube Data API v3 enabled. Restrict it to your worker domain for security.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-ink">Quick links</p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg border border-border bg-canvas px-3 py-2 text-xs font-medium text-ink transition-colors hover:bg-canvas-subtle"
+                >
+                  Google Cloud Console → API Key
+                </a>
+                <a
+                  href="https://developers.google.com/youtube/v3/docs/commentThreads/list"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg border border-border bg-canvas px-3 py-2 text-xs font-medium text-ink transition-colors hover:bg-canvas-subtle"
+                >
+                  YouTube Data API v3 Docs
+                </a>
+              </div>
+            </div>
+          </div>
+        </SettingsSectionCard>
+
         {FEATURE_NEWS_RESEARCH && newsResearch && setNewsResearch && newsProviderKeys ? (
           <SettingsSectionCard id="settings-news" title="News">
             <NewsResearchSettingsSection
