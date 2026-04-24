@@ -77,8 +77,8 @@ export { ScheduledPublishAlarm } from './scheduled-publish';
 
 
 
-type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp' | 'gmail';
-type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp' | 'gmail';
+type ChannelId = 'instagram' | 'linkedin' | 'telegram' | 'whatsapp' | 'gmail' | 'youtube';
+type AuthProvider = 'instagram' | 'linkedin' | 'whatsapp' | 'gmail' | 'youtube';
 
 export interface Env {
   CONFIG_KV: KVNamespace;
@@ -101,6 +101,9 @@ export interface Env {
   SERPAPI_API_KEY?: string;
   /** YouTube Data API v3 key for trending proxy. */
   YOUTUBE_API_KEY?: string;
+  /** YouTube OAuth client credentials. */
+  YOUTUBE_CLIENT_ID?: string;
+  YOUTUBE_CLIENT_SECRET?: string;
   NEWSAPI_KEY?: string;
   GNEWS_API_KEY?: string;
   NEWSDATA_API_KEY?: string;
@@ -196,6 +199,9 @@ interface BotConfig {
   whatsappPhoneNumberId: string;
   hasWhatsAppAccessToken: boolean;
   whatsappRecipients: WhatsAppRecipient[];
+  youtubeAuthAvailable: boolean;
+  youtubeEmailAddress: string;
+  hasYouTubeAccessToken: boolean;
   /** News researcher settings (admin-editable); API keys are Worker secrets only. Omitted when FEATURE_NEWS_RESEARCH is false. */
   newsResearch?: NewsResearchStored;
   newsProviderKeys?: {
@@ -259,6 +265,11 @@ export interface StoredConfig {
   gmailAccessToken?: string;
   gmailRefreshTokenCiphertext?: string;
   gmailRefreshToken?: string;
+  youtubeEmailAddress?: string;
+  youtubeAccessTokenCiphertext?: string;
+  youtubeAccessToken?: string;
+  youtubeRefreshTokenCiphertext?: string;
+  youtubeRefreshToken?: string;
   telegramBotTokenCiphertext?: string;
   telegramBotToken?: string;
   telegramRecipients: TelegramRecipient[];
@@ -688,6 +699,10 @@ export default {
 
       if (url.pathname === '/auth/gmail/callback') {
         return handleGmailCallback(request, env);
+      }
+
+      if (url.pathname === '/auth/youtube/callback') {
+        return handleYouTubeCallback(request, env);
       }
 
       return jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
@@ -1575,7 +1590,7 @@ Rules:
     case 'startGmailAuth':
       return startGmailAuth(request, env, session);
     case 'startYouTubeAuth':
-      throw new Error('YouTube OAuth is not yet implemented.');
+      return startYouTubeAuth(request, env, session);
     case 'disconnectChannelAuth':
       ensureAdmin(session);
       return disconnectChannelAuth(env, storedConfig, String(payload.provider || '').trim());
@@ -2252,6 +2267,9 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
     whatsappPhoneNumberId: config.whatsappPhoneNumberId,
     hasWhatsAppAccessToken: Boolean(config.whatsappAccessTokenCiphertext || config.whatsappAccessToken),
     whatsappRecipients: normalizeWhatsAppRecipients(config.whatsappRecipients),
+    youtubeAuthAvailable: hasYouTubeOAuthConfig(env),
+    youtubeEmailAddress: config.youtubeEmailAddress || '',
+    hasYouTubeAccessToken: Boolean(config.youtubeAccessTokenCiphertext || config.youtubeAccessToken),
   };
   if (FEATURE_MULTI_PROVIDER_LLM) {
     const ws = workspaceConfigFromStored(config.googleModel, config.allowedGoogleModels, config.llm);
@@ -2310,6 +2328,10 @@ function hasMetaOAuthConfig(env: Env): boolean {
 
 function hasGmailOAuthConfig(env: Env): boolean {
   return Boolean(String(env.GMAIL_CLIENT_ID || '').trim() && String(env.GMAIL_CLIENT_SECRET || '').trim());
+}
+
+function hasYouTubeOAuthConfig(env: Env): boolean {
+  return Boolean(String(env.YOUTUBE_CLIENT_ID || '').trim() && String(env.YOUTUBE_CLIENT_SECRET || '').trim());
 }
 
 function buildWorkerOrigin(request: Request, env?: Pick<Env, 'OAUTH_REDIRECT_BASE_URL'>): string {
@@ -2460,6 +2482,42 @@ async function startGmailAuth(request: Request, env: Env, session: VerifiedSessi
     scope: GMAIL_OAUTH_SCOPES,
     access_type: 'offline', // We need a refresh token
     prompt: 'consent', // Force consent to ensure we get a refresh token
+    state,
+  });
+
+  return {
+    authorizationUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+    callbackOrigin,
+  };
+}
+
+const YOUTUBE_OAUTH_SCOPES = [
+  'https://www.googleapis.com/auth/youtube',
+  'email',
+].join(' ');
+
+async function startYouTubeAuth(request: Request, env: Env, session: VerifiedSession): Promise<{ authorizationUrl: string; callbackOrigin: string }> {
+  if (!hasYouTubeOAuthConfig(env)) {
+    throw new Error('YouTube OAuth is not configured in the Worker environment. Add YOUTUBE_CLIENT_ID and YOUTUBE_CLIENT_SECRET first.');
+  }
+
+  const state = createRandomToken();
+  const callbackOrigin = buildWorkerOrigin(request, env);
+  const redirectUri = `${callbackOrigin}/auth/youtube/callback`;
+  await storeOAuthState(env, state, {
+    provider: 'youtube',
+    email: session.email,
+    origin: requireFrontendOrigin(request),
+    redirectUri,
+  });
+
+  const params = new URLSearchParams({
+    client_id: String(env.YOUTUBE_CLIENT_ID || '').trim(),
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: YOUTUBE_OAUTH_SCOPES,
+    access_type: 'offline',
+    prompt: 'consent',
     state,
   });
 
@@ -2828,6 +2886,82 @@ async function handleGmailCallback(request: Request, env: Env): Promise<Response
   }
 }
 
+async function handleYouTubeCallback(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const state = String(url.searchParams.get('state') || '').trim();
+  if (!state) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'youtube',
+      ok: false,
+      error: 'Missing YouTube OAuth state.',
+    });
+  }
+
+  let oauthState: OAuthStateRecord;
+  try {
+    oauthState = await consumeOAuthState(env, state, 'youtube');
+  } catch (error) {
+    return oauthPopupResponse(null, {
+      source: 'channel-bot-oauth',
+      provider: 'youtube',
+      ok: false,
+      error: error instanceof Error ? error.message : 'The YouTube OAuth session expired.',
+    });
+  }
+
+  const errorMessage = String(url.searchParams.get('error') || '').trim();
+  if (errorMessage) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'youtube',
+      ok: false,
+      error: decodeURIComponent(errorMessage),
+    });
+  }
+
+  const code = String(url.searchParams.get('code') || '').trim();
+  if (!code) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'youtube',
+      ok: false,
+      error: 'YouTube did not return an authorization code.',
+    });
+  }
+
+  try {
+    const tokens = await exchangeYouTubeCodeForToken(code, oauthState.redirectUri, env);
+    const channel = await fetchYouTubeChannel(tokens.access_token);
+    await persistYouTubeConnection(env, tokens.access_token, tokens.refresh_token || '', channel.title);
+    const encKey = requireSecretEncryptionKey(env);
+    const refreshToken = tokens.refresh_token || '';
+    await upsertSocialIntegration(env.PIPELINE_DB, {
+      userId: oauthState.email,
+      provider: 'youtube',
+      internalId: channel.channelId,
+      displayName: channel.title,
+      profilePicture: '',
+      accessTokenEnc: await encryptSecret(tokens.access_token, encKey),
+      refreshTokenEnc: refreshToken ? await encryptSecret(refreshToken, encKey) : '',
+      tokenExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      scopes: YOUTUBE_OAUTH_SCOPES,
+    }).catch(() => undefined);
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'youtube',
+      ok: true,
+    });
+  } catch (error) {
+    return oauthPopupResponse(oauthState.origin, {
+      source: 'channel-bot-oauth',
+      provider: 'youtube',
+      ok: false,
+      error: error instanceof Error ? error.message : 'YouTube connection failed.',
+    });
+  }
+}
+
 async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, env: Env): Promise<string> {
   const response = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
     method: 'POST',
@@ -2877,6 +3011,52 @@ async function exchangeGmailCodeForToken(code: string, redirectUri: string, env:
     access_token: accessToken,
     refresh_token: payload?.refresh_token ? String(payload.refresh_token).trim() : undefined,
   };
+}
+
+async function exchangeYouTubeCodeForToken(code: string, redirectUri: string, env: Env): Promise<{ access_token: string; refresh_token?: string }> {
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      client_id: String(env.YOUTUBE_CLIENT_ID || '').trim(),
+      client_secret: String(env.YOUTUBE_CLIENT_SECRET || '').trim(),
+      redirect_uri: redirectUri,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as GmailTokenResponse | null;
+  const accessToken = String(payload?.access_token || '').trim();
+  if (!response.ok || !accessToken) {
+    throw new Error(payload?.error_description || payload?.error || `YouTube token exchange failed with status ${response.status}.`);
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: payload?.refresh_token ? String(payload.refresh_token).trim() : undefined,
+  };
+}
+
+async function fetchYouTubeChannel(accessToken: string): Promise<{ channelId: string; title: string }> {
+  const response = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const payload = (await response.json().catch(() => null)) as { items?: Array<{ id: string; snippet: { title: string } }> } | null;
+  const item = payload?.items?.[0];
+  const channelId = String(item?.id || '').trim();
+  const title = String(item?.snippet?.title || '').trim();
+
+  if (!response.ok || !channelId) {
+    throw new Error(`YouTube channel lookup failed with status ${response.status}.`);
+  }
+
+  return { channelId, title };
 }
 
 async function refreshGmailAccessToken(env: Env, config: StoredConfig): Promise<string> {
@@ -3146,8 +3326,27 @@ async function persistGmailConnection(env: Env, accessToken: string, refreshToke
   return toPublicConfig(nextConfig, env);
 }
 
+async function persistYouTubeConnection(env: Env, accessToken: string, refreshToken: string, title: string): Promise<BotConfig> {
+  const current = await loadStoredConfig(env);
+  const nextConfig: StoredConfig = {
+    ...current,
+    disconnectedAuthProviders: withoutDisconnectedAuthProvider(current.disconnectedAuthProviders || [], 'youtube'),
+    youtubeEmailAddress: title,
+    youtubeAccessTokenCiphertext: await encryptSecret(accessToken, requireSecretEncryptionKey(env)),
+    youtubeAccessToken: undefined,
+  };
+
+  if (refreshToken) {
+    nextConfig.youtubeRefreshTokenCiphertext = await encryptSecret(refreshToken, requireSecretEncryptionKey(env));
+    nextConfig.youtubeRefreshToken = undefined;
+  }
+
+  await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
+  return toPublicConfig(nextConfig, env);
+}
+
 async function disconnectChannelAuth(env: Env, current: StoredConfig, provider: string): Promise<BotConfig> {
-  if (provider !== 'instagram' && provider !== 'linkedin' && provider !== 'whatsapp' && provider !== 'gmail') {
+  if (provider !== 'instagram' && provider !== 'linkedin' && provider !== 'whatsapp' && provider !== 'gmail' && provider !== 'youtube') {
     throw new Error('Choose a valid OAuth channel to disconnect.');
   }
 
@@ -3181,6 +3380,14 @@ async function disconnectChannelAuth(env: Env, current: StoredConfig, provider: 
     nextConfig.whatsappPhoneNumberId = '';
     nextConfig.whatsappAccessTokenCiphertext = undefined;
     nextConfig.whatsappAccessToken = undefined;
+  }
+
+  if (provider === 'youtube') {
+    nextConfig.youtubeEmailAddress = '';
+    nextConfig.youtubeAccessTokenCiphertext = undefined;
+    nextConfig.youtubeAccessToken = undefined;
+    nextConfig.youtubeRefreshTokenCiphertext = undefined;
+    nextConfig.youtubeRefreshToken = undefined;
   }
 
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
