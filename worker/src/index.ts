@@ -2042,7 +2042,7 @@ Rules:
       const sid = String(storedConfig.spreadsheetId || '').trim();
       if (!sid) throw new Error('No spreadsheet configured.');
       const { handleSaveNewsletterConfig } = await import('./newsletter/handlers');
-      await handleSaveNewsletterConfig(env.PIPELINE_DB, sid, payload as Parameters<typeof handleSaveNewsletterConfig>[2]);
+      await handleSaveNewsletterConfig(env.PIPELINE_DB, sid, payload as unknown as Parameters<typeof handleSaveNewsletterConfig>[2]);
       return { ok: true };
     }
     case 'newsletter.listIssues': {

@@ -59,13 +59,9 @@ export async function handleSendApprovedNewsletterIssue(
   if (!row) throw new Error('Issue not found');
   if (row.status !== 'approved') throw new Error(`Cannot send issue with status '${row.status}' — must be approved first`);
 
-  try {
-    const { process_newsletter_send } = await import('../../linkedin_bot');
-    await process_newsletter_send(env, db, issueId);
-  } catch (err) {
-    console.error('process_newsletter_send failed:', err);
-    throw err;
-  }
-
-  await markIssueSent(db, issueId);
+  // TODO: Newsletter send is currently implemented only in the Python linkedin_bot
+  // pipeline. Wire the TypeScript worker sender here when available.
+  void env;
+  void markIssueSent;
+  throw new Error('Newsletter send is not implemented in the worker yet; use the Python pipeline.');
 }

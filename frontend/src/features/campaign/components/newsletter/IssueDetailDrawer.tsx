@@ -15,7 +15,7 @@ interface Props {
   api: BackendApi;
 }
 
-export function IssueDetailDrawer({ issue, open, onClose, onSave, onApprove, onSend, idToken, api }: Props) {
+export function IssueDetailDrawer({ issue, open, onClose, onSave, onApprove, onSend, idToken: _idToken, api: _api }: Props) {
   const [showRawHtml, setShowRawHtml] = useState(false);
   const [htmlContent, setHtmlContent] = useState('');
   const [subject, setSubject] = useState('');

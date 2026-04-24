@@ -107,6 +107,20 @@ export interface NewsletterConfig {
   active: number;
   created_at: string;
   updated_at: string;
+  // v16 voice & personalization
+  author_persona?: string;
+  meaning?: string;
+  style?: string;
+  writing_style_examples?: string;
+  topic_include_keywords_json?: string;
+  topic_exclude_keywords_json?: string;
+  recurring_sections_json?: string;
+  newsletter_intro?: string;
+  newsletter_outro?: string;
+  primary_channel?: string;
+  // v16 granular sources
+  enabled_rss_feed_ids_json?: string;
+  enabled_news_api_providers_json?: string;
 }
 
 export interface NewsletterConfigInput {
@@ -132,7 +146,7 @@ export interface NewsletterIssueRow {
   spreadsheet_id: string;
   issue_date: string;
   scheduled_for: string;
-  status: string;
+  status: 'draft' | 'pending_approval' | 'approved' | 'sent' | 'failed';
   articles_json: string;
   rendered_content: string;
   subject: string;
