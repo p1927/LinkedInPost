@@ -44,6 +44,8 @@ interface Props {
   aiGenerationPrompt?: string;
 }
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 function buildDownloadName(topic: string, option: ImageAssetOption): string {
   const baseTopic = topic
     .toLowerCase()
@@ -107,6 +109,11 @@ export function ImageAssetManager({
 
     if (!file.type.toLowerCase().startsWith('image/')) {
       void showAlert({ title: 'Notice', description: 'Choose an image file to upload.' });
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      void showAlert({ title: 'Notice', description: `Image exceeds the ${MAX_IMAGE_SIZE / (1024 * 1024)} MB limit.` });
       return;
     }
 
@@ -230,15 +237,21 @@ export function ImageAssetManager({
           {compact && images.length > 1 ? (
             <p className="mb-2 text-xs leading-5 text-muted">Scroll sideways to compare options (search loads up to eight).</p>
           ) : null}
-          <div
-            role="list"
-            aria-label="Image options"
-            className={
-              compact
-                ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 pt-1 [scrollbar-width:thin]'
-                : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
-            }
-          >
+          <div className="relative">
+            {fetching ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl bg-white/60 backdrop-blur-sm">
+                <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : null}
+            <div
+              role="list"
+              aria-label="Image options"
+              className={
+                compact
+                  ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 pt-1 [scrollbar-width:thin]'
+                  : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'
+              }
+            >
             {images.map((option) => {
             const orderIndex = selectedImageUrls.indexOf(option.imageUrl);
             const isSelected = orderIndex >= 0;

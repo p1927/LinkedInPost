@@ -200,7 +200,7 @@ export function EditorSidebar() {
           />
         ) : null}
 
-        {activeWorkspacePanel === 'email' && deliveryChannel === 'gmail' ? (
+        {activeWorkspacePanel === 'email' ? (
           <section className="rounded-xl border border-border bg-white p-3 shadow-sm space-y-3">
             <div>
               <label className="block text-xs font-semibold text-ink mb-1">To</label>

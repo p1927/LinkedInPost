@@ -728,17 +728,39 @@ export function useReviewFlowActions(
   const [savingEmailFields, setSavingEmailFields] = useState(false);
   const saveEmailFieldsInFlight = useRef(false);
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function parseEmailList(value: string): string[] {
+    return String(value || '')
+      .split(/[\s,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function validateEmailAddresses(emailTo: string, emailCc: string, emailBcc: string): string[] {
+    const errors: string[] = [];
+    for (const addr of [...parseEmailList(emailTo), ...parseEmailList(emailCc), ...parseEmailList(emailBcc)]) {
+      if (addr && !EMAIL_REGEX.test(addr)) {
+        errors.push(`Invalid email address: ${addr}`);
+      }
+    }
+    return errors;
+  }
+
   const handleSaveEmailFields = useCallback(async () => {
     if (saveEmailFieldsInFlight.current) return;
+    const validationErrors = validateEmailAddresses(emailTo, emailCc, emailBcc);
+    if (validationErrors.length > 0) {
+      void showAlert({ title: 'Invalid email address', description: validationErrors[0] });
+      return;
+    }
+    const parsedTo = parseEmailList(emailTo).join(', ');
+    const parsedCc = parseEmailList(emailCc).join(', ');
+    const parsedBcc = parseEmailList(emailBcc).join(', ');
     saveEmailFieldsInFlight.current = true;
     setSavingEmailFields(true);
     try {
-      await onSaveEmailFields(
-        emailTo,
-        emailCc,
-        emailBcc,
-        emailSubject,
-      );
+      await onSaveEmailFields(parsedTo, parsedCc, parsedBcc, emailSubject);
       void showAlert({ title: 'Saved', description: 'Email settings saved to this topic.' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save email settings.';
@@ -847,6 +869,12 @@ export function useReviewFlowActions(
         ...prev,
         { id: result.documentId, name: file.name, charCount: result.charCount, content: result.extractedText },
       ]);
+    } catch (error) {
+      void showAlert({
+        title: 'Upload failed',
+        description: error instanceof Error ? error.message : 'Could not upload the document.',
+      });
+      throw error;
     } finally {
       setUploadingContextDocument(false);
     }

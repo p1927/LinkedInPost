@@ -128,7 +128,7 @@ export function RulesPanel({
             type="button"
             variant="outline"
             size={compact ? 'sm' : 'default'}
-            disabled={savingGenerationTemplate || !(generationTemplateId || '').trim()}
+            disabled={savingGenerationTemplate || !(generationTemplateId || '').trim() || topicOverrides}
             onClick={() => void onSaveGenerationTemplate('')}
           >
             Clear template
