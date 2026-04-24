@@ -38,6 +38,45 @@ export const IMPORTANCE_WEIGHT: Record<ImportanceLevel, number> = {
 } as const;
 
 // ─────────────────────────────────────────────────────────────
+// DIMENSION WEIGHTS  (7 quality dimensions, each 0–100)
+// ─────────────────────────────────────────────────────────────
+
+export type DimensionName =
+  | 'emotions'
+  | 'psychology'
+  | 'persuasion'
+  | 'copywriting'
+  | 'storytelling'
+  | 'typography'
+  | 'vocabulary';
+
+/**
+ * Per-dimension intensity sliders (0–100).
+ * Missing keys mean "use the workflow default".
+ * Values are converted to ImportanceLevel overrides in WorkflowRunner.
+ */
+export interface DimensionWeights {
+  emotions?: number;
+  psychology?: number;
+  persuasion?: number;
+  copywriting?: number;
+  storytelling?: number;
+  typography?: number;
+  vocabulary?: number;
+}
+
+/**
+ * Maps a slider value (0–100) to an ImportanceLevel.
+ */
+export function dimensionValueToImportance(value: number): ImportanceLevel {
+  if (value <= 10) return 'off';
+  if (value <= 30) return 'background';
+  if (value <= 50) return 'supporting';
+  if (value <= 80) return 'important';
+  return 'critical';
+}
+
+// ─────────────────────────────────────────────────────────────
 // DELIVERY CHANNELS
 // ─────────────────────────────────────────────────────────────
 
@@ -218,6 +257,8 @@ export interface DraftVariant {
   hookType: HookType;
   arcType: NarrativeArcType;
   wordCount: number;
+  /** 1-2 sentence explanation of key creative choices made in this variant. */
+  variant_rationale?: string;
 }
 
 export interface VariantValidation {
@@ -258,6 +299,12 @@ export interface WorkflowInput {
   /** Merged rules from topic → template → global hierarchy. */
   generationRules: string;
   researchArticles?: ResearchArticleRef[];
+  /** Optional quality dimension weights (0–100 per dimension). Applied as importance overrides. */
+  dimensionWeights?: DimensionWeights;
+  /** Optional post type workflow ID (e.g., 'informational-news', 'personal-story'). */
+  postType?: string;
+  /** Whether this topic came from the author's own writing or external research. */
+  sourceType?: 'author_note' | 'research' | 'news';
 }
 
 /** Typed slots for every node output. Null until the node runs. */

@@ -76,7 +76,8 @@ ${JSON_ONLY_INSTRUCTION}
       "text": "complete post text here",
       "hookType": "<hook type used>",
       "arcType": "<arc type used>",
-      "wordCount": <integer word count>
+      "wordCount": <integer word count>,
+      "variant_rationale": "1-2 sentences explaining the key creative choices: which hook was chosen and why, what emotional angle was emphasized, or what structural decision makes this variant distinct."
     },
     { "index": 1, ... },
     { "index": 2, ... },
@@ -84,6 +85,7 @@ ${JSON_ONLY_INSTRUCTION}
   ]
 }
 
+VARIANT RATIONALE: For each variant, write 1-2 sentences in variant_rationale explaining your key creative choice — which hook type you chose and why, what emotional register you emphasized, or what structural decision makes this variant distinct from the others.
 CRITICAL: All 4 variants must be fully written — no placeholders, no "[continue here]", no truncation. Each must be independently publish-ready.`;
 
     const raw = await generateLlmParsedJson<DraftGeneratorOutput>(

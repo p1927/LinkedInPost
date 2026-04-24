@@ -198,6 +198,10 @@ export interface GenerationRequest {
   llm?: { provider: LlmProviderId; model: string };
   researchArticles?: ResearchArticleRef[];
   contextDocuments?: Array<{ name: string; content: string }>;
+  /** Post type workflow ID (e.g. 'informational-news', 'personal-story'). */
+  postType?: string;
+  /** Quality dimension weights (0–100 per dimension). */
+  dimensionWeights?: Record<string, number>;
 }
 
 export interface RunContentReviewRequest {
@@ -298,6 +302,12 @@ export interface VariantPreviewResult {
   label: string;
   replacementText: string;
   fullText: string;
+  /** Hook type used in this variant (e.g. 'data_point'). */
+  hookType?: string;
+  /** Narrative arc type (e.g. 'problem_agitate_solve'). */
+  arcType?: string;
+  /** 1-2 sentence rationale for key creative choices. */
+  variant_rationale?: string;
 }
 
 export interface VariantsPreviewResponse {

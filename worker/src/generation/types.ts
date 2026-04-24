@@ -1,3 +1,5 @@
+import type { DimensionWeights } from '../engine/types';
+
 export type ManagedSheetName = 'Topics' | 'Draft' | 'Post';
 
 export interface SheetRow {
@@ -87,6 +89,10 @@ export interface GenerationRequestPayload {
   llm?: { provider?: string; model?: string };
   /** Optional news context from researcher (snippets + URLs). */
   researchArticles?: ResearchArticleRef[];
+  /** Quality dimension weights (0–100 per dimension). */
+  dimensionWeights?: DimensionWeights;
+  /** Post type workflow ID. */
+  postType?: string;
 }
 
 export interface QuickChangePreviewResult {

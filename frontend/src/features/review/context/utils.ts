@@ -12,6 +12,14 @@ export type SheetVariantForReview = {
   /** Present when the row’s saved selection (JSON / selectedImageId) overrides column image links for this variant. */
   imageUrls?: string[];
   originalIndex: number;
+  /** Hook type used by this variant (e.g. ‘data_point’, ‘contrarian’). Set when generated via engine. */
+  hookType?: string;
+  /** Narrative arc type (e.g. ‘problem_agitate_solve’). Set when generated via engine. */
+  arcType?: string;
+  /** Post type workflow (e.g. ‘personal-story’). Set when generated via engine. */
+  postType?: string;
+  /** 1-2 sentence rationale explaining key creative choices for this variant. */
+  variant_rationale?: string;
 };
 
 /**

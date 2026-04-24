@@ -4,12 +4,52 @@ import { workflowRegistry } from '../registry/WorkflowRegistry';
 import { nodeRegistry } from '../registry/NodeRegistry';
 import { ContextAccumulator } from '../context/ContextAccumulator';
 import { isNodeActive } from '../importance/ImportanceResolver';
+import { dimensionValueToImportance } from '../types';
 import type {
   RunWorkflowOptions,
   RunWorkflowResult,
   NodeRunEnvironment,
   WorkflowNodeOutputs,
+  DimensionWeights,
+  DimensionName,
+  ImportanceLevel,
 } from '../types';
+
+const DIMENSION_NODE_MAP: Record<DimensionName, string[]> = {
+  emotions:    ['hook-designer', 'narrative-arc'],
+  psychology:  ['psychology-analyzer'],
+  persuasion:  ['hook-designer', 'narrative-arc'],
+  copywriting: ['tone-calibrator', 'draft-generator'],
+  storytelling: ['narrative-arc'],
+  typography:  ['constraint-validator', 'tone-calibrator'],
+  vocabulary:  ['vocabulary-selector'],
+};
+
+const IMPORTANCE_ORDER: ImportanceLevel[] = ['off', 'background', 'supporting', 'important', 'critical'];
+
+function applyDimensionWeights(
+  importanceMap: Record<string, ImportanceLevel>,
+  weights: DimensionWeights,
+): Record<string, ImportanceLevel> {
+  const result = { ...importanceMap };
+  for (const [dim, value] of Object.entries(weights) as [DimensionName, number][]) {
+    if (value === undefined || value === null) continue;
+    const targetLevel = dimensionValueToImportance(value);
+    for (const nodeId of DIMENSION_NODE_MAP[dim] ?? []) {
+      // draft-generator must never be set to 'off'
+      const effectiveTargetLevel: ImportanceLevel =
+        nodeId === 'draft-generator' && targetLevel === 'off' ? 'background' : targetLevel;
+      const effectiveTargetIdx = IMPORTANCE_ORDER.indexOf(effectiveTargetLevel);
+      const currentLevel = result[nodeId] ?? 'supporting';
+      const currentIdx = IMPORTANCE_ORDER.indexOf(currentLevel);
+      // Take the maximum (never decrease)
+      if (effectiveTargetIdx > currentIdx) {
+        result[nodeId] = effectiveTargetLevel;
+      }
+    }
+  }
+  return result;
+}
 
 /**
  * Orchestrates a full workflow execution:
@@ -25,15 +65,18 @@ export async function runWorkflow(options: RunWorkflowOptions): Promise<RunWorkf
   const { input, env, llmRef, fallbackLlmRef } = options;
   const startedAt = Date.now();
 
+  // ── 0. Resolve effective workflowId (postType takes precedence) ──
+  const effectiveWorkflowId = input.postType ?? input.workflowId;
+
   // ── 1. Resolve workflow ──────────────────────────────────────
   let resolvedWorkflow;
   try {
-    resolvedWorkflow = workflowRegistry.resolve(input.workflowId);
+    resolvedWorkflow = workflowRegistry.resolve(effectiveWorkflowId);
   } catch (err) {
     lifecycleEventBus.emit({
       type: 'workflow:failed',
       runId: input.runId,
-      workflowId: input.workflowId,
+      workflowId: effectiveWorkflowId,
       error: err instanceof Error ? err.message : String(err),
       timestamp: Date.now(),
     });
@@ -41,19 +84,26 @@ export async function runWorkflow(options: RunWorkflowOptions): Promise<RunWorkf
   }
 
   // ── 2. Filter active nodes and build execution plan ──────────
-  const activeConfigs = resolvedWorkflow.nodeConfigs.filter((c) =>
-    isNodeActive(c.importance),
-  );
+  // Apply dimension weight overrides if provided
+  let effectiveImportanceMap = resolvedWorkflow.importanceMap;
+  if (input.dimensionWeights && Object.keys(input.dimensionWeights).length > 0) {
+    effectiveImportanceMap = applyDimensionWeights(resolvedWorkflow.importanceMap, input.dimensionWeights);
+  }
+
+  const activeConfigs = resolvedWorkflow.nodeConfigs.map((c) => ({
+    ...c,
+    importance: effectiveImportanceMap[c.nodeId] ?? c.importance,
+  })).filter((c) => isNodeActive(c.importance));
   const plan = buildExecutionPlan(activeConfigs);
 
   // ── 3. Initialise context accumulator ───────────────────────
-  const accumulator = new ContextAccumulator(input, resolvedWorkflow.id, resolvedWorkflow.importanceMap, resolvedWorkflow.generationInstruction);
+  const accumulator = new ContextAccumulator(input, resolvedWorkflow.id, effectiveImportanceMap, resolvedWorkflow.generationInstruction);
 
   // ── 4. Fire workflow:started ─────────────────────────────────
   lifecycleEventBus.emit({
     type: 'workflow:started',
     runId: input.runId,
-    workflowId: input.workflowId,
+    workflowId: effectiveWorkflowId,
     resolvedWorkflowId: resolvedWorkflow.id,
     timestamp: Date.now(),
   });
@@ -152,7 +202,7 @@ export async function runWorkflow(options: RunWorkflowOptions): Promise<RunWorkf
   lifecycleEventBus.emit({
     type: 'workflow:completed',
     runId: input.runId,
-    workflowId: input.workflowId,
+    workflowId: effectiveWorkflowId,
     context: finalContext,
     durationMs,
     timestamp: Date.now(),
@@ -160,7 +210,7 @@ export async function runWorkflow(options: RunWorkflowOptions): Promise<RunWorkf
 
   return {
     runId: input.runId,
-    workflowId: input.workflowId,
+    workflowId: effectiveWorkflowId,
     context: finalContext,
     // Prefer calibrated variants (post tone-calibrator) over raw drafts
     variants: finalContext.outputs.calibratedVariants ?? finalContext.outputs.draftVariants ?? [],

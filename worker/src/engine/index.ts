@@ -25,3 +25,6 @@ export type {
 } from './types';
 
 export { CHANNEL_CONSTRAINTS_MAP } from './types';
+
+export type { GapReport, DimensionGap } from './gap-scorer';
+export { scoreGaps } from './gap-scorer';

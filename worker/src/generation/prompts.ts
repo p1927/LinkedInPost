@@ -1,5 +1,6 @@
 import { buildRulesPrefix } from './rules';
 import type { GenerationScope, ResearchArticleRef, SheetRow, TextSelectionRange } from './types';
+import type { GapReport } from '../engine/gap-scorer';
 
 function buildResearchContextAppendix(articles: ResearchArticleRef[] | undefined): string {
   if (!articles || articles.length === 0) {
@@ -125,4 +126,40 @@ export function buildVariantsPrompt(
     editorText,
     researchBlock,
   ].join('\n');
+}
+
+/**
+ * Builds a surgical enhancement prompt for Author Voice mode.
+ * The LLM is instructed to make targeted edits only, preserving the author's phrasing.
+ */
+export function buildEnhancementPrompt(
+  topic: string,
+  baseDraft: string,
+  gapReport: GapReport,
+  authorProfileBlock: string,
+): string {
+  const author = authorProfileBlock.trim();
+  const authorSection = author ? `\nAUTHOR VOICE PROFILE:\n${author}\n` : '';
+  const gapSection = gapReport.summaryForPrompt
+    ? `\n${gapReport.summaryForPrompt}\n`
+    : '';
+
+  return `You are a surgical editor improving a social media post draft.
+
+CRITICAL CONSTRAINTS:
+- Preserve the author's exact phrasing wherever possible
+- Prefer ADDING or INSERTING over rewriting
+- Maximum word count increase: 10%
+- Do NOT restructure the post — only refine within the existing structure
+- The final post must still sound like the author wrote it
+${authorSection}
+TOPIC: ${topic}
+
+ORIGINAL DRAFT:
+${baseDraft}
+${gapSection}
+Apply the minimum targeted edits needed to address the gaps above. Leave everything else unchanged.
+
+Return ONLY valid JSON:
+{"result": "<enhanced post text>", "changes_explanation": "<1-2 sentences describing what you changed and why>"}`;
 }

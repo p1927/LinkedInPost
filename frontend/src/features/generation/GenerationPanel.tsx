@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Sparkles, WandSparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -5,6 +7,54 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import type { QuickChangePreviewResult, VariantsPreviewResponse } from '../../services/backendApi';
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+const POST_TYPES = [
+  { value: '', label: '— Select post type —', disabled: true },
+  { value: 'base', label: 'General / Balanced' },
+  { value: 'informational-news', label: 'Informational / News' },
+  { value: 'week-in-review', label: 'Week in Review' },
+  { value: 'personal-story', label: 'Personal Story' },
+  { value: 'event-insight', label: 'Event Insight' },
+  { value: 'trend-commentary', label: 'Industry Trend & Commentary' },
+  { value: 'satirical', label: 'Satirical / Sarcastic' },
+  { value: 'appreciation', label: 'Appreciation & Recognition' },
+] as const;
+
+const DIMENSIONS = [
+  { key: 'emotions', label: 'Emotions' },
+  { key: 'psychology', label: 'Psychology' },
+  { key: 'persuasion', label: 'Persuasion' },
+  { key: 'copywriting', label: 'Copywriting' },
+  { key: 'storytelling', label: 'Storytelling' },
+  { key: 'typography', label: 'Typography' },
+  { key: 'vocabulary', label: 'Vocabulary' },
+] as const;
+
+const DEFAULT_WEIGHTS: Record<string, number> = {
+  emotions: 50,
+  psychology: 50,
+  persuasion: 50,
+  copywriting: 50,
+  storytelling: 50,
+  typography: 50,
+  vocabulary: 50,
+};
+
+function getLevelName(value: number): string {
+  if (value <= 10) return 'Off';
+  if (value <= 30) return 'Light';
+  if (value <= 50) return 'Moderate';
+  if (value <= 80) return 'Strong';
+  return 'Max';
+}
+
+function getLevelColor(value: number): string {
+  if (value <= 10) return 'text-slate-400';
+  if (value <= 30) return 'text-blue-500';
+  if (value <= 50) return 'text-amber-500';
+  if (value <= 80) return 'text-orange-500';
+  return 'text-red-500';
+}
 
 interface GenerationPanelProps {
   instruction: string;
@@ -23,6 +73,10 @@ interface GenerationPanelProps {
   previewVariantSaveByIndex?: Record<number, VariantSaveStatus>;
   previewVariantSaveErrors?: Record<number, string>;
   onSavePreviewVariant?: (index: number) => void;
+  postType?: string;
+  onPostTypeChange?: (postType: string) => void;
+  dimensionWeights?: Record<string, number>;
+  onDimensionWeightsChange?: (weights: Record<string, number>) => void;
 }
 
 export function GenerationPanel({
@@ -41,7 +95,27 @@ export function GenerationPanel({
   previewVariantSaveByIndex = {},
   previewVariantSaveErrors = {},
   onSavePreviewVariant,
+  postType: postTypeProp,
+  onPostTypeChange,
+  dimensionWeights: dimensionWeightsProp,
+  onDimensionWeightsChange,
 }: GenerationPanelProps) {
+  const [localPostType, setLocalPostType] = useState('');
+  const [localWeights, setLocalWeights] = useState<Record<string, number>>(DEFAULT_WEIGHTS);
+
+  const postType = postTypeProp !== undefined ? postTypeProp : localPostType;
+  const weights = dimensionWeightsProp !== undefined ? dimensionWeightsProp : localWeights;
+
+  function handlePostTypeChange(value: string) {
+    if (postTypeProp === undefined) setLocalPostType(value);
+    onPostTypeChange?.(value);
+  }
+
+  function handleWeightChange(key: string, value: number) {
+    const newWeights = { ...weights, [key]: value };
+    if (dimensionWeightsProp === undefined) setLocalWeights(newWeights);
+    onDimensionWeightsChange?.(newWeights);
+  }
   const pad = compact ? 'p-3' : 'p-4';
   const title = compact ? 'text-base' : 'text-lg';
   const body = compact ? 'text-xs leading-5' : 'text-sm leading-6';
@@ -84,6 +158,57 @@ export function GenerationPanel({
           </CollapsibleContent>
         </Collapsible>
       ) : null}
+
+      {/* Post Type Selector */}
+      <label className={`mt-5 block font-bold text-ink transition-colors duration-200 ${compact ? 'text-[0.65rem]' : 'text-sm'}`} htmlFor="generation-post-type">
+        Post Type
+      </label>
+      <select
+        id="generation-post-type"
+        value={postType}
+        onChange={(e) => handlePostTypeChange(e.target.value)}
+        className={`mt-2 w-full rounded-xl border border-violet-200/70 bg-white/90 text-ink shadow-sm outline-none backdrop-blur-sm transition-all duration-200 hover:border-violet-300/80 hover:bg-white focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/30 focus:ring-offset-1 focus:shadow-lg ${compact ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm'}`}
+      >
+        {POST_TYPES.map((opt) => (
+          <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
+      {/* Dimension Control Panel */}
+      <Collapsible className="mt-4 rounded-xl border border-violet-200/60 bg-white/80 backdrop-blur-sm px-3 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md">
+        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between text-xs font-bold text-primary transition-colors duration-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 rounded-sm">
+          <span className={compact ? 'text-[0.65rem]' : 'text-xs'}>Advanced Controls</span>
+          <ChevronDown className={`transition-transform duration-200 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className={`mt-3 grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {DIMENSIONS.map(({ key, label: dimLabel }) => {
+              const val = weights[key] ?? 50;
+              const levelName = getLevelName(val);
+              const levelColor = getLevelColor(val);
+              return (
+                <div key={key}>
+                  <div className="flex items-center justify-between">
+                    <span className={`font-semibold text-ink ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>{dimLabel}</span>
+                    <span className={`font-bold ${compact ? 'text-[0.65rem]' : 'text-xs'} ${levelColor}`}>{levelName}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={val}
+                    onChange={(e) => handleWeightChange(key, Number(e.target.value))}
+                    className="mt-1 w-full accent-primary"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <label className={`mt-5 block font-bold text-ink transition-colors duration-200 ${label}`} htmlFor="generation-instruction">
         Rewrite direction
@@ -155,7 +280,28 @@ export function GenerationPanel({
             <div key={variant.id} className={`rounded-xl border border-violet-200/70 bg-gradient-to-br from-violet-50/40 to-white/80 backdrop-blur-sm shadow-md transition-all duration-200 hover:shadow-lg hover:border-violet-300/80 hover:from-violet-50/50 hover:to-white/90 ${compact ? 'p-3' : 'p-4'}`}>
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <p className={`font-bold uppercase tracking-[0.2em] text-violet-700/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Preview {index + 1}</p>
+                  <div className="flex flex-col gap-1">
+                    <p className={`font-bold uppercase tracking-[0.2em] text-violet-700/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Preview {index + 1}</p>
+                    {(variant.hookType || variant.arcType) && (
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {variant.hookType && (
+                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[0.6rem] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+                            {variant.hookType.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                        {variant.arcType && (
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[0.6rem] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                            {variant.arcType.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {variant.variant_rationale && (
+                      <p className="text-[0.6rem] leading-relaxed text-slate-500 italic mt-1">
+                        {variant.variant_rationale}
+                      </p>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {onSavePreviewVariant ? (
                       <Button

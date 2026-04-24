@@ -4,6 +4,47 @@ import { cn } from '../../../lib/cn';
 import { ChannelPostPreview } from '../../../components/channel-previews/ChannelPostPreview';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
 
+function formatPostType(id: string): string {
+  const map: Record<string, string> = {
+    'base': 'General',
+    'informational-news': 'Informational',
+    'week-in-review': 'Week in Review',
+    'personal-story': 'Personal Story',
+    'event-insight': 'Event Insight',
+    'trend-commentary': 'Trend',
+    'satirical': 'Satirical',
+    'appreciation': 'Appreciation',
+    'thought-leadership': 'Thought Leadership',
+    'viral-story': 'Viral Story',
+    'educational': 'Educational',
+    'engagement-trap': 'Engagement',
+    'personal-brand': 'Personal Brand',
+  };
+  return map[id] ?? id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatHookType(type: string): string {
+  const map: Record<string, string> = {
+    contrarian: 'Contrarian Hook',
+    data_point: 'Data Point Hook',
+    personal_story: 'Story Hook',
+    bold_question: 'Bold Question',
+    bold_claim: 'Bold Claim',
+  };
+  return map[type] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatArcType(type: string): string {
+  const map: Record<string, string> = {
+    hook_story_lesson: 'Hook → Story → Lesson',
+    problem_agitate_solve: 'Problem → Agitate → Solve',
+    before_after: 'Before / After',
+    step_by_step: 'Step by Step',
+    contrarian_case: 'Contrarian Case',
+  };
+  return map[type] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function VariantCarousel() {
   const {
     sheetVariants,
@@ -90,6 +131,35 @@ export function VariantCarousel() {
                   onToggleExpanded={() => undefined}
                   onOpenMedia={() => handleOpenMediaFromPickTile(index)}
                 />
+                {/* Metadata badges — only show when engine metadata is available */}
+                {(variant.hookType || variant.arcType || variant.postType || variant.variant_rationale) && (
+                  <div className="mt-2 flex flex-col gap-2 px-1">
+                    {(variant.hookType || variant.arcType || variant.postType) && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {variant.postType && (
+                          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[0.65rem] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200">
+                            {formatPostType(variant.postType)}
+                          </span>
+                        )}
+                        {variant.hookType && (
+                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[0.65rem] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+                            {formatHookType(variant.hookType)}
+                          </span>
+                        )}
+                        {variant.arcType && (
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[0.65rem] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                            {formatArcType(variant.arcType)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {variant.variant_rationale && (
+                      <p className="text-[0.65rem] leading-relaxed text-slate-500 font-medium italic">
+                        {variant.variant_rationale}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
