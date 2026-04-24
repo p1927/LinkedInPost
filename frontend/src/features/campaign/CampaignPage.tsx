@@ -24,8 +24,11 @@ import { parseCampaignPaste, campaignPostToImportPayload } from './validate/pars
 import { CampaignPostList } from './views/CampaignPostList';
 import { CampaignPreviewToolbar } from './views/CampaignPreviewToolbar';
 import type { CampaignPostV1 } from './schema/types';
+import { NewsletterTab } from './components/newsletter/NewsletterTab';
 import clsx from 'clsx';
-import { Copy, LayoutList, CalendarDays, Loader2, ArrowRight } from 'lucide-react';
+import { Copy, LayoutList, CalendarDays, Loader2, ArrowRight, Mail } from 'lucide-react';
+
+type CampaignTab = 'bulk' | 'newsletter';
 
 type PreviewTab = 'list' | 'calendar';
 
@@ -49,6 +52,7 @@ export function CampaignPage(props: {
   const [previewTab, setPreviewTab] = useState<PreviewTab>('calendar');
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [campaignTab, setCampaignTab] = useState<CampaignTab>('bulk');
   const pageTopRef = useRef<HTMLDivElement>(null);
 
   const promptText = useMemo(() => buildCampaignClaudePrompt(topicsIdeas), [topicsIdeas]);
@@ -283,19 +287,63 @@ export function CampaignPage(props: {
   return (
     <div className="w-full px-0 py-4 sm:py-6" ref={pageTopRef}>
       <div className="mx-auto max-w-6xl px-4 sm:px-8">
-        {/* Carousel step nav — page title lives in workspace header */}
-        <Carousel
-          steps={CAMPAIGN_STEPS}
-          currentStep={currentStep}
-          onStepChange={handleStepChange}
-          disabledSteps={parseResult.ok ? [] : [1]}
-          className="mb-5"
-        />
+        {/* Campaign tab switcher */}
+        <div className="flex gap-1 border-b border-slate-200 mb-5">
+          <button
+            type="button"
+            onClick={() => setCampaignTab('bulk')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer',
+              campaignTab === 'bulk'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            )}
+          >
+            Bulk Posts
+          </button>
+          <button
+            type="button"
+            onClick={() => setCampaignTab('newsletter')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer',
+              campaignTab === 'newsletter'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            )}
+          >
+            <Mail className="h-4 w-4" />
+            Newsletter
+          </button>
+        </div>
+
+        {/* Newsletter tab */}
+        {campaignTab === 'newsletter' ? (
+          <div className="mx-auto max-w-6xl px-4 sm:px-8">
+            <NewsletterTab
+              idToken={idToken}
+              session={session}
+              api={api}
+              onAuthExpired={onAuthExpired}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Carousel step nav — page title lives in workspace header */}
+            <Carousel
+              steps={CAMPAIGN_STEPS}
+              currentStep={currentStep}
+              onStepChange={handleStepChange}
+              disabledSteps={parseResult.ok ? [] : [1]}
+              className="mb-5"
+            />
+          </>
+        )}
       </div>
 
       {/* Animated step content */}
-      <CarouselContent currentStep={currentStep}>
-        {/* Step 0: Import — topic ideas → Claude prompt → paste JSON */}
+      {campaignTab === 'bulk' && (
+        <CarouselContent currentStep={currentStep}>
+          {/* Step 0: Import — topic ideas → Claude prompt → paste JSON */}
         <div className="mx-auto max-w-6xl px-4 sm:px-8">
           <div className="flex flex-col gap-5">
               {/* Section 1: Topic ideas */}
@@ -632,6 +680,7 @@ export function CampaignPage(props: {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
     </div>
   );
 }

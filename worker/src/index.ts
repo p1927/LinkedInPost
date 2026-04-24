@@ -2022,6 +2022,42 @@ Rules:
       return { ok: true };
     }
 
+    case 'newsletter.getConfig': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No spreadsheet configured.');
+      const { handleGetNewsletterConfig } = await import('./newsletter/handlers');
+      return handleGetNewsletterConfig(env.PIPELINE_DB, sid);
+    }
+    case 'newsletter.saveConfig': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No spreadsheet configured.');
+      const { handleSaveNewsletterConfig } = await import('./newsletter/handlers');
+      await handleSaveNewsletterConfig(env.PIPELINE_DB, sid, payload as Parameters<typeof handleSaveNewsletterConfig>[2]);
+      return { ok: true };
+    }
+    case 'newsletter.listIssues': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No spreadsheet configured.');
+      const { handleListNewsletterIssues } = await import('./newsletter/handlers');
+      return handleListNewsletterIssues(env.PIPELINE_DB, sid);
+    }
+    case 'newsletter.approveIssue': {
+      const { handleApproveNewsletterIssue } = await import('./newsletter/handlers');
+      await handleApproveNewsletterIssue(env.PIPELINE_DB, String(payload.issueId || '').trim());
+      return { ok: true };
+    }
+    case 'newsletter.rejectIssue': {
+      const { handleRejectNewsletterIssue } = await import('./newsletter/handlers');
+      await handleRejectNewsletterIssue(env.PIPELINE_DB, String(payload.issueId || '').trim());
+      return { ok: true };
+    }
+    case 'newsletter.createDraftNow': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No spreadsheet configured.');
+      const { handleCreateNewsletterDraftNow } = await import('./newsletter/handlers');
+      return handleCreateNewsletterDraftNow(env, env.PIPELINE_DB, sid);
+    }
+
     default:
       throw new Error(`Unknown action: ${action}`);
   }

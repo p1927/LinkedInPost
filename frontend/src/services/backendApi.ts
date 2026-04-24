@@ -83,6 +83,65 @@ export interface BulkImportCampaignResult {
   imported: number;
 }
 
+// --- Newsletter types ---
+export interface NewsletterConfig {
+  spreadsheet_id: string;
+  rss_enabled: number;
+  news_api_enabled: number;
+  custom_rss_feeds_json: string;
+  item_count: number;
+  schedule_days_json: string;
+  schedule_times_json: string;
+  schedule_frequency: string;
+  email_recipients_json: string;
+  subject_template: string;
+  channel_targets_json: string;
+  processing_template: string;
+  processing_note: string;
+  emotion_target: string;
+  color_emotion_target: string;
+  story_framework: string;
+  active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewsletterConfigInput {
+  rssEnabled: boolean;
+  newsApiEnabled: boolean;
+  customRssFeeds: Array<{ id: string; url: string; label?: string; enabled: boolean }>;
+  itemCount: number;
+  scheduleDays: string[];
+  scheduleTimes: string[];
+  scheduleFrequency: 'weekly' | 'biweekly' | 'monthly';
+  emailRecipients: string[];
+  subjectTemplate: string;
+  channelTargets: string[];
+  processingTemplate: string;
+  processingNote: string;
+  emotionTarget: string;
+  colorEmotionTarget: string;
+  storyFramework: string;
+}
+
+export interface NewsletterIssueRow {
+  id: string;
+  spreadsheet_id: string;
+  issue_date: string;
+  scheduled_for: string;
+  status: string;
+  articles_json: string;
+  rendered_content: string;
+  subject: string;
+  admin_preview_sent_at: string | null;
+  admin_preview_message_id: string | null;
+  approved_at: string | null;
+  sent_at: string | null;
+  recipients_json: string;
+  channel_results_json: string;
+  created_at: string;
+}
+
 export interface OAuthStartResult {
   authorizationUrl: string;
   callbackOrigin: string;
@@ -736,6 +795,31 @@ export class BackendApi {
     posts: BulkImportCampaignPostPayload[],
   ): Promise<BulkImportCampaignResult> {
     return this.post<BulkImportCampaignResult>('bulkImportCampaign', idToken, { posts });
+  }
+
+  // --- Newsletter ---
+  async getNewsletterConfig(idToken: string): Promise<NewsletterConfig | null> {
+    return this.post<NewsletterConfig | null>('newsletter.getConfig', idToken);
+  }
+
+  async saveNewsletterConfig(idToken: string, config: NewsletterConfigInput): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('newsletter.saveConfig', idToken, config as unknown as Record<string, unknown>);
+  }
+
+  async listNewsletterIssues(idToken: string): Promise<NewsletterIssueRow[]> {
+    return this.post<NewsletterIssueRow[]>('newsletter.listIssues', idToken);
+  }
+
+  async approveNewsletterIssue(idToken: string, issueId: string): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('newsletter.approveIssue', idToken, { issueId });
+  }
+
+  async rejectNewsletterIssue(idToken: string, issueId: string): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('newsletter.rejectIssue', idToken, { issueId });
+  }
+
+  async createNewsletterDraftNow(idToken: string): Promise<{ id: string; subject: string; status: string }> {
+    return this.post<{ id: string; subject: string; status: string }>('newsletter.createDraftNow', idToken);
   }
 
   async updateRowStatus(
