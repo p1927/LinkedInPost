@@ -9,6 +9,9 @@ import { RecommendationsPanel } from './components/RecommendationsPanel';
 import { TrendingGraph } from './components/TrendingGraph';
 import { PanelToggle, type PanelConfig } from './components/PanelToggle';
 import { useTrending, type TrendingCapabilities } from './hooks/useTrending';
+import { useTrendingSearch } from './hooks/useTrendingSearch';
+import { TrendingFilters, readFilterDefaults } from './components/TrendingFilters';
+import { TrendingWordsWidget } from './components/TrendingWordsWidget';
 import { Sparkles, Settings, PlugZap } from 'lucide-react';
 import type { GraphNode } from './types';
 import type { BackendApi } from '@/services/backendApi';
@@ -39,7 +42,12 @@ export function TrendingDashboard({
   const [enabledPanels, setEnabledPanels] = useState<string[]>(DEFAULT_ENABLED);
   const [showSettings, setShowSettings] = useState(false);
 
+  const [region, setRegion] = useState(() => readFilterDefaults().region);
+  const [genre, setGenre] = useState(() => readFilterDefaults().genre);
+  const [windowDays, setWindowDays] = useState(() => readFilterDefaults().windowDays);
+
   const { data, loading, error, config, enabledPlatforms } = useTrending(searchTopic, idToken, api, capabilities);
+  const trendingSearch = useTrendingSearch(searchTopic, region, genre, windowDays, idToken, api);
 
   const hasNewsApis = Boolean(
     newsProviderKeys?.newsapi ||
@@ -80,18 +88,7 @@ export function TrendingDashboard({
     );
   };
 
-  // Get available panels based on config
-  const availablePanels = useMemo(() => {
-    return ALL_PANELS.filter(panel => {
-      switch (panel.id) {
-        case 'youtube': return true; // Always show YouTube option
-        case 'instagram': return true;
-        case 'linkedin': return true;
-        case 'news': return true;
-        default: return false;
-      }
-    });
-  }, []);
+  const availablePanels = ALL_PANELS;
 
   // Filter to only show panels with data
   const visiblePanels = useMemo(() => {
@@ -100,10 +97,13 @@ export function TrendingDashboard({
       if (id === 'youtube') return data.youtube.length > 0;
       if (id === 'instagram') return data.instagram.length > 0;
       if (id === 'linkedin') return data.linkedin && data.linkedin.length > 0;
-      if (id === 'news') return data.news.length > 0;
+      if (id === 'news') {
+        const newsArticles = trendingSearch.data?.articles ?? data.news;
+        return newsArticles.length > 0;
+      }
       return false;
     });
-  }, [data, enabledPanels]);
+  }, [data, enabledPanels, trendingSearch.data]);
 
   return (
     <div className="h-full overflow-auto p-6">
@@ -174,6 +174,25 @@ export function TrendingDashboard({
         {/* Search Bar */}
         <TrendingSearchBar value={topic} onChange={setTopic} onSearch={handleSearch} />
 
+        <TrendingFilters
+          region={region}
+          genre={genre}
+          windowDays={windowDays}
+          onRegionChange={setRegion}
+          onGenreChange={setGenre}
+          onWindowChange={setWindowDays}
+        />
+
+        {trendingSearch.data?.trendingWords && trendingSearch.data.trendingWords.length > 0 && (
+          <TrendingWordsWidget
+            words={trendingSearch.data.trendingWords}
+            onSelectWord={(word) => {
+              setTopic(word);
+              setSearchTopic(word);
+            }}
+          />
+        )}
+
         {/* Panel Toggle */}
         <PanelToggle
           panels={availablePanels}
@@ -182,16 +201,16 @@ export function TrendingDashboard({
         />
 
         {/* Loading State */}
-        {loading && (
+        {(loading || trendingSearch.loading) && (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
           </div>
         )}
 
         {/* Error State */}
-        {error && (
+        {(error || trendingSearch.error) && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="text-red-600">{error}</p>
+            <p className="text-red-600">{error || trendingSearch.error}</p>
           </div>
         )}
 
@@ -199,19 +218,24 @@ export function TrendingDashboard({
         {data && !loading && (
           <>
             {/* Recommendations */}
-            {(data.recommendedTopics.length > 0 ||
-              data.relatedNewsTopics.length > 0) && (
-              <RecommendationsPanel
-                topics={[
-                  ...data.recommendedTopics,
-                  ...data.relatedNewsTopics,
-                ].slice(0, 10)}
-                onSelectTopic={(t) => {
-                  setTopic(t);
-                  setSearchTopic(t);
-                }}
-              />
-            )}
+            {(() => {
+              const relatedTopics = trendingSearch.data?.relatedTopics ?? [];
+              const allTopics = [
+                ...relatedTopics,
+                ...data.recommendedTopics,
+                ...data.relatedNewsTopics,
+              ];
+              const uniqueTopics = [...new Set(allTopics)].slice(0, 10);
+              return uniqueTopics.length > 0 ? (
+                <RecommendationsPanel
+                  topics={uniqueTopics}
+                  onSelectTopic={(t) => {
+                    setTopic(t);
+                    setSearchTopic(t);
+                  }}
+                />
+              ) : null;
+            })()}
 
             {/* Platform Panels Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -233,11 +257,14 @@ export function TrendingDashboard({
                 </div>
               )}
 
-              {visiblePanels.includes('news') && data.news.length > 0 && (
-                <div className={visiblePanels.length === 1 ? 'xl:col-span-2' : ''}>
-                  <NewsPanel articles={data.news} />
-                </div>
-              )}
+              {visiblePanels.includes('news') && (() => {
+                const newsArticles = trendingSearch.data?.articles ?? data.news;
+                return newsArticles.length > 0 ? (
+                  <div className={visiblePanels.length === 1 ? 'xl:col-span-2' : ''}>
+                    <NewsPanel articles={newsArticles} />
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* Graph - show if we have multiple platforms */}
