@@ -633,11 +633,7 @@ export function Dashboard({
       availableModels={settingsHook.availableModels}
       modelPickerLocked={settingsHook.modelPickerLocked}
       providerLabel={getProviderDisplayLabel(settingsHook.llmPrimaryProvider)}
-      previewAuthorName={previewAuthorDisplayName(session.email)}
       onSaveTopicDeliveryPreferences={queueHook.handleSaveTopicDeliveryPreferences}
-      onOpenEditor={(row) => navigate(topicEditorPathForRow(row))}
-      idToken={idToken}
-      api={api}
     />
   );
 
