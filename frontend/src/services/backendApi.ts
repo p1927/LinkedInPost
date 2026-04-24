@@ -3,6 +3,7 @@ import { normalizeBotConfig } from './configService';
 import type { ChannelId } from '../integrations/channels';
 import type { DraftPreviewSelection, SheetRow } from './sheets';
 import type { ContentReviewReport } from '../features/content-review/types';
+import type { TrendingSearchRequest, TrendingSearchResult } from '../features/trending/types';
 
 export interface SocialIntegration {
   provider: string;
@@ -633,6 +634,13 @@ export class BackendApi {
 
   async searchNewsResearch(idToken: string, payload: NewsResearchSearchPayload): Promise<NewsResearchSearchResult> {
     return this.post<NewsResearchSearchResult>('searchNewsResearch', idToken, { ...payload });
+  }
+
+  async trendingSearch(
+    idToken: string,
+    req: TrendingSearchRequest,
+  ): Promise<TrendingSearchResult> {
+    return this.post<TrendingSearchResult>('trendingSearch', idToken, req);
   }
 
   async listNewsResearchHistory(idToken: string, topicId: string, limit = 20): Promise<NewsResearchHistoryItem[]> {

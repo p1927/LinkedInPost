@@ -26,8 +26,9 @@ import {
 import { buildServices } from './services';
 import { requireTopicId } from './persistence/pipeline-db/mappers';
 import { searchNewsResearch } from './researcher/search';
+import { trendingSearch } from './researcher/trendingSearch';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
-import type { NewsResearchStored } from './researcher/types';
+import type { NewsResearchStored, TrendingSearchRequest } from './researcher/types';
 import type { SheetRow } from './generation/types';
 import { upsertUser, completeUserOnboarding, setUserSpreadsheetId, setUserTenantSettings, listAllUserTenantSettings } from './db/users';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
@@ -1628,6 +1629,15 @@ Rules:
         normalizeNewsResearchStored(storedConfig.newsResearch),
         payload,
         storedConfig.spreadsheetId,
+      );
+    case 'trendingSearch':
+      return trendingSearch(
+        env,
+        env.PIPELINE_DB,
+        normalizeNewsResearchStored(storedConfig.newsResearch),
+        storedConfig.spreadsheetId,
+        session.userId,
+        payload as unknown as TrendingSearchRequest,
       );
     case 'bulkImportCampaign':
       ensureSpreadsheetConfigured(storedConfig);
