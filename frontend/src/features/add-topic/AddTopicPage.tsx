@@ -135,10 +135,10 @@ export function AddTopicPage({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-<  const [selectedAudience, setSelectedAudience] = useState('');
+  const [selectedAudience, setSelectedAudience] = useState('');
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [showPersonaDialog, setShowPersonaDialog] = useState(false);
-  const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null);
+  const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null););
 
   // Debounced topic for sidebar (600 ms)
   const [debouncedTopic, setDebouncedTopic] = useState('');
