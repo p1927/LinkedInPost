@@ -143,6 +143,7 @@ export function AddTopicPage({
       if (Array.isArray(meta.pros)) setPros(meta.pros.filter((x): x is string => typeof x === 'string'));
       if (Array.isArray(meta.cons)) setCons(meta.cons.filter((x): x is string => typeof x === 'string'));
       if (typeof meta.notes === 'string') setNotes(meta.notes);
+      if (typeof meta.audience === 'string') setSelectedAudience(meta.audience);
     }
   }, [editRow?.topicId]); // eslint-disable-line react-hooks/exhaustive-deps
 

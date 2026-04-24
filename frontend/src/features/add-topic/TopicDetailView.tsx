@@ -53,10 +53,7 @@ export function TopicDetailView({
   if (compact) {
     return (
       <div className="rounded-xl border border-white/40 bg-white/30 p-4 backdrop-blur-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted/50">
-            Topic details
-          </span>
+        <div className="mb-3 flex justify-end">
           <Button
             type="button"
             variant="ghost"
@@ -152,21 +149,7 @@ export function TopicDetailView({
               </div>
             )}
           </div>
-        ) : (
-          <div className="text-center">
-            <p className="text-xs text-muted">No details saved for this topic yet.</p>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleEdit}
-              className="mt-2 gap-1.5"
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-              Add details
-            </Button>
-          </div>
-        )}
+        ) : null}
       </div>
     );
   }
