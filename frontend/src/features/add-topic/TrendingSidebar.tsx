@@ -5,12 +5,13 @@ import { YouTubeIcon, InstagramIcon, LinkedInIcon } from '@/components/SocialIco
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import type { BackendApi } from '@/services/backendApi';
 
-export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities }: {
+export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities, onTopicClick }: {
   topic: string;
   idToken?: string;
   onRefresh?: () => void;
   api?: BackendApi;
   capabilities?: TrendingCapabilities;
+  onTopicClick?: (topic: string) => void;
 }) {
   const [fetchedTopic, setFetchedTopic] = useState('');
   const { data, loading, error, refetch } = useTrending(fetchedTopic, idToken, api, capabilities);
@@ -222,12 +223,14 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities }
           </div>
           <div className="flex flex-wrap gap-1.5">
             {recommended.slice(0, 10).map((t, i) => (
-              <span
+              <button
                 key={i}
-                className="rounded-full border border-white/50 bg-white/40 px-2.5 py-1 text-xs font-medium text-ink backdrop-blur-sm"
+                type="button"
+                onClick={() => onTopicClick?.(t)}
+                className="rounded-full border border-white/50 bg-white/40 px-2.5 py-1 text-xs font-medium text-ink backdrop-blur-sm transition-colors hover:bg-primary/10 hover:border-primary/40 hover:text-primary"
               >
                 {t}
-              </span>
+              </button>
             ))}
           </div>
         </section>
