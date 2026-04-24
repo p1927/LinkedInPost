@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ExternalLink, Newspaper, Lightbulb, SearchX, RefreshCw } from 'lucide-react';
+import { NewsCard } from '../trending/components/NewsCard';
 import { YouTubeIcon, InstagramIcon, LinkedInIcon } from '@/components/SocialIcons';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import type { BackendApi } from '@/services/backendApi';
@@ -110,22 +111,13 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities }
           <ul className="flex flex-col gap-2 list-none p-0 m-0">
             {news.slice(0, 8).map((article) => (
               <li key={article.id}>
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex flex-col gap-0.5 rounded-xl border border-white/40 bg-white/30 p-3 no-underline backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-white/50"
-                >
-                  <span className="text-xs font-semibold leading-snug text-ink group-hover:text-primary line-clamp-2">
-                    {article.title}
-                  </span>
-                  <div className="flex items-center gap-1 text-[10px] text-muted">
-                    <span className="truncate">{article.source}</span>
-                    <span>·</span>
-                    <span className="shrink-0">{article.publishedAt}</span>
-                    <ExternalLink className="ml-auto h-2.5 w-2.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
-                  </div>
-                </a>
+                <NewsCard
+                  title={article.title}
+                  source={article.source}
+                  publishedAt={article.publishedAt}
+                  url={article.url}
+                  imageUrl={article.imageUrl}
+                />
               </li>
             ))}
           </ul>
