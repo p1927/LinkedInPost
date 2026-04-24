@@ -238,6 +238,12 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'INSTAGRAM_USER_ID': os.environ.get('INSTAGRAM_USER_ID', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
+        'YOUTUBE_API_KEY': os.environ.get('YOUTUBE_API_KEY', '').strip(),
+        'YOUTUBE_OAUTH_TOKEN': os.environ.get('YOUTUBE_OAUTH_TOKEN', '').strip(),
+        'YOUTUBE_CHANNEL_ID': os.environ.get('YOUTUBE_CHANNEL_ID', '').strip(),
+        'FAL_API_KEY': os.environ.get('FAL_API_KEY', '').strip(),
+        'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY', '').strip(),
+        'STABILITY_API_KEY': os.environ.get('STABILITY_API_KEY', '').strip(),
         'GENERATION_WORKER_URL': generation_worker_url_for_dev(worker_bootstrap, WORKER_DEV_VARS),
         'GENERATION_WORKER_SECRET': worker_bootstrap.generation_worker_secret,
     }
@@ -270,6 +276,12 @@ def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_js
         'INSTAGRAM_ACCESS_TOKEN': os.environ.get('INSTAGRAM_ACCESS_TOKEN', '').strip(),
         'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
         'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
+        'YOUTUBE_API_KEY': os.environ.get('YOUTUBE_API_KEY', '').strip(),
+        'YOUTUBE_OAUTH_TOKEN': os.environ.get('YOUTUBE_OAUTH_TOKEN', '').strip(),
+        'YOUTUBE_CHANNEL_ID': os.environ.get('YOUTUBE_CHANNEL_ID', '').strip(),
+        'FAL_API_KEY': os.environ.get('FAL_API_KEY', '').strip(),
+        'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY', '').strip(),
+        'STABILITY_API_KEY': os.environ.get('STABILITY_API_KEY', '').strip(),
     }
     secret_values.update({name: value for name, value in optional.items() if value})
     return secret_values
