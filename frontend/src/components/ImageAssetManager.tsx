@@ -368,6 +368,7 @@ export function ImageAssetManager({
           })}
           </div>
         </div>
+      </div>
       )}
 
       {selectedImageUrls.length > 0 && onClearSelectedImage ? (
