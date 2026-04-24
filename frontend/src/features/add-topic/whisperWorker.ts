@@ -36,10 +36,13 @@ self.onmessage = async (e: MessageEvent<InMsg>) => {
       return;
     }
     try {
+      console.log('[whisperWorker] transcribe called, audio samples:', msg.audio.length);
       type ASRPipeline = (input: Float32Array, opts: Record<string, unknown>) => Promise<unknown>;
       const out = await (transcriber as unknown as ASRPipeline)(msg.audio, { language: 'english', task: 'transcribe' });
+      console.log('[whisperWorker] raw output:', JSON.stringify(out));
       const item = Array.isArray(out) ? out[0] : out;
       const text = ((item as { text?: string })?.text ?? '').trim();
+      console.log('[whisperWorker] extracted text:', JSON.stringify(text));
       post({ type: 'result', text });
     } catch (err) {
       post({ type: 'error', error: String(err) });

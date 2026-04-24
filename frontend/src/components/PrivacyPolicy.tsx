@@ -9,10 +9,6 @@ export function PrivacyPolicy() {
       <LegalPageChrome title="Privacy Policy" />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <p className="text-sm text-muted">Last updated: {EFFECTIVE}</p>
-        <p className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
-          This policy is a starting point for transparency. It is not legal advice. Align it with your real data flows,
-          subprocessors, and jurisdictions, and have counsel review it.
-        </p>
 
         <div className="mt-8 space-y-8 text-[15px] leading-relaxed text-muted">
           <section className="space-y-3">
@@ -65,7 +61,8 @@ export function PrivacyPolicy() {
               <li>Comply with law and respond to lawful requests;</li>
               <li>Communicate about the Service, including notices and (where allowed) product updates.</li>
             </ul>
-            <p>We do not sell your personal information or content to third parties for money.</p>
+            <p>We do not sell your personal information or content to third parties for money. We do not use your data for any purpose beyond delivering and improving the Service you have requested.</p>
+            <p><strong className="text-ink">You own your data.</strong> All content, posts, and information you provide remains yours. You can request deletion of your data from our systems at any time by contacting us. We will honor deletion requests subject only to legal obligations we must fulfill.</p>
           </section>
 
           <section className="space-y-3">
@@ -181,8 +178,7 @@ export function PrivacyPolicy() {
           <section className="space-y-3">
             <h2 className="font-heading text-xl font-semibold text-ink">12. Contact</h2>
             <p>
-              For privacy questions or requests, contact the operator of Channel Bot at the administrative email or mailing
-              address you publish for the Service. Replace this sentence with your real contact details before production use.
+              For privacy questions or data deletion requests, contact us at jbphome@gmail.com or through the support channels in the application. We respond to privacy requests within 30 days.
             </p>
           </section>
         </div>

@@ -76,10 +76,12 @@ export function useSpeechToText(): SpeechToTextState {
     let loaded = false;
 
     worker.onmessage = (e: MessageEvent) => {
+      console.log('[whisperWorker] message:', e.data);
       const { type, text } = e.data as { type: string; text?: string };
       if (type === 'ready') {
         loaded = true;
         modeRef.current = 'wasm';
+        console.log('[stt] WASM mode activated');
         setIsAvailable(true);
         setUnavailableReason(null);
       } else if (type === 'result') {
@@ -211,12 +213,16 @@ export function useSpeechToText(): SpeechToTextState {
     if (modeRef.current === 'wasm' && wasmWorkerRef.current) {
       try {
         const audio = await blobToFloat32(blob);
+        console.log('[stt] wasm: sending', audio.length, 'samples, blob size:', blob.size);
         const text = await new Promise<string>((resolve) => {
           wasmPendingRef.current = resolve;
           wasmWorkerRef.current!.postMessage({ type: 'transcribe', audio }, [audio.buffer]);
         });
+        console.log('[stt] wasm: got text:', JSON.stringify(text));
         if (text) insertText(text);
-      } catch { /* transcription error */ }
+      } catch (e) {
+        console.error('[stt] wasm transcription error', e);
+      }
     }
   }, [insertText]);
 
