@@ -247,6 +247,7 @@ export function TopicsRightRail({
               <TopicDetailView
                 row={selectedRow}
                 editPath={WORKSPACE_PATHS.addTopic}
+                compact
               />
             </RailSection>
           )}

@@ -762,6 +762,7 @@ export class BackendApi {
     pros?: string[];
     cons?: string[];
     notes?: string;
+    audience?: string;
   }): Promise<SheetRow | void> {
     return this.post<SheetRow>('addTopic', idToken, { topic, topicMeta });
   }
