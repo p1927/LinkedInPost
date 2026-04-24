@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Newspaper, Sparkles, Loader2, ThumbsUp, ThumbsDown, X as XIcon } from 'lucide-react';
+import { Sparkles, Loader2, ThumbsUp, ThumbsDown, X as XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -140,12 +140,6 @@ export function AddTopicPage({
   const [showPersonaDialog, setShowPersonaDialog] = useState(false);
   const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null);
 
-  // Debounced topic for sidebar (600 ms)
-  const [debouncedTopic, setDebouncedTopic] = useState('');
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedTopic(topic), 600);
-    return () => clearTimeout(t);
-  }, [topic]);
 
   // Load custom personas on mount
   useEffect(() => {

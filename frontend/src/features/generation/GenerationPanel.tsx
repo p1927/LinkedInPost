@@ -8,7 +8,7 @@ import type { QuickChangePreviewResult, VariantsPreviewResponse } from '../../se
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-const POST_TYPES = [
+const POST_TYPES: Array<{ value: string; label: string; disabled?: boolean }> = [
   { value: '', label: '— Select post type —', disabled: true },
   { value: 'base', label: 'General / Balanced' },
   { value: 'informational-news', label: 'Informational / News' },
@@ -18,7 +18,7 @@ const POST_TYPES = [
   { value: 'trend-commentary', label: 'Industry Trend & Commentary' },
   { value: 'satirical', label: 'Satirical / Sarcastic' },
   { value: 'appreciation', label: 'Appreciation & Recognition' },
-] as const;
+];
 
 const DIMENSIONS = [
   { key: 'emotions', label: 'Emotions' },

@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
-import { SetupWizard } from './features/setup-wizard/SetupWizard'
+import { SetupWizard } from './SetupWizard'
 
 // Google OAuth Client ID - you will need to replace this with your actual Client ID
 // It is safe to expose this in the frontend as long as you configure authorized origins in GCP

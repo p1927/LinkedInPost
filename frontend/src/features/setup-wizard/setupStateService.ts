@@ -1,17 +1,5 @@
 import type { EnvVar, Integration, Worker, SetupState } from './types';
 
-const REQUIRED_ENV_VARS = [
-  { name: 'VITE_GOOGLE_CLIENT_ID', isRequired: true, description: 'Google OAuth Client ID for authentication' },
-  { name: 'VITE_WORKER_URL', isRequired: true, description: 'Cloudflare Worker URL for API backend' },
-  { name: 'GOOGLE_CLIENT_ID', isRequired: true, description: 'Google service account client ID' },
-  { name: 'GOOGLE_CREDENTIALS_JSON', isRequired: true, description: 'Google service account credentials JSON' },
-  { name: 'GEMINI_API_KEY', isRequired: true, description: 'Gemini API key for content generation' },
-  { name: 'CLOUDFLARE_API_TOKEN', isRequired: false, description: 'Cloudflare API token for deployment' },
-  { name: 'LINKEDIN_CLIENT_ID', isRequired: false, description: 'LinkedIn OAuth app client ID' },
-  { name: 'LINKEDIN_CLIENT_SECRET', isRequired: false, description: 'LinkedIn OAuth app secret' },
-  { name: 'SERPAPI_API_KEY', isRequired: false, description: 'SerpAPI key for news research' },
-];
-
 export class SetupStateService {
   private projectDir: string;
 
