@@ -12,6 +12,18 @@ import type { TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useSpeechToText } from './useSpeechToText';
 import { MicButton } from './MicButton';
 
+// Module-level draft — survives navigation so the form isn't wiped on unmount.
+const draft = {
+  topic: '', about: '', meaning: '', style: '', notes: '',
+  pros: [] as string[], cons: [] as string[], selectedAudience: '',
+};
+
+function clearDraft() {
+  draft.topic = ''; draft.about = ''; draft.meaning = '';
+  draft.style = ''; draft.notes = '';
+  draft.pros = []; draft.cons = []; draft.selectedAudience = '';
+}
+
 const BUILT_IN_PERSONAS = [
   { id: 'startup-founder', name: 'Startup Founder' },
   { id: 'engineering-manager', name: 'Engineering Manager' },
@@ -107,13 +119,14 @@ export function AddTopicPage({
   void searchParams;
   const stt = useSpeechToText();
 
-  const [topic, setTopic] = useState('');
-  const [about, setAbout] = useState('');
-  const [meaning, setMeaning] = useState('');
-  const [style, setStyle] = useState('');
-  const [notes, setNotes] = useState('');
-  const [pros, setPros] = useState<string[]>([]);
-  const [cons, setCons] = useState<string[]>([]);
+  // Restore from the module-level draft when creating a new topic (not editing an existing one).
+  const [topic, setTopic] = useState(() => editRow ? '' : draft.topic);
+  const [about, setAbout] = useState(() => editRow ? '' : draft.about);
+  const [meaning, setMeaning] = useState(() => editRow ? '' : draft.meaning);
+  const [style, setStyle] = useState(() => editRow ? '' : draft.style);
+  const [notes, setNotes] = useState(() => editRow ? '' : draft.notes);
+  const [pros, setPros] = useState<string[]>(() => editRow ? [] : draft.pros);
+  const [cons, setCons] = useState<string[]>(() => editRow ? [] : draft.cons);
   useEffect(() => {
     if (!editRow) return;
     setTopic(editRow.topic);
@@ -138,10 +151,18 @@ export function AddTopicPage({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const [selectedAudience, setSelectedAudience] = useState('');
+  const [selectedAudience, setSelectedAudience] = useState(() => editRow ? '' : draft.selectedAudience);
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [showPersonaDialog, setShowPersonaDialog] = useState(false);
   const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null);
+
+  // Keep the draft in sync so changes survive navigation (only for new topics).
+  useEffect(() => {
+    if (editRow) return;
+    draft.topic = topic; draft.about = about; draft.meaning = meaning;
+    draft.style = style; draft.notes = notes;
+    draft.pros = pros; draft.cons = cons; draft.selectedAudience = selectedAudience;
+  }, [editRow, topic, about, meaning, style, notes, pros, cons, selectedAudience]);
 
   // Debounced topic for sidebar (600 ms)
   const [debouncedTopic, setDebouncedTopic] = useState('');
@@ -197,6 +218,7 @@ export function AddTopicPage({
           audience: selectedAudience || undefined,
         };
         await api.addTopic(idToken, topic.trim(), topicMeta);
+        if (!editRow) clearDraft();
         navigate(WORKSPACE_PATHS.topics);
       } catch (err) {
         setSubmitError(err instanceof Error ? err.message : 'Failed to add topic.');

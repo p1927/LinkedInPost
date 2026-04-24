@@ -5,6 +5,17 @@ const CHUNK_INTERVAL_MS = 3000;
 const WASM_MODEL_KEY = 'stt_wasm_model';
 const WASM_READY_KEY = 'stt_wasm_ready';
 
+// Module-level singleton — survives navigation so the worker isn't torn down on unmount.
+const stt = {
+  worker: null as Worker | null,
+  mode: null as 'sidecar' | 'wasm' | null,
+  isAvailable: false,
+  unavailableReason: 'sidecar_offline' as UnavailableReason,
+  shortcut: 'Mod+Shift+M',
+  /** True once the sidecar probe has completed (or exhausted retries). */
+  probed: false,
+};
+
 function getChunkInterval(modelId: string): number {
   // Moonshine's ergodic architecture handles short clips natively; Whisper needs more context
   return modelId.includes('moonshine') ? 1500 : CHUNK_INTERVAL_MS;
@@ -50,11 +61,17 @@ async function blobToFloat32(blob: Blob): Promise<Float32Array> {
 }
 
 export function useSpeechToText(): SpeechToTextState {
-  const [isAvailable, setIsAvailable] = useState(false);
-  const [unavailableReason, setUnavailableReason] = useState<UnavailableReason>('sidecar_offline');
+  // Initialise from singleton so re-mounting the page doesn't reset UI state.
+  const [isAvailable, setIsAvailableState] = useState(stt.isAvailable);
+  const [unavailableReason, setUnavailableReasonState] = useState<UnavailableReason>(stt.unavailableReason);
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [shortcut, setShortcut] = useState('Mod+Shift+M');
+  const [shortcut, setShortcutState] = useState(stt.shortcut);
+
+  // Wrappers that keep the singleton in sync with local React state.
+  const setIsAvailable = useCallback((v: boolean) => { stt.isAvailable = v; setIsAvailableState(v); }, []);
+  const setUnavailableReason = useCallback((v: UnavailableReason) => { stt.unavailableReason = v; setUnavailableReasonState(v); }, []);
+  const setShortcut = useCallback((v: string) => { stt.shortcut = v; setShortcutState(v); }, []);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -62,22 +79,25 @@ export function useSpeechToText(): SpeechToTextState {
   const activeElRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const cursorPositionRef = useRef<number | null>(null);
 
-  // 'sidecar' | 'wasm' | null
-  const modeRef = useRef<'sidecar' | 'wasm' | null>(null);
-  const wasmWorkerRef = useRef<Worker | null>(null);
+  // These refs mirror the singleton so the rest of the hook reads them uniformly.
+  const modeRef = useRef(stt.mode);
+  const wasmWorkerRef = useRef(stt.worker);
   // Resolves the current in-flight WASM transcription promise
   const wasmPendingRef = useRef<((text: string) => void) | null>(null);
 
   const initWasmWorker = useCallback((modelId: string) => {
     // Terminate any existing worker before creating a new one
-    wasmWorkerRef.current?.terminate();
+    stt.worker?.terminate();
+    stt.worker = null;
     wasmWorkerRef.current = null;
+    stt.mode = null;
     modeRef.current = null;
 
     setIsAvailable(false);
     setUnavailableReason('wasm_loading');
 
     const worker = new Worker(new URL('./whisperWorker.ts', import.meta.url), { type: 'module' });
+    stt.worker = worker;
     wasmWorkerRef.current = worker;
     let loaded = false;
 
@@ -88,6 +108,7 @@ export function useSpeechToText(): SpeechToTextState {
         loaded = true;
         const { device } = e.data as { device?: string };
         console.log('[STT] worker ready, device:', device ?? 'wasm');
+        stt.mode = 'wasm';
         modeRef.current = 'wasm';
         console.log('[stt] WASM mode activated');
         setIsAvailable(true);
@@ -118,7 +139,7 @@ export function useSpeechToText(): SpeechToTextState {
     };
 
     worker.postMessage({ type: 'load', model: modelId });
-  }, []);
+  }, [setIsAvailable, setUnavailableReason]);
 
   // Attempt WASM if local sidecar is unavailable
   const tryWasm = useCallback(() => {
@@ -130,13 +151,24 @@ export function useSpeechToText(): SpeechToTextState {
       setIsAvailable(false);
       setUnavailableReason('model_missing');
     }
-  }, [initWasmWorker]);
+  }, [initWasmWorker, setIsAvailable, setUnavailableReason]);
 
-  // On mount: probe sidecar first, fall back to WASM
+  // On mount: probe sidecar first (localhost only), fall back to WASM.
+  // Skip entirely if the singleton already completed a probe.
   useEffect(() => {
+    if (stt.probed) return;
+
     let cancelled = false;
     const MAX_RETRIES = 3;
     const RETRY_DELAY_MS = 1000;
+
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (!isLocalhost) {
+      stt.probed = true;
+      tryWasm();
+      return;
+    }
 
     const checkHealth = async (attempt: number) => {
       try {
@@ -145,6 +177,7 @@ export function useSpeechToText(): SpeechToTextState {
         if (cancelled) return;
         setShortcut(data.shortcut ?? 'Mod+Shift+M');
         if (data.enabled && data.modelLoaded) {
+          stt.mode = 'sidecar';
           modeRef.current = 'sidecar';
           setIsAvailable(true);
           setUnavailableReason(null);
@@ -158,16 +191,15 @@ export function useSpeechToText(): SpeechToTextState {
         } else {
           tryWasm();
         }
+      } finally {
+        if (!cancelled) stt.probed = true;
       }
     };
 
     checkHealth(0);
-    return () => {
-      cancelled = true;
-      wasmWorkerRef.current?.terminate();
-      wasmWorkerRef.current = null;
-    };
-  }, [tryWasm]);
+    // On unmount: cancel the in-flight probe but keep the worker alive.
+    return () => { cancelled = true; };
+  }, [tryWasm, setIsAvailable, setUnavailableReason, setShortcut]);
 
   // Listen for WASM model becoming available (e.g. downloaded via settings while page is open)
   useEffect(() => {
