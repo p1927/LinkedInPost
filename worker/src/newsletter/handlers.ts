@@ -1,7 +1,6 @@
 import type { Env } from '../index';
-import type { PipelineStore } from '../persistence/pipeline-db/pipeline';
-import { createNewsletterIssue, getNewsletterConfig, saveNewsletterConfig, listNewsletterIssues, approveNewsletterIssue, rejectNewsletterIssue, type NewsletterConfigRow, type NewsletterIssueRow } from './persistence';
-import type { NewsletterIssue } from './types';
+import { getNewsletterConfig, saveNewsletterConfig, listNewsletterIssues, approveNewsletterIssue, rejectNewsletterIssue } from './persistence';
+import type { NewsletterConfigRow, NewsletterIssueRow } from './types';
 
 export async function handleGetNewsletterConfig(
   db: D1Database,
@@ -61,7 +60,7 @@ export async function handleCreateNewsletterDraftNow(
   env: Env,
   db: D1Database,
   spreadsheetId: string,
-): Promise<NewsletterIssue> {
+): Promise<{ id: string; subject: string; status: string }> {
   const { createNewsletterDraft } = await import('./draftCreator');
   return createNewsletterDraft(env, db, spreadsheetId);
 }

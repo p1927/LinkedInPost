@@ -46,9 +46,9 @@ export async function collectArticlesFromSources(
     }
   }
 
-  const [feedResults, ...rest] = await Promise.allSettled(feedFetchPromises);
+  const feedResults = await Promise.allSettled(feedFetchPromises);
   const feedArticles: ResearchArticle[] = [];
-  for (const result of [feedResults]) {
+  for (const result of feedResults) {
     if (result.status === 'fulfilled') {
       feedArticles.push(...result.value);
     }
@@ -74,7 +74,7 @@ export async function collectArticlesFromSources(
     }
     if (String(env.SERPAPI_API_KEY || '').trim()) {
       apiPromises.push(
-        fetchSerpApiGoogleNews(env, 'news', windowStart, windowEnd).catch(() => []),
+        fetchSerpApiGoogleNews(env, 'news').catch(() => []),
       );
     }
 

@@ -35,6 +35,7 @@ export async function createNewsletterDraft(
   const subjectTemplate = config.subject_template || 'Weekly Newsletter';
 
   const renderedContent = await renderNewsletterEmail(
+    env,
     selectedArticles,
     template,
     {
@@ -70,7 +71,7 @@ export async function createNewsletterDraft(
 function determineNextSendTime(
   days: string[],
   times: string[],
-  frequency: string,
+  _frequency: string,
 ): string {
   if (days.length === 0 || times.length === 0) {
     const d = new Date();

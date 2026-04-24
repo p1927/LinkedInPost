@@ -1,4 +1,6 @@
+import type { Env } from '../index';
 import type { ResearchArticle } from './types';
+import { generateForRef } from '../llm';
 
 interface EnrichmentConfig {
   processingNote: string;
@@ -15,6 +17,7 @@ const NEWSLETTER_TEMPLATES: Record<string, string> = {
 };
 
 export async function renderNewsletterEmail(
+  env: Env,
   articles: ResearchArticle[],
   template: string,
   enrichment: EnrichmentConfig,
@@ -54,14 +57,11 @@ ${enrichmentNote ? `## Additional Guidance\n${enrichmentNote}` : ''}
 Write the complete newsletter email content. Do not include a subject line. Return only the email body content in plain text or basic HTML (no complex formatting).
 `.trim();
 
-  const { generateTextJsonWithFallback } = await import('../llm');
-  const env = await import('../index').then((m) => m.env as Env | undefined).catch(() => undefined);
-
   try {
-    const result = await generateTextJsonWithFallback(
-      { LLM_TEXT_MODEL: 'sonnet' },
+    const result = await generateForRef(
+      env,
+      { provider: 'gemini', model: 'gemini-2.0-flash' },
       prompt,
-      undefined,
     );
     return result.text;
   } catch (err) {
@@ -70,10 +70,10 @@ Write the complete newsletter email content. Do not include a subject line. Retu
   }
 }
 
-function renderFallbackNewsletter(articles: ResearchArticle[], template: string): string {
+function renderFallbackNewsletter(articles: ResearchArticle[], _template: string): string {
   const items = articles
     .map(
-      (a, i) => `
+      (a, _i) => `
 <li style="margin-bottom: 16px;">
   <strong><a href="${a.url}">${a.title}</a></strong><br/>
   <em>${a.source}</em> — ${a.snippet || 'No description available.'}
