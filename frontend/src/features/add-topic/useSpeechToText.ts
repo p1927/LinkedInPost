@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 const STT_URL = 'http://localhost:3457';
-const CHUNK_INTERVAL_MS = 5000;
+const CHUNK_INTERVAL_MS = 3000;
 const WASM_MODEL_KEY = 'stt_wasm_model';
 const WASM_READY_KEY = 'stt_wasm_ready';
 
@@ -15,6 +15,7 @@ export interface SpeechToTextState {
   error: string | null;
   toggle: () => void;
 }
+
 
 /** Decode a webm audio blob and resample to 16 kHz mono Float32Array for Whisper. */
 async function blobToFloat32(blob: Blob): Promise<Float32Array> {
@@ -80,19 +81,35 @@ export function useSpeechToText(): SpeechToTextState {
       const { type, text } = e.data as { type: string; text?: string };
       if (type === 'ready') {
         loaded = true;
+        const { device } = e.data as { device?: string };
+        console.log('[STT] worker ready, device:', device ?? 'wasm');
         modeRef.current = 'wasm';
         console.log('[stt] WASM mode activated');
         setIsAvailable(true);
         setUnavailableReason(null);
       } else if (type === 'result') {
+        console.log('[STT] worker result received:', JSON.stringify(text));
         wasmPendingRef.current?.(text ?? '');
         wasmPendingRef.current = null;
-      } else if (type === 'error' && !loaded) {
-        setUnavailableReason('model_missing');
+      } else if (type === 'error') {
+        const { error } = e.data as { error?: string };
+        console.log('[STT] worker error received:', error, 'loaded:', loaded);
+        if (!loaded) {
+          setUnavailableReason('model_missing');
+        } else {
+          wasmPendingRef.current?.('');
+          wasmPendingRef.current = null;
+        }
+      } else if (type === 'progress') {
+        // ignore
+      } else {
+        console.log('[STT] worker unknown message:', type);
       }
     };
-    worker.onerror = () => {
+    worker.onerror = (err) => {
+      console.log('[STT] worker.onerror:', err);
       if (!loaded) setUnavailableReason('model_missing');
+      else { wasmPendingRef.current?.(''); wasmPendingRef.current = null; }
     };
 
     worker.postMessage({ type: 'load', model: modelId });
@@ -162,6 +179,7 @@ export function useSpeechToText(): SpeechToTextState {
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
+        console.log('[STT] focusin tracked:', (e.target as HTMLElement).tagName, (e.target as HTMLInputElement).name || (e.target as HTMLInputElement).placeholder || '');
         activeElRef.current = e.target;
         cursorPositionRef.current = e.target.selectionStart ?? e.target.value.length;
       }
@@ -173,6 +191,7 @@ export function useSpeechToText(): SpeechToTextState {
   // Insert transcribed text at the saved cursor position
   const insertText = useCallback((text: string) => {
     const el = activeElRef.current;
+    console.log('[STT] insertText called, text:', JSON.stringify(text), 'el:', el?.tagName ?? 'null');
     if (!el || !text) return;
 
     const pos = cursorPositionRef.current ?? el.value.length;
@@ -185,17 +204,20 @@ export function useSpeechToText(): SpeechToTextState {
 
     const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+    console.log('[STT] nativeInputValueSetter:', !!nativeInputValueSetter, 'newValue:', JSON.stringify(newValue));
     if (nativeInputValueSetter) {
       nativeInputValueSetter.call(el, newValue);
       el.selectionStart = newPos;
       el.selectionEnd = newPos;
       cursorPositionRef.current = newPos;
       el.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[STT] input event dispatched');
     }
   }, []);
 
   // Send an audio blob to whichever backend is active
   const transcribeChunk = useCallback(async (blob: Blob) => {
+    console.log('[STT] transcribeChunk, size:', blob.size, 'mode:', modeRef.current);
     if (blob.size < 1000) return;
 
     if (modeRef.current === 'sidecar') {
@@ -205,6 +227,7 @@ export function useSpeechToText(): SpeechToTextState {
         const r = await fetch(`${STT_URL}/transcribe`, { method: 'POST', body: form });
         if (!r.ok) return;
         const { text } = await r.json() as { text?: string };
+        console.log('[STT] sidecar result:', JSON.stringify(text));
         if (text) insertText(text);
       } catch { /* sidecar stopped */ }
       return;
@@ -218,11 +241,9 @@ export function useSpeechToText(): SpeechToTextState {
           wasmPendingRef.current = resolve;
           wasmWorkerRef.current!.postMessage({ type: 'transcribe', audio }, [audio.buffer]);
         });
-        console.log('[stt] wasm: got text:', JSON.stringify(text));
+        console.log('[STT] wasm result:', JSON.stringify(text));
         if (text) insertText(text);
-      } catch (e) {
-        console.error('[stt] wasm transcription error', e);
-      }
+      } catch (err) { console.log('[STT] wasm transcription error:', err); }
     }
   }, [insertText]);
 

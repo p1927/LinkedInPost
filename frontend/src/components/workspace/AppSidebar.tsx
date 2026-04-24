@@ -259,7 +259,7 @@ export function AppSidebar({
         <nav className="flex min-h-0 flex-1 flex-col overflow-hidden" aria-label="Workspace navigation">
           <ul
             id="workspace-sidebar-nav"
-            className="custom-scrollbar shrink-0 list-none flex flex-col gap-1.5 overflow-y-auto p-2"
+            className="custom-scrollbar flex-1 min-h-0 list-none flex flex-col gap-1.5 overflow-y-auto p-2"
           >
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
             {link('add-topic', <PlusCircle aria-hidden />, 'New Topic')}
