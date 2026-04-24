@@ -218,8 +218,12 @@ export function AddTopicPage({
           notes: notes.trim() || undefined,
           audience: selectedAudience || undefined,
         };
-        await api.addTopic(idToken, topic.trim(), topicMeta);
-        if (!editRow) clearDraft();
+        if (editRow) {
+          await api.updateTopicMeta(idToken, editRow.topicId, topic.trim(), topicMeta);
+        } else {
+          await api.addTopic(idToken, topic.trim(), topicMeta);
+          clearDraft();
+        }
         navigate(WORKSPACE_PATHS.topics);
       } catch (err) {
         setSubmitError(err instanceof Error ? err.message : 'Failed to add topic.');

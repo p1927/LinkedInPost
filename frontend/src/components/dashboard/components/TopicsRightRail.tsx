@@ -241,20 +241,9 @@ export function TopicsRightRail({
             ) : null}
           </RailSection>
 
-          {/* Topic details from Notion-like editor */}
-          {selectedRow && (
-            <RailSection title="Topic Details" className="mb-5">
-              <TopicDetailView
-                row={selectedRow}
-                editPath={WORKSPACE_PATHS.addTopic}
-                compact
-              />
-            </RailSection>
-          )}
-
           {/* Settings — compact 2-col grid, always visible */}
           {selectedRow ? (
-            <div className="border-t border-violet-200/40 pt-4">
+            <div className="mb-5 border-t border-violet-200/40 pt-4">
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-muted/70">Settings</p>
               <div className={cn('grid gap-3', modelPickerLocked ? 'grid-cols-1' : 'grid-cols-2')}>
                 {/* AI model */}
@@ -344,6 +333,17 @@ export function TopicsRightRail({
               {saving ? <p className="mt-2 text-[10px] text-muted">Saving…</p> : null}
             </div>
           ) : null}
+
+          {/* Topic details from Notion-like editor */}
+          {selectedRow && (
+            <RailSection title="Topic Details">
+              <TopicDetailView
+                row={selectedRow}
+                editPath={WORKSPACE_PATHS.addTopic}
+                compact
+              />
+            </RailSection>
+          )}
         </>
       )}
     </div>

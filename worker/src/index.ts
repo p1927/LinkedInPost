@@ -1388,6 +1388,20 @@ async function dispatchAction(
       }
       return newRow;
     }
+    case 'updateTopicMeta': {
+      const topicId = String(payload.topicId || '').trim();
+      if (!topicId) throw new Error('topicId is required.');
+      const topicText = String(payload.topic || '').trim();
+      if (!topicText) throw new Error('topic is required.');
+      const topicMeta = payload.topicMeta && typeof payload.topicMeta === 'object' ? payload.topicMeta : null;
+      const topicGenerationRules = topicMeta ? JSON.stringify(topicMeta) : '';
+      if (topicGenerationRules.length > 8000) throw new Error('Topic metadata is too large.');
+      const row = await pipeline.getRowByTopicId(sheets, storedConfig.spreadsheetId, topicId);
+      if (!row) throw new Error('Topic not found.');
+      const updated: SheetRow = { ...row, topic: topicText, topicGenerationRules };
+      await pipeline.upsertFull(storedConfig.spreadsheetId, updated);
+      return updated;
+    }
     case 'listCustomPersonas': {
       const personas = await pipeline.listCustomPersonas(session.userId);
       return personas;

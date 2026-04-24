@@ -781,6 +781,18 @@ export class BackendApi {
     return this.post<SheetRow>('addTopic', idToken, { topic, topicMeta });
   }
 
+  async updateTopicMeta(idToken: string, topicId: string, topic: string, topicMeta?: {
+    about?: string;
+    meaning?: string;
+    style?: string;
+    pros?: string[];
+    cons?: string[];
+    notes?: string;
+    audience?: string;
+  }): Promise<SheetRow | void> {
+    return this.post<SheetRow>('updateTopicMeta', idToken, { topicId, topic, topicMeta });
+  }
+
   async listCustomPersonas(idToken: string) {
     return this.post<Array<{
       id: string; name: string; concerns: string[]; ambitions: string[];
