@@ -2067,6 +2067,11 @@ Rules:
       const { handleCreateNewsletterDraftNow } = await import('./newsletter/handlers');
       return handleCreateNewsletterDraftNow(env, env.PIPELINE_DB, sid);
     }
+    case 'newsletter.sendApproved': {
+      const { handleSendApprovedNewsletterIssue } = await import('./newsletter/handlers');
+      await handleSendApprovedNewsletterIssue(env, env.PIPELINE_DB, String(payload.issueId || '').trim());
+      return { ok: true };
+    }
 
     default:
       throw new Error(`Unknown action: ${action}`);

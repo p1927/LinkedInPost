@@ -23,9 +23,14 @@ export async function saveNewsletterConfig(
         item_count, schedule_days_json, schedule_times_json, schedule_frequency,
         email_recipients_json, subject_template, channel_targets_json,
         processing_template, processing_note, emotion_target, color_emotion_target,
-        story_framework, preview_channel, admin_email, active, updated_at
+        story_framework, preview_channel, admin_email, active, updated_at,
+        author_persona, writing_style_examples,
+        topic_include_keywords_json, topic_exclude_keywords_json,
+        recurring_sections_json, newsletter_intro, newsletter_outro,
+        primary_channel, enabled_rss_feed_ids_json, enabled_news_api_providers_json
       ) VALUES (
-        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, 1, datetime('now')
+        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, 1, datetime('now'),
+        ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28
       )`,
     )
     .bind(
@@ -47,6 +52,16 @@ export async function saveNewsletterConfig(
       config.storyFramework,
       config.previewChannel,
       config.adminEmail,
+      config.authorPersona || '',
+      config.writingStyleExamples || '',
+      JSON.stringify(config.topicIncludeKeywords || []),
+      JSON.stringify(config.topicExcludeKeywords || []),
+      JSON.stringify(config.recurringSections || []),
+      config.newsletterIntro || '',
+      config.newsletterOutro || '',
+      config.primaryChannel || 'email',
+      JSON.stringify(config.enabledRssFeedIds || []),
+      JSON.stringify(config.enabledNewsApiProviders || []),
     )
     .run();
 }

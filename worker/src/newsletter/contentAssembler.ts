@@ -8,13 +8,21 @@ import {
   fetchSerpApiGoogleNews,
 } from '../researcher/providers/newsApis';
 
+interface ArticleFilter {
+  includeKeywords: string[];
+  excludeKeywords: string[];
+}
+
 export async function collectArticlesFromSources(
   env: Env,
   rssEnabled: boolean,
   newsApiEnabled: boolean,
   customRssFeeds: Array<{ id: string; url: string; label?: string; enabled: boolean }>,
+  enabledBuiltInFeedIds: string[],
+  enabledNewsApiProviders: string[],
   windowStart: string,
   windowEnd: string,
+  filter: ArticleFilter,
 ): Promise<ResearchArticle[]> {
   const allArticles: ResearchArticle[] = [];
 
@@ -30,15 +38,25 @@ export async function collectArticlesFromSources(
     }
   });
 
-  if (rssEnabled) {
+  if (rssEnabled && enabledBuiltInFeedIds.length > 0) {
     const { collectEnabledRssUrls, normalizeNewsResearchStored } = await import('../researcher/config');
     const stored = normalizeNewsResearchStored({});
-    const rssUrls = collectEnabledRssUrls(stored, env);
-    for (const url of rssUrls) {
+    const allBuiltInUrls = collectEnabledRssUrls(stored, env);
+    // Only include feeds whose IDs are in enabledBuiltInFeedIds
+    // Match by feed URL or label (stored rssFeeds entries have id + url)
+    const storedFeeds = (stored.rssFeeds || []).filter((f: { id: string }) => enabledBuiltInFeedIds.includes(f.id));
+    for (const feed of storedFeeds) {
       feedFetchPromises.push(
-        fetchRssFeed(url, url).then((articles) => {
-          return articles;
-        }).catch((err) => {
+        fetchRssFeed(feed.url, feed.label || feed.id).catch((err) => {
+          console.error(`Failed to fetch built-in RSS ${feed.url}:`, err);
+          return [];
+        }),
+      );
+    }
+    // Also fetch any env-defined feeds not already covered
+    for (const url of allBuiltInUrls) {
+      feedFetchPromises.push(
+        fetchRssFeed(url, url).catch((err) => {
           console.error(`Failed to fetch RSS ${url}:`, err);
           return [];
         }),
@@ -54,28 +72,20 @@ export async function collectArticlesFromSources(
     }
   }
 
-  if (newsApiEnabled) {
+  if (newsApiEnabled && enabledNewsApiProviders.length > 0) {
     const apiPromises: Promise<ResearchArticle[]>[] = [];
 
-    if (String(env.NEWSAPI_KEY || '').trim()) {
-      apiPromises.push(
-        fetchNewsApiEverything(env, 'news', windowStart, windowEnd).catch(() => []),
-      );
+    if (enabledNewsApiProviders.includes('newsapi') && String(env.NEWSAPI_KEY || '').trim()) {
+      apiPromises.push(fetchNewsApiEverything(env, 'news', windowStart, windowEnd).catch(() => []));
     }
-    if (String(env.GNEWS_API_KEY || '').trim()) {
-      apiPromises.push(
-        fetchGNewsSearch(env, 'news', windowStart, windowEnd).catch(() => []),
-      );
+    if (enabledNewsApiProviders.includes('gnews') && String(env.GNEWS_API_KEY || '').trim()) {
+      apiPromises.push(fetchGNewsSearch(env, 'news', windowStart, windowEnd).catch(() => []));
     }
-    if (String(env.NEWSDATA_API_KEY || '').trim()) {
-      apiPromises.push(
-        fetchNewsDataIo(env, 'news', windowStart, windowEnd).catch(() => []),
-      );
+    if (enabledNewsApiProviders.includes('newsdata') && String(env.NEWSDATA_API_KEY || '').trim()) {
+      apiPromises.push(fetchNewsDataIo(env, 'news', windowStart, windowEnd).catch(() => []));
     }
-    if (String(env.SERPAPI_API_KEY || '').trim()) {
-      apiPromises.push(
-        fetchSerpApiGoogleNews(env, 'news').catch(() => []),
-      );
+    if (enabledNewsApiProviders.includes('serpapi') && String(env.SERPAPI_API_KEY || '').trim()) {
+      apiPromises.push(fetchSerpApiGoogleNews(env, 'news').catch(() => []));
     }
 
     const apiResults = await Promise.allSettled(apiPromises);
@@ -89,10 +99,24 @@ export async function collectArticlesFromSources(
   allArticles.push(...feedArticles);
 
   const deduped = deduplicateArticles(allArticles);
+  const filtered = filterArticles(deduped, filter);
 
-  return deduped.sort(
+  return filtered.sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
   );
+}
+
+function filterArticles(articles: ResearchArticle[], filter: ArticleFilter): ResearchArticle[] {
+  const { includeKeywords, excludeKeywords } = filter;
+  if (includeKeywords.length === 0 && excludeKeywords.length === 0) return articles;
+
+  return articles.filter((article) => {
+    const text = `${article.title} ${article.snippet} ${article.source}`.toLowerCase();
+    const hasExcluded = excludeKeywords.some((kw) => text.includes(kw.toLowerCase()));
+    if (hasExcluded) return false;
+    if (includeKeywords.length === 0) return true;
+    return includeKeywords.some((kw) => text.includes(kw.toLowerCase()));
+  });
 }
 
 function deduplicateArticles(articles: ResearchArticle[]): ResearchArticle[] {

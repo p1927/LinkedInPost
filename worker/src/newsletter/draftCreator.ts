@@ -24,8 +24,14 @@ export async function createNewsletterDraft(
     config.rss_enabled === 1,
     config.news_api_enabled === 1,
     JSON.parse(config.custom_rss_feeds_json || '[]'),
+    JSON.parse(config.enabled_rss_feed_ids_json || '[]'),
+    JSON.parse(config.enabled_news_api_providers_json || '[]'),
     windowStart.toISOString(),
     windowEnd.toISOString(),
+    {
+      includeKeywords: JSON.parse(config.topic_include_keywords_json || '[]'),
+      excludeKeywords: JSON.parse(config.topic_exclude_keywords_json || '[]'),
+    },
   );
 
   const itemCount = config.item_count || 5;
@@ -43,6 +49,11 @@ export async function createNewsletterDraft(
       emotionTarget: config.emotion_target,
       colorEmotionTarget: config.color_emotion_target,
       storyFramework: config.story_framework,
+      authorPersona: config.author_persona || '',
+      writingStyleExamples: config.writing_style_examples || '',
+      newsletterIntro: config.newsletter_intro || '',
+      newsletterOutro: config.newsletter_outro || '',
+      recurringSections: JSON.parse(config.recurring_sections_json || '[]'),
     },
   );
 

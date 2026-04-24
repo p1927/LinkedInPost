@@ -16,6 +16,23 @@ export interface NewsletterConfigInput {
   storyFramework: string;
   previewChannel: 'email' | 'telegram';
   adminEmail: string;
+  // v16 voice & personalization
+  authorPersona: string;
+  writingStyleExamples: string;
+  topicIncludeKeywords: string[];
+  topicExcludeKeywords: string[];
+  recurringSections: RecurringSection[];
+  newsletterIntro: string;
+  newsletterOutro: string;
+  primaryChannel: string;
+  // v16 granular sources
+  enabledRssFeedIds: string[];
+  enabledNewsApiProviders: string[];
+}
+
+export interface RecurringSection {
+  name: string;
+  prompt: string;
 }
 
 export interface NewsletterIssueRow {
@@ -57,5 +74,17 @@ export function parseNewsletterConfig(raw: Partial<NewsletterConfigInput>): News
     storyFramework: String(raw.storyFramework || ''),
     previewChannel: ['email', 'telegram'].includes(raw.previewChannel as string) ? (raw.previewChannel as 'email' | 'telegram') : 'email',
     adminEmail: String(raw.adminEmail || ''),
+    // v16 voice & personalization
+    authorPersona: String(raw.authorPersona || ''),
+    writingStyleExamples: String(raw.writingStyleExamples || ''),
+    topicIncludeKeywords: Array.isArray(raw.topicIncludeKeywords) ? raw.topicIncludeKeywords : [],
+    topicExcludeKeywords: Array.isArray(raw.topicExcludeKeywords) ? raw.topicExcludeKeywords : [],
+    recurringSections: Array.isArray(raw.recurringSections) ? raw.recurringSections : [],
+    newsletterIntro: String(raw.newsletterIntro || ''),
+    newsletterOutro: String(raw.newsletterOutro || ''),
+    primaryChannel: String(raw.primaryChannel || 'email'),
+    // v16 granular sources
+    enabledRssFeedIds: Array.isArray(raw.enabledRssFeedIds) ? raw.enabledRssFeedIds : [],
+    enabledNewsApiProviders: Array.isArray(raw.enabledNewsApiProviders) ? raw.enabledNewsApiProviders : [],
   };
 }

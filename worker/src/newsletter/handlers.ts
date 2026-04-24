@@ -1,6 +1,6 @@
 import type { Env } from '../index';
-import { getNewsletterConfig, saveNewsletterConfig, listNewsletterIssues, approveNewsletterIssue, rejectNewsletterIssue } from './persistence';
-import type { NewsletterConfigRow, NewsletterIssueRow } from './types';
+import { getNewsletterConfig, saveNewsletterConfig, listNewsletterIssues, approveNewsletterIssue, rejectNewsletterIssue, markIssueSent } from './persistence';
+import type { NewsletterConfigRow, NewsletterIssueRow, NewsletterConfigInput } from './types';
 
 export async function handleGetNewsletterConfig(
   db: D1Database,
@@ -12,25 +12,7 @@ export async function handleGetNewsletterConfig(
 export async function handleSaveNewsletterConfig(
   db: D1Database,
   spreadsheetId: string,
-  config: {
-    rssEnabled: boolean;
-    newsApiEnabled: boolean;
-    customRssFeeds: Array<{ id: string; url: string; label?: string; enabled: boolean }>;
-    itemCount: number;
-    scheduleDays: string[];
-    scheduleTimes: string[];
-    scheduleFrequency: 'weekly' | 'biweekly' | 'monthly';
-    emailRecipients: string[];
-    subjectTemplate: string;
-    channelTargets: string[];
-    processingTemplate: string;
-    processingNote: string;
-    emotionTarget: string;
-    colorEmotionTarget: string;
-    storyFramework: string;
-    previewChannel: 'email' | 'telegram';
-    adminEmail: string;
-  },
+  config: NewsletterConfigInput,
 ): Promise<void> {
   await saveNewsletterConfig(db, spreadsheetId, config);
 }
@@ -63,4 +45,27 @@ export async function handleCreateNewsletterDraftNow(
 ): Promise<{ id: string; subject: string; status: string }> {
   const { createNewsletterDraft } = await import('./draftCreator');
   return createNewsletterDraft(env, db, spreadsheetId);
+}
+
+export async function handleSendApprovedNewsletterIssue(
+  env: Env,
+  db: D1Database,
+  issueId: string,
+): Promise<void> {
+  const row = await db
+    .prepare('SELECT * FROM newsletter_issues WHERE id = ?')
+    .bind(issueId)
+    .first<NewsletterIssueRow>();
+  if (!row) throw new Error('Issue not found');
+  if (row.status !== 'approved') throw new Error(`Cannot send issue with status '${row.status}' — must be approved first`);
+
+  try {
+    const { process_newsletter_send } = await import('../../linkedin_bot');
+    await process_newsletter_send(env, db, issueId);
+  } catch (err) {
+    console.error('process_newsletter_send failed:', err);
+    throw err;
+  }
+
+  await markIssueSent(db, issueId);
 }

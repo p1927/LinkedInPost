@@ -20,6 +20,18 @@ export interface NewsletterConfigRow {
   active: number;
   created_at: string;
   updated_at: string;
+  // v16 voice & personalization
+  author_persona: string;
+  writing_style_examples: string;
+  topic_include_keywords_json: string;
+  topic_exclude_keywords_json: string;
+  recurring_sections_json: string;
+  newsletter_intro: string;
+  newsletter_outro: string;
+  primary_channel: string;
+  // v16 granular sources
+  enabled_rss_feed_ids_json: string;
+  enabled_news_api_providers_json: string;
 }
 
 export interface NewsletterIssueRow {
@@ -40,6 +52,11 @@ export interface NewsletterIssueRow {
   created_at: string;
 }
 
+export interface RecurringSection {
+  name: string;
+  prompt: string;
+}
+
 export interface NewsletterConfigInput {
   rssEnabled: boolean;
   newsApiEnabled: boolean;
@@ -58,6 +75,18 @@ export interface NewsletterConfigInput {
   storyFramework: string;
   previewChannel: 'email' | 'telegram';
   adminEmail: string;
+  // v16 voice & personalization
+  authorPersona: string;
+  writingStyleExamples: string;
+  topicIncludeKeywords: string[];
+  topicExcludeKeywords: string[];
+  recurringSections: RecurringSection[];
+  newsletterIntro: string;
+  newsletterOutro: string;
+  primaryChannel: string;
+  // v16 granular sources
+  enabledRssFeedIds: string[];
+  enabledNewsApiProviders: string[];
 }
 
 export interface NewsletterIssue {

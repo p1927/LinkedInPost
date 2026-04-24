@@ -80,5 +80,32 @@ export function emptyNewsletterConfig(): NewsletterConfigInput {
     storyFramework: '',
     previewChannel: 'email',
     adminEmail: '',
+    // v16 voice & personalization
+    authorPersona: '',
+    writingStyleExamples: '',
+    topicIncludeKeywords: [],
+    topicExcludeKeywords: [],
+    recurringSections: [],
+    newsletterIntro: '',
+    newsletterOutro: '',
+    primaryChannel: 'email',
+    // v16 granular sources
+    enabledRssFeedIds: [],
+    enabledNewsApiProviders: [],
   };
 }
+
+export const CHANNEL_SEND_OPTIONS = [
+  { value: 'email', label: 'Email' },
+  { value: 'telegram', label: 'Telegram' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+] as const;
+
+export const NEWS_API_PROVIDERS = [
+  { value: 'newsapi', label: 'NewsAPI.org' },
+  { value: 'gnews', label: 'GNews' },
+  { value: 'newsdata', label: 'NewsData.io' },
+  { value: 'serpapi', label: 'SerpApi Google News' },
+] as const;

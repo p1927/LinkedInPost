@@ -833,6 +833,10 @@ export class BackendApi {
     return this.post<{ id: string; subject: string; status: string }>('newsletter.createDraftNow', idToken);
   }
 
+  async sendNewsletterIssue(idToken: string, issueId: string): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('newsletter.sendApproved', idToken, { issueId });
+  }
+
   async updateRowStatus(
     idToken: string,
     row: SheetRow,
