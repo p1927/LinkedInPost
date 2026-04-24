@@ -1,4 +1,5 @@
 import { generateForRef } from './gateway';
+import type { GatewayUsageCtx } from './gateway';
 import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
 
 function stripJsonCodeFences(text: string): string {
@@ -20,8 +21,9 @@ export async function generateLlmParsedJson<T>(
   ref: LlmRef,
   prompt: string,
   opts?: LlmGenerationOptions,
+  usageCtx?: GatewayUsageCtx,
 ): Promise<T> {
-  const { text: raw } = await generateForRef(env, ref, prompt, opts);
+  const { text: raw } = await generateForRef(env, ref, prompt, opts, usageCtx);
   const toParse = stripJsonCodeFences(raw);
   try {
     return JSON.parse(toParse) as T;

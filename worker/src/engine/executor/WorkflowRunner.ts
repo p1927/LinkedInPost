@@ -62,7 +62,7 @@ function applyDimensionWeights(
  * error is recorded in the context. Use `result.context.errors` to inspect.
  */
 export async function runWorkflow(options: RunWorkflowOptions): Promise<RunWorkflowResult> {
-  const { input, env, llmRef, fallbackLlmRef } = options;
+  const { input, env, llmRef, fallbackLlmRef, usageCtx } = options;
   const startedAt = Date.now();
 
   // ── 0. Resolve effective workflowId (postType takes precedence) ──
@@ -109,7 +109,7 @@ export async function runWorkflow(options: RunWorkflowOptions): Promise<RunWorkf
   });
 
   // ── 5. Execute phases ────────────────────────────────────────
-  const nodeEnv: NodeRunEnvironment = { env, llmRef, fallbackLlmRef };
+  const nodeEnv: NodeRunEnvironment = { env, llmRef, fallbackLlmRef, usageCtx };
 
   for (const executionPhase of plan) {
     // Fire node:started for every node in this phase

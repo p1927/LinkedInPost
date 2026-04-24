@@ -1,4 +1,4 @@
-import type { DimensionName, DimensionWeights, EngineEnv } from './types';
+import type { DimensionName, DimensionWeights, EngineEnv, EngineUsageCtx } from './types';
 import { dimensionValueToImportance } from './types';
 import type { LlmRef } from '@repo/llm-core';
 import { generateLlmParsedJson } from '../llm/structuredJson';
@@ -36,6 +36,7 @@ export async function scoreGaps(
   dimensionWeights: DimensionWeights,
   env: EngineEnv,
   llmRef: LlmRef,
+  usageCtx?: EngineUsageCtx,
 ): Promise<GapReport> {
   const activeDimensions = (Object.entries(dimensionWeights) as [DimensionName, number][])
     .filter(([, value]) => value !== undefined && dimensionValueToImportance(value) !== 'off')
@@ -67,6 +68,7 @@ Return ONLY valid JSON:
         llmRef,
         prompt,
         { maxOutputTokens: 512 },
+        usageCtx ? { ...usageCtx, settingKey: 'engine_gap_scorer' } : undefined,
       );
       return { dimension, score: result.score ?? 5, gaps: result.gaps ?? [] };
     }),

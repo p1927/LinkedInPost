@@ -4,6 +4,15 @@ import { generateGrokJson } from './providers/grok';
 import { generateOpenrouterJson } from './providers/openrouter';
 import { generateMinimaxJson } from './providers/minimax';
 import type { LlmGenerationOptions, LlmRef, WorkerEnvForLlm } from './types';
+import type { D1Database } from '@cloudflare/workers-types';
+import { logLlmUsage } from '../db/llm-usage';
+
+export interface GatewayUsageCtx {
+  db: D1Database;
+  spreadsheetId: string;
+  userId: string;
+  settingKey: string;
+}
 
 function isRetryableLlmError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
@@ -23,6 +32,7 @@ export async function generateForRef(
   ref: LlmRef,
   prompt: string,
   opts?: LlmGenerationOptions,
+  usageCtx?: GatewayUsageCtx,
 ): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number } }> {
   const tag = `[LLM ${ref.provider}/${ref.model}]`;
   const start = Date.now();
@@ -39,6 +49,17 @@ export async function generateForRef(
       result = await generateGrokJson(env, ref.model, prompt, opts);
     }
     console.log(`${tag} OK duration_ms=${Date.now() - start} response_chars=${result.text.length} usage=${JSON.stringify(result.usage)} preview=${JSON.stringify(result.text.slice(0, 120))}`);
+    if (usageCtx) {
+      logLlmUsage(usageCtx.db, {
+        spreadsheetId: usageCtx.spreadsheetId,
+        userId: usageCtx.userId,
+        provider: ref.provider,
+        model: ref.model,
+        settingKey: usageCtx.settingKey,
+        promptTokens: result.usage.promptTokens,
+        completionTokens: result.usage.completionTokens,
+      }).catch((e) => console.error(`${tag} logLlmUsage failed`, e));
+    }
     return result;
   } catch (err) {
     console.error(`${tag} ERROR duration_ms=${Date.now() - start} error=${String(err)}`);
@@ -51,16 +72,17 @@ export async function generateTextJsonWithFallback(
   primary: LlmRef,
   fallback: LlmRef | undefined,
   prompt: string,
+  usageCtx?: GatewayUsageCtx,
 ): Promise<{ text: string; used: LlmRef; usage: { promptTokens: number; completionTokens: number } }> {
   try {
-    const { text, usage } = await generateForRef(env, primary, prompt);
+    const { text, usage } = await generateForRef(env, primary, prompt, undefined, usageCtx);
     return { text, used: primary, usage };
   } catch (firstErr) {
     if (!fallback || !isRetryableLlmError(firstErr)) {
       throw firstErr;
     }
     try {
-      const { text, usage } = await generateForRef(env, fallback, prompt);
+      const { text, usage } = await generateForRef(env, fallback, prompt, undefined, usageCtx);
       return { text, used: fallback, usage };
     } catch {
       throw firstErr;

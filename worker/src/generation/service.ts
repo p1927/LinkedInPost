@@ -27,7 +27,6 @@ import {
   resolveGenerationRef,
   workspaceConfigFromStored,
 } from '../llm';
-import { logLlmUsage } from '../db/llm-usage';
 
 function coerceResearchArticles(raw: unknown): ResearchArticleRef[] | undefined {
   if (!Array.isArray(raw) || raw.length === 0) {
@@ -111,22 +110,17 @@ export async function generateQuickChangePreview(
   const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
   const authorBlock = formatAuthorProfileForPrompt(storedConfig.userWhoAmI || storedConfig.authorProfile || '');
   const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, authorBlock, researchRefs);
-  const { text, used, usage } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+  const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt, {
+    db: env.PIPELINE_DB,
+    spreadsheetId: storedConfig.spreadsheetId,
+    userId: userId ?? storedConfig.userWhoAmI ?? '',
+    settingKey: 'generation_worker',
+  });
   const replacementText = normalizePlainTextValue(tryParseJson(text));
 
   if (!replacementText) {
     throw new Error('Quick Change returned empty preview text.');
   }
-
-  await logLlmUsage(env.PIPELINE_DB, {
-    spreadsheetId: storedConfig.spreadsheetId,
-    userId: userId ?? storedConfig.userWhoAmI ?? '',
-    provider: used.provider,
-    model: used.model,
-    settingKey: 'generation_worker',
-    promptTokens: usage.promptTokens,
-    completionTokens: usage.completionTokens,
-  });
 
   return {
     scope,
@@ -174,22 +168,17 @@ export async function generateVariantsPreview(
     authorBlock,
     researchRefs,
   );
-  const { text, used, usage } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+  const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt, {
+    db: env.PIPELINE_DB,
+    spreadsheetId: storedConfig.spreadsheetId,
+    userId: userId ?? storedConfig.userWhoAmI ?? '',
+    settingKey: 'generation_worker',
+  });
   const variants = normalizeVariantList(tryParseJson(text));
 
   if (variants.length !== 4) {
     throw new Error('The model did not return four valid preview variants.');
   }
-
-  await logLlmUsage(env.PIPELINE_DB, {
-    spreadsheetId: storedConfig.spreadsheetId,
-    userId: userId ?? storedConfig.userWhoAmI ?? '',
-    provider: used.provider,
-    model: used.model,
-    settingKey: 'generation_worker',
-    promptTokens: usage.promptTokens,
-    completionTokens: usage.completionTokens,
-  });
 
   return {
     scope,

@@ -182,11 +182,12 @@ export async function runGithubAutomationGenerateVariants(
     imageSearchQueryMaxChars,
   });
 
-  let { text: rawText } = await generateForRef(env, ref, prompt);
+  const usageCtx = { db: env.PIPELINE_DB, spreadsheetId, userId: '', settingKey: 'github_automation' };
+  let { text: rawText } = await generateForRef(env, ref, prompt, undefined, usageCtx);
   try {
     return tryParseAndAssert(rawText);
   } catch {
-    ({ text: rawText } = await generateForRef(env, ref, prompt + REPAIR_SUFFIX));
+    ({ text: rawText } = await generateForRef(env, ref, prompt + REPAIR_SUFFIX, undefined, usageCtx));
     return tryParseAndAssert(rawText);
   }
 }

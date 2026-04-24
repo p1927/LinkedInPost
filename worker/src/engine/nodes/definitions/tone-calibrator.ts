@@ -71,6 +71,8 @@ Return all ${draftVariants.length} variants. If a variant already matches the vo
       nodeEnv.env,
       nodeEnv.llmRef,
       prompt,
+      undefined,
+      nodeEnv.usageCtx ? { ...nodeEnv.usageCtx, settingKey: 'engine_tone_calibrator' } : undefined,
     );
 
     return { calibratedVariants: raw.calibratedVariants };

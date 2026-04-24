@@ -30,6 +30,7 @@ export {
   workspaceConfigFromStored,
 } from './policy';
 export { generateTextJsonWithFallback, generateMultimodalForRef, generateForRef } from './gateway';
+export type { GatewayUsageCtx } from './gateway';
 export {
   getConfiguredLlmProviderIds,
   hasAnyLlmProvider,

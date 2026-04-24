@@ -47,6 +47,8 @@ Requirements:
       nodeEnv.env,
       nodeEnv.llmRef,
       prompt,
+      undefined,
+      nodeEnv.usageCtx ? { ...nodeEnv.usageCtx, settingKey: 'engine_psychology_analyzer' } : undefined,
     );
 
     return { psychologyAnalysis: result };

@@ -57,7 +57,7 @@ self.onmessage = async (e: MessageEvent<InMsg>) => {
     try {
       console.log('[whisperWorker] transcribe called, audio samples:', msg.audio.length);
       type ASRPipeline = (input: Float32Array, opts: Record<string, unknown>) => Promise<unknown>;
-      const isMultilingual = !loadedModel.endsWith('.en');
+      const isMultilingual = !loadedModel.endsWith('.en') && !loadedModel.includes('moonshine');
       const opts: Record<string, unknown> = {};
       if (isMultilingual) { opts.language = 'english'; opts.task = 'transcribe'; }
       const out = await (transcriber as unknown as ASRPipeline)(msg.audio, opts);

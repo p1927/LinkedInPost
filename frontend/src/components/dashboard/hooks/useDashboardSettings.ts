@@ -215,15 +215,31 @@ export function useDashboardSettings({
   useEffect(() => {
     let cancelled = false;
     const syncModels = async () => {
-      try {
-        const models = normalizeGoogleModelOptions(await api.getGoogleModels(idToken), session.config.googleModel);
-        if (!cancelled) {
-          setCatalogModels(models);
+      if (FEATURE_MULTI_PROVIDER_LLM) {
+        try {
+          const catalog = await api.getLlmProviderCatalog(idToken);
+          if (cancelled) return;
+          const byId = Object.fromEntries(catalog.providers.map((p) => [p.id, p.models]));
+          setCatalogModels(normalizeGoogleModelOptions(byId['gemini'] ?? catalog.staticFallbacks.gemini ?? [], session.config.googleModel));
+          setGrokCatalogModels(normalizeGrokOptions(byId['grok'] ?? []));
+          setOpenrouterCatalogModels(normalizeOpenrouterOptions(byId['openrouter'] ?? []));
+          setMinimaxCatalogModels(normalizeMinimaxOptions(byId['minimax'] ?? []));
+        } catch {
+          if (cancelled) return;
+          try {
+            setCatalogModels(await loadAvailableGoogleModels(session.config.googleModel));
+          } catch { /* ignore */ }
+          setGrokCatalogModels([]);
+          setOpenrouterCatalogModels([]);
+          setMinimaxCatalogModels([]);
         }
-      } catch {
-        const fallbackModels = await loadAvailableGoogleModels(session.config.googleModel);
-        if (!cancelled) {
-          setCatalogModels(fallbackModels);
+      } else {
+        try {
+          const models = normalizeGoogleModelOptions(await api.getGoogleModels(idToken), session.config.googleModel);
+          if (!cancelled) setCatalogModels(models);
+        } catch {
+          const fallbackModels = await loadAvailableGoogleModels(session.config.googleModel);
+          if (!cancelled) setCatalogModels(fallbackModels);
         }
       }
     };
@@ -232,40 +248,6 @@ export function useDashboardSettings({
       cancelled = true;
     };
   }, [api, idToken, session.config.googleModel, session.isAdmin]);
-
-  useEffect(() => {
-    if (!FEATURE_MULTI_PROVIDER_LLM) return;
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const models = normalizeGrokOptions(await api.listLlmModels(idToken, 'grok'));
-        if (!cancelled) setGrokCatalogModels(models);
-      } catch {
-        if (!cancelled) setGrokCatalogModels([]);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [api, idToken]);
-
-  useEffect(() => {
-    if (!FEATURE_MULTI_PROVIDER_LLM) return;
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const models = normalizeOpenrouterOptions(await api.listLlmModels(idToken, 'openrouter'));
-        if (!cancelled) setOpenrouterCatalogModels(models);
-      } catch {
-        if (!cancelled) setOpenrouterCatalogModels([]);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [api, idToken]);
 
   useEffect(() => {
     if (!FEATURE_MULTI_PROVIDER_LLM || !session.isAdmin) return;
@@ -280,23 +262,6 @@ export function useDashboardSettings({
     if (openrouterCatalogModels.length === 0) return;
     setAllowedOpenrouterModels(openrouterCatalogModels.map((m) => m.value));
   }, [session.isAdmin, openrouterCatalogModels, allowedOpenrouterModels.length]);
-
-  useEffect(() => {
-    if (!FEATURE_MULTI_PROVIDER_LLM) return;
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const models = normalizeMinimaxOptions(await api.listLlmModels(idToken, 'minimax'));
-        if (!cancelled) setMinimaxCatalogModels(models);
-      } catch {
-        if (!cancelled) setMinimaxCatalogModels([]);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [api, idToken]);
 
   useEffect(() => {
     if (!FEATURE_MULTI_PROVIDER_LLM || !session.isAdmin) return;

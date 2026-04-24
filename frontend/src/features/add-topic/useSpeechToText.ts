@@ -5,6 +5,11 @@ const CHUNK_INTERVAL_MS = 3000;
 const WASM_MODEL_KEY = 'stt_wasm_model';
 const WASM_READY_KEY = 'stt_wasm_ready';
 
+function getChunkInterval(modelId: string): number {
+  // Moonshine's ergodic architecture handles short clips natively; Whisper needs more context
+  return modelId.includes('moonshine') ? 1500 : CHUNK_INTERVAL_MS;
+}
+
 export type UnavailableReason = 'disabled' | 'model_missing' | 'sidecar_offline' | 'wasm_loading' | null;
 
 export interface SpeechToTextState {
@@ -286,6 +291,7 @@ export function useSpeechToText(): SpeechToTextState {
       startChunk(stream);
       setIsRecording(true);
 
+      const activeModel = modeRef.current === 'wasm' ? (localStorage.getItem(WASM_MODEL_KEY) ?? '') : '';
       chunkTimerRef.current = setInterval(() => {
         const old = mediaRecorderRef.current;
         if (old?.state !== 'recording') return;
@@ -295,7 +301,7 @@ export function useSpeechToText(): SpeechToTextState {
           startChunk(stream);
         };
         old.stop();
-      }, CHUNK_INTERVAL_MS);
+      }, getChunkInterval(activeModel));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Microphone access denied');
     }

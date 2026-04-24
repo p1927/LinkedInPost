@@ -52,6 +52,8 @@ Requirements:
       nodeEnv.env,
       nodeEnv.llmRef,
       prompt,
+      undefined,
+      nodeEnv.usageCtx ? { ...nodeEnv.usageCtx, settingKey: 'engine_research_context' } : undefined,
     );
 
     return { researchFindings: result };

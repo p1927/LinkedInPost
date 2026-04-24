@@ -93,6 +93,7 @@ CRITICAL: All 4 variants must be fully written — no placeholders, no "[continu
       nodeEnv.llmRef,
       prompt,
       { maxOutputTokens: 4096 },
+      nodeEnv.usageCtx ? { ...nodeEnv.usageCtx, settingKey: 'engine_draft_generator' } : undefined,
     );
 
     return { draftVariants: raw.variants };

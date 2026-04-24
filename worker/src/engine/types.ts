@@ -6,6 +6,7 @@
  */
 
 import type { LlmRef } from '@repo/llm-core';
+import type { D1Database } from '@cloudflare/workers-types';
 
 // ─────────────────────────────────────────────────────────────
 // IMPORTANCE LEVELS  (solves the numeric-weight ambiguity problem)
@@ -372,10 +373,19 @@ export type EngineEnv = {
   MINIMAX_API_KEY?: string;
 };
 
+/** Context passed to LLM calls so usage is logged to llm_usage_log. Structurally compatible with GatewayUsageCtx. */
+export interface EngineUsageCtx {
+  db: D1Database;
+  spreadsheetId: string;
+  userId: string;
+  settingKey: string;
+}
+
 export interface NodeRunEnvironment {
   env: EngineEnv;
   llmRef: LlmRef;
   fallbackLlmRef?: LlmRef;
+  usageCtx?: EngineUsageCtx;
 }
 
 export interface NodeDefinition {
@@ -558,6 +568,7 @@ export interface RunWorkflowOptions {
   env: EngineEnv;
   llmRef: LlmRef;
   fallbackLlmRef?: LlmRef;
+  usageCtx?: EngineUsageCtx;
 }
 
 export interface RunWorkflowResult {

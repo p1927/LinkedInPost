@@ -215,6 +215,7 @@ def provision_d1_database() -> None:
 
     if not is_placeholder:
         ok('D1 database ID', current_id)
+        _apply_d1_migrations(remote=False)
         _apply_d1_migrations(remote=True)
         return
 
@@ -240,6 +241,7 @@ def provision_d1_database() -> None:
 
     _patch_d1_database_id(database_id)
     ok('D1 database ID', database_id)
+    _apply_d1_migrations(remote=False)
     _apply_d1_migrations(remote=True)
 
 

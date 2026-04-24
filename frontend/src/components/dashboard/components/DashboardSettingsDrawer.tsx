@@ -901,9 +901,10 @@ const WASM_MODEL_KEY = 'stt_wasm_model';
 const WASM_READY_KEY = 'stt_wasm_ready';
 
 const WASM_MODELS = [
-  { id: 'onnx-community/whisper-tiny.en', label: 'Tiny (~40 MB) — fastest' },
-  { id: 'onnx-community/whisper-base.en', label: 'Base (~75 MB) — recommended' },
-  { id: 'onnx-community/whisper-small.en', label: 'Small (~235 MB) — most accurate' },
+  { id: 'onnx-community/moonshine-tiny-ONNX', label: 'Moonshine Tiny (~45 MB) — fastest, streaming-optimized' },
+  { id: 'onnx-community/whisper-tiny.en', label: 'Whisper Tiny (~40 MB) — fast' },
+  { id: 'onnx-community/whisper-base.en', label: 'Whisper Base (~75 MB) — recommended' },
+  { id: 'onnx-community/whisper-small.en', label: 'Whisper Small (~235 MB) — most accurate' },
 ] as const;
 
 function SpeechToTextSettingsSection() {

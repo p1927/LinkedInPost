@@ -1373,7 +1373,7 @@ async function dispatchAction(
       return newRow;
     }
     case 'listCustomPersonas': {
-      const personas = await pipeline.listCustomPersonas(storedConfig.spreadsheetId);
+      const personas = await pipeline.listCustomPersonas(session.userId);
       return personas;
     }
     case 'createCustomPersona': {
@@ -1387,7 +1387,7 @@ async function dispatchAction(
       const decisionDrivers = Array.isArray(payload.decisionDrivers) ? payload.decisionDrivers : [];
       const painPoints = Array.isArray(payload.painPoints) ? payload.painPoints : [];
       const id = crypto.randomUUID();
-      await pipeline.createCustomPersona(storedConfig.spreadsheetId, {
+      await pipeline.createCustomPersona(session.userId, {
         id, name, concerns, ambitions, currentFocus, habits, language, decisionDrivers, painPoints,
       });
       return { id, name, concerns, ambitions, currentFocus, habits, language, decisionDrivers, painPoints };
@@ -1395,7 +1395,7 @@ async function dispatchAction(
     case 'deleteCustomPersona': {
       const personaId = String(payload.personaId || '').trim();
       if (!personaId) throw new Error('personaId is required.');
-      await pipeline.deleteCustomPersona(storedConfig.spreadsheetId, personaId);
+      await pipeline.deleteCustomPersona(session.userId, personaId);
       return { success: true };
     }
     case 'analyzeTopicInsights': {
