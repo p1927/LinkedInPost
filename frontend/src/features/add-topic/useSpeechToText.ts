@@ -156,6 +156,18 @@ export function useSpeechToText(): SpeechToTextState {
     return () => window.removeEventListener('stt-wasm-ready', handler);
   }, [initWasmWorker]);
 
+  // Track the last focused input/textarea so clicking MicButton doesn't lose the target
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
+        activeElRef.current = e.target;
+        cursorPositionRef.current = e.target.selectionStart ?? e.target.value.length;
+      }
+    };
+    document.addEventListener('focusin', handleFocusIn);
+    return () => document.removeEventListener('focusin', handleFocusIn);
+  }, []);
+
   // Insert transcribed text at the saved cursor position
   const insertText = useCallback((text: string) => {
     const el = activeElRef.current;
@@ -240,19 +252,9 @@ export function useSpeechToText(): SpeechToTextState {
 
   const startRecording = useCallback(async () => {
     setError(null);
-    // Capture focus before getUserMedia — clicking MicButton steals focus
-    const active = document.activeElement;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-
-      if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
-        activeElRef.current = active;
-        cursorPositionRef.current = active.selectionStart ?? active.value.length;
-      } else {
-        activeElRef.current = null;
-        cursorPositionRef.current = null;
-      }
 
       startChunk(stream);
       setIsRecording(true);
