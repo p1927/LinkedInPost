@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { type AppSession, type BackendApi, type SocialIntegration, type TelegramChatVerificationResult } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
 import { type BotConfig, type BotConfigUpdate, type LlmRef, type GoogleModelOption, type EnrichmentSkillConfig, type EnrichmentSkillId } from '../../services/configService';
@@ -44,9 +44,51 @@ import {
 import { CampaignPage } from '../../features/campaign';
 import { TrendingDashboard } from '../../features/trending';
 import { AddTopicPage } from '../../features/add-topic/AddTopicPage';
+import { TopicDetailView } from '../../features/add-topic/TopicDetailView';
 import { AutomationsTab } from '../../features/automations';
+import { SetupWizard } from '../../features/setup-wizard/SetupWizard';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 import type { TopicRescheduleCommitPayload } from '@/features/content-schedule-calendar';
+
+function AddTopicPageWithEdit({
+  idToken,
+  api,
+  rows,
+}: {
+  idToken: string;
+  api: BackendApi;
+  rows: SheetRow[];
+}) {
+  const [searchParams] = useSearchParams();
+  const editTopicId = searchParams.get('edit') ?? '';
+  const editRow = editTopicId
+    ? findRowByTopicRouteId(rows, editTopicId) ?? rows.find((r) => String(r.topicId).trim() === editTopicId.trim())
+    : undefined;
+  return <AddTopicPage idToken={idToken} api={api} editRow={editRow} />;
+}
+
+function TopicVariantsOrDetail(p: Parameters<typeof TopicVariantsPage>[0] & { rows: SheetRow[] }) {
+  const { topicId } = useParams<{ topicId: string }>();
+  const row = topicId ? findRowByTopicRouteId(p.rows, topicId) : undefined;
+  const isPending = row && !row.variant1?.trim() && !row.variant2?.trim();
+  if (isPending) {
+    return (
+      <div className="flex h-full min-h-0 flex-1">
+        <TopicDetailView row={row} editPath={WORKSPACE_PATHS.addTopic} />
+      </div>
+    );
+  }
+  return <TopicVariantsPage {...p} />;
+}
+
+function getProviderDisplayLabel(provider: string): string {
+  switch (provider) {
+    case 'grok': return 'Grok (xAI)';
+    case 'openrouter': return 'OpenRouter';
+    case 'minimax': return 'Minimax';
+    default: return 'Google Gemini';
+  }
+}
 
 function previewAuthorDisplayName(email: string): string {
   const local = email.split('@')[0]?.trim() ?? '';
@@ -406,21 +448,6 @@ export function Dashboard({
 
   const isTopicsMain = pathNorm === WORKSPACE_PATHS.topics;
 
-  const addTopicForm = useMemo(
-    () =>
-      isTopicsMain && !topicIdFromPath
-        ? {
-            newTopic: queueHook.newTopic,
-            setNewTopic: queueHook.setNewTopic,
-            handleAddTopic: queueHook.handleAddTopic,
-            addingTopic: queueHook.addingTopic,
-            loading: queueHook.loading,
-          }
-        : null,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isTopicsMain, topicIdFromPath, queueHook.newTopic, queueHook.addingTopic, queueHook.loading],
-  );
-
   useRegisterWorkspaceChrome({
     onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,
     queueLoading: queueHook.loading,
@@ -428,7 +455,6 @@ export function Dashboard({
     health: publishingHealth,
     headerOverride,
     clearTopicReviewHeader: !topicIdFromPath,
-    addTopicForm,
   });
 
   const parsedTelegramRecipientsForSettings = useMemo(() => {
@@ -603,7 +629,7 @@ export function Dashboard({
       rows={queueHook.rows}
       availableModels={settingsHook.availableModels}
       modelPickerLocked={settingsHook.modelPickerLocked}
-      providerLabel={settingsHook.llmPrimaryProvider === 'grok' ? 'Grok (xAI)' : 'Google Gemini'}
+      providerLabel={getProviderDisplayLabel(settingsHook.llmPrimaryProvider)}
       previewAuthorName={previewAuthorDisplayName(session.email)}
       onSaveTopicDeliveryPreferences={queueHook.handleSaveTopicDeliveryPreferences}
       onOpenEditor={(row) => navigate(topicEditorPathForRow(row))}
@@ -765,7 +791,7 @@ export function Dashboard({
       <Routes>
         <Route
           path={WORKSPACE_ROUTE_PATHS.addTopic}
-          element={<AddTopicPage idToken={idToken} api={api} />}
+          element={<AddTopicPageWithEdit idToken={idToken} api={api} rows={queueHook.rows} />}
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.topicEditor}
@@ -773,7 +799,7 @@ export function Dashboard({
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.topicVariants}
-          element={<TopicVariantsPage {...topicReviewBase} />}
+          element={<TopicVariantsOrDetail {...topicReviewBase} rows={queueHook.rows} />}
         />
         <Route path={WORKSPACE_ROUTE_PATHS.topics} element={topicsHome} />
         <Route path={`${WORKSPACE_PATHS.topics}/`} element={topicsHome} />
@@ -836,12 +862,31 @@ export function Dashboard({
             )
           }
         />
-        <Route path={WORKSPACE_ROUTE_PATHS.trending} element={<TrendingDashboard idToken={idToken} />} />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.trending}
+          element={
+            <TrendingDashboard
+              idToken={idToken}
+              api={api}
+              newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
+            />
+          }
+        />
         <Route
           path={WORKSPACE_ROUTE_PATHS.automations}
           element={
             session.isAdmin ? (
               <AutomationsTab idToken={idToken} isAdmin={session.isAdmin} />
+            ) : (
+              <Navigate to={WORKSPACE_PATHS.topics} replace />
+            )
+          }
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.setup}
+          element={
+            session.isAdmin ? (
+              <SetupWizard embedded />
             ) : (
               <Navigate to={WORKSPACE_PATHS.topics} replace />
             )

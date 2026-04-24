@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, ScrollText, Settings, TrendingUp, Zap } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, ScrollText, Settings, TrendingUp, Wrench, Zap } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
 import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'automations';
+export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'automations' | 'setup';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -145,12 +145,16 @@ export function AppSidebar({
                     ? WORKSPACE_PATHS.enrichment
                     : page === 'trending'
                       ? WORKSPACE_PATHS.trending
-                      : WORKSPACE_PATHS.settings;
+                      : page === 'settings'
+                        ? WORKSPACE_PATHS.settings
+                        : page === 'setup'
+                          ? WORKSPACE_PATHS.setup
+                          : WORKSPACE_PATHS.automations; // explicit — not a fallthrough
     return (
       <li key={page}>
         <NavLink
           to={to}
-          end={page !== 'topics'}
+          end
           onClick={(e) => {
             if (hasUnsavedChanges) {
               if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
@@ -267,6 +271,7 @@ export function AppSidebar({
             {link('trending', <TrendingUp aria-hidden />, 'Trending')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
             {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}
+            {session.isAdmin ? link('setup', <Wrench aria-hidden />, 'Setup') : null}
           </ul>
         </nav>
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, FolderOpen } from 'lucide-react';
 
 interface DirectorySelectorProps {
   onSelect: (directory: string) => void;
@@ -11,23 +11,6 @@ export function DirectorySelector({ onSelect, onBack, onNext }: DirectorySelecto
   const [directory, setDirectory] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleBrowse = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.webkitdirectory = true;
-    input.capture = 'filesystem';
-
-    input.onchange = (e) => {
-      const files = (e.target as HTMLInputElement).files;
-      if (files && files.length > 0) {
-        const path = files[0].webkitRelativePath.split('/')[0];
-        setDirectory(path || '.');
-      }
-    };
-
-    input.click();
-  };
-
   const handlePathChange = (path: string) => {
     setDirectory(path);
     setError(null);
@@ -35,10 +18,10 @@ export function DirectorySelector({ onSelect, onBack, onNext }: DirectorySelecto
 
   const handleNext = () => {
     if (!directory.trim()) {
-      setError('Please select a directory');
+      setError('Please enter the project directory path');
       return;
     }
-    onSelect(directory);
+    onSelect(directory.trim());
     onNext();
   };
 
@@ -52,40 +35,42 @@ export function DirectorySelector({ onSelect, onBack, onNext }: DirectorySelecto
         <span className="text-sm">Back</span>
       </button>
 
-      <h2 className="font-heading text-2xl font-semibold text-ink mb-2">
-        Choose Installation Directory
-      </h2>
-      <p className="text-muted mb-8">
-        Select where LinkedIn Post is installed on your computer.
-      </p>
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100">
+          <FolderOpen className="h-5 w-5 text-violet-600" />
+        </div>
+        <div>
+          <h2 className="font-heading text-2xl font-semibold text-ink">
+            Project Directory
+          </h2>
+          <p className="text-sm text-muted">Where is your LinkedIn Post repo cloned?</p>
+        </div>
+      </div>
 
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-ink mb-2">
-            Project Directory
+            Absolute path to project root
           </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={directory}
-              onChange={(e) => handlePathChange(e.target.value)}
-              placeholder="/path/to/your/project"
-              className="flex-1 rounded-xl border border-border bg-white px-4 py-3 text-ink placeholder:text-muted/50 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-            />
-            <button
-              onClick={handleBrowse}
-              className="rounded-xl border border-border bg-white px-4 py-3 text-sm font-medium text-ink hover:bg-muted/50 transition-colors"
-            >
-              Browse
-            </button>
-          </div>
+          <input
+            type="text"
+            value={directory}
+            onChange={(e) => handlePathChange(e.target.value)}
+            placeholder="/Users/you/Documents/LinkedInPost"
+            className="w-full rounded-xl border border-border bg-white px-4 py-3 font-mono text-sm text-ink placeholder:text-muted/50 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+            autoFocus
+          />
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         </div>
 
-        <div className="rounded-xl border border-violet-200/50 bg-violet-50/50 p-4">
-          <p className="text-sm text-muted">
-            <strong className="text-ink">Tip:</strong> The directory should be the root of the LinkedIn Post project
-            containing frontend/, worker/, and other project files.
+        <div className="rounded-xl border border-violet-200/50 bg-violet-50/50 p-4 space-y-2">
+          <p className="text-sm font-medium text-ink">How to find the path</p>
+          <ul className="text-sm text-muted space-y-1 list-disc list-inside">
+            <li>Open Terminal and <code className="rounded bg-violet-100 px-1 text-violet-700">cd</code> into the project folder</li>
+            <li>Run <code className="rounded bg-violet-100 px-1 text-violet-700">pwd</code> and paste the output here</li>
+          </ul>
+          <p className="text-xs text-muted pt-1">
+            The folder should contain <code className="rounded bg-violet-100 px-1 text-violet-700">frontend/</code>, <code className="rounded bg-violet-100 px-1 text-violet-700">worker/</code>, and other project files.
           </p>
         </div>
       </div>

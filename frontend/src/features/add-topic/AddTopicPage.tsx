@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useCallback, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Newspaper, Sparkles, Loader2, ThumbsUp, ThumbsDown, X as XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { type BackendApi } from '../../services/backendApi';
+import { type SheetRow } from '../../services/sheets';
 import { WORKSPACE_PATHS } from '../topic-navigation/utils/workspaceRoutes';
 import { TrendingSidebar } from './TrendingSidebar';
 import { useSpeechToText } from './useSpeechToText';
@@ -92,15 +93,16 @@ function SectionDivider({ label, action }: { label: string; action?: React.React
 export function AddTopicPage({
   idToken,
   api,
+  editRow,
 }: {
   idToken: string;
   api: BackendApi;
+  editRow?: SheetRow;
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  void searchParams; // topicId param accepted; hydration is a follow-up task
-  const notesRef = useRef<HTMLTextAreaElement>(null);
-  const stt = useSpeechToText(notesRef);
+  void searchParams;
+  const stt = useSpeechToText();
 
   const [topic, setTopic] = useState('');
   const [about, setAbout] = useState('');
@@ -109,12 +111,31 @@ export function AddTopicPage({
   const [notes, setNotes] = useState('');
   const [pros, setPros] = useState<string[]>([]);
   const [cons, setCons] = useState<string[]>([]);
+  useEffect(() => {
+    if (!editRow) return;
+    setTopic(editRow.topic);
+    const meta = editRow.topicGenerationRules
+      ? (() => {
+          try { return JSON.parse(editRow.topicGenerationRules) as Record<string, unknown>; }
+          catch { return null; }
+        })()
+      : null;
+    if (meta) {
+      if (typeof meta.about === 'string') setAbout(meta.about);
+      if (typeof meta.meaning === 'string') setMeaning(meta.meaning);
+      if (typeof meta.style === 'string') setStyle(meta.style);
+      if (Array.isArray(meta.pros)) setPros(meta.pros.filter((x): x is string => typeof x === 'string'));
+      if (Array.isArray(meta.cons)) setCons(meta.cons.filter((x): x is string => typeof x === 'string'));
+      if (typeof meta.notes === 'string') setNotes(meta.notes);
+    }
+  }, [editRow?.topicId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [generatingInsights, setGeneratingInsights] = useState(false);
   const [insightsError, setInsightsError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const [selectedAudience, setSelectedAudience] = useState('');
+<  const [selectedAudience, setSelectedAudience] = useState('');
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [showPersonaDialog, setShowPersonaDialog] = useState(false);
   const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null);
@@ -132,7 +153,6 @@ export function AddTopicPage({
       // Non-fatal: custom personas are optional
     });
   }, [idToken, api]);
-
   const handleGenerateInsights = useCallback(async () => {
     if (!topic.trim()) return;
     setGeneratingInsights(true);
@@ -191,19 +211,30 @@ export function AddTopicPage({
       <div className="custom-scrollbar flex-1 overflow-y-auto">
         <form onSubmit={handleSubmit} className="mx-auto max-w-2xl px-8 py-10">
 
-          {/* Document title */}
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Untitled topic…"
-            autoFocus
-            className={[
-              'w-full bg-transparent font-heading text-3xl font-bold text-ink',
-              'placeholder:text-muted/30 outline-none border-none mb-8',
-              'transition-colors duration-150',
-            ].join(' ')}
-          />
+          {/* Document title + voice button */}
+          <div className="mb-8 flex items-start gap-3">
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Untitled topic…"
+              autoFocus
+              className={[
+                'min-w-0 flex-1 bg-transparent font-heading text-3xl font-bold text-ink',
+                'placeholder:text-muted/30 outline-none border-none',
+                'transition-colors duration-150',
+              ].join(' ')}
+            />
+            <div className="mt-2 shrink-0">
+              <MicButton
+                isRecording={stt.isRecording}
+                isAvailable={stt.isAvailable}
+                unavailableReason={stt.unavailableReason}
+                shortcut={stt.shortcut}
+                onClick={stt.toggle}
+              />
+            </div>
+          </div>
 
           {/* About */}
           <div className="mb-6">
@@ -306,21 +337,9 @@ export function AddTopicPage({
 
           {/* Research notes — main scratchpad */}
           <div className="mb-6">
-            <SectionDivider
-              label="Research notes"
-              action={
-                <MicButton
-                  isRecording={stt.isRecording}
-                  isAvailable={stt.isAvailable}
-                  unavailableReason={stt.unavailableReason}
-                  shortcut={stt.shortcut}
-                  onClick={stt.toggle}
-                />
-              }
-            />
+            <SectionDivider label="Research notes" />
             <div className="pt-3">
               <DocTextarea
-                ref={notesRef}
                 value={notes}
                 onChange={setNotes}
                 placeholder="Paste links, quotes, stats, anecdotes, or anything you want to remember. This is your scratchpad…"
@@ -461,14 +480,7 @@ export function AddTopicPage({
 
       {/* ── Right: trending sidebar ── */}
       <aside className="custom-scrollbar hidden w-72 shrink-0 overflow-y-auto border-l border-white/30 bg-white/5 p-4 backdrop-blur-sm lg:block">
-        <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted/60">
-          <Newspaper className="h-3.5 w-3.5 text-primary" />
-          Live Research
-        </div>
-        <p className="mb-4 text-[11px] leading-relaxed text-muted/50">
-          Updates as you type your topic.
-        </p>
-        <TrendingSidebar topic={debouncedTopic} idToken={idToken} />
+        <TrendingSidebar topic={topic} idToken={idToken} api={api} onRefresh={() => {}} />
       </aside>
     </div>
   );

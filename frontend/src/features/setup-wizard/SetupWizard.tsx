@@ -87,7 +87,7 @@ const DEFAULT_CONFIG: SetupConfig = {
   envVars: {},
 };
 
-export function SetupWizard() {
+export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
   const [step, setStep] = useState<SetupStep>('welcome');
   const [config, setConfig] = useState<SetupConfig>(DEFAULT_CONFIG);
   const [progressLogs, setProgressLogs] = useState<{ message: string; status: 'pending' | 'running' | 'done' | 'error' }[]>([]);
@@ -300,8 +300,11 @@ export function SetupWizard() {
   }, [config.projectDir]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className={embedded
+      ? 'w-full max-w-2xl mx-auto py-6 px-4'
+      : 'min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-center justify-center p-4'
+    }>
+      <div className={embedded ? 'w-full' : 'w-full max-w-2xl'}>
         <AnimatePresence mode="wait">
           {isDetectingState && (
             <motion.div

@@ -16,6 +16,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   trending: 'Trending',
   'add-topic': 'Add Topic',
   automations: 'Automations',
+  setup: 'Setup',
 };
 
 export function WorkspaceHeader({

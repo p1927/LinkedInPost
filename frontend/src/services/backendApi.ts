@@ -1092,6 +1092,23 @@ export class BackendApi {
       reader.readAsDataURL(file);
     });
   }
+
+  async loadImageGenModelCatalog(idToken: string): Promise<Array<{ provider: string; label: string; models: Array<{ value: string; label: string }> }>> {
+    if (!this.endpointUrl) {
+      throw new Error('Missing VITE_WORKER_URL. Add your deployed Cloudflare Worker URL to the frontend environment.');
+    }
+    const response = await fetch(`${this.endpointUrl}/v1/image-gen-catalog`, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(`image-gen-catalog request failed with status ${response.status}.`);
+    }
+    const parsed = await response.json() as { ok: boolean; data?: { providers: Array<{ provider: string; label: string; models: Array<{ value: string; label: string }> }> }; error?: string };
+    if (!parsed.ok || !parsed.data) {
+      throw new Error(parsed.error || 'Failed to load image gen model catalog.');
+    }
+    return parsed.data.providers;
+  }
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {

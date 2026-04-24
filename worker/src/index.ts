@@ -57,6 +57,7 @@ import {
   type LlmSettingsMap,
 } from './llm';
 import { runGithubAutomationGenerateVariants } from './internal/githubAutomationGenerateVariants';
+import { syncImageGenCatalog, getImageGenCatalog, seedImageGenCatalogIfEmpty } from './image-gen/model-catalog';
 import { listGeminiModels, STATIC_GEMINI_MODELS } from './llm/providers/gemini';
 import { listGrokModels, STATIC_GROK_MODELS } from './llm/providers/grok';
 import { listOpenrouterModels, STATIC_OPENROUTER_MODELS } from './llm/providers/openrouter';
@@ -90,6 +91,11 @@ export interface Env {
   GOOGLE_CLOUD_STORAGE_BUCKET?: string;
   DELETE_UNUSED_GENERATED_IMAGES?: string;
   GEMINI_API_KEY?: string;
+  FAL_API_KEY?: string;
+  OPENAI_API_KEY?: string;
+  STABILITY_API_KEY?: string;
+  SEEDANCE_API_KEY?: string;
+  PIXAZO_API_KEY?: string;
   /** xAI Grok API key (optional; multi-provider LLM). */
   XAI_API_KEY?: string;
   SERPAPI_API_KEY?: string;
@@ -640,6 +646,34 @@ export default {
         return jsonResponse({ ok: true, data: { status: 'ok', backend: 'cloudflare-worker' } }, 200, corsHeaders);
       }
 
+      if (url.pathname === '/v1/image-gen-catalog') {
+        const authHeader = request.headers.get('Authorization') || '';
+        const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+        try {
+          const s = await verifySession(idToken, env);
+          if (!s.isAdmin) return jsonResponse({ ok: false, error: 'Forbidden' }, 403, corsHeaders);
+        } catch {
+          return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, corsHeaders);
+        }
+        await seedImageGenCatalogIfEmpty(env.PIPELINE_DB);
+        const catalog = await getImageGenCatalog(env.PIPELINE_DB);
+        const IMAGE_GEN_PROVIDER_LABELS: Record<string, string> = {
+          'flux-kontext': 'FLUX Kontext (FAL)',
+          'ideogram': 'Ideogram (FAL)',
+          'dall-e': 'DALL-E / GPT Image (OpenAI)',
+          'stability': 'Stability AI',
+          'gemini': 'Google Gemini',
+          'seedance': 'Seedance (ByteDance)',
+          'pixazo': 'Pixazo SDXL',
+        };
+        const providers = Object.entries(catalog).map(([provider, models]) => ({
+          provider,
+          label: IMAGE_GEN_PROVIDER_LABELS[provider] ?? provider,
+          models,
+        }));
+        return jsonResponse({ ok: true, data: { providers } }, 200, corsHeaders);
+      }
+
       if (url.pathname === '/auth/linkedin/callback') {
         return handleLinkedInCallback(request, env);
       }
@@ -956,6 +990,7 @@ export default {
     ctx.waitUntil(
       pruneOldLlmUsageLog(env.PIPELINE_DB).catch(() => undefined),
     );
+    ctx.waitUntil(syncImageGenCatalog(env.PIPELINE_DB, env).catch(() => undefined));
   },
 } satisfies ExportedHandler<Env>;
 

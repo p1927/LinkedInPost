@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { TrendingData } from '../types';
 import { DEFAULT_CONFIG, isAnyApiEnabled } from '../api/config';
 import type { TrendingApiConfig } from '../api';
@@ -6,6 +6,7 @@ import { useYouTubeTrending } from './useYouTubeTrending';
 import { useInstagramTrending } from './useInstagramTrending';
 import { useLinkedInTrending } from './useLinkedInTrending';
 import { useNewsTrending } from './useNewsTrending';
+import type { BackendApi } from '@/services/backendApi';
 
 // Mock data for development when no APIs are configured
 const MOCK_TRENDING_DATA: TrendingData = {
@@ -146,47 +147,57 @@ interface UseTrendingResult {
   loading: boolean;
   error: string | null;
   config: TrendingApiConfig;
-  setConfig: (config: TrendingApiConfig) => void;
+  setConfig: (updater: TrendingApiConfig | ((prev: TrendingApiConfig) => TrendingApiConfig)) => void;
   enabledPlatforms: {
     youtube: boolean;
     instagram: boolean;
     linkedin: boolean;
     news: boolean;
   };
+  refetch: () => void;
 }
 
 /**
  * Main trending hook that coordinates all platform-specific hooks.
  * Falls back to mock data when no APIs are configured.
  */
-export function useTrending(topic: string, idToken?: string): UseTrendingResult {
+export function useTrending(topic: string, idToken?: string, api?: BackendApi): UseTrendingResult {
   const [config, setConfig] = useState<TrendingApiConfig>(DEFAULT_CONFIG);
   const [mockLoading, setMockLoading] = useState(false);
   const [mockError, setMockError] = useState<string | null>(null);
 
-  const useRealApis = isAnyApiEnabled(config);
+  // Auto-enable news when worker API is available — news goes through the worker, not a third-party key
+  const effectiveConfig = useMemo((): TrendingApiConfig => {
+    if (!api) return config;
+    return {
+      ...config,
+      news: { ...config.news, config: { ...config.news.config, enabled: true } },
+    };
+  }, [config, api]);
+
+  const useRealApis = isAnyApiEnabled(effectiveConfig);
 
   // Inject worker proxy credentials into each platform config when idToken is available
   const workerUrl = import.meta.env.VITE_WORKER_URL as string | undefined;
   const enrichedConfig = useMemo((): TrendingApiConfig => {
-    if (!idToken || !workerUrl) return config;
+    if (!idToken || !workerUrl) return effectiveConfig;
     const inject = <T>(cfg: { config: { workerProxyUrl?: string; idToken?: string } } & T) => ({
       ...cfg,
       config: { ...cfg.config, workerProxyUrl: workerUrl, idToken },
     });
     return {
-      youtube: inject(config.youtube),
-      instagram: inject(config.instagram),
-      linkedin: inject(config.linkedin),
-      news: config.news,
+      youtube: inject(effectiveConfig.youtube),
+      instagram: inject(effectiveConfig.instagram),
+      linkedin: inject(effectiveConfig.linkedin),
+      news: effectiveConfig.news,
     };
-  }, [config, idToken, workerUrl]);
+  }, [effectiveConfig, idToken, workerUrl]);
 
   // Platform-specific hooks (only active when their API is enabled)
   const youtube = useYouTubeTrending(topic, enrichedConfig);
   const instagram = useInstagramTrending(topic, enrichedConfig);
   const linkedin = useLinkedInTrending(topic, enrichedConfig);
-  const news = useNewsTrending(topic, enrichedConfig);
+  const news = useNewsTrending(topic, enrichedConfig, api, idToken);
 
   // Aggregate data based on what's enabled
   const data = useMemo((): TrendingData | null => {
@@ -209,10 +220,10 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
 
     // Aggregate real data from enabled platforms
     const enabled = {
-      youtube: config.youtube.config.enabled,
-      instagram: config.instagram.config.enabled,
-      linkedin: config.linkedin.config.enabled,
-      news: config.news.config.enabled,
+      youtube: effectiveConfig.youtube.config.enabled,
+      instagram: effectiveConfig.instagram.config.enabled,
+      linkedin: effectiveConfig.linkedin.config.enabled,
+      news: effectiveConfig.news.config.enabled,
     };
 
     const recommendedTopics = new Set<string>();
@@ -233,7 +244,7 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
       relatedNewsTopics: [],
       timestamp: Date.now(),
     };
-  }, [topic, useRealApis, config, youtube.data, instagram.data, linkedin.data, news.data]);
+  }, [topic, useRealApis, effectiveConfig, youtube.data, instagram.data, linkedin.data, news.data]);
 
   const loading = useRealApis
     ? (youtube.loading || instagram.loading || linkedin.loading || news.loading)
@@ -259,6 +270,10 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
     return () => clearTimeout(timer);
   }, [topic, useRealApis]);
 
+  const refetch = useCallback(() => {
+    news.refetch();
+  }, [news.refetch]);
+
   return {
     data,
     loading,
@@ -271,5 +286,6 @@ export function useTrending(topic: string, idToken?: string): UseTrendingResult 
       linkedin: config.linkedin.config.enabled,
       news: config.news.config.enabled,
     },
+    refetch,
   };
 }

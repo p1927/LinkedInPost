@@ -62,6 +62,13 @@ export default defineConfig({
     __APP_BUILD_LABEL__: JSON.stringify(appBuildLabel()),
   },
   plugins: [react(), tailwindcss(), spaGithubPages404()],
+  optimizeDeps: {
+    // ESM-only, loads WASM dynamically — must not be pre-bundled
+    exclude: ['@huggingface/transformers'],
+  },
+  worker: {
+    format: 'es',
+  },
   server: {
     port: 5174,
     /** Fail fast so the URL always matches Google Cloud “Authorized JavaScript origins” (e.g. http://localhost:5174). */
