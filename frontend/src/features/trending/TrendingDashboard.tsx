@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingSearchBar } from './components/TrendingSearchBar';
 import { YouTubePanel } from './components/YouTubePanel';
@@ -8,7 +8,7 @@ import { LinkedInPanel } from './components/LinkedInPanel';
 import { RecommendationsPanel } from './components/RecommendationsPanel';
 import { TrendingGraph } from './components/TrendingGraph';
 import { PanelToggle, type PanelConfig } from './components/PanelToggle';
-import { useTrending } from './hooks/useTrending';
+import { useTrending, type TrendingCapabilities } from './hooks/useTrending';
 import { Sparkles, Settings, PlugZap } from 'lucide-react';
 import type { GraphNode } from './types';
 import type { BackendApi } from '@/services/backendApi';
@@ -27,17 +27,19 @@ export function TrendingDashboard({
   idToken,
   api,
   newsProviderKeys,
+  capabilities,
 }: {
   idToken?: string;
   api?: BackendApi;
   newsProviderKeys?: NewsProviderKeys | null;
+  capabilities?: TrendingCapabilities;
 } = {}) {
   const [topic, setTopic] = useState('');
   const [searchTopic, setSearchTopic] = useState('');
   const [enabledPanels, setEnabledPanels] = useState<string[]>(DEFAULT_ENABLED);
   const [showSettings, setShowSettings] = useState(false);
 
-  const { data, loading, error, config, setConfig, enabledPlatforms } = useTrending(searchTopic, idToken, api);
+  const { data, loading, error, config, enabledPlatforms } = useTrending(searchTopic, idToken, api, capabilities);
 
   const hasNewsApis = Boolean(
     newsProviderKeys?.newsapi ||
@@ -45,17 +47,6 @@ export function TrendingDashboard({
     newsProviderKeys?.newsdata ||
     newsProviderKeys?.serpapi
   );
-
-  // Enable news in config when APIs are available
-  useEffect(() => {
-    setConfig(prev => ({
-      ...prev,
-      news: {
-        ...prev.news,
-        config: { ...prev.news.config, enabled: hasNewsApis },
-      },
-    }));
-  }, [hasNewsApis, setConfig]);
 
   const handleSearch = () => {
     setSearchTopic(topic);

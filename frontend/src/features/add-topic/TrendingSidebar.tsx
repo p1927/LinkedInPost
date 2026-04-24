@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, Newspaper, Lightbulb, SearchX, RefreshCw } from 'lucide-react';
-import { useTrending } from '../trending/hooks/useTrending';
+import { ExternalLink, Newspaper, Lightbulb, SearchX, RefreshCw, Youtube, Instagram, Linkedin } from 'lucide-react';
+import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import type { BackendApi } from '@/services/backendApi';
 
-export function TrendingSidebar({ topic, idToken, onRefresh, api }: { topic: string; idToken?: string; onRefresh?: () => void; api?: BackendApi }) {
+export function TrendingSidebar({ topic, idToken, onRefresh, api, capabilities }: {
+  topic: string;
+  idToken?: string;
+  onRefresh?: () => void;
+  api?: BackendApi;
+  capabilities?: TrendingCapabilities;
+}) {
   const [fetchedTopic, setFetchedTopic] = useState('');
-  const { data, loading, error, refetch } = useTrending(fetchedTopic, idToken, api);
+  const { data, loading, error, refetch } = useTrending(fetchedTopic, idToken, api, capabilities);
 
   // Fetch on mount if topic is non-empty and we haven't fetched yet
   useEffect(() => {
@@ -28,6 +34,9 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api }: { topic: str
 
   const news = data?.news ?? [];
   const recommended = data?.recommendedTopics ?? [];
+  const youtubeItems = data?.youtube ?? [];
+  const instagramItems = data?.instagram ?? [];
+  const linkedinItems = data?.linkedin ?? [];
 
   if (!topic.trim()) {
     return (
@@ -122,6 +131,96 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api }: { topic: str
         </section>
       )}
 
+      {youtubeItems.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+            <Youtube className="h-3.5 w-3.5" />
+            YouTube
+          </div>
+          <ul className="flex flex-col gap-2 list-none p-0 m-0">
+            {youtubeItems.slice(0, 5).map((v) => (
+              <li key={v.id}>
+                <a
+                  href={v.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col gap-0.5 rounded-xl border border-white/40 bg-white/30 p-3 no-underline backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-white/50"
+                >
+                  <span className="text-xs font-semibold leading-snug text-ink group-hover:text-primary line-clamp-2">
+                    {v.title}
+                  </span>
+                  <div className="flex items-center gap-1 text-[10px] text-muted">
+                    <span className="truncate">{v.channelTitle}</span>
+                    {v.viewCount && <><span>·</span><span className="shrink-0">{v.viewCount} views</span></>}
+                    <ExternalLink className="ml-auto h-2.5 w-2.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {instagramItems.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+            <Instagram className="h-3.5 w-3.5" />
+            Instagram
+          </div>
+          <ul className="flex flex-col gap-2 list-none p-0 m-0">
+            {instagramItems.slice(0, 4).map((p) => (
+              <li key={p.id}>
+                <a
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col gap-0.5 rounded-xl border border-white/40 bg-white/30 p-3 no-underline backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-white/50"
+                >
+                  <span className="text-xs leading-snug text-ink line-clamp-2">{p.caption}</span>
+                  <div className="flex items-center gap-1 text-[10px] text-muted">
+                    {p.likeCount && <span>{p.likeCount} likes</span>}
+                    <ExternalLink className="ml-auto h-2.5 w-2.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {linkedinItems.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+            <Linkedin className="h-3.5 w-3.5" />
+            LinkedIn
+          </div>
+          <ul className="flex flex-col gap-2 list-none p-0 m-0">
+            {linkedinItems.slice(0, 4).map((p) => (
+              <li key={p.id}>
+                <a
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col gap-0.5 rounded-xl border border-white/40 bg-white/30 p-3 no-underline backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-white/50"
+                >
+                  {p.title && (
+                    <span className="text-xs font-semibold leading-snug text-ink group-hover:text-primary line-clamp-1">
+                      {p.title}
+                    </span>
+                  )}
+                  <span className="text-xs leading-snug text-muted line-clamp-2">{p.caption}</span>
+                  <div className="flex items-center gap-1 text-[10px] text-muted">
+                    {p.authorName && <span className="truncate">{p.authorName}</span>}
+                    {p.likeCount && <><span>·</span><span className="shrink-0">{p.likeCount} likes</span></>}
+                    <ExternalLink className="ml-auto h-2.5 w-2.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {recommended.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
@@ -141,7 +240,7 @@ export function TrendingSidebar({ topic, idToken, onRefresh, api }: { topic: str
         </section>
       )}
 
-      {news.length === 0 && recommended.length === 0 && (
+      {news.length === 0 && youtubeItems.length === 0 && instagramItems.length === 0 && linkedinItems.length === 0 && recommended.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-8 text-center text-muted">
           <SearchX className="h-5 w-5 opacity-40" />
           <p className="text-xs">No results found for this topic</p>

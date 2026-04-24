@@ -8,6 +8,7 @@ import { type BackendApi } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
 import { WORKSPACE_PATHS } from '../topic-navigation/utils/workspaceRoutes';
 import { TrendingSidebar } from './TrendingSidebar';
+import type { TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useSpeechToText } from './useSpeechToText';
 import { MicButton } from './MicButton';
 
@@ -94,10 +95,12 @@ export function AddTopicPage({
   idToken,
   api,
   editRow,
+  capabilities,
 }: {
   idToken: string;
   api: BackendApi;
   editRow?: SheetRow;
+  capabilities?: TrendingCapabilities;
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -481,7 +484,7 @@ export function AddTopicPage({
 
       {/* ── Right: trending sidebar ── */}
       <aside className="custom-scrollbar hidden w-72 shrink-0 overflow-y-auto border-l border-white/30 bg-white/5 p-4 backdrop-blur-sm lg:block">
-        <TrendingSidebar topic={debouncedTopic} idToken={idToken} api={api} onRefresh={() => {}} />
+        <TrendingSidebar topic={debouncedTopic} idToken={idToken} api={api} onRefresh={() => {}} capabilities={capabilities} />
       </aside>
     </div>
   );

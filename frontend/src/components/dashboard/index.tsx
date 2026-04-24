@@ -43,6 +43,7 @@ import {
 } from '../../generated/features';
 import { CampaignPage } from '../../features/campaign';
 import { TrendingDashboard } from '../../features/trending';
+import type { TrendingCapabilities } from '../../features/trending/hooks/useTrending';
 import { AddTopicPage } from '../../features/add-topic/AddTopicPage';
 import { TopicDetailView } from '../../features/add-topic/TopicDetailView';
 import { AutomationsTab } from '../../features/automations';
@@ -54,17 +55,19 @@ function AddTopicPageWithEdit({
   idToken,
   api,
   rows,
+  capabilities,
 }: {
   idToken: string;
   api: BackendApi;
   rows: SheetRow[];
+  capabilities?: TrendingCapabilities;
 }) {
   const [searchParams] = useSearchParams();
   const editTopicId = searchParams.get('edit') ?? '';
   const editRow = editTopicId
     ? findRowByTopicRouteId(rows, editTopicId) ?? rows.find((r) => String(r.topicId).trim() === editTopicId.trim())
     : undefined;
-  return <AddTopicPage idToken={idToken} api={api} editRow={editRow} />;
+  return <AddTopicPage idToken={idToken} api={api} editRow={editRow} capabilities={capabilities} />;
 }
 
 function TopicVariantsOrDetail(p: Parameters<typeof TopicVariantsPage>[0] & { rows: SheetRow[] }) {
@@ -791,7 +794,7 @@ export function Dashboard({
       <Routes>
         <Route
           path={WORKSPACE_ROUTE_PATHS.addTopic}
-          element={<AddTopicPageWithEdit idToken={idToken} api={api} rows={queueHook.rows} />}
+          element={<AddTopicPageWithEdit idToken={idToken} api={api} rows={queueHook.rows} capabilities={{ youtube: session.config.youtubeAuthAvailable, instagram: session.config.hasInstagramAccessToken, linkedin: session.config.hasLinkedInAccessToken }} />}
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.topicEditor}
@@ -869,6 +872,11 @@ export function Dashboard({
               idToken={idToken}
               api={api}
               newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
+              capabilities={{
+                youtube: session.config.youtubeAuthAvailable,
+                instagram: session.config.hasInstagramAccessToken,
+                linkedin: session.config.hasLinkedInAccessToken,
+              }}
             />
           }
         />

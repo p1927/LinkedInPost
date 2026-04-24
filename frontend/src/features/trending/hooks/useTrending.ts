@@ -8,6 +8,12 @@ import { useLinkedInTrending } from './useLinkedInTrending';
 import { useNewsTrending } from './useNewsTrending';
 import type { BackendApi } from '@/services/backendApi';
 
+export interface TrendingCapabilities {
+  youtube?: boolean;
+  instagram?: boolean;
+  linkedin?: boolean;
+}
+
 // Mock data for development when no APIs are configured
 const MOCK_TRENDING_DATA: TrendingData = {
   youtube: [
@@ -161,19 +167,28 @@ interface UseTrendingResult {
  * Main trending hook that coordinates all platform-specific hooks.
  * Falls back to mock data when no APIs are configured.
  */
-export function useTrending(topic: string, idToken?: string, api?: BackendApi): UseTrendingResult {
+export function useTrending(topic: string, idToken?: string, api?: BackendApi, capabilities?: TrendingCapabilities): UseTrendingResult {
   const [config, setConfig] = useState<TrendingApiConfig>(DEFAULT_CONFIG);
   const [mockLoading, setMockLoading] = useState(false);
   const [mockError, setMockError] = useState<string | null>(null);
 
   // Auto-enable news when worker API is available — news goes through the worker, not a third-party key
   const effectiveConfig = useMemo((): TrendingApiConfig => {
-    if (!api) return config;
-    return {
-      ...config,
-      news: { ...config.news, config: { ...config.news.config, enabled: true } },
-    };
-  }, [config, api]);
+    let cfg = config;
+    if (api) {
+      cfg = { ...cfg, news: { ...cfg.news, config: { ...cfg.news.config, enabled: true } } };
+    }
+    if (capabilities?.youtube) {
+      cfg = { ...cfg, youtube: { ...cfg.youtube, config: { ...cfg.youtube.config, enabled: true } } };
+    }
+    if (capabilities?.instagram) {
+      cfg = { ...cfg, instagram: { ...cfg.instagram, config: { ...cfg.instagram.config, enabled: true } } };
+    }
+    if (capabilities?.linkedin) {
+      cfg = { ...cfg, linkedin: { ...cfg.linkedin, config: { ...cfg.linkedin.config, enabled: true } } };
+    }
+    return cfg;
+  }, [config, api, capabilities]);
 
   const useRealApis = isAnyApiEnabled(effectiveConfig);
 
@@ -227,11 +242,18 @@ export function useTrending(topic: string, idToken?: string, api?: BackendApi): 
     };
 
     const recommendedTopics = new Set<string>();
+    // Derive from YouTube titles when available
     if (enabled.youtube && youtube.data.length > 0) {
       youtube.data.forEach(v => {
-        // Extract keywords from titles as recommendations
-        const words = v.title.split(' ').filter(w => w.length > 4);
+        const words = v.title.split(/\s+/).filter(w => w.length > 4 && /^[a-zA-Z]/.test(w));
         words.slice(0, 3).forEach(w => recommendedTopics.add(w));
+      });
+    }
+    // Fall back to news titles when YouTube not enabled
+    if (recommendedTopics.size === 0 && enabled.news && news.data.length > 0) {
+      news.data.slice(0, 10).forEach(a => {
+        const words = a.title.split(/\s+/).filter(w => w.length > 5 && /^[A-Z]/.test(w));
+        words.slice(0, 2).forEach(w => recommendedTopics.add(w));
       });
     }
 
@@ -272,7 +294,10 @@ export function useTrending(topic: string, idToken?: string, api?: BackendApi): 
 
   const refetch = useCallback(() => {
     news.refetch();
-  }, [news.refetch]);
+    youtube.refetch();
+    instagram.refetch();
+    linkedin.refetch();
+  }, [news.refetch, youtube.refetch, instagram.refetch, linkedin.refetch]);
 
   return {
     data,
