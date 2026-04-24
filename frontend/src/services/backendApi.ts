@@ -843,6 +843,10 @@ export class BackendApi {
     return this.post<OAuthStartResult>('startGmailAuth', idToken);
   }
 
+  async startYouTubeAuth(idToken: string): Promise<OAuthStartResult> {
+    return this.post<OAuthStartResult>('startYouTubeAuth', idToken);
+  }
+
   async disconnectChannelAuth(idToken: string, provider: OAuthProvider): Promise<BotConfig> {
     const saved = await this.post<BotConfig>('disconnectChannelAuth', idToken, { provider });
     return normalizeBotConfig(saved);

@@ -64,6 +64,7 @@ export const TAG_CLASS_BY_CHANNEL: Record<ChannelId, string> = {
   telegram: 'font-medium text-[#229ED9]',
   whatsapp: 'font-medium text-[#128C7E]',
   gmail: 'font-medium text-[#EA4335]',
+  youtube: 'font-medium text-[#FF0000]',
 };
 
 export function previewAuthorInitials(name: string): string {

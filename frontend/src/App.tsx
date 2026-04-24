@@ -80,7 +80,7 @@ function WorkspaceSession({
   onAuthExpired: () => void
   llmCatalog: LlmProviderCatalog | null
   integrations: SocialIntegration[]
-  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp') => void
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp' | 'youtube') => void
   onDisconnect: (provider: string) => void
   connecting: string | null
 }) {
@@ -303,7 +303,7 @@ function App() {
     setErrorMessage('Your Google session expired. Sign in again to continue.')
   }, [])
 
-  const handleConnect = useCallback(async (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp') => {
+  const handleConnect = useCallback(async (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp' | 'youtube') => {
     if (!idToken) return
     setConnecting(provider)
     try {
@@ -312,6 +312,7 @@ function App() {
         instagram: 'startInstagramAuth',
         gmail: 'startGmailAuth',
         whatsapp: 'startWhatsAppAuth',
+        youtube: 'startYouTubeAuth',
       } as const
       const method = actionMap[provider]
       const result = await api[method](idToken)

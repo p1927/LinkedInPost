@@ -5,7 +5,7 @@ import type { SocialIntegration } from '@/services/backendApi';
 
 interface OnboardingModalProps {
   integrations: SocialIntegration[];
-  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail') => void;
+  onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'youtube') => void;
   onDisconnect: (provider: string) => void;
   onComplete: (spreadsheetId?: string, driveAccessToken?: string) => void;
   connecting: string | null;

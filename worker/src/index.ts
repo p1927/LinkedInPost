@@ -1574,6 +1574,8 @@ Rules:
       return startWhatsAppAuth(request, env, session);
     case 'startGmailAuth':
       return startGmailAuth(request, env, session);
+    case 'startYouTubeAuth':
+      throw new Error('YouTube OAuth is not yet implemented.');
     case 'disconnectChannelAuth':
       ensureAdmin(session);
       return disconnectChannelAuth(env, storedConfig, String(payload.provider || '').trim());
