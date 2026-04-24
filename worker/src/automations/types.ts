@@ -1,12 +1,13 @@
 export type AutomationPlatform = 'instagram' | 'linkedin' | 'telegram' | 'gmail' | 'youtube';
 
-export type AutomationTrigger = 'comment' | 'dm' | 'comment_to_dm';
+export type AutomationTrigger = 'comment' | 'dm' | 'comment_to_dm' | 'follow';
 
 export interface AutomationRule {
   triggers: AutomationTrigger[];
   comment_reply_template?: string;
   dm_reply_template?: string;
   comment_to_dm_template?: string;
+  follow_reply_template?: string;
   enabled: boolean;
   updatedAt: string;
 }
