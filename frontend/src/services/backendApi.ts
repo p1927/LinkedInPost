@@ -642,7 +642,7 @@ export class BackendApi {
     idToken: string,
     req: TrendingSearchRequest,
   ): Promise<TrendingSearchResult> {
-    return this.post<TrendingSearchResult>('trendingSearch', idToken, req);
+    return this.post<TrendingSearchResult>('trendingSearch', idToken, { ...req });
   }
 
   async listNewsResearchHistory(idToken: string, topicId: string, limit = 20): Promise<NewsResearchHistoryItem[]> {

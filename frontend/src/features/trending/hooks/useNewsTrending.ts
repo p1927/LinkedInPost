@@ -61,7 +61,7 @@ export function useNewsTrending(
             source: a.source ?? '',
             publishedAt: a.publishedAt ?? '',
             url: a.url,
-            imageUrl: a.imageUrl,
+            imageUrl: undefined,
             platform: 'news' as const,
           }));
           setData(articles);

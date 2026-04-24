@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAlert } from '@/components/useAlert';
-import type { BackendApi } from '@/services/backendApi';
+import type { BackendApi, NewsletterIssueRow } from '@/services/backendApi';
 import type { AppSession } from '@/services/backendApi';
-import type { NewsletterConfigInput, NewsletterIssueRow } from '../../schema/newsletterTypes';
+import type { NewsletterConfigInput } from '../../schema/newsletterTypes';
 import { parseNewsletterConfig } from '../../schema/newsletterTypes';
-import { emptyNewsletterConfig, NEWSLETTER_TEMPLATES, WEEKDAYS, FREQUENCIES, CHANNEL_OPTIONS, PREVIEW_CHANNEL_OPTIONS, EMOTION_OPTIONS, COLOR_OPTIONS, STORY_OPTIONS } from '../components/newsletter/constants';
+import { emptyNewsletterConfig, NEWSLETTER_TEMPLATES, WEEKDAYS, FREQUENCIES, CHANNEL_OPTIONS, PREVIEW_CHANNEL_OPTIONS, EMOTION_OPTIONS, COLOR_OPTIONS, STORY_OPTIONS } from './constants';
 import { Loader2, Plus, Trash2, Mail, Clock, Rss, Newspaper, Settings2, Send } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -15,7 +15,7 @@ interface Props {
   onAuthExpired: () => void;
 }
 
-export function NewsletterTab({ idToken, session, api }: Props) {
+export function NewsletterTab({ idToken, api }: Props) {
   const { showAlert } = useAlert();
   const [config, setConfig] = useState<NewsletterConfigInput>(emptyNewsletterConfig());
   const [loading, setLoading] = useState(true);

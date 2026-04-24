@@ -342,6 +342,7 @@ export function CampaignPage(props: {
 
       {/* Animated step content */}
       {campaignTab === 'bulk' && (
+        <>
         <CarouselContent currentStep={currentStep}>
           {/* Step 0: Import — topic ideas → Claude prompt → paste JSON */}
         <div className="mx-auto max-w-6xl px-4 sm:px-8">
@@ -680,6 +681,7 @@ export function CampaignPage(props: {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </>
       )}
     </div>
   );
