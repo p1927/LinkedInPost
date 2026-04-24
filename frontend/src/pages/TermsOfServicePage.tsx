@@ -9,10 +9,6 @@ export function TermsOfServicePage() {
       <LegalPageChrome title="Terms of Service" />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <p className="text-sm text-muted">Effective date: {EFFECTIVE}</p>
-        <p className="mt-4 rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
-          This document is provided for convenience only and does not constitute legal advice. Have qualified counsel review
-          these terms for your situation.
-        </p>
 
         <div className="mt-8 space-y-8 text-[15px] leading-relaxed text-muted">
           <section className="space-y-3">
@@ -128,7 +124,24 @@ export function TermsOfServicePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="font-heading text-xl font-semibold text-ink">11. Changes</h2>
+            <h2 className="font-heading text-xl font-semibold text-ink">11. User responsibility and acceptable use</h2>
+            <p>
+              You are solely responsible for your use of the Service and any consequences thereof. The operator of Channel Bot
+              and its developer(s) accept no liability for any outcomes arising from your use of the Service, including but
+              not limited to: content published or sent through the Service, actions taken on connected third-party platforms
+              (such as LinkedIn, Instagram, WhatsApp, Telegram, or any other integrated service), decisions made based on
+              AI-assisted outputs, loss of data or business, service interruptions, errors in content, or any direct or
+              indirect damage caused by using this Service.
+            </p>
+            <p>
+              You agree to use the Service only for lawful purposes and in accordance with these Terms. You will not hold the
+              operator of Channel Bot or its developer(s) responsible for any claims, damages, losses, or costs arising from
+              your use of the Service.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-heading text-xl font-semibold text-ink">12. Changes</h2>
             <p>
               We may modify these Terms at any time. If we make material changes, we will take reasonable steps to notify you
               (for example by posting an updated effective date). Continued use after changes constitutes acceptance. If you do
@@ -137,7 +150,7 @@ export function TermsOfServicePage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="font-heading text-xl font-semibold text-ink">12. Governing law</h2>
+            <h2 className="font-heading text-xl font-semibold text-ink">13. Governing law</h2>
             <p>
               These Terms are governed by the laws of the State of Delaware, United States, without regard to conflict-of-law
               principles, except where prohibited by your local mandatory consumer protections. Courts in Delaware (or the
