@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import type { SheetRow } from '@/services/sheets';
 import { deriveCalendarFieldsFromSheetRow } from '@/features/content-schedule-calendar';
+import { CSC_TOKENS as T } from '@/features/content-schedule-calendar/tokens';
 
 export function TopicDetailPanel({
   row,
@@ -81,8 +80,8 @@ export function TopicDetailPanel({
 
         {/* Scrollable body */}
         <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-          {row && <ScheduleSection row={row} onSave={onSaveSchedule} />}
           {children}
+          {row && <ScheduleSection row={row} onSave={onSaveSchedule} />}
         </div>
       </div>
     </div>
@@ -121,41 +120,61 @@ function ScheduleSection({
   };
 
   return (
-    <div className="border-b border-slate-100 px-5 py-4">
-      <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Schedule</h4>
-      <div className="grid grid-cols-2 gap-3">
+    <div style={{ borderTop: `1px solid ${T.line}`, padding: '16px 20px 20px' }}>
+      <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: T.muted, marginBottom: 12 }}>
+        Schedule
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Date</label>
-          <Input
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}>Date</label>
+          <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="h-9 text-sm"
             disabled={busy}
+            style={{
+              width: '100%', height: 34, padding: '0 10px', fontSize: 13,
+              border: `1px solid ${T.lineStrong}`, borderRadius: 8,
+              background: T.surface, color: T.ink,
+              outline: 'none', fontFamily: 'inherit',
+              opacity: busy ? 0.5 : 1,
+            }}
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">
-            Time <span className="font-normal text-slate-400">(optional)</span>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}>
+            Time <span style={{ fontWeight: 400, color: T.mutedSoft }}>(optional)</span>
           </label>
-          <Input
+          <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="h-9 text-sm"
             disabled={busy}
+            style={{
+              width: '100%', height: 34, padding: '0 10px', fontSize: 13,
+              border: `1px solid ${T.lineStrong}`, borderRadius: 8,
+              background: T.surface, color: T.ink,
+              outline: 'none', fontFamily: 'inherit',
+              opacity: busy ? 0.5 : 1,
+            }}
           />
         </div>
       </div>
-      <Button
+      <button
         type="button"
-        size="sm"
-        className="mt-3 w-full cursor-pointer sm:w-auto"
         disabled={busy || !dirty}
         onClick={() => void handleSave()}
+        style={{
+          marginTop: 12, width: '100%', height: 34, borderRadius: 8,
+          fontSize: 13, fontWeight: 600, cursor: busy || !dirty ? 'not-allowed' : 'pointer',
+          background: busy || !dirty ? T.accentSoft : T.accent,
+          color: busy || !dirty ? T.accent : '#fff',
+          border: 'none', transition: 'background 150ms, color 150ms',
+          fontFamily: 'inherit',
+        }}
       >
         {busy ? 'Saving…' : 'Update schedule'}
-      </Button>
+      </button>
     </div>
   );
 }
