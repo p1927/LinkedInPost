@@ -16,7 +16,8 @@ import {
 import { SettingsConnectionsCard } from './components/SettingsConnectionsCard';
 import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
-import { TopicsHomePanels, TopicsRightRail } from './components/TopicsRightRail';
+import { TopicsRightRail } from './components/TopicsRightRail';
+import { TopicDetailPanel } from './components/TopicDetailPanel';
 import { getChannelOption } from '../../integrations/channels';
 import { useRegisterWorkspaceChrome } from '../workspace/WorkspaceChromeContext';
 import { normalizeTelegramChatId, parseTelegramRecipientsInput } from '../../integrations/telegram';
@@ -265,7 +266,6 @@ export function Dashboard({
   );
 
   const [selectedTopicsPanelTopicId, setSelectedTopicsPanelTopicId] = useState<string | null>(null);
-  const [isCalendarMode, setIsCalendarMode] = useState(false);
 
   const queueHook = useDashboardQueue({
     idToken,
@@ -326,6 +326,14 @@ export function Dashboard({
     if (queueHook.loading) return id;
     return queueHook.rows.some((r) => String(r.topicId).trim() === id) ? id : null;
   }, [selectedTopicsPanelTopicId, queueHook.rows, queueHook.loading]);
+
+  const drawerRow = useMemo(
+    () =>
+      railSelectedTopicId
+        ? (queueHook.rows.find((r) => String(r.topicId).trim() === railSelectedTopicId) ?? null)
+        : null,
+    [railSelectedTopicId, queueHook.rows],
+  );
 
   const deliveryTargetSummary = selectedChannelOption.requiresRecipient
     ? (selectedRecipientLabel || resolvedRecipientId || 'Choose a recipient')
@@ -622,7 +630,7 @@ export function Dashboard({
       onUpdatePostSchedule={handleUpdatePostSchedule}
       onCalendarRescheduleCommit={handleCalendarRescheduleCommit}
       contentPatterns={queueHook.postTemplates}
-      onViewModeChange={(m) => setIsCalendarMode(m === 'calendar')}
+      disableCalendarInternalDrawer={true}
       idToken={idToken}
       api={api}
     />
@@ -767,9 +775,11 @@ export function Dashboard({
     />
   );
 
-  const topicsHome = isCalendarMode
-    ? <div className="mx-auto w-full max-w-[min(100%,1820px)] min-w-0 px-2">{queueContent}</div>
-    : <TopicsHomePanels queue={queueContent} rail={topicsRail} />;
+  const topicsHome = (
+    <div className="mx-auto w-full max-w-[min(100%,1820px)] min-w-0 px-2">
+      {queueContent}
+    </div>
+  );
 
   const settingsHome = (
     <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
@@ -909,6 +919,15 @@ export function Dashboard({
         <Route path="*" element={<Navigate to={WORKSPACE_PATHS.topics} replace />} />
       </Routes>
 
+      {railSelectedTopicId && (
+        <TopicDetailPanel
+          row={drawerRow}
+          onClose={() => setSelectedTopicsPanelTopicId(null)}
+          onSaveSchedule={handleUpdatePostSchedule}
+        >
+          {topicsRail}
+        </TopicDetailPanel>
+      )}
     </div>
   );
 }

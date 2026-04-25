@@ -84,6 +84,7 @@ export function DashboardQueue({
   /** Patterns for the row’s generation template — used to tailor AI Draft quick picks. */
   contentPatterns = [],
   onViewModeChange,
+  disableCalendarInternalDrawer,
   idToken,
   api,
 }: {
@@ -120,6 +121,7 @@ export function DashboardQueue({
   generationProgress?: Array<{ step: string; label: string; done: boolean }>;
   contentPatterns?: ContentPattern[];
   onViewModeChange?: (mode: 'list' | 'calendar') => void;
+  disableCalendarInternalDrawer?: boolean;
   idToken?: string;
   api?: BackendApi;
 }) {
@@ -581,6 +583,7 @@ export function DashboardQueue({
                 initialView="month-grid"
                 disablePastDates
                 teleportDatePicker
+                disableInternalDrawer={disableCalendarInternalDrawer}
                 className="csc-compact csc-topics-queue"
                 renderPreview={(calTopic) => {
                   const row = calTopic.payload as SheetRow | undefined;

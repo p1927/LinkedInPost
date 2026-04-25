@@ -47,6 +47,7 @@ export interface ContentScheduleCalendarProps {
   onRescheduleCommit?: (payload: TopicRescheduleCommitPayload) => Promise<void>;
   topicEventModalActions?: TopicEventModalActions;
   renderPreview?: (topic: CalendarTopic) => ReactNode;
+  disableInternalDrawer?: boolean;
 }
 
 interface RescheduleUi {
@@ -80,6 +81,7 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
     onRescheduleCommit,
     topicEventModalActions,
     renderPreview,
+    disableInternalDrawer,
   } = props;
 
   const { showAlert } = useAlert();
@@ -126,8 +128,8 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
     const topic = topicsRef.current.find((t) => String(t.id) === String(id));
     if (!topic) return;
     onTopicActivate?.(topic);
-    setSelectedTopic(topic);
-  }, [onTopicActivate]);
+    if (!disableInternalDrawer) setSelectedTopic(topic);
+  }, [onTopicActivate, disableInternalDrawer]);
 
   /* ─── Drag confirm flow (matches Schedule-X build 1:1) ──────────── */
   const resolveTopicIds = useCallback((draggedId: string): string[] => {
@@ -394,7 +396,7 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
       </Dialog>
 
       {/* Event detail / edit modal — unchanged component, dropped in. */}
-      {selectedTopic && (
+      {selectedTopic && !disableInternalDrawer && (
         <EventDetailAndEdit
           key={String(selectedTopic.id)}
           topic={selectedTopic}
