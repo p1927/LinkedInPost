@@ -187,6 +187,16 @@ export async function createNewsletterDraftForRecord(
 
   const subject = interpolateSubject(subjectTemplate, selectedArticles);
 
+  // newsletter_issues.spreadsheet_id has a FK to newsletter_configs; ensure a
+  // placeholder row exists so the constraint is satisfied when using the
+  // multi-newsletter flow (which stores config in newsletters.config_json).
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO newsletter_configs (spreadsheet_id) VALUES (?)`,
+    )
+    .bind(row.spreadsheet_id)
+    .run();
+
   const issue = await createNewsletterIssue(db, row.spreadsheet_id, {
     articles: JSON.stringify(selectedArticles),
     renderedContent,
