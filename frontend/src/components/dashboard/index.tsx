@@ -57,18 +57,20 @@ function AddTopicPageWithEdit({
   api,
   rows,
   capabilities,
+  onSaved,
 }: {
   idToken: string;
   api: BackendApi;
   rows: SheetRow[];
   capabilities?: TrendingCapabilities;
+  onSaved?: () => void;
 }) {
   const [searchParams] = useSearchParams();
   const editTopicId = searchParams.get('edit') ?? '';
   const editRow = editTopicId
     ? findRowByTopicRouteId(rows, editTopicId) ?? rows.find((r) => String(r.topicId).trim() === editTopicId.trim())
     : undefined;
-  return <AddTopicPage idToken={idToken} api={api} editRow={editRow} capabilities={capabilities} />;
+  return <AddTopicPage idToken={idToken} api={api} editRow={editRow} capabilities={capabilities} onSaved={onSaved} />;
 }
 
 function TopicVariantsOrDetail(p: Parameters<typeof TopicVariantsPage>[0] & { rows: SheetRow[] }) {
@@ -810,7 +812,7 @@ export function Dashboard({
       <Routes>
         <Route
           path={WORKSPACE_ROUTE_PATHS.addTopic}
-          element={<AddTopicPageWithEdit idToken={idToken} api={api} rows={queueHook.rows} capabilities={{ youtube: session.config.youtubeAuthAvailable, instagram: session.config.hasInstagramAccessToken, linkedin: session.config.hasLinkedInAccessToken }} />}
+          element={<AddTopicPageWithEdit idToken={idToken} api={api} rows={queueHook.rows} capabilities={{ youtube: session.config.youtubeAuthAvailable, instagram: session.config.hasInstagramAccessToken, linkedin: session.config.hasLinkedInAccessToken }} onSaved={() => void queueHook.loadData(true)} />}
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.topicEditor}

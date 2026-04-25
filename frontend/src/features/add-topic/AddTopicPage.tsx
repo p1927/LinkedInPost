@@ -108,11 +108,13 @@ export function AddTopicPage({
   api,
   editRow,
   capabilities,
+  onSaved,
 }: {
   idToken: string;
   api: BackendApi;
   editRow?: SheetRow;
   capabilities?: TrendingCapabilities;
+  onSaved?: () => void;
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -224,6 +226,7 @@ export function AddTopicPage({
           await api.addTopic(idToken, topic.trim(), topicMeta);
           clearDraft();
         }
+        onSaved?.();
         navigate(WORKSPACE_PATHS.topics);
       } catch (err) {
         setSubmitError(err instanceof Error ? err.message : 'Failed to add topic.');
@@ -231,7 +234,7 @@ export function AddTopicPage({
         setSubmitting(false);
       }
     },
-    [idToken, api, topic, about, meaning, style, pros, cons, notes, selectedAudience, navigate],
+    [idToken, api, topic, about, meaning, style, pros, cons, notes, selectedAudience, navigate, onSaved],
   );
 
   const hasInsights = pros.length > 0 || cons.length > 0;
