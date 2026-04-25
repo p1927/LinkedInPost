@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Bot, ChevronDown, ChevronRight, Pencil, RefreshCw, RotateCw, Send, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
