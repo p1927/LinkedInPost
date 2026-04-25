@@ -53,10 +53,10 @@ const KNOWN_CHANNELS = ['linkedin', 'instagram', 'telegram', 'whatsapp', 'gmail'
 // ─── ApprovalRail ────────────────────────────────────────────────────────────
 
 const STAGES = [
-  { label: 'Drafting',   status: 'pending',   order: 0 },
-  { label: 'In review',  status: 'drafted',   order: 1 },
-  { label: 'Approved',   status: 'approved',  order: 2 },
-  { label: 'Published',  status: 'published', order: 3 },
+  { label: 'Drafting',   helper: 'Draft in progress', status: 'pending',   order: 0 },
+  { label: 'In review',  helper: 'Pending review',     status: 'drafted',   order: 1 },
+  { label: 'Approved',   helper: 'Ready to publish',   status: 'approved',  order: 2 },
+  { label: 'Publish',    helper: 'Scheduled',          status: 'published', order: 3 },
 ];
 
 function statusOrder(status?: string): number {
@@ -67,50 +67,55 @@ function statusOrder(status?: string): number {
 function ApprovalRail({ status }: { status?: string }) {
   const current = statusOrder(status);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0, paddingBottom: 14 }}>
-      {STAGES.map((stage, idx) => {
+    <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, paddingBottom: 14 }}>
+      {STAGES.map((stage, i) => {
         const isDone = stage.order < current;
         const isCurrent = stage.order === current;
         return (
-          <div key={stage.status} style={{ display: 'flex', alignItems: 'center', flex: idx < STAGES.length - 1 ? 1 : undefined }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              {/* Circle */}
-              <div
-                style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  flexShrink: 0,
-                  background: isDone ? T.ink : isCurrent ? '#fff' : T.tint,
-                  border: isCurrent ? `1.5px solid ${T.ink}` : isDone ? 'none' : `1.5px solid ${T.lineStrong}`,
-                  color: isDone ? '#fff' : isCurrent ? T.ink : T.mutedSoft,
-                }}
-              >
-                {isDone ? '✓' : stage.order + 1}
-              </div>
-              {/* Label */}
-              <span style={{ fontSize: 9.5, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? T.ink : T.mutedSoft, whiteSpace: 'nowrap' }}>
+          <div
+            key={stage.status}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 12px',
+              background: isCurrent ? '#FFFFFF' : 'transparent',
+              borderRadius: i === 0 ? '8px 0 0 8px' : i === STAGES.length - 1 ? '0 8px 8px 0' : 0,
+              border: isCurrent ? `1px solid ${T.lineStrong}` : '1px solid transparent',
+              borderLeft: i === 0 ? undefined : isCurrent ? `1px solid ${T.lineStrong}` : `1px solid ${T.line}`,
+              position: 'relative',
+            }}
+          >
+            {/* Circle */}
+            <span
+              style={{
+                flexShrink: 0,
+                width: 22,
+                height: 22,
+                borderRadius: 999,
+                background: isDone ? T.ink : isCurrent ? '#fff' : T.tint,
+                border: `1.5px solid ${isDone ? T.ink : isCurrent ? T.ink : T.lineStrong}`,
+                color: isDone ? '#fff' : isCurrent ? T.ink : T.muted,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 11,
+                fontWeight: 700,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {isDone ? '✓' : i + 1}
+            </span>
+            {/* Text */}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: isCurrent || isDone ? T.ink : T.muted, letterSpacing: '-0.005em', whiteSpace: 'nowrap' }}>
                 {stage.label}
-              </span>
+              </div>
+              <div style={{ fontSize: 10.5, color: T.muted, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {stage.helper}
+              </div>
             </div>
-            {/* Connector line */}
-            {idx < STAGES.length - 1 && (
-              <div
-                style={{
-                  flex: 1,
-                  height: 1.5,
-                  marginBottom: 18,
-                  marginLeft: 4,
-                  marginRight: 4,
-                  background: stage.order < current ? T.ink : T.lineStrong,
-                }}
-              />
-            )}
           </div>
         );
       })}
@@ -120,20 +125,20 @@ function ApprovalRail({ status }: { status?: string }) {
 
 // ─── ChannelBadge ────────────────────────────────────────────────────────────
 
-function ChannelBadge({ channelId }: { channelId: string }) {
+function ChannelBadge({ channelId, size = 30 }: { channelId: string; size?: number }) {
   const cs = channelStyle(channelId);
   return (
     <div
       style={{
-        width: 28,
-        height: 28,
-        borderRadius: 7,
+        width: size,
+        height: size,
+        borderRadius: Math.round(size * 0.27),
         background: cs.color,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: '#fff',
-        fontSize: 10,
+        fontSize: Math.round(size * 0.37),
         fontWeight: 700,
         flexShrink: 0,
         textTransform: 'uppercase',
@@ -449,6 +454,11 @@ export function EventDetailAndEdit({
 
   // ─── Bold Header ──────────────────────────────────────────────────────────
 
+  const iconBtnStyle: React.CSSProperties = {
+    width: 30, height: 30, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    border: 'none', background: 'transparent', color: T.muted, cursor: 'pointer', borderRadius: 7,
+  };
+
   const boldHeader = (
     <div
       style={{
@@ -459,43 +469,25 @@ export function EventDetailAndEdit({
       }}
     >
       {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <ChannelBadge channelId={primaryChannel} />
           <div>
             <div style={{ fontSize: 10.5, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>
-              {cs.label} post
+              Editing post · {cs.label}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.005em', marginTop: 2 }}>
               {formatCalendarDate(topic.date)}
               {(topic.startTime || defaultSlotTime) && ' · ' + formatTimeHm(topic.startTime ?? defaultSlotTime)}
             </div>
           </div>
         </div>
         {/* Nav + Close */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button
-            type="button"
-            style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${T.lineStrong}`, background: T.surface, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.muted }}
-            aria-label="Previous"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            type="button"
-            style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${T.lineStrong}`, background: T.surface, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.muted }}
-            aria-label="Next"
-          >
-            <ChevronRight size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${T.lineStrong}`, background: T.surface, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.muted }}
-            aria-label="Close"
-          >
-            <X size={14} />
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <button type="button" style={iconBtnStyle} aria-label="Previous"><ChevronLeft size={14} /></button>
+          <button type="button" style={iconBtnStyle} aria-label="Next"><ChevronRight size={14} /></button>
+          <span style={{ width: 1, height: 18, background: T.line, margin: '0 6px' }} />
+          <button type="button" onClick={onClose} style={iconBtnStyle} aria-label="Close"><X size={13} /></button>
         </div>
       </div>
       {/* Approval rail */}
@@ -619,89 +611,6 @@ export function EventDetailAndEdit({
         </>
       )}
 
-      {/* Actions area */}
-      <div
-        style={{
-          marginTop: 'auto',
-          paddingTop: 20,
-          borderTop: `1px solid ${T.line}`,
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        {/* Left: delete */}
-        <div>
-          {onDelete && (
-            <button
-              type="button"
-              onClick={onDelete}
-              style={{ ...btnBase, background: '#FFF0EE', color: '#C0392B' }}
-            >
-              <Trash2 size={13} aria-hidden />
-              Delete
-            </button>
-          )}
-        </div>
-        {/* Right: action buttons */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {topicQueueModal && topicQueueModal.onDraft && (topic.status ?? '').toLowerCase() === 'pending' && (
-            <button
-              type="button"
-              onClick={() => {
-                topicQueueModal.onDraft!(topic);
-                onClose();
-              }}
-              style={{ ...btnBase, background: T.accentSoft, color: T.accent }}
-            >
-              <Bot size={13} aria-hidden />
-              AI Draft
-            </button>
-          )}
-          {topicQueueModal ? (
-            <button
-              type="button"
-              onClick={() => {
-                topicQueueModal.onOpenEdit(topic);
-                onClose();
-              }}
-              style={{ ...btnBase, background: T.accentSoft, color: T.accent }}
-            >
-              <Pencil size={13} aria-hidden />
-              Edit
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSave}
-              style={{ ...btnBase, background: T.accentSoft, color: T.accent }}
-            >
-              <Pencil size={13} aria-hidden />
-              Save changes
-            </button>
-          )}
-          {pub && pub.visible && (
-            <button
-              type="button"
-              disabled={pub.disabled || publishBusy}
-              title={pub.disabledReason}
-              onClick={() => void handleQueuePublish()}
-              style={{ ...btnBase, background: T.accent, color: '#fff', opacity: (pub.disabled || publishBusy) ? 0.6 : 1 }}
-            >
-              {publishBusy || pub.busy ? (
-                <RefreshCw size={13} className="animate-spin" aria-hidden />
-              ) : pub.mode === 'republish' ? (
-                <RotateCw size={13} aria-hidden />
-              ) : (
-                <Send size={13} aria-hidden />
-              )}
-              {publishBusy ? 'Working…' : pub.mode === 'republish' ? 'Republish' : 'Publish'}
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   );
 
@@ -729,13 +638,13 @@ export function EventDetailAndEdit({
         }}
       >
         {/* Top row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <span style={{ fontSize: 10.5, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>
             Live preview
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: T.muted }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} />
-            Live
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: T.muted }}>
+            <span style={{ width: 5, height: 5, borderRadius: 999, background: '#34C759', display: 'inline-block' }} />
+            Synced
           </span>
         </div>
         {/* Channel tabs */}
@@ -749,31 +658,44 @@ export function EventDetailAndEdit({
                 type="button"
                 onClick={() => setPreviewChannel(ch)}
                 style={{
-                  padding: '7px 12px 8px',
+                  padding: '8px 12px 9px',
                   borderRadius: '7px 7px 0 0',
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6,
-                  border: active ? `1px solid ${T.line}` : '1px solid transparent',
+                  gap: 7,
+                  border: 'none',
+                  borderTop: active ? `1px solid ${T.line}` : '1px solid transparent',
+                  borderLeft: active ? `1px solid ${T.line}` : '1px solid transparent',
+                  borderRight: active ? `1px solid ${T.line}` : '1px solid transparent',
                   borderBottom: active ? `1px solid ${T.surface}` : '1px solid transparent',
                   background: active ? T.surface : 'transparent',
                   color: active ? T.ink : T.muted,
                   marginBottom: active ? -1 : 0,
                   position: 'relative',
+                  fontFamily: 'inherit',
                 }}
               >
                 <span
                   style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 13,
+                    height: 13,
+                    borderRadius: 3,
                     background: chs.color,
+                    color: '#fff',
+                    fontSize: 7,
+                    fontWeight: 700,
                     flexShrink: 0,
+                    textTransform: 'uppercase',
                   }}
-                />
+                >
+                  {chs.letter}
+                </span>
                 {chs.label}
               </button>
             );
@@ -799,6 +721,97 @@ export function EventDetailAndEdit({
     </div>
   );
 
+  // ─── Footer ───────────────────────────────────────────────────────────────
+
+  const footer = (
+    <div
+      style={{
+        padding: '12px 18px',
+        borderTop: `1px solid ${T.line}`,
+        background: '#FFFFFF',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        flexShrink: 0,
+      }}
+    >
+      {/* Left: status */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.muted }}>
+          <span style={{ width: 5, height: 5, borderRadius: 999, background: '#34C759' }} />
+          Auto-saved
+        </span>
+        <span style={{ fontSize: 11, color: T.mutedSoft }}>· ⌘S to save · Esc to close</span>
+      </div>
+      {/* Right: action buttons */}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          style={{ ...btnBase, background: '#FFF0EE', color: '#C0392B', height: 36, fontSize: 13 }}
+        >
+          <Trash2 size={13} aria-hidden />
+          Delete
+        </button>
+      )}
+      {topicQueueModal && topicQueueModal.onDraft && (topic.status ?? '').toLowerCase() === 'pending' && (
+        <button
+          type="button"
+          onClick={() => { topicQueueModal.onDraft!(topic); onClose(); }}
+          style={{ ...btnBase, background: T.surface, color: T.ink2, border: `1px solid ${T.line}`, height: 36, fontSize: 13 }}
+        >
+          <Bot size={13} aria-hidden />
+          AI Draft
+        </button>
+      )}
+      {topicQueueModal ? (
+        <button
+          type="button"
+          onClick={() => { topicQueueModal.onOpenEdit(topic); onClose(); }}
+          style={{ ...btnBase, background: T.surface, color: T.ink2, border: `1px solid ${T.line}`, height: 36, fontSize: 13 }}
+        >
+          <Pencil size={13} aria-hidden />
+          Edit post
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSave}
+          style={{ ...btnBase, background: T.surface, color: T.ink2, border: `1px solid ${T.line}`, height: 36, fontSize: 13 }}
+        >
+          Save draft
+        </button>
+      )}
+      {pub && pub.visible ? (
+        <button
+          type="button"
+          disabled={pub.disabled || publishBusy}
+          title={pub.disabledReason}
+          onClick={() => void handleQueuePublish()}
+          style={{ ...btnBase, background: T.accent, color: '#fff', border: 'none', height: 36, fontSize: 13, boxShadow: '0 1px 2px rgba(107,70,229,0.25)', opacity: (pub.disabled || publishBusy) ? 0.6 : 1, gap: 7 }}
+        >
+          {publishBusy || pub.busy ? (
+            <RefreshCw size={13} className="animate-spin" aria-hidden />
+          ) : pub.mode === 'republish' ? (
+            <RotateCw size={13} aria-hidden />
+          ) : (
+            <Send size={13} aria-hidden />
+          )}
+          {publishBusy ? 'Working…' : pub.mode === 'republish' ? 'Republish' : 'Send for approval'}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={topicQueueModal ? () => { topicQueueModal.onOpenEdit(topic); onClose(); } : handleSave}
+          style={{ ...btnBase, background: T.accent, color: '#fff', border: 'none', height: 36, fontSize: 13, boxShadow: '0 1px 2px rgba(107,70,229,0.25)', gap: 7 }}
+        >
+          <Send size={13} aria-hidden />
+          Send for approval
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <FloatingPanelShell visible={visible} onClose={onClose}>
       {/* Bold Header */}
@@ -816,6 +829,8 @@ export function EventDetailAndEdit({
         {leftPane}
         {rightPane}
       </div>
+      {/* Footer */}
+      {footer}
     </FloatingPanelShell>
   );
 }

@@ -1,24 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { SheetRow } from '@/services/sheets';
 import { deriveCalendarFieldsFromSheetRow } from '@/features/content-schedule-calendar';
 import { CSC_TOKENS as T } from '@/features/content-schedule-calendar/tokens';
+import { channelStyle } from '@/features/content-schedule-calendar/channelStyles';
 
 export function TopicDetailPanel({
   row,
   onClose,
   onSaveSchedule,
   children,
+  renderPreview,
 }: {
   row: SheetRow | null;
   onClose: () => void;
   onSaveSchedule: (row: SheetRow, postTime: string) => Promise<void>;
   children: React.ReactNode;
+  renderPreview?: (channel: string) => React.ReactNode;
 }) {
-  const [panelWidth, setPanelWidth] = useState(460);
-  const resizingRef = useRef(false);
-  const startXRef = useRef(0);
-  const startWRef = useRef(0);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -26,37 +25,13 @@ export function TopicDetailPanel({
     return () => cancelAnimationFrame(t);
   }, []);
 
-  const handleResizeMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    resizingRef.current = true;
-    startXRef.current = e.clientX;
-    startWRef.current = panelWidth;
-    const onMove = (ev: MouseEvent) => {
-      if (!resizingRef.current) return;
-      const delta = startXRef.current - ev.clientX;
-      setPanelWidth(Math.min(720, Math.max(380, startWRef.current + delta)));
-    };
-    const onUp = () => {
-      resizingRef.current = false;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  };
-
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0" style={{ background: 'rgba(17,17,19,0.04)' }} onClick={onClose} />
       <div
-        className="absolute top-0 bottom-0 z-10 w-1.5 cursor-ew-resize hover:bg-violet-400/40 transition-colors"
-        style={{ right: panelWidth - 3 }}
-        onMouseDown={handleResizeMouseDown}
-      />
-      <div
         className="absolute right-0 top-0 bottom-0 bg-white flex flex-col overflow-hidden"
         style={{
-          width: panelWidth,
+          width: 'min(900px, 100vw)',
           borderLeft: '1px solid #D8CEEB',
           borderRadius: '14px 0 0 14px',
           boxShadow: '0 18px 60px rgba(17,17,19,0.10), 0 4px 12px rgba(17,17,19,0.04)',
@@ -66,8 +41,11 @@ export function TopicDetailPanel({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-sm font-semibold text-slate-800">Topic Details</h2>
+        <div
+          className="shrink-0 flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: `1px solid ${T.line}`, background: 'linear-gradient(180deg, #F3EEFC 0%, #FFFFFF 100%)' }}
+        >
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Topic Details</h2>
           <button
             type="button"
             onClick={onClose}
@@ -78,11 +56,127 @@ export function TopicDetailPanel({
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
-          {children}
-          {row && <ScheduleSection row={row} onSave={onSaveSchedule} />}
+        {/* Body — split when renderPreview provided, single column otherwise */}
+        <div style={{ flex: 1, display: 'grid', minHeight: 0, gridTemplateColumns: renderPreview ? '1.5fr 1fr' : '1fr' }}>
+          {/* LEFT: scrollable meta + schedule */}
+          <div
+            className="custom-scrollbar"
+            style={{ overflowY: 'auto', minWidth: 0, borderRight: renderPreview ? `1px solid ${T.line}` : 'none' }}
+          >
+            {children}
+            {row && <ScheduleSection row={row} onSave={onSaveSchedule} />}
+          </div>
+
+          {/* RIGHT: preview pane (only when renderPreview provided) */}
+          {renderPreview && (
+            <PreviewPane renderPreview={renderPreview} />
+          )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => React.ReactNode }) {
+  const [activeChannel, setActiveChannel] = React.useState('linkedin');
+  const TABS = ['linkedin', 'instagram', 'telegram'];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: '#EDE5FB', overflowY: 'auto' }}>
+      {/* Sticky tab header */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 5,
+          background: '#EDE5FB',
+          padding: '14px 18px 0',
+          borderBottom: `1px solid ${T.line}`,
+        }}
+      >
+        {/* Top row: label + synced indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: T.muted,
+            }}
+          >
+            Live preview
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: T.muted }}>
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: '#34C759' }} />
+            Synced
+          </span>
+        </div>
+        {/* Channel tabs */}
+        <div style={{ display: 'flex', gap: 2 }}>
+          {TABS.map((ch) => {
+            const active = ch === activeChannel;
+            const cs = channelStyle(ch);
+            return (
+              <button
+                key={ch}
+                onClick={() => setActiveChannel(ch)}
+                style={{
+                  padding: '7px 12px 8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: active ? T.surface : 'transparent',
+                  border: 'none',
+                  borderRadius: '7px 7px 0 0',
+                  cursor: 'pointer',
+                  borderTop: active ? `1px solid ${T.line}` : '1px solid transparent',
+                  borderLeft: active ? `1px solid ${T.line}` : '1px solid transparent',
+                  borderRight: active ? `1px solid ${T.line}` : '1px solid transparent',
+                  borderBottom: active ? `1px solid ${T.surface}` : '1px solid transparent',
+                  marginBottom: active ? -1 : 0,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: active ? T.ink : T.muted,
+                  letterSpacing: '-0.005em',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {/* channel badge (small square) */}
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 14,
+                    height: 14,
+                    borderRadius: 3,
+                    background: cs.color,
+                    color: '#fff',
+                    fontSize: 7,
+                    fontWeight: 700,
+                  }}
+                >
+                  {cs.letter.toUpperCase()}
+                </span>
+                {cs.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Preview content */}
+      <div
+        style={{
+          flex: 1,
+          padding: '20px 16px 28px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+        }}
+      >
+        {renderPreview(activeChannel)}
       </div>
     </div>
   );

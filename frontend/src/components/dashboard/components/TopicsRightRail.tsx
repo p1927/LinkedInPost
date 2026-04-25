@@ -75,6 +75,7 @@ export function TopicsRightRail({
   onOpenEditor,
   idToken,
   api,
+  hidePreview,
 }: {
   workspaceChannel: ChannelId;
   workspaceLlm: LlmRef;
@@ -91,6 +92,7 @@ export function TopicsRightRail({
   onOpenEditor: (row: SheetRow) => void;
   idToken?: string;
   api?: BackendApi;
+  hidePreview?: boolean;
 }) {
   const { showAlert } = useAlert();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -223,23 +225,25 @@ export function TopicsRightRail({
           )}
 
           {/* Channel preview */}
-          <RailSection title="Preview" className="mb-5">
-            {selectedRow ? (
-              <TopicPostPreviewCard
-                row={selectedRow}
-                previewChannel={previewCh}
-                previewAuthorName={previewAuthorName}
-                compact
-                onOpenEditor={
-                  shouldShowDraftedQueueActions(selectedRow)
-                    ? () => onOpenEditor(selectedRow)
-                    : undefined
-                }
-                idToken={idToken}
-                api={api}
-              />
-            ) : null}
-          </RailSection>
+          {!hidePreview && (
+            <RailSection title="Preview" className="mb-5">
+              {selectedRow ? (
+                <TopicPostPreviewCard
+                  row={selectedRow}
+                  previewChannel={previewCh}
+                  previewAuthorName={previewAuthorName}
+                  compact
+                  onOpenEditor={
+                    shouldShowDraftedQueueActions(selectedRow)
+                      ? () => onOpenEditor(selectedRow)
+                      : undefined
+                  }
+                  idToken={idToken}
+                  api={api}
+                />
+              ) : null}
+            </RailSection>
+          )}
 
           {/* Settings — compact 2-col grid, always visible */}
           {selectedRow ? (

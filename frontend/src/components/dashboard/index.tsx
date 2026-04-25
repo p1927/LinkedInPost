@@ -18,6 +18,7 @@ import { DashboardQueue } from './tabs/DashboardQueue';
 import { DashboardDelivery } from './tabs/DashboardDelivery';
 import { TopicsRightRail } from './components/TopicsRightRail';
 import { TopicDetailPanel } from './components/TopicDetailPanel';
+import { TopicPostPreviewCard } from './components/TopicPostPreviewCard';
 import { getChannelOption } from '../../integrations/channels';
 import { useRegisterWorkspaceChrome } from '../workspace/WorkspaceChromeContext';
 import { normalizeTelegramChatId, parseTelegramRecipientsInput } from '../../integrations/telegram';
@@ -638,7 +639,7 @@ export function Dashboard({
     />
   );
 
-  const topicsRail = (
+  const topicsRailForPanel = (
     <TopicsRightRail
       workspaceChannel={channelsHook.selectedChannel}
       workspaceLlm={queueWorkspaceLlm}
@@ -652,6 +653,7 @@ export function Dashboard({
       onOpenEditor={(row) => navigate(topicEditorPathForRow(row))}
       idToken={idToken}
       api={api}
+      hidePreview={true}
     />
   );
 
@@ -926,8 +928,18 @@ export function Dashboard({
           row={drawerRow}
           onClose={() => setSelectedTopicsPanelTopicId(null)}
           onSaveSchedule={handleUpdatePostSchedule}
+          renderPreview={drawerRow ? (channel) => (
+            <TopicPostPreviewCard
+              row={drawerRow}
+              previewChannel={channel as import('@/integrations/channels').ChannelId}
+              previewAuthorName={previewAuthorDisplayName(session.email)}
+              compact={false}
+              idToken={idToken}
+              api={api}
+            />
+          ) : undefined}
         >
-          {topicsRail}
+          {topicsRailForPanel}
         </TopicDetailPanel>
       )}
     </div>
