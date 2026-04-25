@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '../../../lib/cn';
-import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest } from '../../../services/backendApi';
+import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest, type BackendApi } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
 import { type QueueFilter } from '../types';
 import {
@@ -12,6 +12,7 @@ import {
   shouldShowDraftedQueueActions,
 } from '../utils';
 import { effectiveChannel } from '@/lib/topicEffectivePrefs';
+import { TopicPostPreviewCard } from '../components/TopicPostPreviewCard';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
@@ -82,6 +83,9 @@ export function DashboardQueue({
   generationProgress = [],
   /** Patterns for the row’s generation template — used to tailor AI Draft quick picks. */
   contentPatterns = [],
+  onViewModeChange,
+  idToken,
+  api,
 }: {
   setStatusFilter: (filter: QueueFilter) => void;
   statusFilter: QueueFilter;
@@ -115,6 +119,9 @@ export function DashboardQueue({
   onGenerationWorkerDraft?: (row: SheetRow, request: GenWorkerGenerateRequest) => Promise<void>;
   generationProgress?: Array<{ step: string; label: string; done: boolean }>;
   contentPatterns?: ContentPattern[];
+  onViewModeChange?: (mode: 'list' | 'calendar') => void;
+  idToken?: string;
+  api?: BackendApi;
 }) {
   useEffect(() => {
     if (!scrollTargetId) return;
@@ -144,6 +151,10 @@ export function DashboardQueue({
   const [bulkDate, setBulkDate] = useState('');
   const [bulkTime, setBulkTime] = useState('');
   const [topicsViewMode, setTopicsViewMode] = useState<'list' | 'calendar'>('list');
+
+  useEffect(() => {
+    onViewModeChange?.(topicsViewMode);
+  }, [topicsViewMode, onViewModeChange]);
 
   // Generation worker draft dialog
   const [genWorkerDialogRow, setGenWorkerDialogRow] = useState<SheetRow | null>(null);
@@ -571,6 +582,25 @@ export function DashboardQueue({
                 disablePastDates
                 teleportDatePicker
                 className="csc-compact csc-topics-queue"
+                renderPreview={(calTopic) => {
+                  const row = calTopic.payload as SheetRow | undefined;
+                  if (!row) return null;
+                  const ch = effectiveChannel(row, selectedChannel);
+                  const local = (session.email.split('@')[0]?.trim() ?? '');
+                  const authorName = local
+                    ? local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+                    : session.email;
+                  return (
+                    <TopicPostPreviewCard
+                      row={row}
+                      previewChannel={ch}
+                      previewAuthorName={authorName}
+                      compact
+                      idToken={idToken}
+                      api={api}
+                    />
+                  );
+                }}
               />
             </div>
           )

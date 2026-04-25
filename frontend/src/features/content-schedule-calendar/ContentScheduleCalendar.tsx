@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { CSC_TOKENS as T } from './tokens';
 import './content-schedule-calendar.css';
 import { WeekView } from './WeekView';
@@ -46,6 +46,7 @@ export interface ContentScheduleCalendarProps {
   rescheduleConfirm?: boolean;
   onRescheduleCommit?: (payload: TopicRescheduleCommitPayload) => Promise<void>;
   topicEventModalActions?: TopicEventModalActions;
+  renderPreview?: (topic: CalendarTopic) => ReactNode;
 }
 
 interface RescheduleUi {
@@ -78,6 +79,7 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
     rescheduleConfirm = false,
     onRescheduleCommit,
     topicEventModalActions,
+    renderPreview,
   } = props;
 
   const { showAlert } = useAlert();
@@ -405,6 +407,7 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
           }}
           topicQueueModal={topicEventModalActions}
           onDelete={onTopicDelete ? () => { onTopicDelete?.(selectedTopic.id); setSelectedTopic(null); } : undefined}
+          previewSlot={topicEventModalActions && renderPreview ? renderPreview(selectedTopic) : undefined}
         />
       )}
     </div>

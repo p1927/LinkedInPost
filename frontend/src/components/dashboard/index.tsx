@@ -265,6 +265,7 @@ export function Dashboard({
   );
 
   const [selectedTopicsPanelTopicId, setSelectedTopicsPanelTopicId] = useState<string | null>(null);
+  const [isCalendarMode, setIsCalendarMode] = useState(false);
 
   const queueHook = useDashboardQueue({
     idToken,
@@ -621,6 +622,9 @@ export function Dashboard({
       onUpdatePostSchedule={handleUpdatePostSchedule}
       onCalendarRescheduleCommit={handleCalendarRescheduleCommit}
       contentPatterns={queueHook.postTemplates}
+      onViewModeChange={(m) => setIsCalendarMode(m === 'calendar')}
+      idToken={idToken}
+      api={api}
     />
   );
 
@@ -763,7 +767,9 @@ export function Dashboard({
     />
   );
 
-  const topicsHome = <TopicsHomePanels queue={queueContent} rail={topicsRail} />;
+  const topicsHome = isCalendarMode
+    ? <div className="mx-auto w-full max-w-[min(100%,1820px)] min-w-0 px-2">{queueContent}</div>
+    : <TopicsHomePanels queue={queueContent} rail={topicsRail} />;
 
   const settingsHome = (
     <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">

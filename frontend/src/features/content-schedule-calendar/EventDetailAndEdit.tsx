@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Bot, ChevronDown, ChevronRight, Pencil, RefreshCw, RotateCw, Send, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,7 @@ export function EventDetailAndEdit({
   onSave,
   onDelete,
   topicQueueModal,
+  previewSlot,
 }: {
   topic: CalendarTopic;
   /** Shown when `topic.startTime` is missing (matches calendar fallback slot). */
@@ -80,6 +82,7 @@ export function EventDetailAndEdit({
   onDelete?: () => void;
   /** Topics queue: schedule + channel + edit/publish in-modal; hides post preview. */
   topicQueueModal?: TopicEventModalActions;
+  previewSlot?: ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(topic.date);
@@ -246,6 +249,12 @@ export function EventDetailAndEdit({
 
             <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-4">
               <div className="flex flex-col gap-5">
+                {previewSlot && (
+                  <section className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+                    <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Preview</h4>
+                    {previewSlot}
+                  </section>
+                )}
                 <section className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
                   <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Schedule</h4>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
