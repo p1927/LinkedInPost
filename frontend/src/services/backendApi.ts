@@ -4,6 +4,7 @@ import type { ChannelId } from '../integrations/channels';
 import type { DraftPreviewSelection, SheetRow } from './sheets';
 import type { ContentReviewReport } from '../features/content-review/types';
 import type { TrendingSearchRequest, TrendingSearchResult } from '../features/trending/types';
+import type { NewsletterRecord } from '../features/campaign/schema/newsletterTypes';
 
 export interface SocialIntegration {
   provider: string;
@@ -861,6 +862,43 @@ export class BackendApi {
 
   async sendNewsletterIssue(idToken: string, issueId: string): Promise<{ ok: true }> {
     return this.post<{ ok: true }>('newsletter.sendApproved', idToken, { issueId });
+  }
+
+  // --- Multi-Newsletter ---
+  async listNewsletters(idToken: string): Promise<NewsletterRecord[]> {
+    return this.post<NewsletterRecord[]>('newsletter.list', idToken);
+  }
+
+  async createNewsletter(
+    idToken: string,
+    name: string,
+    config: NewsletterConfigInput,
+    autoApprove: boolean,
+  ): Promise<NewsletterRecord> {
+    return this.post<NewsletterRecord>('newsletter.create', idToken, { name, config, autoApprove });
+  }
+
+  async updateNewsletter(
+    idToken: string,
+    newsletterId: string,
+    patch: Partial<NewsletterConfigInput & { name: string; autoApprove: boolean; active: boolean }>,
+  ): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('newsletter.update', idToken, { newsletterId, ...patch });
+  }
+
+  async deleteNewsletter(idToken: string, newsletterId: string): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('newsletter.delete', idToken, { newsletterId });
+  }
+
+  async listNewsletterIssuesByNewsletter(idToken: string, newsletterId: string): Promise<NewsletterIssueRow[]> {
+    return this.post<NewsletterIssueRow[]>('newsletter.listIssuesByNewsletter', idToken, { newsletterId });
+  }
+
+  async createNewsletterDraftByNewsletter(
+    idToken: string,
+    newsletterId: string,
+  ): Promise<{ id: string; subject: string; status: string }> {
+    return this.post<{ id: string; subject: string; status: string }>('newsletter.createDraftByNewsletter', idToken, { newsletterId });
   }
 
   async updateRowStatus(

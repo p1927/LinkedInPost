@@ -53,6 +53,16 @@ export interface NewsletterIssueRow {
   created_at: string;
 }
 
+export interface NewsletterRecord {
+  id: string;
+  name: string;
+  config: NewsletterConfigInput;
+  active: boolean;
+  autoApprove: boolean;
+  createdAt: string;
+  nextSendAt: string | null;
+}
+
 export function parseNewsletterConfig(raw: Partial<NewsletterConfigInput>): NewsletterConfigInput {
   return {
     rssEnabled: Boolean(raw.rssEnabled),
