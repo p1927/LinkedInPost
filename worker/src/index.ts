@@ -2087,6 +2087,47 @@ Rules:
       return { ok: true };
     }
 
+    case 'newsletter.list': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No spreadsheet configured.');
+      const { handleListNewsletters } = await import('./newsletter/handlers');
+      return handleListNewsletters(env.PIPELINE_DB, sid);
+    }
+    case 'newsletter.create': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No spreadsheet configured.');
+      const { handleCreateNewsletter } = await import('./newsletter/handlers');
+      return handleCreateNewsletter(
+        env.PIPELINE_DB,
+        sid,
+        String(payload.name || '').trim(),
+        (payload.config as object) ?? {},
+        Boolean(payload.autoApprove),
+      );
+    }
+    case 'newsletter.update': {
+      const { handleUpdateNewsletter } = await import('./newsletter/handlers');
+      await handleUpdateNewsletter(env.PIPELINE_DB, String(payload.newsletterId || '').trim(), {
+        name: payload.name !== undefined ? String(payload.name) : undefined,
+        config: payload.config !== undefined ? (payload.config as object) : undefined,
+        autoApprove: payload.autoApprove !== undefined ? Boolean(payload.autoApprove) : undefined,
+      });
+      return { ok: true };
+    }
+    case 'newsletter.delete': {
+      const { handleDeleteNewsletter } = await import('./newsletter/handlers');
+      await handleDeleteNewsletter(env.PIPELINE_DB, String(payload.newsletterId || '').trim());
+      return { ok: true };
+    }
+    case 'newsletter.listIssuesByNewsletter': {
+      const { handleListIssuesByNewsletter } = await import('./newsletter/handlers');
+      return handleListIssuesByNewsletter(env.PIPELINE_DB, String(payload.newsletterId || '').trim());
+    }
+    case 'newsletter.createDraftByNewsletter': {
+      const { handleCreateDraftByNewsletter } = await import('./newsletter/handlers');
+      return handleCreateDraftByNewsletter(env, env.PIPELINE_DB, String(payload.newsletterId || '').trim());
+    }
+
     default:
       throw new Error(`Unknown action: ${action}`);
   }

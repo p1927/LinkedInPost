@@ -1,9 +1,8 @@
 import type { Env } from '../index';
 import type { ResearchArticle } from './types';
-import { getNewsletterConfig } from './persistence';
+import { getNewsletterConfig, createNewsletterIssue } from './persistence';
 import { collectArticlesFromSources } from './contentAssembler';
 import { renderNewsletterEmail } from './emailRenderer';
-import { createNewsletterIssue } from './persistence';
 
 export async function createNewsletterDraft(
   env: Env,
@@ -129,6 +128,74 @@ function interpolateSubject(template: string, articles: ResearchArticle[]): stri
   const firstArticle = articles[0];
   const title = firstArticle?.title || 'Newsletter';
   return template.replace('{title}', title).replace('{date}', new Date().toLocaleDateString());
+}
+
+export async function createNewsletterDraftForRecord(
+  env: Env,
+  db: D1Database,
+  newsletterId: string,
+): Promise<{ id: string; subject: string; status: string }> {
+  const row = await db
+    .prepare('SELECT * FROM newsletters WHERE id = ?')
+    .bind(newsletterId)
+    .first<import('./persistence').NewsletterRow>();
+  if (!row) throw new Error('Newsletter not found.');
+
+  const cfg = JSON.parse(row.config_json) as import('./types').NewsletterConfigInput;
+
+  const windowStart = new Date();
+  windowStart.setDate(windowStart.getDate() - 7);
+  const windowEnd = new Date();
+
+  const articles = await collectArticlesFromSources(
+    env,
+    Boolean(cfg.rssEnabled),
+    Boolean(cfg.newsApiEnabled),
+    Array.isArray(cfg.customRssFeeds) ? cfg.customRssFeeds : [],
+    Array.isArray(cfg.enabledRssFeedIds) ? cfg.enabledRssFeedIds : [],
+    Array.isArray(cfg.enabledNewsApiProviders) ? cfg.enabledNewsApiProviders : [],
+    windowStart.toISOString(),
+    windowEnd.toISOString(),
+    {
+      includeKeywords: Array.isArray(cfg.topicIncludeKeywords) ? cfg.topicIncludeKeywords : [],
+      excludeKeywords: Array.isArray(cfg.topicExcludeKeywords) ? cfg.topicExcludeKeywords : [],
+    },
+  );
+
+  const itemCount = cfg.itemCount || 5;
+  const selectedArticles = articles.slice(0, itemCount);
+  const template = cfg.processingTemplate || 'personal-story';
+  const subjectTemplate = cfg.subjectTemplate || 'Weekly Newsletter';
+
+  const renderedContent = await renderNewsletterEmail(env, selectedArticles, template, {
+    processingNote: cfg.processingNote,
+    emotionTarget: cfg.emotionTarget,
+    colorEmotionTarget: cfg.colorEmotionTarget,
+    storyFramework: cfg.storyFramework,
+    authorPersona: cfg.authorPersona || '',
+    writingStyleExamples: cfg.writingStyleExamples || '',
+    newsletterIntro: cfg.newsletterIntro || '',
+    newsletterOutro: cfg.newsletterOutro || '',
+    recurringSections: Array.isArray(cfg.recurringSections) ? cfg.recurringSections : [],
+  });
+
+  const scheduledFor = determineNextSendTime(
+    Array.isArray(cfg.scheduleDays) ? cfg.scheduleDays : [],
+    Array.isArray(cfg.scheduleTimes) ? cfg.scheduleTimes : [],
+    cfg.scheduleFrequency || 'weekly',
+  );
+
+  const subject = interpolateSubject(subjectTemplate, selectedArticles);
+
+  const issue = await createNewsletterIssue(db, row.spreadsheet_id, {
+    articles: JSON.stringify(selectedArticles),
+    renderedContent,
+    subject,
+    scheduledFor,
+    newsletterId,
+  });
+
+  return { id: issue.id, subject, status: issue.status };
 }
 
 async function sendAdminPreview(

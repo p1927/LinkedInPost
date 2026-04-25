@@ -90,6 +90,7 @@ export async function createNewsletterIssue(
     renderedContent: string;
     subject: string;
     scheduledFor: string;
+    newsletterId?: string;
   },
 ): Promise<NewsletterIssueRow> {
   const id = crypto.randomUUID();
@@ -97,10 +98,10 @@ export async function createNewsletterIssue(
   await db
     .prepare(
       `INSERT INTO newsletter_issues
-        (id, spreadsheet_id, issue_date, scheduled_for, articles_json, rendered_content, subject, status)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending_approval')`,
+        (id, spreadsheet_id, newsletter_id, issue_date, scheduled_for, articles_json, rendered_content, subject, status)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'pending_approval')`,
     )
-    .bind(id, spreadsheetId, issueDate, data.scheduledFor, data.articles, data.renderedContent, data.subject)
+    .bind(id, spreadsheetId, data.newsletterId ?? null, issueDate, data.scheduledFor, data.articles, data.renderedContent, data.subject)
     .run();
   const row = await db
     .prepare('SELECT * FROM newsletter_issues WHERE id = ?')
@@ -149,4 +150,97 @@ export async function markIssueSent(
     )
     .bind(issueId)
     .run();
+}
+
+export interface NewsletterRow {
+  id: string;
+  spreadsheet_id: string;
+  name: string;
+  config_json: string;
+  auto_approve: number;
+  active: number;
+  next_send_at: string | null;
+  created_at: string;
+}
+
+export async function createNewsletterRecord(
+  db: D1Database,
+  spreadsheetId: string,
+  name: string,
+  config: object,
+  autoApprove: boolean,
+): Promise<NewsletterRow> {
+  const id = crypto.randomUUID();
+  await db
+    .prepare(
+      `INSERT INTO newsletters (id, spreadsheet_id, name, config_json, auto_approve)
+       VALUES (?1, ?2, ?3, ?4, ?5)`,
+    )
+    .bind(id, spreadsheetId, name, JSON.stringify(config), autoApprove ? 1 : 0)
+    .run();
+  const row = await db
+    .prepare('SELECT * FROM newsletters WHERE id = ?')
+    .bind(id)
+    .first<NewsletterRow>();
+  return row!;
+}
+
+export async function listNewsletterRecords(
+  db: D1Database,
+  spreadsheetId: string,
+): Promise<NewsletterRow[]> {
+  const res = await db
+    .prepare('SELECT * FROM newsletters WHERE spreadsheet_id = ? AND active = 1 ORDER BY created_at ASC')
+    .bind(spreadsheetId)
+    .all<NewsletterRow>();
+  return res.results ?? [];
+}
+
+export async function updateNewsletterRecord(
+  db: D1Database,
+  id: string,
+  patch: { name?: string; config?: object; autoApprove?: boolean },
+): Promise<void> {
+  const parts: string[] = [];
+  const binds: unknown[] = [];
+
+  if (patch.name !== undefined) {
+    parts.push(`name = ?${parts.length + 1}`);
+    binds.push(patch.name);
+  }
+  if (patch.config !== undefined) {
+    parts.push(`config_json = ?${parts.length + 1}`);
+    binds.push(JSON.stringify(patch.config));
+  }
+  if (patch.autoApprove !== undefined) {
+    parts.push(`auto_approve = ?${parts.length + 1}`);
+    binds.push(patch.autoApprove ? 1 : 0);
+  }
+  if (parts.length === 0) return;
+
+  binds.push(id);
+  await db
+    .prepare(`UPDATE newsletters SET ${parts.join(', ')} WHERE id = ?${binds.length}`)
+    .bind(...binds)
+    .run();
+}
+
+export async function deleteNewsletterRecord(
+  db: D1Database,
+  id: string,
+): Promise<void> {
+  await db.prepare('DELETE FROM newsletters WHERE id = ?').bind(id).run();
+}
+
+export async function listIssuesByNewsletter(
+  db: D1Database,
+  newsletterId: string,
+): Promise<NewsletterIssueRow[]> {
+  const res = await db
+    .prepare(
+      `SELECT * FROM newsletter_issues WHERE newsletter_id = ? ORDER BY issue_date DESC LIMIT 50`,
+    )
+    .bind(newsletterId)
+    .all<NewsletterIssueRow>();
+  return res.results ?? [];
 }

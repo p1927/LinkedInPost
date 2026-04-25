@@ -1,6 +1,19 @@
 import type { Env } from '../index';
 import { getNewsletterConfig, saveNewsletterConfig, listNewsletterIssues, approveNewsletterIssue, rejectNewsletterIssue, markIssueSent } from './persistence';
 import type { NewsletterConfigRow, NewsletterIssueRow, NewsletterConfigInput } from './types';
+import type { NewsletterRow } from './persistence';
+
+function toRecord(row: NewsletterRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    config: JSON.parse(row.config_json) as object,
+    active: row.active === 1,
+    autoApprove: row.auto_approve === 1,
+    createdAt: row.created_at,
+    nextSendAt: row.next_send_at ?? null,
+  };
+}
 
 export async function handleGetNewsletterConfig(
   db: D1Database,
@@ -64,4 +77,50 @@ export async function handleSendApprovedNewsletterIssue(
   void env;
   void markIssueSent;
   throw new Error('Newsletter send is not implemented in the worker yet; use the Python pipeline.');
+}
+
+export async function handleListNewsletters(db: D1Database, spreadsheetId: string) {
+  const { listNewsletterRecords } = await import('./persistence');
+  const rows = await listNewsletterRecords(db, spreadsheetId);
+  return rows.map(toRecord);
+}
+
+export async function handleCreateNewsletter(
+  db: D1Database,
+  spreadsheetId: string,
+  name: string,
+  config: object,
+  autoApprove: boolean,
+) {
+  const { createNewsletterRecord } = await import('./persistence');
+  const row = await createNewsletterRecord(db, spreadsheetId, name, config, autoApprove);
+  return toRecord(row);
+}
+
+export async function handleUpdateNewsletter(
+  db: D1Database,
+  newsletterId: string,
+  patch: { name?: string; config?: object; autoApprove?: boolean },
+) {
+  const { updateNewsletterRecord } = await import('./persistence');
+  await updateNewsletterRecord(db, newsletterId, patch);
+}
+
+export async function handleDeleteNewsletter(db: D1Database, newsletterId: string) {
+  const { deleteNewsletterRecord } = await import('./persistence');
+  await deleteNewsletterRecord(db, newsletterId);
+}
+
+export async function handleListIssuesByNewsletter(db: D1Database, newsletterId: string) {
+  const { listIssuesByNewsletter } = await import('./persistence');
+  return listIssuesByNewsletter(db, newsletterId);
+}
+
+export async function handleCreateDraftByNewsletter(
+  env: Env,
+  db: D1Database,
+  newsletterId: string,
+): Promise<{ id: string; subject: string; status: string }> {
+  const { createNewsletterDraftForRecord } = await import('./draftCreator');
+  return createNewsletterDraftForRecord(env, db, newsletterId);
 }
