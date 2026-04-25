@@ -442,7 +442,7 @@ function DayColumn(props: DayColumnProps) {
   );
 }
 
-function EventTile({ ev, startHour, hourPx, selected, dragging, dragDxPx, dragDyPx, onPointerDown, onClick, weekend }: {
+function EventTile({ ev, startHour, hourPx, selected, dragging, dragDxPx, dragDyPx, onPointerDown, onClick }: {
   ev: PositionedEvent; startHour: number; hourPx: number; selected: boolean;
   dragging: boolean; dragDxPx: number; dragDyPx: number;
   onPointerDown: (e: React.PointerEvent) => void;

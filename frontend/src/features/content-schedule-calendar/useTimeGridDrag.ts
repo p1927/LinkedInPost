@@ -50,7 +50,7 @@ export interface DragEndArg extends DragStartArg {
 export interface UseTimeGridDragOptions {
   spec: TimeGridDragSpec;
   /** Container with `position: relative` covering the time grid (rows × cols). */
-  containerRef: React.RefObject<HTMLElement>;
+  containerRef: React.RefObject<HTMLElement | null>;
   /** Async confirm hook (past-date guard, reschedule dialog). Return false to revert. */
   onBeforeUpdate?: (arg: DragEndArg) => boolean | Promise<boolean>;
   onUpdate: (arg: DragEndArg) => void;

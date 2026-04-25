@@ -48,7 +48,7 @@ export function weekDaysFor(anchorIso: string, todayIso: string = localDateIsoTo
   const monday = mondayOfWeek(anchorIso);
   return Array.from({ length: 7 }, (_, i): WeekDay => {
     const iso = isoPlusDays(monday, i);
-    const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+    const d = Number(iso.split('-')[2]);
     return {
       iso,
       day: d,
@@ -78,7 +78,6 @@ export interface MonthCell {
  */
 export function monthGridFor(anchorIso: string, todayIso: string = localDateIsoToday()): MonthCell[] {
   const first = firstOfMonth(anchorIso);
-  const last = lastOfMonth(anchorIso);
   const [y, m] = anchorIso.split('-').map(Number) as [number, number];
   const startMon = mondayOfWeek(first);
   // Always 6 rows so dialog/popups don't jump as months change shape.
