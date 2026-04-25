@@ -1,17 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ScheduleXCalendar, useCalendarApp } from '@schedule-x/react';
-import { viewWeek, viewMonthGrid, viewDay } from '@schedule-x/calendar';
-import { createDragAndDropPlugin } from '@schedule-x/drag-and-drop';
-import '@schedule-x/theme-default/dist/index.css';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import type { CSSProperties } from 'react';
+import { CSC_TOKENS as T } from './tokens';
 import './content-schedule-calendar.css';
-import { mapTopicsToEvents, extractDateFromStart } from './mapTopicsToEvents';
-import { STATUS_CALENDARS } from './statusStyles';
+import { WeekView } from './WeekView';
+import { DayView } from './DayView';
+import { MonthView } from './MonthView';
 import { EventDetailAndEdit } from './EventDetailAndEdit';
 import {
-  CscDateGridTopicEvent,
-  CscMonthGridTopicEvent,
-  CscTimeGridTopicEvent,
-} from './CscTopicEventCustom';
+  localDateIsoToday, isoPlusDays,
+  weekDaysFor, weekLabel, monthLabel, prettyDate,
+  formatTimeHm, firstOfMonth,
+} from './calendarTemporal';
 import { isLocalScheduleInPast } from './scheduleValidation';
 import type {
   CalendarTopic,
@@ -19,82 +18,13 @@ import type {
   TopicRescheduleCommitPayload,
   TopicScheduleChange,
 } from './types';
+import type { DragEndArg } from './useTimeGridDrag';
 import { useAlert } from '@/components/useAlert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-
-/** Schedule-X runtime shape (config is not exposed on public CalendarApp typings). */
-type ScheduleXCalendarInternals = {
-  $app: {
-    config: {
-      weekOptions: {
-        value: {
-          gridHeight: number;
-          gridStep: number;
-          nDays: number;
-          eventWidth: number;
-          eventOverlap: boolean;
-          timeAxisFormatOptions: Intl.DateTimeFormatOptions;
-        };
-      };
-      monthGridOptions: { value: { nEventsPerDay: number } };
-    };
-  };
-};
-
-function eventsPerDayForWrapperHeight(px: number): number {
-  if (px < 340) return 3;
-  if (px < 420) return 4;
-  if (px < 500) return 5;
-  if (px < 580) return 6;
-  if (px < 660) return 7;
-  if (px < 760) return 8;
-  return 9;
-}
-
-function resolveRescheduleTopicIds(
-  draggedId: string,
-  topics: CalendarTopic[],
-  selected: ReadonlySet<string> | undefined,
-): string[] {
-  const id = String(draggedId);
-  const movable = (t: CalendarTopic) => (t.status ?? '').toLowerCase() !== 'blocked';
-  if (selected?.has(id) && selected.size > 1) {
-    return [...selected].filter((tid) => topics.some((t) => String(t.id) === tid && movable(t)));
-  }
-  if (!topics.some((t) => String(t.id) === id && movable(t))) return [];
-  return [id];
-}
-
-function CalendarStatusLegend() {
-  const entries = [
-    { id: 'pending',   label: 'Pending',   color: '#6366F1' },
-    { id: 'drafted',   label: 'Drafted',   color: '#F97316' },
-    { id: 'approved',  label: 'Approved',  color: '#22C55E' },
-    { id: 'published', label: 'Published', color: '#94A3B8' },
-    { id: 'blocked',   label: 'Blocked',   color: '#EF4444' },
-  ];
-  return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 text-[0.6875rem] font-medium text-slate-500 border-b border-border/50">
-      {entries.map((e) => (
-        <span key={e.id} className="flex items-center gap-1.5">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: e.color }}
-          />
-          {e.label}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 export type CalendarView = 'week' | 'month-grid' | 'day';
 
@@ -103,238 +33,158 @@ export interface ContentScheduleCalendarProps {
   onTopicPatch?: (id: string, patch: Partial<CalendarTopic>) => void;
   onTopicScheduleChange?: (change: TopicScheduleChange) => void;
   initialView?: CalendarView;
-  /** Set false to disable drag-and-drop (e.g. for published events). */
   canDrag?: boolean;
-  /** HH:MM used when a topic has no `startTime` so it appears in the time grid (week/day drag). */
   fallbackSlotTime?: string;
-  /** Topic ids (string) that show a selected outline on the calendar. */
   selectedTopicIds?: ReadonlySet<string>;
-  /** ⌘/Ctrl-click toggles selection; plain click still opens the detail dialog. */
   onTopicSelectionToggle?: (id: string) => void;
   onTopicDelete?: (id: string) => void;
-  /**
-   * Plain click (without modifier) on an event: notify host (e.g. sync list/rail selection)
-   * before opening the detail dialog.
-   */
   onTopicActivate?: (topic: CalendarTopic) => void;
-  /** Block dragging/rescheduling events onto dates before today (local). */
   disablePastDates?: boolean;
-  /** Portal the header date-picker to `document.body` so it is not clipped by scroll parents. */
+  /** No-op (kept for prop compatibility — the new header has no portaled date-picker). */
   teleportDatePicker?: boolean;
   className?: string;
-  /**
-   * When true (Topics queue), drag/resize opens a confirm dialog and calls `onRescheduleCommit`.
-   * When false (Campaign), schedule updates apply immediately via `onTopicScheduleChange`.
-   */
   rescheduleConfirm?: boolean;
   onRescheduleCommit?: (payload: TopicRescheduleCommitPayload) => Promise<void>;
-  /** Topics queue: event modal shows schedule, channel, edit, publish (no post preview). */
   topicEventModalActions?: TopicEventModalActions;
 }
 
-export function ContentScheduleCalendar({
-  topics,
-  onTopicPatch,
-  onTopicScheduleChange,
-  initialView = 'month-grid',
-  canDrag = true,
-  fallbackSlotTime = '09:00',
-  selectedTopicIds,
-  onTopicSelectionToggle,
-  onTopicDelete,
-  onTopicActivate,
-  disablePastDates = false,
-  teleportDatePicker = false,
-  className,
-  rescheduleConfirm = false,
-  onRescheduleCommit,
-  topicEventModalActions,
-}: ContentScheduleCalendarProps) {
+interface RescheduleUi {
+  open: boolean;
+  topicIds: string[];
+  date: string;
+  time: string;
+  hasPublished: boolean;
+  titles: string[];
+}
+
+const INITIAL_RESCHEDULE: RescheduleUi = {
+  open: false, topicIds: [], date: '', time: '09:00', hasPublished: false, titles: [],
+};
+
+export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
+  const {
+    topics,
+    onTopicPatch,
+    onTopicScheduleChange,
+    initialView = 'month-grid',
+    canDrag = true,
+    fallbackSlotTime = '09:00',
+    selectedTopicIds,
+    onTopicSelectionToggle,
+    onTopicDelete,
+    onTopicActivate,
+    disablePastDates = false,
+    className,
+    rescheduleConfirm = false,
+    onRescheduleCommit,
+    topicEventModalActions,
+  } = props;
+
   const { showAlert } = useAlert();
 
-  const topicsRef = useRef(topics);
-  const onPatchRef = useRef(onTopicPatch);
-  const onScheduleChangeRef = useRef(onTopicScheduleChange);
-  const onSelectionToggleRef = useRef(onTopicSelectionToggle);
-  const onDeleteRef = useRef(onTopicDelete);
-  const onTopicActivateRef = useRef(onTopicActivate);
-  const disablePastDatesRef = useRef(disablePastDates);
-  const rescheduleConfirmRef = useRef(rescheduleConfirm);
-  const onRescheduleCommitRef = useRef(onRescheduleCommit);
-  const selectedTopicIdsRef = useRef(selectedTopicIds);
-  const fallbackSlotTimeRef = useRef(fallbackSlotTime);
-  const rescheduleResolveRef = useRef<((v: boolean) => void) | null>(null);
-
-  useEffect(() => {
-    topicsRef.current = topics;
-  }, [topics]);
-  useEffect(() => {
-    onPatchRef.current = onTopicPatch;
-  }, [onTopicPatch]);
-  useEffect(() => {
-    onScheduleChangeRef.current = onTopicScheduleChange;
-  }, [onTopicScheduleChange]);
-  useEffect(() => {
-    onSelectionToggleRef.current = onTopicSelectionToggle;
-  }, [onTopicSelectionToggle]);
-  useEffect(() => {
-    onDeleteRef.current = onTopicDelete;
-  }, [onTopicDelete]);
-  useEffect(() => {
-    onTopicActivateRef.current = onTopicActivate;
-  }, [onTopicActivate]);
-  useEffect(() => {
-    disablePastDatesRef.current = disablePastDates;
-  }, [disablePastDates]);
-  useEffect(() => {
-    rescheduleConfirmRef.current = rescheduleConfirm;
-  }, [rescheduleConfirm]);
-  useEffect(() => {
-    onRescheduleCommitRef.current = onRescheduleCommit;
-  }, [onRescheduleCommit]);
-  useEffect(() => {
-    selectedTopicIdsRef.current = selectedTopicIds;
-  }, [selectedTopicIds]);
-  useEffect(() => {
-    fallbackSlotTimeRef.current = fallbackSlotTime;
-  }, [fallbackSlotTime]);
-
+  const [view, setView] = useState<CalendarView>(initialView);
+  const [anchorIso, setAnchorIso] = useState<string>(localDateIsoToday());
+  const [todayIso, setTodayIso] = useState<string>(localDateIsoToday());
   const [selectedTopic, setSelectedTopic] = useState<CalendarTopic | null>(null);
-
-  const [rescheduleUi, setRescheduleUi] = useState<{
-    open: boolean;
-    topicIds: string[];
-    date: string;
-    time: string;
-    hasPublished: boolean;
-    titles: string[];
-  }>({
-    open: false,
-    topicIds: [],
-    date: '',
-    time: '09:00',
-    hasPublished: false,
-    titles: [],
-  });
+  const [rescheduleUi, setRescheduleUi] = useState<RescheduleUi>(INITIAL_RESCHEDULE);
   const [rescheduleBusy, setRescheduleBusy] = useState(false);
   const [rescheduleFieldError, setRescheduleFieldError] = useState<string | null>(null);
+  const rescheduleResolveRef = useRef<((v: boolean) => void) | null>(null);
 
-  const plugins = canDrag ? [createDragAndDropPlugin(15)] : [];
+  // Refresh todayIso at midnight + on focus.
+  useEffect(() => {
+    const tick = () => setTodayIso(localDateIsoToday());
+    const onVis = () => tick();
+    window.addEventListener('focus', onVis);
+    document.addEventListener('visibilitychange', onVis);
+    const id = window.setInterval(tick, 60_000);
+    return () => {
+      window.removeEventListener('focus', onVis);
+      document.removeEventListener('visibilitychange', onVis);
+      window.clearInterval(id);
+    };
+  }, []);
 
-  const datePickerConfig = useMemo(
-    () =>
-      teleportDatePicker && typeof document !== 'undefined'
-        ? { teleportTo: document.body as HTMLElement }
-        : undefined,
-    [teleportDatePicker],
-  );
+  // Stable refs (avoid stale closures inside async drag confirms).
+  const topicsRef = useRef(topics); topicsRef.current = topics;
+  const selectedIdsRef = useRef(selectedTopicIds); selectedIdsRef.current = selectedTopicIds;
+  const rescheduleConfirmRef = useRef(rescheduleConfirm); rescheduleConfirmRef.current = rescheduleConfirm;
+  const onRescheduleCommitRef = useRef(onRescheduleCommit); onRescheduleCommitRef.current = onRescheduleCommit;
+  const onScheduleChangeRef = useRef(onTopicScheduleChange); onScheduleChangeRef.current = onTopicScheduleChange;
+  const disablePastRef = useRef(disablePastDates); disablePastRef.current = disablePastDates;
+  const fallbackTimeRef = useRef(fallbackSlotTime); fallbackTimeRef.current = fallbackSlotTime;
 
-  const calendarApp = useCalendarApp(
-    {
-      views: [viewWeek, viewMonthGrid, viewDay],
-      defaultView: initialView,
-      /**
-       * Schedule-X defaults `isResponsive` to true: on narrow wrappers it calls `setScreenSizeCompatibleView`,
-       * which replaces Month grid (`hasSmallScreenCompat: false`) with the first small-compat view in
-       * `views` — here **Day** — even when `defaultView` is `month-grid`. Topics/Campaign panels are often
-       * under ~700px wide, so users saw Day instead of Month. Disabling responsive auto-switch keeps
-       * `initialView`; users can still pick Week/Day from the header.
-       */
-      isResponsive: false,
-      events: mapTopicsToEvents(topics, { fallbackSlotTime, selectedTopicIds }),
-      calendars: STATUS_CALENDARS,
-      dayBoundaries: { start: '07:00', end: '22:00' },
-      weekOptions: {
-        gridHeight: 520,
-        gridStep: 60,
-        timeAxisFormatOptions: { hour: '2-digit', minute: '2-digit', hour12: false },
-      },
-      monthGridOptions: { nEventsPerDay: 5 },
-      ...(datePickerConfig ? { datePicker: datePickerConfig } : {}),
-      callbacks: {
-        onEventClick(calendarEvent, uiEvent) {
-          const id = String(calendarEvent.id);
-          const mouse = uiEvent as MouseEvent;
-          if (mouse.metaKey || mouse.ctrlKey) {
-            onSelectionToggleRef.current?.(id);
-            return;
-          }
-          const topic = topicsRef.current.find((t) => String(t.id) === id);
-          if (topic) {
-            onTopicActivateRef.current?.(topic);
-            setSelectedTopic(topic);
-          }
-        },
-        onBeforeEventUpdateAsync: async (_oldEvent, newEvent) => {
-          const proposed = extractDateFromStart(newEvent.start);
-          const slotTime = proposed.time ?? fallbackSlotTimeRef.current;
-          if (disablePastDatesRef.current && isLocalScheduleInPast(proposed.date, slotTime)) {
-            return false;
-          }
-          if (!rescheduleConfirmRef.current) {
-            return true;
-          }
-          return await new Promise<boolean>((resolve) => {
-            if (rescheduleResolveRef.current) {
-              rescheduleResolveRef.current(false);
-              rescheduleResolveRef.current = null;
-            }
-            rescheduleResolveRef.current = resolve;
-            const topicList = topicsRef.current;
-            const topicIds = resolveRescheduleTopicIds(
-              String(_oldEvent.id),
-              topicList,
-              selectedTopicIdsRef.current,
-            );
-            if (topicIds.length === 0) {
-              rescheduleResolveRef.current = null;
-              resolve(false);
-              return;
-            }
-            const hasPublished = topicIds.some((tid) => {
-              const t = topicList.find((x) => String(x.id) === tid);
-              return (t?.status ?? '').toLowerCase() === 'published';
-            });
-            const titles = topicIds
-              .map((tid) => topicList.find((x) => String(x.id) === tid)?.title ?? tid)
-              .slice(0, 6);
-            setRescheduleFieldError(null);
-            setRescheduleUi({
-              open: true,
-              topicIds,
-              date: proposed.date,
-              time: proposed.time ?? fallbackSlotTimeRef.current,
-              hasPublished,
-              titles,
-            });
-          });
-        },
-        onEventUpdate(event) {
-          if (rescheduleConfirmRef.current) return;
-          const change = extractDateFromStart(event.start);
-          onScheduleChangeRef.current?.({
-            id: String(event.id),
-            newDate: change.date,
-            newStartTime: change.time,
-          });
-        },
-      },
-    },
-    plugins,
-  );
+  /* ─── Selection ─────────────────────────────────────────────────── */
+  const handleToggleSelect = useCallback((id: string) => {
+    onTopicSelectionToggle?.(id);
+  }, [onTopicSelectionToggle]);
+
+  /* ─── Open topic modal ──────────────────────────────────────────── */
+  const handleOpenTopic = useCallback((id: string) => {
+    const topic = topicsRef.current.find((t) => String(t.id) === String(id));
+    if (!topic) return;
+    onTopicActivate?.(topic);
+    setSelectedTopic(topic);
+  }, [onTopicActivate]);
+
+  /* ─── Drag confirm flow (matches Schedule-X build 1:1) ──────────── */
+  const resolveTopicIds = useCallback((draggedId: string): string[] => {
+    const id = String(draggedId);
+    const topicList = topicsRef.current;
+    const sel = selectedIdsRef.current;
+    const movable = (t: CalendarTopic) => (t.status ?? '').toLowerCase() !== 'blocked';
+    if (sel?.has(id) && sel.size > 1) {
+      return [...sel].filter((tid) => topicList.some((t) => String(t.id) === tid && movable(t)));
+    }
+    if (!topicList.some((t) => String(t.id) === id && movable(t))) return [];
+    return [id];
+  }, []);
+
+  const handleBeforeReschedule = useCallback(async (arg: DragEndArg, _isBulk: boolean): Promise<boolean> => {
+    const time = formatTimeHm(arg.toMinutes);
+    if (disablePastRef.current && isLocalScheduleInPast(arg.toDate, time)) return false;
+    if (!rescheduleConfirmRef.current) return true;
+    return await new Promise<boolean>((resolve) => {
+      rescheduleResolveRef.current?.(false);
+      rescheduleResolveRef.current = resolve;
+      const topicIds = resolveTopicIds(arg.id);
+      if (topicIds.length === 0) {
+        rescheduleResolveRef.current = null;
+        resolve(false);
+        return;
+      }
+      const list = topicsRef.current;
+      const hasPublished = topicIds.some((tid) => {
+        const t = list.find((x) => String(x.id) === tid);
+        return (t?.status ?? '').toLowerCase() === 'published';
+      });
+      const titles = topicIds
+        .map((tid) => list.find((x) => String(x.id) === tid)?.title ?? tid)
+        .slice(0, 6);
+      setRescheduleFieldError(null);
+      setRescheduleUi({
+        open: true, topicIds,
+        date: arg.toDate, time,
+        hasPublished, titles,
+      });
+    });
+  }, [resolveTopicIds]);
+
+  const handleReschedule = useCallback((arg: DragEndArg, isBulk: boolean) => {
+    if (rescheduleConfirmRef.current) return; // applied via dialog
+    const newStartTime = formatTimeHm(arg.toMinutes);
+    if (isBulk) {
+      const ids = resolveTopicIds(arg.id);
+      ids.forEach((id) => onScheduleChangeRef.current?.({ id, newDate: arg.toDate, newStartTime }));
+    } else {
+      onScheduleChangeRef.current?.({ id: String(arg.id), newDate: arg.toDate, newStartTime });
+    }
+  }, [resolveTopicIds]);
 
   const finishRescheduleDialog = (result: boolean) => {
     rescheduleResolveRef.current?.(result);
     rescheduleResolveRef.current = null;
-    setRescheduleUi((prev) => ({ ...prev, open: false }));
-  };
-
-  const handleRescheduleDialogOpenChange = (open: boolean) => {
-    if (open || rescheduleBusy) return;
-    // Apply/Cancel already resolved the drag promise; only overlay/X close leaves it pending.
-    if (rescheduleResolveRef.current) {
-      finishRescheduleDialog(false);
-    }
+    setRescheduleUi((p) => ({ ...p, open: false }));
   };
 
   const handleRescheduleApply = async () => {
@@ -343,8 +193,8 @@ export function ContentScheduleCalendar({
       setRescheduleFieldError('Choose a date.');
       return;
     }
-    const timeNorm = time.trim() || fallbackSlotTimeRef.current;
-    if (disablePastDatesRef.current && isLocalScheduleInPast(date, timeNorm)) {
+    const timeNorm = time.trim() || fallbackTimeRef.current;
+    if (disablePastRef.current && isLocalScheduleInPast(date, timeNorm)) {
       setRescheduleFieldError('That date and time are in the past.');
       return;
     }
@@ -357,7 +207,6 @@ export function ContentScheduleCalendar({
     setRescheduleBusy(true);
     try {
       await commit({ topicIds, date: date.trim(), time: timeNorm });
-      // Tell Schedule-X to keep the dragged position; rejecting here reverts the UI until a slow queue refresh.
       finishRescheduleDialog(true);
     } catch (e) {
       void showAlert({
@@ -370,101 +219,122 @@ export function ContentScheduleCalendar({
     }
   };
 
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  /* ─── Header navigation ─────────────────────────────────────────── */
+  const goPrev = () => {
+    if (view === 'day') setAnchorIso(isoPlusDays(anchorIso, -1));
+    else if (view === 'week') setAnchorIso(isoPlusDays(anchorIso, -7));
+    else {
+      const [y, m] = anchorIso.split('-').map(Number) as [number, number];
+      const dt = new Date(y, m - 2, 1);
+      setAnchorIso(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-01`);
+    }
+  };
+  const goNext = () => {
+    if (view === 'day') setAnchorIso(isoPlusDays(anchorIso, 1));
+    else if (view === 'week') setAnchorIso(isoPlusDays(anchorIso, 7));
+    else {
+      const [y, m] = anchorIso.split('-').map(Number) as [number, number];
+      const dt = new Date(y, m, 1);
+      setAnchorIso(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-01`);
+    }
+  };
+  const goToday = () => setAnchorIso(localDateIsoToday());
 
+  /* ─── Keyboard shortcuts (1/2/3 + arrow nav) ────────────────────── */
   useEffect(() => {
-    if (!calendarApp) return;
-    const root = wrapperRef.current;
-    if (!root) return;
-
-    const internal = calendarApp as unknown as ScheduleXCalendarInternals;
-    let raf = 0;
-
-    const apply = () => {
-      const h = root.getBoundingClientRect().height;
-      if (h < 8) return;
-
-      const headerEl = root.querySelector('.sx__calendar-header');
-      const headerH =
-        headerEl instanceof HTMLElement ? headerEl.getBoundingClientRect().height : 76;
-      const gridH = Math.max(200, Math.round(h - headerH - 6));
-
-      const wo = internal.$app.config.weekOptions.value;
-      if (wo.gridHeight !== gridH) {
-        internal.$app.config.weekOptions.value = { ...wo, gridHeight: gridH };
-      }
-
-      const n = eventsPerDayForWrapperHeight(h);
-      const mo = internal.$app.config.monthGridOptions.value;
-      if (mo.nEventsPerDay !== n) {
-        internal.$app.config.monthGridOptions.value = { ...mo, nEventsPerDay: n };
-      }
-    };
-
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(apply);
-    };
-
-    const ro = new ResizeObserver(schedule);
-    ro.observe(root);
-    schedule();
-    const postPaint = requestAnimationFrame(() => {
-      requestAnimationFrame(apply);
-    });
-
-    return () => {
-      cancelAnimationFrame(raf);
-      cancelAnimationFrame(postPaint);
-      ro.disconnect();
-    };
-  }, [calendarApp]);
-
-  useEffect(() => {
-    if (!calendarApp) return;
-    calendarApp.events.set(
-      mapTopicsToEvents(topicsRef.current, { fallbackSlotTime, selectedTopicIds }),
-    );
-  }, [calendarApp, topics, fallbackSlotTime, selectedTopicIds]);
-
-  useEffect(() => {
-    if (!calendarApp) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === '1') (calendarApp as { setView?: (v: string) => void }).setView?.('month-grid');
-      else if (e.key === '2') (calendarApp as { setView?: (v: string) => void }).setView?.('week');
-      else if (e.key === '3') (calendarApp as { setView?: (v: string) => void }).setView?.('day');
+      if (e.key === '1') setView('month-grid');
+      else if (e.key === '2') setView('week');
+      else if (e.key === '3') setView('day');
+      else if (e.key === 't' || e.key === 'T') goToday();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [calendarApp]);
+  }, []);
+
+  const headerTitle = useMemo(() => {
+    if (view === 'day') return prettyDate(anchorIso);
+    if (view === 'week') return weekLabel(weekDaysFor(anchorIso, todayIso));
+    return monthLabel(firstOfMonth(anchorIso));
+  }, [view, anchorIso, todayIso]);
+
+  const selectedSet: ReadonlySet<string> = selectedTopicIds ?? EMPTY_SET;
 
   return (
-    <div
-      ref={wrapperRef}
-      className={`csc-wrapper ${canDrag ? 'csc-draggable' : ''} ${className ?? ''}`.trim()}
-    >
-      <CalendarStatusLegend />
-      {calendarApp && (
-        <ScheduleXCalendar
-          calendarApp={calendarApp}
-          customComponents={{
-            monthGridEvent: CscMonthGridTopicEvent,
-            timeGridEvent: CscTimeGridTopicEvent,
-            dateGridEvent: CscDateGridTopicEvent,
-          }}
-        />
-      )}
+    <div className={`csc-wrapper ${className ?? ''}`.trim()} style={wrapperStyle}>
+      <CalendarHeader
+        title={headerTitle}
+        view={view}
+        onView={setView}
+        onPrev={goPrev}
+        onNext={goNext}
+        onToday={goToday}
+      />
+      <CalendarStatusLegend/>
+      <div style={{ flex: 1, minHeight: 0, padding: 8, background: T.bg }}>
+        {view === 'week' && (
+          <WeekView
+            anchorIso={anchorIso}
+            todayIso={todayIso}
+            topics={topics}
+            selectedIds={selectedSet}
+            onToggleSelect={handleToggleSelect}
+            onOpenTopic={handleOpenTopic}
+            onClearSelection={() => { /* host-controlled */ }}
+            canDrag={canDrag}
+            onBeforeReschedule={handleBeforeReschedule}
+            onReschedule={handleReschedule}
+          />
+        )}
+        {view === 'day' && (
+          <DayView
+            anchorIso={anchorIso}
+            todayIso={todayIso}
+            topics={topics}
+            selectedIds={selectedSet}
+            onToggleSelect={handleToggleSelect}
+            onOpenTopic={handleOpenTopic}
+            onClearSelection={() => { /* host-controlled */ }}
+            canDrag={canDrag}
+            onBeforeReschedule={handleBeforeReschedule}
+            onReschedule={handleReschedule}
+          />
+        )}
+        {view === 'month-grid' && (
+          <MonthView
+            anchorIso={firstOfMonth(anchorIso)}
+            todayIso={todayIso}
+            topics={topics}
+            selectedIds={selectedSet}
+            onToggleSelect={handleToggleSelect}
+            onOpenTopic={handleOpenTopic}
+            onClickDay={(iso) => {
+              setAnchorIso(iso);
+              setView('day');
+            }}
+            onClickOverflow={(iso) => {
+              setAnchorIso(iso);
+              setView('day');
+            }}
+          />
+        )}
+      </div>
 
-      <Dialog open={rescheduleUi.open} onOpenChange={handleRescheduleDialogOpenChange}>
+      {/* Reschedule confirm dialog (Topics queue path) */}
+      <Dialog
+        open={rescheduleUi.open}
+        onOpenChange={(open) => {
+          if (open || rescheduleBusy) return;
+          if (rescheduleResolveRef.current) finishRescheduleDialog(false);
+        }}
+      >
         <DialogContent className="sm:max-w-md" showCloseButton={!rescheduleBusy}>
           <DialogHeader>
             <DialogTitle>
               Set schedule
-              {rescheduleUi.topicIds.length > 1
-                ? ` (${rescheduleUi.topicIds.length} topics)`
-                : ''}
+              {rescheduleUi.topicIds.length > 1 ? ` (${rescheduleUi.topicIds.length} topics)` : ''}
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-3 py-1">
@@ -477,9 +347,7 @@ export function ContentScheduleCalendar({
             {rescheduleUi.titles.length > 0 ? (
               <ul className="max-h-24 list-inside list-disc overflow-y-auto text-xs text-slate-600">
                 {rescheduleUi.titles.map((t, i) => (
-                  <li key={`${t}-${i}`} className="truncate">
-                    {t}
-                  </li>
+                  <li key={`${t}-${i}`} className="truncate">{t}</li>
                 ))}
                 {rescheduleUi.topicIds.length > rescheduleUi.titles.length ? (
                   <li className="list-none text-slate-500">
@@ -489,9 +357,7 @@ export function ContentScheduleCalendar({
               </ul>
             ) : null}
             <div>
-              <label htmlFor="csc-reschedule-date" className="mb-1 block text-xs font-medium text-slate-700">
-                Date
-              </label>
+              <label htmlFor="csc-reschedule-date" className="mb-1 block text-xs font-medium text-slate-700">Date</label>
               <Input
                 id="csc-reschedule-date"
                 type="date"
@@ -502,9 +368,7 @@ export function ContentScheduleCalendar({
               />
             </div>
             <div>
-              <label htmlFor="csc-reschedule-time" className="mb-1 block text-xs font-medium text-slate-700">
-                Time
-              </label>
+              <label htmlFor="csc-reschedule-time" className="mb-1 block text-xs font-medium text-slate-700">Time</label>
               <Input
                 id="csc-reschedule-time"
                 type="time"
@@ -519,14 +383,7 @@ export function ContentScheduleCalendar({
             ) : null}
           </div>
           <DialogFooter className="border-t-0 bg-transparent p-0 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={rescheduleBusy}
-              onClick={() => finishRescheduleDialog(false)}
-            >
-              Cancel
-            </Button>
+            <Button type="button" variant="outline" disabled={rescheduleBusy} onClick={() => finishRescheduleDialog(false)}>Cancel</Button>
             <Button type="button" disabled={rescheduleBusy} onClick={() => void handleRescheduleApply()}>
               {rescheduleBusy ? 'Applying…' : 'Apply'}
             </Button>
@@ -534,28 +391,133 @@ export function ContentScheduleCalendar({
         </DialogContent>
       </Dialog>
 
+      {/* Event detail / edit modal — unchanged component, dropped in. */}
       {selectedTopic && (
         <EventDetailAndEdit
           key={String(selectedTopic.id)}
           topic={selectedTopic}
           defaultSlotTime={fallbackSlotTime}
-          minSelectableDateIso={disablePastDates ? Temporal.Now.plainDateISO().toString() : undefined}
+          minSelectableDateIso={disablePastDates ? localDateIsoToday() : undefined}
           onClose={() => setSelectedTopic(null)}
           onSave={(patch) => {
-            onPatchRef.current?.(selectedTopic.id, patch);
+            onTopicPatch?.(selectedTopic.id, patch);
             if (!topicEventModalActions) setSelectedTopic(null);
           }}
           topicQueueModal={topicEventModalActions}
-          onDelete={
-            onTopicDelete
-              ? () => {
-                  onDeleteRef.current?.(selectedTopic.id);
-                  setSelectedTopic(null);
-                }
-              : undefined
-          }
+          onDelete={onTopicDelete ? () => { onTopicDelete?.(selectedTopic.id); setSelectedTopic(null); } : undefined}
         />
       )}
+    </div>
+  );
+}
+
+const EMPTY_SET: ReadonlySet<string> = new Set<string>();
+
+const wrapperStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  minHeight: 0,
+  background: T.bg,
+  color: T.ink,
+  fontFamily: '"Inter", -apple-system, system-ui, sans-serif',
+};
+
+/* ─── Header + view switcher ───────────────────────────────────────── */
+
+function CalendarHeader({ title, view, onView, onPrev, onNext, onToday }: {
+  title: string;
+  view: CalendarView;
+  onView: (v: CalendarView) => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '12px 16px',
+      background: T.surface,
+      borderBottom: `1px solid ${T.line}`,
+      flexShrink: 0,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button type="button" onClick={onPrev} aria-label="Previous" style={iconBtnStyle}>‹</button>
+          <button type="button" onClick={onToday} style={{ ...iconBtnStyle, padding: '0 12px', width: 'auto', fontSize: 12, fontWeight: 600 }}>Today</button>
+          <button type="button" onClick={onNext} aria-label="Next" style={iconBtnStyle}>›</button>
+        </div>
+        <h2 style={{
+          margin: 0, fontSize: 16, fontWeight: 600, color: T.ink,
+          letterSpacing: '-0.025em',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{title}</h2>
+      </div>
+      <ViewSwitcher view={view} onView={onView}/>
+    </div>
+  );
+}
+
+function ViewSwitcher({ view, onView }: { view: CalendarView; onView: (v: CalendarView) => void }) {
+  const items: Array<[CalendarView, string]> = [
+    ['month-grid', 'Month'],
+    ['week', 'Week'],
+    ['day', 'Day'],
+  ];
+  return (
+    <div style={{
+      display: 'inline-flex', padding: 2,
+      borderRadius: 8, background: T.tint,
+      border: `1px solid ${T.line}`,
+    }}>
+      {items.map(([v, label]) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onView(v)}
+          style={{
+            padding: '5px 12px',
+            border: 'none', cursor: 'pointer',
+            fontSize: 12, fontWeight: 600,
+            letterSpacing: '-0.005em',
+            borderRadius: 6,
+            background: view === v ? T.surface : 'transparent',
+            color: view === v ? T.ink : T.muted,
+            boxShadow: view === v ? '0 1px 2px rgba(17,17,19,0.06)' : 'none',
+            transition: 'background 120ms, color 120ms',
+          }}
+        >{label}</button>
+      ))}
+    </div>
+  );
+}
+
+const iconBtnStyle: CSSProperties = {
+  width: 28, height: 28, borderRadius: 7,
+  border: `1px solid ${T.line}`, background: T.surface,
+  color: T.ink, fontSize: 14, cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  padding: 0,
+};
+
+/* ─── Status legend (preserved from original) ─────────────────────── */
+
+function CalendarStatusLegend() {
+  const entries = [
+    { id: 'pending',   label: 'Pending',   color: '#6366F1' },
+    { id: 'drafted',   label: 'Drafted',   color: '#F97316' },
+    { id: 'approved',  label: 'Approved',  color: '#22C55E' },
+    { id: 'published', label: 'Published', color: '#94A3B8' },
+    { id: 'blocked',   label: 'Blocked',   color: '#EF4444' },
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 text-[0.6875rem] font-medium text-slate-500 border-b border-border/50">
+      {entries.map((e) => (
+        <span key={e.id} className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: e.color }}/>
+          {e.label}
+        </span>
+      ))}
     </div>
   );
 }

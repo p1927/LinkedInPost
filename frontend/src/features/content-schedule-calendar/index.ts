@@ -15,3 +15,6 @@ export {
   sheetRowToCalendarTopic,
   sheetRowsToCalendarTopics,
 } from './adapters/sheetRowAdapter';
+
+/* Internal exports kept for back-compat with any non-public imports. */
+export { STATUS_CALENDARS, statusToCalendarId } from './statusStyles';

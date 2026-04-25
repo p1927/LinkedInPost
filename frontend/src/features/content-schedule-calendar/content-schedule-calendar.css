@@ -1,422 +1,57 @@
-/* ============================================================
-   ContentScheduleCalendar — Schedule-X theme overrides
-   Scoped to .csc-wrapper so no globals leak out.
-   ============================================================ */
+/* ────────────────────────────────────────────────────────────────────
+   ContentScheduleCalendar — Fresh build (no Schedule-X)
+   Scoped to .csc-wrapper so no globals leak.
+
+   Host modifier classes (passed via the `className` prop):
+     .csc-compact      — denser type/spacing, used by Campaign + Dashboard
+     .csc-fullwidth    — full-bleed, used by the Topics page
+     .csc-topics-queue — narrow queue panel inside Dashboard
+
+   The component itself uses inline styles for layout, so this stylesheet
+   only handles wrapper-level sizing and the few host modifier knobs.
+   ──────────────────────────────────────────────────────────────────── */
 
 .csc-wrapper {
-  --sx-color-primary: #6366F1;
-  --sx-color-primary-container: #EEF2FF;
-  --sx-color-on-primary: #fff;
-  --sx-color-surface: rgba(255, 255, 255, 0.9);
-  --sx-color-surface-container: rgba(255, 255, 255, 0.75);
-  --sx-color-on-surface: #1e1b4b;
-  --sx-color-on-surface-variant: #6b7280;
-  --sx-border-radius: 0.75rem;
-  width: 100%;
-  min-height: 480px;
-  font-size: 0.8125rem;
-  /* Lets month cells scale with available height/width (see @container rules below). */
-  container-type: size;
-  container-name: csc;
-}
-
-/* Make the calendar fill its wrapper */
-.csc-wrapper .sx__calendar {
-  border-radius: 0.75rem;
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  min-height: 480px;
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  /*
-   * Theme default is overflow:hidden, which clips the header "View" label
-   * (translateY(-50%)) and absolutely positioned view dropdowns. The grid
-   * scrolls inside .sx__view-container instead.
-   */
-  overflow: visible;
-}
-
-.csc-wrapper .sx__view-container {
-  border-radius: 0 0 0.75rem 0.75rem;
-  min-height: 0;
-  flex: 1 1 auto;
-}
-
-/* Month grid: stretch rows to fill the view; event rows shrink when space is tight */
-.csc-wrapper .sx__month-grid-wrapper {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.csc-wrapper .sx__month-grid-week {
-  min-height: 0;
-}
-
-.csc-wrapper .sx__month-grid-day {
-  min-height: 0;
+  min-height: 480px;
+  width: 100%;
+  border-radius: 12px;
   overflow: hidden;
+  background: var(--csc-bg, #F8F5FF);
 }
 
-.csc-wrapper .sx__month-grid-day__events {
-  grid-gap: clamp(2px, 0.35cqh, 4px);
+.csc-wrapper.csc-compact {
+  min-height: 360px;
+  font-size: 13px;
 }
 
-@supports (height: 1cqh) {
-  .csc-wrapper .sx__month-grid-cell {
-    height: clamp(11px, min(3.6cqh, 3.8cqw), 26px);
-  }
-
-  .csc-wrapper .sx__month-grid-event {
-    font-size: clamp(9px, min(2.6cqh, 2.8cqw), 13px);
-    padding: 1px clamp(3px, 0.5cqw, 6px);
-  }
-
-  .csc-wrapper .sx__month-grid-event-time {
-    margin-right: clamp(2px, 0.35cqw, 4px);
-  }
+.csc-wrapper.csc-fullwidth {
+  flex: 1;
+  min-height: 600px;
 }
 
-/* Header bar */
-.csc-wrapper .sx__calendar-header {
-  background: #F8FAFC;
-  border-bottom: 1px solid #CBD5E1;
-  border-radius: 0.75rem 0.75rem 0 0;
-  padding: 0.5rem 0.75rem;
+.csc-wrapper.csc-topics-queue {
+  min-height: 280px;
+  border-radius: 10px;
 }
 
-/* View selector buttons */
-.csc-wrapper .sx__view-selection-item {
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.7rem;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-  color: #64748B;
-  cursor: pointer;
+/* Selected event ring — applies to event tiles in any view. */
+.csc-wrapper [data-csc-event][data-selected="true"] {
+  outline: 2px solid var(--csc-accent, #6B46E5);
+  outline-offset: -2px;
 }
 
-.csc-wrapper .sx__view-selection-item:hover:not(.is-selected) {
-  background: #F1F5F9;
-  color: #334155;
-}
-
-.csc-wrapper .sx__view-selection-item.is-selected {
-  background: #6366F1;
-  color: #fff;
-  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.4);
-}
-
-/* Event tiles */
-.csc-wrapper .sx__event {
-  border-radius: 0.375rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  cursor: grab;
-  transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-  padding: 3px 6px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.csc-wrapper .sx__event:hover {
-  filter: brightness(0.95);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
-}
-
-.csc-wrapper.csc-draggable .sx__event {
-  cursor: grab;
-}
-
-.csc-wrapper.csc-draggable .sx__event:active {
+/* Disable text selection while dragging (set on the wrapper during drag). */
+.csc-wrapper.csc-dragging {
+  user-select: none;
   cursor: grabbing;
 }
 
-.csc-wrapper .sx__event.csc-event--selected {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
-  z-index: 1;
-}
-
-/* Month grid cell numbers */
-.csc-wrapper .sx__month-grid-day__header-date {
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: #1E293B;
-}
-
-/* Today highlight */
-.csc-wrapper .sx__month-grid-day--today .sx__month-grid-day__header-date,
-.csc-wrapper .sx__week-grid__date-number--today {
-  background: #6366F1;
-  color: #fff;
-  border-radius: 50%;
-  width: 1.625rem;
-  height: 1.625rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.4);
-}
-
-/* Month grid column headers (day names) */
-.csc-wrapper .sx__month-grid-day__header {
-  padding: 0.375rem 0.375rem;
-}
-
-.csc-wrapper .sx__week-day-name {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #475569;
-}
-
-/* Mute past events slightly */
-.csc-wrapper .sx__event[data-event-id] {
-  /* Past detection is done via calendarId="published" → grey colors */
-}
-
-/* Compact layout for the Campaign aside panel */
-.csc-wrapper.csc-compact {
-  min-height: 360px;
-}
-
-.csc-wrapper.csc-compact .sx__calendar {
-  min-height: 360px;
-  font-size: 0.6875rem;
-  border-radius: 0.625rem;
-}
-
-.csc-wrapper.csc-compact .sx__calendar-header {
-  padding: 0.25rem 0.5rem;
-}
-
-.csc-wrapper.csc-compact .sx__view-selection-item {
-  font-size: 0.6875rem;
-  padding: 0.1875rem 0.5rem;
-}
-
-.csc-wrapper.csc-compact .sx__event {
-  font-size: 0.625rem;
-  padding: 1px 4px;
-}
-
-.csc-wrapper.csc-compact .sx__month-grid-day__header-date {
-  font-size: 0.625rem;
-}
-
-/* Full-width layout for standalone calendar page */
-.csc-wrapper.csc-fullwidth {
-  /* Mobile default: 384px minimum */
-  min-height: 24rem;
-  max-height: 90dvh;
-  overflow-y: auto;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-}
-
-.csc-wrapper.csc-fullwidth .sx__calendar {
-  min-height: 24rem;
-  height: 100%;
-  font-size: 0.875rem;
-}
-
-.csc-wrapper.csc-fullwidth .sx__view-selection-item {
-  font-size: 0.875rem;
-}
-
-.csc-wrapper.csc-fullwidth .sx__event {
-  font-size: 0.8125rem;
-}
-
-.csc-wrapper.csc-fullwidth .sx__month-grid-day__header-date {
-  font-size: 0.8125rem;
-}
-
-/* Responsive: mobile (≤ 480px) */
-@media (max-width: 480px) {
-  .csc-wrapper.csc-fullwidth {
-    min-height: 24rem;
-    padding: 0;
+/* Reduced motion — disable transform transitions on event tiles. */
+@media (prefers-reduced-motion: reduce) {
+  .csc-wrapper [data-csc-event] {
+    transition: none !important;
   }
-
-  .csc-wrapper.csc-fullwidth .sx__calendar {
-    min-height: 24rem;
-    height: 100%;
-    font-size: 0.75rem;
-    border-radius: 0;
-  }
-
-  .csc-wrapper.csc-fullwidth .sx__view-selection-item {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .csc-wrapper.csc-fullwidth .sx__event {
-    font-size: 0.6875rem;
-  }
-
-  .csc-wrapper.csc-fullwidth .sx__month-grid-day__header-date {
-    font-size: 0.6875rem;
-  }
-}
-
-/* Responsive: tablet (641px+) — full dynamic viewport height */
-@media (min-width: 641px) {
-  .csc-wrapper.csc-fullwidth {
-    min-height: 100dvh;
-  }
-
-  .csc-wrapper.csc-fullwidth .sx__calendar {
-    min-height: 100dvh;
-  }
-}
-
-/* Responsive: tablet (481px – 1023px) */
-@media (min-width: 481px) and (max-width: 1023px) {
-  .csc-wrapper.csc-fullwidth .sx__calendar {
-    font-size: 0.8125rem;
-  }
-
-  .csc-wrapper.csc-fullwidth .sx__view-selection-item {
-    font-size: 0.8125rem;
-  }
-}
-
-/* Responsive: desktop (≥ 1024px) */
-@media (min-width: 1024px) {
-  .csc-wrapper.csc-fullwidth {
-    min-height: 600px;
-  }
-
-  .csc-wrapper.csc-fullwidth .sx__calendar {
-    min-height: 600px;
-    font-size: 0.875rem;
-  }
-}
-
-/* ------------------------------------------------------------------
-   Topics queue — same Schedule-X chrome as campaign (compact), plus
-   padding, viewport-bounded height (week/day scroll inside the grid),
-   and high z-index so the view menu sits above the month/week cells.
-   ------------------------------------------------------------------ */
-
-.csc-wrapper.csc-topics-queue {
-  --sx-calendar-header-popup-z-index: 70;
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  /* Bounded height so week/day time grids scroll inside .sx__view-container */
-  min-height: 280px; /* overrides .csc-wrapper { min-height: 480px } */
-  height: clamp(280px, 72vh, calc(100dvh - 14rem));
-  max-height: calc(100dvh - 14rem);
-}
-
-.csc-wrapper.csc-topics-queue .sx-react-calendar-wrapper {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.csc-wrapper.csc-topics-queue .sx__calendar-wrapper {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.csc-wrapper.csc-compact.csc-topics-queue .sx__calendar {
-  /* Override compact min-height so max-height on the wrapper can win */
-  min-height: 0;
-  flex: 1 1 auto;
-  max-height: 100%;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection {
-  z-index: 6;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-selected-item {
-  min-height: 2.375rem;
-  padding: 0.375rem 0.625rem;
-  border-color: rgba(99, 102, 241, 0.32);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 1px 2px rgba(30, 27, 75, 0.05);
-  gap: 0.375rem;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  color: #1e1b4b;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-selected-item:hover {
-  border-color: rgba(99, 102, 241, 0.45);
-  background: #fff;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-label {
-  background: #f8f9ff;
-  color: #64748b;
-  font-weight: 600;
-  font-size: 0.6875rem;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-items {
-  /* Default theme opens downward (top: 100%). Upward positioning clipped
-   * against .sx__calendar when combined with scroll parents; overflow on
-   * .sx__calendar is visible so this stays readable. */
-  left: 0;
-  min-width: 11rem;
-  border-radius: 0.625rem;
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  box-shadow:
-    0 14px 40px -12px rgba(30, 27, 75, 0.2),
-    0 6px 18px -6px rgba(99, 102, 241, 0.14);
-  padding: 0.2rem 0;
-  overflow: hidden;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-item {
-  margin: 0.125rem 0.4rem;
-  border-radius: 0.5rem;
-  padding: 0.45rem 0.65rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-item:not(.is-selected):hover {
-  background: rgba(99, 102, 241, 0.1);
-  color: #4338ca;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-item.is-selected {
-  background: rgba(99, 102, 241, 0.14);
-  color: #3730a3;
-}
-
-.csc-wrapper.csc-topics-queue .sx__view-selection-item.is-selected:hover {
-  background: #6366f1;
-  color: #fff;
-}
-
-/* Date picker portaled to body (teleportDatePicker) — sit above modals/drawers */
-body .sx__date-picker-popup.is-teleported {
-  z-index: 100;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(99, 102, 241, 0.22);
-  box-shadow:
-    0 18px 48px -12px rgba(30, 27, 75, 0.22),
-    0 8px 20px -8px rgba(99, 102, 241, 0.16);
-  overflow: hidden;
-}
-
-/* Today highlight */
-.csc-wrapper .sx__month-grid-day--today {
-  background: rgba(99, 102, 241, 0.04);
-  border: 1px solid rgba(99, 102, 241, 0.18);
-  border-radius: 0.25rem;
 }

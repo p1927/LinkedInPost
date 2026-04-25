@@ -1,6 +1,9 @@
 /**
- * Whether a local calendar date (and optional HH:MM) is strictly before "now" in the browser local timezone.
- * Used to block scheduling in the past (including today's date with an earlier time).
+ * Whether a local calendar date (and optional HH:MM) is strictly before "now"
+ * in the browser local timezone. Used to block scheduling in the past.
+ *
+ * Identical semantics to the original Schedule-X build so existing call sites
+ * keep working.
  */
 export function isLocalScheduleInPast(dateIso: string, timeHm: string | undefined): boolean {
   const d = dateIso.trim();
@@ -18,4 +21,12 @@ export function isLocalScheduleInPast(dateIso: string, timeHm: string | undefine
   const [Y, M, D] = d.split('-').map((x) => parseInt(x, 10));
   const candidate = new Date(Y!, M! - 1, D!, h, m, 0, 0);
   return candidate.getTime() < Date.now();
+}
+
+/** Same check, taking minutes-since-midnight directly (used during drag). */
+export function isLocalScheduleInPastMinutes(dateIso: string, minutes?: number): boolean {
+  if (minutes == null) return isLocalScheduleInPast(dateIso, undefined);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return isLocalScheduleInPast(dateIso, `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
 }
