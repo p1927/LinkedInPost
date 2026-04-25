@@ -98,7 +98,7 @@ export function TrendingDashboard({
       if (id === 'instagram') return data.instagram.length > 0;
       if (id === 'linkedin') return data.linkedin && data.linkedin.length > 0;
       if (id === 'news') {
-        const newsArticles = trendingSearch.data?.articles ?? data.news;
+        const newsArticles = trendingSearch.data?.articles?.length ? trendingSearch.data.articles : data.news;
         return newsArticles.length > 0;
       }
       return false;
@@ -258,7 +258,7 @@ export function TrendingDashboard({
               )}
 
               {visiblePanels.includes('news') && (() => {
-                const newsArticles = trendingSearch.data?.articles ?? data.news;
+                const newsArticles = trendingSearch.data?.articles?.length ? trendingSearch.data.articles : data.news;
                 return newsArticles.length > 0 ? (
                   <div className={visiblePanels.length === 1 ? 'xl:col-span-2' : ''}>
                     <NewsPanel articles={newsArticles} />
