@@ -1,5 +1,5 @@
 import { Loader2, Mail } from "lucide-react";
-import { NewsletterRecord } from "../../schema/newsletterTypes";
+import type { NewsletterRecord } from "../../schema/newsletterTypes";
 import { NewsletterCard } from "./NewsletterCard";
 
 interface Props {

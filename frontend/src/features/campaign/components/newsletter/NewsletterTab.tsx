@@ -6,7 +6,7 @@ import type { SheetRow } from '@/services/sheets';
 import type { NewsletterRecord, NewsletterIssueRow } from '../../schema/newsletterTypes';
 import { NewsletterListView } from './NewsletterListView';
 import { NewsletterDashboard } from './NewsletterDashboard';
-import { NewsletterCalendarView, type CalendarIssueEvent } from './NewsletterCalendarView';
+import NewsletterCalendarView, { type CalendarIssueEvent } from './NewsletterCalendarView';
 import { NewsletterWizard } from './NewsletterWizard';
 import { NewsletterConfigDrawer } from './NewsletterConfigDrawer';
 import { IssueDetailDrawer } from './IssueDetailDrawer';
@@ -178,7 +178,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
             newsletters={newsletters}
             issueEvents={allIssues}
             topicRows={topicRows}
-            onIssueClick={(issue) => {
+            onIssueClick={(issue: NewsletterIssueRow) => {
               setCalendarSelectedIssue(issue);
               setCalendarDrawerOpen(true);
             }}

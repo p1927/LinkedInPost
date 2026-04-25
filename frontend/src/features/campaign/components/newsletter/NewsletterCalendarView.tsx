@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
-import { NewsletterRecord, NewsletterIssueRow } from '../../schema/newsletterTypes';
-import { SheetRow } from '@/services/sheets';
+import type { NewsletterRecord, NewsletterIssueRow } from '../../schema/newsletterTypes';
+import type { SheetRow } from '@/services/sheets';
 
 export interface CalendarIssueEvent {
   date: string; // YYYY-MM-DD (derived from issue_date)
