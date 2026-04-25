@@ -48,18 +48,21 @@ export function TopicDetailPanel({
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="absolute inset-0" style={{ background: 'rgba(17,17,19,0.04)' }} onClick={onClose} />
       <div
         className="absolute top-0 bottom-0 z-10 w-1.5 cursor-ew-resize hover:bg-violet-400/40 transition-colors"
         style={{ right: panelWidth - 3 }}
         onMouseDown={handleResizeMouseDown}
       />
       <div
-        className="absolute right-0 top-0 bottom-0 bg-white border-l border-slate-200/80 shadow-2xl flex flex-col overflow-hidden"
+        className="absolute right-0 top-0 bottom-0 bg-white flex flex-col overflow-hidden"
         style={{
           width: panelWidth,
+          borderLeft: '1px solid #D8CEEB',
+          borderRadius: '14px 0 0 14px',
+          boxShadow: '0 18px 60px rgba(17,17,19,0.10), 0 4px 12px rgba(17,17,19,0.04)',
           transform: visible ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1)',
+          transition: 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >

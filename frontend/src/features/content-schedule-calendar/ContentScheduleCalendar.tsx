@@ -423,6 +423,7 @@ const wrapperStyle: CSSProperties = {
   flexDirection: 'column',
   height: '100%',
   minHeight: 0,
+  position: 'relative',
   background: T.bg,
   color: T.ink,
   fontFamily: '"Inter", -apple-system, system-ui, sans-serif',
