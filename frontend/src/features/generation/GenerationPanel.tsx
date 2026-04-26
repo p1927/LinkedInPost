@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { QuickChangePreviewResult, VariantsPreviewResponse } from '../../services/backendApi';
+import { WorkflowCardPicker, type CustomWorkflowSummary } from './WorkflowCardPicker';
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -77,6 +78,9 @@ interface GenerationPanelProps {
   onPostTypeChange?: (postType: string) => void;
   dimensionWeights?: Record<string, number>;
   onDimensionWeightsChange?: (weights: Record<string, number>) => void;
+  customWorkflows?: CustomWorkflowSummary[];
+  isLoadingCustomWorkflows?: boolean;
+  onOpenWorkflowBuilder?: (workflow?: CustomWorkflowSummary) => void;
 }
 
 export function GenerationPanel({
@@ -99,6 +103,9 @@ export function GenerationPanel({
   onPostTypeChange,
   dimensionWeights: dimensionWeightsProp,
   onDimensionWeightsChange,
+  customWorkflows = [],
+  isLoadingCustomWorkflows = false,
+  onOpenWorkflowBuilder,
 }: GenerationPanelProps) {
   const [localPostType, setLocalPostType] = useState('');
   const [localWeights, setLocalWeights] = useState<Record<string, number>>(DEFAULT_WEIGHTS);
@@ -159,22 +166,19 @@ export function GenerationPanel({
         </Collapsible>
       ) : null}
 
-      {/* Post Type Selector */}
-      <label className={`mt-5 block font-bold text-ink transition-colors duration-200 ${compact ? 'text-[0.65rem]' : 'text-sm'}`} htmlFor="generation-post-type">
-        Post Type
-      </label>
-      <select
-        id="generation-post-type"
-        value={postType}
-        onChange={(e) => handlePostTypeChange(e.target.value)}
-        className={`mt-2 w-full rounded-xl border border-violet-200/70 bg-white/90 text-ink shadow-sm outline-none backdrop-blur-sm transition-all duration-200 hover:border-violet-300/80 hover:bg-white focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/30 focus:ring-offset-1 focus:shadow-lg ${compact ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm'}`}
-      >
-        {POST_TYPES.map((opt) => (
-          <option key={opt.value} value={opt.value} disabled={opt.disabled}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      {/* Workflow Card Picker */}
+      <div className="mt-4">
+        <p className={`mb-2 font-bold text-ink ${compact ? 'text-[0.65rem]' : 'text-sm'}`}>
+          What should this post achieve?
+        </p>
+        <WorkflowCardPicker
+          selectedWorkflowId={postType}
+          customWorkflows={customWorkflows}
+          onSelect={handlePostTypeChange}
+          onOpenBuilder={onOpenWorkflowBuilder ?? (() => {})}
+          isLoadingCustom={isLoadingCustomWorkflows}
+        />
+      </div>
 
       {/* Dimension Control Panel */}
       <Collapsible className="mt-4 rounded-xl border border-violet-200/60 bg-white/80 backdrop-blur-sm px-3 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md">
