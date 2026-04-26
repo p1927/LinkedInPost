@@ -80,6 +80,9 @@ import {
 } from './features/custom-workflows/customWorkflowActions';
 import type { CreateCustomWorkflowPayload, UpdateCustomWorkflowPayload } from './features/custom-workflows/types';
 import { nodeRegistry } from './engine/registry/NodeRegistry';
+import { lifecycleEventBus } from './engine/events/LifecycleEventBus';
+import { buildNodeInsightSummary } from './generation/nodeInsightSummary';
+import type { NodeCompletedEvent } from './engine/types';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -763,6 +766,25 @@ export default {
       const storedConfig = await loadStoredConfig(env, session.userId, { isAdmin: session.isAdmin });
       const payload = await request.json() as Record<string, unknown>;
 
+      // Queue for enrichment SSE events — drained by the stream relay below
+      const enrichmentQueue: string[] = [];
+
+      const unsubscribeEnrichment = lifecycleEventBus.subscribe<NodeCompletedEvent>(
+        'node:completed',
+        (event) => {
+          // Synchronous handler — push serialised SSE event to queue
+          const insightSummary = buildNodeInsightSummary(event.nodeId, '{}');
+          enrichmentQueue.push(
+            `data: ${JSON.stringify({
+              type: 'enrichment:node_completed',
+              nodeId: event.nodeId,
+              durationMs: event.durationMs,
+              insightSummary,
+            })}\n\n`,
+          );
+        },
+      );
+
       let genResponse: Response;
       try {
         genResponse = await callGenerationWorkerStream(env, {
@@ -859,11 +881,16 @@ export default {
                 }
               }
 
+              // Drain any queued enrichment events before forwarding the block
+              while (enrichmentQueue.length > 0) {
+                await writer.write(encoder.encode(enrichmentQueue.shift()!));
+              }
               // Forward the block
               await writer.write(encoder.encode(block + '\n\n'));
             }
           }
         } finally {
+          unsubscribeEnrichment();
           await writer.close();
         }
       })();
