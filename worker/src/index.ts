@@ -72,6 +72,14 @@ import {
   handleSavePatternMetadata,
   handleGetTestGroup,
 } from './routes/patterns';
+import {
+  handleListCustomWorkflows,
+  handleCreateCustomWorkflow,
+  handleUpdateCustomWorkflow,
+  handleDeleteCustomWorkflow,
+} from './features/custom-workflows/customWorkflowActions';
+import type { CreateCustomWorkflowPayload, UpdateCustomWorkflowPayload } from './features/custom-workflows/types';
+import { nodeRegistry } from './engine/registry/NodeRegistry';
 
 
 export { ScheduledPublishAlarm } from './scheduled-publish';
@@ -1432,6 +1440,24 @@ async function dispatchAction(
       if (!personaId) throw new Error('personaId is required.');
       await pipeline.deleteCustomPersona(session.userId, personaId);
       return { success: true };
+    }
+    case 'listCustomWorkflows': {
+      return handleListCustomWorkflows(env.PIPELINE_DB, session.userId);
+    }
+    case 'createCustomWorkflow': {
+      const cwPayload = payload as unknown as CreateCustomWorkflowPayload;
+      return handleCreateCustomWorkflow(env.PIPELINE_DB, session.userId, cwPayload);
+    }
+    case 'updateCustomWorkflow': {
+      const cwPayload = payload as unknown as UpdateCustomWorkflowPayload;
+      return handleUpdateCustomWorkflow(env.PIPELINE_DB, session.userId, cwPayload);
+    }
+    case 'deleteCustomWorkflow': {
+      const cwId = (payload as { id: string }).id;
+      return handleDeleteCustomWorkflow(env.PIPELINE_DB, session.userId, cwId);
+    }
+    case 'getNodeCatalog': {
+      return Response.json({ nodes: nodeRegistry.list().map(n => ({ id: n.id, name: n.name, description: n.description })) });
     }
     case 'analyzeTopicInsights': {
       const topicText = String(payload.topic || '').trim();

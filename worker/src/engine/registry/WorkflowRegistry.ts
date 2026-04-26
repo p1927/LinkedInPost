@@ -1,3 +1,4 @@
+import type { D1Database } from '@cloudflare/workers-types';
 import type {
   WorkflowDefinition,
   ResolvedWorkflow,
@@ -88,6 +89,31 @@ export class WorkflowRegistry {
   /** Returns all registered workflows sorted by id. */
   list(): WorkflowDefinition[] {
     return [...this.workflows.values()].sort((a, b) => a.id.localeCompare(b.id));
+  }
+
+  /**
+   * Returns a new WorkflowRegistry containing all built-in workflows
+   * PLUS the given user's custom workflows from D1.
+   * Does NOT mutate the singleton registry.
+   */
+  async loadCustomWorkflows(db: D1Database, userId: string): Promise<WorkflowRegistry> {
+    const { dbListCustomWorkflowsFull } = await import('../../features/custom-workflows/customWorkflowD1');
+    const { customWorkflowToDefinition } = await import('../../features/custom-workflows/customWorkflowToDefinition');
+    const customRows = await dbListCustomWorkflowsFull(db, userId);
+    const extended = new WorkflowRegistry();
+    // Copy all built-in registrations
+    for (const def of this.list()) {
+      extended.register(def);
+    }
+    // Register custom workflows
+    for (const cw of customRows) {
+      try {
+        extended.register(customWorkflowToDefinition(cw));
+      } catch {
+        // Skip duplicates (shouldn't happen but guard against it)
+      }
+    }
+    return extended;
   }
 
   /**
