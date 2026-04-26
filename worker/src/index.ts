@@ -1007,6 +1007,11 @@ export default {
       pruneOldLlmUsageLog(env.PIPELINE_DB).catch(() => undefined),
     );
     ctx.waitUntil(syncImageGenCatalog(env.PIPELINE_DB, env).catch(() => undefined));
+    ctx.waitUntil(
+      import('./newsletter/scheduler').then(m =>
+        m.runNewsletterScheduler(env, env.PIPELINE_DB),
+      ).catch(err => console.error('Newsletter scheduler error:', err)),
+    );
   },
 } satisfies ExportedHandler<Env>;
 
@@ -2098,6 +2103,7 @@ Rules:
       if (!sid) throw new Error('No spreadsheet configured.');
       const { handleCreateNewsletter } = await import('./newsletter/handlers');
       return handleCreateNewsletter(
+        env,
         env.PIPELINE_DB,
         sid,
         String(payload.name || '').trim(),
@@ -2107,10 +2113,11 @@ Rules:
     }
     case 'newsletter.update': {
       const { handleUpdateNewsletter } = await import('./newsletter/handlers');
-      await handleUpdateNewsletter(env.PIPELINE_DB, String(payload.newsletterId || '').trim(), {
+      await handleUpdateNewsletter(env, env.PIPELINE_DB, String(payload.newsletterId || '').trim(), {
         name: payload.name !== undefined ? String(payload.name) : undefined,
         config: payload.config !== undefined ? (payload.config as object) : undefined,
         autoApprove: payload.autoApprove !== undefined ? Boolean(payload.autoApprove) : undefined,
+        active: payload.active !== undefined ? Boolean(payload.active) : undefined,
       });
       return { ok: true };
     }

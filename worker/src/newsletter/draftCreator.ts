@@ -78,52 +78,6 @@ export async function createNewsletterDraft(
   return { id: issue.id, subject, status: issue.status };
 }
 
-function determineNextSendTime(
-  days: string[],
-  times: string[],
-  _frequency: string,
-): string {
-  if (days.length === 0 || times.length === 0) {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    d.setHours(9, 0, 0, 0);
-    return d.toISOString();
-  }
-
-  const now = new Date();
-  const dayMap: Record<string, number> = {
-    sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
-  };
-
-  const targetDays = days.map((d) => dayMap[d.toLowerCase()] ?? -1).filter((d) => d >= 0);
-  if (targetDays.length === 0) {
-    targetDays.push(1);
-  }
-
-  const currentDay = now.getDay();
-  let daysUntilNext = -1;
-  for (let i = 1; i <= 7; i++) {
-    const nextDay = (currentDay + i) % 7;
-    if (targetDays.includes(nextDay)) {
-      daysUntilNext = i;
-      break;
-    }
-  }
-
-  if (daysUntilNext === -1) {
-    daysUntilNext = 1;
-  }
-
-  const sendDate = new Date(now);
-  sendDate.setDate(sendDate.getDate() + daysUntilNext);
-
-  const timeStr = times[0] || '09:00';
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  sendDate.setHours(hours || 9, minutes || 0, 0, 0);
-
-  return sendDate.toISOString();
-}
-
 function interpolateSubject(template: string, articles: ResearchArticle[]): string {
   const firstArticle = articles[0];
   const title = firstArticle?.title || 'Newsletter';
@@ -179,7 +133,8 @@ export async function createNewsletterDraftForRecord(
     recurringSections: Array.isArray(cfg.recurringSections) ? cfg.recurringSections : [],
   });
 
-  const scheduledFor = determineNextSendTime(
+  // Use the stored next_send_at so preview checks can match by scheduledFor
+  const scheduledFor = row.next_send_at ?? computeNextSendAt(
     Array.isArray(cfg.scheduleDays) ? cfg.scheduleDays : [],
     Array.isArray(cfg.scheduleTimes) ? cfg.scheduleTimes : [],
     cfg.scheduleFrequency || 'weekly',
@@ -204,6 +159,12 @@ export async function createNewsletterDraftForRecord(
     scheduledFor,
     newsletterId,
   });
+
+  const previewChannel = (cfg as { previewChannel?: string }).previewChannel || 'telegram';
+  const adminEmail = (cfg as { adminEmail?: string }).adminEmail || '';
+  if (adminEmail) {
+    await sendAdminPreview(env, issue.id, subject, selectedArticles, previewChannel as 'email' | 'telegram', adminEmail);
+  }
 
   return { id: issue.id, subject, status: issue.status };
 }

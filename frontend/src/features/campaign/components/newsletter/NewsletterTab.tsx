@@ -9,7 +9,7 @@ import { NewsletterDashboard } from './NewsletterDashboard';
 import NewsletterCalendarView, { type CalendarIssueEvent } from './NewsletterCalendarView';
 import { NewsletterWizard } from './NewsletterWizard';
 import { NewsletterConfigDrawer } from './NewsletterConfigDrawer';
-import { IssueDetailDrawer } from './IssueDetailDrawer';
+import { NewsletterIssuePanel } from './NewsletterIssuePanel';
 
 interface Props {
   idToken: string;
@@ -183,18 +183,19 @@ export function NewsletterTab({ idToken, session, api }: Props) {
               setCalendarDrawerOpen(true);
             }}
           />
-          <IssueDetailDrawer
+          <NewsletterIssuePanel
             issue={calendarSelectedIssue}
             open={calendarDrawerOpen}
             onClose={() => setCalendarDrawerOpen(false)}
-            onSave={() => { setCalendarDrawerOpen(false); }}
             onApprove={async (issueId) => {
               await api.approveNewsletterIssue(idToken, issueId);
               setCalendarDrawerOpen(false);
+              void loadAllIssues(newsletters);
             }}
             onSend={async (issueId) => {
               await api.sendNewsletterIssue(idToken, issueId);
               setCalendarDrawerOpen(false);
+              void loadAllIssues(newsletters);
             }}
             idToken={idToken}
             api={api}
