@@ -55,7 +55,7 @@ export default function NewsletterCalendarView({
         date: new Date(r.postTime).toISOString().slice(0, 10),
         startTime: new Date(r.postTime).toTimeString().slice(0, 5),
         status: (r.status as string) ?? 'pending',
-        channels: r.channel ? [r.channel] : [],
+        channels: r.topicDeliveryChannel ? [r.topicDeliveryChannel] : [],
         payload: { __type: 'topic', row: r },
       }));
 
