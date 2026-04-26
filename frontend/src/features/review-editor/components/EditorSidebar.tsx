@@ -264,6 +264,22 @@ export function EditorSidebar() {
         {/* ── Writing Styles ─────────────────────────────────────────────────── */}
         {activeWorkspacePanel === 'styles' ? (
           <section className="flex flex-col gap-3">
+            {/* Section header with inline Generate button */}
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                disabled={isGenerateDisabled}
+                onClick={() => void handleGenerateFromStyle()}
+                className={cn(
+                  'rounded-lg px-3 py-1 text-[0.65rem] font-semibold transition-all duration-150',
+                  isGenerateDisabled
+                    ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                    : 'bg-primary text-white shadow-sm hover:bg-primary/90 active:scale-[0.98]',
+                )}
+              >
+                {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
+              </button>
+            </div>
             {/* Card grid — fixed height with internal scroll */}
             <div className="h-[280px] overflow-y-auto rounded-xl border border-gray-100 pr-0.5">
               <div className="grid grid-cols-2 gap-2 p-1">
@@ -390,51 +406,12 @@ export function EditorSidebar() {
               })}
             </div>
 
-            {/* Generate button */}
-            <button
-              type="button"
-              disabled={isGenerateDisabled}
-              onClick={() => void handleGenerateFromStyle()}
-              className={cn(
-                'w-full rounded-xl py-2.5 text-[0.75rem] font-semibold transition-all duration-150',
-                isGenerateDisabled
-                  ? 'cursor-not-allowed bg-gray-100 text-gray-400'
-                  : 'bg-primary text-white shadow-sm hover:bg-primary/90 active:scale-[0.98]',
-              )}
-            >
-              {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
-            </button>
           </section>
         ) : null}
 
         {/* ── Refine ─────────────────────────────────────────────────────────── */}
         {activeWorkspacePanel === 'refine' ? (
           <>
-            {/* Selected style chip */}
-            {selectedStyleName ? (
-              <div className="flex items-center gap-2 rounded-lg border border-violet-200/60 bg-violet-50/40 px-3 py-2">
-                <span className="text-[0.65rem] text-muted shrink-0">Style:</span>
-                <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[0.65rem] font-semibold text-violet-700 min-w-0 truncate">
-                  {selectedStyleName}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveWorkspacePanel('styles')}
-                  className="ml-auto shrink-0 flex items-center gap-0.5 text-[0.65rem] font-semibold text-primary hover:text-primary-hover"
-                >
-                  Change <ArrowRight className="h-2.5 w-2.5" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setActiveWorkspacePanel('styles')}
-                className="flex w-full items-center justify-between rounded-lg border border-dashed border-violet-200 bg-violet-50/30 px-3 py-2 text-[0.65rem] font-semibold text-primary hover:bg-violet-50/60"
-              >
-                <span>Pick a writing style first</span>
-                <ArrowRight className="h-3 w-3" />
-              </button>
-            )}
 
             <GenerationPanel
               instruction={instruction}
