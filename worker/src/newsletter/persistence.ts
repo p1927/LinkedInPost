@@ -1,5 +1,48 @@
 import type { NewsletterConfigRow, NewsletterConfigInput, NewsletterIssueRow } from './types';
 
+export function computeNextSendAt(
+  scheduleDays: string[],
+  scheduleTimes: string[],
+  _frequency: string,
+): string {
+  if (scheduleDays.length === 0 || scheduleTimes.length === 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+    return d.toISOString();
+  }
+
+  const dayMap: Record<string, number> = {
+    sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
+  };
+  const targetDays = scheduleDays
+    .map(d => dayMap[d.toLowerCase()] ?? -1)
+    .filter(d => d >= 0);
+  if (targetDays.length === 0) targetDays.push(1);
+
+  const timeStr = scheduleTimes[0] || '09:00';
+  const [hoursStr, minutesStr] = timeStr.split(':');
+  const hours = parseInt(hoursStr || '9', 10);
+  const minutes = parseInt(minutesStr || '0', 10);
+
+  const now = new Date();
+  const currentDay = now.getDay();
+
+  for (let i = 0; i <= 7; i++) {
+    const dayOfWeek = (currentDay + i) % 7;
+    if (!targetDays.includes(dayOfWeek)) continue;
+    const candidate = new Date(now);
+    candidate.setDate(candidate.getDate() + i);
+    candidate.setHours(hours, minutes, 0, 0);
+    if (candidate > now) return candidate.toISOString();
+  }
+
+  const fallback = new Date(now);
+  fallback.setDate(fallback.getDate() + 7);
+  fallback.setHours(hours, minutes, 0, 0);
+  return fallback.toISOString();
+}
+
 export async function getNewsletterConfig(
   db: D1Database,
   spreadsheetId: string,
@@ -171,12 +214,18 @@ export async function createNewsletterRecord(
   autoApprove: boolean,
 ): Promise<NewsletterRow> {
   const id = crypto.randomUUID();
+  const cfg = config as { scheduleDays?: string[]; scheduleTimes?: string[]; scheduleFrequency?: string };
+  const nextSendAt = computeNextSendAt(
+    Array.isArray(cfg.scheduleDays) ? cfg.scheduleDays : [],
+    Array.isArray(cfg.scheduleTimes) ? cfg.scheduleTimes : [],
+    cfg.scheduleFrequency || 'weekly',
+  );
   await db
     .prepare(
-      `INSERT INTO newsletters (id, spreadsheet_id, name, config_json, auto_approve)
-       VALUES (?1, ?2, ?3, ?4, ?5)`,
+      `INSERT INTO newsletters (id, spreadsheet_id, name, config_json, auto_approve, next_send_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
     )
-    .bind(id, spreadsheetId, name, JSON.stringify(config), autoApprove ? 1 : 0)
+    .bind(id, spreadsheetId, name, JSON.stringify(config), autoApprove ? 1 : 0, nextSendAt)
     .run();
   const row = await db
     .prepare('SELECT * FROM newsletters WHERE id = ?')
@@ -199,7 +248,7 @@ export async function listNewsletterRecords(
 export async function updateNewsletterRecord(
   db: D1Database,
   id: string,
-  patch: { name?: string; config?: object; autoApprove?: boolean },
+  patch: { name?: string; config?: object; autoApprove?: boolean; active?: boolean },
 ): Promise<void> {
   const parts: string[] = [];
   const binds: unknown[] = [];
@@ -211,10 +260,22 @@ export async function updateNewsletterRecord(
   if (patch.config !== undefined) {
     parts.push(`config_json = ?${parts.length + 1}`);
     binds.push(JSON.stringify(patch.config));
+    const cfg = patch.config as { scheduleDays?: string[]; scheduleTimes?: string[]; scheduleFrequency?: string };
+    const nextSendAt = computeNextSendAt(
+      Array.isArray(cfg.scheduleDays) ? cfg.scheduleDays : [],
+      Array.isArray(cfg.scheduleTimes) ? cfg.scheduleTimes : [],
+      cfg.scheduleFrequency || 'weekly',
+    );
+    parts.push(`next_send_at = ?${parts.length + 1}`);
+    binds.push(nextSendAt);
   }
   if (patch.autoApprove !== undefined) {
     parts.push(`auto_approve = ?${parts.length + 1}`);
     binds.push(patch.autoApprove ? 1 : 0);
+  }
+  if (patch.active !== undefined) {
+    parts.push(`active = ?${parts.length + 1}`);
+    binds.push(patch.active ? 1 : 0);
   }
   if (parts.length === 0) return;
 
@@ -223,6 +284,51 @@ export async function updateNewsletterRecord(
     .prepare(`UPDATE newsletters SET ${parts.join(', ')} WHERE id = ?${binds.length}`)
     .bind(...binds)
     .run();
+}
+
+export async function setNewsletterNextSendAt(db: D1Database, id: string, nextSendAt: string): Promise<void> {
+  await db
+    .prepare(`UPDATE newsletters SET next_send_at = ? WHERE id = ?`)
+    .bind(nextSendAt, id)
+    .run();
+}
+
+export async function getActiveNewslettersForScheduler(db: D1Database): Promise<NewsletterRow[]> {
+  const res = await db
+    .prepare(`SELECT * FROM newsletters WHERE active = 1 AND next_send_at IS NOT NULL`)
+    .all<NewsletterRow>();
+  return res.results ?? [];
+}
+
+export async function getIssueForNewsletterWindow(
+  db: D1Database,
+  newsletterId: string,
+  nextSendAt: string,
+): Promise<NewsletterIssueRow | null> {
+  const windowStart = new Date(new Date(nextSendAt).getTime() - 2 * 60 * 60 * 1000).toISOString();
+  const windowEnd = new Date(new Date(nextSendAt).getTime() + 2 * 60 * 60 * 1000).toISOString();
+  return db
+    .prepare(
+      `SELECT * FROM newsletter_issues
+       WHERE newsletter_id = ? AND scheduled_for >= ? AND scheduled_for <= ?
+       ORDER BY created_at DESC LIMIT 1`,
+    )
+    .bind(newsletterId, windowStart, windowEnd)
+    .first<NewsletterIssueRow>();
+}
+
+export async function getApprovedIssueForNewsletter(
+  db: D1Database,
+  newsletterId: string,
+): Promise<NewsletterIssueRow | null> {
+  return db
+    .prepare(
+      `SELECT * FROM newsletter_issues
+       WHERE newsletter_id = ? AND status = 'approved'
+       ORDER BY scheduled_for ASC LIMIT 1`,
+    )
+    .bind(newsletterId)
+    .first<NewsletterIssueRow>();
 }
 
 export async function deleteNewsletterRecord(

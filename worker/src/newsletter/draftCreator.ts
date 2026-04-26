@@ -1,6 +1,6 @@
 import type { Env } from '../index';
 import type { ResearchArticle } from './types';
-import { getNewsletterConfig, createNewsletterIssue } from './persistence';
+import { getNewsletterConfig, createNewsletterIssue, computeNextSendAt } from './persistence';
 import { collectArticlesFromSources } from './contentAssembler';
 import { renderNewsletterEmail } from './emailRenderer';
 
@@ -56,7 +56,7 @@ export async function createNewsletterDraft(
     },
   );
 
-  const scheduledFor = determineNextSendTime(
+  const scheduledFor = computeNextSendAt(
     JSON.parse(config.schedule_days_json || '[]'),
     JSON.parse(config.schedule_times_json || '[]'),
     config.schedule_frequency,
