@@ -1279,6 +1279,10 @@ export class BackendApi {
     });
   }
 
+  getNodeCatalog(idToken: string): Promise<{ nodes: Array<{ id: string; name: string }> }> {
+    return this.post<{ nodes: Array<{ id: string; name: string }> }>('getNodeCatalog', idToken);
+  }
+
   listCustomWorkflows(idToken: string): Promise<{ workflows: CustomWorkflowSummary[] }> {
     return this.post<{ workflows: CustomWorkflowSummary[] }>('listCustomWorkflows', idToken);
   }

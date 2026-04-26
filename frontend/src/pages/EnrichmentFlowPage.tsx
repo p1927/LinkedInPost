@@ -602,8 +602,10 @@ function NodeDetailPanel({
   onClose: () => void;
 }) {
   const [showTemplate, setShowTemplate] = useState(false);
+  const [activeTab, setActiveTab] = useState<'summary' | 'raw'>('summary');
 
   useEffect(() => { setShowTemplate(false); }, [node?.id]);
+  useEffect(() => { setActiveTab('summary'); }, [node?.id]);
 
   if (!node) return null;
 
@@ -706,9 +708,46 @@ function NodeDetailPanel({
 
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-2">Output</p>
-              <pre className="max-h-64 overflow-y-auto rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
-                {nodeRun.output}
-              </pre>
+              {/* Tab switcher */}
+              <div className="flex gap-1 border-b border-border mb-3">
+                {(['summary', 'raw'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={cn(
+                      'px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                      activeTab === tab ? 'text-ink border-b-2 border-primary' : 'text-muted hover:text-ink',
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {activeTab === 'raw' ? (
+                <pre className="max-h-64 overflow-y-auto rounded-xl border border-border bg-canvas p-3 text-[11px] leading-relaxed text-ink/80 whitespace-pre-wrap font-mono">
+                  {nodeRun.output}
+                </pre>
+              ) : (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 text-xs text-ink/80 leading-relaxed space-y-1">
+                  {Object.entries((() => {
+                    try {
+                      return JSON.parse(nodeRun.output) as Record<string, unknown>;
+                    } catch { return {}; }
+                  })())
+                    .filter(([, v]) => typeof v === 'string' || (Array.isArray(v) && (v as unknown[]).length > 0))
+                    .slice(0, 6)
+                    .map(([k, v]) => (
+                      <p key={k}>
+                        <span className="font-semibold">{k}:</span>{' '}
+                        {Array.isArray(v)
+                          ? (v as string[]).slice(0, 3).join(', ')
+                          : String(v).slice(0, 120)}
+                      </p>
+                    ))}
+                </div>
+              )}
             </div>
 
             <div>
@@ -757,11 +796,21 @@ export function EnrichmentFlowPage({
   const topicGroups = buildTopicGroups(rows);
   const defaultRun = topicGroups[0]?.runs[0] ?? null;
 
+  interface NodeCatalogEntry { id: string; name: string; }
+  const [nodeCatalog, setNodeCatalog] = useState<NodeCatalogEntry[]>([]);
+
+  useEffect(() => {
+    api.getNodeCatalog(idToken)
+      .then(res => setNodeCatalog(res.nodes ?? []))
+      .catch(() => {});
+  }, [idToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [selectedRunId, setSelectedRunId] = useState<string | null>(defaultRun?.id ?? null);
   const [selectedNode, setSelectedNode] = useState<FlowNode | null>(null);
   const [runsOpen, setRunsOpen] = useState(true);
   const [detailCollapsed, setDetailCollapsed] = useState(false);
   const [canvasResetKey, setCanvasResetKey] = useState(0);
+  const [showTimeline, setShowTimeline] = useState(false);
   const [nodeRunsCache, setNodeRunsCache] = useState<Map<string, NodeRun[]>>(new Map());
   const [loadingTopicId, setLoadingTopicId] = useState<string | null>(null);
 
@@ -900,6 +949,13 @@ export function EnrichmentFlowPage({
             </div>
             <button
               type="button"
+              onClick={() => setShowTimeline(p => !p)}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:bg-border/30 hover:text-ink transition-colors"
+            >
+              {showTimeline ? 'DAG view' : 'Timeline view'}
+            </button>
+            <button
+              type="button"
               onClick={() => setCanvasResetKey(k => k + 1)}
               className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:bg-border/30 hover:text-ink transition-colors"
             >
@@ -909,41 +965,89 @@ export function EnrichmentFlowPage({
           </div>
         </div>
 
-        <div className="flex flex-1 min-h-0 p-3 gap-3">
-          <DraggableCanvas resetKey={canvasResetKey}>
-            <div className="flex flex-col items-center gap-0 p-8">
-              <NodeCard {...cardProps(triggerNode)} />
-              <Arrow />
-
-              <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
-                <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
-                  {executedEnrichmentNodeIds && executedEnrichmentNodeIds.length > 0
-                    ? 'Enrichment Modules (execution order)'
-                    : 'Enrichment Modules (parallel)'}
+        {selectedRun && (
+          <div className="px-4 py-2.5 border-b border-border bg-canvas shrink-0">
+            <div className="flex flex-wrap items-center gap-6">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Workflow</p>
+                <p className="text-sm font-semibold text-ink">
+                  {rows?.find((r: SheetRow) => r.topicId === selectedRun.topicId)?.generationTemplateId ?? 'Default'}
                 </p>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {ENRICHMENT_NODESToRender.map(node => (
-                    <NodeCard key={node.id} {...cardProps(node)} />
-                  ))}
-                </div>
               </div>
-              <Arrow />
-
-              <NodeCard {...cardProps(reviewGenNode)} />
-              <Arrow />
-              <NodeCard {...cardProps(genWorkerNode)} />
-              <Arrow />
-
-              <div className="flex items-center gap-0">
-                <NodeCard {...cardProps(textReviewNode)} />
-                <Arrow horizontal />
-                <NodeCard {...cardProps(visionReviewNode)} />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Nodes ran</p>
+                <p className="text-sm font-semibold text-ink">{loadedNodeRuns?.length ?? 0}</p>
               </div>
-              <Arrow />
-
-              <NodeCard {...cardProps(outputNode)} />
             </div>
-          </DraggableCanvas>
+          </div>
+        )}
+
+        <div className="flex flex-1 min-h-0 p-3 gap-3">
+          {showTimeline && loadedNodeRuns ? (
+            <div className="flex-1 overflow-y-auto p-4">
+              <p className="text-xs font-bold text-muted mb-3">Execution timeline</p>
+              <div className="space-y-2">
+                {[...loadedNodeRuns]
+                  .sort((a, b) => (a.durationMs ?? 0) - (b.durationMs ?? 0))
+                  .map(run => {
+                    const maxMs = Math.max(...loadedNodeRuns.map(r => r.durationMs ?? 0), 1);
+                    const width = Math.max(4, ((run.durationMs ?? 0) / maxMs) * 100);
+                    const nodeLabel = nodeCatalog.find(n => n.id === run.nodeId)?.name ?? run.nodeId;
+                    return (
+                      <div key={run.nodeId} className="flex items-center gap-3">
+                        <span className="w-36 shrink-0 text-[11px] text-ink font-medium truncate">{nodeLabel}</span>
+                        <div className="flex-1 rounded-full bg-border h-2 overflow-hidden">
+                          <div
+                            className={cn('h-full rounded-full', run.status === 'failed' ? 'bg-red-400' : 'bg-primary')}
+                            style={{ width: `${width}%` }}
+                          />
+                        </div>
+                        <span className="w-12 shrink-0 text-[11px] text-muted text-right">
+                          {(run.durationMs ?? 0) < 1000
+                            ? `${run.durationMs}ms`
+                            : `${((run.durationMs ?? 0) / 1000).toFixed(1)}s`}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          ) : (
+            <DraggableCanvas resetKey={canvasResetKey}>
+              <div className="flex flex-col items-center gap-0 p-8">
+                <NodeCard {...cardProps(triggerNode)} />
+                <Arrow />
+
+                <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
+                  <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                    {executedEnrichmentNodeIds && executedEnrichmentNodeIds.length > 0
+                      ? 'Enrichment Modules (execution order)'
+                      : 'Enrichment Modules (parallel)'}
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {ENRICHMENT_NODESToRender.map(node => (
+                      <NodeCard key={node.id} {...cardProps(node)} />
+                    ))}
+                  </div>
+                </div>
+                <Arrow />
+
+                <NodeCard {...cardProps(reviewGenNode)} />
+                <Arrow />
+                <NodeCard {...cardProps(genWorkerNode)} />
+                <Arrow />
+
+                <div className="flex items-center gap-0">
+                  <NodeCard {...cardProps(textReviewNode)} />
+                  <Arrow horizontal />
+                  <NodeCard {...cardProps(visionReviewNode)} />
+                </div>
+                <Arrow />
+
+                <NodeCard {...cardProps(outputNode)} />
+              </div>
+            </DraggableCanvas>
+          )}
 
           <NodeDetailPanel
             key={selectedNode?.id}
