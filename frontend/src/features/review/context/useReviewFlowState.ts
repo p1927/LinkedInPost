@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useRef, useReducer } from 'react';
+import { useState, useMemo, useEffect, useRef, useReducer, useCallback } from 'react';
 import { type ReviewFlowProviderProps, type CompareState } from './types';
+import type { GeneratedStyleCard, VersionEntry } from './types';
 import { getInitialEditorText, buildSheetVariants, buildGeneratedImages } from './utils';
 import {
   type GenerationScope,
@@ -386,6 +387,74 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [postType, setPostType] = useState('');
   const [dimensionWeights, setDimensionWeights] = useState<Record<string, number>>({});
 
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [generatedCards, setGeneratedCards] = useState<GeneratedStyleCard[]>([]);
+  const [lastGeneratedConfig, setLastGeneratedConfig] = useState<{
+    cardId: string | null;
+    dimensionWeights: Record<string, number>;
+  } | null>(null);
+  const [versionHistory, setVersionHistory] = useState<VersionEntry[]>([]);
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const [versionRestoreCounter, setVersionRestoreCounter] = useState(0);
+
+  const topicId = row.topicId;
+
+  useEffect(() => {
+    if (!topicId) {
+      setVersionHistory([]);
+      setCurrentVersionId(null);
+      return;
+    }
+    // Reset generated cards and last config when navigating to a different topic
+    setSelectedCardId(null);
+    setGeneratedCards([]);
+    setLastGeneratedConfig(null);
+
+    try {
+      const stored = localStorage.getItem(`version-history-${topicId}`);
+      if (stored) {
+        setVersionHistory(JSON.parse(stored) as VersionEntry[]);
+        setCurrentVersionId(null);
+        return;
+      }
+    } catch {
+      // ignore malformed stored data
+    }
+
+    // No stored history: create initial entry if editor has content
+    const initialContent = row.selectedText || row.variant1 || '';
+    if (initialContent.trim()) {
+      setVersionHistory([
+        {
+          id: crypto.randomUUID(),
+          timestamp: Date.now(),
+          content: initialContent,
+          label: 'Original',
+          dimensionWeights: {},
+          source: 'initial',
+        },
+      ]);
+    } else {
+      setVersionHistory([]);
+    }
+    setCurrentVersionId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topicId]);
+
+  const restoreVersion = useCallback(
+    (entry: VersionEntry) => {
+      setters.setEditorText(entry.content);
+      setCurrentVersionId(entry.id);
+      setDimensionWeights(entry.dimensionWeights ?? {});
+      setSelectedCardId(entry.cardId ?? null);
+      if (entry.cardId) setPostType(entry.cardId);
+      setVersionRestoreCounter(c => c + 1);
+    },
+    // These are all stable setState functions — empty dep array is correct
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
     void loadPostTemplates()
@@ -583,6 +652,18 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setPostType,
     dimensionWeights,
     setDimensionWeights,
+    selectedCardId,
+    setSelectedCardId,
+    generatedCards,
+    setGeneratedCards,
+    lastGeneratedConfig,
+    setLastGeneratedConfig,
+    versionHistory,
+    setVersionHistory,
+    currentVersionId,
+    setCurrentVersionId,
+    versionRestoreCounter,
+    restoreVersion,
     nodeRuns,
     nodeRunsLoading,
   };

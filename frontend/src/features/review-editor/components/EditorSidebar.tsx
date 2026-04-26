@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ArrowRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
@@ -14,6 +14,8 @@ import { WorkflowBuilderModal } from '../../workflows/WorkflowBuilderModal';
 import type { CustomWorkflowSummary } from '../../generation/WorkflowCardPicker';
 import type { CreateWorkflowFormValues } from '../../workflows/useCustomWorkflows';
 import { BUILT_IN_WORKFLOW_CARDS, FEATURED_WORKFLOW_IDS } from '../../generation/builtInWorkflowCards';
+import { recordsEqual } from '../../../utils/recordsEqual';
+import type { GeneratedStyleCard } from '../../review/context/types';
 import { cn } from '@/lib/cn';
 
 // ─── Dimension slider data (mirrors GenerationPanel internals) ─────────────────
@@ -160,6 +162,11 @@ export function EditorSidebar() {
     setPostType,
     dimensionWeights,
     setDimensionWeights,
+    selectedCardId,
+    setSelectedCardId,
+    generatedCards,
+    lastGeneratedConfig,
+    handleGenerateFromStyle,
   } = useReviewFlowEditor();
 
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -182,14 +189,32 @@ export function EditorSidebar() {
   }
 
   function selectStyle(id: string) {
+    const card = BUILT_IN_WORKFLOW_CARDS.find(c => c.id === id);
+    setSelectedCardId(id);
     setPostType(id);
-    setActiveWorkspacePanel('refine');
+    setDimensionWeights(card ? card.dimensionWeights : DEFAULT_WEIGHTS);
+  }
+
+  function selectGeneratedCard(card: GeneratedStyleCard) {
+    setSelectedCardId(card.id);
+    setDimensionWeights(card.dimensionWeights);
+    // Don't set postType — generated card IDs shouldn't go to the API
   }
 
   const weights = dimensionWeights ?? DEFAULT_WEIGHTS;
   function handleWeightChange(key: string, value: number) {
     setDimensionWeights({ ...weights, [key]: value });
+    setSelectedCardId(null);
   }
+
+  const isGenerateDisabled = useMemo(() => {
+    if (generationLoading !== null) return true;
+    if (!lastGeneratedConfig) return false;
+    return (
+      lastGeneratedConfig.cardId === (selectedCardId ?? null) &&
+      recordsEqual(lastGeneratedConfig.dimensionWeights, dimensionWeights ?? DEFAULT_WEIGHTS)
+    );
+  }, [generationLoading, lastGeneratedConfig, selectedCardId, dimensionWeights]);
 
   const tabs = deliveryChannel === 'gmail'
     ? [...TABS_BASE, { id: 'email' as const, label: 'Email' }]
@@ -238,78 +263,109 @@ export function EditorSidebar() {
 
         {/* ── Writing Styles ─────────────────────────────────────────────────── */}
         {activeWorkspacePanel === 'styles' ? (
-          <section className="space-y-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink/55 mb-0.5">
-                Choose a writing style
-              </p>
-              <p className="text-[10px] text-muted leading-snug">
-                Pick a style to guide tone, structure, and emphasis. Selecting one takes you straight to Refine.
-              </p>
+          <section className="flex flex-col gap-3">
+            {/* Card grid — fixed height with internal scroll */}
+            <div className="h-[280px] overflow-y-auto rounded-xl border border-gray-100 pr-0.5">
+              <div className="grid grid-cols-2 gap-2 p-1">
+
+                {/* Generated (untitled) cards — most recent first */}
+                {generatedCards.slice(0, 5).map(gc => {
+                  const isSelected = selectedCardId === gc.id;
+                  const topDims = Object.entries(gc.dimensionWeights)
+                    .sort(([, a], [, b]) => (b as number) - (a as number))
+                    .slice(0, 3)
+                    .map(([k]) => k);
+                  return (
+                    <button
+                      key={gc.id}
+                      type="button"
+                      onClick={() => selectGeneratedCard(gc)}
+                      className={cn(
+                        'flex flex-col gap-1.5 rounded-xl border-2 border-dashed p-2.5 text-left transition-all duration-150',
+                        'border-slate-300 bg-slate-50/80 hover:bg-slate-100/60',
+                        isSelected && 'ring-2 ring-offset-1 shadow-md ring-slate-400',
+                      )}
+                    >
+                      <p className="text-xs font-bold text-ink leading-snug truncate">{gc.label}</p>
+                      <p className="text-[0.55rem] text-muted">
+                        {new Date(gc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-auto pt-0.5">
+                        {topDims.map(d => (
+                          <span
+                            key={d}
+                            className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 capitalize"
+                          >
+                            {d}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+
+                {/* Built-in cards (featured first) */}
+                {ORDERED_CARDS.map(card => {
+                  const isSelected = selectedCardId === card.id;
+                  return (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => selectStyle(card.id)}
+                      className={cn(
+                        'flex flex-col gap-1.5 rounded-xl border-2 p-2.5 text-left transition-all duration-150 hover:shadow-md',
+                        CARD_BG[card.colorKey],
+                        isSelected && `ring-2 ring-offset-1 shadow-md ${CARD_RING[card.colorKey]}`,
+                      )}
+                    >
+                      <p className="text-xs font-bold text-ink leading-snug">{card.name}</p>
+                      <p className="text-[0.6rem] leading-relaxed text-slate-600 line-clamp-2">{card.description}</p>
+                      <div className="flex flex-wrap gap-1 mt-auto pt-0.5">
+                        {card.traits.map(trait => (
+                          <span
+                            key={trait}
+                            className="rounded-full bg-white/70 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200"
+                          >
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+
+                {/* Custom user-created workflows */}
+                {customWorkflows?.map(wf => {
+                  const isSelected = selectedCardId === wf.id;
+                  return (
+                    <button
+                      key={wf.id}
+                      type="button"
+                      onClick={() => selectStyle(wf.id)}
+                      className={cn(
+                        'flex flex-col gap-1.5 rounded-xl border-2 border-violet-200 bg-violet-50/70 p-2.5 text-left transition-all duration-150 hover:border-violet-300 hover:shadow-md',
+                        isSelected && 'ring-2 ring-offset-1 ring-violet-400 shadow-md',
+                      )}
+                    >
+                      <p className="text-xs font-bold text-ink leading-snug">{wf.name}</p>
+                      <p className="text-[0.6rem] leading-relaxed text-slate-600 line-clamp-2">{wf.description}</p>
+                    </button>
+                  );
+                })}
+
+                {/* Create your own */}
+                <button
+                  type="button"
+                  onClick={() => { setBuilderWorkflow(undefined); setBuilderOpen(true); }}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center transition-all duration-150 hover:border-violet-300 hover:bg-violet-50/40"
+                >
+                  <Plus className="h-4 w-4 text-muted" />
+                  <p className="text-[0.65rem] font-semibold text-muted">Create your own</p>
+                </button>
+              </div>
             </div>
 
-            {/* Card grid */}
-            <div className="grid grid-cols-2 gap-2">
-              {ORDERED_CARDS.map(card => {
-                const isSelected = postType === card.id;
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    onClick={() => selectStyle(card.id)}
-                    className={cn(
-                      'flex flex-col gap-1.5 rounded-xl border-2 p-2.5 text-left transition-all duration-150 hover:shadow-md',
-                      CARD_BG[card.colorKey],
-                      isSelected && `ring-2 ring-offset-1 shadow-md ${CARD_RING[card.colorKey]}`,
-                    )}
-                  >
-                    <p className="text-xs font-bold text-ink leading-snug">{card.name}</p>
-                    <p className="text-[0.6rem] leading-relaxed text-slate-600 line-clamp-2">{card.description}</p>
-                    <div className="flex flex-wrap gap-1 mt-auto pt-0.5">
-                      {card.traits.map(trait => (
-                        <span
-                          key={trait}
-                          className="rounded-full bg-white/70 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200"
-                        >
-                          {trait}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Custom workflows */}
-              {customWorkflows?.map(wf => {
-                const isSelected = postType === wf.id;
-                return (
-                  <button
-                    key={wf.id}
-                    type="button"
-                    onClick={() => selectStyle(wf.id)}
-                    className={cn(
-                      'flex flex-col gap-1.5 rounded-xl border-2 border-violet-200 bg-violet-50/70 p-2.5 text-left transition-all duration-150 hover:border-violet-300 hover:shadow-md',
-                      isSelected && 'ring-2 ring-offset-1 ring-violet-400 shadow-md',
-                    )}
-                  >
-                    <p className="text-xs font-bold text-ink leading-snug">{wf.name}</p>
-                    <p className="text-[0.6rem] leading-relaxed text-slate-600 line-clamp-2">{wf.description}</p>
-                  </button>
-                );
-              })}
-
-              {/* Create custom */}
-              <button
-                type="button"
-                onClick={() => { setBuilderWorkflow(undefined); setBuilderOpen(true); }}
-                className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center transition-all duration-150 hover:border-violet-300 hover:bg-violet-50/40"
-              >
-                <Plus className="h-4 w-4 text-muted" />
-                <p className="text-[0.65rem] font-semibold text-muted">Create your own</p>
-              </button>
-            </div>
-
-            {/* Dimension sliders */}
+            {/* Dimension sliders — always visible */}
             <div className="rounded-xl border border-violet-200/60 bg-white/80 px-3 py-3 shadow-sm space-y-2.5">
               <p className="text-[0.65rem] font-bold text-ink/70">Writing emphasis</p>
               {DIMENSIONS.map(({ key, label }) => {
@@ -333,6 +389,21 @@ export function EditorSidebar() {
                 );
               })}
             </div>
+
+            {/* Generate button */}
+            <button
+              type="button"
+              disabled={isGenerateDisabled}
+              onClick={() => void handleGenerateFromStyle()}
+              className={cn(
+                'w-full rounded-xl py-2.5 text-[0.75rem] font-semibold transition-all duration-150',
+                isGenerateDisabled
+                  ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                  : 'bg-primary text-white shadow-sm hover:bg-primary/90 active:scale-[0.98]',
+              )}
+            >
+              {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
+            </button>
           </section>
         ) : null}
 

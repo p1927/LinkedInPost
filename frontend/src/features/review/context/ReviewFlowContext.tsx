@@ -64,6 +64,15 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     handleApplyVariant: actions.handleApplyVariant,
     handleSavePreviewVariantAtIndex: actions.handleSavePreviewVariantAtIndex,
     handleFormatting: actions.handleFormatting,
+    selectedCardId: restState.selectedCardId,
+    setSelectedCardId: restState.setSelectedCardId,
+    generatedCards: restState.generatedCards,
+    lastGeneratedConfig: restState.lastGeneratedConfig,
+    handleGenerateFromStyle: actions.handleGenerateFromStyle,
+    versionHistory: restState.versionHistory,
+    currentVersionId: restState.currentVersionId,
+    restoreVersion: restState.restoreVersion,
+    versionRestoreCounter: restState.versionRestoreCounter,
   };
 
   // Stable context — does NOT change on typing

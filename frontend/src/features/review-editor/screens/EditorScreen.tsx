@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ShieldCheck, Eye } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 import { EditorSidebar } from '../components/EditorSidebar';
+import { VersionHistoryStrip } from '../components/VersionHistoryStrip';
 import { LivePreviewSidebar } from '../components/LivePreviewSidebar';
 import { EditorVariantBar } from '../../variant/components/EditorVariantBar';
 import { ContentReviewReport } from '@/features/content-review/ContentReviewReport';
@@ -59,14 +60,28 @@ export function EditorScreen() {
     setScope,
     editorDirty,
     handleFormatting,
+    versionHistory,
+    currentVersionId,
+    restoreVersion,
+    versionRestoreCounter,
   } = useReviewFlowEditor();
 
   const [contentReviewOpen, setContentReviewOpen] = useState(false);
   const [contentReviewBusy, setContentReviewBusy] = useState(false);
   const [contentReviewResult, setContentReviewResult] = useState<ContentReviewReportData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem('editor-version-history-open') === 'true'; } catch { return false; }
+  });
+  const handleToggleVersionHistory = useCallback(() => {
+    setVersionHistoryOpen(prev => {
+      const next = !prev;
+      try { localStorage.setItem('editor-version-history-open', String(next)); } catch {}
+      return next;
+    });
+  }, []);
 
-  const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}`;
+  const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}:${versionRestoreCounter}`;
 
   const isPublished = (sheetRow.status || '').trim().toLowerCase() === 'published';
   const hasSheetVariants = sheetVariants.length > 0;
@@ -131,6 +146,13 @@ export function EditorScreen() {
         historyResetKey={editorHistoryResetKey}
         compact
         className="min-h-0 xl:flex-none"
+      />
+      <VersionHistoryStrip
+        versions={versionHistory}
+        currentVersionId={currentVersionId}
+        onRestore={restoreVersion}
+        isOpen={versionHistoryOpen}
+        onToggle={handleToggleVersionHistory}
       />
     </section>
   );

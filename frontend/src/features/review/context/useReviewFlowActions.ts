@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ReviewFlowProviderProps } from './types';
 import type { LlmRef } from '../../../services/configService';
+import { BUILT_IN_WORKFLOW_CARDS } from '../../generation/builtInWorkflowCards';
+import type { GeneratedStyleCard, VersionEntry } from './types';
 import { type GenerationRequest, isAuthErrorMessage, BackendApi } from '../../../services/backendApi';
 import type { ContextDocument } from '../components/ContextDocumentsPanel';
 import { useAlert } from '../../../components/useAlert';
@@ -90,6 +92,13 @@ export function useReviewFlowActions(
     researchContextArticles,
     postType,
     dimensionWeights,
+    selectedCardId,
+    generatedCards,
+    setGeneratedCards,
+    setLastGeneratedConfig,
+    versionHistory,
+    setVersionHistory,
+    setCurrentVersionId,
   } = state;
 
   const { showAlert } = useAlert();
@@ -255,6 +264,67 @@ export function useReviewFlowActions(
       setVariantsPreview(preview);
       setPreviewVariantSaveByIndex({});
       setPreviewVariantSaveErrors({});
+    } finally {
+      setGenerationLoading(null);
+    }
+  };
+
+  const handleGenerateFromStyle = async (): Promise<void> => {
+    if (generationLoading !== null) return;
+
+    if (!(editorText || '').trim()) {
+      void showAlert({ title: 'Notice', description: 'Add some draft text before generating.' });
+      return;
+    }
+
+    // Snapshot the content BEFORE generation so user can revert to it
+    const activeCard = selectedCardId
+      ? BUILT_IN_WORKFLOW_CARDS.find(c => c.id === selectedCardId)
+      : null;
+    const snapshotLabel = activeCard?.name ?? 'Custom';
+    const snapshot: VersionEntry = {
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      content: editorText,
+      label: snapshotLabel,
+      cardId: selectedCardId ?? undefined,
+      dimensionWeights: { ...dimensionWeights },
+      source: 'generate',
+    };
+
+    // Build request without requiring an instruction
+    const req = buildGenerationRequest();
+    if (!req.instruction?.trim()) delete req.instruction;
+
+    setGenerationLoading('quick-change');
+    try {
+      const result = await onGenerateQuickChange(req);
+      if (!result) return;
+
+      // Apply result directly to editor (no preview step for styles tab)
+      const newContent = result.fullText ?? result.replacementText ?? editorText;
+      setEditorText(newContent);
+
+      // Save snapshot to version history (captures the pre-generate state)
+      const updatedHistory = [...versionHistory, snapshot].slice(-20);
+      setVersionHistory(updatedHistory);
+      setCurrentVersionId(snapshot.id);
+
+      // Update last generated config so the generate button disables
+      setLastGeneratedConfig({ cardId: selectedCardId, dimensionWeights: { ...dimensionWeights } });
+
+      // Create an untitled card for the top of the card grid (session-only)
+      const now = Date.now();
+      const newCardBase = {
+        id: `generated-${now}`,
+        dimensionWeights: { ...dimensionWeights },
+        baseCardId: selectedCardId ?? undefined,
+        createdAt: now,
+      };
+      setGeneratedCards(prev => {
+        const card: GeneratedStyleCard = { ...newCardBase, label: `Untitled ${prev.length + 1}` };
+        return [card, ...prev].slice(0, 5);
+      });
     } finally {
       setGenerationLoading(null);
     }
@@ -587,6 +657,30 @@ export function useReviewFlowActions(
       });
       setSheetRow(updatedRow);
       setEditorBaselineText(editorText.trim());
+
+      // Create a version checkpoint for this save
+      const saveLabel = `Saved · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      const saveEntry: VersionEntry = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        content: editorText,
+        label: saveLabel,
+        cardId: selectedCardId ?? undefined,
+        dimensionWeights: { ...dimensionWeights },
+        source: 'save',
+      };
+      const updatedSaveHistory = [...versionHistory, saveEntry].slice(-20);
+      setVersionHistory(updatedSaveHistory);
+      setCurrentVersionId(saveEntry.id);
+      try {
+        localStorage.setItem(
+          `version-history-${sheetRow.topicId}`,
+          JSON.stringify(updatedSaveHistory),
+        );
+      } catch {
+        // localStorage might be full — silently ignore
+      }
+
       void showAlert({ title: 'Saved', description: 'Draft saved.' });
     } catch (error) {
       void showAlert({
@@ -894,6 +988,7 @@ export function useReviewFlowActions(
     applySheetVariantBase,
     handleGenerateQuickChange,
     handleGenerateVariants,
+    handleGenerateFromStyle,
     openCompare,
     handleApplyQuickChange,
     handleApplyVariant,
