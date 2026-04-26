@@ -74,6 +74,8 @@ interface GenerationPanelProps {
   enrichmentEvents?: EnrichmentNodeEvent[];
   activeEnrichmentNodeId?: string | null;
   expectedEnrichmentNodeIds?: string[];
+  /** When true, hide the WorkflowCardPicker and dimension sliders (they live in the Writing Styles tab). */
+  hideStyleControls?: boolean;
 }
 
 export function GenerationPanel({
@@ -102,6 +104,7 @@ export function GenerationPanel({
   enrichmentEvents,
   activeEnrichmentNodeId,
   expectedEnrichmentNodeIds,
+  hideStyleControls = false,
 }: GenerationPanelProps) {
   const [localPostType, setLocalPostType] = useState('');
   const [localWeights, setLocalWeights] = useState<Record<string, number>>(DEFAULT_WEIGHTS);
@@ -162,53 +165,56 @@ export function GenerationPanel({
         </Collapsible>
       ) : null}
 
-      {/* Workflow Card Picker */}
-      <div className="mt-4">
-        <p className={`mb-2 font-bold text-ink ${compact ? 'text-[0.65rem]' : 'text-sm'}`}>
-          What should this post achieve?
-        </p>
-        <WorkflowCardPicker
-          selectedWorkflowId={postType}
-          customWorkflows={customWorkflows}
-          onSelect={handlePostTypeChange}
-          onOpenBuilder={onOpenWorkflowBuilder ?? (() => {})}
-          isLoadingCustom={isLoadingCustomWorkflows}
-        />
-      </div>
-
-      {/* Dimension Control Panel */}
-      <Collapsible className="mt-4 rounded-xl border border-violet-200/60 bg-white/80 backdrop-blur-sm px-3 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md">
-        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between text-xs font-bold text-primary transition-colors duration-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 rounded-sm">
-          <span className={compact ? 'text-[0.65rem]' : 'text-xs'}>Advanced Controls</span>
-          <ChevronDown className={`transition-transform duration-200 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`} />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className={`mt-3 grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
-            {DIMENSIONS.map(({ key, label: dimLabel }) => {
-              const val = weights[key] ?? 50;
-              const levelName = getLevelName(val);
-              const levelColor = getLevelColor(val);
-              return (
-                <div key={key}>
-                  <div className="flex items-center justify-between">
-                    <span className={`font-semibold text-ink ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>{dimLabel}</span>
-                    <span className={`font-bold ${compact ? 'text-[0.65rem]' : 'text-xs'} ${levelColor}`}>{levelName}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={val}
-                    onChange={(e) => handleWeightChange(key, Number(e.target.value))}
-                    className="mt-1 w-full accent-primary"
-                  />
-                </div>
-              );
-            })}
+      {/* Workflow Card Picker + Dimension Controls — hidden when the Writing Styles tab owns them */}
+      {!hideStyleControls ? (
+        <>
+          <div className="mt-4">
+            <p className={`mb-2 font-bold text-ink ${compact ? 'text-[0.65rem]' : 'text-sm'}`}>
+              What should this post achieve?
+            </p>
+            <WorkflowCardPicker
+              selectedWorkflowId={postType}
+              customWorkflows={customWorkflows}
+              onSelect={handlePostTypeChange}
+              onOpenBuilder={onOpenWorkflowBuilder ?? (() => {})}
+              isLoadingCustom={isLoadingCustomWorkflows}
+            />
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+
+          <Collapsible className="mt-4 rounded-xl border border-violet-200/60 bg-white/80 backdrop-blur-sm px-3 py-2.5 shadow-sm transition-all duration-200 hover:shadow-md">
+            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between text-xs font-bold text-primary transition-colors duration-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 rounded-sm">
+              <span className={compact ? 'text-[0.65rem]' : 'text-xs'}>Advanced Controls</span>
+              <ChevronDown className={`transition-transform duration-200 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className={`mt-3 grid gap-3 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+                {DIMENSIONS.map(({ key, label: dimLabel }) => {
+                  const val = weights[key] ?? 50;
+                  const levelName = getLevelName(val);
+                  const levelColor = getLevelColor(val);
+                  return (
+                    <div key={key}>
+                      <div className="flex items-center justify-between">
+                        <span className={`font-semibold text-ink ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>{dimLabel}</span>
+                        <span className={`font-bold ${compact ? 'text-[0.65rem]' : 'text-xs'} ${levelColor}`}>{levelName}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={val}
+                        onChange={(e) => handleWeightChange(key, Number(e.target.value))}
+                        className="mt-1 w-full accent-primary"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </>
+      ) : null}
 
       <label className={`mt-5 block font-bold text-ink transition-colors duration-200 ${label}`} htmlFor="generation-instruction">
         Rewrite direction
