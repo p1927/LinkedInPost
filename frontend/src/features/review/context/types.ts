@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import type { CustomWorkflowSummary } from '../generation/WorkflowCardPicker';
+import type { CustomWorkflowSummary } from '../../generation/WorkflowCardPicker';
 import { type DraftPreviewSelection, type SheetRow } from '../../../services/sheets';
 import {
   type ContentReviewReport,
@@ -211,8 +211,8 @@ export interface ReviewFlowContextValue {
   nodeRunsLoading: boolean;
   customWorkflows: CustomWorkflowSummary[];
   isLoadingCustomWorkflows: boolean;
-  onCreateCustomWorkflow?: (payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<string | null>;
-  onUpdateCustomWorkflow?: (id: string, payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<boolean>;
+  onCreateCustomWorkflow?: (payload: import('../../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<string | null>;
+  onUpdateCustomWorkflow?: (id: string, payload: import('../../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<boolean>;
   onDeleteCustomWorkflow?: (id: string) => Promise<boolean>;
 }
 
@@ -264,7 +264,7 @@ export interface ReviewFlowProviderProps {
   onGetNodeRuns?: () => Promise<NodeRunItem[]>;
   customWorkflows?: CustomWorkflowSummary[];
   isLoadingCustomWorkflows?: boolean;
-  onCreateCustomWorkflow?: (payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<string | null>;
-  onUpdateCustomWorkflow?: (id: string, payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<boolean>;
+  onCreateCustomWorkflow?: (payload: import('../../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<string | null>;
+  onUpdateCustomWorkflow?: (id: string, payload: import('../../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<boolean>;
   onDeleteCustomWorkflow?: (id: string) => Promise<boolean>;
 }
