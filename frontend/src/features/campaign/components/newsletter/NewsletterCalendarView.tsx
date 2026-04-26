@@ -6,6 +6,7 @@ import type { SheetRow } from '@/services/sheets';
 
 export interface CalendarIssueEvent {
   date: string; // YYYY-MM-DD
+  newsletterId: string;
   newsletterIndex: number;
   newsletterName: string;
   issue: NewsletterIssueRow;

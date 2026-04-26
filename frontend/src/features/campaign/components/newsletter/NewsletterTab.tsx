@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Loader2, Mail, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import type { BackendApi, AppSession } from '@/services/backendApi';
 import type { SheetRow } from '@/services/sheets';
 import type { NewsletterRecord, NewsletterIssueRow } from '../../schema/newsletterTypes';
-import { NewsletterListView } from './NewsletterListView';
-import { NewsletterDashboard } from './NewsletterDashboard';
 import NewsletterCalendarView, { type CalendarIssueEvent } from './NewsletterCalendarView';
 import { NewsletterWizard } from './NewsletterWizard';
 import { NewsletterConfigDrawer } from './NewsletterConfigDrawer';
 import { NewsletterIssuePanel } from './NewsletterIssuePanel';
+import { NewsletterSectionCard } from './NewsletterSectionCard';
 
 interface Props {
   idToken: string;
@@ -22,13 +21,13 @@ export function NewsletterTab({ idToken, session, api }: Props) {
   const [newsletters, setNewsletters] = useState<NewsletterRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [subView, setSubView] = useState<'list' | 'calendar'>('list');
-  const [activeNewsletterId, setActiveNewsletterId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [configDrawerNewsletterId, setConfigDrawerNewsletterId] = useState<string | null>(null);
   const [allIssues, setAllIssues] = useState<CalendarIssueEvent[]>([]);
   const [topicRows, setTopicRows] = useState<SheetRow[]>([]);
-  const [calendarSelectedIssue, setCalendarSelectedIssue] = useState<NewsletterIssueRow | null>(null);
-  const [calendarDrawerOpen, setCalendarDrawerOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<NewsletterIssueRow | null>(null);
+  const [issuePanelOpen, setIssuePanelOpen] = useState(false);
+  const [creatingDraftIds, setCreatingDraftIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     void loadData();
@@ -58,6 +57,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
           api.listNewsletterIssuesByNewsletter(idToken, n.id).then(issues =>
             issues.map(issue => ({
               date: issue.issue_date?.split('T')[0] ?? issue.scheduled_for?.split('T')[0] ?? '',
+              newsletterId: n.id,
               newsletterIndex: idx,
               newsletterName: n.name,
               issue,
@@ -67,11 +67,20 @@ export function NewsletterTab({ idToken, session, api }: Props) {
       );
       setAllIssues(issueArrays.flat());
     } catch {
-      // ignore calendar load errors
+      // ignore
     }
   };
 
-  const activeNewsletter = newsletters.find(n => n.id === activeNewsletterId) ?? null;
+  // Group issues by newsletterId for the list view
+  const issuesByNewsletterId = useMemo<Record<string, NewsletterIssueRow[]>>(() => {
+    const map: Record<string, NewsletterIssueRow[]> = {};
+    for (const event of allIssues) {
+      if (!map[event.newsletterId]) map[event.newsletterId] = [];
+      map[event.newsletterId].push(event.issue);
+    }
+    return map;
+  }, [allIssues]);
+
   const configDrawerNewsletter = newsletters.find(n => n.id === configDrawerNewsletterId) ?? null;
 
   const handleNewsletterCreated = (newsletter: NewsletterRecord) => {
@@ -84,7 +93,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
     setNewsletters(prev => prev.map(n => n.id === updated.id ? updated : n));
   };
 
-  const handleNewsletterToggleActive = async (id: string, active: boolean) => {
+  const handleToggleActive = async (id: string, active: boolean) => {
     try {
       await api.updateNewsletter(idToken, id, { active });
       setNewsletters(prev => prev.map(n => n.id === id ? { ...n, active } : n));
@@ -93,14 +102,46 @@ export function NewsletterTab({ idToken, session, api }: Props) {
     }
   };
 
-  const handleNewsletterDelete = async (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
       await api.deleteNewsletter(idToken, id);
       setNewsletters(prev => prev.filter(n => n.id !== id));
-      if (activeNewsletterId === id) setActiveNewsletterId(null);
+      setAllIssues(prev => prev.filter(e => e.newsletterId !== id));
     } catch (err) {
       console.error('Failed to delete newsletter:', err);
     }
+  };
+
+  const handleCreateDraft = async (newsletterId: string) => {
+    setCreatingDraftIds(prev => new Set(prev).add(newsletterId));
+    try {
+      await api.createNewsletterDraftByNewsletter(idToken, newsletterId);
+      await loadAllIssues(newsletters);
+    } catch (err) {
+      console.error('Failed to create draft:', err);
+    } finally {
+      setCreatingDraftIds(prev => {
+        const next = new Set(prev);
+        next.delete(newsletterId);
+        return next;
+      });
+    }
+  };
+
+  const openIssuePanel = (issue: NewsletterIssueRow) => {
+    setSelectedIssue(issue);
+    setIssuePanelOpen(true);
+  };
+
+  const handleApprove = async (issueId: string) => {
+    await api.approveNewsletterIssue(idToken, issueId);
+    void loadAllIssues(newsletters);
+  };
+
+  const handleSend = async (issueId: string) => {
+    await api.sendNewsletterIssue(idToken, issueId);
+    setIssuePanelOpen(false);
+    void loadAllIssues(newsletters);
   };
 
   if (loading) {
@@ -111,99 +152,102 @@ export function NewsletterTab({ idToken, session, api }: Props) {
     );
   }
 
-  if (activeNewsletter) {
-    return (
-      <>
-        <NewsletterDashboard
-          newsletter={activeNewsletter}
-          api={api}
-          idToken={idToken}
-          onBack={() => setActiveNewsletterId(null)}
-          onOpenConfig={(id) => setConfigDrawerNewsletterId(id)}
-          onUpdated={handleNewsletterUpdated}
-        />
-        {configDrawerNewsletter && (
-          <NewsletterConfigDrawer
-            newsletter={configDrawerNewsletter}
-            session={session}
-            api={api}
-            idToken={idToken}
-            open={true}
-            onClose={() => setConfigDrawerNewsletterId(null)}
-            onSaved={(updated) => {
-              handleNewsletterUpdated(updated);
-              setConfigDrawerNewsletterId(null);
-            }}
-          />
-        )}
-      </>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {/* Pill toggle */}
-      <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
-        {(['list', 'calendar'] as const).map(view => (
+      {/* Top bar: toggle + create button */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+          {(['list', 'calendar'] as const).map(view => (
+            <button
+              key={view}
+              onClick={() => setSubView(view)}
+              className={clsx(
+                'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors cursor-pointer',
+                subView === view
+                  ? 'bg-white text-slate-800 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              )}
+            >
+              {view === 'list' ? 'Newsletters' : 'Calendar'}
+            </button>
+          ))}
+        </div>
+
+        {subView === 'list' && (
           <button
-            key={view}
-            onClick={() => setSubView(view)}
-            className={clsx(
-              'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors cursor-pointer',
-              subView === view
-                ? 'bg-white text-slate-800 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            )}
+            type="button"
+            onClick={() => setWizardOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 cursor-pointer"
           >
-            {view === 'list' ? 'Newsletters' : 'Calendar'}
+            <Plus className="h-4 w-4" />
+            New Newsletter
           </button>
-        ))}
+        )}
       </div>
 
+      {/* Newsletters list — flat, no drill-in */}
       {subView === 'list' && (
-        <NewsletterListView
+        newsletters.length === 0 ? (
+          <div className="flex flex-col items-center py-16 text-center">
+            <Mail className="mx-auto mb-4 h-12 w-12 text-slate-300" />
+            <p className="text-lg font-semibold text-slate-700">No newsletters yet</p>
+            <p className="mb-6 text-sm text-slate-500">
+              Create your first newsletter to start sending scheduled content.
+            </p>
+            <button
+              type="button"
+              onClick={() => setWizardOpen(true)}
+              className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 cursor-pointer"
+            >
+              + Create Newsletter
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {newsletters.map(newsletter => (
+              <NewsletterSectionCard
+                key={newsletter.id}
+                newsletter={newsletter}
+                issues={issuesByNewsletterId[newsletter.id] ?? []}
+                creatingDraft={creatingDraftIds.has(newsletter.id)}
+                onConfig={(id) => setConfigDrawerNewsletterId(id)}
+                onToggleActive={handleToggleActive}
+                onDelete={handleDelete}
+                onCreateDraft={handleCreateDraft}
+                onIssueClick={openIssuePanel}
+                onApprove={handleApprove}
+                onSend={handleSend}
+              />
+            ))}
+          </div>
+        )
+      )}
+
+      {/* Calendar view */}
+      {subView === 'calendar' && (
+        <NewsletterCalendarView
           newsletters={newsletters}
-          loading={false}
-          onViewIssues={(id) => setActiveNewsletterId(id)}
-          onConfig={(id) => setConfigDrawerNewsletterId(id)}
-          onToggleActive={handleNewsletterToggleActive}
-          onDelete={handleNewsletterDelete}
-          onCreateNew={() => setWizardOpen(true)}
+          issueEvents={allIssues}
+          topicRows={topicRows}
+          onIssueClick={openIssuePanel}
         />
       )}
 
-      {subView === 'calendar' && (
-        <>
-          <NewsletterCalendarView
-            newsletters={newsletters}
-            issueEvents={allIssues}
-            topicRows={topicRows}
-            onIssueClick={(issue: NewsletterIssueRow) => {
-              setCalendarSelectedIssue(issue);
-              setCalendarDrawerOpen(true);
-            }}
-          />
-          <NewsletterIssuePanel
-            issue={calendarSelectedIssue}
-            open={calendarDrawerOpen}
-            onClose={() => setCalendarDrawerOpen(false)}
-            onApprove={async (issueId) => {
-              await api.approveNewsletterIssue(idToken, issueId);
-              setCalendarDrawerOpen(false);
-              void loadAllIssues(newsletters);
-            }}
-            onSend={async (issueId) => {
-              await api.sendNewsletterIssue(idToken, issueId);
-              setCalendarDrawerOpen(false);
-              void loadAllIssues(newsletters);
-            }}
-            idToken={idToken}
-            api={api}
-          />
-        </>
-      )}
+      {/* Issue detail panel — shared across list + calendar */}
+      <NewsletterIssuePanel
+        issue={selectedIssue}
+        open={issuePanelOpen}
+        onClose={() => setIssuePanelOpen(false)}
+        onApprove={async (issueId) => {
+          await handleApprove(issueId);
+          setIssuePanelOpen(false);
+        }}
+        onSend={handleSend}
+        idToken={idToken}
+        api={api}
+      />
 
-      {/* Wizard modal */}
+      {/* Create newsletter wizard */}
       {wizardOpen && (
         <NewsletterWizard
           session={session}
@@ -214,7 +258,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
         />
       )}
 
-      {/* Config drawer for list view */}
+      {/* Config drawer */}
       {configDrawerNewsletter && (
         <NewsletterConfigDrawer
           newsletter={configDrawerNewsletter}
