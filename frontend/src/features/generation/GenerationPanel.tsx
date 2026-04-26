@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { QuickChangePreviewResult, VariantsPreviewResponse } from '../../services/backendApi';
 import { WorkflowCardPicker, type CustomWorkflowSummary } from './WorkflowCardPicker';
+import { EnrichmentProgressPanel } from './EnrichmentProgressPanel';
+import { type EnrichmentNodeEvent } from './nodeProgressLabels';
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -69,6 +71,9 @@ interface GenerationPanelProps {
   customWorkflows?: CustomWorkflowSummary[];
   isLoadingCustomWorkflows?: boolean;
   onOpenWorkflowBuilder?: (workflow?: CustomWorkflowSummary) => void;
+  enrichmentEvents?: EnrichmentNodeEvent[];
+  activeEnrichmentNodeId?: string | null;
+  expectedEnrichmentNodeIds?: string[];
 }
 
 export function GenerationPanel({
@@ -94,6 +99,9 @@ export function GenerationPanel({
   customWorkflows = [],
   isLoadingCustomWorkflows = false,
   onOpenWorkflowBuilder,
+  enrichmentEvents,
+  activeEnrichmentNodeId,
+  expectedEnrichmentNodeIds,
 }: GenerationPanelProps) {
   const [localPostType, setLocalPostType] = useState('');
   const [localWeights, setLocalWeights] = useState<Record<string, number>>(DEFAULT_WEIGHTS);
@@ -245,6 +253,19 @@ export function GenerationPanel({
           </p>
         ) : null}
       </div>
+
+      {loadingAction === 'variants' && enrichmentEvents !== undefined && (
+        <div className="mt-4">
+          <EnrichmentProgressPanel
+            expectedNodeIds={expectedEnrichmentNodeIds ?? [
+              'psychology-analyzer', 'research-context', 'vocabulary-selector',
+              'hook-designer', 'narrative-arc', 'draft-generator', 'tone-calibrator', 'constraint-validator',
+            ]}
+            completedEvents={enrichmentEvents}
+            activeNodeId={activeEnrichmentNodeId}
+          />
+        </div>
+      )}
 
       {quickChangePreview ? (
         <div className={`mt-5 rounded-xl border border-violet-200/70 bg-gradient-to-br from-violet-50/80 to-white/70 backdrop-blur-sm shadow-md transition-all duration-200 hover:shadow-lg hover:border-violet-300/80 ${compact ? 'p-3' : 'p-4'}`}>
