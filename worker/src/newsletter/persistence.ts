@@ -181,6 +181,20 @@ export async function rejectNewsletterIssue(
     .run();
 }
 
+export async function updateNewsletterIssue(
+  db: D1Database,
+  issueId: string,
+  patch: { subject?: string; rendered_content?: string },
+): Promise<void> {
+  const parts: string[] = [];
+  const bindings: unknown[] = [];
+  if (patch.subject !== undefined) { parts.push(`subject = ?${parts.length + 1}`); bindings.push(patch.subject); }
+  if (patch.rendered_content !== undefined) { parts.push(`rendered_content = ?${parts.length + 1}`); bindings.push(patch.rendered_content); }
+  if (parts.length === 0) return;
+  bindings.push(issueId);
+  await db.prepare(`UPDATE newsletter_issues SET ${parts.join(', ')} WHERE id = ?${bindings.length}`).bind(...bindings).run();
+}
+
 export async function markIssueSent(
   db: D1Database,
   issueId: string,

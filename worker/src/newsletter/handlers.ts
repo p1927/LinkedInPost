@@ -147,6 +147,15 @@ export async function handleDeleteNewsletter(db: D1Database, newsletterId: strin
   await deleteNewsletterRecord(db, newsletterId);
 }
 
+export async function handleUpdateNewsletterIssue(
+  db: D1Database,
+  issueId: string,
+  patch: { subject?: string; rendered_content?: string },
+): Promise<void> {
+  const { updateNewsletterIssue } = await import('./persistence');
+  await updateNewsletterIssue(db, issueId, patch);
+}
+
 export async function handleListIssuesByNewsletter(db: D1Database, newsletterId: string) {
   const { listIssuesByNewsletter } = await import('./persistence');
   return listIssuesByNewsletter(db, newsletterId);

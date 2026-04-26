@@ -2187,6 +2187,14 @@ Rules:
       const { handleCreateDraftByNewsletter } = await import('./newsletter/handlers');
       return handleCreateDraftByNewsletter(env, env.PIPELINE_DB, String(payload.newsletterId || '').trim());
     }
+    case 'newsletter.issue.update': {
+      const { handleUpdateNewsletterIssue } = await import('./newsletter/handlers');
+      await handleUpdateNewsletterIssue(env.PIPELINE_DB, String(payload.issueId || '').trim(), {
+        subject: payload.subject !== undefined ? String(payload.subject) : undefined,
+        rendered_content: payload.rendered_content !== undefined ? String(payload.rendered_content) : undefined,
+      });
+      return { ok: true };
+    }
 
     default:
       throw new Error(`Unknown action: ${action}`);

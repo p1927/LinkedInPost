@@ -865,6 +865,14 @@ export class BackendApi {
     return this.post<{ ok: true }>('newsletter.sendApproved', idToken, { issueId });
   }
 
+  async updateNewsletterIssue(
+    idToken: string,
+    issueId: string,
+    patch: { subject?: string; rendered_content?: string },
+  ): Promise<{ ok: true }> {
+    return this.post<{ ok: true }>('newsletter.issue.update', idToken, { issueId, ...patch });
+  }
+
   // --- Multi-Newsletter ---
   async listNewsletters(idToken: string): Promise<NewsletterRecord[]> {
     return this.post<NewsletterRecord[]>('newsletter.list', idToken);
