@@ -1388,6 +1388,10 @@ async function dispatchAction(
     );
     case 'generateVariantsPreview': {
       ensureSpreadsheetConfigured(storedConfig);
+      // If a postType/workflowId was sent, resolve its generationInstruction so the
+      // selected workflow profile influences the variant prompt.
+      // For user-created workflows (cw_ prefix) we must load D1 records first because
+      // the singleton workflowRegistry only contains built-in workflow definitions.
       const postTypeVal = typeof payload.postType === 'string' ? payload.postType.trim() : '';
       let workflowInstruction = '';
       if (postTypeVal) {

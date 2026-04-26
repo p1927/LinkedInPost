@@ -172,6 +172,8 @@ export function Dashboard({
     telegramBotTokenInput: '', 
   });
 
+  // Custom workflow CRUD — results are threaded into topicReviewBase so the
+  // WorkflowBuilderModal in EditorSidebar can create/update/delete workflows.
   const customWorkflowsHook = useCustomWorkflows({ api, idToken, enabled: true });
 
   const settingsHook = useDashboardSettings({
@@ -432,6 +434,7 @@ export function Dashboard({
     onUploadContextDocument: queueHook.handleUploadContextDocument,
     imageGenConfig: session.config.imageGen,
     onGetNodeRuns: queueHook.getNodeRunsForRow,
+    // Workflow builder — lets EditorSidebar open the modal for create/edit/delete
     customWorkflows: customWorkflowsHook.workflows,
     isLoadingCustomWorkflows: customWorkflowsHook.isLoading,
     onCreateCustomWorkflow: customWorkflowsHook.create,

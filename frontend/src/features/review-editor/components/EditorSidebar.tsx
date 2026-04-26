@@ -81,9 +81,12 @@ export function EditorSidebar() {
     setDimensionWeights,
   } = useReviewFlowEditor();
 
+  // WorkflowBuilderModal open/edit state — opened by WorkflowCardPicker's
+  // "Create your own" card or by clicking an existing custom workflow card.
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderWorkflow, setBuilderWorkflow] = useState<CustomWorkflowSummary | undefined>(undefined);
 
+  // Unified save handler: update if editing an existing workflow, create otherwise.
   async function handleModalSave(values: CreateWorkflowFormValues) {
     if (builderWorkflow) {
       await onUpdateCustomWorkflow?.(builderWorkflow.id, values);
