@@ -5,6 +5,7 @@ import type { DraftPreviewSelection, SheetRow } from './sheets';
 import type { ContentReviewReport } from '../features/content-review/types';
 import type { TrendingSearchRequest, TrendingSearchResult } from '../features/trending/types';
 import type { NewsletterRecord } from '../features/campaign/schema/newsletterTypes';
+import type { CustomWorkflowSummary } from '../features/generation/WorkflowCardPicker';
 
 export interface SocialIntegration {
   provider: string;
@@ -1268,6 +1269,43 @@ export class BackendApi {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  listCustomWorkflows(idToken: string): Promise<{ workflows: CustomWorkflowSummary[] }> {
+    return this.post<{ workflows: CustomWorkflowSummary[] }>('listCustomWorkflows', idToken);
+  }
+
+  createCustomWorkflow(
+    idToken: string,
+    payload: {
+      name: string;
+      description: string;
+      optimizationTarget: string;
+      generationInstruction: string;
+      extendsWorkflowId: string;
+      dimensionWeights: Record<string, number>;
+    },
+  ): Promise<{ id: string }> {
+    return this.post<{ id: string }>('createCustomWorkflow', idToken, { payload });
+  }
+
+  updateCustomWorkflow(
+    idToken: string,
+    id: string,
+    payload: {
+      name: string;
+      description: string;
+      optimizationTarget: string;
+      generationInstruction: string;
+      extendsWorkflowId: string;
+      dimensionWeights: Record<string, number>;
+    },
+  ): Promise<{ ok: boolean }> {
+    return this.post<{ ok: boolean }>('updateCustomWorkflow', idToken, { payload: { ...payload, id } });
+  }
+
+  deleteCustomWorkflow(idToken: string, id: string): Promise<{ ok: boolean }> {
+    return this.post<{ ok: boolean }>('deleteCustomWorkflow', idToken, { payload: { id } });
   }
 
   async loadImageGenModelCatalog(idToken: string): Promise<Array<{ provider: string; label: string; models: Array<{ value: string; label: string }> }>> {
