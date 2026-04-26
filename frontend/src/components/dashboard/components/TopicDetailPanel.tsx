@@ -4,6 +4,27 @@ import type { SheetRow } from '@/services/sheets';
 import { deriveCalendarFieldsFromSheetRow } from '@/features/content-schedule-calendar';
 import { CSC_TOKENS as T } from '@/features/content-schedule-calendar/tokens';
 import { channelStyle } from '@/features/content-schedule-calendar/channelStyles';
+import { TopicDetailView } from '@/features/add-topic/TopicDetailView';
+import { Badge } from '@/components/ui/badge';
+import { queueStatusToBadgeVariant } from '@/components/dashboard/utils';
+import { WORKSPACE_PATHS } from '@/features/topic-navigation/utils/workspaceRoutes';
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      style={{
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        color: T.muted,
+        marginBottom: 10,
+      }}
+    >
+      {children}
+    </p>
+  );
+}
 
 export function TopicDetailPanel({
   row,
@@ -27,11 +48,16 @@ export function TopicDetailPanel({
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0" style={{ background: 'rgba(17,17,19,0.04)' }} onClick={onClose} />
       <div
-        className="absolute right-0 top-0 bottom-0 bg-white flex flex-col overflow-hidden"
+        className="absolute inset-0"
+        style={{ background: 'rgba(17,17,19,0.04)' }}
+        onClick={onClose}
+      />
+      <div
+        className="absolute right-0 top-0 bottom-0 flex flex-col overflow-hidden"
         style={{
-          width: 'min(900px, 100vw)',
+          width: 'min(980px, 100vw)',
+          background: T.bg,
           borderLeft: '1px solid #D8CEEB',
           borderRadius: '14px 0 0 14px',
           boxShadow: '0 18px 60px rgba(17,17,19,0.10), 0 4px 12px rgba(17,17,19,0.04)',
@@ -40,37 +66,91 @@ export function TopicDetailPanel({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Header: status chip + topic title + close */}
         <div
-          className="shrink-0 flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: `1px solid ${T.line}`, background: 'linear-gradient(180deg, #F3EEFC 0%, #FFFFFF 100%)' }}
+          className="shrink-0 flex items-start justify-between gap-4 px-6 py-4"
+          style={{
+            borderBottom: `1px solid ${T.line}`,
+            background: 'linear-gradient(180deg, #F3EEFC 0%, #FFFFFF 100%)',
+          }}
         >
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Topic Details</h2>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            {row && (
+              <div className="self-start">
+                <Badge variant={queueStatusToBadgeVariant(row.status)} size="sm">
+                  {row.status || 'Pending'}
+                </Badge>
+              </div>
+            )}
+            <h2
+              style={{
+                fontSize: 17,
+                fontWeight: 700,
+                color: T.ink,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.3,
+                margin: 0,
+              }}
+            >
+              {row?.topic ?? 'Topic'}
+            </h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+            className="mt-0.5 shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Body — split when renderPreview provided, single column otherwise */}
-        <div style={{ flex: 1, display: 'grid', minHeight: 0, gridTemplateColumns: renderPreview ? '1.5fr 1fr' : '1fr' }}>
-          {/* LEFT: scrollable meta + schedule */}
+        {/* Body */}
+        <div
+          style={{
+            flex: 1,
+            display: 'grid',
+            minHeight: 0,
+            gridTemplateColumns: renderPreview ? '1fr 1fr' : '1fr',
+          }}
+        >
+          {/* LEFT: topic details → schedule → settings */}
           <div
             className="custom-scrollbar"
-            style={{ overflowY: 'auto', minWidth: 0, borderRight: renderPreview ? `1px solid ${T.line}` : 'none' }}
+            style={{
+              overflowY: 'auto',
+              minWidth: 0,
+              borderRight: renderPreview ? `1px solid ${T.line}` : 'none',
+            }}
           >
-            {children}
-            {row && <ScheduleSection row={row} onSave={onSaveSchedule} />}
+            {/* Topic Details */}
+            {row && (
+              <div style={{ padding: '20px 24px', borderBottom: `1px solid ${T.line}` }}>
+                <SectionLabel>Topic Details</SectionLabel>
+                <TopicDetailView row={row} editPath={WORKSPACE_PATHS.addTopic} compact />
+              </div>
+            )}
+
+            {/* Schedule */}
+            {row && (
+              <ScheduleSection
+                row={row}
+                onSave={onSaveSchedule}
+                showBottomBorder={Boolean(children)}
+              />
+            )}
+
+            {/* Settings */}
+            {children && (
+              <div style={{ padding: '16px 24px 24px' }}>
+                <SectionLabel>Settings</SectionLabel>
+                {children}
+              </div>
+            )}
           </div>
 
-          {/* RIGHT: preview pane (only when renderPreview provided) */}
-          {renderPreview && (
-            <PreviewPane renderPreview={renderPreview} />
-          )}
+          {/* RIGHT: preview pane */}
+          {renderPreview && <PreviewPane renderPreview={renderPreview} />}
         </div>
       </div>
     </div>
@@ -82,8 +162,16 @@ function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => Re
   const TABS = ['linkedin', 'instagram', 'telegram'];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: '#EDE5FB', overflowY: 'auto' }}>
-      {/* Sticky tab header */}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        background: '#EDE5FB',
+        overflowY: 'auto',
+      }}
+    >
+      {/* Sticky channel tabs — no extra labels, just the tabs */}
       <div
         style={{
           position: 'sticky',
@@ -94,25 +182,6 @@ function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => Re
           borderBottom: `1px solid ${T.line}`,
         }}
       >
-        {/* Top row: label + synced indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 600,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              color: T.muted,
-            }}
-          >
-            Live preview
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: T.muted }}>
-            <span style={{ width: 6, height: 6, borderRadius: 999, background: '#34C759' }} />
-            Synced
-          </span>
-        </div>
-        {/* Channel tabs */}
         <div style={{ display: 'flex', gap: 2 }}>
           {TABS.map((ch) => {
             const active = ch === activeChannel;
@@ -120,6 +189,7 @@ function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => Re
             return (
               <button
                 key={ch}
+                type="button"
                 onClick={() => setActiveChannel(ch)}
                 style={{
                   padding: '7px 12px 8px',
@@ -142,7 +212,6 @@ function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => Re
                   fontFamily: 'inherit',
                 }}
               >
-                {/* channel badge (small square) */}
                 <span
                   style={{
                     display: 'inline-flex',
@@ -170,7 +239,7 @@ function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => Re
       <div
         style={{
           flex: 1,
-          padding: '20px 16px 28px',
+          padding: '20px 18px 32px',
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'center',
@@ -185,9 +254,11 @@ function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => Re
 function ScheduleSection({
   row,
   onSave,
+  showBottomBorder = false,
 }: {
   row: SheetRow;
   onSave: (row: SheetRow, postTime: string) => Promise<void>;
+  showBottomBorder?: boolean;
 }) {
   const base = deriveCalendarFieldsFromSheetRow(row);
   const [date, setDate] = useState(base.date ?? '');
@@ -214,30 +285,47 @@ function ScheduleSection({
   };
 
   return (
-    <div style={{ borderTop: `1px solid ${T.line}`, padding: '16px 20px 20px' }}>
-      <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: T.muted, marginBottom: 12 }}>
-        Schedule
-      </p>
+    <div
+      style={{
+        padding: '16px 24px 20px',
+        borderBottom: showBottomBorder ? `1px solid ${T.line}` : 'none',
+      }}
+    >
+      <SectionLabel>Schedule</SectionLabel>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}>Date</label>
+          <label
+            style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}
+          >
+            Date
+          </label>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             disabled={busy}
             style={{
-              width: '100%', height: 34, padding: '0 10px', fontSize: 13,
-              border: `1px solid ${T.lineStrong}`, borderRadius: 8,
-              background: T.surface, color: T.ink,
-              outline: 'none', fontFamily: 'inherit',
+              width: '100%',
+              height: 34,
+              padding: '0 10px',
+              fontSize: 13,
+              border: `1px solid ${T.lineStrong}`,
+              borderRadius: 8,
+              background: T.surface,
+              color: T.ink,
+              outline: 'none',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
               opacity: busy ? 0.5 : 1,
             }}
           />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}>
-            Time <span style={{ fontWeight: 400, color: T.mutedSoft }}>(optional)</span>
+          <label
+            style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}
+          >
+            Time{' '}
+            <span style={{ fontWeight: 400, color: T.mutedSoft }}>(optional)</span>
           </label>
           <input
             type="time"
@@ -245,10 +333,17 @@ function ScheduleSection({
             onChange={(e) => setTime(e.target.value)}
             disabled={busy}
             style={{
-              width: '100%', height: 34, padding: '0 10px', fontSize: 13,
-              border: `1px solid ${T.lineStrong}`, borderRadius: 8,
-              background: T.surface, color: T.ink,
-              outline: 'none', fontFamily: 'inherit',
+              width: '100%',
+              height: 34,
+              padding: '0 10px',
+              fontSize: 13,
+              border: `1px solid ${T.lineStrong}`,
+              borderRadius: 8,
+              background: T.surface,
+              color: T.ink,
+              outline: 'none',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
               opacity: busy ? 0.5 : 1,
             }}
           />
@@ -259,11 +354,17 @@ function ScheduleSection({
         disabled={busy || !dirty}
         onClick={() => void handleSave()}
         style={{
-          marginTop: 12, width: '100%', height: 34, borderRadius: 8,
-          fontSize: 13, fontWeight: 600, cursor: busy || !dirty ? 'not-allowed' : 'pointer',
+          marginTop: 12,
+          width: '100%',
+          height: 34,
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: busy || !dirty ? 'not-allowed' : 'pointer',
           background: busy || !dirty ? T.accentSoft : T.accent,
           color: busy || !dirty ? T.accent : '#fff',
-          border: 'none', transition: 'background 150ms, color 150ms',
+          border: 'none',
+          transition: 'background 150ms, color 150ms',
           fontFamily: 'inherit',
         }}
       >

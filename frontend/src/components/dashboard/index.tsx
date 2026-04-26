@@ -654,6 +654,7 @@ export function Dashboard({
       idToken={idToken}
       api={api}
       hidePreview={true}
+      settingsOnly={true}
     />
   );
 
@@ -934,6 +935,7 @@ export function Dashboard({
               previewChannel={channel as import('@/integrations/channels').ChannelId}
               previewAuthorName={previewAuthorDisplayName(session.email)}
               compact={false}
+              noVariantHeader={true}
               idToken={idToken}
               api={api}
             />

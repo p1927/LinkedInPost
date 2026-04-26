@@ -26,6 +26,7 @@ export function TopicPostPreviewCard({
   previewChannel,
   previewAuthorName,
   compact = false,
+  noVariantHeader = false,
   onOpenEditor,
   idToken,
   api,
@@ -34,6 +35,7 @@ export function TopicPostPreviewCard({
   previewChannel: ChannelId;
   previewAuthorName?: string;
   compact?: boolean;
+  noVariantHeader?: boolean;
   onOpenEditor?: () => void;
   idToken?: string;
   api?: BackendApi;
@@ -140,7 +142,7 @@ export function TopicPostPreviewCard({
 
   return (
     <div className={cn('space-y-4', compact && 'space-y-3')}>
-      {!compact && (
+      {!compact && !noVariantHeader && (
         <div>
           <div className="flex items-center gap-2">
             <h3 className="truncate font-heading text-sm font-semibold text-ink" title={topicTooltip}>
@@ -171,7 +173,7 @@ export function TopicPostPreviewCard({
           onSelect={() => undefined}
           onToggleExpanded={() => undefined}
           mode="hero"
-          layout={compact ? 'sidebar' : 'default'}
+          layout={noVariantHeader ? 'sidebar' : compact ? 'sidebar' : 'default'}
           previewAuthorName={previewAuthorName}
         />
       </div>

@@ -93,6 +93,7 @@ export function TopicsRightRail({
   idToken?: string;
   api?: BackendApi;
   hidePreview?: boolean;
+  settingsOnly?: boolean;
 }) {
   const { showAlert } = useAlert();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -192,6 +193,97 @@ export function TopicsRightRail({
     },
     [flushSave, persist],
   );
+
+  // Settings-only mode: renders just the settings grid (no card wrapper, header, or topic details).
+  // Used by TopicDetailPanel to embed settings as one section among others.
+  if (settingsOnly) {
+    if (!selectedRow) return null;
+    return (
+      <>
+        <div className={cn('grid gap-3', modelPickerLocked ? 'grid-cols-1' : 'grid-cols-2')}>
+          {!modelPickerLocked ? (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-muted">AI model</span>
+                <button
+                  type="button"
+                  className="rounded p-0.5 text-muted transition-colors hover:bg-violet-100/60 hover:text-ink"
+                  aria-label={aiModelInfoTooltip}
+                  title={aiModelInfoTooltip}
+                >
+                  <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
+                </button>
+              </div>
+              <LlmModelCombobox
+                models={availableModels}
+                value={modelIdValue}
+                disabled={saving}
+                size="sm"
+                prependOptions={[{ value: WORKSPACE_DEFAULT_MODEL, label: workspaceDefaultModelCaption }]}
+                onChange={(val) => {
+                  if (!selectedRow) return;
+                  if (val === WORKSPACE_DEFAULT_MODEL) {
+                    void persist(selectedRow, { topicGenerationModel: '' });
+                    return;
+                  }
+                  if (FEATURE_MULTI_PROVIDER_LLM) {
+                    const payload = JSON.stringify({ provider: workspaceLlm.provider, model: val });
+                    scheduleModelSave(selectedRow, payload);
+                    return;
+                  }
+                  scheduleModelSave(selectedRow, val);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] text-muted">AI model</span>
+              <p className="text-[11px] text-muted">One model workspace.</p>
+            </div>
+          )}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-muted">Channel</span>
+              <button
+                type="button"
+                className="rounded p-0.5 text-muted transition-colors hover:bg-violet-100/60 hover:text-ink"
+                aria-label={deliveryInfoTooltip}
+                title={deliveryInfoTooltip}
+              >
+                <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
+              </button>
+            </div>
+            <Select
+              value={channelSelectValue}
+              disabled={saving}
+              onValueChange={(val) => {
+                if (!selectedRow) return;
+                const topicDeliveryChannel = val === WORKSPACE_DEFAULT_CHANNEL ? '' : (val as ChannelId);
+                void persist(selectedRow, { topicDeliveryChannel });
+              }}
+              itemToStringLabel={(v) => {
+                if (v === WORKSPACE_DEFAULT_CHANNEL) return workspaceDefaultChannelCaption;
+                return getChannelLabel(v as ChannelId);
+              }}
+            >
+              <SelectTrigger className="h-9 py-2 text-left text-xs font-medium">
+                <SelectValue placeholder="Channel" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>{workspaceDefaultChannelCaption}</SelectItem>
+                {CHANNEL_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        {saving && <p className="mt-2 text-[10px] text-muted">Saving…</p>}
+      </>
+    );
+  }
 
   const railInner = (
     <div className="glass-panel rounded-2xl border border-white/55 p-4 shadow-lift ring-1 ring-white/55 sm:p-5">
