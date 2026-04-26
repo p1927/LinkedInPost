@@ -33,6 +33,26 @@ export interface CompareState {
   onConfirm: () => void;
 }
 
+export interface GeneratedStyleCard {
+  id: string;
+  label: string;
+  dimensionWeights: Record<string, number>;
+  baseCardId?: string;
+  createdAt: number;
+}
+
+export interface VersionEntry {
+  id: string;
+  timestamp: number;
+  content: string;
+  /** "Viral Story", "Custom", "Saved · 10:32", "Original" */
+  label: string;
+  /** ID of the built-in or generated card active at snapshot time */
+  cardId?: string;
+  dimensionWeights: Record<string, number>;
+  source: 'generate' | 'save' | 'initial';
+}
+
 /**
  * Editor-sensitive state that changes on every keystroke (editorText, selection, instruction)
  * and all generation state coupled to the editor. Kept in a separate context so components
@@ -80,6 +100,25 @@ export interface ReviewFlowEditorContextValue {
   handleApplyVariant: (index: number) => void;
   handleSavePreviewVariantAtIndex: (index: number) => Promise<void>;
   handleFormatting: (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => void;
+
+  // ── Styles tab ────────────────────────────────────────────
+  /** ID of the card visually highlighted in the card grid (decoupled from postType) */
+  selectedCardId: string | null;
+  setSelectedCardId: (id: string | null) => void;
+  /** Auto-created cards from the styles tab generate button, session-only */
+  generatedCards: GeneratedStyleCard[];
+  /** Config used for the last successful styles-tab generation; used to disable the button */
+  lastGeneratedConfig: { cardId: string | null; dimensionWeights: Record<string, number> } | null;
+  /** Direct-apply generation from the Styles tab (no instruction required) */
+  handleGenerateFromStyle: () => Promise<void>;
+
+  // ── Version history ────────────────────────────────────────
+  versionHistory: VersionEntry[];
+  currentVersionId: string | null;
+  /** Restore editor to a past VersionEntry (also resets editor undo stack) */
+  restoreVersion: (entry: VersionEntry) => void;
+  /** Increments on every restore; used in historyResetKey to clear undo stack */
+  versionRestoreCounter: number;
 }
 
 /**
