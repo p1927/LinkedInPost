@@ -76,6 +76,7 @@ export function TopicsRightRail({
   idToken,
   api,
   hidePreview,
+  settingsOnly,
 }: {
   workspaceChannel: ChannelId;
   workspaceLlm: LlmRef;
