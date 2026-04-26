@@ -46,6 +46,8 @@ function orderedBuiltIns(): BuiltInWorkflowCard[] {
   return [...featured, ...rest];
 }
 
+const ORDERED_BUILT_INS = orderedBuiltIns();
+
 export function WorkflowCardPicker({
   selectedWorkflowId,
   customWorkflows,
@@ -53,11 +55,9 @@ export function WorkflowCardPicker({
   onOpenBuilder,
   isLoadingCustom = false,
 }: WorkflowCardPickerProps) {
-  const builtIns = orderedBuiltIns();
-
   return (
     <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-      {builtIns.map(card => {
+      {ORDERED_BUILT_INS.map(card => {
         const isSelected = selectedWorkflowId === card.id;
         return (
           <button
@@ -90,6 +90,9 @@ export function WorkflowCardPicker({
         return (
           <div
             key={cw.id}
+            data-testid={`workflow-card-custom-${cw.id}`}
+            role="group"
+            aria-label={`Custom workflow: ${cw.name}`}
             className={cn(
               'group relative flex shrink-0 w-44 flex-col gap-2 rounded-xl border-2 p-3 transition-all duration-150',
               'border-indigo-200 bg-indigo-50/60 hover:border-indigo-300 hover:shadow-md',
@@ -98,7 +101,6 @@ export function WorkflowCardPicker({
           >
             <button
               type="button"
-              data-testid={`workflow-card-custom-${cw.id}`}
               onClick={() => onSelect(cw.id)}
               className="flex flex-col gap-2 text-left w-full"
             >
