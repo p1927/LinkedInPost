@@ -176,6 +176,8 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     uploadingContextDocument: actions.uploadingContextDocument,
     uploadContextDocument: actions.uploadContextDocument,
     removeContextDocument: actions.removeContextDocument,
+    nodeRuns: restState.nodeRuns,
+    nodeRunsLoading: restState.nodeRunsLoading,
   };
 
   return (

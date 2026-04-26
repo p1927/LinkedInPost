@@ -8,6 +8,7 @@ import {
   type NewsResearchSearchPayload,
   type NewsResearchSearchResult,
   type NewsResearchSnapshotDetail,
+  type NodeRunItem,
   type PostTemplate,
   type QuickChangePreviewResult,
   type ResearchArticleRef,
@@ -200,6 +201,8 @@ export interface ReviewFlowContextValue {
   uploadingContextDocument: boolean;
   uploadContextDocument: (file: File) => Promise<void>;
   removeContextDocument: (id: string) => void;
+  nodeRuns: NodeRunItem[];
+  nodeRunsLoading: boolean;
 }
 
 export interface ReviewFlowProviderProps {
@@ -247,4 +250,5 @@ export interface ReviewFlowProviderProps {
   ) => Promise<ContentReviewReport>;
   onAfterContentReview?: () => Promise<void>;
   onUploadContextDocument?: (params: { name: string; contentBase64: string; mimeType: string }) => Promise<{ documentId: string; extractedText: string; charCount: number }>;
+  onGetNodeRuns?: () => Promise<NodeRunItem[]>;
 }

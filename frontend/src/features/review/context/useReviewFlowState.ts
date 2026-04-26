@@ -3,6 +3,7 @@ import { type ReviewFlowProviderProps, type CompareState } from './types';
 import { getInitialEditorText, buildSheetVariants, buildGeneratedImages } from './utils';
 import {
   type GenerationScope,
+  type NodeRunItem,
   type PostTemplate,
   type QuickChangePreviewResult,
   type ResearchArticleRef,
@@ -298,7 +299,7 @@ function makeSetter<K extends keyof ReviewFlowState>(
 // ---------------------------------------------------------------------------
 
 export function useReviewFlowState(props: ReviewFlowProviderProps) {
-  const { row, routed, editorStartMediaPanel, globalEmailDefaults, globalGenerationRules, loadPostTemplates } = props;
+  const { row, routed, editorStartMediaPanel, globalEmailDefaults, globalGenerationRules, loadPostTemplates, onGetNodeRuns } = props;
   const { setChrome } = useWorkspaceChrome();
 
   const [state, dispatch] = useReducer(
@@ -396,6 +397,28 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
       cancelled = true;
     };
   }, [loadPostTemplates, row.topic, row.date]);
+
+  const [nodeRuns, setNodeRuns] = useState<NodeRunItem[]>([]);
+  const [nodeRunsLoading, setNodeRunsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!onGetNodeRuns) return;
+    let cancelled = false;
+    setNodeRunsLoading(true);
+    void onGetNodeRuns()
+      .then((items) => {
+        if (!cancelled) setNodeRuns(items);
+      })
+      .catch(() => {
+        if (!cancelled) setNodeRuns([]);
+      })
+      .finally(() => {
+        if (!cancelled) setNodeRunsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [onGetNodeRuns, row.topic, row.date]);
 
   const effectiveGenerationRules = useMemo(
     () =>
@@ -554,5 +577,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     postTemplates,
     researchContextArticles,
     setResearchContextArticles,
+    nodeRuns,
+    nodeRunsLoading,
   };
 }

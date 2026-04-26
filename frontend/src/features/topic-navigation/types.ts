@@ -6,6 +6,7 @@ import {
   type NewsResearchSearchPayload,
   type NewsResearchSearchResult,
   type NewsResearchSnapshotDetail,
+  type NodeRunItem,
   type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
@@ -62,6 +63,8 @@ export type TopicReviewPagesBaseProps = {
   ) => Promise<ContentReviewReport>;
   /** Refresh queue row after a content review so D1 fields sync in the UI. */
   onAfterContentReview?: () => Promise<void>;
+  /** Fetch node runs for the current topic to show generation justification. */
+  onGetNodeRuns?: (row: SheetRow) => Promise<NodeRunItem[]>;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

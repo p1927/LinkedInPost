@@ -477,6 +477,10 @@ export function useDashboardQueue({
     return api.listPostTemplates(idToken);
   }, [api, idToken]);
 
+  const getNodeRunsForRow = useCallback(async (row: SheetRow) => {
+    return api.getNodeRuns(idToken, row.topicId);
+  }, [api, idToken]);
+
   // E8: Load patterns once so queue items can display pattern names.
   const [postTemplates, setPostTemplates] = useState<ContentPattern[]>([]);
   useEffect(() => {
@@ -912,6 +916,7 @@ export function useDashboardQueue({
     handleSaveDraftVariants,
     handleSaveTopicGenerationRules,
     loadPostTemplates,
+    getNodeRunsForRow,
     handleSaveGenerationTemplateId,
     handleSaveTopicDeliveryPreferences,
     handleFetchReviewImages,

@@ -78,6 +78,7 @@ export function TopicVariantsPage(p: TopicReviewPagesBaseProps) {
         onGetNewsResearchSnapshot={
           p.onGetNewsResearchSnapshot ? (id) => p.onGetNewsResearchSnapshot!(row, id) : undefined
         }
+        onGetNodeRuns={p.onGetNodeRuns ? () => p.onGetNodeRuns!(row) : undefined}
       />
     </div>
   );

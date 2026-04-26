@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
+import { GenerationJustificationPanel } from '../../review/GenerationJustificationPanel';
 import { RulesPanel } from '../../rules/RulesPanel';
 import { ImageAssetManager } from '../../../components/ImageAssetManager';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
@@ -47,6 +48,8 @@ export function EditorSidebar() {
     uploadingContextDocument,
     uploadContextDocument,
     removeContextDocument,
+    nodeRuns,
+    nodeRunsLoading,
   } = useReviewFlow();
   const {
     instruction,
@@ -163,6 +166,10 @@ export function EditorSidebar() {
             onRemove={removeContextDocument}
             uploading={uploadingContextDocument}
           />
+        ) : null}
+
+        {activeWorkspacePanel === 'refine' && (nodeRuns.length > 0 || nodeRunsLoading) ? (
+          <GenerationJustificationPanel nodeRuns={nodeRuns} isLoading={nodeRunsLoading} />
         ) : null}
 
         {activeWorkspacePanel === 'media' ? (

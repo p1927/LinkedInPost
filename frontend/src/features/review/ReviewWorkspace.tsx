@@ -8,6 +8,7 @@ import {
   type NewsResearchSearchPayload,
   type NewsResearchSearchResult,
   type NewsResearchSnapshotDetail,
+  type NodeRunItem,
   type PostTemplate,
   type QuickChangePreviewResult,
   type VariantsPreviewResponse,
@@ -73,6 +74,7 @@ export interface ReviewWorkspaceProps {
   ) => Promise<ContentReviewReport>;
   onAfterContentReview?: () => Promise<void>;
   onUploadContextDocument?: (params: { name: string; contentBase64: string; mimeType: string }) => Promise<{ documentId: string; extractedText: string; charCount: number }>;
+  onGetNodeRuns?: () => Promise<NodeRunItem[]>;
 }
 
 function ReviewWorkspaceLayout() {

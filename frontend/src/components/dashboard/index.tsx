@@ -428,6 +428,7 @@ export function Dashboard({
     onGenerateReferenceImage: queueHook.handleGenerateReferenceImage,
     onUploadContextDocument: queueHook.handleUploadContextDocument,
     imageGenConfig: session.config.imageGen,
+    onGetNodeRuns: queueHook.getNodeRunsForRow,
     ...(FEATURE_CONTENT_REVIEW
       ? {
           onRunContentReview: queueHook.handleRunContentReview,

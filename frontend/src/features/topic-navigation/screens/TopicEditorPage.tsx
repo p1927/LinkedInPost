@@ -100,6 +100,7 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
             : undefined
         }
         onAfterContentReview={p.onAfterContentReview}
+        onGetNodeRuns={p.onGetNodeRuns ? () => p.onGetNodeRuns!(row) : undefined}
       />
     </div>
   );
