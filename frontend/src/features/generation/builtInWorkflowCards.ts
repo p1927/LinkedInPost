@@ -1,106 +1,137 @@
 // frontend/src/features/generation/builtInWorkflowCards.ts
 
+export type DimensionKey =
+  | 'emotions'
+  | 'psychology'
+  | 'persuasion'
+  | 'copywriting'
+  | 'storytelling'
+  | 'typography'
+  | 'vocabulary';
+
+export const DIMENSION_KEYS: DimensionKey[] = [
+  'emotions',
+  'psychology',
+  'persuasion',
+  'copywriting',
+  'storytelling',
+  'typography',
+  'vocabulary',
+];
+
 export interface BuiltInWorkflowCard {
   id: string;
   name: string;
   description: string;
-  /** 3 short trait strings shown as pills on the card */
   traits: [string, string, string];
-  /** Tailwind color key for card accent */
   colorKey: 'violet' | 'amber' | 'emerald' | 'blue' | 'rose' | 'slate';
+  dimensionWeights: Record<DimensionKey, number>;
 }
 
 export const BUILT_IN_WORKFLOW_CARDS: BuiltInWorkflowCard[] = [
   {
     id: 'viral-story',
     name: 'Viral Story',
-    description: 'Make people feel something and share it',
-    traits: ['High emotion', 'Authentic voice', 'Narrative arc'],
-    colorKey: 'rose',
+    description: 'Narrative-driven posts with emotional pull designed to spread.',
+    traits: ['Narrative', 'Emotional', 'Engaging'],
+    colorKey: 'violet',
+    dimensionWeights: { emotions: 80, psychology: 60, persuasion: 65, copywriting: 70, storytelling: 90, typography: 50, vocabulary: 55 },
   },
   {
     id: 'thought-leadership',
     name: 'Thought Leadership',
-    description: 'Establish expert authority with evidence',
-    traits: ['Research-heavy', 'Structured arc', 'Authority vocab'],
+    description: 'Analytical takes that position you as a credible industry voice.',
+    traits: ['Analytical', 'Authoritative', 'Insightful'],
     colorKey: 'blue',
+    dimensionWeights: { emotions: 30, psychology: 80, persuasion: 70, copywriting: 65, storytelling: 50, typography: 60, vocabulary: 85 },
   },
   {
     id: 'engagement-trap',
     name: 'Engagement Driver',
-    description: 'Drive comments and discussion in the first hour',
-    traits: ['Aggressive hook', 'Strong CTA', 'Controversy'],
+    description: 'Hook-first posts engineered for comments and shares.',
+    traits: ['Hook', 'Provocative', 'Interactive'],
     colorKey: 'amber',
+    dimensionWeights: { emotions: 70, psychology: 85, persuasion: 90, copywriting: 80, storytelling: 55, typography: 60, vocabulary: 60 },
   },
   {
     id: 'educational',
     name: 'Educational',
-    description: 'Teach something clearly, step by step',
-    traits: ['Strict structure', 'Data-backed', 'Clarity-first'],
+    description: 'Clear, structured posts that teach something concrete.',
+    traits: ['Clear', 'Structured', 'Informative'],
     colorKey: 'emerald',
+    dimensionWeights: { emotions: 25, psychology: 55, persuasion: 50, copywriting: 80, storytelling: 45, typography: 70, vocabulary: 85 },
   },
   {
     id: 'personal-brand',
     name: 'Personal Brand',
-    description: 'Raw creator voice, identity-defining content',
-    traits: ['Max authenticity', 'Emotional depth', 'Personal lens'],
+    description: 'Consistent voice that reinforces your professional identity.',
+    traits: ['Authentic', 'Consistent', 'Professional'],
     colorKey: 'violet',
+    dimensionWeights: { emotions: 50, psychology: 65, persuasion: 60, copywriting: 70, storytelling: 60, typography: 65, vocabulary: 75 },
   },
   {
     id: 'personal-story',
     name: 'Personal Story',
-    description: 'A single story that teaches a professional lesson',
-    traits: ['Story-led', 'One clear lesson', 'Relatable'],
+    description: 'Vulnerable, first-person narratives that build connection.',
+    traits: ['Vulnerable', 'Relatable', 'Human'],
     colorKey: 'rose',
+    dimensionWeights: { emotions: 90, psychology: 50, persuasion: 35, copywriting: 55, storytelling: 85, typography: 45, vocabulary: 50 },
   },
   {
     id: 'informational-news',
     name: 'News & Insights',
-    description: 'Timely take on industry news',
-    traits: ['News hook', 'Your angle', 'Timely'],
-    colorKey: 'blue',
+    description: 'Timely, factual posts that surface important developments.',
+    traits: ['Factual', 'Timely', 'Objective'],
+    colorKey: 'slate',
+    dimensionWeights: { emotions: 20, psychology: 45, persuasion: 40, copywriting: 75, storytelling: 40, typography: 70, vocabulary: 80 },
   },
   {
     id: 'trend-commentary',
     name: 'Trend Commentary',
-    description: 'Your perspective on a shifting industry trend',
-    traits: ['Contrarian ok', 'Trend-aware', 'Expert take'],
-    colorKey: 'blue',
+    description: 'Opinionated takes on what is happening in your industry.',
+    traits: ['Timely', 'Analytical', 'Opinionated'],
+    colorKey: 'amber',
+    dimensionWeights: { emotions: 55, psychology: 80, persuasion: 75, copywriting: 70, storytelling: 50, typography: 55, vocabulary: 70 },
   },
   {
     id: 'week-in-review',
     name: 'Week in Review',
-    description: 'Weekly roundup with key takeaways',
-    traits: ['List format', 'Curated', 'Consistent voice'],
-    colorKey: 'slate',
+    description: 'Structured digest of key events or learnings from the week.',
+    traits: ['Structured', 'Comprehensive', 'Digestible'],
+    colorKey: 'blue',
+    dimensionWeights: { emotions: 30, psychology: 50, persuasion: 45, copywriting: 75, storytelling: 55, typography: 85, vocabulary: 70 },
   },
   {
     id: 'event-insight',
     name: 'Event Insight',
-    description: 'Lessons and observations from an event',
-    traits: ['Experiential', 'Specific detail', 'Transferable'],
+    description: 'Experiential posts sharing observations from events you attended.',
+    traits: ['Experiential', 'Observational', 'Contextual'],
     colorKey: 'emerald',
+    dimensionWeights: { emotions: 65, psychology: 55, persuasion: 50, copywriting: 60, storytelling: 75, typography: 55, vocabulary: 60 },
   },
   {
     id: 'satirical',
     name: 'Satirical',
-    description: 'Sharp, funny take on an industry absurdity',
-    traits: ['Humour-led', 'Punchy', 'Brave'],
-    colorKey: 'amber',
+    description: 'Sharp, witty posts that entertain while making a point.',
+    traits: ['Humorous', 'Sharp', 'Witty'],
+    colorKey: 'rose',
+    dimensionWeights: { emotions: 75, psychology: 70, persuasion: 55, copywriting: 80, storytelling: 65, typography: 50, vocabulary: 70 },
   },
   {
     id: 'appreciation',
     name: 'Appreciation',
-    description: 'Recognise someone or something with impact',
-    traits: ['Specific praise', 'Warm tone', 'Story-backed'],
-    colorKey: 'violet',
+    description: 'Warm posts celebrating people, milestones, or communities.',
+    traits: ['Warm', 'Grateful', 'Connecting'],
+    colorKey: 'amber',
+    dimensionWeights: { emotions: 90, psychology: 45, persuasion: 40, copywriting: 55, storytelling: 70, typography: 50, vocabulary: 55 },
   },
   {
     id: 'base',
     name: 'Balanced',
-    description: 'All dimensions at moderate — good default',
-    traits: ['Balanced', 'Versatile', 'Reliable'],
+    description: 'A neutral baseline with equal weight across all dimensions.',
+    traits: ['Balanced', 'Neutral', 'Versatile'],
     colorKey: 'slate',
+    dimensionWeights: { emotions: 50, psychology: 50, persuasion: 50, copywriting: 50, storytelling: 50, typography: 50, vocabulary: 50 },
   },
 ];
 
