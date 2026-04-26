@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Eye } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
@@ -64,6 +64,7 @@ export function EditorScreen() {
   const [contentReviewOpen, setContentReviewOpen] = useState(false);
   const [contentReviewBusy, setContentReviewBusy] = useState(false);
   const [contentReviewResult, setContentReviewResult] = useState<ContentReviewReportData | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}`;
 
@@ -100,9 +101,24 @@ export function EditorScreen() {
       aria-labelledby="review-draft-editor-heading"
       className="order-1 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-violet-200/30 px-4 py-3 xl:order-none xl:h-full xl:max-h-full xl:flex-1 xl:border-b-0"
     >
-      <h3 id="review-draft-editor-heading" className="sr-only">
-        Draft editor
-      </h3>
+      <div className="mb-2 flex shrink-0 items-center justify-between">
+        <h3
+          id="review-draft-editor-heading"
+          className="text-[10px] font-semibold uppercase tracking-wider text-ink/55"
+        >
+          Draft editor
+        </h3>
+        <Button
+          type="button"
+          variant="ghost"
+          size="inline"
+          onClick={() => setPreviewOpen(true)}
+          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold text-primary hover:bg-violet-50 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
+        >
+          <Eye className="h-3.5 w-3.5" aria-hidden />
+          Preview
+        </Button>
+      </div>
       <DraftEditor
         value={editorText}
         selection={selection}
@@ -131,9 +147,9 @@ export function EditorScreen() {
           >
             <Panel
               id="review-refine"
-              defaultSize="26%"
-              minSize="16%"
-              maxSize="48%"
+              defaultSize="32%"
+              minSize="20%"
+              maxSize="52%"
               className="flex min-h-0 flex-col"
             >
               <EditorSidebar />
@@ -141,30 +157,20 @@ export function EditorScreen() {
             <ResizeHandle />
             <Panel
               id="review-editor"
-              defaultSize="48%"
-              minSize="28%"
+              defaultSize="68%"
+              minSize="36%"
               className="flex min-h-0 flex-col"
             >
               {editorSection}
-            </Panel>
-            <ResizeHandle />
-            <Panel
-              id="review-preview"
-              defaultSize="26%"
-              minSize="16%"
-              maxSize="48%"
-              className="flex min-h-0 flex-col"
-            >
-              <LivePreviewSidebar />
             </Panel>
           </PanelGroup>
         ) : (
           <>
             {editorSection}
             <EditorSidebar />
-            <LivePreviewSidebar />
           </>
         )}
+        <LivePreviewSidebar isOpen={previewOpen} onClose={() => setPreviewOpen(false)} />
       </div>
 
       <footer className="shrink-0 border-t border-violet-200/35 bg-canvas/95 px-4 py-3 backdrop-blur-sm">
