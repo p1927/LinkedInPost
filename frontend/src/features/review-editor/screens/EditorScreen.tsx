@@ -160,7 +160,6 @@ export function EditorScreen() {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
-        <EditorVariantBar />
         {isDesktop ? (
           <PanelGroup
             orientation="horizontal"
@@ -183,11 +182,13 @@ export function EditorScreen() {
               minSize="24%"
               className="flex min-h-0 flex-col"
             >
+              <EditorVariantBar />
               {editorSection}
             </Panel>
           </PanelGroup>
         ) : (
           <>
+            <EditorVariantBar />
             {editorSection}
             <EditorSidebar />
           </>

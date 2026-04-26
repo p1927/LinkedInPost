@@ -18,7 +18,7 @@ import { recordsEqual } from '../../../utils/recordsEqual';
 import type { GeneratedStyleCard } from '../../review/context/types';
 import { cn } from '@/lib/cn';
 
-// ─── Dimension slider data (mirrors GenerationPanel internals) ─────────────────
+// ─── Dimension slider data ─────────────────────────────────────────────────────
 
 const DIMENSIONS = [
   { key: 'emotions', label: 'Emotions' },
@@ -191,13 +191,12 @@ export function EditorSidebar() {
     const card = BUILT_IN_WORKFLOW_CARDS.find(c => c.id === id);
     setSelectedCardId(id);
     setPostType(id);
-    setDimensionWeights(card ? card.dimensionWeights : DEFAULT_WEIGHTS);
+    setDimensionWeights(card ? { ...card.dimensionWeights } : { ...DEFAULT_WEIGHTS });
   }
 
   function selectGeneratedCard(card: GeneratedStyleCard) {
     setSelectedCardId(card.id);
-    setDimensionWeights(card.dimensionWeights);
-    // Don't set postType — generated card IDs shouldn't go to the API
+    setDimensionWeights({ ...card.dimensionWeights });
   }
 
   const weights = dimensionWeights ?? DEFAULT_WEIGHTS;
@@ -219,171 +218,177 @@ export function EditorSidebar() {
     ? [...TABS_BASE, { id: 'email' as const, label: 'Email' }]
     : TABS_BASE;
 
+  const isStylesTab = activeWorkspacePanel === 'styles';
+
   return (
     <aside
       aria-label="Refine, media, and publishing rules"
-      className="order-2 min-h-0 min-w-0 border-b border-violet-200/30 px-4 py-3 xl:order-none xl:max-h-full xl:border-b-0 xl:overflow-y-auto"
+      className="order-2 flex min-h-0 min-w-0 flex-col border-b border-violet-200/30 xl:order-none xl:max-h-full xl:border-b-0"
     >
-      {/* Tab bar */}
-      <div
-        className={`grid gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm`}
-        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
-        role="tablist"
-        aria-label="Review workspace panels"
-      >
-        {tabs.map(tab => (
-          <Button
-            key={tab.id}
-            type="button"
-            variant="ghost"
-            size="inline"
-            role="tab"
-            aria-selected={activeWorkspacePanel === tab.id}
-            onClick={() => setActiveWorkspacePanel(tab.id)}
-            className={cn(
-              'rounded-lg px-1.5 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
-              activeWorkspacePanel === tab.id
-                ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70'
-                : 'text-muted hover:bg-white/60 hover:text-ink/70',
-            )}
-          >
-            {tab.label}
-          </Button>
-        ))}
+      {/* Tab bar — always visible, never scrolls away */}
+      <div className="shrink-0 px-4 pt-3 pb-2">
+        <div
+          className="grid gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm"
+          style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+          role="tablist"
+          aria-label="Review workspace panels"
+        >
+          {tabs.map(tab => (
+            <Button
+              key={tab.id}
+              type="button"
+              variant="ghost"
+              size="inline"
+              role="tab"
+              aria-selected={activeWorkspacePanel === tab.id}
+              onClick={() => setActiveWorkspacePanel(tab.id)}
+              className={cn(
+                'rounded-lg px-1.5 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
+                activeWorkspacePanel === tab.id
+                  ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70'
+                  : 'text-muted hover:bg-white/60 hover:text-ink/70',
+              )}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-4 space-y-3">
+      {/* ── Writing Styles — fills remaining height with internal scroll for cards ── */}
+      {isStylesTab ? (
+        <section className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-3">
+          {/* Generate button */}
+          <div className="flex shrink-0 items-center justify-end">
+            <button
+              type="button"
+              disabled={isGenerateDisabled}
+              onClick={() => void handleGenerateFromStyle()}
+              className={cn(
+                'rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150',
+                isGenerateDisabled
+                  ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                  : 'bg-primary text-white shadow-sm hover:bg-primary/90 active:scale-[0.98]',
+              )}
+            >
+              {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
+            </button>
+          </div>
 
-        {/* ── Writing Styles ─────────────────────────────────────────────────── */}
-        {activeWorkspacePanel === 'styles' ? (
-          <section className="flex flex-col gap-3">
-            {/* Section header with inline Generate button */}
-            <div className="flex items-center justify-end">
+          {/* Card grid — scrolls internally, fills available space */}
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100 pr-0.5">
+            <div className="grid grid-cols-2 gap-2 p-1">
+
+              {/* Generated (untitled) cards — most recent first */}
+              {generatedCards.slice(0, 5).map(gc => {
+                const isSelected = selectedCardId === gc.id;
+                const topDims = Object.entries(gc.dimensionWeights)
+                  .sort(([, a], [, b]) => (b as number) - (a as number))
+                  .slice(0, 3)
+                  .map(([k]) => k);
+                return (
+                  <button
+                    key={gc.id}
+                    type="button"
+                    onClick={() => selectGeneratedCard(gc)}
+                    className={cn(
+                      'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 border-dashed p-2.5 text-left transition-all duration-150',
+                      'border-slate-300 bg-slate-50/80 hover:bg-slate-100/60',
+                      isSelected && 'ring-2 ring-offset-1 shadow-md ring-slate-400',
+                    )}
+                  >
+                    <p className="truncate text-xs font-bold leading-snug text-ink">{gc.label}</p>
+                    <p className="text-[0.55rem] text-muted">
+                      {new Date(gc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <div className="mt-auto flex flex-wrap gap-1 pt-0.5">
+                      {topDims.map(d => (
+                        <span
+                          key={d}
+                          className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[0.55rem] font-semibold capitalize text-slate-600"
+                        >
+                          {d}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Built-in cards (featured first) */}
+              {ORDERED_CARDS.map(card => {
+                const isSelected = selectedCardId === card.id;
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => selectStyle(card.id)}
+                    className={cn(
+                      'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 p-2.5 text-left transition-all duration-150 hover:shadow-md',
+                      CARD_BG[card.colorKey],
+                      isSelected && `ring-2 ring-offset-1 shadow-md ${CARD_RING[card.colorKey]}`,
+                    )}
+                  >
+                    <p className="text-xs font-bold leading-snug text-ink">{card.name}</p>
+                    <p className="line-clamp-2 text-[0.6rem] leading-relaxed text-slate-600">{card.description}</p>
+                    <div className="mt-auto flex flex-wrap gap-1 pt-0.5">
+                      {card.traits.map(trait => (
+                        <span
+                          key={trait}
+                          className="rounded-full bg-white/70 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200"
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Custom user-created workflows */}
+              {customWorkflows?.map(wf => {
+                const isSelected = selectedCardId === wf.id;
+                return (
+                  <button
+                    key={wf.id}
+                    type="button"
+                    onClick={() => selectStyle(wf.id)}
+                    className={cn(
+                      'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 border-violet-200 bg-violet-50/70 p-2.5 text-left transition-all duration-150 hover:border-violet-300 hover:shadow-md',
+                      isSelected && 'ring-2 ring-offset-1 ring-violet-400 shadow-md',
+                    )}
+                  >
+                    <p className="text-xs font-bold leading-snug text-ink">{wf.name}</p>
+                    <p className="line-clamp-2 text-[0.6rem] leading-relaxed text-slate-600">{wf.description}</p>
+                  </button>
+                );
+              })}
+
+              {/* Create your own */}
               <button
                 type="button"
-                disabled={isGenerateDisabled}
-                onClick={() => void handleGenerateFromStyle()}
-                className={cn(
-                  'rounded-lg px-3 py-1 text-[0.65rem] font-semibold transition-all duration-150',
-                  isGenerateDisabled
-                    ? 'cursor-not-allowed bg-gray-100 text-gray-400'
-                    : 'bg-primary text-white shadow-sm hover:bg-primary/90 active:scale-[0.98]',
-                )}
+                onClick={() => { setBuilderWorkflow(undefined); setBuilderOpen(true); }}
+                className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center transition-all duration-150 hover:border-violet-300 hover:bg-violet-50/40"
               >
-                {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
+                <Plus className="h-4 w-4 text-muted" />
+                <p className="text-[0.65rem] font-semibold text-muted">Create your own</p>
               </button>
             </div>
-            {/* Card grid — fixed height with internal scroll */}
-            <div className="h-[280px] overflow-y-auto rounded-xl border border-gray-100 pr-0.5">
-              <div className="grid grid-cols-2 gap-2 p-1">
+          </div>
 
-                {/* Generated (untitled) cards — most recent first */}
-                {generatedCards.slice(0, 5).map(gc => {
-                  const isSelected = selectedCardId === gc.id;
-                  const topDims = Object.entries(gc.dimensionWeights)
-                    .sort(([, a], [, b]) => (b as number) - (a as number))
-                    .slice(0, 3)
-                    .map(([k]) => k);
-                  return (
-                    <button
-                      key={gc.id}
-                      type="button"
-                      onClick={() => selectGeneratedCard(gc)}
-                      className={cn(
-                        'flex flex-col gap-1.5 rounded-xl border-2 border-dashed p-2.5 text-left transition-all duration-150',
-                        'border-slate-300 bg-slate-50/80 hover:bg-slate-100/60',
-                        isSelected && 'ring-2 ring-offset-1 shadow-md ring-slate-400',
-                      )}
-                    >
-                      <p className="text-xs font-bold text-ink leading-snug truncate">{gc.label}</p>
-                      <p className="text-[0.55rem] text-muted">
-                        {new Date(gc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      <div className="flex flex-wrap gap-1 mt-auto pt-0.5">
-                        {topDims.map(d => (
-                          <span
-                            key={d}
-                            className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 capitalize"
-                          >
-                            {d}
-                          </span>
-                        ))}
-                      </div>
-                    </button>
-                  );
-                })}
-
-                {/* Built-in cards (featured first) */}
-                {ORDERED_CARDS.map(card => {
-                  const isSelected = selectedCardId === card.id;
-                  return (
-                    <button
-                      key={card.id}
-                      type="button"
-                      onClick={() => selectStyle(card.id)}
-                      className={cn(
-                        'flex flex-col gap-1.5 rounded-xl border-2 p-2.5 text-left transition-all duration-150 hover:shadow-md',
-                        CARD_BG[card.colorKey],
-                        isSelected && `ring-2 ring-offset-1 shadow-md ${CARD_RING[card.colorKey]}`,
-                      )}
-                    >
-                      <p className="text-xs font-bold text-ink leading-snug">{card.name}</p>
-                      <p className="text-[0.6rem] leading-relaxed text-slate-600 line-clamp-2">{card.description}</p>
-                      <div className="flex flex-wrap gap-1 mt-auto pt-0.5">
-                        {card.traits.map(trait => (
-                          <span
-                            key={trait}
-                            className="rounded-full bg-white/70 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200"
-                          >
-                            {trait}
-                          </span>
-                        ))}
-                      </div>
-                    </button>
-                  );
-                })}
-
-                {/* Custom user-created workflows */}
-                {customWorkflows?.map(wf => {
-                  const isSelected = selectedCardId === wf.id;
-                  return (
-                    <button
-                      key={wf.id}
-                      type="button"
-                      onClick={() => selectStyle(wf.id)}
-                      className={cn(
-                        'flex flex-col gap-1.5 rounded-xl border-2 border-violet-200 bg-violet-50/70 p-2.5 text-left transition-all duration-150 hover:border-violet-300 hover:shadow-md',
-                        isSelected && 'ring-2 ring-offset-1 ring-violet-400 shadow-md',
-                      )}
-                    >
-                      <p className="text-xs font-bold text-ink leading-snug">{wf.name}</p>
-                      <p className="text-[0.6rem] leading-relaxed text-slate-600 line-clamp-2">{wf.description}</p>
-                    </button>
-                  );
-                })}
-
-                {/* Create your own */}
-                <button
-                  type="button"
-                  onClick={() => { setBuilderWorkflow(undefined); setBuilderOpen(true); }}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center transition-all duration-150 hover:border-violet-300 hover:bg-violet-50/40"
-                >
-                  <Plus className="h-4 w-4 text-muted" />
-                  <p className="text-[0.65rem] font-semibold text-muted">Create your own</p>
-                </button>
-              </div>
-            </div>
-
-            {/* Dimension sliders — always visible */}
-            <div className="rounded-xl border border-violet-200/60 bg-white/80 px-3 py-3 shadow-sm space-y-2.5">
-              <p className="text-[0.65rem] font-bold text-ink/70">Writing emphasis</p>
+          {/* Compact dimension sliders — always pinned at bottom */}
+          <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-3 py-2 shadow-sm">
+            <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink/50">Writing emphasis</p>
+            <div className="space-y-1">
               {DIMENSIONS.map(({ key, label }) => {
                 const val = weights[key] ?? 50;
                 return (
                   <div key={key}>
                     <div className="flex items-center justify-between">
-                      <span className="text-[0.65rem] font-semibold text-ink">{label}</span>
-                      <span className={cn('text-[0.65rem] font-bold', getLevelColor(val))}>{getLevelName(val)}</span>
+                      <span className="text-[0.6rem] font-semibold text-ink/80">{label}</span>
+                      <span className={cn('text-[0.6rem] font-bold tabular-nums', getLevelColor(val))}>
+                        {getLevelName(val)}
+                      </span>
                     </div>
                     <input
                       type="range"
@@ -392,147 +397,159 @@ export function EditorSidebar() {
                       step="1"
                       value={val}
                       onChange={e => handleWeightChange(key, Number(e.target.value))}
-                      className="mt-1 w-full accent-primary"
+                      className={cn(
+                        'mt-0.5 h-1 w-full cursor-pointer appearance-none rounded-full bg-slate-200',
+                        '[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3',
+                        '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
+                        '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
+                        '[&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:transition-transform',
+                        '[&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:hover:scale-110',
+                        '[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3',
+                        '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
+                        '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary',
+                      )}
                     />
                   </div>
                 );
               })}
             </div>
+          </div>
+        </section>
+      ) : (
+        /* All other tabs — simple scroll container */
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-3 pt-1">
+          <div className="space-y-3">
 
-          </section>
-        ) : null}
-
-        {/* ── Refine ─────────────────────────────────────────────────────────── */}
-        {activeWorkspacePanel === 'refine' ? (
-          <>
-
-            <GenerationPanel
-              instruction={instruction}
-              loadingAction={generationLoading}
-              quickChangePreview={quickChangePreview}
-              variantsPreview={variantsPreview}
-              onInstructionChange={setInstruction}
-              onGenerateQuickChange={() => void handleGenerateQuickChange()}
-              onGenerateVariants={() => void handleGenerateVariants()}
-              onApplyQuickChange={handleApplyQuickChange}
-              onApplyVariant={handleApplyVariant}
-              aiGenerateDisabled={aiRefineBlocked}
-              aiGenerateDisabledReason={aiRefineBlockedReason}
-              compact
-              previewVariantSaveByIndex={previewVariantSaveByIndex}
-              previewVariantSaveErrors={previewVariantSaveErrors}
-              onSavePreviewVariant={(index) => void handleSavePreviewVariantAtIndex(index)}
-              hideStyleControls
-              customWorkflows={customWorkflows}
-              isLoadingCustomWorkflows={isLoadingCustomWorkflows}
-              onOpenWorkflowBuilder={(wf) => {
-                setBuilderWorkflow(wf);
-                setBuilderOpen(true);
-              }}
-            />
-
-            <ContextDocumentsPanel
-              documents={contextDocuments}
-              onUpload={(file) => uploadContextDocument(file)}
-              onRemove={removeContextDocument}
-              uploading={uploadingContextDocument}
-            />
-
-            {nodeRuns.length > 0 || nodeRunsLoading ? (
-              <GenerationJustificationPanel nodeRuns={nodeRuns} isLoading={nodeRunsLoading} />
+            {/* ── Refine ──────────────────────────────────────────────────────── */}
+            {activeWorkspacePanel === 'refine' ? (
+              <>
+                <GenerationPanel
+                  instruction={instruction}
+                  loadingAction={generationLoading}
+                  quickChangePreview={quickChangePreview}
+                  variantsPreview={variantsPreview}
+                  onInstructionChange={setInstruction}
+                  onGenerateQuickChange={() => void handleGenerateQuickChange()}
+                  onGenerateVariants={() => void handleGenerateVariants()}
+                  onApplyQuickChange={handleApplyQuickChange}
+                  onApplyVariant={handleApplyVariant}
+                  aiGenerateDisabled={aiRefineBlocked}
+                  aiGenerateDisabledReason={aiRefineBlockedReason}
+                  compact
+                  previewVariantSaveByIndex={previewVariantSaveByIndex}
+                  previewVariantSaveErrors={previewVariantSaveErrors}
+                  onSavePreviewVariant={(index) => void handleSavePreviewVariantAtIndex(index)}
+                  hideStyleControls
+                  customWorkflows={customWorkflows}
+                  isLoadingCustomWorkflows={isLoadingCustomWorkflows}
+                  onOpenWorkflowBuilder={(wf) => {
+                    setBuilderWorkflow(wf);
+                    setBuilderOpen(true);
+                  }}
+                />
+                <ContextDocumentsPanel
+                  documents={contextDocuments}
+                  onUpload={(file) => uploadContextDocument(file)}
+                  onRemove={removeContextDocument}
+                  uploading={uploadingContextDocument}
+                />
+                {nodeRuns.length > 0 || nodeRunsLoading ? (
+                  <GenerationJustificationPanel nodeRuns={nodeRuns} isLoading={nodeRunsLoading} />
+                ) : null}
+              </>
             ) : null}
-          </>
-        ) : null}
 
-        {/* ── News ───────────────────────────────────────────────────────────── */}
-        {activeWorkspacePanel === 'news' ? (
-          onSearchNewsResearch ? (
-            <ResearcherPanel
-              row={sheetRow}
-              newsResearch={newsResearch}
-              onSearch={onSearchNewsResearch}
-              onListHistory={onListNewsResearchHistory}
-              onLoadSnapshot={onGetNewsResearchSnapshot}
-              selectedRefs={researchContextArticles}
-              onSelectedRefsChange={setResearchContextArticles}
-            />
-          ) : (
-            <div className="rounded-xl border border-border bg-white p-4 text-center">
-              <p className="text-xs text-muted">News research is not configured.</p>
-            </div>
-          )
-        ) : null}
+            {/* ── News ────────────────────────────────────────────────────────── */}
+            {activeWorkspacePanel === 'news' ? (
+              onSearchNewsResearch ? (
+                <ResearcherPanel
+                  row={sheetRow}
+                  newsResearch={newsResearch}
+                  onSearch={onSearchNewsResearch}
+                  onListHistory={onListNewsResearchHistory}
+                  onLoadSnapshot={onGetNewsResearchSnapshot}
+                  selectedRefs={researchContextArticles}
+                  onSelectedRefsChange={setResearchContextArticles}
+                />
+              ) : (
+                <div className="rounded-xl border border-border bg-white p-4 text-center">
+                  <p className="text-xs text-muted">News research is not configured.</p>
+                </div>
+              )
+            ) : null}
 
-        {/* ── Media ──────────────────────────────────────────────────────────── */}
-        {activeWorkspacePanel === 'media' ? (
-          <section className="rounded-xl border border-border bg-white p-3 shadow-sm">
-            <ImageAssetManager
-              topic={sheetRow.topic}
-              images={imageOptions}
-              selectedImageUrls={selectedImageUrls}
-              onSelectImage={handleSelectImageOption}
-              onFetchMoreImages={handleFetchMoreImageOptions}
-              onUploadImage={handleUploadImageOption}
-              onDownloadImage={onDownloadImage}
-              onClearSelectedImage={handleClearSelectedImage}
-              compact
-              supportsReferenceImage={getImageGenCapabilities(imageGenConfig?.provider ?? 'pixazo', imageGenConfig?.model).supportsReferenceImage}
-              onUploadReferenceImage={handleUploadReferenceImage}
-              onGenerateReferenceImage={handleGenerateReferenceImage}
-              channel={deliveryChannel}
-            />
-          </section>
-        ) : null}
+            {/* ── Media ───────────────────────────────────────────────────────── */}
+            {activeWorkspacePanel === 'media' ? (
+              <section className="rounded-xl border border-border bg-white p-3 shadow-sm">
+                <ImageAssetManager
+                  topic={sheetRow.topic}
+                  images={imageOptions}
+                  selectedImageUrls={selectedImageUrls}
+                  onSelectImage={handleSelectImageOption}
+                  onFetchMoreImages={handleFetchMoreImageOptions}
+                  onUploadImage={handleUploadImageOption}
+                  onDownloadImage={onDownloadImage}
+                  onClearSelectedImage={handleClearSelectedImage}
+                  compact
+                  supportsReferenceImage={getImageGenCapabilities(imageGenConfig?.provider ?? 'pixazo', imageGenConfig?.model).supportsReferenceImage}
+                  onUploadReferenceImage={handleUploadReferenceImage}
+                  onGenerateReferenceImage={handleGenerateReferenceImage}
+                  channel={deliveryChannel}
+                />
+              </section>
+            ) : null}
 
-        {/* ── Topic Rules ────────────────────────────────────────────────────── */}
-        {activeWorkspacePanel === 'rules' ? (
-          <RulesPanel
-            globalGenerationRules={globalGenerationRules}
-            topicGenerationRules={sheetRow.topicGenerationRules || ''}
-            generationTemplateId={sheetRow.generationTemplateId || ''}
-            effectiveGenerationRules={sharedRules}
-            postTemplates={postTemplates}
-            compact
-            onSaveTopic={handleSaveTopicRules}
-            savingTopic={savingTopicRules}
-            onSaveGenerationTemplate={handleSaveGenerationTemplateId}
-            savingGenerationTemplate={savingGenerationTemplateId}
-          />
-        ) : null}
+            {/* ── Topic Rules ──────────────────────────────────────────────────── */}
+            {activeWorkspacePanel === 'rules' ? (
+              <RulesPanel
+                globalGenerationRules={globalGenerationRules}
+                topicGenerationRules={sheetRow.topicGenerationRules || ''}
+                generationTemplateId={sheetRow.generationTemplateId || ''}
+                effectiveGenerationRules={sharedRules}
+                postTemplates={postTemplates}
+                compact
+                onSaveTopic={handleSaveTopicRules}
+                savingTopic={savingTopicRules}
+                onSaveGenerationTemplate={handleSaveGenerationTemplateId}
+                savingGenerationTemplate={savingGenerationTemplateId}
+              />
+            ) : null}
 
-        {/* ── Email (Gmail only) ─────────────────────────────────────────────── */}
-        {activeWorkspacePanel === 'email' ? (
-          <section className="rounded-xl border border-border bg-white p-3 shadow-sm space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">To</label>
-              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="recipient@example.com" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">Cc</label>
-              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailCc} onChange={e => setEmailCc(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">Bcc</label>
-              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailBcc} onChange={e => setEmailBcc(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1">Subject</label>
-              <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject line" />
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              disabled={savingEmailFields}
-              onClick={() => void handleSaveEmailFields()}
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-violet-50 disabled:opacity-50"
-            >
-              {savingEmailFields ? 'Saving…' : 'Save email settings'}
-            </Button>
-          </section>
-        ) : null}
+            {/* ── Email (Gmail only) ───────────────────────────────────────────── */}
+            {activeWorkspacePanel === 'email' ? (
+              <section className="space-y-3 rounded-xl border border-border bg-white p-3 shadow-sm">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-ink">To</label>
+                  <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="recipient@example.com" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-ink">Cc</label>
+                  <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailCc} onChange={e => setEmailCc(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-ink">Bcc</label>
+                  <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailBcc} onChange={e => setEmailBcc(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-ink">Subject</label>
+                  <input type="text" className="w-full rounded-md border border-border px-2 py-1 text-sm focus:ring-1 focus:ring-primary" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Subject line" />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="inline"
+                  disabled={savingEmailFields}
+                  onClick={() => void handleSaveEmailFields()}
+                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-violet-50 disabled:opacity-50"
+                >
+                  {savingEmailFields ? 'Saving…' : 'Save email settings'}
+                </Button>
+              </section>
+            ) : null}
 
-      </div>
+          </div>
+        </div>
+      )}
 
       <WorkflowBuilderModal
         isOpen={builderOpen}
