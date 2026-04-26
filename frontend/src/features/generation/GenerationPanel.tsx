@@ -9,18 +9,6 @@ import { WorkflowCardPicker, type CustomWorkflowSummary } from './WorkflowCardPi
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-const POST_TYPES: Array<{ value: string; label: string; disabled?: boolean }> = [
-  { value: '', label: '— Select post type —', disabled: true },
-  { value: 'base', label: 'General / Balanced' },
-  { value: 'informational-news', label: 'Informational / News' },
-  { value: 'week-in-review', label: 'Week in Review' },
-  { value: 'personal-story', label: 'Personal Story' },
-  { value: 'event-insight', label: 'Event Insight' },
-  { value: 'trend-commentary', label: 'Industry Trend & Commentary' },
-  { value: 'satirical', label: 'Satirical / Sarcastic' },
-  { value: 'appreciation', label: 'Appreciation & Recognition' },
-];
-
 const DIMENSIONS = [
   { key: 'emotions', label: 'Emotions' },
   { key: 'psychology', label: 'Psychology' },
