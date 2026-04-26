@@ -1,14 +1,19 @@
+import { useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChannelPostPreview } from '../../../components/channel-previews/ChannelPostPreview';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
 import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContext';
 
-export function LivePreviewSidebar() {
+interface LivePreviewSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function LivePreviewSidebar({ isOpen, onClose }: LivePreviewSidebarProps) {
   const {
     selectedImageUrls,
-    previewCollapsed,
-    setPreviewCollapsed,
     deliveryChannel,
     previewAuthorName,
     setActiveWorkspacePanel,
@@ -17,69 +22,97 @@ export function LivePreviewSidebar() {
   } = useReviewFlow();
   const { editorText } = useReviewFlowEditor();
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  const badgeLabel =
+    deliveryChannel === 'gmail'
+      ? selectedImageUrls.length > 1
+        ? `Gmail · ${selectedImageUrls.length} images`
+        : selectedImageUrls.length === 1
+          ? 'Gmail · image'
+          : 'Gmail · text'
+      : selectedImageUrls.length > 1
+        ? `${selectedImageUrls.length} images`
+        : selectedImageUrls.length === 1
+          ? 'Image'
+          : 'Text only';
+
   return (
-    <aside className="order-3 min-h-0 min-w-0 px-3 py-3 xl:order-none xl:max-h-full xl:overflow-y-auto">
-      <section
-        aria-labelledby="review-live-preview-heading"
-        className="sticky top-0 flex min-w-0 flex-col gap-2.5"
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 ${
+          isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Slide-in panel */}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="live-preview-heading"
+        className={`fixed inset-y-0 right-0 z-50 flex w-[540px] max-w-[92vw] flex-col bg-canvas shadow-2xl transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
       >
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-white px-3 py-2 shadow-sm">
-          <div className="flex items-center gap-2 min-w-0">
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-violet-200/40 px-5 py-3">
+          <div className="flex items-center gap-2">
             <p
-              id="review-live-preview-heading"
-              className="text-[10px] font-semibold uppercase tracking-wider text-ink/65 whitespace-nowrap"
+              id="live-preview-heading"
+              className="text-[10px] font-semibold uppercase tracking-wider text-ink/65"
             >
               Live preview
             </p>
             <Badge variant="neutral" size="xs" className="normal-case shrink-0">
-              {deliveryChannel === 'gmail'
-                ? selectedImageUrls.length > 1
-                  ? `Gmail · ${selectedImageUrls.length} images`
-                  : selectedImageUrls.length === 1
-                    ? 'Gmail · image'
-                    : 'Gmail · text'
-                : selectedImageUrls.length > 1
-                  ? `${selectedImageUrls.length} images`
-                  : selectedImageUrls.length === 1
-                    ? 'Image'
-                    : 'Text only'}
+              {badgeLabel}
             </Badge>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="inline"
-            onClick={() => setPreviewCollapsed((c) => !c)}
-            className="shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold text-primary hover:bg-violet-50 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
+            onClick={onClose}
+            aria-label="Close preview"
+            className="rounded-md p-1.5 text-ink/50 hover:bg-violet-50 hover:text-ink focus-visible:ring-2 focus-visible:ring-primary/35"
           >
-            {previewCollapsed ? 'Show' : 'Hide'}
+            <X className="h-4 w-4" aria-hidden />
           </Button>
         </div>
-        {!previewCollapsed ? (
-          <div className="flex w-full min-w-0 justify-center px-0.5 pb-1">
-            <ChannelPostPreview
-              optionNumber={1}
-              text={editorText}
-              imageUrl={selectedImageUrls[0]}
-              imageUrls={selectedImageUrls.length > 1 ? selectedImageUrls : undefined}
-              previewChannel={deliveryChannel}
-              previewAuthorName={previewAuthorName}
-              gmailTo={emailTo}
-              gmailSubject={emailSubject}
-              layout="sidebar"
-              selected
-              expanded
-              onSelect={() => undefined}
-              onToggleExpanded={() => undefined}
-              onOpenMedia={() => setActiveWorkspacePanel('media')}
-            />
+
+        {/* Scrollable content */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          <div className="flex w-full justify-center">
+            <div className="w-full max-w-[460px]">
+              <ChannelPostPreview
+                optionNumber={1}
+                text={editorText}
+                imageUrl={selectedImageUrls[0]}
+                imageUrls={selectedImageUrls.length > 1 ? selectedImageUrls : undefined}
+                previewChannel={deliveryChannel}
+                previewAuthorName={previewAuthorName}
+                gmailTo={emailTo}
+                gmailSubject={emailSubject}
+                layout="sidebar"
+                selected
+                expanded
+                onSelect={() => undefined}
+                onToggleExpanded={() => undefined}
+                onOpenMedia={() => setActiveWorkspacePanel('media')}
+              />
+            </div>
           </div>
-        ) : (
-          <p className="px-1 text-center text-[10px] leading-relaxed text-muted">
-            Preview hidden. Show when you want to check layout and media.
-          </p>
-        )}
-      </section>
-    </aside>
+        </div>
+      </aside>
+    </>
   );
 }
