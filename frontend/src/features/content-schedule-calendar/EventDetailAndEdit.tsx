@@ -452,63 +452,68 @@ export function EventDetailAndEdit({
   const primaryChannel = channels[0] ?? 'linkedin';
   const cs = channelStyle(primaryChannel);
 
-  // ─── Bold Header ──────────────────────────────────────────────────────────
+  // ─── Shared icon button style ─────────────────────────────────────────────
 
   const iconBtnStyle: React.CSSProperties = {
     width: 30, height: 30, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     border: 'none', background: 'transparent', color: T.muted, cursor: 'pointer', borderRadius: 7,
   };
 
-  const boldHeader = (
-    <div
-      style={{
-        background: 'linear-gradient(180deg, #F3EEFC 0%, #FFFFFF 100%)',
-        padding: '14px 24px 0',
-        borderBottom: `1px solid ${T.line}`,
-        flexShrink: 0,
-      }}
-    >
-      {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <ChannelBadge channelId={primaryChannel} />
-          <div>
-            <div style={{ fontSize: 10.5, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>
-              Editing post · {cs.label}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.005em', marginTop: 2 }}>
-              {formatCalendarDate(topic.date)}
-              {(topic.startTime || defaultSlotTime) && ' · ' + formatTimeHm(topic.startTime ?? defaultSlotTime)}
-            </div>
-          </div>
-        </div>
-        {/* Nav + Close */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <button type="button" style={iconBtnStyle} aria-label="Previous"><ChevronLeft size={14} /></button>
-          <button type="button" style={iconBtnStyle} aria-label="Next"><ChevronRight size={14} /></button>
-          <span style={{ width: 1, height: 18, background: T.line, margin: '0 6px' }} />
-          <button type="button" onClick={onClose} style={iconBtnStyle} aria-label="Close"><X size={13} /></button>
-        </div>
-      </div>
-      {/* Approval rail */}
-      <ApprovalRail status={topic.status} />
-    </div>
-  );
-
-  // ─── Left pane content ────────────────────────────────────────────────────
+  // ─── Left pane (full height) ──────────────────────────────────────────────
 
   const leftPane = (
     <div
       style={{
-        padding: '26px 28px 28px',
-        borderRight: `1px solid ${T.line}`,
-        overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
+        borderRight: `1px solid ${T.line}`,
         minHeight: 0,
-        flex: 1,
+        overflow: 'hidden',
       }}
     >
+      {/* Left panel header */}
+      <div
+        style={{
+          background: 'linear-gradient(180deg, #F3EEFC 0%, #FFFFFF 100%)',
+          padding: '14px 24px 0',
+          borderBottom: `1px solid ${T.line}`,
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <ChannelBadge channelId={primaryChannel} />
+            <div>
+              <div style={{ fontSize: 10.5, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>
+                Editing post · {cs.label}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.ink, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.005em', marginTop: 2 }}>
+                {formatCalendarDate(topic.date)}
+                {(topic.startTime || defaultSlotTime) && ' · ' + formatTimeHm(topic.startTime ?? defaultSlotTime)}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <button type="button" style={iconBtnStyle} aria-label="Previous"><ChevronLeft size={14} /></button>
+            <button type="button" style={iconBtnStyle} aria-label="Next"><ChevronRight size={14} /></button>
+            <span style={{ width: 1, height: 18, background: T.line, margin: '0 6px' }} />
+            <button type="button" onClick={onClose} style={iconBtnStyle} aria-label="Close"><X size={13} /></button>
+          </div>
+        </div>
+        <ApprovalRail status={topic.status} />
+      </div>
+
+      {/* Left panel scrollable content */}
+      <div
+        style={{
+          padding: '26px 28px 28px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
+        }}
+      >
       {/* Topic title */}
       <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.022em', color: T.ink, marginBottom: 4, lineHeight: 1.3 }}>
         {topic.title}
@@ -612,6 +617,7 @@ export function EventDetailAndEdit({
         </>
       )}
 
+      </div>
     </div>
   );
 
@@ -805,21 +811,17 @@ export function EventDetailAndEdit({
 
   return (
     <FloatingPanelShell visible={visible} onClose={onClose}>
-      {/* Body: left column has its own header + content; right column fills full height */}
+      {/* Body: full-height split — left has header + form, right has tabs + preview */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1.5fr 1fr',
+          gridTemplateColumns: '2fr 3fr',
           flex: 1,
           minHeight: 0,
           overflow: 'hidden',
         }}
       >
-        {/* Left: sticky header + scrollable content */}
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-          {boldHeader}
-          {leftPane}
-        </div>
+        {leftPane}
         {rightPane}
       </div>
       {/* Footer */}
