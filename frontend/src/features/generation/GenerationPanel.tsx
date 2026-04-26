@@ -290,60 +290,67 @@ export function GenerationPanel({
       {variantsPreview?.variants.length ? (
         <div className={`mt-5 ${compact ? 'space-y-3' : 'space-y-4'}`}>
           {variantsPreview.variants.map((variant, index) => (
-            <div key={variant.id} className={`rounded-xl border border-violet-200/70 bg-gradient-to-br from-violet-50/40 to-white/80 backdrop-blur-sm shadow-md transition-all duration-200 hover:shadow-lg hover:border-violet-300/80 hover:from-violet-50/50 hover:to-white/90 ${compact ? 'p-3' : 'p-4'}`}>
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <p className={`font-bold uppercase tracking-[0.2em] text-violet-700/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>Preview {index + 1}</p>
-                    {(variant.hookType || variant.arcType) && (
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {variant.hookType && (
-                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[0.6rem] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
-                            {variant.hookType.replace(/_/g, ' ')}
-                          </span>
-                        )}
-                        {variant.arcType && (
-                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[0.6rem] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                            {variant.arcType.replace(/_/g, ' ')}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {variant.variant_rationale && (
-                      <p className="text-[0.6rem] leading-relaxed text-slate-500 italic mt-1">
-                        {variant.variant_rationale}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {onSavePreviewVariant ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onSavePreviewVariant(index)}
-                        disabled={
-                          (previewVariantSaveByIndex[index] ?? 'idle') === 'saving' || variantsPreview.variants.length !== 4
-                        }
-                        className="px-2.5 py-1.5 text-xs font-bold transition-all duration-200 hover:shadow-md"
-                      >
-                        {saveLabel(index)}
-                      </Button>
-                    ) : null}
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onApplyVariant(index)}
-                      className="px-2.5 py-1.5 text-xs sm:text-sm font-bold transition-all duration-200 hover:shadow-md"
-                    >
-                      Review changes
-                    </Button>
-                  </div>
+            <div key={variant.id} className={`rounded-xl border border-violet-200/70 bg-gradient-to-br from-violet-50/40 to-white/80 backdrop-blur-sm shadow-md transition-all duration-200 hover:shadow-lg hover:border-violet-300/80 ${compact ? 'p-3' : 'p-4'}`}>
+              <div className="flex flex-col gap-2.5">
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-2">
+                  <p className={`font-bold uppercase tracking-[0.2em] text-violet-700/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>
+                    Variant {index + 1}
+                  </p>
+                  {variant.label && (
+                    <span className="text-[0.55rem] font-semibold text-slate-400 uppercase tracking-wider shrink-0">
+                      {variant.label.replace(/-/g, ' ')}
+                    </span>
+                  )}
                 </div>
-                <p className={`text-ink font-medium ${compact ? 'line-clamp-5 text-xs leading-5' : 'line-clamp-6 text-sm leading-6'}`}>{variant.fullText}</p>
+
+                {/* Rationale as headline */}
+                {variant.variant_rationale && (
+                  <p className={`font-semibold text-ink leading-snug ${compact ? 'text-xs' : 'text-sm'}`}>
+                    "{variant.variant_rationale}"
+                  </p>
+                )}
+
+                {/* Hook / Arc badges */}
+                {(variant.hookType || variant.arcType) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {variant.hookType && (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[0.6rem] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+                        {variant.hookType.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                    {variant.arcType && (
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[0.6rem] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                        {variant.arcType.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Preview text */}
+                <p className={`text-ink font-medium ${compact ? 'line-clamp-4 text-xs leading-5' : 'line-clamp-5 text-sm leading-6'}`}>
+                  {variant.fullText}
+                </p>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {onSavePreviewVariant ? (
+                    <Button type="button" variant="outline" size="sm"
+                      onClick={() => onSavePreviewVariant(index)}
+                      disabled={(previewVariantSaveByIndex[index] ?? 'idle') === 'saving' || variantsPreview.variants.length !== 4}
+                      className="px-2.5 py-1.5 text-xs font-bold">
+                      {saveLabel(index)}
+                    </Button>
+                  ) : null}
+                  <Button type="button" variant="secondary" size="sm"
+                    onClick={() => onApplyVariant(index)}
+                    className="px-2.5 py-1.5 text-xs font-bold">
+                    Review changes
+                  </Button>
+                </div>
+
                 {previewVariantSaveErrors[index] ? (
-                  <p className="text-xs leading-snug text-red-700 font-semibold">{previewVariantSaveErrors[index]}</p>
+                  <p className="text-xs text-red-700 font-semibold">{previewVariantSaveErrors[index]}</p>
                 ) : null}
               </div>
             </div>
