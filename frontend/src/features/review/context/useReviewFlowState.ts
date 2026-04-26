@@ -105,7 +105,7 @@ const getInitialPostTime = (rowPostTime: string | undefined): string => {
 // Reducer state — all state that resets together when the topic/route changes
 // ---------------------------------------------------------------------------
 
-type ActivePanel = 'refine' | 'media' | 'rules' | 'email';
+type ActivePanel = 'styles' | 'refine' | 'news' | 'media' | 'rules' | 'email';
 
 interface ReviewFlowState {
   sheetRow: SheetRow;

@@ -130,8 +130,8 @@ export interface ReviewFlowContextValue {
   pendingNavigateToVariants: boolean;
   setPendingNavigateToVariants: React.Dispatch<React.SetStateAction<boolean>>;
   submitting: boolean;
-  activeWorkspacePanel: 'refine' | 'media' | 'rules' | 'email';
-  setActiveWorkspacePanel: React.Dispatch<React.SetStateAction<'refine' | 'media' | 'rules' | 'email'>>;
+  activeWorkspacePanel: 'styles' | 'refine' | 'news' | 'media' | 'rules' | 'email';
+  setActiveWorkspacePanel: React.Dispatch<React.SetStateAction<'styles' | 'refine' | 'news' | 'media' | 'rules' | 'email'>>;
   reviewPhase: 'pick-variant' | 'edit';
   setReviewPhase: React.Dispatch<React.SetStateAction<'pick-variant' | 'edit'>>;
   editorVariantIndex: number | null;

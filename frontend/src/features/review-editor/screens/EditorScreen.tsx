@@ -147,9 +147,9 @@ export function EditorScreen() {
           >
             <Panel
               id="review-refine"
-              defaultSize="32%"
-              minSize="20%"
-              maxSize="52%"
+              defaultSize="58%"
+              minSize="36%"
+              maxSize="72%"
               className="flex min-h-0 flex-col"
             >
               <EditorSidebar />
@@ -157,8 +157,8 @@ export function EditorScreen() {
             <ResizeHandle />
             <Panel
               id="review-editor"
-              defaultSize="68%"
-              minSize="36%"
+              defaultSize="42%"
+              minSize="24%"
               className="flex min-h-0 flex-col"
             >
               {editorSection}
