@@ -506,6 +506,7 @@ export function EventDetailAndEdit({
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
+        flex: 1,
       }}
     >
       {/* Topic title */}
@@ -637,16 +638,6 @@ export function EventDetailAndEdit({
           padding: '14px 18px 0',
         }}
       >
-        {/* Top row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontSize: 10.5, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>
-            Live preview
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: T.muted }}>
-            <span style={{ width: 5, height: 5, borderRadius: 999, background: '#34C759', display: 'inline-block' }} />
-            Synced
-          </span>
-        </div>
         {/* Channel tabs */}
         <div style={{ display: 'flex', gap: 2 }}>
           {channels.map((ch) => {
@@ -814,9 +805,7 @@ export function EventDetailAndEdit({
 
   return (
     <FloatingPanelShell visible={visible} onClose={onClose}>
-      {/* Bold Header */}
-      {boldHeader}
-      {/* Body: split grid */}
+      {/* Body: left column has its own header + content; right column fills full height */}
       <div
         style={{
           display: 'grid',
@@ -826,7 +815,11 @@ export function EventDetailAndEdit({
           overflow: 'hidden',
         }}
       >
-        {leftPane}
+        {/* Left: sticky header + scrollable content */}
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          {boldHeader}
+          {leftPane}
+        </div>
         {rightPane}
       </div>
       {/* Footer */}

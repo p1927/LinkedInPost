@@ -153,7 +153,12 @@ export function TopicDetailPanel({
           </div>
 
           {/* RIGHT: preview pane */}
-          {renderPreview && <PreviewPane renderPreview={renderPreview} />}
+          {renderPreview && (
+            <PreviewPane
+              renderPreview={renderPreview}
+              initialChannel={row?.topicDeliveryChannel || 'linkedin'}
+            />
+          )}
         </div>
 
         {/* Footer: action buttons */}
@@ -170,9 +175,18 @@ export function TopicDetailPanel({
   );
 }
 
-function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => React.ReactNode }) {
-  const [activeChannel, setActiveChannel] = React.useState('linkedin');
-  const TABS = ['linkedin', 'instagram', 'telegram'];
+function PreviewPane({
+  renderPreview,
+  initialChannel = 'linkedin',
+}: {
+  renderPreview: (channel: string) => React.ReactNode;
+  initialChannel?: string;
+}) {
+  const ALL_TABS = ['linkedin', 'instagram', 'telegram', 'gmail', 'whatsapp'];
+  const [activeChannel, setActiveChannel] = React.useState(
+    ALL_TABS.includes(initialChannel) ? initialChannel : 'linkedin',
+  );
+  const TABS = ALL_TABS;
 
   return (
     <div
