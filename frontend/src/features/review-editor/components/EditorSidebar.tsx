@@ -158,7 +158,6 @@ export function EditorSidebar() {
     handleSavePreviewVariantAtIndex,
     aiRefineBlocked,
     aiRefineBlockedReason,
-    postType,
     setPostType,
     dimensionWeights,
     setDimensionWeights,
