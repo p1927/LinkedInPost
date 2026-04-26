@@ -43,9 +43,7 @@ export async function dbListCustomWorkflows(
 ): Promise<CustomWorkflowSummary[]> {
   const result = await db
     .prepare(
-      `SELECT id, user_id, name, description, optimization_target,
-              generation_instruction, extends_workflow_id, node_configs_json,
-              is_deleted, created_at, updated_at
+      `SELECT id, name, description, optimization_target, extends_workflow_id, created_at
        FROM custom_workflows
        WHERE user_id = ? AND is_deleted = 0
        ORDER BY created_at DESC`,
