@@ -1,5 +1,5 @@
 import type { Env } from '../index';
-import { getNewsletterConfig, saveNewsletterConfig, listNewsletterIssues, approveNewsletterIssue, rejectNewsletterIssue, markIssueSent } from './persistence';
+import { getNewsletterConfig, saveNewsletterConfig, listNewsletterIssues, approveNewsletterIssue, rejectNewsletterIssue, markIssueSent, getIssueForNewsletterWindow } from './persistence';
 import type { NewsletterConfigRow, NewsletterIssueRow, NewsletterConfigInput } from './types';
 import type { NewsletterRow } from './persistence';
 
@@ -86,6 +86,7 @@ export async function handleListNewsletters(db: D1Database, spreadsheetId: strin
 }
 
 export async function handleCreateNewsletter(
+  env: Env,
   db: D1Database,
   spreadsheetId: string,
   name: string,
@@ -94,16 +95,51 @@ export async function handleCreateNewsletter(
 ) {
   const { createNewsletterRecord } = await import('./persistence');
   const row = await createNewsletterRecord(db, spreadsheetId, name, config, autoApprove);
+  // If publish time is within 24h, preview window has already started — generate immediately
+  if (row.next_send_at) {
+    const sendTime = new Date(row.next_send_at);
+    const hoursUntilSend = (sendTime.getTime() - Date.now()) / (60 * 60 * 1000);
+    if (hoursUntilSend <= 24) {
+      const existing = await getIssueForNewsletterWindow(db, row.id, row.next_send_at);
+      if (!existing) {
+        const { createNewsletterDraftForRecord } = await import('./draftCreator');
+        createNewsletterDraftForRecord(env, db, row.id).catch(err =>
+          console.error('Immediate preview generation failed:', err),
+        );
+      }
+    }
+  }
   return toRecord(row);
 }
 
 export async function handleUpdateNewsletter(
+  env: Env,
   db: D1Database,
   newsletterId: string,
-  patch: { name?: string; config?: object; autoApprove?: boolean },
+  patch: { name?: string; config?: object; autoApprove?: boolean; active?: boolean },
 ) {
   const { updateNewsletterRecord } = await import('./persistence');
   await updateNewsletterRecord(db, newsletterId, patch);
+  // When schedule changes, check if the new next_send_at is within 24h
+  if (patch.config) {
+    const row = await db
+      .prepare('SELECT * FROM newsletters WHERE id = ?')
+      .bind(newsletterId)
+      .first<NewsletterRow>();
+    if (row?.next_send_at) {
+      const sendTime = new Date(row.next_send_at);
+      const hoursUntilSend = (sendTime.getTime() - Date.now()) / (60 * 60 * 1000);
+      if (hoursUntilSend <= 24) {
+        const existing = await getIssueForNewsletterWindow(db, row.id, row.next_send_at);
+        if (!existing) {
+          const { createNewsletterDraftForRecord } = await import('./draftCreator');
+          createNewsletterDraftForRecord(env, db, row.id).catch(err =>
+            console.error('Immediate preview generation failed:', err),
+          );
+        }
+      }
+    }
+  }
 }
 
 export async function handleDeleteNewsletter(db: D1Database, newsletterId: string) {
