@@ -11,6 +11,7 @@ import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
 import { useDashboardQueue } from './hooks/useDashboardQueue';
+import { useCustomWorkflows } from '../../features/workflows/useCustomWorkflows';
 import {
   DashboardSettingsDrawer,
   type DashboardSettingsDrawerHandle,
@@ -170,6 +171,8 @@ export function Dashboard({
     onSaveConfig,
     telegramBotTokenInput: '', 
   });
+
+  const customWorkflowsHook = useCustomWorkflows({ api, idToken, enabled: true });
 
   const settingsHook = useDashboardSettings({
     idToken,
@@ -429,6 +432,11 @@ export function Dashboard({
     onUploadContextDocument: queueHook.handleUploadContextDocument,
     imageGenConfig: session.config.imageGen,
     onGetNodeRuns: queueHook.getNodeRunsForRow,
+    customWorkflows: customWorkflowsHook.workflows,
+    isLoadingCustomWorkflows: customWorkflowsHook.isLoading,
+    onCreateCustomWorkflow: customWorkflowsHook.create,
+    onUpdateCustomWorkflow: customWorkflowsHook.update,
+    onDeleteCustomWorkflow: customWorkflowsHook.remove,
     ...(FEATURE_CONTENT_REVIEW
       ? {
           onRunContentReview: queueHook.handleRunContentReview,

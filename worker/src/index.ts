@@ -80,6 +80,7 @@ import {
 } from './features/custom-workflows/customWorkflowActions';
 import type { CreateCustomWorkflowPayload, UpdateCustomWorkflowPayload } from './features/custom-workflows/types';
 import { nodeRegistry } from './engine/registry/NodeRegistry';
+import { workflowRegistry } from './engine/registry/WorkflowRegistry';
 import { lifecycleEventBus } from './engine/events/LifecycleEventBus';
 import { buildNodeInsightSummary } from './generation/nodeInsightSummary';
 import type { NodeCompletedEvent } from './engine/types';
@@ -1385,12 +1386,28 @@ async function dispatchAction(
         sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
       session.userId,
     );
-    case 'generateVariantsPreview':
+    case 'generateVariantsPreview': {
       ensureSpreadsheetConfigured(storedConfig);
-      return generateVariantsPreview(env, storedConfig, payload, (templateId) =>
-        sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
-      session.userId,
-    );
+      const postTypeVal = typeof payload.postType === 'string' ? payload.postType.trim() : '';
+      let workflowInstruction = '';
+      if (postTypeVal) {
+        try {
+          const registry = postTypeVal.startsWith('cw_')
+            ? await workflowRegistry.loadCustomWorkflows(env.PIPELINE_DB, session.userId)
+            : workflowRegistry;
+          const resolved = registry.resolve(postTypeVal);
+          workflowInstruction = resolved.generationInstruction ?? '';
+        } catch {
+          // Unknown workflow ID — proceed without instruction
+        }
+      }
+      return generateVariantsPreview(
+        env, storedConfig, payload,
+        (templateId) => sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
+        session.userId,
+        workflowInstruction,
+      );
+    }
     case 'saveDraftVariants':
       return pipeline.saveDraftVariants(
         storedConfig.spreadsheetId,

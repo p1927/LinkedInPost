@@ -88,6 +88,8 @@ export function useReviewFlowActions(
     pickCarouselIndex,
     setChrome,
     researchContextArticles,
+    postType,
+    dimensionWeights,
   } = state;
 
   const { showAlert } = useAlert();
@@ -163,6 +165,8 @@ export function useReviewFlowActions(
         ? { contextDocuments: contextDocuments.map(d => ({ name: d.name, content: d.content })) }
         : {}),
     };
+    if (postType) base.postType = postType;
+    if (Object.keys(dimensionWeights).length > 0) base.dimensionWeights = dimensionWeights;
     if (FEATURE_MULTI_PROVIDER_LLM && generationLlm) {
       base.llm = { provider: generationLlm.provider, model: generationLlm.model };
       if (generationLlm.provider === 'gemini') {

@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import type { CustomWorkflowSummary } from '../generation/WorkflowCardPicker';
 import { type DraftPreviewSelection, type SheetRow } from '../../../services/sheets';
 import {
   type ContentReviewReport,
@@ -49,6 +50,11 @@ export interface ReviewFlowEditorContextValue {
   setScope: React.Dispatch<React.SetStateAction<GenerationScope>>;
   instruction: string;
   setInstruction: React.Dispatch<React.SetStateAction<string>>;
+  // Post type / workflow enrichment
+  postType: string;
+  setPostType: React.Dispatch<React.SetStateAction<string>>;
+  dimensionWeights: Record<string, number>;
+  setDimensionWeights: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   // Generation state
   generationLoading: 'quick-change' | 'variants' | null;
   quickChangePreview: QuickChangePreviewResult | null;
@@ -203,6 +209,11 @@ export interface ReviewFlowContextValue {
   removeContextDocument: (id: string) => void;
   nodeRuns: NodeRunItem[];
   nodeRunsLoading: boolean;
+  customWorkflows: CustomWorkflowSummary[];
+  isLoadingCustomWorkflows: boolean;
+  onCreateCustomWorkflow?: (payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<string | null>;
+  onUpdateCustomWorkflow?: (id: string, payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<boolean>;
+  onDeleteCustomWorkflow?: (id: string) => Promise<boolean>;
 }
 
 export interface ReviewFlowProviderProps {
@@ -251,4 +262,9 @@ export interface ReviewFlowProviderProps {
   onAfterContentReview?: () => Promise<void>;
   onUploadContextDocument?: (params: { name: string; contentBase64: string; mimeType: string }) => Promise<{ documentId: string; extractedText: string; charCount: number }>;
   onGetNodeRuns?: () => Promise<NodeRunItem[]>;
+  customWorkflows?: CustomWorkflowSummary[];
+  isLoadingCustomWorkflows?: boolean;
+  onCreateCustomWorkflow?: (payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<string | null>;
+  onUpdateCustomWorkflow?: (id: string, payload: import('../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<boolean>;
+  onDeleteCustomWorkflow?: (id: string) => Promise<boolean>;
 }

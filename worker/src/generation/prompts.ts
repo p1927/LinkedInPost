@@ -92,12 +92,14 @@ export function buildVariantsPrompt(
   sharedRules: string,
   authorProfileBlock: string,
   researchArticles?: ResearchArticleRef[],
+  workflowInstruction?: string,
 ): string {
   const rulesPrefix = prependAuthorToRulesPrefix(authorProfileBlock, buildRulesPrefix(sharedRules, instruction));
   const researchBlock = buildResearchContextAppendix(researchArticles);
   const promptLines = [
     'You are generating four distinct LinkedIn draft options.',
     rulesPrefix,
+    ...(workflowInstruction ? [`Optimization target: ${workflowInstruction}`] : []),
     'Return strict JSON with the shape {"variants":["...","...","...","..."]}.',
     'Return exactly four non-empty plain-text options.',
     'Each option should take a clearly different angle while staying on-topic and ready for downstream posting.',

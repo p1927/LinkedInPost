@@ -52,6 +52,10 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     aiRefineBlockedReason: restState.aiRefineBlockedReason,
     currentTargetText: restState.currentTargetText,
     editorDirty: restState.editorDirty,
+    postType: restState.postType,
+    setPostType: restState.setPostType,
+    dimensionWeights: restState.dimensionWeights,
+    setDimensionWeights: restState.setDimensionWeights,
     applySheetVariantBase: actions.applySheetVariantBase,
     handleGenerateQuickChange: actions.handleGenerateQuickChange,
     handleGenerateVariants: actions.handleGenerateVariants,
@@ -178,6 +182,11 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     removeContextDocument: actions.removeContextDocument,
     nodeRuns: restState.nodeRuns,
     nodeRunsLoading: restState.nodeRunsLoading,
+    customWorkflows: props.customWorkflows ?? [],
+    isLoadingCustomWorkflows: props.isLoadingCustomWorkflows ?? false,
+    onCreateCustomWorkflow: props.onCreateCustomWorkflow,
+    onUpdateCustomWorkflow: props.onUpdateCustomWorkflow,
+    onDeleteCustomWorkflow: props.onDeleteCustomWorkflow,
   };
 
   return (

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
 import { GenerationJustificationPanel } from '../../review/GenerationJustificationPanel';
@@ -8,6 +9,9 @@ import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContex
 import { ResearcherPanel } from '../../news-research';
 import { getImageGenCapabilities } from '../../../services/configService';
 import { ContextDocumentsPanel } from '../../review/components/ContextDocumentsPanel';
+import { WorkflowBuilderModal } from '../../workflows/WorkflowBuilderModal';
+import type { CustomWorkflowSummary } from '../../generation/WorkflowCardPicker';
+import type { CreateWorkflowFormValues } from '../../workflows/useCustomWorkflows';
 
 export function EditorSidebar() {
   const {
@@ -50,6 +54,11 @@ export function EditorSidebar() {
     removeContextDocument,
     nodeRuns,
     nodeRunsLoading,
+    customWorkflows,
+    isLoadingCustomWorkflows,
+    onCreateCustomWorkflow,
+    onUpdateCustomWorkflow,
+    onDeleteCustomWorkflow,
   } = useReviewFlow();
   const {
     instruction,
@@ -66,7 +75,30 @@ export function EditorSidebar() {
     handleSavePreviewVariantAtIndex,
     aiRefineBlocked,
     aiRefineBlockedReason,
+    postType,
+    setPostType,
+    dimensionWeights,
+    setDimensionWeights,
   } = useReviewFlowEditor();
+
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [builderWorkflow, setBuilderWorkflow] = useState<CustomWorkflowSummary | undefined>(undefined);
+
+  async function handleModalSave(values: CreateWorkflowFormValues) {
+    if (builderWorkflow) {
+      await onUpdateCustomWorkflow?.(builderWorkflow.id, values);
+    } else {
+      await onCreateCustomWorkflow?.(values);
+    }
+    setBuilderOpen(false);
+    setBuilderWorkflow(undefined);
+  }
+
+  async function handleModalDelete(id: string) {
+    await onDeleteCustomWorkflow?.(id);
+    setBuilderOpen(false);
+    setBuilderWorkflow(undefined);
+  }
 
   return (
     <aside
@@ -144,6 +176,16 @@ export function EditorSidebar() {
             previewVariantSaveByIndex={previewVariantSaveByIndex}
             previewVariantSaveErrors={previewVariantSaveErrors}
             onSavePreviewVariant={(index) => void handleSavePreviewVariantAtIndex(index)}
+            postType={postType}
+            onPostTypeChange={setPostType}
+            dimensionWeights={dimensionWeights}
+            onDimensionWeightsChange={setDimensionWeights}
+            customWorkflows={customWorkflows}
+            isLoadingCustomWorkflows={isLoadingCustomWorkflows}
+            onOpenWorkflowBuilder={(wf) => {
+              setBuilderWorkflow(wf);
+              setBuilderOpen(true);
+            }}
           />
         ) : null}
 
@@ -238,6 +280,13 @@ export function EditorSidebar() {
           </section>
         ) : null}
       </div>
+      <WorkflowBuilderModal
+        isOpen={builderOpen}
+        workflowToEdit={builderWorkflow}
+        onClose={() => { setBuilderOpen(false); setBuilderWorkflow(undefined); }}
+        onSave={handleModalSave}
+        onDelete={onDeleteCustomWorkflow ? handleModalDelete : undefined}
+      />
     </aside>
   );
 }

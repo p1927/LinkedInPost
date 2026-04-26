@@ -138,6 +138,7 @@ export async function generateVariantsPreview(
   payload: Record<string, unknown>,
   getPostTemplateRulesById: (templateId: string) => Promise<string | null>,
   userId?: string,
+  workflowInstruction?: string,
 ): Promise<VariantsPreviewResponse> {
   const request = payload as unknown as GenerationRequestPayload;
   const row = coerceSheetRow(request.row);
@@ -167,6 +168,7 @@ export async function generateVariantsPreview(
     effectiveRules,
     authorBlock,
     researchRefs,
+    workflowInstruction,
   );
   const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt, {
     db: env.PIPELINE_DB,

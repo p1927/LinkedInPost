@@ -383,6 +383,8 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   // postTemplates and researchContextArticles are independently managed — not part of row init
   const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([]);
   const [researchContextArticles, setResearchContextArticles] = useState<ResearchArticleRef[]>([]);
+  const [postType, setPostType] = useState('');
+  const [dimensionWeights, setDimensionWeights] = useState<Record<string, number>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -577,6 +579,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     postTemplates,
     researchContextArticles,
     setResearchContextArticles,
+    postType,
+    setPostType,
+    dimensionWeights,
+    setDimensionWeights,
     nodeRuns,
     nodeRunsLoading,
   };
