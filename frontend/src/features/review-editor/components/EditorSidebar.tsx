@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
 import { GenerationJustificationPanel } from '../../review/GenerationJustificationPanel';
@@ -219,12 +219,6 @@ export function EditorSidebar() {
   const tabs = deliveryChannel === 'gmail'
     ? [...TABS_BASE, { id: 'email' as const, label: 'Email' }]
     : TABS_BASE;
-
-  const selectedStyleName = postType
-    ? (BUILT_IN_WORKFLOW_CARDS.find(c => c.id === postType)?.name
-        ?? customWorkflows?.find(w => w.id === postType)?.name
-        ?? postType)
-    : null;
 
   return (
     <aside
