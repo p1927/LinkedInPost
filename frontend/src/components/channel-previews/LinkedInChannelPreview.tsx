@@ -51,6 +51,7 @@ export function LinkedInChannelPreview({
   pickMode = false,
   previewAuthorName,
   onOpenMedia,
+  hideVariantHeader = false,
 }: ChannelPreviewProps) {
   const proof = SOCIAL_PROOF[(optionNumber - 1) % SOCIAL_PROOF.length];
   const authorLabel = previewAuthorName?.trim() || 'Your channel';
@@ -115,7 +116,7 @@ export function LinkedInChannelPreview({
         className,
       )}
     >
-      {!isSidebar && (
+      {!isSidebar && !hideVariantHeader && (
         <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-4'}`}>
           <div>
             <p className="font-heading text-xs font-bold uppercase tracking-widest text-slate-500">Draft {optionNumber}</p>

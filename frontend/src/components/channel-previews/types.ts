@@ -23,4 +23,6 @@ export interface ChannelPreviewProps {
   gmailTo?: string;
   /** Gmail compose-style header: subject line. */
   gmailSubject?: string;
+  /** When true, hides the "Draft N / LinkedIn-style preview / Selected" header row (used in panel preview context where that info is already in the header). */
+  hideVariantHeader?: boolean;
 }

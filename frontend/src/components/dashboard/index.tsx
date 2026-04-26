@@ -4,7 +4,9 @@ import { type AppSession, type BackendApi, type SocialIntegration, type Telegram
 import { type SheetRow } from '../../services/sheets';
 import { type BotConfig, type BotConfigUpdate, type LlmRef, type GoogleModelOption, type EnrichmentSkillConfig, type EnrichmentSkillId } from '../../services/configService';
 import type { LlmProviderId } from '@repo/llm-core';
-import { getNormalizedRowStatus, queueStatusToBadgeVariant } from './utils';
+import { getNormalizedRowStatus, queueStatusToBadgeVariant, shouldShowDraftedQueueActions } from './utils';
+import { FileEdit, Trash2, Send, RotateCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { type QueueFilter, type DeliverySummary } from './types';
 import { useDashboardSettings } from './hooks/useDashboardSettings';
 import { useDashboardChannels } from './hooks/useDashboardChannels';
@@ -940,6 +942,61 @@ export function Dashboard({
               api={api}
             />
           ) : undefined}
+          renderFooterActions={drawerRow ? () => {
+            const st = getNormalizedRowStatus(drawerRow.status);
+            const hasDraft = shouldShowDraftedQueueActions(drawerRow);
+            const canEdit = hasDraft || st === 'approved' || st === 'published';
+            const canPublish = hasDraft || st === 'approved';
+            const isPublished = st === 'published';
+            const close = () => setSelectedTopicsPanelTopicId(null);
+            return (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mr-auto text-red-500 hover:bg-red-50 hover:text-red-600"
+                  onClick={() => { queueHook.handleDeleteTopic(drawerRow); close(); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                  Delete
+                </Button>
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => { navigate(topicEditorPathForRow(drawerRow)); close(); }}
+                  >
+                    <FileEdit className="h-3.5 w-3.5" aria-hidden />
+                    Edit
+                  </Button>
+                )}
+                {isPublished && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => { void queueHook.republishRowToSelectedChannel(drawerRow); close(); }}
+                  >
+                    <RotateCw className="h-3.5 w-3.5" aria-hidden />
+                    Republish
+                  </Button>
+                )}
+                {canPublish && !isPublished && (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={() => { void queueHook.publishRowToSelectedChannel(drawerRow); close(); }}
+                  >
+                    <Send className="h-3.5 w-3.5" aria-hidden />
+                    Publish
+                  </Button>
+                )}
+              </>
+            );
+          } : undefined}
         >
           {topicsRailForPanel}
         </TopicDetailPanel>

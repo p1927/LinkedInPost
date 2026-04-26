@@ -168,12 +168,13 @@ export function TopicPostPreviewCard({
           previewChannel={previewChannel}
           gmailTo={row.emailTo}
           gmailSubject={row.emailSubject}
-          selected={true}
+          selected={!noVariantHeader}
           expanded={true}
           onSelect={() => undefined}
           onToggleExpanded={() => undefined}
           mode="hero"
-          layout={noVariantHeader ? 'sidebar' : compact ? 'sidebar' : 'default'}
+          layout={compact ? 'sidebar' : 'default'}
+          hideVariantHeader={noVariantHeader}
           previewAuthorName={previewAuthorName}
         />
       </div>

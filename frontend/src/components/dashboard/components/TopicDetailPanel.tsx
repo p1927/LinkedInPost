@@ -32,12 +32,14 @@ export function TopicDetailPanel({
   onSaveSchedule,
   children,
   renderPreview,
+  renderFooterActions,
 }: {
   row: SheetRow | null;
   onClose: () => void;
   onSaveSchedule: (row: SheetRow, postTime: string) => Promise<void>;
   children: React.ReactNode;
   renderPreview?: (channel: string) => React.ReactNode;
+  renderFooterActions?: () => React.ReactNode;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -116,9 +118,10 @@ export function TopicDetailPanel({
         >
           {/* LEFT: topic details → schedule → settings */}
           <div
-            className="custom-scrollbar"
+            className="[&::-webkit-scrollbar]:hidden"
             style={{
               overflowY: 'auto',
+              scrollbarWidth: 'none',
               minWidth: 0,
               borderRight: renderPreview ? `1px solid ${T.line}` : 'none',
             }}
@@ -152,6 +155,16 @@ export function TopicDetailPanel({
           {/* RIGHT: preview pane */}
           {renderPreview && <PreviewPane renderPreview={renderPreview} />}
         </div>
+
+        {/* Footer: action buttons */}
+        {renderFooterActions && (
+          <div
+            className="shrink-0 flex items-center justify-end gap-2 px-6 py-3"
+            style={{ borderTop: `1px solid ${T.line}`, background: T.surface }}
+          >
+            {renderFooterActions()}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -163,12 +176,14 @@ function PreviewPane({ renderPreview }: { renderPreview: (channel: string) => Re
 
   return (
     <div
+      className="[&::-webkit-scrollbar]:hidden"
       style={{
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
         background: '#EDE5FB',
         overflowY: 'auto',
+        scrollbarWidth: 'none',
       }}
     >
       {/* Sticky channel tabs — no extra labels, just the tabs */}
