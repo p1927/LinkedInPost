@@ -197,10 +197,7 @@ export function EditorScreen() {
             ) : null}
           </div>
           <div
-            className={cn(
-              'flex shrink-0 flex-col gap-2 justify-stretch sm:flex-row sm:flex-wrap sm:items-end sm:justify-end sm:gap-3',
-              (!isPublished || (isPublished && hasSheetVariants)) && 'sm:items-center',
-            )}
+            className="flex shrink-0 flex-col gap-2 justify-stretch sm:flex-row sm:flex-wrap sm:items-end sm:justify-end sm:gap-3"
           >
             <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:max-w-[240px] sm:shrink-0">
               <label
@@ -242,19 +239,43 @@ export function EditorScreen() {
               </Button>
             ) : null}
             {isPublished && !hasSheetVariants ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="primary"
-                onClick={() => void handleApprove()}
-                disabled={footerBusy}
-                title="No generated variants on this row yet — save a draft copy first (e.g. after GitHub draft generation)."
-                className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none lg:w-auto lg:min-w-[9rem]"
-              >
-                {submitting ? 'Saving…' : 'Save as draft'}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPreviewOpen(true)}
+                  disabled={footerBusy}
+                  className="min-h-[44px] w-full border-violet-200/80 bg-white/90 shadow-sm sm:w-auto sm:min-w-[8rem]"
+                >
+                  <Eye className="mr-1.5 h-4 w-4 shrink-0" aria-hidden />
+                  Preview
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => void handleApprove()}
+                  disabled={footerBusy}
+                  title="No generated variants on this row yet — save a draft copy first (e.g. after GitHub draft generation)."
+                  className="min-h-[44px] w-full cursor-pointer shadow-[0_6px_20px_rgba(124,58,237,0.32)] transition-all duration-200 hover:shadow-[0_10px_28px_rgba(109,40,217,0.36)] active:shadow-[0_4px_12px_rgba(109,40,217,0.28)] disabled:opacity-75 focus:ring-2 focus:ring-primary/50 focus:outline-none lg:w-auto lg:min-w-[9rem]"
+                >
+                  {submitting ? 'Saving…' : 'Save as draft'}
+                </Button>
+              </>
             ) : isPublished && hasSheetVariants ? (
               <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPreviewOpen(true)}
+                  disabled={footerBusy}
+                  className="min-h-[44px] w-full border-violet-200/80 bg-white/90 shadow-sm sm:w-auto sm:min-w-[8rem]"
+                >
+                  <Eye className="mr-1.5 h-4 w-4 shrink-0" aria-hidden />
+                  Preview
+                </Button>
                 <Button
                   type="button"
                   size="sm"
@@ -286,6 +307,17 @@ export function EditorScreen() {
               </>
             ) : (
               <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPreviewOpen(true)}
+                  disabled={footerBusy}
+                  className="min-h-[44px] w-full border-violet-200/80 bg-white/90 shadow-sm sm:w-auto sm:min-w-[8rem]"
+                >
+                  <Eye className="mr-1.5 h-4 w-4 shrink-0" aria-hidden />
+                  Preview
+                </Button>
                 <Button
                   type="button"
                   size="sm"
