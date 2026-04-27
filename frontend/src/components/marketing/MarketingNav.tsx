@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
-import { GoogleLoginButton } from '@/components/GoogleLoginButton';
 
 interface MarketingNavProps {
   onLogin?: (token: string) => void;
@@ -59,13 +58,10 @@ export function MarketingNav({ onLogin }: MarketingNavProps) {
         <div className="flex items-center justify-between px-5 py-3">
           {/* Logo */}
           <Link
-            to="/landing"
-            className="flex items-center gap-2.5 cursor-pointer rounded-lg outline-none ring-violet-400/50 focus-visible:ring-2"
+            to="/"
+            className="cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-white shadow-sm">
-              CB
-            </div>
-            <span className="font-semibold text-gray-900 text-sm tracking-tight">
+            <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-xl font-bold tracking-tight text-transparent">
               Linked
             </span>
           </Link>
@@ -94,16 +90,19 @@ export function MarketingNav({ onLogin }: MarketingNavProps) {
           </nav>
 
           {/* CTA */}
-          <div className="hidden items-center gap-3 md:flex">
-            <div className="[&_div]:!rounded-xl [&_div]:!border-violet-200 [&_div]:!bg-white/80 [&_div]:backdrop-blur-sm">
-              <GoogleLoginButton onLogin={onLogin ?? (() => {})} />
-            </div>
-            <Link
-              to="/landing"
+          <div className="hidden items-center gap-2 md:flex">
+            <a
+              href="#cta"
+              className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-50"
+            >
+              Sign in
+            </a>
+            <a
+              href="#cta"
               className="cursor-pointer rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:from-violet-700 hover:to-purple-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
             >
               Get Started
-            </Link>
+            </a>
           </div>
 
           {/* Mobile hamburger */}
@@ -150,16 +149,20 @@ export function MarketingNav({ onLogin }: MarketingNavProps) {
                   )
                 )}
                 <div className="mt-2 border-t border-white/30 pt-2 flex flex-col gap-2">
-                  <div className="[&_div]:!rounded-xl [&_div]:!border-violet-200 [&_div]:!bg-white/80 [&_div]:backdrop-blur-sm">
-                    <GoogleLoginButton onLogin={onLogin ?? (() => {})} />
-                  </div>
-                  <Link
-                    to="/landing"
+                  <a
+                    href="#cta"
+                    onClick={() => setMobileOpen(false)}
+                    className="block cursor-pointer rounded-lg px-4 py-2.5 text-center text-sm font-medium text-violet-700 transition-colors hover:bg-violet-50"
+                  >
+                    Sign in
+                  </a>
+                  <a
+                    href="#cta"
                     onClick={() => setMobileOpen(false)}
                     className="block cursor-pointer rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-all hover:from-violet-700 hover:to-purple-700"
                   >
                     Get Started
-                  </Link>
+                  </a>
                 </div>
               </div>
             </motion.div>

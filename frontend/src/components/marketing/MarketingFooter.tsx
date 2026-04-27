@@ -95,13 +95,12 @@ export function MarketingFooter() {
           {/* Logo + tagline — spans 2 cols on md */}
           <div className="col-span-2 flex flex-col gap-3 md:col-span-2">
             <Link
-              to="/landing"
-              className="flex w-fit cursor-pointer items-center gap-2.5 rounded-lg outline-none ring-violet-400/50 focus-visible:ring-2"
+              to="/"
+              className="w-fit cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 text-xs font-bold text-white shadow-sm">
-                CB
-              </div>
-              <span className="font-semibold text-white">Linked</span>
+              <span className="bg-gradient-to-r from-violet-300 to-purple-200 bg-clip-text text-2xl font-bold tracking-tight text-transparent">
+                Linked
+              </span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-violet-300/80">
               AI-powered content for every channel
