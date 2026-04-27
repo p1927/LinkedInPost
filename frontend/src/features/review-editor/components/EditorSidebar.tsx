@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
@@ -469,19 +470,29 @@ export function EditorSidebar() {
             </div>
           </div>
 
-          {/* Compact dimension sliders — pinned below cards, always visible */}
-          <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-3 py-2 shadow-sm">
-            <p className="mb-1 text-[0.58rem] font-bold uppercase tracking-wide text-ink/50">Writing emphasis</p>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+          {/* Dimension sliders — spacious, animated */}
+          <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-4 py-3.5 shadow-sm">
+            <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-ink/40">Writing emphasis</p>
+            <div className="flex flex-col gap-3">
               {DIMENSIONS.map(({ key, label }) => {
                 const val = weights[key] ?? 50;
+                const levelName = getLevelName(val);
                 return (
-                  <div key={key} className="flex flex-col gap-0.5">
+                  <div key={key} className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[0.58rem] font-semibold text-ink/70">{label}</span>
-                      <span className={cn('text-[0.58rem] font-bold tabular-nums', getLevelColor(val))}>
-                        {getLevelName(val)}
-                      </span>
+                      <span className="text-[0.72rem] font-medium text-ink/75">{label}</span>
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                          key={levelName}
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 4 }}
+                          transition={{ duration: 0.15 }}
+                          className={cn('text-[0.65rem] font-bold tabular-nums', getLevelColor(val))}
+                        >
+                          {levelName}
+                        </motion.span>
+                      </AnimatePresence>
                     </div>
                     <input
                       type="range"
@@ -490,15 +501,19 @@ export function EditorSidebar() {
                       step="1"
                       value={val}
                       onChange={e => handleWeightChange(key, Number(e.target.value))}
+                      style={{ '--pct': `${val}%` } as React.CSSProperties}
                       className={cn(
-                        'w-full h-0.5 cursor-pointer appearance-none rounded-full bg-slate-200',
-                        '[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5',
+                        'w-full h-[3px] cursor-pointer appearance-none rounded-full',
+                        '[background:linear-gradient(to_right,#7c3aed_var(--pct),#e2e8f0_var(--pct))]',
+                        '[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3',
                         '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
-                        '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
-                        '[&::-webkit-slider-thumb]:shadow-sm',
-                        '[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5',
+                        '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-600',
+                        '[&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2',
+                        '[&::-webkit-slider-thumb]:ring-white',
+                        '[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3',
                         '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
-                        '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary',
+                        '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-violet-600',
+                        '[&::-moz-range-thumb]:shadow-md',
                       )}
                     />
                   </div>
