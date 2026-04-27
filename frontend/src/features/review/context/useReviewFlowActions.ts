@@ -322,15 +322,19 @@ export function useReviewFlowActions(
 
       // Create an untitled card for the top of the card grid (session-only)
       const cardNow = Date.now();
-      const newCard: GeneratedStyleCard = {
+      const newCardBase = {
         id: `generated-${cardNow}`,
         dimensionWeights: { ...dimensionWeights },
         baseCardId: selectedCardId ?? undefined,
         createdAt: cardNow,
         instruction: autoInstruction,
-        label: `Untitled ${generatedCards.length + 1}`,
       };
-      setGeneratedCards(prev => [newCard, ...prev].slice(0, 5));
+      let newCard: GeneratedStyleCard | null = null;
+      setGeneratedCards(prev => {
+        const card: GeneratedStyleCard = { ...newCardBase, label: `Untitled ${prev.length + 1}` };
+        newCard = card;
+        return [card, ...prev].slice(0, 5);
+      });
       return newCard;
     } finally {
       setGenerationLoading(null);
