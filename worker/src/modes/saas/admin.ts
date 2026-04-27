@@ -1,5 +1,5 @@
 // worker/src/routes/admin.ts
-import { listAllUsers, listAccessRequests, setUserStatus, setUserBudget, resolveAccessRequest, getMonthlyTokenUsage } from '../db/users';
+import { listAllUsers, listAccessRequests, setUserStatus, setUserBudget, resolveAccessRequest, getMonthlyTokenUsage } from '../../db/users';
 
 function okJson(data: unknown): Response {
   return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });

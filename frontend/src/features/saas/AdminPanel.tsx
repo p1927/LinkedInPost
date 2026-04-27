@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BackendApi } from '../services/backendApi';
+import { BackendApi } from '../../services/backendApi';
 
 interface UserRow {
   id: string;

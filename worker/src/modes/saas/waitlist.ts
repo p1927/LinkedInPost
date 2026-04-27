@@ -1,5 +1,5 @@
 // worker/src/routes/waitlist.ts
-import { createAccessRequest } from '../db/users';
+import { createAccessRequest } from '../../db/users';
 
 export async function handleWaitlist(request: Request, db: D1Database): Promise<Response> {
   if (request.method !== 'POST') {

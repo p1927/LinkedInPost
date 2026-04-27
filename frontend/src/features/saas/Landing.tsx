@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BackendApi } from '../services/backendApi';
+import { BackendApi } from '../../services/backendApi';
 
 const api = new BackendApi();
 

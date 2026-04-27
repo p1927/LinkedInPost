@@ -32,8 +32,8 @@ import type { NewsResearchStored, TrendingSearchRequest } from './researcher/typ
 import type { SheetRow } from './generation/types';
 import { upsertUser, completeUserOnboarding, setUserSpreadsheetId, setUserTenantSettings, listAllUserTenantSettings, getMonthlyTokenUsage, getUserBudget } from './db/users';
 import { checkUserAccess, checkTokenBudget } from './auth';
-import { handleWaitlist } from './routes/waitlist';
-import { handleAdmin } from './routes/admin';
+import { handleWaitlist } from './modes/saas/waitlist';
+import { handleAdmin } from './modes/saas/admin';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { getUsageSummary, pruneOldLlmUsageLog } from './db/llm-usage';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';

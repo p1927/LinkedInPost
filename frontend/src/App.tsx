@@ -38,9 +38,9 @@ import {
   POST_LOGIN_REDIRECT_KEY,
   shouldCapturePathForPostLogin,
 } from './lib/postLoginRedirect'
-import Landing from './pages/Landing'
-import AdminPanel from './pages/AdminPanel'
-import UsageMeter from './components/UsageMeter'
+import Landing from './features/saas/Landing'
+import AdminPanel from './features/saas/AdminPanel'
+import UsageMeter from './features/saas/UsageMeter'
 import { deploymentMode } from './generated/features'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
