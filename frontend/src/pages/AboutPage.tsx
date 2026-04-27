@@ -299,7 +299,7 @@ export function AboutPage() {
 
                 {/* Roles */}
                 <div className="divide-y divide-slate-100">
-                  {OPEN_ROLES.map((role, i) => (
+                  {OPEN_ROLES.map((role) => (
                     <div
                       key={role.title}
                       className="flex items-center justify-between px-8 py-4 hover:bg-violet-50/40 transition-colors"
