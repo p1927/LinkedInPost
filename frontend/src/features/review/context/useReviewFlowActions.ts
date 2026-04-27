@@ -376,7 +376,9 @@ export function useReviewFlowActions(
     const variant = variantsPreview?.variants[index];
     if (!variant) return;
 
-    // Snapshot current editor content so user can revert via version history
+    const newContent = variant.fullText ?? variant.replacementText ?? editorText;
+    if (newContent === editorText) return;
+
     const snapshot: VersionEntry = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -386,9 +388,7 @@ export function useReviewFlowActions(
       source: 'generate',
     };
 
-    const newContent = variant.fullText ?? variant.replacementText ?? editorText;
     setEditorText(newContent);
-
     const updatedHistory = [...versionHistory, snapshot].slice(-20);
     setVersionHistory(updatedHistory);
     setCurrentVersionId(null);

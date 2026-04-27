@@ -8,6 +8,8 @@ interface VersionHistoryStripProps {
   onRestore: (entry: VersionEntry) => void;
   isOpen: boolean;
   onToggle: () => void;
+  /** When true, renders as a full-page panel (no toggle, always expanded, fills available height) */
+  fullPage?: boolean;
 }
 
 const SOURCE_LABEL: Record<VersionEntry['source'], string> = {
@@ -35,17 +37,24 @@ function formatTimestamp(ts: number): string {
   return `${date} · ${time}`;
 }
 
-export function VersionHistoryStrip({
+function VersionList({
   versions,
   currentVersionId,
   onRestore,
   isOpen,
-  onToggle,
-}: VersionHistoryStripProps) {
+  className,
+}: {
+  versions: VersionEntry[];
+  currentVersionId: string | null;
+  onRestore: (entry: VersionEntry) => void;
+  isOpen: boolean;
+  className?: string;
+}) {
   const mostRecent = versions.at(-1);
   const isOnCurrent = !currentVersionId || currentVersionId === mostRecent?.id;
+  const reversedVersions = useMemo(() => [...versions].reverse(), [versions]);
 
-  // Refresh relative timestamps every 30s while the strip is open
+  // Refresh timestamps every 30s while visible
   const [, setTick] = useState(0);
   useEffect(() => {
     if (!isOpen) return;
@@ -53,7 +62,88 @@ export function VersionHistoryStrip({
     return () => clearInterval(id);
   }, [isOpen]);
 
-  const reversedVersions = useMemo(() => [...versions].reverse(), [versions]);
+  if (versions.length === 0) {
+    return (
+      <div className={cn('flex items-center justify-center px-4 py-8 text-[11px] text-ink/35', className)}>
+        No versions yet
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn('flex flex-col gap-1 overflow-y-auto px-3 py-3 scrollbar-thin scrollbar-thumb-violet-200', className)}>
+      {/* Current — always pinned top */}
+      <button
+        type="button"
+        onClick={() => mostRecent && onRestore(mostRecent)}
+        disabled={isOnCurrent}
+        className={cn(
+          'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-150',
+          isOnCurrent
+            ? 'border-violet-300/70 bg-violet-50 text-violet-700 cursor-default shadow-sm'
+            : 'border-gray-200 bg-white text-ink/60 hover:border-violet-300 hover:bg-violet-50/60 hover:text-violet-700',
+        )}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" aria-hidden />
+        <span className="text-xs font-semibold">Current</span>
+        {isOnCurrent && (
+          <span className="ml-auto text-[10px] font-semibold text-violet-500 uppercase tracking-wide">Active</span>
+        )}
+      </button>
+
+      {/* Past versions — newest to oldest */}
+      {reversedVersions.map(entry => {
+        const isActive = currentVersionId === entry.id;
+        return (
+          <button
+            key={entry.id}
+            type="button"
+            onClick={() => onRestore(entry)}
+            className={cn(
+              'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-150',
+              isActive
+                ? 'border-violet-300/70 bg-violet-50 text-violet-700 shadow-sm'
+                : 'border-gray-100 bg-white/60 text-ink/70 hover:border-violet-200 hover:bg-violet-50/40 hover:text-ink',
+            )}
+          >
+            <span
+              className={cn(
+                'shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none',
+                SOURCE_COLORS[entry.source],
+              )}
+            >
+              {SOURCE_LABEL[entry.source]}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-xs font-medium">{entry.label}</span>
+            <span className="shrink-0 text-[10px] text-ink/40 tabular-nums">
+              {formatTimestamp(entry.timestamp)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function VersionHistoryStrip({
+  versions,
+  currentVersionId,
+  onRestore,
+  isOpen,
+  onToggle,
+  fullPage = false,
+}: VersionHistoryStripProps) {
+  if (fullPage) {
+    return (
+      <VersionList
+        versions={versions}
+        currentVersionId={currentVersionId}
+        onRestore={onRestore}
+        isOpen={true}
+        className="flex-1"
+      />
+    );
+  }
 
   return (
     <div className="font-sans border-t border-violet-200/40 mt-1">
@@ -81,58 +171,14 @@ export function VersionHistoryStrip({
         </span>
       </button>
 
-      {isOpen && versions.length > 0 && (
-        <div className="flex max-h-48 flex-col gap-1 overflow-y-auto px-3 pb-3 scrollbar-thin scrollbar-thumb-violet-200">
-          {/* Current — always pinned top */}
-          <button
-            type="button"
-            onClick={() => mostRecent && onRestore(mostRecent)}
-            disabled={isOnCurrent}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-150',
-              isOnCurrent
-                ? 'border-violet-300/70 bg-violet-50 text-violet-700 cursor-default shadow-sm'
-                : 'border-gray-200 bg-white text-ink/60 hover:border-violet-300 hover:bg-violet-50/60 hover:text-violet-700',
-            )}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" aria-hidden />
-            <span className="text-xs font-semibold">Current</span>
-            {isOnCurrent && (
-              <span className="ml-auto text-[10px] font-semibold text-violet-500 uppercase tracking-wide">Active</span>
-            )}
-          </button>
-
-          {/* Past versions — newest to oldest */}
-          {reversedVersions.map(entry => {
-            const isActive = currentVersionId === entry.id;
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                onClick={() => onRestore(entry)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-150',
-                  isActive
-                    ? 'border-violet-300/70 bg-violet-50 text-violet-700 shadow-sm'
-                    : 'border-gray-100 bg-white/60 text-ink/70 hover:border-violet-200 hover:bg-violet-50/40 hover:text-ink',
-                )}
-              >
-                <span
-                  className={cn(
-                    'shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-none',
-                    SOURCE_COLORS[entry.source],
-                  )}
-                >
-                  {SOURCE_LABEL[entry.source]}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-xs font-medium">{entry.label}</span>
-                <span className="shrink-0 text-[10px] text-ink/40 tabular-nums">
-                  {formatTimestamp(entry.timestamp)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      {isOpen && (
+        <VersionList
+          versions={versions}
+          currentVersionId={currentVersionId}
+          onRestore={onRestore}
+          isOpen={isOpen}
+          className="max-h-48 pb-0"
+        />
       )}
     </div>
   );

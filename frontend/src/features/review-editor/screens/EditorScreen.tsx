@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { ShieldCheck, Eye } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
@@ -70,16 +70,7 @@ export function EditorScreen() {
   const [contentReviewBusy, setContentReviewBusy] = useState(false);
   const [contentReviewResult, setContentReviewResult] = useState<ContentReviewReportData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [versionHistoryOpen, setVersionHistoryOpen] = useState<boolean>(() => {
-    try { return localStorage.getItem('editor-version-history-open') === 'true'; } catch { return false; }
-  });
-  const handleToggleVersionHistory = useCallback(() => {
-    setVersionHistoryOpen(prev => {
-      const next = !prev;
-      try { localStorage.setItem('editor-version-history-open', String(next)); } catch {}
-      return next;
-    });
-  }, []);
+  const [rightTab, setRightTab] = useState<'editor' | 'versions'>('editor');
 
   const editorHistoryResetKey = `${sheetRow.topic}:${routed?.screen ?? ''}:${routed?.editorVariantSlot ?? ''}:${editorStartMediaPanel}:${versionRestoreCounter}`;
 
@@ -111,49 +102,81 @@ export function EditorScreen() {
       deliveryChannel,
     );
 
+  const RIGHT_TABS = [
+    { id: 'editor' as const, label: 'Draft Editor' },
+    { id: 'versions' as const, label: 'Version Control' },
+  ];
+
   const editorSection = (
     <section
       aria-labelledby="review-draft-editor-heading"
-      className="order-1 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-violet-200/30 px-4 py-3 xl:order-none xl:h-full xl:max-h-full xl:flex-1 xl:border-b-0"
+      className="order-1 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-violet-200/30 xl:order-none xl:h-full xl:max-h-full xl:flex-1 xl:border-b-0"
     >
-      <div className="mb-2 flex shrink-0 items-center justify-between">
-        <h3
-          id="review-draft-editor-heading"
-          className="text-[10px] font-semibold uppercase tracking-wider text-ink/55"
+      {/* Tab bar */}
+      <div className="shrink-0 border-b border-violet-200/40 px-3 pt-2">
+        <div
+          className="grid gap-1 rounded-lg bg-violet-50/60 p-1"
+          style={{ gridTemplateColumns: `repeat(${RIGHT_TABS.length}, minmax(0, 1fr))` }}
         >
-          Draft editor
-        </h3>
-        <Button
-          type="button"
-          variant="ghost"
-          size="inline"
-          onClick={() => setPreviewOpen(true)}
-          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold text-primary hover:bg-violet-50 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
-        >
-          <Eye className="h-3.5 w-3.5" aria-hidden />
-          Preview
-        </Button>
+          {RIGHT_TABS.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setRightTab(tab.id)}
+              className={cn(
+                'rounded-md py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all duration-150',
+                rightTab === tab.id
+                  ? 'bg-white text-violet-700 shadow-sm'
+                  : 'text-ink/45 hover:text-ink/70',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <DraftEditor
-        value={editorText}
-        selection={selection}
-        preferredScope={scope}
-        dirty={editorDirty}
-        onChange={setEditorText}
-        onSelectionChange={setSelection}
-        onScopeChange={setScope}
-        onFormatting={handleFormatting}
-        historyResetKey={editorHistoryResetKey}
-        compact
-        className="min-h-0 xl:flex-none"
-      />
-      <VersionHistoryStrip
-        versions={versionHistory}
-        currentVersionId={currentVersionId}
-        onRestore={restoreVersion}
-        isOpen={versionHistoryOpen}
-        onToggle={handleToggleVersionHistory}
-      />
+
+      {/* Tab content */}
+      {rightTab === 'editor' ? (
+        <div className="flex min-h-0 flex-1 flex-col px-4 py-3">
+          <div className="mb-2 flex shrink-0 items-center justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="inline"
+              onClick={() => setPreviewOpen(true)}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold text-primary hover:bg-violet-50 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
+            >
+              <Eye className="h-3.5 w-3.5" aria-hidden />
+              Preview
+            </Button>
+          </div>
+          <DraftEditor
+            value={editorText}
+            selection={selection}
+            preferredScope={scope}
+            dirty={editorDirty}
+            onChange={setEditorText}
+            onSelectionChange={setSelection}
+            onScopeChange={setScope}
+            onFormatting={handleFormatting}
+            historyResetKey={editorHistoryResetKey}
+            compact
+            className="min-h-0 xl:flex-none"
+          />
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <VersionHistoryStrip
+            versions={versionHistory}
+            currentVersionId={currentVersionId}
+            onRestore={restoreVersion}
+            isOpen={true}
+            onToggle={() => {}}
+            fullPage
+          />
+        </div>
+      )}
     </section>
   );
 
