@@ -34,6 +34,8 @@ import { OnboardingModal } from './features/onboarding/OnboardingModal'
 import { PrivacyPolicy } from './components/PrivacyPolicy'
 import { LegalFooterLinks } from './components/LegalFooterLinks'
 import { TermsOfServicePage } from './pages/TermsOfServicePage'
+import { PricingPage } from './pages/PricingPage'
+import { AboutPage } from './pages/AboutPage'
 import {
   POST_LOGIN_REDIRECT_KEY,
   shouldCapturePathForPostLogin,
@@ -442,6 +444,8 @@ function App() {
         <Routes>
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/about" element={<AboutPage />} />
           {deploymentMode === 'saas' && (
             <Route path="/landing" element={<Landing onLogin={handleLogin} />} />
           )}
