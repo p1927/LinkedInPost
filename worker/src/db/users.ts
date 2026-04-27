@@ -131,7 +131,7 @@ export async function getMonthlyTokenUsage(db: D1Database, userId: string): Prom
   start.setHours(0, 0, 0, 0);
   const row = await db
     .prepare(
-      `SELECT COALESCE(SUM(total_tokens), 0) as used
+      `SELECT COALESCE(SUM(prompt_tokens + completion_tokens), 0) as used
        FROM llm_usage_log
        WHERE user_id = ? AND created_at >= ?`
     )
