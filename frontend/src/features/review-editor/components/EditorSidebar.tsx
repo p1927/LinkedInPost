@@ -335,8 +335,8 @@ export function EditorSidebar() {
             </button>
           </div>
 
-          {/* Card grid + sliders — fixed-height scrollable box */}
-          <div className="max-h-[440px] overflow-y-auto rounded-xl border border-gray-100">
+          {/* Card grid — scrolls internally, fills available space */}
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100">
             <div className="grid grid-cols-2 gap-2 p-1">
 
               {/* Create your own — always top-left */}
@@ -434,44 +434,41 @@ export function EditorSidebar() {
                 );
               })}
             </div>
+          </div>
 
-            {/* Compact dimension sliders — inside the scrollable box */}
-            <div className="mx-1 mb-1 rounded-xl border border-violet-200/60 bg-white/80 px-3 py-2 shadow-sm">
-              <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink/50">Writing emphasis</p>
-              <div className="space-y-1">
-                {DIMENSIONS.map(({ key, label }) => {
-                  const val = weights[key] ?? 50;
-                  return (
-                    <div key={key}>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[0.6rem] font-semibold text-ink/80">{label}</span>
-                        <span className={cn('text-[0.6rem] font-bold tabular-nums', getLevelColor(val))}>
-                          {getLevelName(val)}
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={val}
-                        onChange={e => handleWeightChange(key, Number(e.target.value))}
-                        className={cn(
-                          'mt-0.5 h-1 w-full cursor-pointer appearance-none rounded-full bg-slate-200',
-                          '[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3',
-                          '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
-                          '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
-                          '[&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:transition-transform',
-                          '[&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:hover:scale-110',
-                          '[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3',
-                          '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
-                          '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary',
-                        )}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Compact dimension sliders — pinned below cards, always visible */}
+          <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-3 py-2 shadow-sm">
+            <p className="mb-1 text-[0.58rem] font-bold uppercase tracking-wide text-ink/50">Writing emphasis</p>
+            <div className="space-y-0.5">
+              {DIMENSIONS.map(({ key, label }) => {
+                const val = weights[key] ?? 50;
+                return (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="w-[4.5rem] shrink-0 text-[0.58rem] font-semibold text-ink/70">{label}</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={val}
+                      onChange={e => handleWeightChange(key, Number(e.target.value))}
+                      className={cn(
+                        'flex-1 h-0.5 cursor-pointer appearance-none rounded-full bg-slate-200',
+                        '[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5',
+                        '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
+                        '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
+                        '[&::-webkit-slider-thumb]:shadow-sm',
+                        '[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5',
+                        '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
+                        '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary',
+                      )}
+                    />
+                    <span className={cn('w-10 shrink-0 text-right text-[0.58rem] font-bold tabular-nums', getLevelColor(val))}>
+                      {getLevelName(val)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
