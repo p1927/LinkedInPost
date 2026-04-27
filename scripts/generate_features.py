@@ -76,6 +76,19 @@ def emit_ts(features: dict[str, bool | str]) -> str:
     return ''.join(lines)
 
 
+def update_wrangler_deployment_mode(mode: str) -> None:
+    """Keep DEPLOYMENT_MODE in worker/wrangler.jsonc in sync with features.yaml."""
+    import re
+    wrangler = ROOT / 'worker' / 'wrangler.jsonc'
+    if not wrangler.is_file():
+        return
+    text = wrangler.read_text()
+    updated = re.sub(r'"DEPLOYMENT_MODE"\s*:\s*"[^"]*"', f'"DEPLOYMENT_MODE": "{mode}"', text)
+    if updated != text:
+        wrangler.write_text(updated)
+        print(f'Updated DEPLOYMENT_MODE={mode} in worker/wrangler.jsonc')
+
+
 def main() -> None:
     features = load_feature_map()
     body = emit_ts(features)
@@ -84,6 +97,7 @@ def main() -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(body)
         print(f'Wrote {path.relative_to(ROOT)}')
+    update_wrangler_deployment_mode(str(features.get('deploymentMode', 'saas')))
 
 
 if __name__ == '__main__':

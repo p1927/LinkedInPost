@@ -71,7 +71,7 @@ fi
 echo ""
 
 # Run Python setup if available
-if [ -f "$PROJECT_ROOT/setup/setup.py" ]; then
+if [ -f "$PROJECT_ROOT/setup.py" ]; then
     echo -e "${CYAN}Running Python setup...${NC}"
     cd "$PROJECT_ROOT"
 
@@ -80,7 +80,7 @@ if [ -f "$PROJECT_ROOT/setup/setup.py" ]; then
         PYTHON_ARGS="$PYTHON_ARGS --cloudflare --deploy-worker"
     fi
 
-    python3 setup/setup.py $PYTHON_ARGS 2>&1 || true
+    python3 setup.py $PYTHON_ARGS 2>&1 || true
     echo ""
 fi
 
