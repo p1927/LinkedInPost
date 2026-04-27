@@ -30,7 +30,10 @@ import { trendingSearch } from './researcher/trendingSearch';
 import { getNewsProviderKeyStatus, normalizeNewsResearchStored } from './researcher/config';
 import type { NewsResearchStored, TrendingSearchRequest } from './researcher/types';
 import type { SheetRow } from './generation/types';
-import { upsertUser, completeUserOnboarding, setUserSpreadsheetId, setUserTenantSettings, listAllUserTenantSettings } from './db/users';
+import { upsertUser, completeUserOnboarding, setUserSpreadsheetId, setUserTenantSettings, listAllUserTenantSettings, getMonthlyTokenUsage, getUserBudget } from './db/users';
+import { checkUserAccess, checkTokenBudget } from './auth';
+import { handleWaitlist } from './routes/waitlist';
+import { handleAdmin } from './routes/admin';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { getUsageSummary, pruneOldLlmUsageLog } from './db/llm-usage';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
@@ -698,6 +701,24 @@ export default {
         return jsonResponse({ ok: true, data: { providers } }, 200, corsHeaders);
       }
 
+      if (url.pathname === '/api/usage') {
+        const authHeader = request.headers.get('Authorization') || '';
+        const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+        try {
+          const s = await verifySession(idToken, env);
+          const [used, budget] = await Promise.all([
+            getMonthlyTokenUsage(env.PIPELINE_DB, s.userId),
+            getUserBudget(env.PIPELINE_DB, s.userId),
+          ]);
+          const d = new Date();
+          d.setMonth(d.getMonth() + 1, 1);
+          d.setHours(0, 0, 0, 0);
+          return jsonResponse({ ok: true, data: { used, budget, resetDate: d.toISOString() } }, 200, corsHeaders);
+        } catch {
+          return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, corsHeaders);
+        }
+      }
+
       if (url.pathname === '/auth/linkedin/callback') {
         return handleLinkedInCallback(request, env);
       }
@@ -723,6 +744,11 @@ export default {
 
     if (request.method !== 'POST') {
       return jsonResponse({ ok: false, error: 'Method not allowed.' }, 405, corsHeaders);
+    }
+
+    // Public endpoint — no auth required
+    if (url.pathname === '/api/waitlist') {
+      return handleWaitlist(request, env.PIPELINE_DB);
     }
 
     if (url.pathname === '/internal/schedule-linkedin-publish') {
@@ -910,6 +936,25 @@ export default {
       }
 
       const session = await verifySession(idToken, env);
+
+      // Admin REST-style routes (action = '__admin__' is a sentinel to route to admin handlers)
+      // These come in as action-based POST requests with path embedded in payload
+      if (action === '__admin__') {
+        if (!session.isAdmin) {
+          return jsonResponse({ ok: false, error: 'Admin access required' }, 403, corsHeaders);
+        }
+        const adminPath = String((payload as Record<string, unknown>)?.__path ?? '');
+        const adminMethod = String((payload as Record<string, unknown>)?.__method ?? 'GET').toUpperCase();
+        // Re-construct a synthetic request for the admin handler with the body payload
+        const adminReqInit: RequestInit = { method: adminMethod };
+        if (adminMethod === 'POST') {
+          adminReqInit.body = JSON.stringify(payload);
+          adminReqInit.headers = { 'Content-Type': 'application/json' };
+        }
+        const adminReq = new Request(`https://worker${adminPath}`, adminReqInit);
+        return handleAdmin(adminReq, env.PIPELINE_DB, adminPath, adminMethod);
+      }
+
       if (action === 'downloadDraftImage') {
         const response = await downloadDraftImage(payload ?? {});
         return withCorsHeaders(response, corsHeaders);
@@ -1380,14 +1425,25 @@ async function dispatchAction(
         return pipeline.getRowsByUserId();
       }
     }
-    case 'generateQuickChange':
+    case 'generateQuickChange': {
       ensureSpreadsheetConfigured(storedConfig);
+      const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId);
+      if (!budgetCheck.allowed) {
+        throw Object.assign(new Error('Monthly token budget exceeded'), { httpStatus: 429, used: budgetCheck.used, budget: budgetCheck.budget });
+      }
       return generateQuickChangePreview(env, storedConfig, payload, (templateId) =>
         sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, templateId),
       session.userId,
     );
+    }
     case 'generateVariantsPreview': {
       ensureSpreadsheetConfigured(storedConfig);
+      {
+        const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId);
+        if (!budgetCheck.allowed) {
+          throw Object.assign(new Error('Monthly token budget exceeded'), { httpStatus: 429, used: budgetCheck.used, budget: budgetCheck.budget });
+        }
+      }
       // If a postType/workflowId was sent, resolve its generationInstruction so the
       // selected workflow profile influences the variant prompt.
       // For user-created workflows (cw_ prefix) we must load D1 records first because
@@ -1834,6 +1890,12 @@ Rules:
         throw new Error('Generation worker integration is disabled for this deployment.');
       }
       ensureSpreadsheetConfigured(storedConfig);
+      {
+        const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId);
+        if (!budgetCheck.allowed) {
+          throw Object.assign(new Error('Monthly token budget exceeded'), { httpStatus: 429, used: budgetCheck.used, budget: budgetCheck.budget });
+        }
+      }
       if (!isGenerationWorkerConfigured(env)) {
         throw new Error('GENERATION_WORKER_URL is not configured. Set it in Worker environment.');
       }
@@ -2314,18 +2376,21 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
     throw new Error('Unauthorized: Google token audience does not match this app.');
   }
 
-  // ALLOWED_EMAILS is now optional: if set, acts as an allowlist; if empty, any Google account can log in.
-  const allowedEmails = parseEmailList(env.ALLOWED_EMAILS);
-  if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
-    throw new Error('Unauthorized: this Google account is not on the allowed users list.');
-  }
-
   // Upsert user into D1 on every login (updates name/avatar if they changed).
   const displayName = String(tokenInfo.name || '').trim();
   const avatarUrl = String(tokenInfo.picture || '').trim();
   await upsertUser(env.PIPELINE_DB, email, displayName, avatarUrl).catch(() => undefined);
 
   const adminEmails = resolveAdminEmailAllowlist(env);
+  const { allowed, suspended } = await checkUserAccess(env.PIPELINE_DB, email, adminEmails);
+
+  if (suspended) {
+    throw new Error('Access denied: your account has been suspended. Contact support.');
+  }
+  if (!allowed) {
+    throw new Error('Access not granted. Request access at the homepage.');
+  }
+
   return {
     email,
     userId: email,
