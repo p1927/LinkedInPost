@@ -60,7 +60,7 @@ export function TermsOfServicePage() {
           </h1>
           <p className="mt-4 text-sm text-slate-500">Effective date: {EFFECTIVE}</p>
           <p className="mt-5 text-base leading-relaxed text-slate-600">
-            These terms govern your access to and use of Channel Bot. By using the Service,
+            These terms govern your access to and use of Linked. By using the Service,
             you agree to be bound by them.
           </p>
         </motion.div>
@@ -94,7 +94,7 @@ export function TermsOfServicePage() {
             <AnimatedSection id="agreement">
               <h2 className="font-heading text-xl font-semibold text-slate-900">1. Agreement</h2>
               <p>
-                By accessing or using Channel Bot (the &quot;Service&quot;), you agree to these Terms of Service
+                By accessing or using Linked (the &quot;Service&quot;), you agree to these Terms of Service
                 (&quot;Terms&quot;). If you do not agree, do not use the Service.
               </p>
             </AnimatedSection>
@@ -102,7 +102,7 @@ export function TermsOfServicePage() {
             <AnimatedSection id="the-service">
               <h2 className="font-heading text-xl font-semibold text-slate-900">2. The Service</h2>
               <p>
-                Channel Bot provides tools to manage content workflows, including integrations with third-party products such as
+                Linked provides tools to manage content workflows, including integrations with third-party products such as
                 Google accounts, spreadsheets, generative AI features, and social or messaging platforms (for example LinkedIn,
                 Instagram, Telegram, or WhatsApp). Features may change, be suspended, or discontinued at any time without
                 liability to you.
@@ -187,7 +187,7 @@ export function TermsOfServicePage() {
             <AnimatedSection id="indemnity">
               <h2 className="font-heading text-xl font-semibold text-slate-900">9. Indemnity</h2>
               <p>
-                You will defend, indemnify, and hold harmless the operator of Channel Bot and its affiliates and personnel from
+                You will defend, indemnify, and hold harmless the operator of Linked and its affiliates and personnel from
                 and against any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys&apos;
                 fees) arising out of your content, your use of the Service, your violation of these Terms, or your violation of
                 any third-party rights or applicable law.
@@ -206,7 +206,7 @@ export function TermsOfServicePage() {
             <AnimatedSection id="acceptable-use">
               <h2 className="font-heading text-xl font-semibold text-slate-900">11. User responsibility and acceptable use</h2>
               <p>
-                You are solely responsible for your use of the Service and any consequences thereof. The operator of Channel Bot
+                You are solely responsible for your use of the Service and any consequences thereof. The operator of Linked
                 and its developer(s) accept no liability for any outcomes arising from your use of the Service, including but
                 not limited to: content published or sent through the Service, actions taken on connected third-party platforms
                 (such as LinkedIn, Instagram, WhatsApp, Telegram, or any other integrated service), decisions made based on
@@ -215,7 +215,7 @@ export function TermsOfServicePage() {
               </p>
               <p>
                 You agree to use the Service only for lawful purposes and in accordance with these Terms. You will not hold the
-                operator of Channel Bot or its developer(s) responsible for any claims, damages, losses, or costs arising from
+                operator of Linked or its developer(s) responsible for any claims, damages, losses, or costs arising from
                 your use of the Service.
               </p>
             </AnimatedSection>

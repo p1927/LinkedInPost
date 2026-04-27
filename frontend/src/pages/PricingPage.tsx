@@ -163,7 +163,7 @@ const FAQS: FaqItem[] = [
   {
     question: 'Can I self-host instead?',
     answer:
-      "Yes. Channel Bot has an open-source self-hosted version available on GitHub. You get the full core feature set with no monthly fees — you just manage your own infrastructure and API keys.",
+      "Yes. Linked has an open-source self-hosted version available on GitHub. You get the full core feature set with no monthly fees — you just manage your own infrastructure and API keys.",
   },
 ];
 
@@ -230,7 +230,7 @@ function PricingCard({ plan, annual }: { plan: Plan; annual: boolean }) {
     <motion.div
       whileHover={reduced ? undefined : { y: -4, transition: { duration: 0.2 } }}
       className={[
-        'relative flex flex-col rounded-2xl p-6 shadow-xl',
+        'relative flex flex-col rounded-2xl p-8 shadow-xl overflow-visible',
         plan.highlighted
           ? 'border-2 border-violet-500 bg-white/80 backdrop-blur-sm'
           : 'border border-white/30 bg-white/70 backdrop-blur-sm',
@@ -247,7 +247,7 @@ function PricingCard({ plan, annual }: { plan: Plan; annual: boolean }) {
         <p className="mt-0.5 text-sm text-slate-500">{plan.tag}</p>
       </div>
 
-      <div className="mb-6 h-16 overflow-hidden">
+      <div className="mb-6 min-h-[5rem] overflow-visible">
         <AnimatePresence mode="wait">
           <motion.div
             key={`${plan.name}-${annual ? 'annual' : 'monthly'}`}
@@ -256,18 +256,18 @@ function PricingCard({ plan, annual }: { plan: Plan; annual: boolean }) {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            <span className="text-4xl font-bold text-slate-900">${price}</span>
+            <span className="text-5xl font-bold leading-none text-slate-900">${price}</span>
             <span className="ml-1 text-sm text-slate-500">/mo</span>
             {annual && (
-              <p className="mt-0.5 text-xs text-slate-400">billed annually</p>
+              <p className="mt-1 text-xs text-slate-400">billed annually</p>
             )}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      <ul className="mb-6 flex-1 space-y-2.5">
+      <ul className="mb-6 flex-1 space-y-3">
         {plan.features.map((f) => (
-          <li key={f.text} className="flex items-start gap-2.5 text-sm text-slate-700">
+          <li key={f.text} className="flex items-start gap-3 text-sm text-slate-700">
             <Check size={15} className="mt-0.5 shrink-0 text-violet-500" />
             <span>{f.text}</span>
           </li>
@@ -370,7 +370,7 @@ export function PricingPage() {
                 ].join(' ')}
               >
                 Annual
-                <span className="rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                <span className="whitespace-nowrap rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white leading-none">
                   SAVE 20%
                 </span>
               </button>
@@ -490,16 +490,16 @@ export function PricingPage() {
               <p className="mt-3 text-slate-600">
                 Our team is happy to help. Reach out to{' '}
                 <a
-                  href="mailto:support@channelbot.app"
+                  href="mailto:support@linked.app"
                   className="font-medium text-violet-600 hover:text-violet-700 transition-colors"
                 >
-                  support@channelbot.app
+                  support@linked.app
                 </a>{' '}
                 or talk to sales about the Team plan.
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <a
-                  href="mailto:support@channelbot.app"
+                  href="mailto:support@linked.app"
                   className="flex items-center gap-2 rounded-xl border border-violet-300 px-5 py-2.5 text-sm font-semibold text-violet-700 transition-all hover:bg-violet-50"
                 >
                   <Mail size={15} />

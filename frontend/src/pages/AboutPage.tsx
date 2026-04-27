@@ -177,7 +177,7 @@ export function AboutPage() {
           </SectionReveal>
           <SectionReveal delay={0.15} className="mx-auto mt-6 max-w-2xl">
             <p className="text-lg leading-relaxed text-slate-600">
-              Channel Bot was built to help solo creators and small teams punch above their weight by
+              Linked was built to help solo creators and small teams punch above their weight by
               automating the repetitive parts of content creation — so you can spend your energy on
               what actually matters: making great content.
             </p>
@@ -202,7 +202,7 @@ export function AboutPage() {
             <div className="grid gap-8 md:grid-cols-2 md:items-start">
               <SectionReveal delay={0.1}>
                 <p className="text-base leading-relaxed text-slate-600">
-                  We built Channel Bot because we were frustrated. As a small team, we spent 80% of
+                  We built Linked because we were frustrated. As a small team, we spent 80% of
                   our time writing, formatting, and manually publishing the same content to different
                   platforms. We wanted a tool that would do the busywork so we could focus on what
                   matters: creating great content.

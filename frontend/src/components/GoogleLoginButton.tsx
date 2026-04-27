@@ -99,7 +99,7 @@ export function GoogleLoginButton({
   return (
     <div className="flex w-full min-w-0 flex-col items-center gap-3">
       <div
-        className="w-full min-w-0 overflow-visible rounded-2xl border border-violet-200/50 bg-gradient-to-b from-white/90 to-violet-50/35 p-2.5 shadow-card ring-1 ring-white/60 backdrop-blur-sm transition-[box-shadow,border-color] duration-200 hover:border-violet-300/55 hover:shadow-lift"
+        className="w-full min-w-0 overflow-visible rounded-2xl border border-violet-200 bg-white/80 p-2.5 shadow-sm ring-1 ring-violet-100 backdrop-blur-sm transition-[box-shadow,border-color] duration-200 hover:border-violet-300 hover:shadow-md [&>div]:rounded-xl [&>div]:shadow-sm [&>div]:border [&>div]:border-violet-100 [&_iframe]:rounded-xl"
       >
         <div ref={measureRef} className="flex w-full min-w-0 justify-center overflow-visible">
           <GoogleLogin

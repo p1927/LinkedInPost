@@ -60,7 +60,7 @@ export function PrivacyPolicy() {
           </h1>
           <p className="mt-4 text-sm text-slate-500">Effective date: {EFFECTIVE}</p>
           <p className="mt-5 text-base leading-relaxed text-slate-600">
-            We built Channel Bot to help teams publish great content — not to harvest data.
+            We built Linked to help teams publish great content — not to harvest data.
             This policy explains exactly what we collect, why we collect it, and how you stay in control.
           </p>
         </motion.div>
@@ -94,8 +94,8 @@ export function PrivacyPolicy() {
             <AnimatedSection id="who-we-are">
               <h2 className="font-heading text-xl font-semibold text-slate-900">1. Who we are</h2>
               <p>
-                This Privacy Policy describes how the operator of Channel Bot (&quot;we,&quot; &quot;us&quot;) collects, uses,
-                and shares information when you use the Channel Bot websites, applications, and related services (collectively,
+                This Privacy Policy describes how the operator of Linked (&quot;we,&quot; &quot;us&quot;) collects, uses,
+                and shares information when you use the Linked websites, applications, and related services (collectively,
                 the &quot;Service&quot;).
               </p>
             </AnimatedSection>
@@ -162,7 +162,7 @@ export function PrivacyPolicy() {
             <AnimatedSection id="third-party">
               <h2 className="font-heading text-xl font-semibold text-slate-900">5. Third-party services</h2>
               <p>
-                Channel Bot integrates with third-party APIs including Google (authentication, Sheets, and AI model access),
+                Linked integrates with third-party APIs including Google (authentication, Sheets, and AI model access),
                 LinkedIn, Meta (Instagram, WhatsApp), Telegram, and cloud infrastructure. Your use of those integrations is also
                 governed by their respective terms and privacy policies. Content sent to AI providers is transmitted securely;
                 how providers treat that content depends on their policies and your agreements with them.

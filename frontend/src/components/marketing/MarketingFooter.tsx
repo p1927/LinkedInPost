@@ -101,7 +101,7 @@ export function MarketingFooter() {
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 text-xs font-bold text-white shadow-sm">
                 CB
               </div>
-              <span className="font-semibold text-white">Channel Bot</span>
+              <span className="font-semibold text-white">Linked</span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-violet-300/80">
               AI-powered content for every channel
@@ -165,7 +165,7 @@ export function MarketingFooter() {
 
         {/* Bottom bar */}
         <div className="mt-6 flex flex-col items-center justify-between gap-3 text-xs text-violet-400/70 sm:flex-row">
-          <span>&copy; 2025 Channel Bot. All rights reserved.</span>
+          <span>&copy; 2025 Linked. All rights reserved.</span>
           <span>Made with &#9825; for content creators</span>
         </div>
       </div>

@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import { GoogleLoginButton } from '@/components/GoogleLoginButton';
 
 interface MarketingNavProps {
   onLogin?: (token: string) => void;
 }
 
-export function MarketingNav({ onLogin: _onLogin }: MarketingNavProps) {
+export function MarketingNav({ onLogin }: MarketingNavProps) {
   const prefersReducedMotion = useReducedMotion();
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
@@ -65,7 +66,7 @@ export function MarketingNav({ onLogin: _onLogin }: MarketingNavProps) {
               CB
             </div>
             <span className="font-semibold text-gray-900 text-sm tracking-tight">
-              Channel Bot
+              Linked
             </span>
           </Link>
 
@@ -94,6 +95,9 @@ export function MarketingNav({ onLogin: _onLogin }: MarketingNavProps) {
 
           {/* CTA */}
           <div className="hidden items-center gap-3 md:flex">
+            <div className="[&_div]:!rounded-xl [&_div]:!border-violet-200 [&_div]:!bg-white/80 [&_div]:backdrop-blur-sm">
+              <GoogleLoginButton onLogin={onLogin ?? (() => {})} />
+            </div>
             <Link
               to="/landing"
               className="cursor-pointer rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:from-violet-700 hover:to-purple-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
@@ -145,7 +149,10 @@ export function MarketingNav({ onLogin: _onLogin }: MarketingNavProps) {
                     </Link>
                   )
                 )}
-                <div className="mt-2 border-t border-white/30 pt-2">
+                <div className="mt-2 border-t border-white/30 pt-2 flex flex-col gap-2">
+                  <div className="[&_div]:!rounded-xl [&_div]:!border-violet-200 [&_div]:!bg-white/80 [&_div]:backdrop-blur-sm">
+                    <GoogleLoginButton onLogin={onLogin ?? (() => {})} />
+                  </div>
                   <Link
                     to="/landing"
                     onClick={() => setMobileOpen(false)}

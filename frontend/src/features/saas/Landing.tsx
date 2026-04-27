@@ -239,7 +239,7 @@ export default function Landing({ onLogin }: LandingProps) {
       icon: <Sparkles size={24} />,
       title: 'AI Generates Drafts',
       description:
-        'Channel Bot researches, writes, and formats multiple variants for you to review and refine.',
+        'Linked researches, writes, and formats multiple variants for you to review and refine.',
     },
     {
       number: '03',
@@ -253,7 +253,7 @@ export default function Landing({ onLogin }: LandingProps) {
   const testimonials = [
     {
       quote:
-        'Channel Bot cut our content production time by 80%. We went from 2 posts/week to 15.',
+        'Linked cut our content production time by 80%. We went from 2 posts/week to 15.',
       name: 'Sarah K.',
       role: 'Head of Marketing',
       company: 'TechFlow',
@@ -378,7 +378,7 @@ export default function Landing({ onLogin }: LandingProps) {
                 {...fadeUp(0.6)}
                 className="text-lg text-slate-600 leading-relaxed max-w-lg"
               >
-                Channel Bot turns your ideas into polished posts and publishes them across
+                Linked turns your ideas into polished posts and publishes them across
                 LinkedIn, Instagram, Telegram, and WhatsApp — all from one dashboard.
               </motion.p>
 
@@ -507,7 +507,7 @@ export default function Landing({ onLogin }: LandingProps) {
               From idea to published in 3 steps
             </h2>
             <p className="mt-3 text-slate-600">
-              No complicated setup. Just add a topic and let Channel Bot do the rest.
+              No complicated setup. Just add a topic and let Linked do the rest.
             </p>
           </motion.div>
 
@@ -558,7 +558,7 @@ export default function Landing({ onLogin }: LandingProps) {
               Loved by content teams
             </h2>
             <p className="mt-3 text-slate-600">
-              Thousands of creators and marketers use Channel Bot every day.
+              Thousands of creators and marketers use Linked every day.
             </p>
           </motion.div>
 
@@ -691,7 +691,7 @@ export default function Landing({ onLogin }: LandingProps) {
                 Ready to 10x your content output?
               </h2>
               <p className="mt-3 text-violet-100 max-w-lg mx-auto">
-                Join 2,400+ content creators already using Channel Bot to automate their publishing.
+                Join 2,400+ content creators already using Linked to automate their publishing.
               </p>
 
               <div className="mt-8 flex flex-col items-center gap-4">
