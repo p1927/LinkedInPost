@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center space-y-6 py-12">
+  <div class="text-6xl">&#127881;</div>
+  <h1 class="text-3xl font-bold">You're all set!</h1>
+  <p class="text-gray-500 max-w-md mx-auto">Your LinkedIn Post Studio is deployed and ready to use. Here's what to do next:</p>
+
+  <div class="text-left border rounded-xl divide-y max-w-md mx-auto">
+    <div class="px-4 py-3 flex gap-3 items-start">
+      <span class="text-green-500 text-lg mt-0.5">1.</span>
+      <div>
+        <p class="font-medium text-sm">Open the dashboard</p>
+        <p class="text-xs text-gray-400">Run <code class="bg-gray-100 px-1 rounded">npm run dev</code> in the <code>frontend/</code> folder, then open <a href="http://localhost:5174" class="text-blue-500 underline">localhost:5174</a></p>
+      </div>
+    </div>
+    <div class="px-4 py-3 flex gap-3 items-start">
+      <span class="text-green-500 text-lg mt-0.5">2.</span>
+      <div>
+        <p class="font-medium text-sm">Connect your LinkedIn account</p>
+        <p class="text-xs text-gray-400">Go to Settings &rarr; Connected Accounts &rarr; LinkedIn and click Connect.</p>
+      </div>
+    </div>
+    <div class="px-4 py-3 flex gap-3 items-start">
+      <span class="text-green-500 text-lg mt-0.5">3.</span>
+      <div>
+        <p class="font-medium text-sm">Create your first post</p>
+        <p class="text-xs text-gray-400">Click New Post, enter a topic, and let the AI generate variants for you.</p>
+      </div>
+    </div>
+    <div class="px-4 py-3 flex gap-3 items-start">
+      <span class="text-green-500 text-lg mt-0.5">4.</span>
+      <div>
+        <p class="font-medium text-sm">Deploy the frontend publicly (optional)</p>
+        <p class="text-xs text-gray-400">Run <code class="bg-gray-100 px-1 rounded">npm run build</code> and push <code>dist/</code> to your GitHub Pages branch.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-xs text-gray-400">Configuration saved to <code>.env</code> and <code>worker/wrangler.jsonc</code>.</p>
+</div>
+{% endblock %}
