@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <title>LinkedIn Post — Setup Wizard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full bg-gray-50 font-sans">
+<div class="flex h-full">
+  <!-- Sidebar -->
+  <aside class="w-60 shrink-0 bg-white border-r flex flex-col p-6 gap-2">
+    <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Setup steps</p>
+    {% set steps = [
+      ('prereqs',    '1. Prerequisites'),
+      ('google',     '2. Google Cloud'),
+      ('cloudflare', '3. Cloudflare'),
+      ('apikeys',    '4. API Keys'),
+      ('deploy',     '5. Deploy'),
+      ('verify',     '6. Verify'),
+    ] %}
+    {% for key, label in steps %}
+      {% if wizard_state.get(key) %}
+        <div class="flex items-center gap-2 text-green-700 font-medium text-sm">
+          <span class="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center text-xs">&#10003;</span>
+          {{ label }}
+        </div>
+      {% elif current_step == key %}
+        <div class="flex items-center gap-2 text-blue-700 font-semibold text-sm">
+          <span class="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center text-xs">&#8594;</span>
+          {{ label }}
+        </div>
+      {% else %}
+        <div class="flex items-center gap-2 text-gray-400 text-sm">
+          <span class="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-xs">·</span>
+          {{ label }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 overflow-y-auto p-10">
+    <div class="max-w-2xl mx-auto">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+</body>
+</html>
