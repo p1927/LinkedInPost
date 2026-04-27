@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BrowserRouter, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
-import { LogOut, Share2, Sparkles, TableProperties } from 'lucide-react'
+import { LogOut, Settings, Share2, Sparkles, TableProperties } from 'lucide-react'
 import { googleLogout } from '@react-oauth/google'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Button } from '@/components/ui/button'
@@ -38,6 +38,10 @@ import {
   POST_LOGIN_REDIRECT_KEY,
   shouldCapturePathForPostLogin,
 } from './lib/postLoginRedirect'
+import Landing from './features/saas/Landing'
+import AdminPanel from './features/saas/AdminPanel'
+import UsageMeter from './features/saas/UsageMeter'
+import { deploymentMode } from './generated/features'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
 
@@ -69,6 +73,7 @@ function WorkspaceSession({
   onConnect,
   onDisconnect,
   connecting,
+  tokenUsage,
 }: {
   idToken: string
   session: AppSession
@@ -83,6 +88,7 @@ function WorkspaceSession({
   onConnect: (provider: 'linkedin' | 'instagram' | 'gmail' | 'whatsapp' | 'youtube') => void
   onDisconnect: (provider: string) => void
   connecting: string | null
+  tokenUsage: { used: number; budget: number; resetDate: string } | null
 }) {
   const location = useLocation()
   const path = normalizeWorkspacePathname(location.pathname)
@@ -112,6 +118,8 @@ function WorkspaceSession({
     document.title = getWorkspaceDocumentTitle(location.pathname)
   }, [location.pathname])
 
+  const navigate = useNavigate()
+
   return (
     <WorkspaceShell
       session={session}
@@ -124,6 +132,28 @@ function WorkspaceSession({
         setSession(null)
         setErrorMessage('')
       }}
+      headerExtra={
+        <>
+          {deploymentMode === 'saas' && tokenUsage && (
+            <UsageMeter used={tokenUsage.used} budget={tokenUsage.budget} resetDate={tokenUsage.resetDate} />
+          )}
+          {deploymentMode === 'saas' && session.isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="h-9 min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 sm:px-4"
+            >
+              Admin
+            </button>
+          )}
+          <a
+            href="/setup-wizard.html"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-muted transition-colors"
+          >
+            <Settings className="h-3.5 w-3.5" aria-hidden />
+            Setup
+          </a>
+        </>
+      }
     >
       <Dashboard
         idToken={idToken}
@@ -244,6 +274,8 @@ function App() {
   const [integrations, setIntegrations] = useState<SocialIntegration[]>([])
   const [connecting, setConnecting] = useState<string | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [tokenUsage, setTokenUsage] = useState<{ used: number; budget: number; resetDate: string } | null>(null)
+  const [accessPending, setAccessPending] = useState(false)
   useEffect(() => {
     if (!idToken) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -262,10 +294,14 @@ function App() {
         setSession(nextSession)
         setIntegrations(nextSession.integrations ?? [])
         setShowOnboarding(!(nextSession.onboardingCompleted ?? true))
+        setAccessPending(false)
 
-        // Fetch LLM catalog after session is ready
+        // Fetch LLM catalog and token usage after session is ready
         try {
-          const catalogData = await api.getLlmProviderCatalog(idToken)
+          const [catalogData] = await Promise.all([
+            api.getLlmProviderCatalog(idToken),
+            api.getTokenUsage(idToken).then(usage => setTokenUsage(usage)).catch(() => undefined),
+          ])
           setLlmCatalog(catalogData.providers)
         } catch (catalogError) {
           console.error('Failed to fetch LLM catalog:', catalogError)
@@ -276,6 +312,13 @@ function App() {
       .catch((error) => {
         const message = error instanceof Error ? error.message : 'Failed to start the session.'
         console.error('Failed to bootstrap backend session:', error)
+
+        if (message.includes('Access not granted') || message.includes('account has been suspended')) {
+          setAccessPending(true)
+          setErrorMessage(message)
+          return
+        }
+
         setErrorMessage(message)
 
         if (isAuthErrorMessage(message)) {
@@ -398,6 +441,12 @@ function App() {
         <Routes>
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          {deploymentMode === 'saas' && (
+            <Route path="/landing" element={<Landing onLogin={handleLogin} />} />
+          )}
+          {deploymentMode === 'saas' && idToken && session?.isAdmin && (
+            <Route path="/admin" element={<AdminPanel idToken={idToken} />} />
+          )}
           <Route
             path="*"
             element={
@@ -411,26 +460,35 @@ function App() {
                         </div>
                         <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
                       </div>
-                      {idToken ? (
-                        isActiveDevGoogleAuthBypassToken(idToken) ? (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="md"
-                            onClick={() => {
-                              setIdToken(null)
-                              setSession(null)
-                              setErrorMessage('')
-                            }}
-                            className="glass-inset gap-2 rounded-xl text-muted hover:bg-white/85 hover:text-ink"
-                          >
-                            <LogOut className="h-4 w-4" aria-hidden />
-                            Log out
-                          </Button>
-                        ) : (
-                          <GoogleLoginButton onLogin={handleLogin} onSignInIntent={() => setErrorMessage('')} />
-                        )
-                      ) : null}
+                      <div className="flex items-center gap-2">
+                        <a
+                          href="/setup-wizard.html"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-muted/10 transition-colors text-muted"
+                        >
+                          <Settings className="h-3.5 w-3.5" aria-hidden />
+                          Setup
+                        </a>
+                        {idToken ? (
+                          isActiveDevGoogleAuthBypassToken(idToken) ? (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="md"
+                              onClick={() => {
+                                setIdToken(null)
+                                setSession(null)
+                                setErrorMessage('')
+                              }}
+                              className="glass-inset gap-2 rounded-xl text-muted hover:bg-white/85 hover:text-ink"
+                            >
+                              <LogOut className="h-4 w-4" aria-hidden />
+                              Log out
+                            </Button>
+                          ) : (
+                            <GoogleLoginButton onLogin={handleLogin} onSignInIntent={() => setErrorMessage('')} />
+                          )
+                        ) : null}
+                      </div>
                     </div>
                   </header>
                 ) : null}
@@ -460,6 +518,7 @@ function App() {
                     onConnect={handleConnect}
                     onDisconnect={handleDisconnect}
                     connecting={connecting}
+                    tokenUsage={tokenUsage}
                   />
                   </>
                 ) : (
@@ -470,6 +529,29 @@ function App() {
                     <p className="text-muted">
                       Set <code>VITE_WORKER_URL</code> to the deployed Cloudflare Worker URL, then rebuild the frontend.
                     </p>
+                  </div>
+                ) : accessPending ? (
+                  <div className="flex flex-1 items-center justify-center">
+                    <div className="max-w-md text-center space-y-4 px-4">
+                      <h2 className="font-heading text-2xl font-semibold text-ink">Access request pending</h2>
+                      <p className="text-muted">
+                        {errorMessage.includes('suspended')
+                          ? 'Your account has been suspended. Contact support for help.'
+                          : "Your access request is pending review. You'll receive an email when approved."}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setAccessPending(false)
+                          setErrorMessage('')
+                          googleLogout()
+                          localStorage.removeItem(STORED_ID_TOKEN_KEY)
+                          setIdToken(null)
+                        }}
+                        className="text-sm text-muted underline"
+                      >
+                        Sign out
+                      </button>
+                    </div>
                   </div>
                 ) : !idToken ? (
                   <div className="flex w-full flex-1 flex-col">

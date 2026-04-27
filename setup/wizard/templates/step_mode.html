@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-2">Choose Deployment Mode</h1>
+<p class="text-gray-500 mb-8">How will you be using this app?</p>
+
+<form method="POST" action="/step/mode" class="space-y-4">
+  <label class="flex gap-4 border rounded-xl p-5 cursor-pointer hover:bg-blue-50 transition {% if current == 'saas' %}border-blue-500 bg-blue-50{% endif %}">
+    <input type="radio" name="mode" value="saas" {% if current == 'saas' %}checked{% endif %} class="mt-1">
+    <div>
+      <p class="font-semibold">SaaS / Hosted</p>
+      <p class="text-sm text-gray-500 mt-0.5">You host this for multiple users. Invite-only access, per-user token budgets, admin panel to manage users.</p>
+    </div>
+  </label>
+
+  <label class="flex gap-4 border rounded-xl p-5 cursor-pointer hover:bg-green-50 transition {% if current == 'selfHosted' %}border-green-500 bg-green-50{% endif %}">
+    <input type="radio" name="mode" value="selfHosted" {% if current == 'selfHosted' %}checked{% endif %} class="mt-1">
+    <div>
+      <p class="font-semibold">Self-Hosted</p>
+      <p class="text-sm text-gray-500 mt-0.5">Just you (or your small team). Direct Google login, no waitlist, no token budgets. You bring your own API keys.</p>
+    </div>
+  </label>
+
+  <button class="mt-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+    Continue &rarr;
+  </button>
+</form>
+{% endblock %}

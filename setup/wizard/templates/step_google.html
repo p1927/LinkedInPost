@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-2">Google Cloud Setup</h1>
+<p class="text-gray-500 mb-6">You need a Google Cloud project with a service account and OAuth client.</p>
+
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-800 space-y-1">
+  <p class="font-semibold">Before continuing, complete these steps in Google Cloud Console:</p>
+  <ol class="list-decimal list-inside space-y-1">
+    <li>Create a project (or select existing)</li>
+    <li>Enable: Google Sheets API, Google Drive API, Google Docs API, Cloud Storage API</li>
+    <li>Create a Service Account &rarr; download JSON key</li>
+    <li>Create an OAuth 2.0 Web Client ID (add <code class="bg-blue-100 px-1 rounded">http://localhost:5174</code> and your GitHub Pages URL to Authorized JavaScript Origins)</li>
+  </ol>
+  <a href="https://console.cloud.google.com" target="_blank" class="inline-block mt-2 text-blue-600 underline">Open Google Cloud Console &rarr;</a>
+</div>
+
+{% if error %}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">{{ error }}</div>
+{% endif %}
+
+<form method="POST" action="/step/google" class="space-y-6">
+  <div>
+    <label class="block text-sm font-medium mb-1">Service Account JSON key</label>
+    <textarea name="service_account_json" rows="8" required
+              placeholder='{"type": "service_account", "project_id": "...", ...}'
+              class="w-full border rounded-lg px-3 py-2 text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+    <p class="text-xs text-gray-400 mt-1">Paste the entire downloaded JSON key file content here.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">OAuth Client ID</label>
+    <input name="google_client_id" type="text" required
+           value="{{ existing_client_id }}"
+           placeholder="718831604482-xxxx.apps.googleusercontent.com"
+           class="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+  </div>
+
+  <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+    Validate &amp; Continue &rarr;
+  </button>
+</form>
+{% endblock %}

@@ -1,3 +1,4 @@
+import type React from 'react';
 import clsx from 'clsx';
 import { ChevronLeft, ChevronRight, LogOut, Menu, Plus, RefreshCw } from 'lucide-react';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
@@ -23,10 +24,12 @@ export function WorkspaceHeader({
   workspacePage,
   onOpenMobileSidebar,
   onLogout,
+  headerExtra,
 }: {
   workspacePage: WorkspaceNavPage;
   onOpenMobileSidebar: () => void;
   onLogout: () => void;
+  headerExtra?: React.ReactNode;
 }) {
   const { onRefreshQueue, queueLoading, highlightRefreshQueue, headerOverride, topicReviewHeader, addTopicForm } =
     useWorkspaceChrome();
@@ -230,6 +233,7 @@ export function WorkspaceHeader({
           <RefreshCw className={clsx('h-3.5 w-3.5 shrink-0', queueLoading && 'animate-spin')} aria-hidden />
           <span>Refresh</span>
         </Button>
+        {headerExtra ?? null}
         <Button
           type="button"
           variant="secondary"

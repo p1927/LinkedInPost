@@ -13,7 +13,7 @@ import { ImageGenStep } from './ImageGenStep';
 import { SpeechToTextStep } from './SpeechToTextStep';
 import type { SetupState } from './types';
 
-export type SetupStep = 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'trending' | 'imagegen' | 'stt' | 'envvars' | 'final';
+export type SetupStep = 'deploymentMode' | 'status' | 'welcome' | 'directory' | 'progress' | 'integrations' | 'trending' | 'imagegen' | 'stt' | 'envvars' | 'final';
 
 export type YouTubeAdapterType = 'youtube-official' | 'apify-youtube';
 export type InstagramAdapterType = 'instagram-official' | 'sociavault';
@@ -25,6 +25,7 @@ const isSetupWizard = typeof window !== 'undefined' && window.location.port === 
 
 export interface SetupConfig {
   projectDir: string;
+  deploymentMode: 'saas' | 'selfHosted';
   integrations: {
     linkedin: boolean;
     instagram: boolean;
@@ -57,6 +58,7 @@ export interface SetupConfig {
 
 const DEFAULT_CONFIG: SetupConfig = {
   projectDir: '',
+  deploymentMode: 'saas',
   integrations: {
     linkedin: false,
     instagram: false,
@@ -88,7 +90,7 @@ const DEFAULT_CONFIG: SetupConfig = {
 };
 
 export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
-  const [step, setStep] = useState<SetupStep>('welcome');
+  const [step, setStep] = useState<SetupStep>('deploymentMode');
   const [config, setConfig] = useState<SetupConfig>(DEFAULT_CONFIG);
   const [progressLogs, setProgressLogs] = useState<{ message: string; status: 'pending' | 'running' | 'done' | 'error' }[]>([]);
   const [currentProgressIndex, setCurrentProgressIndex] = useState(0);
@@ -243,7 +245,7 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
   const handleRestart = useCallback(() => {
     setConfig(DEFAULT_CONFIG);
     setProgressLogs([]);
-    setStep('welcome');
+    setStep('deploymentMode');
   }, []);
 
   const handleStatusContinue = useCallback((targetStep: 'envVars' | 'integrations' | 'final') => {
@@ -316,6 +318,64 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
             >
               <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
               <p className="mt-4 text-muted">Detecting setup state...</p>
+            </motion.div>
+          )}
+
+          {!isDetectingState && step === 'deploymentMode' && (
+            <motion.div
+              key="deploymentMode"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold">How will you use this?</h2>
+                  <p className="text-muted-foreground text-sm mt-1">Choose your deployment mode. You can change this later.</p>
+                </div>
+                <div className="space-y-3">
+                  {(['saas', 'selfHosted'] as const).map(mode => (
+                    <label
+                      key={mode}
+                      className={`flex gap-4 border rounded-xl p-4 cursor-pointer transition-colors ${
+                        config.deploymentMode === mode ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="deploymentMode"
+                        value={mode}
+                        checked={config.deploymentMode === mode}
+                        onChange={() => setConfig(c => ({ ...c, deploymentMode: mode }))}
+                        className="mt-1 accent-primary"
+                      />
+                      <div>
+                        <p className="font-medium">{mode === 'saas' ? 'Hosted / SaaS' : 'Self-Hosted'}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {mode === 'saas'
+                            ? 'You host this for multiple users. Invite-only access, per-user token budgets, admin panel.'
+                            : 'Just you or your team. Direct login, no waitlist, no token limits. You bring your own API keys.'}
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  onClick={async () => {
+                    if (config.projectDir) {
+                      await fetch('http://localhost:3456/api/setup/deployment-mode', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ projectDir: config.projectDir, mode: config.deploymentMode }),
+                      }).catch(() => {});
+                    }
+                    setStep('welcome');
+                  }}
+                  className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Continue →
+                </button>
+              </div>
             </motion.div>
           )}
 

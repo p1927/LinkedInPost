@@ -4,6 +4,8 @@
 export const FEATURE_CAMPAIGN = true as const;
 export const FEATURE_CONTENT_FLOW = true as const;
 export const FEATURE_CONTENT_REVIEW = true as const;
+export const deploymentMode = 'saas' as const;
+export type DeploymentMode = typeof deploymentMode;
 export const FEATURE_ENRICHMENT = true as const;
 export const FEATURE_MULTI_PROVIDER_LLM = true as const;
 export const FEATURE_NEWS_RESEARCH = true as const;

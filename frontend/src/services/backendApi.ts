@@ -1336,6 +1336,78 @@ export class BackendApi {
     }
     return parsed.data.providers;
   }
+
+  /** Submit a waitlist request — public, no auth required. */
+  async submitWaitlist(email: string, name?: string, reason?: string): Promise<{ ok: boolean; message: string }> {
+    if (!this.endpointUrl) {
+      throw new Error('Missing VITE_WORKER_URL.');
+    }
+    const res = await fetch(`${this.endpointUrl}/api/waitlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, reason }),
+    });
+    return res.json() as Promise<{ ok: boolean; message: string }>;
+  }
+
+  /** Get the current user's monthly token usage. */
+  async getTokenUsage(idToken: string): Promise<{ used: number; budget: number; resetDate: string }> {
+    if (!this.endpointUrl) {
+      throw new Error('Missing VITE_WORKER_URL.');
+    }
+    const res = await fetch(`${this.endpointUrl}/api/usage`, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch token usage: ${res.status}`);
+    }
+    const parsed = await res.json() as { ok: boolean; data?: { used: number; budget: number; resetDate: string }; error?: string };
+    if (!parsed.ok || !parsed.data) {
+      throw new Error(parsed.error || 'Failed to load usage.');
+    }
+    return parsed.data;
+  }
+
+  /** Admin: list all users with monthly token usage. */
+  async getAdminUsers(idToken: string): Promise<Array<Record<string, unknown>>> {
+    return this.post<Array<Record<string, unknown>>>('__admin__', idToken, {
+      __path: '/api/admin/users',
+      __method: 'GET',
+    });
+  }
+
+  /** Admin: list pending waitlist requests. */
+  async getAdminWaitlist(idToken: string): Promise<Array<Record<string, unknown>>> {
+    return this.post<Array<Record<string, unknown>>>('__admin__', idToken, {
+      __path: '/api/admin/waitlist',
+      __method: 'GET',
+    });
+  }
+
+  /** Admin: approve a user. */
+  async approveUserAccess(idToken: string, userId: string): Promise<void> {
+    await this.post<{ ok: boolean }>('__admin__', idToken, {
+      __path: `/api/admin/users/${encodeURIComponent(userId)}/approve`,
+      __method: 'POST',
+    });
+  }
+
+  /** Admin: suspend a user. */
+  async suspendUserAccess(idToken: string, userId: string): Promise<void> {
+    await this.post<{ ok: boolean }>('__admin__', idToken, {
+      __path: `/api/admin/users/${encodeURIComponent(userId)}/suspend`,
+      __method: 'POST',
+    });
+  }
+
+  /** Admin: set monthly token budget for a user. */
+  async setMonthlyTokenBudget(idToken: string, userId: string, budget: number): Promise<void> {
+    await this.post<{ ok: boolean }>('__admin__', idToken, {
+      __path: `/api/admin/users/${encodeURIComponent(userId)}/budget`,
+      __method: 'POST',
+      budget,
+    });
+  }
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {

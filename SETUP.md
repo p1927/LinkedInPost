@@ -18,7 +18,27 @@ The deployed shape is:
 
 Only the API Worker is deployed to Cloudflare. The repository does not keep a second root Cloudflare deployment config for the frontend.
 
-## Prerequisites
+## Quick Start (Web Wizard)
+
+The fastest way to self-host is the built-in setup wizard:
+
+```bash
+pip install -r requirements.txt
+python setup.py --web
+```
+
+Your browser will open to `http://localhost:4242`. Follow the 6-step wizard:
+
+1. **Prerequisites** — confirms Python, Node, Wrangler, and Git are installed
+2. **Google Cloud** — paste your service account key and OAuth Client ID
+3. **Cloudflare** — paste your API token; D1 and KV are provisioned automatically
+4. **API Keys** — enter Gemini (required) + optional channel credentials
+5. **Deploy** — one-click deploy to Cloudflare Workers with live log streaming
+6. **Verify** — confirms every integration is live
+
+---
+
+## Manual Setup (alternative)
 
 Install the Python dependencies locally:
 

@@ -17,6 +17,7 @@ export function WorkspaceShell({
   lockMainScroll = false,
   /** Topic draft editor route: collapse the app sidebar for more editor width (restore when leaving if we auto-collapsed). */
   autoCollapseMainSidebar = false,
+  headerExtra,
   children,
 }: {
   session: AppSession;
@@ -25,6 +26,7 @@ export function WorkspaceShell({
   onLogoutComplete: () => void;
   lockMainScroll?: boolean;
   autoCollapseMainSidebar?: boolean;
+  headerExtra?: ReactNode;
   children: ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => readSidebarCollapsed());
@@ -88,6 +90,7 @@ export function WorkspaceShell({
             workspacePage={workspacePage}
             onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
             onLogout={handleLogout}
+            headerExtra={headerExtra}
           />
           <main
             id="workspace-main"

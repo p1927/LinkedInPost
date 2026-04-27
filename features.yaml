@@ -5,6 +5,8 @@
 # When a feature is false, related UI and Worker RPCs are disabled; generation
 # ignores related client payloads.
 
+# Deployment mode: 'saas' (hosted, multi-tenant, waitlist) or 'selfHosted' (single-owner, direct login).
+deploymentMode: saas
 newsResearch: true
 # Bulk campaign import (Topics + Draft rows, Claude JSON paste).
 campaign: true

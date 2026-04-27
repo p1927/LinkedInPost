@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-2">Cloudflare Setup</h1>
+<p class="text-gray-500 mb-6">We'll provision your D1 database and KV namespace automatically.</p>
+
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-800">
+  <p class="font-semibold mb-2">Before continuing:</p>
+  <ol class="list-decimal list-inside space-y-1">
+    <li>Sign up at <a href="https://dash.cloudflare.com" target="_blank" class="underline">dash.cloudflare.com</a> (free plan is fine)</li>
+    <li>Go to My Profile &rarr; API Tokens &rarr; Create Token</li>
+    <li>Use the <strong>"Edit Cloudflare Workers"</strong> template, then add <strong>D1: Edit</strong> permission</li>
+    <li>Copy the generated token and paste below</li>
+  </ol>
+</div>
+
+{% if error %}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm whitespace-pre-wrap font-mono">{{ error }}</div>
+{% endif %}
+
+<form method="POST" action="/step/cloudflare" class="space-y-6">
+  <div>
+    <label class="block text-sm font-medium mb-1">Cloudflare API Token</label>
+    <input name="cloudflare_api_token" type="password" required
+           placeholder="Paste your API token here"
+           class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-400">
+    <p class="text-xs text-gray-400 mt-1">We validate this against the Cloudflare API before provisioning.</p>
+  </div>
+
+  <div>
+    <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+      Validate &amp; Provision &rarr;
+    </button>
+    <p class="text-xs text-gray-400 mt-2">This creates your D1 database and KV namespace. Takes ~30 seconds.</p>
+  </div>
+</form>
+{% endblock %}

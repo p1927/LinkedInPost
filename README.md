@@ -34,6 +34,12 @@ The current deployment model is:
 
 Use [SETUP.md](SETUP.md) for the full deployment checklist.
 
+### Self-hosting
+
+```bash
+pip install -r requirements.txt && python setup.py --web
+```
+
 The short version is:
 
 1. Run `python setup.py` to create the shared Google resources.

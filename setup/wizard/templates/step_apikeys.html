@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-2">API Keys</h1>
+<p class="text-gray-500 mb-6">Enter your API keys below. Only Gemini is required — everything else is optional.</p>
+
+{% if error %}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">{{ error }}</div>
+{% endif %}
+
+<form method="POST" action="/step/apikeys" class="space-y-8">
+
+  <section class="space-y-4">
+    <h2 class="font-semibold text-gray-700 border-b pb-2">LLM — Required</h2>
+    <div>
+      <label class="block text-sm font-medium mb-1">Gemini API Key <span class="text-red-500">*</span></label>
+      <input name="gemini_api_key" type="password" required
+             placeholder="AIza..."
+             class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <p class="text-xs text-gray-400 mt-1">Get from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline text-blue-500">aistudio.google.com</a></p>
+    </div>
+  </section>
+
+  <section class="space-y-4">
+    <h2 class="font-semibold text-gray-700 border-b pb-2">LinkedIn OAuth App — optional (needed to publish to LinkedIn)</h2>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Client ID</label>
+        <input name="linkedin_client_id" type="text" placeholder="86ht5x..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Client Secret</label>
+        <input name="linkedin_client_secret" type="password" placeholder="..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      </div>
+    </div>
+    <p class="text-xs text-gray-400">Create a LinkedIn Developer App at <a href="https://www.linkedin.com/developers/apps" target="_blank" class="underline text-blue-500">linkedin.com/developers/apps</a>. Required products: Sign In with LinkedIn, Share on LinkedIn.</p>
+  </section>
+
+  <section class="space-y-4">
+    <h2 class="font-semibold text-gray-700 border-b pb-2">Instagram / Meta — optional</h2>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">App ID</label>
+        <input name="instagram_app_id" type="text" placeholder="2367592..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">App Secret</label>
+        <input name="instagram_app_secret" type="password" class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-4">
+    <h2 class="font-semibold text-gray-700 border-b pb-2">Other — optional</h2>
+    <div>
+      <label class="block text-sm font-medium mb-1">Telegram Bot Token</label>
+      <input name="telegram_bot_token" type="password" placeholder="123456:ABC-..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <p class="text-xs text-gray-400 mt-1">Create via <a href="https://t.me/BotFather" target="_blank" class="underline text-blue-500">@BotFather</a> on Telegram.</p>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">SerpApi Key (for web research)</label>
+      <input name="serpapi_key" type="password" placeholder="..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">xAI / Grok API Key (alternative LLM)</label>
+      <input name="xai_api_key" type="password" placeholder="xai-..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+    </div>
+  </section>
+
+  <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+    Save &amp; Continue &rarr;
+  </button>
+</form>
+{% endblock %}

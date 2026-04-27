@@ -111,3 +111,58 @@ export async function completeUserOnboarding(
     .bind(userId)
     .run();
 }
+
+export async function getUserStatus(db: D1Database, userId: string): Promise<'active' | 'pending' | 'suspended' | null> {
+  const row = await db.prepare('SELECT status FROM users WHERE id = ?').bind(userId).first<{ status: string }>();
+  return row ? (row.status as 'active' | 'pending' | 'suspended') : null;
+}
+
+export async function setUserStatus(db: D1Database, userId: string, status: 'active' | 'suspended'): Promise<void> {
+  await db.prepare('UPDATE users SET status = ? WHERE id = ?').bind(status, userId).run();
+}
+
+export async function setUserBudget(db: D1Database, userId: string, monthlyTokenBudget: number): Promise<void> {
+  await db.prepare('UPDATE users SET monthly_token_budget = ? WHERE id = ?').bind(monthlyTokenBudget, userId).run();
+}
+
+export async function getMonthlyTokenUsage(db: D1Database, userId: string): Promise<number> {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  const row = await db
+    .prepare(
+      `SELECT COALESCE(SUM(total_tokens), 0) as used
+       FROM llm_usage_log
+       WHERE user_id = ? AND created_at >= ?`
+    )
+    .bind(userId, start.toISOString())
+    .first<{ used: number }>();
+  return row?.used ?? 0;
+}
+
+export async function getUserBudget(db: D1Database, userId: string): Promise<number> {
+  const row = await db.prepare('SELECT monthly_token_budget FROM users WHERE id = ?').bind(userId).first<{ monthly_token_budget: number }>();
+  return row?.monthly_token_budget ?? 500000;
+}
+
+export async function createAccessRequest(db: D1Database, id: string, email: string, name: string | null, reason: string | null): Promise<void> {
+  await db
+    .prepare('INSERT OR IGNORE INTO access_requests (id, email, name, reason) VALUES (?, ?, ?, ?)')
+    .bind(id, email, name, reason)
+    .run();
+}
+
+export async function listAccessRequests(db: D1Database, status: 'pending' | 'approved' | 'rejected' = 'pending') {
+  return db.prepare('SELECT * FROM access_requests WHERE status = ? ORDER BY created_at DESC').bind(status).all();
+}
+
+export async function resolveAccessRequest(db: D1Database, email: string, decision: 'approved' | 'rejected', reviewedBy: string): Promise<void> {
+  await db
+    .prepare("UPDATE access_requests SET status = ?, reviewed_at = datetime('now'), reviewed_by = ? WHERE email = ?")
+    .bind(decision, reviewedBy, email)
+    .run();
+}
+
+export async function listAllUsers(db: D1Database) {
+  return db.prepare('SELECT id, display_name, avatar_url, status, monthly_token_budget, created_at FROM users ORDER BY created_at DESC').all();
+}
