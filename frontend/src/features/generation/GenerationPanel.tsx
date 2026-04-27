@@ -57,6 +57,7 @@ interface GenerationPanelProps {
   onGenerateVariants: () => void;
   onApplyQuickChange: () => void;
   onApplyVariant: (index: number) => void;
+  onLoadVariant?: (index: number) => void;
   compact?: boolean;
   /** When true, Quick Change and 4 Variants are disabled (e.g. Selection mode without a range). */
   aiGenerateDisabled?: boolean;
@@ -88,6 +89,7 @@ export function GenerationPanel({
   onGenerateVariants,
   onApplyQuickChange,
   onApplyVariant,
+  onLoadVariant,
   compact = false,
   aiGenerateDisabled = false,
   aiGenerateDisabledReason,
@@ -333,13 +335,20 @@ export function GenerationPanel({
                   </div>
                 )}
 
-                {/* Preview text */}
-                <p className={`text-ink font-medium ${compact ? 'line-clamp-4 text-xs leading-5' : 'line-clamp-5 text-sm leading-6'}`}>
-                  {variant.fullText}
-                </p>
-
                 {/* Action buttons */}
                 <div className="flex flex-wrap gap-2 mt-1">
+                  {onLoadVariant ? (
+                    <Button type="button" variant="ink" size="sm"
+                      onClick={() => onLoadVariant(index)}
+                      className="px-2.5 py-1.5 text-xs font-bold">
+                      Load in editor
+                    </Button>
+                  ) : null}
+                  <Button type="button" variant="secondary" size="sm"
+                    onClick={() => onApplyVariant(index)}
+                    className="px-2.5 py-1.5 text-xs font-bold">
+                    Review changes
+                  </Button>
                   {onSavePreviewVariant ? (
                     <Button type="button" variant="outline" size="sm"
                       onClick={() => onSavePreviewVariant(index)}
@@ -348,11 +357,6 @@ export function GenerationPanel({
                       {saveLabel(index)}
                     </Button>
                   ) : null}
-                  <Button type="button" variant="secondary" size="sm"
-                    onClick={() => onApplyVariant(index)}
-                    className="px-2.5 py-1.5 text-xs font-bold">
-                    Review changes
-                  </Button>
                 </div>
 
                 {previewVariantSaveErrors[index] ? (

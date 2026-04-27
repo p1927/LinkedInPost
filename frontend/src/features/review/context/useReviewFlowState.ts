@@ -455,6 +455,16 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     [],
   );
 
+  // Persist version history to localStorage whenever it changes
+  useEffect(() => {
+    if (!topicId || versionHistory.length === 0) return;
+    try {
+      localStorage.setItem(`version-history-${topicId}`, JSON.stringify(versionHistory));
+    } catch {
+      // ignore storage errors
+    }
+  }, [topicId, versionHistory]);
+
   useEffect(() => {
     let cancelled = false;
     void loadPostTemplates()

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
 import { GenerationJustificationPanel } from '../../review/GenerationJustificationPanel';
@@ -156,6 +156,7 @@ export function EditorSidebar() {
     handleGenerateVariants,
     handleApplyQuickChange,
     handleApplyVariant,
+    handleLoadVariantIntoEditor,
     previewVariantSaveByIndex,
     previewVariantSaveErrors,
     handleSavePreviewVariantAtIndex,
@@ -321,12 +322,15 @@ export function EditorSidebar() {
               disabled={isGenerateDisabled}
               onClick={() => void handleGenerateFromStyle()}
               className={cn(
-                'rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150',
+                'flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150',
                 isGenerateDisabled
                   ? 'cursor-not-allowed bg-gray-100 text-gray-400'
                   : 'bg-primary text-white shadow-sm hover:bg-primary/90 active:scale-[0.98]',
               )}
             >
+              {generationLoading === 'quick-change' && (
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              )}
               {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
             </button>
           </div>
@@ -489,6 +493,7 @@ export function EditorSidebar() {
                   onGenerateVariants={() => void handleGenerateVariants()}
                   onApplyQuickChange={handleApplyQuickChange}
                   onApplyVariant={handleApplyVariant}
+                  onLoadVariant={handleLoadVariantIntoEditor}
                   aiGenerateDisabled={aiRefineBlocked}
                   aiGenerateDisabledReason={aiRefineBlockedReason}
                   compact

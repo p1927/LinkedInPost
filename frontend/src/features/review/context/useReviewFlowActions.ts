@@ -315,7 +315,7 @@ export function useReviewFlowActions(
       // Save snapshot to version history (captures the pre-generate state)
       const updatedHistory = [...versionHistory, snapshot].slice(-20);
       setVersionHistory(updatedHistory);
-      setCurrentVersionId(snapshot.id);
+      setCurrentVersionId(null); // null = editor has new content not pinned to any history entry
 
       // Update last generated config so the generate button disables
       setLastGeneratedConfig({ cardId: selectedCardId, dimensionWeights: { ...dimensionWeights } });
@@ -366,6 +366,28 @@ export function useReviewFlowActions(
       return;
     }
     openCompare(`Apply preview ${index + 1}`, variant.replacementText, variant.fullText);
+  };
+
+  const handleLoadVariantIntoEditor = (index: number) => {
+    const variant = variantsPreview?.variants[index];
+    if (!variant) return;
+
+    // Snapshot current editor content so user can revert via version history
+    const snapshot: VersionEntry = {
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      content: editorText,
+      label: `Before variant ${index + 1}`,
+      dimensionWeights: { ...dimensionWeights },
+      source: 'generate',
+    };
+
+    const newContent = variant.fullText ?? variant.replacementText ?? editorText;
+    setEditorText(newContent);
+
+    const updatedHistory = [...versionHistory, snapshot].slice(-20);
+    setVersionHistory(updatedHistory);
+    setCurrentVersionId(null);
   };
 
   const handleSavePreviewVariantAtIndex = async (index: number) => {
@@ -999,6 +1021,7 @@ export function useReviewFlowActions(
     openCompare,
     handleApplyQuickChange,
     handleApplyVariant,
+    handleLoadVariantIntoEditor,
     handleSavePreviewVariantAtIndex,
     handleFetchMoreImageOptions,
     handleSelectImageOption,

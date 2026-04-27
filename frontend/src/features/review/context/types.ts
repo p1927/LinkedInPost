@@ -98,6 +98,7 @@ export interface ReviewFlowEditorContextValue {
   openCompare: (title: string, proposedText: string, resultingText: string) => void;
   handleApplyQuickChange: () => void;
   handleApplyVariant: (index: number) => void;
+  handleLoadVariantIntoEditor: (index: number) => void;
   handleSavePreviewVariantAtIndex: (index: number) => Promise<void>;
   handleFormatting: (action: 'tighten-spacing' | 'bulletize' | 'emphasize') => void;
 
