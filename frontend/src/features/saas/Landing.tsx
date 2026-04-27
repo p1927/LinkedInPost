@@ -328,7 +328,7 @@ export default function Landing({ onLogin }: LandingProps) {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <MarketingNav onLogin={onLogin} />
+      <MarketingNav />
 
       {/* ── 1. HERO ─────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex flex-col justify-center pt-24 pb-16 px-4 overflow-hidden">

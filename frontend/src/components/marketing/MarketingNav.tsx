@@ -3,11 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
-interface MarketingNavProps {
-  onLogin?: (token: string) => void;
-}
-
-export function MarketingNav({ onLogin }: MarketingNavProps) {
+export function MarketingNav() {
   const prefersReducedMotion = useReducedMotion();
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
