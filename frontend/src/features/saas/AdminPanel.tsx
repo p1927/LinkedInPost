@@ -30,8 +30,8 @@ export default function AdminPanel({ idToken }: { idToken: string }) {
         api.getAdminUsers(idToken),
         api.getAdminWaitlist(idToken),
       ]);
-      setUsers(u as UserRow[]);
-      setWaitlist(w as WaitlistRow[]);
+      setUsers(u as unknown as UserRow[]);
+      setWaitlist(w as unknown as WaitlistRow[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load admin data.');
     } finally {

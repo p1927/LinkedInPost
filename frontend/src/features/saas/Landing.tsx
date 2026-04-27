@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { BackendApi } from '../../services/backendApi';
+import { GoogleLoginButton } from '../../components/GoogleLoginButton';
 
 const api = new BackendApi();
 
-export default function Landing({ onLogin }: { onLogin: () => void }) {
+export default function Landing({ onLogin }: { onLogin: (newToken: string) => void }) {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -32,12 +33,7 @@ export default function Landing({ onLogin }: { onLogin: () => void }) {
         </p>
 
         <div className="flex gap-3 justify-center">
-          <button
-            onClick={onLogin}
-            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition"
-          >
-            Sign in with Google
-          </button>
+          <GoogleLoginButton onLogin={onLogin} />
         </div>
 
         <div className="border rounded-xl p-6 text-left space-y-4">
