@@ -39,6 +39,7 @@ export interface GeneratedStyleCard {
   dimensionWeights: Record<string, number>;
   baseCardId?: string;
   createdAt: number;
+  instruction?: string;
 }
 
 export interface VersionEntry {
@@ -111,7 +112,8 @@ export interface ReviewFlowEditorContextValue {
   /** Config used for the last successful styles-tab generation; used to disable the button */
   lastGeneratedConfig: { cardId: string | null; dimensionWeights: Record<string, number> } | null;
   /** Direct-apply generation from the Styles tab (no instruction required) */
-  handleGenerateFromStyle: () => Promise<void>;
+  handleGenerateFromStyle: () => Promise<GeneratedStyleCard | null>;
+  removeGeneratedCard: (id: string) => void;
 
   // ── Version history ────────────────────────────────────────
   versionHistory: VersionEntry[];

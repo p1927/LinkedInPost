@@ -389,6 +389,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [generatedCards, setGeneratedCards] = useState<GeneratedStyleCard[]>([]);
+  const removeGeneratedCard = useCallback(
+    (id: string) => setGeneratedCards(prev => prev.filter(c => c.id !== id)),
+    [],
+  );
   const [lastGeneratedConfig, setLastGeneratedConfig] = useState<{
     cardId: string | null;
     dimensionWeights: Record<string, number>;
@@ -666,6 +670,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setSelectedCardId,
     generatedCards,
     setGeneratedCards,
+    removeGeneratedCard,
     lastGeneratedConfig,
     setLastGeneratedConfig,
     versionHistory,

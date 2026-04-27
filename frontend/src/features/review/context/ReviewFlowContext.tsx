@@ -70,6 +70,7 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     generatedCards: restState.generatedCards,
     lastGeneratedConfig: restState.lastGeneratedConfig,
     handleGenerateFromStyle: actions.handleGenerateFromStyle,
+    removeGeneratedCard: restState.removeGeneratedCard,
     versionHistory: restState.versionHistory,
     currentVersionId: restState.currentVersionId,
     restoreVersion: restState.restoreVersion,

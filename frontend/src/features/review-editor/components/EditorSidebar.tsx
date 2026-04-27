@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Pencil, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
 import { GenerationJustificationPanel } from '../../review/GenerationJustificationPanel';
@@ -170,6 +170,7 @@ export function EditorSidebar() {
     generatedCards,
     lastGeneratedConfig,
     handleGenerateFromStyle,
+    removeGeneratedCard,
   } = useReviewFlowEditor();
 
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -194,6 +195,29 @@ export function EditorSidebar() {
     await onDeleteCustomWorkflow?.(id);
     setBuilderOpen(false);
     setBuilderWorkflow(undefined);
+  }
+
+  async function handleGenerateAndSave() {
+    const card = await handleGenerateFromStyle();
+    if (!card || !onCreateCustomWorkflow) return;
+
+    const topDims = Object.entries(card.dimensionWeights)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 3)
+      .map(([k]) => k.charAt(0).toUpperCase() + k.slice(1));
+    const description = `Custom style emphasising ${topDims.join(', ')}.`;
+
+    const savedId = await onCreateCustomWorkflow({
+      name: card.label,
+      description,
+      optimizationTarget: '',
+      generationInstruction: card.instruction ?? `Generate a post with ${topDims.join(', ')} emphasis.`,
+      extendsWorkflowId: card.baseCardId ?? 'base',
+      dimensionWeights: card.dimensionWeights,
+    });
+    if (savedId) {
+      removeGeneratedCard(card.id);
+    }
   }
 
   function selectStyle(id: string) {
@@ -320,7 +344,7 @@ export function EditorSidebar() {
             <button
               type="button"
               disabled={isGenerateDisabled}
-              onClick={() => void handleGenerateFromStyle()}
+              onClick={() => void handleGenerateAndSave()}
               className={cn(
                 'flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150',
                 isGenerateDisabled
@@ -419,18 +443,27 @@ export function EditorSidebar() {
                 const wf = item.wf;
                 const isSelected = selectedCardId === wf.id;
                 return (
-                  <button
-                    key={wf.id}
-                    type="button"
-                    onClick={() => selectStyle(wf.id)}
-                    className={cn(
-                      'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 border-violet-200 bg-violet-50/70 p-2.5 text-left transition-all duration-150 hover:border-violet-300 hover:shadow-md',
-                      isSelected && 'ring-2 ring-offset-1 ring-violet-400 shadow-md',
-                    )}
-                  >
-                    <p className="text-xs font-bold leading-snug text-ink">{wf.name}</p>
-                    <p className="line-clamp-2 text-[0.6rem] leading-relaxed text-slate-600">{wf.description}</p>
-                  </button>
+                  <div key={wf.id} className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => selectStyle(wf.id)}
+                      className={cn(
+                        'flex w-full cursor-pointer flex-col gap-1.5 rounded-xl border-2 border-violet-200 bg-violet-50/70 p-2.5 text-left transition-all duration-150 hover:border-violet-300 hover:shadow-md',
+                        isSelected && 'ring-2 ring-offset-1 ring-violet-400 shadow-md',
+                      )}
+                    >
+                      <p className="pr-4 text-xs font-bold leading-snug text-ink">{wf.name}</p>
+                      <p className="line-clamp-2 text-[0.6rem] leading-relaxed text-slate-600">{wf.description}</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setBuilderWorkflow(wf); setBuilderOpen(true); }}
+                      className="absolute right-1.5 top-1.5 rounded p-0.5 opacity-0 transition-opacity hover:bg-violet-200/60 group-hover:opacity-100"
+                      aria-label={`Edit ${wf.name}`}
+                    >
+                      <Pencil className="h-2.5 w-2.5 text-violet-500" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -439,12 +472,17 @@ export function EditorSidebar() {
           {/* Compact dimension sliders — pinned below cards, always visible */}
           <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-3 py-2 shadow-sm">
             <p className="mb-1 text-[0.58rem] font-bold uppercase tracking-wide text-ink/50">Writing emphasis</p>
-            <div className="space-y-0.5">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {DIMENSIONS.map(({ key, label }) => {
                 const val = weights[key] ?? 50;
                 return (
-                  <div key={key} className="flex items-center gap-2">
-                    <span className="w-[4.5rem] shrink-0 text-[0.58rem] font-semibold text-ink/70">{label}</span>
+                  <div key={key} className="flex flex-col gap-0.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[0.58rem] font-semibold text-ink/70">{label}</span>
+                      <span className={cn('text-[0.58rem] font-bold tabular-nums', getLevelColor(val))}>
+                        {getLevelName(val)}
+                      </span>
+                    </div>
                     <input
                       type="range"
                       min="0"
@@ -453,7 +491,7 @@ export function EditorSidebar() {
                       value={val}
                       onChange={e => handleWeightChange(key, Number(e.target.value))}
                       className={cn(
-                        'flex-1 h-0.5 cursor-pointer appearance-none rounded-full bg-slate-200',
+                        'w-full h-0.5 cursor-pointer appearance-none rounded-full bg-slate-200',
                         '[&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5',
                         '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
                         '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
@@ -463,9 +501,6 @@ export function EditorSidebar() {
                         '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary',
                       )}
                     />
-                    <span className={cn('w-10 shrink-0 text-right text-[0.58rem] font-bold tabular-nums', getLevelColor(val))}>
-                      {getLevelName(val)}
-                    </span>
                   </div>
                 );
               })}

@@ -269,8 +269,8 @@ export function useReviewFlowActions(
     }
   };
 
-  const handleGenerateFromStyle = async (): Promise<void> => {
-    if (generationLoading !== null) return;
+  const handleGenerateFromStyle = async (): Promise<GeneratedStyleCard | null> => {
+    if (generationLoading !== null) return null;
 
     // Identify selected card
     const activeCard = selectedCardId
@@ -306,7 +306,7 @@ export function useReviewFlowActions(
     setGenerationLoading('quick-change');
     try {
       const result = await onGenerateQuickChange(req);
-      if (!result) return;
+      if (!result) return null;
 
       // Apply result directly to editor (no preview step for styles tab)
       const newContent = result.fullText ?? result.replacementText ?? editorText;
@@ -321,17 +321,17 @@ export function useReviewFlowActions(
       setLastGeneratedConfig({ cardId: selectedCardId, dimensionWeights: { ...dimensionWeights } });
 
       // Create an untitled card for the top of the card grid (session-only)
-      const now = Date.now();
-      const newCardBase = {
-        id: `generated-${now}`,
+      const cardNow = Date.now();
+      const newCard: GeneratedStyleCard = {
+        id: `generated-${cardNow}`,
         dimensionWeights: { ...dimensionWeights },
         baseCardId: selectedCardId ?? undefined,
-        createdAt: now,
+        createdAt: cardNow,
+        instruction: autoInstruction,
+        label: `Untitled ${generatedCards.length + 1}`,
       };
-      setGeneratedCards(prev => {
-        const card: GeneratedStyleCard = { ...newCardBase, label: `Untitled ${prev.length + 1}` };
-        return [card, ...prev].slice(0, 5);
-      });
+      setGeneratedCards(prev => [newCard, ...prev].slice(0, 5));
+      return newCard;
     } finally {
       setGenerationLoading(null);
     }
