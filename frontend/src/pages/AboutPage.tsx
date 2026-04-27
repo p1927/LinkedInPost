@@ -124,7 +124,7 @@ function SectionReveal({
       ref={ref}
       initial={reduced ? false : { opacity: 0, y: 30 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay, ease: 'easeOut' }}
+      transition={{ duration: 0.5, delay, ease: 'easeOut' as const }}
       className={className}
     >
       {children}

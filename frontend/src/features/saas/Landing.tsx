@@ -41,7 +41,7 @@ const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 40 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true },
-  transition: { duration: 0.5, delay, ease: 'easeOut' },
+  transition: { duration: 0.5, delay, ease: 'easeOut' as const },
 });
 
 const staggerContainer = {
@@ -51,7 +51,7 @@ const staggerContainer = {
 
 const staggerItem = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
 // ── Sub-components ───────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ function FloatingOrb({ className }: { className: string }) {
           ? {}
           : { y: [0, -24, 0], x: [0, 12, 0] }
       }
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' as const }}
       style={{ willChange: 'transform' }}
     />
   );
@@ -364,7 +364,7 @@ export default function Landing({ onLogin }: LandingProps) {
                     key={i}
                     initial={prefersReducedMotion ? {} : { opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 + i * 0.1, ease: 'easeOut' }}
+                    transition={{ duration: 0.5, delay: 0.1 + i * 0.1, ease: 'easeOut' as const }}
                     className="inline-block mr-3"
                     style={{ willChange: 'transform' }}
                   >
@@ -444,7 +444,7 @@ export default function Landing({ onLogin }: LandingProps) {
           <div className="relative overflow-hidden">
             <motion.div
               animate={prefersReducedMotion ? {} : { x: ['0%', '-50%'] }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+              transition={{ duration: 20, repeat: Infinity, ease: 'linear' as const }}
               className="flex gap-6 w-max"
             >
               {logos.map((name, i) => (
