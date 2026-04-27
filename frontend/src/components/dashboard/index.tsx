@@ -53,6 +53,7 @@ import { AddTopicPage } from '../../features/add-topic/AddTopicPage';
 import { TopicDetailView } from '../../features/add-topic/TopicDetailView';
 import { AutomationsTab } from '../../features/automations';
 import { SetupWizard } from '../../features/setup-wizard/SetupWizard';
+import AdminPanel from '../../features/saas/AdminPanel';
 import { topicNeedsFullTooltip, truncateTopicForUi } from '../../lib/topicDisplay';
 import type { TopicRescheduleCommitPayload } from '@/features/content-schedule-calendar';
 
@@ -930,6 +931,16 @@ export function Dashboard({
           element={
             session.isAdmin ? (
               <SetupWizard embedded />
+            ) : (
+              <Navigate to={WORKSPACE_PATHS.topics} replace />
+            )
+          }
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.admin}
+          element={
+            session.isAdmin ? (
+              <AdminPanel idToken={idToken} />
             ) : (
               <Navigate to={WORKSPACE_PATHS.topics} replace />
             )

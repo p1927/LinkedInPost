@@ -15,6 +15,7 @@ export const WORKSPACE_PATHS = {
   trending: '/trending',
   automations: '/automations',
   setup: '/setup',
+  admin: '/admin',
 } as const;
 
 /** GitHub Pages may 301 `/topics` → `/topics/`; normalize so list/editor matching stays stable. */
@@ -43,6 +44,7 @@ export const WORKSPACE_ROUTE_PATHS = {
   trending: '/trending',
   automations: '/automations',
   setup: '/setup',
+  admin: '/admin',
 } as const;
 
 /** True when the URL is the draft editor (`/topics/…/editor/…`), for layout (e.g. collapse app sidebar). */

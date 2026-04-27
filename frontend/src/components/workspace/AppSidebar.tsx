@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
 import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'automations' | 'setup';
+export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'automations' | 'setup' | 'admin';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -149,7 +149,9 @@ export function AppSidebar({
                         ? WORKSPACE_PATHS.settings
                         : page === 'setup'
                           ? WORKSPACE_PATHS.setup
-                          : WORKSPACE_PATHS.automations; // explicit — not a fallthrough
+                          : page === 'admin'
+                            ? WORKSPACE_PATHS.admin
+                            : WORKSPACE_PATHS.automations; // explicit — not a fallthrough
     return (
       <li key={page}>
         <NavLink
@@ -272,6 +274,7 @@ export function AppSidebar({
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
             {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}
             {session.isAdmin ? link('setup', <Wrench aria-hidden />, 'Setup') : null}
+            {session.isAdmin ? link('admin', <Settings aria-hidden />, 'Admin') : null}
           </ul>
         </nav>
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { BrowserRouter, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Link, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
 import { LogOut, Settings, Share2, Sparkles, TableProperties } from 'lucide-react'
 import { googleLogout } from '@react-oauth/google'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
@@ -39,7 +39,6 @@ import {
   shouldCapturePathForPostLogin,
 } from './lib/postLoginRedirect'
 import Landing from './features/saas/Landing'
-import AdminPanel from './features/saas/AdminPanel'
 import UsageMeter from './features/saas/UsageMeter'
 import { deploymentMode } from './generated/features'
 
@@ -110,15 +109,15 @@ function WorkspaceSession({
                   ? 'automations'
                   : path.startsWith(WORKSPACE_PATHS.setup)
                     ? 'setup'
-                    : 'topics'
+                    : path.startsWith(WORKSPACE_PATHS.admin)
+                      ? 'admin'
+                      : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
   const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
 
   useEffect(() => {
     document.title = getWorkspaceDocumentTitle(location.pathname)
   }, [location.pathname])
-
-  const navigate = useNavigate()
 
   return (
     <WorkspaceShell
@@ -138,20 +137,22 @@ function WorkspaceSession({
             <UsageMeter used={tokenUsage.used} budget={tokenUsage.budget} resetDate={tokenUsage.resetDate} />
           )}
           {deploymentMode === 'saas' && session.isAdmin && (
-            <button
-              onClick={() => navigate('/admin')}
-              className="h-9 min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 sm:px-4"
+            <Link
+              to={WORKSPACE_PATHS.admin}
+              className="h-9 min-h-9 inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 sm:px-4"
             >
               Admin
-            </button>
+            </Link>
           )}
-          <a
-            href="/setup-wizard.html"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-muted transition-colors"
-          >
-            <Settings className="h-3.5 w-3.5" aria-hidden />
-            Setup
-          </a>
+          {session.isAdmin && (
+            <Link
+              to={WORKSPACE_PATHS.setup}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-muted transition-colors"
+            >
+              <Settings className="h-3.5 w-3.5" aria-hidden />
+              Setup
+            </Link>
+          )}
         </>
       }
     >
@@ -444,9 +445,6 @@ function App() {
           {deploymentMode === 'saas' && (
             <Route path="/landing" element={<Landing onLogin={handleLogin} />} />
           )}
-          {deploymentMode === 'saas' && idToken && session?.isAdmin && (
-            <Route path="/admin" element={<AdminPanel idToken={idToken} />} />
-          )}
           <Route
             path="*"
             element={
@@ -461,13 +459,6 @@ function App() {
                         <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
                       </div>
                       <div className="flex items-center gap-2">
-                        <a
-                          href="/setup-wizard.html"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-muted/10 transition-colors text-muted"
-                        >
-                          <Settings className="h-3.5 w-3.5" aria-hidden />
-                          Setup
-                        </a>
                         {idToken ? (
                           isActiveDevGoogleAuthBypassToken(idToken) ? (
                             <Button
