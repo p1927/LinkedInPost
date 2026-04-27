@@ -272,15 +272,18 @@ export function useReviewFlowActions(
   const handleGenerateFromStyle = async (): Promise<void> => {
     if (generationLoading !== null) return;
 
-    if (!(editorText || '').trim()) {
-      void showAlert({ title: 'Notice', description: 'Add some draft text before generating.' });
-      return;
-    }
-
-    // Snapshot the content BEFORE generation so user can revert to it
+    // Identify selected card
     const activeCard = selectedCardId
       ? BUILT_IN_WORKFLOW_CARDS.find(c => c.id === selectedCardId)
       : null;
+
+    // Auto-build instruction from card name, description, and traits so the
+    // backend always receives a non-empty instruction without requiring user input.
+    const autoInstruction = activeCard
+      ? `Write in a ${activeCard.name} style. ${activeCard.description} Key traits: ${activeCard.traits.join(', ')}.`
+      : 'Generate a fresh post using the selected enrichment weights and style.';
+
+    // Snapshot the current editor content BEFORE generation so user can revert.
     const snapshotLabel = activeCard?.name ?? 'Custom';
     const snapshot: VersionEntry = {
       id: crypto.randomUUID(),
@@ -292,9 +295,13 @@ export function useReviewFlowActions(
       source: 'generate',
     };
 
-    // Build request without requiring an instruction
+    // Build request using topic metadata as the source content (not the current
+    // draft) so generation starts from the raw topic, not a refinement pass.
     const req = buildGenerationRequest();
-    if (!req.instruction?.trim()) delete req.instruction;
+    req.editorText = sheetRow.topic || '';
+    req.instruction = autoInstruction;
+    req.scope = 'whole-post';
+    req.selection = null;
 
     setGenerationLoading('quick-change');
     try {
