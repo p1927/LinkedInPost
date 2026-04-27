@@ -52,6 +52,14 @@ function getLevelColor(v: number) {
   return 'text-red-500';
 }
 
+function getLevelPill(v: number) {
+  if (v <= 10) return 'bg-slate-100 text-slate-500';
+  if (v <= 30) return 'bg-blue-100 text-blue-600';
+  if (v <= 50) return 'bg-amber-100 text-amber-600';
+  if (v <= 80) return 'bg-orange-100 text-orange-600';
+  return 'bg-red-100 text-red-600';
+}
+
 // ─── Card colour maps ──────────────────────────────────────────────────────────
 
 type ColorKey = 'violet' | 'amber' | 'emerald' | 'blue' | 'rose' | 'slate';
@@ -470,25 +478,28 @@ export function EditorSidebar() {
             </div>
           </div>
 
-          {/* Dimension sliders — spacious, animated */}
+          {/* Dimension sliders — 2-column grid, spacious, animated */}
           <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-4 py-3.5 shadow-sm">
-            <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-widest text-ink/40">Writing emphasis</p>
-            <div className="flex flex-col gap-3">
+            <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-widest text-ink/40">Writing emphasis</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               {DIMENSIONS.map(({ key, label }) => {
                 const val = weights[key] ?? 50;
                 const levelName = getLevelName(val);
                 return (
                   <div key={key} className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[0.72rem] font-medium text-ink/75">{label}</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="truncate text-[0.68rem] font-semibold text-ink/70">{label}</span>
                       <AnimatePresence mode="wait" initial={false}>
                         <motion.span
                           key={levelName}
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 4 }}
-                          transition={{ duration: 0.15 }}
-                          className={cn('text-[0.65rem] font-bold tabular-nums', getLevelColor(val))}
+                          initial={{ opacity: 0, scale: 0.75 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.75 }}
+                          transition={{ duration: 0.12, ease: 'easeOut' }}
+                          className={cn(
+                            'shrink-0 rounded-full px-1.5 py-px text-[0.55rem] font-bold tabular-nums',
+                            getLevelPill(val),
+                          )}
                         >
                           {levelName}
                         </motion.span>
