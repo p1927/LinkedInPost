@@ -153,6 +153,8 @@ export interface Env {
   DEV_SPREADSHEET_ID?: string;
   /** Optional: override the base URL used for OAuth redirect URIs (e.g. https://my-worker.example.com). Must match the registered redirect URI in each provider's developer console. */
   OAUTH_REDIRECT_BASE_URL?: string;
+  /** Deployment mode: 'saas' (hosted, multi-tenant) or 'selfHosted' (single-owner, direct login). */
+  DEPLOYMENT_MODE?: string;
   /** Local only: shared secret; client sends as idToken to skip Google Sign-In (see dev-google-auth-bypass plugin) */
   DEV_GOOGLE_AUTH_BYPASS_SECRET?: string;
   /** Optional synthetic email for bypass session (default dev-bypass@local.invalid) */
@@ -1427,7 +1429,7 @@ async function dispatchAction(
     }
     case 'generateQuickChange': {
       ensureSpreadsheetConfigured(storedConfig);
-      const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId);
+      const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId, env.DEPLOYMENT_MODE ?? 'saas');
       if (!budgetCheck.allowed) {
         throw Object.assign(new Error('Monthly token budget exceeded'), { httpStatus: 429, used: budgetCheck.used, budget: budgetCheck.budget });
       }
@@ -1439,7 +1441,7 @@ async function dispatchAction(
     case 'generateVariantsPreview': {
       ensureSpreadsheetConfigured(storedConfig);
       {
-        const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId);
+        const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId, env.DEPLOYMENT_MODE ?? 'saas');
         if (!budgetCheck.allowed) {
           throw Object.assign(new Error('Monthly token budget exceeded'), { httpStatus: 429, used: budgetCheck.used, budget: budgetCheck.budget });
         }
@@ -1891,7 +1893,7 @@ Rules:
       }
       ensureSpreadsheetConfigured(storedConfig);
       {
-        const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId);
+        const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId, env.DEPLOYMENT_MODE ?? 'saas');
         if (!budgetCheck.allowed) {
           throw Object.assign(new Error('Monthly token budget exceeded'), { httpStatus: 429, used: budgetCheck.used, budget: budgetCheck.budget });
         }

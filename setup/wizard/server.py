@@ -13,7 +13,8 @@ def create_app() -> Flask:
     app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
     app.secret_key = 'linkedin-setup-wizard-local'
 
-    from .steps import prereqs, google, cloudflare, apikeys, deploy, verify
+    from .steps import mode, prereqs, google, cloudflare, apikeys, deploy, verify
+    app.register_blueprint(mode.bp)
     app.register_blueprint(prereqs.bp)
     app.register_blueprint(google.bp)
     app.register_blueprint(cloudflare.bp)
@@ -23,7 +24,7 @@ def create_app() -> Flask:
 
     @app.route('/')
     def index():
-        return redirect(url_for('prereqs.show'))
+        return redirect(url_for('mode.show'))
 
     @app.route('/complete')
     def complete():

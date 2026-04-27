@@ -5,7 +5,7 @@ from pathlib import Path
 
 STATE_FILE = Path('.wizard_state.json')
 
-STEPS = ['prereqs', 'google', 'cloudflare', 'apikeys', 'deploy', 'verify']
+STEPS = ['mode', 'prereqs', 'google', 'cloudflare', 'apikeys', 'deploy', 'verify']
 
 
 def load() -> dict:

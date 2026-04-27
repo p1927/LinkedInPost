@@ -29,8 +29,12 @@ export async function checkUserAccess(
 
 /**
  * Check if the user has remaining token budget for this month.
+ * In selfHosted mode, budgets are disabled and all requests are allowed.
  */
-export async function checkTokenBudget(db: D1Database, userId: string): Promise<{ allowed: boolean; used: number; budget: number }> {
+export async function checkTokenBudget(db: D1Database, userId: string, deploymentMode: string): Promise<{ allowed: boolean; used: number; budget: number }> {
+  if (deploymentMode !== 'saas') {
+    return { allowed: true, used: 0, budget: Infinity };
+  }
   const [used, budget] = await Promise.all([
     getMonthlyTokenUsage(db, userId),
     getUserBudget(db, userId),

@@ -41,6 +41,7 @@ import {
 import Landing from './pages/Landing'
 import AdminPanel from './pages/AdminPanel'
 import UsageMeter from './components/UsageMeter'
+import { deploymentMode } from './generated/features'
 
 const STORED_ID_TOKEN_KEY = 'google_id_token'
 
@@ -133,10 +134,10 @@ function WorkspaceSession({
       }}
       headerExtra={
         <>
-          {tokenUsage && (
+          {deploymentMode === 'saas' && tokenUsage && (
             <UsageMeter used={tokenUsage.used} budget={tokenUsage.budget} resetDate={tokenUsage.resetDate} />
           )}
-          {session.isAdmin && (
+          {deploymentMode === 'saas' && session.isAdmin && (
             <button
               onClick={() => navigate('/admin')}
               className="h-9 min-h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 sm:px-4"
@@ -433,8 +434,10 @@ function App() {
         <Routes>
           <Route path="/terms" element={<TermsOfServicePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/landing" element={<Landing onLogin={handleLogin} />} />
-          {idToken && session?.isAdmin && (
+          {deploymentMode === 'saas' && (
+            <Route path="/landing" element={<Landing onLogin={handleLogin} />} />
+          )}
+          {deploymentMode === 'saas' && idToken && session?.isAdmin && (
             <Route path="/admin" element={<AdminPanel idToken={idToken} />} />
           )}
           <Route

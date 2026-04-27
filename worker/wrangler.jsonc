@@ -56,7 +56,8 @@
     "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
     "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
     "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
-    "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev"
+    "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev",
+    "DEPLOYMENT_MODE": "saas"
   },
   "observability": {
     "logs": {
@@ -105,7 +106,8 @@
         "WHATSAPP_PHONE_NUMBER_ID": "1022832014251401",
         "GMAIL_CLIENT_ID": "718831604482-adir3bqc7u5qcme92hhjcuo72tsimjmf.apps.googleusercontent.com",
         "NEWS_SNAPSHOT_MAX_PER_TOPIC": "10",
-        "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev"
+        "GENERATION_WORKER_URL": "https://linkedin-generation-worker.99pratyush.workers.dev",
+        "DEPLOYMENT_MODE": "saas"
       },
       "kv_namespaces": [
         {
