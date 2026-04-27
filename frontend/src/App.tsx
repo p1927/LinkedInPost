@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BrowserRouter, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
-import { LogOut, Share2, Sparkles, TableProperties } from 'lucide-react'
+import { LogOut, Settings, Share2, Sparkles, TableProperties } from 'lucide-react'
 import { googleLogout } from '@react-oauth/google'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Button } from '@/components/ui/button'
@@ -145,6 +145,13 @@ function WorkspaceSession({
               Admin
             </button>
           )}
+          <a
+            href="/setup-wizard.html"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-muted transition-colors"
+          >
+            <Settings className="h-3.5 w-3.5" aria-hidden />
+            Setup
+          </a>
         </>
       }
     >
@@ -453,26 +460,35 @@ function App() {
                         </div>
                         <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
                       </div>
-                      {idToken ? (
-                        isActiveDevGoogleAuthBypassToken(idToken) ? (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="md"
-                            onClick={() => {
-                              setIdToken(null)
-                              setSession(null)
-                              setErrorMessage('')
-                            }}
-                            className="glass-inset gap-2 rounded-xl text-muted hover:bg-white/85 hover:text-ink"
-                          >
-                            <LogOut className="h-4 w-4" aria-hidden />
-                            Log out
-                          </Button>
-                        ) : (
-                          <GoogleLoginButton onLogin={handleLogin} onSignInIntent={() => setErrorMessage('')} />
-                        )
-                      ) : null}
+                      <div className="flex items-center gap-2">
+                        <a
+                          href="/setup-wizard.html"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-muted/10 transition-colors text-muted"
+                        >
+                          <Settings className="h-3.5 w-3.5" aria-hidden />
+                          Setup
+                        </a>
+                        {idToken ? (
+                          isActiveDevGoogleAuthBypassToken(idToken) ? (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="md"
+                              onClick={() => {
+                                setIdToken(null)
+                                setSession(null)
+                                setErrorMessage('')
+                              }}
+                              className="glass-inset gap-2 rounded-xl text-muted hover:bg-white/85 hover:text-ink"
+                            >
+                              <LogOut className="h-4 w-4" aria-hidden />
+                              Log out
+                            </Button>
+                          ) : (
+                            <GoogleLoginButton onLogin={handleLogin} onSignInIntent={() => setErrorMessage('')} />
+                          )
+                        ) : null}
+                      </div>
                     </div>
                   </header>
                 ) : null}

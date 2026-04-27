@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "prebuild": "python3 ../scripts/generate_features.py && node scripts/generate-google-models.mjs",
-    "dev": "concurrently \"vite\" \"node server/sttServer.js\"",
+    "dev": "concurrently \"vite\" \"node server/sttServer.js\" \"node server/setupWizard.js\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

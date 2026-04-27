@@ -422,6 +422,54 @@ app.post('/api/setup/regenerate-features', (req, res) => {
   });
 });
 
+/**
+ * POST /api/setup/deployment-mode
+ * Write deploymentMode to features.yaml and regenerate features.ts
+ * Body: { projectDir: string, mode: 'saas' | 'selfHosted' }
+ */
+app.post('/api/setup/deployment-mode', (req, res) => {
+  const { projectDir, mode } = req.body || {};
+  if (!projectDir || typeof projectDir !== 'string') {
+    return res.status(400).json({ error: 'projectDir required' });
+  }
+  if (mode !== 'saas' && mode !== 'selfHosted') {
+    return res.status(400).json({ error: 'mode must be saas or selfHosted' });
+  }
+
+  const resolvedProject = path.resolve(projectDir);
+  if (!path.isAbsolute(resolvedProject) || resolvedProject.includes('..')) {
+    return res.status(400).json({ error: 'invalid projectDir' });
+  }
+
+  const featuresPath = join(resolvedProject, 'features.yaml');
+  try {
+    let content = readFileSync(featuresPath, 'utf-8');
+    content = content.replace(/^deploymentMode:.*$/m, `deploymentMode: ${mode}`);
+    writeFileSync(featuresPath, content, 'utf-8');
+  } catch (err) {
+    return res.status(500).json({ error: `Failed to write features.yaml: ${err.message}` });
+  }
+
+  // Regenerate features.ts
+  const child = spawn('python3', ['scripts/generate_features.py'], {
+    cwd: resolvedProject,
+    timeout: 30000,
+  });
+
+  let stderr = '';
+  child.stderr?.on('data', d => { stderr += d.toString(); });
+
+  child.on('close', code => {
+    if (code === 0) {
+      res.json({ ok: true, mode });
+    } else {
+      res.status(500).json({ ok: false, error: `generate_features.py failed: ${stderr.slice(0, 300)}` });
+    }
+  });
+
+  child.on('error', err => res.status(500).json({ ok: false, error: err.message }));
+});
+
 // ─── STT Endpoints ───────────────────────────────────────────────────────────
 
 const MODEL_URLS = {
