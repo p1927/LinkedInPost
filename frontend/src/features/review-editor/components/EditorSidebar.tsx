@@ -173,6 +173,11 @@ export function EditorSidebar() {
 
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderWorkflow, setBuilderWorkflow] = useState<CustomWorkflowSummary | undefined>(undefined);
+  const [recentlySelectedIds, setRecentlySelectedIds] = useState<string[]>([]);
+
+  function trackRecent(id: string) {
+    setRecentlySelectedIds(prev => [id, ...prev.filter(x => x !== id)]);
+  }
 
   async function handleModalSave(values: CreateWorkflowFormValues) {
     if (builderWorkflow) {
@@ -195,12 +200,35 @@ export function EditorSidebar() {
     setSelectedCardId(id);
     setPostType(id);
     setDimensionWeights(card ? { ...card.dimensionWeights } : { ...DEFAULT_WEIGHTS });
+    trackRecent(id);
   }
 
   function selectGeneratedCard(card: GeneratedStyleCard) {
     setSelectedCardId(card.id);
     setDimensionWeights({ ...card.dimensionWeights });
+    trackRecent(card.id);
   }
+
+  type CardItem =
+    | { kind: 'gen'; gc: GeneratedStyleCard }
+    | { kind: 'builtin'; c: (typeof ORDERED_CARDS)[number] }
+    | { kind: 'custom'; wf: NonNullable<typeof customWorkflows>[number] };
+
+  const allCards = useMemo((): CardItem[] => {
+    const pool: CardItem[] = [
+      ...generatedCards.slice(0, 5).map(gc => ({ kind: 'gen' as const, gc })),
+      ...ORDERED_CARDS.map(c => ({ kind: 'builtin' as const, c })),
+      ...(customWorkflows ?? []).map(wf => ({ kind: 'custom' as const, wf })),
+    ];
+    const getId = (item: CardItem) =>
+      item.kind === 'gen' ? item.gc.id : item.kind === 'builtin' ? item.c.id : item.wf.id;
+    const recentSet = new Set(recentlySelectedIds);
+    const recentItems = recentlySelectedIds
+      .map(id => pool.find(item => getId(item) === id))
+      .filter((x): x is CardItem => x !== undefined);
+    const restItems = pool.filter(item => !recentSet.has(getId(item)));
+    return [...recentItems, ...restItems];
+  }, [generatedCards, customWorkflows, recentlySelectedIds]);
 
   const weights = dimensionWeights ?? DEFAULT_WEIGHTS;
   function handleWeightChange(key: string, value: number) {
@@ -303,78 +331,88 @@ export function EditorSidebar() {
             </button>
           </div>
 
-          {/* Card grid + sliders — scroll together in one rounded box */}
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100">
+          {/* Card grid + sliders — fixed-height scrollable box */}
+          <div className="max-h-[440px] overflow-y-auto rounded-xl border border-gray-100">
             <div className="grid grid-cols-2 gap-2 p-1">
 
-              {/* Generated (untitled) cards — most recent first */}
-              {generatedCards.slice(0, 5).map(gc => {
-                const isSelected = selectedCardId === gc.id;
-                const topDims = Object.entries(gc.dimensionWeights)
-                  .sort(([, a], [, b]) => (b as number) - (a as number))
-                  .slice(0, 3)
-                  .map(([k]) => k);
-                return (
-                  <button
-                    key={gc.id}
-                    type="button"
-                    onClick={() => selectGeneratedCard(gc)}
-                    className={cn(
-                      'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 border-dashed p-2.5 text-left transition-all duration-150',
-                      'border-slate-300 bg-slate-50/80 hover:bg-slate-100/60',
-                      isSelected && 'ring-2 ring-offset-1 shadow-md ring-slate-400',
-                    )}
-                  >
-                    <p className="truncate text-xs font-bold leading-snug text-ink">{gc.label}</p>
-                    <p className="text-[0.55rem] text-muted">
-                      {new Date(gc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                    <div className="mt-auto flex flex-wrap gap-1 pt-0.5">
-                      {topDims.map(d => (
-                        <span
-                          key={d}
-                          className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[0.55rem] font-semibold capitalize text-slate-600"
-                        >
-                          {d}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
+              {/* Create your own — always top-left */}
+              <button
+                type="button"
+                onClick={() => { setBuilderWorkflow(undefined); setBuilderOpen(true); }}
+                className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center transition-all duration-150 hover:border-violet-300 hover:bg-violet-50/40"
+              >
+                <Plus className="h-4 w-4 text-muted" />
+                <p className="text-[0.65rem] font-semibold text-muted">Create your own</p>
+              </button>
 
-              {/* Built-in cards (featured first) */}
-              {ORDERED_CARDS.map(card => {
-                const isSelected = selectedCardId === card.id;
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    onClick={() => selectStyle(card.id)}
-                    className={cn(
-                      'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 p-2.5 text-left transition-all duration-150 hover:shadow-md',
-                      CARD_BG[card.colorKey],
-                      isSelected && `ring-2 ring-offset-1 shadow-md ${CARD_RING[card.colorKey]}`,
-                    )}
-                  >
-                    <p className="text-xs font-bold leading-snug text-ink">{card.name}</p>
-                    <p className="line-clamp-2 text-[0.6rem] leading-relaxed text-slate-600">{card.description}</p>
-                    <div className="mt-auto flex flex-wrap gap-1 pt-0.5">
-                      {card.traits.map(trait => (
-                        <span
-                          key={trait}
-                          className="rounded-full bg-white/70 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200"
-                        >
-                          {trait}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Custom user-created workflows */}
-              {customWorkflows?.map(wf => {
+              {/* All cards: recently selected first, then rest */}
+              {allCards.map(item => {
+                if (item.kind === 'gen') {
+                  const gc = item.gc;
+                  const isSelected = selectedCardId === gc.id;
+                  const topDims = Object.entries(gc.dimensionWeights)
+                    .sort(([, a], [, b]) => (b as number) - (a as number))
+                    .slice(0, 3)
+                    .map(([k]) => k);
+                  return (
+                    <button
+                      key={gc.id}
+                      type="button"
+                      onClick={() => selectGeneratedCard(gc)}
+                      className={cn(
+                        'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 border-dashed p-2.5 text-left transition-all duration-150',
+                        'border-slate-300 bg-slate-50/80 hover:bg-slate-100/60',
+                        isSelected && 'ring-2 ring-offset-1 shadow-md ring-slate-400',
+                      )}
+                    >
+                      <p className="truncate text-xs font-bold leading-snug text-ink">{gc.label}</p>
+                      <p className="text-[0.55rem] text-muted">
+                        {new Date(gc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      <div className="mt-auto flex flex-wrap gap-1 pt-0.5">
+                        {topDims.map(d => (
+                          <span
+                            key={d}
+                            className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[0.55rem] font-semibold capitalize text-slate-600"
+                          >
+                            {d}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                }
+                if (item.kind === 'builtin') {
+                  const card = item.c;
+                  const isSelected = selectedCardId === card.id;
+                  return (
+                    <button
+                      key={card.id}
+                      type="button"
+                      onClick={() => selectStyle(card.id)}
+                      className={cn(
+                        'flex cursor-pointer flex-col gap-1.5 rounded-xl border-2 p-2.5 text-left transition-all duration-150 hover:shadow-md',
+                        CARD_BG[card.colorKey],
+                        isSelected && `ring-2 ring-offset-1 shadow-md ${CARD_RING[card.colorKey]}`,
+                      )}
+                    >
+                      <p className="text-xs font-bold leading-snug text-ink">{card.name}</p>
+                      <p className="line-clamp-2 text-[0.6rem] leading-relaxed text-slate-600">{card.description}</p>
+                      <div className="mt-auto flex flex-wrap gap-1 pt-0.5">
+                        {card.traits.map(trait => (
+                          <span
+                            key={trait}
+                            className="rounded-full bg-white/70 px-1.5 py-0.5 text-[0.55rem] font-semibold text-slate-600 ring-1 ring-inset ring-slate-200"
+                          >
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                }
+                // custom
+                const wf = item.wf;
                 const isSelected = selectedCardId === wf.id;
                 return (
                   <button
@@ -391,16 +429,6 @@ export function EditorSidebar() {
                   </button>
                 );
               })}
-
-              {/* Create your own */}
-              <button
-                type="button"
-                onClick={() => { setBuilderWorkflow(undefined); setBuilderOpen(true); }}
-                className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-2.5 text-center transition-all duration-150 hover:border-violet-300 hover:bg-violet-50/40"
-              >
-                <Plus className="h-4 w-4 text-muted" />
-                <p className="text-[0.65rem] font-semibold text-muted">Create your own</p>
-              </button>
             </div>
 
             {/* Compact dimension sliders — inside the scrollable box */}
