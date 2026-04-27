@@ -62,6 +62,7 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     openCompare: actions.openCompare,
     handleApplyQuickChange: actions.handleApplyQuickChange,
     handleApplyVariant: actions.handleApplyVariant,
+    handleLoadVariantIntoEditor: actions.handleLoadVariantIntoEditor,
     handleSavePreviewVariantAtIndex: actions.handleSavePreviewVariantAtIndex,
     handleFormatting: actions.handleFormatting,
     selectedCardId: restState.selectedCardId,
