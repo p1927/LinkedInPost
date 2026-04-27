@@ -447,7 +447,17 @@ function App() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/about" element={<AboutPage />} />
           {deploymentMode === 'saas' && (
-            <Route path="/landing" element={<Landing onLogin={handleLogin} />} />
+            <>
+              <Route
+                path="/"
+                element={
+                  idToken && session
+                    ? <Navigate to={WORKSPACE_PATHS.topics} replace />
+                    : <Landing onLogin={handleLogin} />
+                }
+              />
+              <Route path="/landing" element={<Navigate to="/" replace />} />
+            </>
           )}
           <Route
             path="*"
