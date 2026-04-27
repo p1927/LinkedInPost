@@ -29,4 +29,5 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--gmail-client-id', default=os.environ.get('GMAIL_CLIENT_ID', '').strip(), help='Google OAuth Web client ID for Gmail connect (defaults to --google-client-id / VITE_GOOGLE_CLIENT_ID when unset).')
     parser.add_argument('--gmail-client-secret', default=os.environ.get('GMAIL_CLIENT_SECRET', '').strip(), help='Google OAuth client secret for Gmail token exchange (Worker secret, not exposed to the browser).')
     parser.add_argument('--all', action='store_true', help='Run Google setup, Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
+    parser.add_argument('--web', action='store_true', help='Start the web-based setup wizard at localhost:4242')
     return parser.parse_args()

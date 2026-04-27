@@ -79,6 +79,12 @@ load_dotenv()
 
 def main() -> None:
     args = parse_args()
+
+    if args.web:
+        from setup.wizard.server import run_wizard
+        run_wizard()
+        return
+
     run_generate_features_script()
 
     if args.all:
