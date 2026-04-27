@@ -88,13 +88,13 @@ export function MarketingNav() {
           {/* CTA */}
           <div className="hidden items-center gap-2 md:flex">
             <a
-              href="#cta"
+              href="#waitlist"
               className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-50"
             >
               Sign in
             </a>
             <a
-              href="#cta"
+              href="#waitlist"
               className="cursor-pointer rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:from-violet-700 hover:to-purple-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
             >
               Get Started
@@ -146,14 +146,14 @@ export function MarketingNav() {
                 )}
                 <div className="mt-2 border-t border-white/30 pt-2 flex flex-col gap-2">
                   <a
-                    href="#cta"
+                    href="#waitlist"
                     onClick={() => setMobileOpen(false)}
                     className="block cursor-pointer rounded-lg px-4 py-2.5 text-center text-sm font-medium text-violet-700 transition-colors hover:bg-violet-50"
                   >
                     Sign in
                   </a>
                   <a
-                    href="#cta"
+                    href="#waitlist"
                     onClick={() => setMobileOpen(false)}
                     className="block cursor-pointer rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-all hover:from-violet-700 hover:to-purple-700"
                   >
