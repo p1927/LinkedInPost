@@ -7,7 +7,7 @@ import { useReviewFlowEditor } from '../../review/context/ReviewFlowEditorContex
 import { EditorSidebar } from '../components/EditorSidebar';
 import { VersionHistoryStrip } from '../components/VersionHistoryStrip';
 import { LivePreviewSidebar } from '../components/LivePreviewSidebar';
-import { EditorVariantBar } from '../../variant/components/EditorVariantBar';
+
 import { ContentReviewReport } from '@/features/content-review/ContentReviewReport';
 import type { ContentReviewReport as ContentReviewReportData } from '@/features/content-review/types';
 import { Button } from '@/components/ui/button';
@@ -182,13 +182,11 @@ export function EditorScreen() {
               minSize="24%"
               className="flex min-h-0 flex-col"
             >
-              <EditorVariantBar />
               {editorSection}
             </Panel>
           </PanelGroup>
         ) : (
           <>
-            <EditorVariantBar />
             {editorSection}
             <EditorSidebar />
           </>

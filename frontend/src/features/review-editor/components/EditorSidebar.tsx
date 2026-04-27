@@ -141,6 +141,9 @@ export function EditorSidebar() {
     onCreateCustomWorkflow,
     onUpdateCustomWorkflow,
     onDeleteCustomWorkflow,
+    sheetVariants,
+    editorVariantIndex,
+    handleLoadSheetVariant,
   } = useReviewFlow();
 
   const {
@@ -225,10 +228,10 @@ export function EditorSidebar() {
       aria-label="Refine, media, and publishing rules"
       className="order-2 flex min-h-0 min-w-0 flex-col border-b border-violet-200/30 xl:order-none xl:max-h-full xl:border-b-0"
     >
-      {/* Tab bar — always visible, never scrolls away */}
-      <div className="shrink-0 px-4 pt-3 pb-2">
+      {/* Tab bar + variant pills — always visible, never scrolls away */}
+      <div className="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
         <div
-          className="grid gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm"
+          className="flex-1 grid gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm"
           style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
           role="tablist"
           aria-label="Review workspace panels"
@@ -253,6 +256,31 @@ export function EditorSidebar() {
             </Button>
           ))}
         </div>
+
+        {sheetVariants.length > 0 && (
+          <div
+            className="flex gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm"
+            role="group"
+            aria-label="Variants"
+          >
+            {sheetVariants.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleLoadSheetVariant(index)}
+                aria-pressed={editorVariantIndex === index}
+                className={cn(
+                  'rounded-lg px-2 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
+                  editorVariantIndex === index
+                    ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70'
+                    : 'text-muted hover:bg-white/60 hover:text-ink/70',
+                )}
+              >
+                V{index + 1}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Writing Styles — fills remaining height with internal scroll for cards ── */}
@@ -275,8 +303,8 @@ export function EditorSidebar() {
             </button>
           </div>
 
-          {/* Card grid — scrolls internally, fills available space */}
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100 pr-0.5">
+          {/* Card grid + sliders — scroll together in one rounded box */}
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100">
             <div className="grid grid-cols-2 gap-2 p-1">
 
               {/* Generated (untitled) cards — most recent first */}
@@ -374,44 +402,44 @@ export function EditorSidebar() {
                 <p className="text-[0.65rem] font-semibold text-muted">Create your own</p>
               </button>
             </div>
-          </div>
 
-          {/* Compact dimension sliders — always pinned at bottom */}
-          <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-3 py-2 shadow-sm">
-            <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink/50">Writing emphasis</p>
-            <div className="space-y-1">
-              {DIMENSIONS.map(({ key, label }) => {
-                const val = weights[key] ?? 50;
-                return (
-                  <div key={key}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[0.6rem] font-semibold text-ink/80">{label}</span>
-                      <span className={cn('text-[0.6rem] font-bold tabular-nums', getLevelColor(val))}>
-                        {getLevelName(val)}
-                      </span>
+            {/* Compact dimension sliders — inside the scrollable box */}
+            <div className="mx-1 mb-1 rounded-xl border border-violet-200/60 bg-white/80 px-3 py-2 shadow-sm">
+              <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-wide text-ink/50">Writing emphasis</p>
+              <div className="space-y-1">
+                {DIMENSIONS.map(({ key, label }) => {
+                  const val = weights[key] ?? 50;
+                  return (
+                    <div key={key}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[0.6rem] font-semibold text-ink/80">{label}</span>
+                        <span className={cn('text-[0.6rem] font-bold tabular-nums', getLevelColor(val))}>
+                          {getLevelName(val)}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={val}
+                        onChange={e => handleWeightChange(key, Number(e.target.value))}
+                        className={cn(
+                          'mt-0.5 h-1 w-full cursor-pointer appearance-none rounded-full bg-slate-200',
+                          '[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3',
+                          '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
+                          '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
+                          '[&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:transition-transform',
+                          '[&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:hover:scale-110',
+                          '[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3',
+                          '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
+                          '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary',
+                        )}
+                      />
                     </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={val}
-                      onChange={e => handleWeightChange(key, Number(e.target.value))}
-                      className={cn(
-                        'mt-0.5 h-1 w-full cursor-pointer appearance-none rounded-full bg-slate-200',
-                        '[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3',
-                        '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
-                        '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary',
-                        '[&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:transition-transform',
-                        '[&::-webkit-slider-thumb]:duration-100 [&::-webkit-slider-thumb]:hover:scale-110',
-                        '[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3',
-                        '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
-                        '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary',
-                      )}
-                    />
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
