@@ -18,6 +18,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   'add-topic': 'Add Topic',
   automations: 'Automations',
   setup: 'Setup',
+  admin: 'Admin',
 };
 
 export function WorkspaceHeader({
