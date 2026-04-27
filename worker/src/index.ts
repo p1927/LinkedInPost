@@ -954,7 +954,7 @@ export default {
           adminReqInit.headers = { 'Content-Type': 'application/json' };
         }
         const adminReq = new Request(`https://worker${adminPath}`, adminReqInit);
-        return handleAdmin(adminReq, env.PIPELINE_DB, adminPath, adminMethod);
+        return withCorsHeaders(await handleAdmin(adminReq, env.PIPELINE_DB, adminPath, adminMethod), corsHeaders);
       }
 
       if (action === 'downloadDraftImage') {
