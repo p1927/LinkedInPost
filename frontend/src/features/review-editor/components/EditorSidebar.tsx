@@ -359,8 +359,8 @@ export function EditorSidebar() {
             </button>
           </div>
 
-          {/* Card grid — scrolls internally, fills available space */}
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100">
+          {/* Card grid — scrolls internally, fixed proportion so sliders stay visible */}
+          <div className="min-h-0 max-h-[38vh] overflow-y-auto rounded-xl border border-gray-100">
             <div className="grid grid-cols-2 gap-2 p-1">
 
               {/* Create your own — always top-left */}

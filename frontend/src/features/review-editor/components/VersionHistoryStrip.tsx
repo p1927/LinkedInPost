@@ -16,11 +16,17 @@ const SOURCE_ICON: Record<VersionEntry['source'], string> = {
   initial: '·',
 };
 
-function relativeTime(ts: number): string {
-  const diff = Date.now() - ts;
-  if (diff < 60_000) return 'just now';
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  return `${Math.floor(diff / 3_600_000)}h ago`;
+function formatTimestamp(ts: number): { date: string; time: string } {
+  const d = new Date(ts);
+  const now = new Date();
+  const isToday =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (isToday) return { date: 'Today', time };
+  const date = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return { date, time };
 }
 
 export function VersionHistoryStrip({
@@ -63,14 +69,14 @@ export function VersionHistoryStrip({
       </button>
 
       {isOpen && versions.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-thin scrollbar-thumb-gray-200">
-          {/* Current chip — always pinned left */}
+        <div className="flex max-h-44 flex-col gap-1 overflow-y-auto px-3 pb-3 scrollbar-thin scrollbar-thumb-gray-200">
+          {/* Current — always pinned top */}
           <button
             type="button"
             onClick={() => mostRecent && onRestore(mostRecent)}
             disabled={isOnCurrent}
             className={cn(
-              'flex shrink-0 flex-col items-start gap-0.5 rounded-lg border px-2.5 py-1.5 transition-colors',
+              'flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 transition-colors',
               isOnCurrent
                 ? 'border-violet-300 bg-violet-50 text-violet-700 cursor-default'
                 : 'border-gray-200 bg-white text-ink/50 hover:border-violet-200 hover:text-violet-600',
@@ -82,23 +88,27 @@ export function VersionHistoryStrip({
           {/* Past versions — newest to oldest */}
           {reversedVersions.map(entry => {
             const isActive = currentVersionId === entry.id;
+            const { date, time } = formatTimestamp(entry.timestamp);
             return (
               <button
                 key={entry.id}
                 type="button"
                 onClick={() => onRestore(entry)}
                 className={cn(
-                  'flex shrink-0 flex-col items-start gap-0.5 rounded-lg border px-2.5 py-1.5 transition-colors',
+                  'flex w-full items-center justify-between rounded-lg border px-2.5 py-1.5 transition-colors',
                   isActive
                     ? 'border-violet-300 bg-violet-50 text-violet-700'
                     : 'border-gray-200 bg-white text-ink/50 hover:border-violet-200 hover:text-ink/70',
                 )}
               >
-                <span className="text-[0.6rem] font-semibold whitespace-nowrap">
+                <span className="text-[0.6rem] font-semibold">
                   <span aria-hidden="true">{SOURCE_ICON[entry.source]} </span>
                   <span>{entry.label}</span>
                 </span>
-                <span className="text-[0.55rem] opacity-60">{relativeTime(entry.timestamp)}</span>
+                <span className="flex flex-col items-end text-[0.55rem] opacity-60">
+                  <span>{date}</span>
+                  <span>{time}</span>
+                </span>
               </button>
             );
           })}
