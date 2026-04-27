@@ -255,7 +255,7 @@ export function EditorSidebar() {
   return (
     <aside
       aria-label="Refine, media, and publishing rules"
-      className="order-2 flex min-h-0 min-w-0 flex-col border-b border-violet-200/30 xl:order-none xl:max-h-full xl:border-b-0"
+      className="order-2 flex min-h-0 min-w-0 flex-col border-b border-violet-200/30 xl:order-none xl:flex-1 xl:overflow-hidden xl:border-b-0"
     >
       {/* Tab bar + variant pills — always visible, never scrolls away */}
       <div className="shrink-0 flex items-center gap-2 px-4 pt-3 pb-2">
