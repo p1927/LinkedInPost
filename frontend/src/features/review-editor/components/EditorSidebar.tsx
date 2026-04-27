@@ -44,14 +44,6 @@ function getLevelName(v: number) {
   return 'Max';
 }
 
-function getLevelColor(v: number) {
-  if (v <= 10) return 'text-slate-400';
-  if (v <= 30) return 'text-blue-500';
-  if (v <= 50) return 'text-amber-500';
-  if (v <= 80) return 'text-orange-500';
-  return 'text-red-500';
-}
-
 function getLevelPill(v: number) {
   if (v <= 10) return 'bg-slate-100 text-slate-500';
   if (v <= 30) return 'bg-blue-100 text-blue-600';
