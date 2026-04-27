@@ -250,7 +250,7 @@ function buildInitialState(
               : [],
       reviewPhase: 'edit',
       editorVariantIndex: slotIdx >= 0 ? slotIdx : null,
-      activeWorkspacePanel: editorStartMediaPanel ? 'media' : 'refine',
+      activeWorkspacePanel: editorStartMediaPanel ? 'media' : 'styles',
     };
   }
 
@@ -274,7 +274,7 @@ function buildInitialState(
           ? 'pick-variant'
           : 'edit',
     editorVariantIndex,
-    activeWorkspacePanel: 'refine',
+    activeWorkspacePanel: 'styles',
   };
 }
 
