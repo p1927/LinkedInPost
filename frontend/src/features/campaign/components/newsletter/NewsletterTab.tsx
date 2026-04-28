@@ -237,7 +237,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
             <Mail className="mx-auto mb-4 h-12 w-12 text-slate-300" />
             <p className="text-lg font-semibold text-slate-700">No newsletters yet</p>
             <p className="mb-6 text-sm text-slate-500">
-              Create your first newsletter to start sending scheduled content.
+              Create your first newsletter to start sending curated content to your audience.
             </p>
             <button
               type="button"

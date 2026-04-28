@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Tour } from '@/components/Tour';
 import { type ReactNode } from 'react';
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
@@ -14,7 +14,7 @@ import { TrendingGraph } from '../trending/components/TrendingGraph';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useTrendingSearch } from '../trending/hooks/useTrendingSearch';
 import { FeedLeftPanel } from './components/FeedLeftPanel';
-import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2 } from 'lucide-react';
+import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2, Search } from 'lucide-react';
 import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
@@ -83,6 +83,13 @@ export function FeedPage({
   const [feedArticles, setFeedArticles] = useState<NewsArticle[]>([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Search + filter bar state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 'all' = no group filter applied on top of sorted articles
+  const [activeFilter, setActiveFilter] = useState<string>('all');
 
   // Feedback (thumbs up / down)
   const [feedbackMap, setFeedbackMap] = useState<ArticleFeedbackMap>({});
@@ -404,6 +411,60 @@ export function FeedPage({
     }
     return displayArticles;
   }, [displayArticles, feedSort, feedbackMap]);
+
+  // Debounce search query updates
+  function handleSearchQueryChange(value: string) {
+    setSearchQuery(value);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(value);
+    }, 200);
+  }
+
+  // Top trending articles for mobile carousel (same source as FeedCuratedPanel's top10Articles)
+  const trendingCarouselArticles = useMemo(() => {
+    const base = trendingSearch.data?.articles?.length
+      ? trendingSearch.data.articles
+      : (data?.news ?? []);
+    return [...base]
+      .sort((a, b) => {
+        try { return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(); }
+        catch { return 0; }
+      })
+      .slice(0, 10);
+  }, [trendingSearch.data, data]);
+
+  // Articles after applying client-side search + group filter on top of sorted feed
+  const filteredDisplayArticles = useMemo(() => {
+    let result = sortedDisplayArticles;
+
+    // Group filter (activeFilter): only applies when "All" group is loaded (activeGroupId === null)
+    // When a specific group is active via activeGroupId, the DB already scopes articles — no client filter needed
+    if (activeFilter !== 'all' && activeGroupId === null) {
+      const group = interestGroups.find(g => g.id === activeFilter);
+      if (group) {
+        const topicSet = new Set(group.topics.map(t => t.toLowerCase()));
+        result = result.filter(a =>
+          topicSet.has(a.source.toLowerCase()) ||
+          group.topics.some(t =>
+            a.title.toLowerCase().includes(t.toLowerCase()) ||
+            (a.description ?? '').toLowerCase().includes(t.toLowerCase()),
+          ),
+        );
+      }
+    }
+
+    // Search filter
+    if (debouncedSearchQuery.trim()) {
+      const q = debouncedSearchQuery.toLowerCase();
+      result = result.filter(a =>
+        a.title.toLowerCase().includes(q) ||
+        (a.description ?? '').toLowerCase().includes(q),
+      );
+    }
+
+    return result;
+  }, [sortedDisplayArticles, activeFilter, activeGroupId, interestGroups, debouncedSearchQuery]);
 
   const leftPanelLoading = searchTopic ? trendingSearch.loading : feedLoading;
   const hasNoGroups = !groupsLoading && interestGroups.length === 0;
@@ -747,7 +808,109 @@ export function FeedPage({
 
               {/* Reading feed mode */}
               {!openDraft && !debateMode && (
-                <motion.div key="feed" {...motionProps} className="p-6 pb-16">
+                <motion.div key="feed" {...motionProps} className="pb-16">
+
+                  {/* ── Mobile trending carousel (< lg) ──────────────── */}
+                  {trendingCarouselArticles.length > 0 && (
+                    <div className="lg:hidden px-6 pt-4 pb-3">
+                      <p className="text-xs font-semibold text-muted mb-2 flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-violet-500" />
+                        Trending
+                      </p>
+                      <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                        {trendingCarouselArticles.map(article => (
+                          <button
+                            key={article.id}
+                            type="button"
+                            onClick={() => { setDebateMode(false); setOpenArticle(article); }}
+                            className="shrink-0 w-40 rounded-xl overflow-hidden border border-border/40 bg-white/60 hover:bg-white/90 transition-colors text-left shadow-sm"
+                            style={{ height: 100 }}
+                          >
+                            <div className="relative h-full flex flex-col">
+                              {article.imageUrl ? (
+                                <img
+                                  src={article.imageUrl}
+                                  alt=""
+                                  className="absolute inset-0 w-full h-full object-cover opacity-30"
+                                />
+                              ) : (
+                                <div className="absolute inset-0 bg-violet-50" />
+                              )}
+                              <div className="relative z-10 p-2 flex flex-col justify-between h-full">
+                                <p className="text-[11px] font-semibold text-ink line-clamp-3 leading-snug">
+                                  {article.title}
+                                </p>
+                                <p className="text-[10px] text-muted truncate mt-1">{article.source}</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Search input + group filter bar (sticky) ─────── */}
+                  <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-6 py-2 border-b border-border/30">
+                    {/* Search */}
+                    <div className="relative mb-2">
+                      <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search articles…"
+                        value={searchQuery}
+                        onChange={e => handleSearchQueryChange(e.target.value)}
+                        className="w-full h-8 rounded-lg border border-border/60 bg-white/70 pl-7 pr-3 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => { setSearchQuery(''); setDebouncedSearchQuery(''); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink transition-colors"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Group filter chips */}
+                    {interestGroups.length > 0 && (
+                      <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveFilter('all')}
+                          className={[
+                            'shrink-0 h-6 rounded-full px-3 text-xs font-semibold transition-colors border',
+                            activeFilter === 'all'
+                              ? 'bg-primary text-primary-fg border-primary'
+                              : 'bg-white/40 text-muted border-white/60 hover:bg-white/60 hover:text-ink',
+                          ].join(' ')}
+                        >
+                          All
+                        </button>
+                        {interestGroups.map(group => {
+                          const isActive = activeFilter === group.id;
+                          return (
+                            <button
+                              key={group.id}
+                              type="button"
+                              onClick={() => setActiveFilter(isActive ? 'all' : group.id)}
+                              style={isActive ? { backgroundColor: group.color, borderColor: group.color } : { borderLeftColor: group.color }}
+                              className={[
+                                'shrink-0 h-6 rounded-full px-3 text-xs font-semibold transition-colors border border-l-4',
+                                isActive
+                                  ? 'text-white'
+                                  : 'bg-white/40 text-muted border-white/60 hover:bg-white/60 hover:text-ink',
+                              ].join(' ')}
+                            >
+                              {group.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="px-6 pt-3">
 
                   {/* Sort filter bar */}
                   {(!hasNoGroups || searchTopic) && (displayArticles.length > 0 || leftPanelLoading) && (
@@ -787,10 +950,10 @@ export function FeedPage({
                         <Settings2 className="text-primary" size={32} />
                       </motion.div>
                       <motion.h3 variants={fadeUpVariants} className="text-xl font-semibold text-ink mb-2">
-                        Set up your interests
+                        Your feed is empty
                       </motion.h3>
                       <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed mb-5">
-                        Add an interest group and your feed will auto-fill with fresh articles every day — no searching needed.
+                        Add interest groups in Settings to start seeing news here.
                       </motion.p>
                       <motion.button
                         variants={fadeUpVariants}
@@ -799,7 +962,7 @@ export function FeedPage({
                         className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
                       >
                         <Plus size={15} />
-                        Add your first interest group
+                        Add interest group
                       </motion.button>
                     </motion.div>
                   )}
@@ -874,7 +1037,7 @@ export function FeedPage({
                   {(leftPanelLoading || displayArticles.length > 0) && (
                     <motion.div className="mb-4" variants={cardItemVariants} initial="hidden" animate="show">
                       <FeedLeftPanel
-                        articles={sortedDisplayArticles}
+                        articles={filteredDisplayArticles}
                         loading={leftPanelLoading}
                         onClip={handleClip}
                         onOpen={(a) => { setDebateMode(false); setOpenArticle(a); }}
@@ -927,6 +1090,7 @@ export function FeedPage({
                     </AnimatePresence>
                   )}
 
+                  </div>{/* end px-6 pt-3 wrapper */}
                 </motion.div>
               )}
 

@@ -12,7 +12,7 @@ import {
   formatQueuePostTime,
   shouldShowDraftedQueueActions,
 } from '../utils';
-import { effectiveChannel } from '@/lib/topicEffectivePrefs';
+import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { TopicPostPreviewCard } from '../components/TopicPostPreviewCard';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
@@ -555,25 +555,14 @@ export function DashboardQueue({
               <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
                 <Bot className="h-6 w-6" strokeWidth={1.5} />
               </div>
-              <p className="text-base font-semibold text-ink mb-1">Ready to publish your first topic?</p>
-              <p className="text-sm text-muted mb-6">Create a topic and generate a draft in seconds.</p>
-              <div className="flex flex-wrap justify-center gap-2 mb-6">
-                {['AI in the workplace', 'Leadership lessons', 'Industry trends'].map((idea) => (
-                  <a
-                    key={idea}
-                    href={`${WORKSPACE_PATHS.addTopic}?topic=${encodeURIComponent(idea)}`}
-                    className="inline-flex items-center rounded-full border border-violet-200/80 bg-violet-50/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-violet-100/70 hover:border-primary/40 transition-colors"
-                  >
-                    {idea}
-                  </a>
-                ))}
-              </div>
+              <p className="text-base font-semibold text-ink mb-1">No topics yet</p>
+              <p className="text-sm text-muted mb-6">Add your first topic and let AI draft your next LinkedIn post.</p>
               <a
                 href={WORKSPACE_PATHS.addTopic}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
               >
                 <Bot className="h-4 w-4" aria-hidden />
-                Create your first topic
+                Add topic
               </a>
             </div>
           ) : (
@@ -662,6 +651,9 @@ export function DashboardQueue({
               <div className="w-[88px] shrink-0 pr-1" aria-hidden="true">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Status</span>
               </div>
+              <div className="hidden w-[90px] shrink-0 pr-1 sm:block" aria-hidden="true">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Channel</span>
+              </div>
               <div className="min-w-0 flex-1 px-1" aria-hidden="true">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Topic</span>
               </div>
@@ -722,6 +714,28 @@ export function DashboardQueue({
                       status={deriveStatus(row.status, { isScheduled: rowHasActiveScheduledPublish(row) })}
                       size="sm"
                     />
+                  </div>
+
+                  {/* Channel pill column */}
+                  <div className="hidden w-[90px] shrink-0 items-center pr-1 sm:flex">
+                    {(() => {
+                      const ch = parseTopicDeliveryChannel(row.topicDeliveryChannel);
+                      if (!ch) return <span className="text-xs text-muted/60">–</span>;
+                      const pillClass = {
+                        linkedin: 'bg-blue-100 text-blue-700',
+                        gmail: 'bg-red-100 text-red-700',
+                        telegram: 'bg-sky-100 text-sky-700',
+                        whatsapp: 'bg-green-100 text-green-700',
+                        instagram: 'bg-fuchsia-100 text-fuchsia-700',
+                        youtube: 'bg-red-100 text-red-700',
+                      }[ch] ?? 'bg-slate-100 text-slate-600';
+                      const label = CHANNEL_OPTIONS.find((o) => o.value === ch)?.label ?? ch;
+                      return (
+                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none', pillClass)}>
+                          {label}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   {/* Topic column */}

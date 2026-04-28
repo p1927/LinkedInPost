@@ -18,6 +18,7 @@ interface ArticleDetailViewProps {
   rows?: SheetRow[];
   onOpenDraft?: (row: SheetRow) => void;
   onDebate?: () => void;
+  asSheet?: boolean;
 }
 
 type TabKey = 'opinion' | 'perspectives' | 'connection' | 'debate';
@@ -59,6 +60,7 @@ export function ArticleDetailView({
   rows = [],
   onOpenDraft,
   onDebate,
+  asSheet = false,
 }: ArticleDetailViewProps) {
   const articleContentRef = useRef<HTMLDivElement>(null);
 
@@ -136,7 +138,7 @@ export function ArticleDetailView({
   };
 
   return (
-    <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
+    <div className={asSheet ? 'flex flex-col gap-4 h-full overflow-y-auto' : 'flex gap-6 flex-1 min-h-0 overflow-hidden'}>
       {selectionTooltip && (
         <SelectionClipTooltip
           x={selectionTooltip.x}
@@ -146,7 +148,7 @@ export function ArticleDetailView({
       )}
 
       {/* ── LEFT: Article Content ─────────────────────────────── */}
-      <div ref={articleContentRef} className="flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 flex flex-col gap-4">
+      <div ref={articleContentRef} className={asSheet ? 'rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 flex flex-col gap-4' : 'flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 flex flex-col gap-4'}>
         {/* Back button */}
         <button
           type="button"
@@ -235,7 +237,7 @@ export function ArticleDetailView({
       </div>
 
       {/* ── RIGHT: AI Insight Panel ───────────────────────────── */}
-      <div className="w-80 xl:w-96 shrink-0 overflow-y-auto flex flex-col gap-4">
+      <div className={asSheet ? 'flex flex-col gap-4' : 'w-80 xl:w-96 shrink-0 overflow-y-auto flex flex-col gap-4'}>
 
         {/* [G] Article Intelligence */}
         <div className="rounded-2xl border border-blue-200/60 bg-blue-50/60 backdrop-blur-sm p-4">

@@ -56,8 +56,8 @@ export function FeedArticleCard({
       ].join(' ')}
       onClick={() => onOpen(article)}
     >
-      {/* Hero image — 16:10 aspect ratio */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden">
+      {/* Hero image — fixed height, full card width */}
+      <div className="relative h-[168px] w-full overflow-hidden rounded-t-lg">
         {article.imageUrl ? (
           <img
             src={article.imageUrl}
@@ -77,20 +77,32 @@ export function FeedArticleCard({
             <span className="text-white text-4xl font-bold">{article.source[0]?.toUpperCase() ?? '?'}</span>
           </div>
         )}
+      </div>
 
-        {/* Source chip — top-left */}
-        <span className="absolute top-2 left-2 text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full">
-          {article.source}
-        </span>
-
-        {/* Time chip — top-right */}
-        <span className="absolute top-2 right-2 text-[10px] text-white bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full">
+      {/* Content */}
+      <div className="p-3">
+        {/* Source + time metadata */}
+        <p className="text-[11px] text-slate-400 mb-1.5">
+          <span className="font-medium text-slate-500">{article.source}</span>
+          {' · '}
           {formatRelativeTime(article.publishedAt)}
-        </span>
+        </p>
 
-        {/* Hover-only action overlay — bottom-right */}
+        {/* Title */}
+        <p className="text-sm font-semibold leading-snug text-slate-900 line-clamp-2">
+          {article.title}
+        </p>
+
+        {/* Description — always shown if present, clamped at 2 lines */}
+        {description && (
+          <p className="mt-1.5 text-[12px] leading-snug text-slate-500 line-clamp-2">
+            {description}
+          </p>
+        )}
+
+        {/* Hover-only action row — bottom of content area */}
         <div
-          className="absolute bottom-2 right-2 flex gap-1 bg-black/50 backdrop-blur-sm rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+          className="mt-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -100,8 +112,8 @@ export function FeedArticleCard({
             className={[
               'h-7 w-7 rounded-full grid place-items-center transition-colors',
               feedbackVote === 'up'
-                ? 'bg-green-500/80 text-white'
-                : 'text-white hover:bg-white/20',
+                ? 'bg-green-100 text-green-600'
+                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600',
             ].join(' ')}
           >
             <ThumbsUp size={12} aria-hidden />
@@ -113,8 +125,8 @@ export function FeedArticleCard({
             className={[
               'h-7 w-7 rounded-full grid place-items-center transition-colors',
               feedbackVote === 'down'
-                ? 'bg-red-500/80 text-white'
-                : 'text-white hover:bg-white/20',
+                ? 'bg-red-100 text-red-500'
+                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600',
             ].join(' ')}
           >
             <ThumbsDown size={12} aria-hidden />
@@ -126,8 +138,8 @@ export function FeedArticleCard({
             className={[
               'h-7 w-7 rounded-full grid place-items-center transition-colors',
               isClipped
-                ? 'bg-violet-500/80 text-white'
-                : 'text-white hover:bg-white/20',
+                ? 'bg-violet-100 text-violet-600'
+                : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600',
             ].join(' ')}
           >
             <Scissors
@@ -137,18 +149,6 @@ export function FeedArticleCard({
             />
           </button>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-3">
-        <p className="text-sm font-semibold leading-snug text-slate-900 line-clamp-2">
-          {article.title}
-        </p>
-        {description && (
-          <p className="mt-1.5 text-[12px] leading-snug text-slate-500 line-clamp-2">
-            {description}
-          </p>
-        )}
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ interface IntegrationStepProps {
   onUpdate: (updates: Partial<SetupConfig>) => void;
   onComplete: (integrations: SetupConfig['integrations']) => void;
   onSkip: () => void;
+  onBack: () => void;
 }
 
 const SOCIAL_INTEGRATIONS = [
@@ -24,7 +25,7 @@ const IMAGE_MODELS = [
   { id: 'seedance' as const, name: 'Seedance', description: 'Video generation' },
 ] as const;
 
-export function IntegrationStep({ config, onUpdate, onComplete, onSkip }: IntegrationStepProps) {
+export function IntegrationStep({ config, onUpdate, onComplete, onSkip, onBack }: IntegrationStepProps) {
   const [activeTab, setActiveTab] = useState<'social' | 'image'>('social');
 
   const toggleIntegration = (id: keyof SetupConfig['integrations']) => {
@@ -150,9 +151,14 @@ export function IntegrationStep({ config, onUpdate, onComplete, onSkip }: Integr
       </AnimatePresence>
 
       <div className="mt-6 flex justify-between">
-        <button onClick={onSkip} className="rounded-xl px-5 py-2.5 text-sm font-medium text-muted hover:text-ink">
-          Skip
-        </button>
+        <div className="flex gap-2">
+          <button onClick={onBack} className="rounded-xl px-5 py-2.5 text-sm font-medium text-muted hover:text-ink">
+            Back
+          </button>
+          <button onClick={onSkip} className="rounded-xl px-5 py-2.5 text-sm font-medium text-muted hover:text-ink">
+            Skip
+          </button>
+        </div>
         <button onClick={() => onComplete(config.integrations)} className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-700">
           Continue
         </button>

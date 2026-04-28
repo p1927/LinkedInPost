@@ -57,39 +57,42 @@ export interface SetupConfig {
 }
 
 /**
- * Linear-progress steps shown in the vertical sidebar.
- * Excludes special states (deploymentMode picker, status dashboard, welcome
- * splash, install progress, final success) which render full-width without
- * the sidebar.
+ * All wizard steps in order, shown in the vertical sidebar.
+ * The status step is a dynamic shortcut and is excluded from linear flow.
  */
 const LINEAR_STEPS: SetupStep[] = [
+  'deploymentMode',
+  'welcome',
   'directory',
+  'progress',
   'integrations',
   'trending',
   'imagegen',
   'stt',
   'envvars',
+  'final',
 ];
 
 /** Human-readable label per step, used in the sidebar and the progress bar. */
 const STEP_LABEL: Record<SetupStep, string> = {
-  deploymentMode: 'Deployment mode',
+  deploymentMode: 'Deployment Mode',
   status: 'Status',
   welcome: 'Welcome',
-  directory: 'Project directory',
-  progress: 'Installation',
+  directory: 'Directory',
+  progress: 'Install Progress',
   integrations: 'Integrations',
-  trending: 'Trending sources',
-  imagegen: 'Image generation',
-  stt: 'Voice transcription',
-  envvars: 'Environment variables',
-  final: 'All set',
+  trending: 'Trending Sources',
+  imagegen: 'Image Generation',
+  stt: 'Voice Transcription',
+  envvars: 'Environment Keys',
+  final: 'Complete',
 };
 
 function WizardSidebar({ currentStep }: { currentStep: SetupStep }) {
   const total = LINEAR_STEPS.length;
   const idx = LINEAR_STEPS.indexOf(currentStep);
-  const stepNumber = idx + 1;
+  // For 'status' step (not in LINEAR_STEPS), treat as before deploymentMode
+  const stepNumber = idx >= 0 ? idx + 1 : 0;
   const percent = idx >= 0 ? Math.round((stepNumber / total) * 100) : 0;
   return (
     <aside
@@ -99,7 +102,7 @@ function WizardSidebar({ currentStep }: { currentStep: SetupStep }) {
       <div className="mb-4">
         <p className="text-[10px] uppercase tracking-wider text-muted">Setup</p>
         <p className="text-sm font-semibold text-ink">
-          Step {stepNumber} of {total}
+          {stepNumber > 0 ? `Step ${stepNumber} of ${total}` : 'Setup Status'}
         </p>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-violet-100">
           <div
@@ -111,7 +114,7 @@ function WizardSidebar({ currentStep }: { currentStep: SetupStep }) {
       <ol className="space-y-1">
         {LINEAR_STEPS.map((s, i) => {
           const isCurrent = s === currentStep;
-          const isDone = i < idx;
+          const isDone = idx >= 0 ? i < idx : false;
           const dotClass = isCurrent
             ? 'bg-violet-600 text-white'
             : isDone
@@ -381,24 +384,22 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
     }
   }, [config.projectDir]);
 
-  const showSidebar = !embedded && LINEAR_STEPS.includes(step);
+  const showSidebar = !embedded;
   const outerClass = embedded
     ? 'w-full mx-auto py-6 px-4'
     : 'min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-start justify-center p-4 sm:p-8';
   const innerClass = embedded
     ? 'w-full'
-    : showSidebar
-      ? 'w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-6'
-      : 'w-full max-w-2xl';
+    : 'w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-6';
   return (
     <div className={outerClass}>
       <div className={innerClass}>
         {showSidebar && (
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
             <WizardSidebar currentStep={step} />
           </div>
         )}
-        <div className={showSidebar ? 'md:col-span-8' : ''}>
+        <div className={showSidebar ? 'md:col-span-9' : ''}>
         <AnimatePresence mode="wait">
           {isDetectingState && (
             <motion.div
@@ -560,6 +561,7 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
                 onUpdate={updateConfig}
                 onComplete={handleIntegrationsComplete}
                 onSkip={() => handleIntegrationsComplete(DEFAULT_CONFIG.integrations)}
+                onBack={() => setStep('progress')}
               />
             </motion.div>
           )}

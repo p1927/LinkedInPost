@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronUp, Plus, Pencil, Check, X as XIcon } from 'lucide-react';
+import { Scissors, Plus, Pencil, Check, X as XIcon } from 'lucide-react';
 import type { Clip } from '../types';
 import type { SheetRow } from '../../../services/sheets';
 import type { BackendApi } from '@/services/backendApi';
+import { WORKSPACE_PATHS } from '../../topic-navigation/utils/workspaceRoutes';
 
 interface ClipsDockProps {
   clips: Clip[];
@@ -57,15 +59,33 @@ export function ClipsDock({
   onOpenDraft,
   onAssignClip,
 }: ClipsDockProps) {
-  const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [dragClipId, setDragClipId] = useState<string | null>(null);
   const [dragOverPostId, setDragOverPostId] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const [editingClipId, setEditingClipId] = useState<string | null>(null);
   const [editPassageText, setEditPassageText] = useState('');
   const [savingClipEdit, setSavingClipEdit] = useState(false);
+
+  // Close panel when clicking outside
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        triggerRef.current && !triggerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   function handleStartEditClip(clip: Clip, e: React.MouseEvent) {
     e.stopPropagation();
@@ -236,7 +256,8 @@ export function ClipsDock({
               <div className="flex-1 overflow-y-auto p-3 min-h-0">
                 {clips.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <p className="text-xs text-muted">No clips yet. Clip articles from the feed.</p>
+                    <p className="text-sm font-semibold text-ink mb-1">No clips yet</p>
+                    <p className="text-xs text-muted">Hover over any article and click ✂️ to clip it.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
