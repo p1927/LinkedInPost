@@ -11,22 +11,31 @@ ADMIN_EMAILS=you@gmail.com
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
 GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"linkedin-bot@your-project.iam.gserviceaccount.com","client_id":"...","token_uri":"https://oauth2.googleapis.com/token"}
 # GITHUB_TOKEN_ENCRYPTION_KEY — required for encrypting OAuth tokens in D1.
-# Generate with: openssl rand -hex 32
-GITHUB_TOKEN_ENCRYPTION_KEY=your-32-byte-hex-key-here
+# Generate with: openssl rand -base64 32
+GITHUB_TOKEN_ENCRYPTION_KEY=your-base64-32-byte-key-here
+GOOGLE_CLOUD_STORAGE_BUCKET=your-public-gcs-bucket-here
+DELETE_UNUSED_GENERATED_IMAGES=true
 CORS_ALLOWED_ORIGINS=http://localhost:5173 http://localhost:5174 http://127.0.0.1:5173 http://127.0.0.1:5174 https://your-username.github.io
 
 # LLM providers — required for generation
 GEMINI_API_KEY=your_gemini_api_key_here
-# xAI Grok (optional — only needed when multi-provider LLM is enabled and you want Grok as primary/fallback)
+# xAI Grok (optional — only needed when multi-provider LLM is enabled)
 XAI_API_KEY=your_xai_grok_api_key_here
+# OpenRouter multi-model gateway (optional)
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+# MiniMax (optional)
+MINIMAX_API_KEY=your_minimax_api_key_here
 
-# Generation Worker (optional — enables AI Draft in the dashboard)
-# setup.py --cloudflare provisions D1; deploy requires GEMINI_API_KEY and/or XAI_API_KEY, then
-# setup.py --deploy-worker deploys the generation worker and fills GENERATION_WORKER_URL / GENERATION_WORKER_SECRET (or set manually):
+# Generation Worker integration
+# setup.py --cloudflare provisions D1 and fills these automatically, or set manually:
 # GENERATION_WORKER_URL=https://your-generation-worker.your-account.workers.dev
-# GENERATION_WORKER_SECRET=must-match-WORKER_SHARED_SECRET-on-the-generation-worker
+# GENERATION_WORKER_SECRET — must match WORKER_SHARED_SECRET in generation-worker/.dev.vars
+# Generate with: openssl rand -base64 32
+# GENERATION_WORKER_SECRET=your-shared-secret-here
+GENERATION_WORKER_URL=http://127.0.0.1:8788
 
 # Scheduled publish auth secret (required for Durable Object alarm callbacks)
+# Generate with: openssl rand -base64 32
 WORKER_SCHEDULER_SECRET=use-a-long-random-string
 
 # News research API keys (optional — enable per-provider in Settings > News Research)
@@ -35,16 +44,25 @@ WORKER_SCHEDULER_SECRET=use-a-long-random-string
 # NEWSDATA_API_KEY=your_newsdata_key_here
 # SERPAPI_API_KEY=your_serpapi_key_here
 
+# Social OAuth apps (for dashboard connect flow)
 INSTAGRAM_APP_ID=your_instagram_app_id_here
 INSTAGRAM_APP_SECRET=your_instagram_app_secret_here
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 LINKEDIN_CLIENT_ID=your_linkedin_client_id_here
 LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret_here
 LINKEDIN_PERSON_URN=urn:li:person:123456
-LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token_here
 META_APP_ID=your_meta_app_id_here
 META_APP_SECRET=your_meta_app_secret_here
 WHATSAPP_PHONE_NUMBER_ID=your_whatsapp_phone_number_id_here
+GMAIL_CLIENT_ID=your_gmail_oauth_client_id_here
+GMAIL_CLIENT_SECRET=your_gmail_oauth_client_secret_here
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+
+# Optional direct-token fallbacks (legacy — prefer OAuth connect flow)
+LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token_here
+INSTAGRAM_ACCESS_TOKEN=your_instagram_access_token_here
 WHATSAPP_ACCESS_TOKEN=your_whatsapp_access_token_here
+
+# YouTube automations (optional)
+YOUTUBE_API_KEY=your_youtube_api_key_here
 
 PIXAZO_API_KEY=your_pixazo_api_key_here

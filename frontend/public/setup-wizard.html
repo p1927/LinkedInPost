@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups" />
     <title>LinkedIn Post Setup</title>
+    <script type="module">
+      // Vite serves files in public/ as static — no React preamble injection.
+      // Manually install the @vitejs/plugin-react fast-refresh hooks so React mounts under dev.
+      try {
+        const m = await import('/@react-refresh');
+        m.default.injectIntoGlobalHook(window);
+        window.$RefreshReg$ = () => {};
+        window.$RefreshSig$ = () => (type) => type;
+        window.__vite_plugin_react_preamble_installed__ = true;
+      } catch (_) {
+        // Production build (no /@react-refresh available) — preamble not needed.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

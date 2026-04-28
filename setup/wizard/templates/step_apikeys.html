@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1 class="text-2xl font-bold mb-2">API Keys</h1>
-<p class="text-gray-500 mb-6">Enter your API keys below. Only Gemini is required — everything else is optional.</p>
+<p class="text-gray-500 mb-6">Enter your API keys below. Only Gemini is required — everything else enables optional features.</p>
 
 {% if error %}
 <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">{{ error }}</div>
@@ -9,60 +9,204 @@
 
 <form method="POST" action="/step/apikeys" class="space-y-8">
 
+  <!-- ── LLMs ─────────────────────────────────────────────── -->
   <section class="space-y-4">
-    <h2 class="font-semibold text-gray-700 border-b pb-2">LLM — Required</h2>
+    <h2 class="font-semibold text-gray-700 border-b pb-2">AI Language Models</h2>
     <div>
       <label class="block text-sm font-medium mb-1">Gemini API Key <span class="text-red-500">*</span></label>
       <input name="gemini_api_key" type="password" required
              placeholder="AIza..."
              class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
-      <p class="text-xs text-gray-400 mt-1">Get from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline text-blue-500">aistudio.google.com</a></p>
+      <p class="text-xs text-gray-400 mt-1">Get from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="underline text-blue-500">aistudio.google.com</a>. Required for all content generation.</p>
     </div>
-  </section>
-
-  <section class="space-y-4">
-    <h2 class="font-semibold text-gray-700 border-b pb-2">LinkedIn OAuth App — optional (needed to publish to LinkedIn)</h2>
     <div class="grid grid-cols-2 gap-3">
       <div>
-        <label class="block text-sm font-medium mb-1">Client ID</label>
-        <input name="linkedin_client_id" type="text" placeholder="86ht5x..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <label class="block text-sm font-medium mb-1">xAI / Grok API Key</label>
+        <input name="xai_api_key" type="password" placeholder="xai-..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1">Optional alternative LLM. <a href="https://console.x.ai" target="_blank" class="underline text-blue-500">console.x.ai</a></p>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Client Secret</label>
-        <input name="linkedin_client_secret" type="password" placeholder="..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <label class="block text-sm font-medium mb-1">OpenRouter API Key</label>
+        <input name="openrouter_api_key" type="password" placeholder="sk-or-..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1">Multi-model gateway. <a href="https://openrouter.ai/keys" target="_blank" class="underline text-blue-500">openrouter.ai</a></p>
       </div>
     </div>
-    <p class="text-xs text-gray-400">Create a LinkedIn Developer App at <a href="https://www.linkedin.com/developers/apps" target="_blank" class="underline text-blue-500">linkedin.com/developers/apps</a>. Required products: Sign In with LinkedIn, Share on LinkedIn.</p>
+    <div>
+      <label class="block text-sm font-medium mb-1">MiniMax API Key</label>
+      <input name="minimax_api_key" type="password" placeholder="sk-cp-..."
+             class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <p class="text-xs text-gray-400 mt-1">Optional. <a href="https://platform.minimaxi.com" target="_blank" class="underline text-blue-500">platform.minimaxi.com</a></p>
+    </div>
   </section>
 
+  <!-- ── Image Generation ──────────────────────────────────── -->
   <section class="space-y-4">
-    <h2 class="font-semibold text-gray-700 border-b pb-2">Instagram / Meta — optional</h2>
+    <h2 class="font-semibold text-gray-700 border-b pb-2">Image Generation — optional</h2>
+    <div class="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
+      Fal.ai powers <strong>Flux Kontext, Ideogram, Kling, and Seedance</strong> providers. Without it, those models will silently fail.
+    </div>
     <div class="grid grid-cols-2 gap-3">
       <div>
-        <label class="block text-sm font-medium mb-1">App ID</label>
-        <input name="instagram_app_id" type="text" placeholder="2367592..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <label class="block text-sm font-medium mb-1">Fal.ai API Key</label>
+        <input name="fal_api_key" type="password" placeholder="fal-..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://fal.ai/dashboard/keys" target="_blank" class="underline text-blue-500">fal.ai/dashboard/keys</a></p>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">App Secret</label>
-        <input name="instagram_app_secret" type="password" class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <label class="block text-sm font-medium mb-1">Pixazo API Key</label>
+        <input name="pixazo_api_key" type="password" placeholder="..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://pixazo.ai" target="_blank" class="underline text-blue-500">pixazo.ai</a></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">OpenAI API Key (DALL-E)</label>
+        <input name="openai_api_key" type="password" placeholder="sk-..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://platform.openai.com/api-keys" target="_blank" class="underline text-blue-500">platform.openai.com</a></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Stability AI Key</label>
+        <input name="stability_api_key" type="password" placeholder="sk-..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://platform.stability.ai/account/keys" target="_blank" class="underline text-blue-500">platform.stability.ai</a></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Runway API Key</label>
+        <input name="runway_api_key" type="password" placeholder="..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://app.runwayml.com/settings" target="_blank" class="underline text-blue-500">app.runwayml.com</a></p>
       </div>
     </div>
   </section>
 
+  <!-- ── Social OAuth ──────────────────────────────────────── -->
   <section class="space-y-4">
-    <h2 class="font-semibold text-gray-700 border-b pb-2">Other — optional</h2>
+    <h2 class="font-semibold text-gray-700 border-b pb-2">Social Platform OAuth Apps — optional</h2>
+    <p class="text-xs text-gray-400">Create developer apps on each platform to enable OAuth connections from the dashboard.</p>
+
+    <div>
+      <p class="text-sm font-medium mb-2 text-gray-600">LinkedIn</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium mb-1">Client ID</label>
+          <input name="linkedin_client_id" type="text" placeholder="86ht5x..."
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Client Secret</label>
+          <input name="linkedin_client_secret" type="password"
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mt-1"><a href="https://www.linkedin.com/developers/apps" target="_blank" class="underline text-blue-500">linkedin.com/developers/apps</a> — required products: Sign In with LinkedIn, Share on LinkedIn.</p>
+    </div>
+
+    <div>
+      <p class="text-sm font-medium mb-2 text-gray-600">Instagram / Meta</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium mb-1">Meta App ID</label>
+          <input name="meta_app_id" type="text" placeholder="2059399..."
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Meta App Secret</label>
+          <input name="meta_app_secret" type="password"
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Instagram App ID</label>
+          <input name="instagram_app_id" type="text" placeholder="2367592..."
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Instagram App Secret</label>
+          <input name="instagram_app_secret" type="password"
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p class="text-sm font-medium mb-2 text-gray-600">Gmail OAuth</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium mb-1">Client ID</label>
+          <input name="gmail_client_id" type="text" placeholder="718831..."
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Client Secret</label>
+          <input name="gmail_client_secret" type="password"
+                 class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        </div>
+      </div>
+    </div>
+
     <div>
       <label class="block text-sm font-medium mb-1">Telegram Bot Token</label>
-      <input name="telegram_bot_token" type="password" placeholder="123456:ABC-..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
-      <p class="text-xs text-gray-400 mt-1">Create via <a href="https://t.me/BotFather" target="_blank" class="underline text-blue-500">@BotFather</a> on Telegram.</p>
+      <input name="telegram_bot_token" type="password" placeholder="123456:ABC-..."
+             class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <p class="text-xs text-gray-400 mt-1">Create via <a href="https://t.me/BotFather" target="_blank" class="underline text-blue-500">@BotFather</a>.</p>
+    </div>
+  </section>
+
+  <!-- ── News / Research ──────────────────────────────────── -->
+  <section class="space-y-4">
+    <h2 class="font-semibold text-gray-700 border-b pb-2">News &amp; Research APIs — optional</h2>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">SerpAPI Key</label>
+        <input name="serpapi_api_key" type="password" placeholder="..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1">Web search + image search. <a href="https://serpapi.com/manage-api-key" target="_blank" class="underline text-blue-500">serpapi.com</a></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">NewsAPI Key</label>
+        <input name="newsapi_key" type="password" placeholder="..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://newsapi.org/account" target="_blank" class="underline text-blue-500">newsapi.org</a></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">GNews Key</label>
+        <input name="gnews_api_key" type="password" placeholder="..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://gnews.io/dashboard" target="_blank" class="underline text-blue-500">gnews.io</a></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">NewsData.io Key</label>
+        <input name="newsdata_api_key" type="password" placeholder="pub_..."
+               class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+        <p class="text-xs text-gray-400 mt-1"><a href="https://newsdata.io/api-key" target="_blank" class="underline text-blue-500">newsdata.io</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Security / Infrastructure ────────────────────────── -->
+  <section class="space-y-4">
+    <h2 class="font-semibold text-gray-700 border-b pb-2">Security &amp; Infrastructure</h2>
+    <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
+      These secrets are required for scheduled publishing and OAuth token encryption. Generate them with <code class="font-mono">openssl rand -base64 32</code>.
     </div>
     <div>
-      <label class="block text-sm font-medium mb-1">SerpApi Key (for web research)</label>
-      <input name="serpapi_key" type="password" placeholder="..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <label class="block text-sm font-medium mb-1">Worker Scheduler Secret</label>
+      <input name="worker_scheduler_secret" type="password" placeholder="random-32-char-string"
+             class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <p class="text-xs text-gray-400 mt-1">Required for scheduled LinkedIn publishing (Durable Object alarm auth).</p>
     </div>
     <div>
-      <label class="block text-sm font-medium mb-1">xAI / Grok API Key (alternative LLM)</label>
-      <input name="xai_api_key" type="password" placeholder="xai-..." class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <label class="block text-sm font-medium mb-1">GitHub Token Encryption Key</label>
+      <input name="github_token_encryption_key" type="password" placeholder="base64-encoded-32-byte-key"
+             class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <p class="text-xs text-gray-400 mt-1">Required for encrypting OAuth tokens stored in D1. Run: <code class="font-mono bg-gray-100 px-1 rounded">openssl rand -base64 32</code></p>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Generation Worker Secret</label>
+      <input name="generation_worker_secret" type="password" placeholder="random-32-char-string"
+             class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
+      <p class="text-xs text-gray-400 mt-1">Shared secret between main Worker and generation Worker. Written as <code class="font-mono bg-gray-100 px-1 rounded">GENERATION_WORKER_SECRET</code> in worker/.dev.vars and <code class="font-mono bg-gray-100 px-1 rounded">WORKER_SHARED_SECRET</code> in generation-worker/.dev.vars.</p>
     </div>
   </section>
 

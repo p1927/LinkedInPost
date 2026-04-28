@@ -7,7 +7,10 @@
   ],
   "scripts": {
     "typecheck:gen": "cd generation-worker && npm run typecheck",
-    "typecheck:researcher": "cd packages/researcher && npm run typecheck"
+    "typecheck:researcher": "cd packages/researcher && npm run typecheck",
+    "test:setup-wizard": "python3 -m pytest setup/wizard/tests/ -v",
+    "test:setup-react": "cd frontend && npm run test:e2e:setup",
+    "test:setup": "npm run test:setup-wizard && npm run test:setup-react"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1"

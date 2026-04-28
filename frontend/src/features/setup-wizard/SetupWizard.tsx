@@ -106,23 +106,16 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
 
     const detectState = async () => {
       try {
-        // Try to auto-detect project directory
-        const possiblePaths = [
-          '/home/openclaw/workspaces/projects/LinkedInPost',
-          window.location.origin === 'http://localhost:3456' ? '/workspace' : '',
-        ].filter(Boolean);
-
+        // Auto-detect project directory via the setup server's filesystem API
         let projectDir = '';
-        for (const path of possiblePaths) {
-          try {
-            const response = await fetch(`${path}/frontend/.env`);
-            if (response.ok) {
-              projectDir = path || '/workspace';
-              break;
-            }
-          } catch {
-            // Continue to next path
+        try {
+          const res = await fetch('http://localhost:3456/api/setup/project-path');
+          if (res.ok) {
+            const data = await res.json();
+            projectDir = data.projectDir || '';
           }
+        } catch {
+          // Setup server not running — skip detection
         }
 
         if (!projectDir) {

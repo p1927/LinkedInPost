@@ -66,13 +66,16 @@ def _which_python() -> str:
 
 def menu_setup() -> None:
     py = _which_python()
+    npm = _which_npm()
     while True:
         print(
             """
-Setup (python3 setup.py)
-  1) Default
-  2) --cloudflare
-  3) --all
+Setup
+  1) python3 setup.py (Google resources)
+  2) python3 setup.py --cloudflare (provision KV/D1, write .dev.vars)
+  3) python3 setup.py --all (full: Google + Cloudflare + deploy + GitHub sync)
+  4) Setup wizard — web UI  (localhost:4242, Flask)
+  5) Deploy generation worker
   0) Back to main menu
 """
         )
@@ -91,7 +94,22 @@ Setup (python3 setup.py)
             _run([py, str(SETUP_PY), "--all"], cwd=ROOT)
             input("\nPress Enter to return to the main menu… ")
             return
-        print("Unknown option. Choose 0–3.")
+        if c == "4":
+            print("\nStarting web setup wizard at http://localhost:4242 …")
+            print("Open that URL in your browser, then press Ctrl+C here when done.\n")
+            _run([py, str(SETUP_PY), "--web"], cwd=ROOT)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        if c == "5":
+            if not npm:
+                print("npm not found; install Node.js first.")
+                input("\nPress Enter to return to the main menu… ")
+                return
+            GEN_WORKER = ROOT / "generation-worker"
+            _run([npm, "run", "deploy"], cwd=GEN_WORKER)
+            input("\nPress Enter to return to the main menu… ")
+            return
+        print("Unknown option. Choose 0–5.")
 
 
 def menu_migrations() -> None:

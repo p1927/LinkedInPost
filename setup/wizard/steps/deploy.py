@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import queue
 import subprocess
+import sys
 import threading
 
 from flask import Blueprint, Response, render_template, stream_with_context
@@ -18,7 +19,7 @@ def _run_deploy():
     _deploy_done.clear()
     _deploy_success.clear()
     proc = subprocess.Popen(
-        ['python', 'setup.py', '--deploy-worker'],
+        [sys.executable, 'setup.py', '--deploy-worker'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
     )
     for line in proc.stdout:

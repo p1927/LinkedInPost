@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import './index.css'
+import '../../index.css'
 import { SetupWizard } from './SetupWizard'
 
 // Google OAuth Client ID - you will need to replace this with your actual Client ID
