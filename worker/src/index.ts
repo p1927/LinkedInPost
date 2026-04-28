@@ -1756,12 +1756,16 @@ Rules:
     case 'findDraftConnections': {
       const title = String(payload.title || '').trim();
       const description = String(payload.description || '').trim();
-      const drafts = Array.isArray(payload.drafts) ? payload.drafts as { topicId: string; topic: string }[] : [];
+      const drafts = (Array.isArray(payload.drafts) ? payload.drafts as { topicId: string; topic: string }[] : []).slice(0, 50);
       if (!title || drafts.length === 0) return { connections: [] };
       const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
       const primary = resolveStoredPrimary(ws, true);
       const fallback = resolveStoredFallback(ws, true);
-      const draftList = drafts.map((d, i) => `[${i}] topicId=${d.topicId}: "${d.topic}"`).join('\n');
+      const draftList = drafts.map((d, i) => {
+        const safeId = String(d.topicId || '').slice(0, 100);
+        const safeTopic = String(d.topic || '').slice(0, 200);
+        return `[${i}] topicId=${safeId}: "${safeTopic}"`;
+      }).join('\n');
       const prompt = `You are a content strategy assistant. A LinkedIn creator is reading an article and wants to know which of their existing post drafts this article relates to.
 
 Article:
@@ -1788,7 +1792,7 @@ Rules:
       const cleaned = text.replace(/```json|```/g, '').trim();
       let parsed: { connections: { topicId: string; topic: string; reason: string }[] };
       try { parsed = JSON.parse(cleaned); }
-      catch { return { connections: [] }; }
+      catch { throw new Error('AI returned unexpected format. Please try again.'); }
       return {
         connections: Array.isArray(parsed.connections) ? parsed.connections.map(c => ({
           topicId: String(c.topicId || ''),
@@ -1839,7 +1843,7 @@ Rules:
       };
     }
     case 'crossDomainInsight': {
-      const topic = String(payload.topic || '').trim();
+      const topic = String(payload.topic || '').trim().slice(0, 300);
       if (!topic) throw new Error('topic is required.');
       const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
       const primary = resolveStoredPrimary(ws, true);
@@ -1881,7 +1885,7 @@ Rules:
       };
     }
     case 'opinionLeaderInsights': {
-      const topic = String(payload.topic || '').trim();
+      const topic = String(payload.topic || '').trim().slice(0, 300);
       if (!topic) throw new Error('topic is required.');
       const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
       const primary = resolveStoredPrimary(ws, true);
