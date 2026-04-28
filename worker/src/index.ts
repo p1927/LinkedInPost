@@ -1753,6 +1753,177 @@ Rules:
         challenge: Array.isArray(parsed.challenge) ? parsed.challenge : [],
       };
     }
+    case 'findDraftConnections': {
+      const title = String(payload.title || '').trim();
+      const description = String(payload.description || '').trim();
+      const drafts = Array.isArray(payload.drafts) ? payload.drafts as { topicId: string; topic: string }[] : [];
+      if (!title || drafts.length === 0) return { connections: [] };
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const draftList = drafts.map((d, i) => `[${i}] topicId=${d.topicId}: "${d.topic}"`).join('\n');
+      const prompt = `You are a content strategy assistant. A LinkedIn creator is reading an article and wants to know which of their existing post drafts this article relates to.
+
+Article:
+Title: ${title}
+${description ? `Description: ${description}` : ''}
+
+Existing drafts:
+${draftList}
+
+Return ONLY valid JSON:
+{
+  "connections": [
+    { "topicId": "the topicId string", "topic": "the draft topic", "reason": "1 sentence explaining how this article relates to that draft" }
+  ]
+}
+
+Rules:
+- Only include drafts that genuinely relate to the article (skip unrelated ones)
+- If no drafts relate, return { "connections": [] }
+- reason must be specific, not generic — mention something from the article
+- Max 4 connections
+- No markdown, just JSON`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: { connections: { topicId: string; topic: string; reason: string }[] };
+      try { parsed = JSON.parse(cleaned); }
+      catch { return { connections: [] }; }
+      return {
+        connections: Array.isArray(parsed.connections) ? parsed.connections.map(c => ({
+          topicId: String(c.topicId || ''),
+          topic: String(c.topic || ''),
+          reason: String(c.reason || ''),
+        })) : [],
+      };
+    }
+    case 'findDebateArticle': {
+      const title = String(payload.title || '').trim();
+      const description = String(payload.description || '').trim();
+      if (!title) throw new Error('title is required.');
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const prompt = `You are a content strategy assistant helping a LinkedIn creator stress-test their thinking by finding a genuinely opposing perspective.
+
+Article:
+Title: ${title}
+${description ? `Description: ${description}` : ''}
+
+Generate a realistic opposing article — something a credible publication might actually publish that contradicts, challenges, or reframes the original article's thesis.
+
+Return ONLY valid JSON:
+{
+  "title": "Title of the opposing article (realistic, publication-ready)",
+  "summary": "2-3 sentence summary of what this opposing article argues",
+  "source": "Plausible publication name (e.g. Harvard Business Review, MIT Technology Review)",
+  "opposingAngle": "The core thesis that contradicts the original article (1 sentence)",
+  "keyArguments": ["argument1", "argument2", "argument3"]
+}
+
+Rules:
+- Make the title and source feel realistic and credible
+- keyArguments: exactly 3 distinct points (max 20 words each)
+- No markdown, just JSON`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: { title: string; summary: string; source: string; opposingAngle: string; keyArguments: string[] };
+      try { parsed = JSON.parse(cleaned); }
+      catch { throw new Error('AI returned unexpected format. Please try again.'); }
+      return {
+        title: String(parsed.title || ''),
+        summary: String(parsed.summary || ''),
+        source: String(parsed.source || ''),
+        opposingAngle: String(parsed.opposingAngle || ''),
+        keyArguments: Array.isArray(parsed.keyArguments) ? parsed.keyArguments.map(String).slice(0, 3) : [],
+      };
+    }
+    case 'crossDomainInsight': {
+      const topic = String(payload.topic || '').trim();
+      if (!topic) throw new Error('topic is required.');
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const prompt = `You are a content strategy assistant helping a LinkedIn creator find surprising cross-domain connections that make their posts more interesting and original.
+
+Topic: ${topic}
+
+Find 3 insights from completely different fields (psychology, biology, sports, military strategy, architecture, music, etc.) that unexpectedly illuminate this topic. Think: what principle from another world applies here in a non-obvious way?
+
+Return ONLY valid JSON:
+{
+  "insights": [
+    {
+      "domain": "The other field (e.g. Evolutionary Biology)",
+      "connection": "2 sentences explaining the cross-domain analogy — what concept from that field maps onto this topic",
+      "postAngle": "A specific LinkedIn post angle using this connection (1 sentence, actionable)"
+    }
+  ]
+}
+
+Rules:
+- Exactly 3 insights
+- Domains must be genuinely different from each other
+- Connections must be specific and non-obvious — not generic ("just like in sports, teamwork matters")
+- postAngle must be a concrete hook a LinkedIn creator can actually use
+- No markdown, just JSON`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: { insights: { domain: string; connection: string; postAngle: string }[] };
+      try { parsed = JSON.parse(cleaned); }
+      catch { throw new Error('AI returned unexpected format. Please try again.'); }
+      return {
+        insights: Array.isArray(parsed.insights) ? parsed.insights.map(ins => ({
+          domain: String(ins.domain || ''),
+          connection: String(ins.connection || ''),
+          postAngle: String(ins.postAngle || ''),
+        })).slice(0, 3) : [],
+      };
+    }
+    case 'opinionLeaderInsights': {
+      const topic = String(payload.topic || '').trim();
+      if (!topic) throw new Error('topic is required.');
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const prompt = `You are a content strategy assistant helping a LinkedIn creator understand different expert perspectives on a topic so they can write more nuanced posts.
+
+Topic: ${topic}
+
+Generate 4 distinct opinion leader perspectives — realistic takes from credible professionals who would have strong, divergent views on this topic. Base these on actual patterns of thought leadership in this domain.
+
+Return ONLY valid JSON:
+{
+  "leaders": [
+    {
+      "name": "Realistic full name",
+      "role": "Job title and company/context (e.g. Partner at McKinsey, ex-Google VP)",
+      "perspective": "2 sentences capturing their specific take on this topic — their angle, what they emphasize, what they'd push back on",
+      "postAngle": "The LinkedIn post this person would write — a 1-sentence hook"
+    }
+  ]
+}
+
+Rules:
+- Exactly 4 leaders with genuinely different viewpoints (not just different industries)
+- Names and roles should feel realistic but be clearly fictional composites
+- Perspectives must disagree with each other in interesting ways
+- postAngle must be a specific, opinionated hook — not generic
+- No markdown, just JSON`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: { leaders: { name: string; role: string; perspective: string; postAngle: string }[] };
+      try { parsed = JSON.parse(cleaned); }
+      catch { throw new Error('AI returned unexpected format. Please try again.'); }
+      return {
+        leaders: Array.isArray(parsed.leaders) ? parsed.leaders.map(l => ({
+          name: String(l.name || ''),
+          role: String(l.role || ''),
+          perspective: String(l.perspective || ''),
+          postAngle: String(l.postAngle || ''),
+        })).slice(0, 4) : [],
+      };
+    }
     case 'updateRowStatus':
       return pipeline.updateRowStatus(
         storedConfig.spreadsheetId,
