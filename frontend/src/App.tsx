@@ -105,7 +105,9 @@ function WorkspaceSession({
             ? 'usage'
             : path.startsWith(WORKSPACE_PATHS.enrichment)
               ? 'enrichment'
-              : path.startsWith(WORKSPACE_PATHS.trending)
+              : path.startsWith(WORKSPACE_PATHS.feed)
+                ? 'feed'
+                : path.startsWith(WORKSPACE_PATHS.trending)
                 ? 'trending'
                 : path.startsWith(WORKSPACE_PATHS.automations)
                   ? 'automations'

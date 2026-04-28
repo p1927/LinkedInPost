@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, ScrollText, Settings, TrendingUp, Wrench, Zap } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, Rss, ScrollText, Settings, TrendingUp, Wrench, Zap } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
 import { FEATURE_CAMPAIGN } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'automations' | 'setup' | 'admin';
+export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'feed' | 'automations' | 'setup' | 'admin';
 
 const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
 
@@ -145,7 +145,9 @@ export function AppSidebar({
                     ? WORKSPACE_PATHS.enrichment
                     : page === 'trending'
                       ? WORKSPACE_PATHS.trending
-                      : page === 'settings'
+                      : page === 'feed'
+                        ? WORKSPACE_PATHS.feed
+                        : page === 'settings'
                         ? WORKSPACE_PATHS.settings
                         : page === 'setup'
                           ? WORKSPACE_PATHS.setup
@@ -270,6 +272,7 @@ export function AppSidebar({
             {link('usage', <BarChart2 aria-hidden />, 'Usage')}
             {link('connections', <PlugZap aria-hidden />, 'Connections')}
             {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
+            {link('feed', <Rss aria-hidden />, 'Feed')}
             {link('trending', <TrendingUp aria-hidden />, 'Trending')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
             {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}

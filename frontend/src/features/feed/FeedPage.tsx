@@ -4,13 +4,12 @@ import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { containerVariants, cardItemVariants, fadeUpVariants, skeletonPulseVariants, spring } from '@/lib/motion';
 import { TrendingSearchBar } from '../trending/components/TrendingSearchBar';
 import { TrendingFilters, readFilterDefaults } from '../trending/components/TrendingFilters';
-import { TrendingSidebar } from '../trending/components/TrendingSidebar';
+import { FeedCuratedPanel } from './components/FeedCuratedPanel';
 import { FeedSection } from '../trending/components/FeedSection';
 import { YouTubePanel } from '../trending/components/YouTubePanel';
 import { InstagramPanel } from '../trending/components/InstagramPanel';
 import { LinkedInPanel } from '../trending/components/LinkedInPanel';
 import { TrendingGraph } from '../trending/components/TrendingGraph';
-import { type PanelConfig } from '../trending/components/PanelToggle';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useTrendingSearch } from '../trending/hooks/useTrendingSearch';
 import { FeedLeftPanel } from './components/FeedLeftPanel';
@@ -19,13 +18,6 @@ import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
 import type { InterestGroup, CreateInterestGroupPayload, Clip } from './types';
-
-const ALL_PANELS: PanelConfig[] = [
-  { id: 'youtube', label: 'YouTube' },
-  { id: 'instagram', label: 'Instagram' },
-  { id: 'linkedin', label: 'LinkedIn' },
-  { id: 'news', label: 'News' },
-];
 
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
 
@@ -51,7 +43,7 @@ export function FeedPage({
 }) {
   const [topic, setTopic] = useState('');
   const [searchTopic, setSearchTopic] = useState('');
-  const [enabledPanels, setEnabledPanels] = useState<string[]>(DEFAULT_ENABLED);
+  const [enabledPanels] = useState<string[]>(DEFAULT_ENABLED);
 
   const [region, setRegion] = useState(() => readFilterDefaults().region);
   const [genre, setGenre] = useState(() => readFilterDefaults().genre);
@@ -107,7 +99,7 @@ export function FeedPage({
       .catch(() => {});
   }, [idToken, api]);
 
-  const { data, loading, error, enabledPlatforms } = useTrending(searchTopic, idToken, api, capabilities);
+  const { data, loading, error } = useTrending(searchTopic, idToken, api, capabilities);
   const trendingSearch = useTrendingSearch(searchTopic, region, genre, windowDays, idToken, api);
 
   const hasNewsApis = Boolean(
@@ -175,9 +167,6 @@ export function FeedPage({
     }
     if (newTopic) { setTopic(newTopic); setSearchTopic(newTopic); }
   };
-
-  const handleTogglePanel = (id: string, enabled: boolean) =>
-    setEnabledPanels(prev => enabled ? [...prev, id] : prev.filter(p => p !== id));
 
   const visiblePanels = useMemo(() => {
     if (!data) return [];
@@ -512,15 +501,30 @@ export function FeedPage({
 
           {/* Right: sticky sidebar */}
           <div className="sticky top-20 hidden lg:block">
-            <TrendingSidebar
+            <FeedCuratedPanel
+              idToken={idToken}
+              api={api}
+              searchTopic={searchTopic}
+              newsProviderKeys={newsProviderKeys}
+              capabilities={capabilities}
+              trendingData={{
+                youtube: data?.youtube ?? [],
+                instagram: data?.instagram ?? [],
+                linkedin: data?.linkedin ?? [],
+                news: (() => {
+                  const articles = trendingSearch.data?.articles?.length
+                    ? trendingSearch.data.articles : (data?.news ?? []);
+                  return articles;
+                })(),
+              }}
               trendingWords={trendingWords}
               recommendedTopics={recommendedTopics}
-              panels={ALL_PANELS}
-              enabledPanels={enabledPanels}
-              enabledPlatforms={enabledPlatforms}
+              loading={isLoading}
+              onClip={handleClip}
+              clippedUrls={clippedUrls}
+              onOpenArticle={setOpenArticle}
               onSelectWord={(w) => { setTopic(w); setSearchTopic(w); }}
               onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
-              onTogglePanel={handleTogglePanel}
             />
           </div>
         </div>

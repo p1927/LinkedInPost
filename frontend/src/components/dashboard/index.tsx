@@ -48,6 +48,7 @@ import {
 } from '../../generated/features';
 import { CampaignPage } from '../../features/campaign';
 import { TrendingDashboard } from '../../features/trending';
+import { FeedPage } from '../../features/feed/FeedPage';
 import type { TrendingCapabilities } from '../../features/trending/hooks/useTrending';
 import { AddTopicPage } from '../../features/add-topic/AddTopicPage';
 import { TopicDetailView } from '../../features/add-topic/TopicDetailView';
@@ -899,6 +900,21 @@ export function Dashboard({
             ) : (
               <Navigate to={WORKSPACE_PATHS.topics} replace />
             )
+          }
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.feed}
+          element={
+            <FeedPage
+              idToken={idToken}
+              api={api}
+              newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
+              capabilities={{
+                youtube: session.config.youtubeAuthAvailable,
+                instagram: session.config.hasInstagramAccessToken,
+                linkedin: session.config.hasLinkedInAccessToken,
+              }}
+            />
           }
         />
         <Route
