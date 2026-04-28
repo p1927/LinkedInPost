@@ -72,11 +72,21 @@ export async function handleSendApprovedNewsletterIssue(
   if (!row) throw new Error('Issue not found');
   if (row.status !== 'approved') throw new Error(`Cannot send issue with status '${row.status}' — must be approved first`);
 
-  // TODO: Newsletter send is currently implemented only in the Python linkedin_bot
-  // pipeline. Wire the TypeScript worker sender here when available.
-  void env;
-  void markIssueSent;
-  throw new Error('Newsletter send is not implemented in the worker yet; use the Python pipeline.');
+  if (!row.newsletter_id) {
+    // Legacy single-newsletter issue with no parent record. Mark as sent so the
+    // UI advances; actual delivery for legacy mode is handled by the Python pipeline.
+    await markIssueSent(db, issueId);
+    return;
+  }
+
+  const newsletter = await db
+    .prepare('SELECT * FROM newsletters WHERE id = ?')
+    .bind(row.newsletter_id)
+    .first<NewsletterRow>();
+  if (!newsletter) throw new Error('Parent newsletter not found');
+
+  const { sendNewsletterToRecipients } = await import('./scheduler');
+  await sendNewsletterToRecipients(env, db, newsletter, row);
 }
 
 export async function handleListNewsletters(db: D1Database, spreadsheetId: string) {
@@ -168,4 +178,21 @@ export async function handleCreateDraftByNewsletter(
 ): Promise<{ id: string; subject: string; status: string }> {
   const { createNewsletterDraftForRecord } = await import('./draftCreator');
   return createNewsletterDraftForRecord(env, db, newsletterId);
+}
+
+export async function handleRegenerateNewsletterIssue(
+  env: Env,
+  db: D1Database,
+  issueId: string,
+): Promise<NewsletterIssueRow> {
+  const row = await db
+    .prepare('SELECT * FROM newsletter_issues WHERE id = ?')
+    .bind(issueId)
+    .first<NewsletterIssueRow>();
+  if (!row) throw new Error('Issue not found');
+  if (!row.newsletter_id) throw new Error('Cannot regenerate legacy issue — create a new draft instead.');
+  if (row.status === 'sent') throw new Error('Cannot regenerate an issue that has already been sent.');
+
+  const { regenerateIssueContent } = await import('./draftCreator');
+  return regenerateIssueContent(env, db, row);
 }

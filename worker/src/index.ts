@@ -2554,6 +2554,10 @@ Rules:
       const { handleCreateDraftByNewsletter } = await import('./newsletter/handlers');
       return handleCreateDraftByNewsletter(env, env.PIPELINE_DB, String(payload.newsletterId || '').trim());
     }
+    case 'newsletter.regenerateIssue': {
+      const { handleRegenerateNewsletterIssue } = await import('./newsletter/handlers');
+      return handleRegenerateNewsletterIssue(env, env.PIPELINE_DB, String(payload.issueId || '').trim());
+    }
     case 'newsletter.issue.update': {
       const { handleUpdateNewsletterIssue } = await import('./newsletter/handlers');
       await handleUpdateNewsletterIssue(env.PIPELINE_DB, String(payload.issueId || '').trim(), {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Sparkles, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import type { NewsletterRecord, NewsletterConfigInput } from '../../schema/newsletterTypes';
 import type { AppSession, BackendApi } from '@/services/backendApi';
@@ -45,13 +45,16 @@ export function NewsletterConfigDrawer({
   const [localConfig, setLocalConfig] = useState<NewsletterConfigInput>(() => newsletter.config);
   const [localName, setLocalName] = useState(newsletter.name);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generateSuccess, setGenerateSuccess] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     setLocalConfig(newsletter.config);
     setLocalName(newsletter.name);
     setError(null);
+    setGenerateSuccess(null);
     setSubmitted(false);
   }, [newsletter.id, open]);
 
@@ -97,6 +100,24 @@ export function NewsletterConfigDrawer({
     }
   };
 
+  const handleGenerateDraft = async () => {
+    setSubmitted(true);
+    if (hasErrors) return;
+    setGenerating(true);
+    setError(null);
+    setGenerateSuccess(null);
+    try {
+      // Save current config first so the draft uses the latest settings
+      await api.updateNewsletter(idToken, newsletter.id, { ...localConfig, name: localName });
+      const result = await api.createNewsletterDraftByNewsletter(idToken, newsletter.id);
+      setGenerateSuccess(`Draft generated: "${result.subject || 'New issue'}". Close this panel to see it.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate draft.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const globalFeeds = session.config.newsResearch?.rssFeeds ?? [];
   const apiStatus = session.config.newsResearch?.apis ?? {
     newsapi: false,
@@ -127,8 +148,8 @@ export function NewsletterConfigDrawer({
           </button>
         </div>
 
-        {/* Split body: config left, preview right */}
-        <div className="flex flex-1 min-h-0">
+        {/* Split body: config left, preview right (stacked on small screens) */}
+        <div className="flex flex-col md:flex-row flex-1 min-h-0">
 
         {/* Config panel */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 border-r border-slate-100">
@@ -591,35 +612,52 @@ export function NewsletterConfigDrawer({
         </div>
 
         {/* Footer inside config panel */}
-        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4 shrink-0">
-          <div className="min-w-0">
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            {submitted && hasErrors && !error && (
-              <p className="text-xs text-red-500">Fix the errors above before saving.</p>
-            )}
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
+        <div className="px-6 py-4 border-t border-slate-200 flex flex-col gap-3 shrink-0">
+          {(error || (submitted && hasErrors) || generateSuccess) && (
+            <div className="min-w-0">
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              {submitted && hasErrors && !error && (
+                <p className="text-xs text-red-500">Fix the errors above before saving.</p>
+              )}
+              {generateSuccess && !error && (
+                <p className="text-sm text-emerald-600">{generateSuccess}</p>
+              )}
+            </div>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <button
               type="button"
-              onClick={onClose}
-              className="text-sm text-slate-600 hover:text-slate-800"
+              onClick={() => void handleGenerateDraft()}
+              disabled={generating || saving || (submitted && hasErrors)}
+              title="Save settings and generate a new draft issue immediately"
+              className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 transition-colors cursor-pointer"
             >
-              Cancel
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {generating ? 'Generating…' : 'Save & Generate Draft'}
             </button>
-            <button
-              type="button"
-              onClick={() => void handleSave()}
-              disabled={saving || (submitted && hasErrors)}
-              className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Saving…' : 'Save Changes'}
-            </button>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-sm text-slate-600 hover:text-slate-800 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={saving || generating || (submitted && hasErrors)}
+                className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
         </div>{/* end config panel */}
 
         {/* Preview pane */}
-        <div className="hidden lg:flex w-80 shrink-0 flex-col bg-slate-50 overflow-y-auto">
+        <div className="hidden md:flex w-full md:w-80 shrink-0 flex-col bg-slate-50 overflow-y-auto border-t md:border-t-0">
           <div className="px-4 py-3 border-b border-slate-200 shrink-0">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Preview</p>
           </div>

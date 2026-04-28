@@ -37,6 +37,7 @@ export interface NewsletterConfigRow {
 export interface NewsletterIssueRow {
   id: string;
   spreadsheet_id: string;
+  newsletter_id: string | null;
   issue_date: string;
   scheduled_for: string;
   status: string;

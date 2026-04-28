@@ -1,5 +1,5 @@
 import type { Env } from '../index';
-import type { ResearchArticle } from './types';
+import type { ResearchArticle, NewsletterIssueRow } from './types';
 import { getNewsletterConfig, createNewsletterIssue, computeNextSendAt } from './persistence';
 import { collectArticlesFromSources } from './contentAssembler';
 import { renderNewsletterEmail } from './emailRenderer';
@@ -167,6 +167,76 @@ export async function createNewsletterDraftForRecord(
   }
 
   return { id: issue.id, subject, status: issue.status };
+}
+
+export async function regenerateIssueContent(
+  env: Env,
+  db: D1Database,
+  issue: NewsletterIssueRow,
+): Promise<NewsletterIssueRow> {
+  if (!issue.newsletter_id) throw new Error('Cannot regenerate without parent newsletter.');
+
+  const row = await db
+    .prepare('SELECT * FROM newsletters WHERE id = ?')
+    .bind(issue.newsletter_id)
+    .first<import('./persistence').NewsletterRow>();
+  if (!row) throw new Error('Newsletter not found.');
+
+  const cfg = JSON.parse(row.config_json) as import('./types').NewsletterConfigInput;
+
+  const windowStart = new Date();
+  windowStart.setDate(windowStart.getDate() - 7);
+  const windowEnd = new Date();
+
+  const articles = await collectArticlesFromSources(
+    env,
+    Boolean(cfg.rssEnabled),
+    Boolean(cfg.newsApiEnabled),
+    Array.isArray(cfg.customRssFeeds) ? cfg.customRssFeeds : [],
+    Array.isArray(cfg.enabledRssFeedIds) ? cfg.enabledRssFeedIds : [],
+    Array.isArray(cfg.enabledNewsApiProviders) ? cfg.enabledNewsApiProviders : [],
+    windowStart.toISOString(),
+    windowEnd.toISOString(),
+    {
+      includeKeywords: Array.isArray(cfg.topicIncludeKeywords) ? cfg.topicIncludeKeywords : [],
+      excludeKeywords: Array.isArray(cfg.topicExcludeKeywords) ? cfg.topicExcludeKeywords : [],
+    },
+  );
+
+  const itemCount = cfg.itemCount || 5;
+  const selectedArticles = articles.slice(0, itemCount);
+  const template = cfg.processingTemplate || 'personal-story';
+  const subjectTemplate = cfg.subjectTemplate || 'Weekly Newsletter';
+
+  const renderedContent = await renderNewsletterEmail(env, selectedArticles, template, {
+    processingNote: cfg.processingNote,
+    emotionTarget: cfg.emotionTarget,
+    colorEmotionTarget: cfg.colorEmotionTarget,
+    storyFramework: cfg.storyFramework,
+    authorPersona: cfg.authorPersona || '',
+    writingStyleExamples: cfg.writingStyleExamples || '',
+    newsletterIntro: cfg.newsletterIntro || '',
+    newsletterOutro: cfg.newsletterOutro || '',
+    recurringSections: Array.isArray(cfg.recurringSections) ? cfg.recurringSections : [],
+  });
+
+  const subject = interpolateSubject(subjectTemplate, selectedArticles);
+  const status = issue.status === 'sent' ? issue.status : 'pending_approval';
+
+  await db
+    .prepare(
+      `UPDATE newsletter_issues
+         SET articles_json = ?, rendered_content = ?, subject = ?, status = ?
+       WHERE id = ?`,
+    )
+    .bind(JSON.stringify(selectedArticles), renderedContent, subject, status, issue.id)
+    .run();
+
+  const refreshed = await db
+    .prepare('SELECT * FROM newsletter_issues WHERE id = ?')
+    .bind(issue.id)
+    .first<NewsletterIssueRow>();
+  return refreshed ?? { ...issue, articles_json: JSON.stringify(selectedArticles), rendered_content: renderedContent, subject, status };
 }
 
 async function sendAdminPreview(

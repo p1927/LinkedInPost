@@ -917,6 +917,13 @@ export class BackendApi {
     return this.post<{ id: string; subject: string; status: string }>('newsletter.createDraftByNewsletter', idToken, { newsletterId });
   }
 
+  async regenerateNewsletterIssue(
+    idToken: string,
+    issueId: string,
+  ): Promise<NewsletterIssueRow> {
+    return this.post<NewsletterIssueRow>('newsletter.regenerateIssue', idToken, { issueId });
+  }
+
   async updateRowStatus(
     idToken: string,
     row: SheetRow,

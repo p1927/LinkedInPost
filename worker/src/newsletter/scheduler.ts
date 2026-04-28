@@ -57,7 +57,7 @@ async function processNewsletter(
   }
 }
 
-async function sendNewsletterToRecipients(
+export async function sendNewsletterToRecipients(
   env: Env,
   db: D1Database,
   newsletter: NewsletterRow,

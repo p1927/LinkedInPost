@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Tour } from '@/components/Tour';
-import { Loader2, Mail, Plus } from 'lucide-react';
+import { Loader2, Mail, Plus, X, AlertTriangle } from 'lucide-react';
 import clsx from 'clsx';
 import type { BackendApi, AppSession } from '@/services/backendApi';
 import type { SheetRow } from '@/services/sheets';
@@ -29,6 +29,16 @@ export function NewsletterTab({ idToken, session, api }: Props) {
   const [selectedIssue, setSelectedIssue] = useState<NewsletterIssueRow | null>(null);
   const [issuePanelOpen, setIssuePanelOpen] = useState(false);
   const [creatingDraftIds, setCreatingDraftIds] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<{ kind: 'error' | 'success'; message: string } | null>(null);
+
+  const showError = (msg: string) => setToast({ kind: 'error', message: msg });
+  const showSuccess = (msg: string) => setToast({ kind: 'success', message: msg });
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     void loadData();
@@ -99,7 +109,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
       await api.updateNewsletter(idToken, id, { active });
       setNewsletters(prev => prev.map(n => n.id === id ? { ...n, active } : n));
     } catch (err) {
-      console.error('Failed to toggle newsletter:', err);
+      showError(err instanceof Error ? err.message : 'Failed to toggle newsletter.');
     }
   };
 
@@ -109,17 +119,18 @@ export function NewsletterTab({ idToken, session, api }: Props) {
       setNewsletters(prev => prev.filter(n => n.id !== id));
       setAllIssues(prev => prev.filter(e => e.newsletterId !== id));
     } catch (err) {
-      console.error('Failed to delete newsletter:', err);
+      showError(err instanceof Error ? err.message : 'Failed to delete newsletter.');
     }
   };
 
   const handleCreateDraft = async (newsletterId: string) => {
     setCreatingDraftIds(prev => new Set(prev).add(newsletterId));
     try {
-      await api.createNewsletterDraftByNewsletter(idToken, newsletterId);
+      const result = await api.createNewsletterDraftByNewsletter(idToken, newsletterId);
       await loadAllIssues(newsletters);
+      showSuccess(`Draft created: ${result.subject || 'New issue'}`);
     } catch (err) {
-      console.error('Failed to create draft:', err);
+      showError(err instanceof Error ? err.message : 'Failed to create draft. Check that you have RSS feeds or news APIs configured.');
     } finally {
       setCreatingDraftIds(prev => {
         const next = new Set(prev);
@@ -135,14 +146,38 @@ export function NewsletterTab({ idToken, session, api }: Props) {
   };
 
   const handleApprove = async (issueId: string) => {
-    await api.approveNewsletterIssue(idToken, issueId);
-    void loadAllIssues(newsletters);
+    try {
+      await api.approveNewsletterIssue(idToken, issueId);
+      void loadAllIssues(newsletters);
+      showSuccess('Issue approved.');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to approve issue.');
+      throw err;
+    }
   };
 
   const handleSend = async (issueId: string) => {
-    await api.sendNewsletterIssue(idToken, issueId);
-    setIssuePanelOpen(false);
-    void loadAllIssues(newsletters);
+    try {
+      await api.sendNewsletterIssue(idToken, issueId);
+      setIssuePanelOpen(false);
+      void loadAllIssues(newsletters);
+      showSuccess('Issue sent.');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to send issue.');
+      throw err;
+    }
+  };
+
+  const handleRegenerateIssue = async (issueId: string): Promise<NewsletterIssueRow | null> => {
+    try {
+      const updated = await api.regenerateNewsletterIssue(idToken, issueId);
+      void loadAllIssues(newsletters);
+      showSuccess('Issue regenerated.');
+      return updated;
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to regenerate issue.');
+      throw err;
+    }
   };
 
   if (loading) {
@@ -253,6 +288,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
           setIssuePanelOpen(false);
         }}
         onSend={handleSend}
+        onRegenerate={handleRegenerateIssue}
         idToken={idToken}
         api={api}
       />
@@ -266,6 +302,30 @@ export function NewsletterTab({ idToken, session, api }: Props) {
           onCreated={handleNewsletterCreated}
           onClose={() => setWizardOpen(false)}
         />
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={clsx(
+            'fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-start gap-2 px-4 py-2.5 rounded-xl shadow-lg max-w-md',
+            toast.kind === 'error'
+              ? 'bg-rose-600 text-white'
+              : 'bg-emerald-600 text-white'
+          )}
+          role="status"
+        >
+          {toast.kind === 'error' && <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />}
+          <p className="text-sm flex-1">{toast.message}</p>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="opacity-70 hover:opacity-100 cursor-pointer"
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       )}
 
       {/* Config drawer */}

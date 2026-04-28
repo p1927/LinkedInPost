@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Check, Send, Eye, EyeOff, FileText, Newspaper } from 'lucide-react';
+import { X, Check, Send, Eye, EyeOff, FileText, Newspaper, RefreshCw, AlertTriangle, Loader2 } from 'lucide-react';
 import { CSC_TOKENS as T } from '@/features/content-schedule-calendar/tokens';
 import type { NewsletterIssueRow } from '../../schema/newsletterTypes';
 import type { BackendApi } from '@/services/backendApi';
@@ -10,6 +10,7 @@ interface Props {
   onClose: () => void;
   onApprove: (issueId: string) => Promise<void>;
   onSend: (issueId: string) => Promise<void>;
+  onRegenerate: (issueId: string) => Promise<NewsletterIssueRow | null>;
   idToken: string;
   api: BackendApi;
 }
@@ -132,13 +133,22 @@ function EditPane({
 
 type RightTab = 'preview' | 'articles';
 
-function RightPane({ issue }: { issue: NewsletterIssueRow }) {
+function RightPane({
+  issue,
+  onRegenerate,
+  regenerating,
+}: {
+  issue: NewsletterIssueRow;
+  onRegenerate: () => void;
+  regenerating: boolean;
+}) {
   const [tab, setTab] = useState<RightTab>('preview');
   const [showRaw, setShowRaw] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const hasContent = Boolean(issue.rendered_content?.trim());
 
   useEffect(() => {
-    if (tab === 'preview' && !showRaw && iframeRef.current && issue.rendered_content) {
+    if (tab === 'preview' && !showRaw && iframeRef.current && hasContent) {
       const doc = iframeRef.current.contentDocument;
       if (doc) {
         doc.open();
@@ -146,7 +156,7 @@ function RightPane({ issue }: { issue: NewsletterIssueRow }) {
         doc.close();
       }
     }
-  }, [issue.rendered_content, showRaw, tab]);
+  }, [issue.rendered_content, showRaw, tab, hasContent]);
 
   const articles = (() => {
     try {
@@ -200,7 +210,25 @@ function RightPane({ issue }: { issue: NewsletterIssueRow }) {
       {/* Tab content */}
       <div className="flex-1 min-h-0 p-4 overflow-hidden">
         {tab === 'preview' && (
-          showRaw ? (
+          !hasContent ? (
+            <div className="h-full flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-6 text-center">
+              <AlertTriangle className="h-7 w-7 text-amber-500" />
+              <p className="text-sm font-medium text-slate-700">No content yet</p>
+              <p className="text-xs text-slate-500 max-w-xs">
+                This issue was created but has no rendered content. Generation may have failed
+                — try regenerating to fetch articles and render the email.
+              </p>
+              <button
+                type="button"
+                disabled={regenerating}
+                onClick={onRegenerate}
+                className="mt-1 flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-60 cursor-pointer"
+              >
+                {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                {regenerating ? 'Regenerating…' : 'Regenerate now'}
+              </button>
+            </div>
+          ) : showRaw ? (
             <textarea
               readOnly
               value={issue.rendered_content || ''}
@@ -249,14 +277,34 @@ function RightPane({ issue }: { issue: NewsletterIssueRow }) {
   );
 }
 
-export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, idToken, api }: Props) {
+export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, onRegenerate, idToken, api }: Props) {
   const [visible, setVisible] = useState(false);
   const [localIssue, setLocalIssue] = useState<NewsletterIssueRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (issue) setLocalIssue(issue);
   }, [issue]);
+
+  useEffect(() => {
+    if (open) setActionError(null);
+  }, [open, localIssue?.id]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!localIssue) return;
+    setRegenerating(true);
+    setActionError(null);
+    try {
+      const updated = await onRegenerate(localIssue.id);
+      if (updated) setLocalIssue(updated);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to regenerate issue.');
+    } finally {
+      setRegenerating(false);
+    }
+  }, [localIssue, onRegenerate]);
 
   useEffect(() => {
     if (open) {
@@ -271,7 +319,14 @@ export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, 
 
   const handle = async (fn: () => Promise<void>) => {
     setBusy(true);
-    try { await fn(); } finally { setBusy(false); }
+    setActionError(null);
+    try {
+      await fn();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Action failed.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -310,6 +365,18 @@ export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, 
 
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {localIssue.status !== 'sent' && (
+              <button
+                type="button"
+                disabled={regenerating || busy}
+                onClick={() => void handleRegenerate()}
+                title="Re-fetch articles and re-render this issue"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+              >
+                {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                {regenerating ? 'Regenerating…' : 'Regenerate'}
+              </button>
+            )}
             {localIssue.status === 'pending_approval' && (
               <button
                 type="button"
@@ -342,6 +409,22 @@ export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, 
           </button>
         </div>
 
+        {/* Error banner */}
+        {actionError && (
+          <div className="shrink-0 flex items-start gap-2 px-6 py-2 bg-rose-50 border-b border-rose-100">
+            <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-rose-700 flex-1">{actionError}</p>
+            <button
+              type="button"
+              onClick={() => setActionError(null)}
+              className="text-rose-400 hover:text-rose-600 cursor-pointer"
+              aria-label="Dismiss"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Two-panel body */}
         <div className="flex-1 min-h-0 grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <EditPane
@@ -350,7 +433,11 @@ export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, 
             api={api}
             onUpdated={patch => setLocalIssue(prev => prev ? { ...prev, ...patch } : prev)}
           />
-          <RightPane issue={localIssue} />
+          <RightPane
+            issue={localIssue}
+            onRegenerate={() => void handleRegenerate()}
+            regenerating={regenerating}
+          />
         </div>
       </div>
     </div>
