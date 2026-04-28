@@ -311,6 +311,19 @@ export function NewsletterTab({ idToken, session, api, subView: externalSubView,
           issueEvents={allIssues}
           topicRows={topicRows}
           onIssueClick={openIssuePanel}
+          onCreateIssueAt={handleCreateDraft}
+          onUpdateNewsletterTime={async (newsletterId, newTime) => {
+            try {
+              await api.updateNewsletter(idToken, newsletterId, { scheduleTimes: [newTime] });
+              setNewsletters(prev => prev.map(n => {
+                if (n.id !== newsletterId) return n;
+                return { ...n, config: { ...n.config, scheduleTimes: [newTime] } };
+              }));
+              showSuccess('Newsletter schedule updated.');
+            } catch (err) {
+              showError(err instanceof Error ? err.message : 'Failed to update schedule.');
+            }
+          }}
         />
       )}
 

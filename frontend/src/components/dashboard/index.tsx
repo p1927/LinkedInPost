@@ -774,12 +774,15 @@ export function Dashboard({
   );
 
   const settingsHome = (
-    <div className="mx-auto flex max-w-6xl flex-col gap-5 lg:flex-row lg:items-start">
-      <div className="glass-panel min-w-0 flex-1 rounded-2xl p-4 shadow-card sm:p-6">{settingsContent}</div>
-      <div className="flex w-full min-w-0 shrink-0 flex-col gap-5 lg:sticky lg:top-4 lg:w-72 lg:self-start">
-        <div className="glass-panel rounded-2xl border border-white/55 p-3 shadow-lift ring-1 ring-white/55">
-          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Channel delivery</h2>
-          <div className="mt-2">{deliveryContent}</div>
+    <div className="mx-auto flex max-w-6xl flex-col gap-5 lg:flex-row lg:items-start lg:h-[calc(100vh-9.5rem)]">
+      <div className="glass-panel min-w-0 flex-1 rounded-2xl p-4 shadow-card sm:p-6 lg:h-full lg:overflow-hidden">{settingsContent}</div>
+      <div className="flex w-full min-w-0 shrink-0 flex-col gap-5 lg:w-72 lg:h-full lg:overflow-y-auto lg:pb-2">
+        <div className="glass-panel rounded-2xl border border-white/55 shadow-lift ring-1 ring-white/55 overflow-hidden">
+          <div className="px-4 py-3 border-b border-violet-200/40">
+            <h2 className="text-xs font-semibold text-ink/80 tracking-wide">Channel Delivery</h2>
+            <p className="mt-0.5 text-[11px] text-muted">Select channel and recipient for publishing</p>
+          </div>
+          <div className="p-3">{deliveryContent}</div>
         </div>
         <SettingsConnectionsCard
           integrations={integrations}

@@ -1295,8 +1295,8 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
   };
 
   return (
-    <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-      <aside className="sticky top-4 z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:self-start">
+    <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:h-full lg:items-start lg:gap-8">
+      <aside className="z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:self-start">
         {/* Search — desktop only */}
         <div className="relative mb-3 hidden lg:flex items-center gap-1.5 rounded-lg border border-border/60 bg-canvas px-2 py-1.5">
           <Search className="h-3 w-3 shrink-0 text-muted" />
@@ -1794,22 +1794,21 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
         <SettingsSectionCard id="settings-telegram" title="Telegram Delivery">
           <p className="text-xs leading-5 text-muted">This path sends approved content directly through the Telegram Bot API.</p>
+
+          {/* Inline status */}
+          <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-border bg-canvas px-3.5 py-2.5">
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-border-strong')} />
+            <span className="text-sm text-ink">
+              {session.config.hasTelegramBotToken ? 'Bot token stored in Worker' : 'No bot token stored yet'}
+            </span>
+          </div>
+
           <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
             <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-                <div className="flex items-center gap-3">
-                  <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasTelegramBotToken ? 'bg-[#0088cc]' : 'bg-border-strong'}`} />
-                  <p className="text-sm font-medium text-ink">
-                    {session.config.hasTelegramBotToken
-                      ? 'Telegram bot token is stored in the Worker.'
-                      : 'No Telegram bot token stored yet.'}
-                  </p>
-                </div>
-              </div>
-
               <div>
-                <label className="mb-1 block text-sm font-semibold text-ink">Replace Telegram Bot Token</label>
+                <label className="mb-1 block text-sm font-semibold text-ink">
+                  {session.config.hasTelegramBotToken ? 'Replace Bot Token' : 'Bot Token'}
+                </label>
                 <Input
                   type="password"
                   value={telegramBotTokenInput}
@@ -1827,9 +1826,11 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
             <div>
               <label className="mb-1 block text-sm font-semibold text-ink">Saved Chats</label>
-              <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Quick add</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
+              <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+                <div className="border-b border-border bg-canvas/60 px-4 py-2.5">
+                  <p className="text-xs font-medium text-muted">Quick add</p>
+                </div>
+                <div className="p-3 grid gap-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)_auto]">
                   <Input
                     type="text"
                     value={telegramDraftLabel}
@@ -1873,12 +1874,12 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                     </Button>
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-muted">
+                <p className="mt-2 px-3 pb-1 text-xs text-muted">
                   Use @channelusername only for public channels or public supergroups. For people, private groups, and private channels, start or add the bot first and use the numeric chat ID instead.
                 </p>
                 {telegramVerification ? (
                   <div
-                    className={`mt-3 rounded-2xl border px-4 py-3 text-sm shadow-sm ${telegramVerification.kind === 'success' ? 'border-success-border bg-success-surface/90 text-success-ink' : 'border-rose-200 bg-rose-50/80 text-rose-700'}`}
+                    className={cn('mx-3 mb-3 mt-2 rounded-xl border px-4 py-3 text-sm', telegramVerification.kind === 'success' ? 'border-success-border bg-success-surface/90 text-success-ink' : 'border-rose-200 bg-rose-50/80 text-rose-700')}
                   >
                     <p className="font-semibold">{telegramVerification.message}</p>
                     {telegramVerification.kind === 'success' && telegramVerification.result ? (
@@ -1894,7 +1895,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                     type="button"
                     variant="link"
                     onClick={handleUseManualTelegramChat}
-                    className="mt-3 inline-flex items-center gap-2 text-xs font-semibold"
+                    className="mx-3 mb-3 mt-1 inline-flex items-center gap-2 text-xs font-semibold"
                   >
                     <MessageCircle className="h-4 w-4" /> Use the manual chat ID from the delivery panel
                   </Button>
@@ -1902,16 +1903,18 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
               </div>
 
               {parsedTelegramRecipients.length > 0 ? (
-                <div className="mt-3 rounded-2xl border border-border bg-surface p-4 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Saved now</p>
-                  <div className="mt-3 space-y-2">
+                <div className="mt-3 rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+                  <div className="border-b border-border bg-canvas/60 px-4 py-2.5">
+                    <p className="text-xs font-medium text-muted">Saved chats</p>
+                  </div>
+                  <div className="space-y-2 p-3">
                     {parsedTelegramRecipients.map((recipient) => (
                       <div
                         key={`${recipient.label}-${recipient.chatId}`}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-canvas px-3 py-3"
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-canvas px-3 py-2.5"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-ink">{recipient.label}</p>
+                          <p className="text-sm font-medium text-ink">{recipient.label}</p>
                           <p className="text-xs text-muted">{recipient.chatId}</p>
                         </div>
                         <Button
@@ -1919,9 +1922,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                           variant="secondary"
                           size="sm"
                           onClick={() => handleRemoveTelegramRecipient(recipient.chatId)}
-                          className="gap-2 rounded-lg text-muted hover:border-rose-200 hover:text-rose-600"
+                          className="gap-1.5 rounded-lg text-muted hover:border-rose-200 hover:text-rose-600"
                         >
-                          <Trash2 className="h-4 w-4" /> Remove
+                          <Trash2 className="h-3.5 w-3.5" /> Remove
                         </Button>
                       </div>
                     ))}

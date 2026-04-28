@@ -9,6 +9,7 @@ import {
   Loader2,
   ZoomIn,
   ZoomOut,
+  List,
 } from 'lucide-react';
 import type { LlmProviderId } from '@repo/llm-core';
 import type { GoogleModelOption } from '../services/configService';
@@ -1004,6 +1005,7 @@ export function EnrichmentFlowPage({
   const [expandedNodeId, setExpandedNodeId] = useState<string | null>(null);
   const [canvasResetKey, setCanvasResetKey] = useState(0);
   const [showDag, setShowDag] = useState(false);
+  const [topicPanelExpanded, setTopicPanelExpanded] = useState(false);
   const [nodeRunsCache, setNodeRunsCache] = useState<Map<string, NodeRun[]>>(new Map());
   const [loadingTopicId, setLoadingTopicId] = useState<string | null>(null);
 
@@ -1090,9 +1092,22 @@ export function EnrichmentFlowPage({
 
         {/* ── Top bar ──────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-canvas shrink-0 flex-wrap gap-y-2">
-          <h1 className="font-heading text-base font-bold text-ink shrink-0">Enrichment Flow</h1>
 
+          {/* Topic panel toggle — only shown when there are topics */}
           {!isEmpty && !hasPendingOnly && (
+            <button
+              type="button"
+              onClick={() => setTopicPanelExpanded(p => !p)}
+              title={topicPanelExpanded ? 'Collapse topic panel' : 'Expand topic panel'}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-muted hover:bg-border/30 hover:text-ink transition-colors shrink-0"
+            >
+              <List className="h-3.5 w-3.5" />
+              {topicPanelExpanded ? 'Collapse' : 'Topics'}
+            </button>
+          )}
+
+          {/* RunSelector: inline dropdown when panel is collapsed */}
+          {!isEmpty && !hasPendingOnly && !topicPanelExpanded && (
             <RunSelector
               topicGroups={topicGroups}
               selectedTopicId={selectedRun?.topicId ?? null}
@@ -1145,131 +1160,176 @@ export function EnrichmentFlowPage({
             <p className="text-sm font-medium text-muted">No completed runs</p>
             <p className="text-xs text-muted/60 mt-1">Topics exist but none have been generated yet.</p>
           </div>
-        ) : showDag ? (
-          <div className="flex flex-1 min-h-0 p-3 gap-3">
-            <DraggableCanvas resetKey={canvasResetKey}>
-              <motion.div
-                className="flex flex-col items-center gap-0 p-8"
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-              >
-                <NodeCard {...dagCardProps(triggerNode)} />
-                <Arrow />
-                <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
-                  <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
-                    Enrichment Modules
-                  </p>
-                  <motion.div className="flex flex-wrap justify-center gap-3" variants={containerVariants}>
-                    {enrichmentNodesToRender.map(node => (
-                      <motion.div key={node.id} variants={cardItemVariants}>
-                        <NodeCard {...dagCardProps(node)} />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </div>
-                <Arrow />
-                <NodeCard {...dagCardProps(reviewGenNode)} />
-                <Arrow />
-                <NodeCard {...dagCardProps(genWorkerNode)} />
-                <Arrow />
-                <div className="flex items-center gap-0">
-                  <NodeCard {...dagCardProps(textReviewNode)} />
-                  <Arrow horizontal />
-                  <NodeCard {...dagCardProps(visionReviewNode)} />
-                </div>
-                <Arrow />
-                <NodeCard {...dagCardProps(outputNode)} />
-              </motion.div>
-            </DraggableCanvas>
-
-            <AnimatePresence>
-              {expandedNodeId && (() => {
-                const selectedNode = FLOW_NODES.find(n => n.id === expandedNodeId);
-                if (!selectedNode) return null;
-                return (
-                  <motion.div
-                    key={expandedNodeId}
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 16 }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                    className="w-80 shrink-0 flex flex-col rounded-xl border border-border bg-canvas overflow-hidden shadow-sm"
-                  >
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={cn(
-                          'h-2 w-2 rounded-full shrink-0',
-                          selectedNode.type === 'trigger' ? 'bg-violet-400' :
-                          selectedNode.type === 'output' ? 'bg-emerald-400' :
-                          selectedNode.group === 'enrichment' ? 'bg-blue-400' : 'bg-amber-400',
-                        )} />
-                        <span className="text-xs font-semibold text-ink truncate">{selectedNode.label}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setExpandedNodeId(null)}
-                        className="shrink-0 ml-2 text-muted hover:text-ink transition-colors text-lg leading-none"
-                        aria-label="Close"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto">
-                      <NodeInlineDetail
-                        node={selectedNode}
-                        nodeRun={getNodeRun(selectedNode.id)}
-                        hasRunSelected={!!selectedRun}
-                        isLoadingRuns={isLoadingRuns}
-                        session={session}
-                      />
-                    </div>
-                  </motion.div>
-                );
-              })()}
-            </AnimatePresence>
-          </div>
         ) : (
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-4 py-4 space-y-3">
-              {selectedRun && (
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                  {(() => {
-                    const matchedRow = rows?.find((r: SheetRow) => r.topicId === selectedRun.topicId);
-                    const templateId = matchedRow?.generationTemplateId;
-                    const workflowCard = templateId ? BUILT_IN_WORKFLOW_CARDS.find(c => c.id === templateId) : null;
-                    const workflowLabel = workflowCard?.name ?? templateId ?? 'Default';
-                    const channel = (matchedRow as SheetRow & { channel?: string } | undefined)?.channel;
-                    const wordCount = (matchedRow as SheetRow & { targetWordCount?: number } | undefined)?.targetWordCount;
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+
+            {/* ── Collapsible left topic panel ────────────────────────── */}
+            <AnimatePresence initial={false}>
+              {topicPanelExpanded && (
+                <motion.div
+                  key="topic-panel"
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 216, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  className="shrink-0 border-r border-border/60 bg-canvas overflow-hidden flex flex-col"
+                >
+                  <div className="px-3 py-2.5 border-b border-border/60 shrink-0 flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted">Topics</p>
+                    <span className="text-[10px] text-muted/60 tabular-nums">{topicGroups.length}</span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+                    {topicGroups.map(group => (
+                      <button
+                        key={group.topicId}
+                        type="button"
+                        onClick={() => {
+                          const run = group.runs[0];
+                          if (run) handleSelectRun(run);
+                        }}
+                        className={cn(
+                          'w-full text-left rounded-lg px-2.5 py-2 text-xs transition-colors cursor-pointer',
+                          selectedRun?.topicId === group.topicId
+                            ? 'bg-primary/10 text-primary font-semibold'
+                            : 'text-ink/70 hover:bg-border/40 hover:text-ink',
+                        )}
+                      >
+                        <span className="line-clamp-2 leading-snug">{group.topic}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ── DAG or Trace view ───────────────────────────────────── */}
+            {showDag ? (
+              <div className="flex flex-1 min-h-0 p-3 gap-3">
+                <DraggableCanvas resetKey={canvasResetKey}>
+                  <motion.div
+                    className="flex flex-col items-center gap-0 p-8"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                  >
+                    <NodeCard {...dagCardProps(triggerNode)} />
+                    <Arrow />
+                    <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
+                      <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                        Enrichment Modules
+                      </p>
+                      <motion.div className="flex flex-wrap justify-center gap-3" variants={containerVariants}>
+                        {enrichmentNodesToRender.map(node => (
+                          <motion.div key={node.id} variants={cardItemVariants}>
+                            <NodeCard {...dagCardProps(node)} />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </div>
+                    <Arrow />
+                    <NodeCard {...dagCardProps(reviewGenNode)} />
+                    <Arrow />
+                    <NodeCard {...dagCardProps(genWorkerNode)} />
+                    <Arrow />
+                    <div className="flex items-center gap-0">
+                      <NodeCard {...dagCardProps(textReviewNode)} />
+                      <Arrow horizontal />
+                      <NodeCard {...dagCardProps(visionReviewNode)} />
+                    </div>
+                    <Arrow />
+                    <NodeCard {...dagCardProps(outputNode)} />
+                  </motion.div>
+                </DraggableCanvas>
+
+                <AnimatePresence>
+                  {expandedNodeId && (() => {
+                    const selectedNode = FLOW_NODES.find(n => n.id === expandedNodeId);
+                    if (!selectedNode) return null;
                     return (
-                      <>
-                        <span className="font-semibold text-ink/80">{workflowLabel}</span>
-                        {channel && <><span className="text-muted/40">·</span><span>{channel}</span></>}
-                        {wordCount != null && <><span className="text-muted/40">·</span><span>{wordCount} words target</span></>}
-                        <span className="text-muted/40">·</span>
-                        <span>{loadedNodeRuns?.length ?? 0} nodes ran</span>
-                      </>
+                      <motion.div
+                        key={expandedNodeId}
+                        initial={{ opacity: 0, x: 16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 16 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        className="w-80 shrink-0 flex flex-col rounded-xl border border-border bg-canvas overflow-hidden shadow-sm"
+                      >
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={cn(
+                              'h-2 w-2 rounded-full shrink-0',
+                              selectedNode.type === 'trigger' ? 'bg-violet-400' :
+                              selectedNode.type === 'output' ? 'bg-emerald-400' :
+                              selectedNode.group === 'enrichment' ? 'bg-blue-400' : 'bg-amber-400',
+                            )} />
+                            <span className="text-xs font-semibold text-ink truncate">{selectedNode.label}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedNodeId(null)}
+                            className="shrink-0 ml-2 text-muted hover:text-ink transition-colors text-lg leading-none"
+                            aria-label="Close"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                          <NodeInlineDetail
+                            node={selectedNode}
+                            nodeRun={getNodeRun(selectedNode.id)}
+                            hasRunSelected={!!selectedRun}
+                            isLoadingRuns={isLoadingRuns}
+                            session={session}
+                          />
+                        </div>
+                      </motion.div>
                     );
                   })()}
-                </div>
-              )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto">
+                <div className="max-w-3xl mx-auto px-4 py-4 space-y-3">
+                  {selectedRun && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                      {(() => {
+                        const matchedRow = rows?.find((r: SheetRow) => r.topicId === selectedRun.topicId);
+                        const templateId = matchedRow?.generationTemplateId;
+                        const workflowCard = templateId ? BUILT_IN_WORKFLOW_CARDS.find(c => c.id === templateId) : null;
+                        const workflowLabel = workflowCard?.name ?? templateId ?? 'Default';
+                        const channel = (matchedRow as SheetRow & { channel?: string } | undefined)?.channel;
+                        const wordCount = (matchedRow as SheetRow & { targetWordCount?: number } | undefined)?.targetWordCount;
+                        return (
+                          <>
+                            <span className="font-semibold text-ink/80">{workflowLabel}</span>
+                            {channel && <><span className="text-muted/40">·</span><span>{channel}</span></>}
+                            {wordCount != null && <><span className="text-muted/40">·</span><span>{wordCount} words target</span></>}
+                            <span className="text-muted/40">·</span>
+                            <span>{loadedNodeRuns?.length ?? 0} nodes ran</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
 
-              {!selectedRun ? (
-                <p className="text-center text-xs text-muted py-8">Select a topic above to view the execution trace.</p>
-              ) : (
-                <ExecutionTrace
-                  triggerNode={triggerNode}
-                  enrichmentNodes={enrichmentNodesToRender}
-                  postEnrichmentNodes={postEnrichmentNodes}
-                  getNodeRun={getNodeRun}
-                  hasRunSelected={!!selectedRun}
-                  isLoadingRuns={isLoadingRuns}
-                  expandedNodeId={expandedNodeId}
-                  onToggleNode={handleToggleNode}
-                  session={session}
-                />
-              )}
-            </div>
+                  {!selectedRun ? (
+                    <p className="text-center text-xs text-muted py-8">Select a topic to view the execution trace.</p>
+                  ) : (
+                    <ExecutionTrace
+                      triggerNode={triggerNode}
+                      enrichmentNodes={enrichmentNodesToRender}
+                      postEnrichmentNodes={postEnrichmentNodes}
+                      getNodeRun={getNodeRun}
+                      hasRunSelected={!!selectedRun}
+                      isLoadingRuns={isLoadingRuns}
+                      expandedNodeId={expandedNodeId}
+                      onToggleNode={handleToggleNode}
+                      session={session}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

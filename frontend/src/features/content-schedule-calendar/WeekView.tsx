@@ -30,6 +30,8 @@ export interface WeekViewProps {
   onOpenTopic: (id: string) => void;
   /** Click on empty space — clears selection. */
   onClearSelection: () => void;
+  /** Click on empty time slot (no event under cursor). */
+  onEmptySlotClick?: (date: string, time: string) => void;
   /** Drag commit. Returning false reverts. */
   onBeforeReschedule?: (arg: DragEndArg, isBulk: boolean) => boolean | Promise<boolean>;
   /** Apply the schedule change. */
@@ -107,7 +109,7 @@ function layoutDayEvents(topics: CalendarTopic[], todayIso: string): PositionedE
 export function WeekView(props: WeekViewProps) {
   const {
     anchorIso, todayIso, topics, selectedIds, onToggleSelect,
-    onOpenTopic, onClearSelection, onBeforeReschedule, onReschedule,
+    onOpenTopic, onClearSelection, onEmptySlotClick, onBeforeReschedule, onReschedule,
     canDrag,
     startHour = 7, endHour = 22,
   } = props;
@@ -207,12 +209,29 @@ export function WeekView(props: WeekViewProps) {
           onMouseMove={onGridMouseMove}
           onMouseLeave={onGridMouseLeave}
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) onClearSelection();
+            if (e.target === e.currentTarget) {
+              onClearSelection();
+              if (onEmptySlotClick) {
+                const rect = gridRef.current?.getBoundingClientRect();
+                if (rect && dayWidthPx > 0) {
+                  const y = e.clientY - rect.top;
+                  const x = e.clientX - rect.left;
+                  const rawMinutes = startHour * 60 + y * minutesPerPx;
+                  const snapped = Math.round(rawMinutes / 15) * 15;
+                  const colIndex = Math.min(6, Math.floor(x / dayWidthPx));
+                  const date = week[colIndex]?.iso;
+                  if (date && snapped >= startHour * 60 && snapped < endHour * 60) {
+                    onEmptySlotClick(date, formatTimeHm(snapped));
+                  }
+                }
+              }
+            }
           }}
           style={{
             position: 'relative', flex: 1, display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
             background: T.surface,
+            cursor: onEmptySlotClick ? 'cell' : 'default',
           }}
         >
           {/* Horizontal hour rules */}
@@ -250,15 +269,21 @@ export function WeekView(props: WeekViewProps) {
           {hoverY != null && hoverMinutes != null && (
             <div style={{
               position: 'absolute', left: 0, right: 0, top: hoverY,
-              height: 1, background: T.accent, opacity: 0.18,
+              height: onEmptySlotClick ? 1.5 : 1,
+              background: T.accent,
+              opacity: onEmptySlotClick ? 0.55 : 0.18,
               pointerEvents: 'none',
             }}>
               <span style={{
-                position: 'absolute', left: 4, top: -8,
-                fontSize: 10, fontWeight: 600, color: T.accent,
+                position: 'absolute', left: 4, top: -9,
+                fontSize: 10, fontWeight: 700, color: T.accent,
                 background: T.surface, padding: '0 4px', borderRadius: 3,
                 fontVariantNumeric: 'tabular-nums',
-              }}>{formatTimeHm(hoverMinutes)}</span>
+                display: 'flex', alignItems: 'center', gap: 3,
+              }}>
+                {onEmptySlotClick && <span style={{ fontSize: 12, lineHeight: 1 }}>+</span>}
+                {formatTimeHm(hoverMinutes)}
+              </span>
             </div>
           )}
           {/* Events */}

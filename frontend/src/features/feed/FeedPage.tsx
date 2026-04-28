@@ -1112,7 +1112,9 @@ export function FeedPage({
                   linkedin: data?.linkedin ?? [],
                   news: trendingSearch.data?.articles?.length
                     ? trendingSearch.data.articles
-                    : (data?.news ?? []),
+                    : feedArticles.length > 0
+                      ? feedArticles
+                      : (data?.news ?? []),
                 }}
                 trendingWords={trendingWords}
                 recommendedTopics={recommendedTopics}

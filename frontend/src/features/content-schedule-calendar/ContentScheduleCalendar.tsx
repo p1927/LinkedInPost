@@ -48,6 +48,8 @@ export interface ContentScheduleCalendarProps {
   topicEventModalActions?: TopicEventModalActions;
   renderPreview?: (topic: CalendarTopic) => ReactNode;
   disableInternalDrawer?: boolean;
+  /** Called when user clicks an empty time slot in week/day view. */
+  onEmptySlotClick?: (date: string, time: string) => void;
 }
 
 interface RescheduleUi {
@@ -82,6 +84,7 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
     topicEventModalActions,
     renderPreview,
     disableInternalDrawer,
+    onEmptySlotClick,
   } = props;
 
   const { showAlert } = useAlert();
@@ -290,6 +293,7 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
             canDrag={canDrag}
             onBeforeReschedule={handleBeforeReschedule}
             onReschedule={handleReschedule}
+            onEmptySlotClick={onEmptySlotClick}
           />
         )}
         {view === 'day' && (
