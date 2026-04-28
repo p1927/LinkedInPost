@@ -11,6 +11,7 @@
 
 import type { Page } from '@playwright/test';
 import type { SheetRow } from '../../src/services/sheets';
+import type { NodeRunItem } from '../../src/services/backendApi';
 
 // ---------------------------------------------------------------------------
 // Shared mock data
@@ -132,6 +133,109 @@ export const MOCK_ROWS: SheetRow[] = [
     },
     1,
   ),
+];
+
+export const MOCK_INTEREST_GROUPS = [
+  {
+    id: 'group-1',
+    name: 'AI & Technology',
+    topics: ['artificial intelligence', 'machine learning'],
+    color: '#6366f1',
+    domains: [],
+  },
+  {
+    id: 'group-2',
+    name: 'Remote Work',
+    topics: ['remote work', 'async collaboration'],
+    color: '#10b981',
+    domains: [],
+  },
+];
+
+export const MOCK_FEED_ARTICLES = [
+  {
+    url: 'https://example.com/ai-article-1',
+    title: 'How AI Is Transforming Startup Operations',
+    source: 'TechCrunch',
+    publishedAt: '2024-01-15',
+    snippet: 'AI-powered tools are reshaping how startups operate in 2024.',
+    imageUrl: '',
+  },
+  {
+    url: 'https://example.com/remote-work-1',
+    title: 'The Future of Remote Work in 2024',
+    source: 'Forbes',
+    publishedAt: '2024-01-14',
+    snippet: 'Remote work continues to evolve with new async practices.',
+    imageUrl: '',
+  },
+];
+
+export const MOCK_CLIPS = [
+  {
+    id: 'clip-1',
+    type: 'passage',
+    articleTitle: 'How AI Is Transforming Startup Operations',
+    articleUrl: 'https://example.com/ai-article-1',
+    source: 'TechCrunch',
+    publishedAt: '2024-01-15',
+    thumbnailUrl: '',
+    passageText: 'AI-powered tools are reshaping how startups operate in 2024.',
+    assignedPostIds: [],
+    versions: [],
+    createdAt: new Date().toISOString(),
+  },
+];
+
+export const MOCK_NODE_RUNS: NodeRunItem[] = [
+  {
+    id: 'node-run-1',
+    run_id: 'run-abc123',
+    node_id: 'enrichment_persona',
+    input_json: JSON.stringify({ topic: 'AI Tools for Founders' }),
+    output_json: JSON.stringify({ angle: 'Founder perspective', voiceTone: 'Authoritative', targetAudience: 'Early-stage founders' }),
+    model: 'google/gemini-2.0-flash',
+    duration_ms: 1200,
+    status: 'completed',
+    error: null,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'node-run-2',
+    run_id: 'run-abc123',
+    node_id: 'enrichment_emotion',
+    input_json: JSON.stringify({ topic: 'AI Tools for Founders' }),
+    output_json: JSON.stringify({ primaryEmotion: 'curiosity', secondaryEmotions: ['excitement'], emotionalHook: 'The tools changing everything' }),
+    model: 'google/gemini-2.0-flash',
+    duration_ms: 980,
+    status: 'completed',
+    error: null,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'node-run-4',
+    run_id: 'run-abc123',
+    node_id: 'enrichment_copywriting',
+    input_json: JSON.stringify({ topic: 'AI Tools for Founders' }),
+    output_json: JSON.stringify({ hook: '5 AI tools that changed how we build', headline: 'The founder\'s toolkit just got smarter' }),
+    model: 'google/gemini-2.0-flash',
+    duration_ms: 1050,
+    status: 'completed',
+    error: null,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'node-run-3',
+    run_id: 'run-abc123',
+    node_id: 'review_generation',
+    input_json: JSON.stringify({ topic: 'AI Tools for Founders', enrichment: {} }),
+    output_json: JSON.stringify({ draft: 'AI tools are reshaping how founders build products.' }),
+    model: 'google/gemini-2.0-flash',
+    duration_ms: 2100,
+    status: 'completed',
+    error: null,
+    created_at: new Date().toISOString(),
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -449,6 +553,203 @@ export async function setupApiMocks(
 
       case 'startWhatsAppAuth':
         data = { authorizationUrl: 'https://facebook.com/oauth' };
+        break;
+
+      // -----------------------------------------------------------------------
+      // Feed
+      // -----------------------------------------------------------------------
+      case 'listInterestGroups':
+        data = MOCK_INTEREST_GROUPS;
+        break;
+
+      case 'createInterestGroup':
+        data = {
+          id: 'group-new',
+          name: (body.name as string) ?? 'New Group',
+          topics: ((body.topics as string) ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
+          color: (body.color as string) ?? '#6366f1',
+          domains: [],
+        };
+        break;
+
+      case 'updateInterestGroup':
+        data = {
+          id: (body.id as string) ?? 'group-1',
+          name: (body.name as string) ?? 'Updated Group',
+          topics: ((body.topics as string) ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
+          color: (body.color as string) ?? '#6366f1',
+          domains: [],
+        };
+        break;
+
+      case 'deleteInterestGroup':
+        data = { success: true };
+        break;
+
+      case 'listClips':
+        data = MOCK_CLIPS;
+        break;
+
+      case 'createClip':
+        data = {
+          id: 'clip-new',
+          type: (body.type as string) ?? 'passage',
+          articleTitle: (body.articleTitle as string) ?? '',
+          articleUrl: (body.articleUrl as string) ?? '',
+          source: (body.source as string) ?? '',
+          publishedAt: (body.publishedAt as string) ?? '',
+          thumbnailUrl: (body.thumbnailUrl as string) ?? '',
+          passageText: (body.passageText as string) ?? '',
+          assignedPostIds: [],
+          versions: [],
+          createdAt: new Date().toISOString(),
+        };
+        break;
+
+      case 'updateClip':
+        data = {
+          ...MOCK_CLIPS[0],
+          id: (body.id as string) ?? 'clip-1',
+          passageText: (body.passageText as string) ?? MOCK_CLIPS[0].passageText,
+        };
+        break;
+
+      case 'deleteClip':
+        data = { success: true };
+        break;
+
+      case 'assignClipToPost':
+        data = { ...MOCK_CLIPS[0], assignedPostIds: [(body.postId as string) ?? 'topic-1'] };
+        break;
+
+      case 'unassignClipFromPost':
+        data = { ...MOCK_CLIPS[0], assignedPostIds: [] };
+        break;
+
+      case 'getFeedArticles':
+        data = { articles: MOCK_FEED_ARTICLES, stale: false };
+        break;
+
+      case 'refreshFeedArticles':
+        data = { articles: MOCK_FEED_ARTICLES, stale: false, trendingWords: [], relatedTopics: [] };
+        break;
+
+      case 'setArticleFeedback':
+        data = { vote: (body.vote as string) ?? 'up' };
+        break;
+
+      case 'getArticleFeedback':
+        data = {};
+        break;
+
+      // -----------------------------------------------------------------------
+      // Personas
+      // -----------------------------------------------------------------------
+      case 'listCustomPersonas':
+        data = [];
+        break;
+
+      case 'createCustomPersona':
+        data = {
+          id: 'persona-custom-1',
+          name: (body as Record<string, unknown>).name ?? 'Test Persona',
+          currentFocus: (body as Record<string, unknown>).currentFocus ?? '',
+          language: (body as Record<string, unknown>).language ?? '',
+          concerns: [],
+          ambitions: [],
+          habits: [],
+          decisionDrivers: [],
+          painPoints: [],
+        };
+        break;
+
+      case 'deleteCustomPersona':
+        data = { success: true };
+        break;
+
+      // -----------------------------------------------------------------------
+      // Custom workflows / writing styles
+      // -----------------------------------------------------------------------
+      case 'listCustomWorkflows':
+        data = [];
+        break;
+
+      case 'createCustomWorkflow':
+        data = { id: 'workflow-custom-1' };
+        break;
+
+      case 'updateCustomWorkflow':
+        data = { id: (body as Record<string, unknown>).id ?? 'workflow-custom-1' };
+        break;
+
+      case 'deleteCustomWorkflow':
+        data = { success: true };
+        break;
+
+      // -----------------------------------------------------------------------
+      // Generation (quick change / variants)
+      // -----------------------------------------------------------------------
+      case 'generateQuickChange':
+        data = {
+          scope: 'full',
+          model: 'google/gemini-2.0-flash',
+          selection: null,
+          replacementText: 'AI tools have quietly become the unfair advantage every founder needs. Here\'s what the data says.',
+          fullText: 'AI tools have quietly become the unfair advantage every founder needs. Here\'s what the data says.',
+        };
+        break;
+
+      case 'generateVariantsPreview':
+        data = {
+          scope: 'full',
+          model: 'google/gemini-2.0-flash',
+          selection: null,
+          variants: [
+            {
+              id: 'v-1',
+              label: 'Variant 1',
+              replacementText: 'In 2024, I replaced 3 full-time roles with AI. Here\'s the exact stack.',
+              fullText: 'In 2024, I replaced 3 full-time roles with AI. Here\'s the exact stack.',
+              hookType: 'data_point',
+              arcType: 'problem_agitate_solve',
+              variant_rationale: 'Opens with a bold claim backed by a specific year.',
+            },
+            {
+              id: 'v-2',
+              label: 'Variant 2',
+              replacementText: 'Most founders are sleeping on the AI tools that actually matter. Let me show you why.',
+              fullText: 'Most founders are sleeping on the AI tools that actually matter. Let me show you why.',
+              hookType: 'contrarian',
+              arcType: 'insight_reveal',
+              variant_rationale: 'Contrarian opener to provoke curiosity.',
+            },
+            {
+              id: 'v-3',
+              label: 'Variant 3',
+              replacementText: '6 months ago I was drowning in ops work. Today AI handles 80% of it.',
+              fullText: '6 months ago I was drowning in ops work. Today AI handles 80% of it.',
+              hookType: 'transformation',
+              arcType: 'before_after',
+              variant_rationale: 'Before/after framing for relatability.',
+            },
+            {
+              id: 'v-4',
+              label: 'Variant 4',
+              replacementText: 'The AI tool stack that helped us scale from 0 to $1M ARR — no fluff.',
+              fullText: 'The AI tool stack that helped us scale from 0 to $1M ARR — no fluff.',
+              hookType: 'milestone',
+              arcType: 'story',
+              variant_rationale: 'Social proof with a specific milestone.',
+            },
+          ],
+        };
+        break;
+
+      // -----------------------------------------------------------------------
+      // Enrichment
+      // -----------------------------------------------------------------------
+      case 'getNodeRuns':
+        data = { nodeRuns: MOCK_NODE_RUNS };
         break;
 
       default:

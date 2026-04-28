@@ -14,6 +14,8 @@ import {
   type VariantsPreviewResponse,
 } from '../../services/backendApi';
 import { type ChannelId } from '../../integrations/channels';
+import type { CustomWorkflowSummary } from '../generation/WorkflowCardPicker';
+import type { CreateWorkflowFormValues } from '../workflows/useCustomWorkflows';
 import { ReviewFlowProvider } from './context/ReviewFlowContext';
 import { useReviewFlow } from './context/useReviewFlow';
 import { ReviewHeader } from './components/ReviewHeader';
@@ -75,6 +77,11 @@ export interface ReviewWorkspaceProps {
   onAfterContentReview?: () => Promise<void>;
   onUploadContextDocument?: (params: { name: string; contentBase64: string; mimeType: string }) => Promise<{ documentId: string; extractedText: string; charCount: number }>;
   onGetNodeRuns?: () => Promise<NodeRunItem[]>;
+  customWorkflows?: CustomWorkflowSummary[];
+  isLoadingCustomWorkflows?: boolean;
+  onCreateCustomWorkflow?: (payload: CreateWorkflowFormValues) => Promise<string | null>;
+  onUpdateCustomWorkflow?: (id: string, payload: CreateWorkflowFormValues) => Promise<boolean>;
+  onDeleteCustomWorkflow?: (id: string) => Promise<boolean>;
 }
 
 function ReviewWorkspaceLayout() {

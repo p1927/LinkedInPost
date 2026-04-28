@@ -14,6 +14,8 @@ import {
 import { type ChannelId } from '../../integrations/channels';
 import { type PendingScheduledPublish } from '@/features/scheduled-publish';
 import type { LlmRef, NewsResearchStored, NewsProviderKeys, ImageGenProvider } from '../../services/configService';
+import type { CustomWorkflowSummary } from '../generation/WorkflowCardPicker';
+import type { CreateWorkflowFormValues } from '../workflows/useCustomWorkflows';
 
 export type TopicReviewPagesBaseProps = {
   rows: SheetRow[];
@@ -65,6 +67,11 @@ export type TopicReviewPagesBaseProps = {
   onAfterContentReview?: () => Promise<void>;
   /** Fetch node runs for the current topic to show generation justification. */
   onGetNodeRuns?: (row: SheetRow) => Promise<NodeRunItem[]>;
+  customWorkflows?: CustomWorkflowSummary[];
+  isLoadingCustomWorkflows?: boolean;
+  onCreateCustomWorkflow?: (payload: CreateWorkflowFormValues) => Promise<string | null>;
+  onUpdateCustomWorkflow?: (id: string, payload: CreateWorkflowFormValues) => Promise<boolean>;
+  onDeleteCustomWorkflow?: (id: string) => Promise<boolean>;
 };
 
 /** Fills workspace main via flex; use with {@link WorkspaceShell} `lockMainScroll` so height is not double-scrolled. */

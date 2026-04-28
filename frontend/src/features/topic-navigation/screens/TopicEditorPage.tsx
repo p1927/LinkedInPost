@@ -101,6 +101,11 @@ export function TopicEditorPage(p: TopicReviewPagesBaseProps) {
         }
         onAfterContentReview={p.onAfterContentReview}
         onGetNodeRuns={p.onGetNodeRuns ? () => p.onGetNodeRuns!(row) : undefined}
+        customWorkflows={p.customWorkflows}
+        isLoadingCustomWorkflows={p.isLoadingCustomWorkflows}
+        onCreateCustomWorkflow={p.onCreateCustomWorkflow}
+        onUpdateCustomWorkflow={p.onUpdateCustomWorkflow}
+        onDeleteCustomWorkflow={p.onDeleteCustomWorkflow}
       />
     </div>
   );
