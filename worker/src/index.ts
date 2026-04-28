@@ -36,6 +36,8 @@ import { handleWaitlist } from './modes/saas/waitlist';
 import { handleAdmin } from './modes/saas/admin';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
 import { getUsageSummary, pruneOldLlmUsageLog } from './db/llm-usage';
+import { listInterestGroups, createInterestGroup, updateInterestGroup, deleteInterestGroup } from './db/interestGroups';
+import { listClips, createClip, updateClip, deleteClip, assignClipToPost, unassignClipFromPost } from './db/clips';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -1561,6 +1563,52 @@ async function dispatchAction(
     case 'deleteCustomWorkflow': {
       const cwId = (payload as { id: string }).id;
       return handleDeleteCustomWorkflow(env.PIPELINE_DB, session.userId, cwId);
+    }
+    case 'listInterestGroups': {
+      return listInterestGroups(env.PIPELINE_DB, session.userId);
+    }
+    case 'createInterestGroup': {
+      const { name, topics, domains, color } = payload as { name: string; topics: string[]; domains: string[]; color: string };
+      return createInterestGroup(env.PIPELINE_DB, session.userId, { name, topics: topics ?? [], domains: domains ?? [], color: color ?? '#6366f1' });
+    }
+    case 'updateInterestGroup': {
+      const { id, name, topics, domains, color } = payload as { id: string; name?: string; topics?: string[]; domains?: string[]; color?: string };
+      if (!id) throw new Error('id is required.');
+      return updateInterestGroup(env.PIPELINE_DB, session.userId, id, { name, topics, domains, color });
+    }
+    case 'deleteInterestGroup': {
+      const { id } = payload as { id: string };
+      if (!id) throw new Error('id is required.');
+      await deleteInterestGroup(env.PIPELINE_DB, session.userId, id);
+      return { success: true };
+    }
+    case 'listClips': {
+      return listClips(env.PIPELINE_DB, session.userId);
+    }
+    case 'createClip': {
+      const clipData = payload as { type: 'article' | 'passage'; articleTitle: string; articleUrl: string; source?: string; publishedAt?: string; thumbnailUrl?: string; passageText?: string };
+      return createClip(env.PIPELINE_DB, session.userId, { ...clipData, source: clipData.source ?? '', publishedAt: clipData.publishedAt ?? '' });
+    }
+    case 'updateClip': {
+      const { id, passageText } = payload as { id: string; passageText?: string };
+      if (!id) throw new Error('id is required.');
+      return updateClip(env.PIPELINE_DB, session.userId, id, { passageText });
+    }
+    case 'deleteClip': {
+      const { id } = payload as { id: string };
+      if (!id) throw new Error('id is required.');
+      await deleteClip(env.PIPELINE_DB, session.userId, id);
+      return { success: true };
+    }
+    case 'assignClipToPost': {
+      const { clipId, postId } = payload as { clipId: string; postId: string };
+      if (!clipId || !postId) throw new Error('clipId and postId are required.');
+      return assignClipToPost(env.PIPELINE_DB, session.userId, clipId, postId);
+    }
+    case 'unassignClipFromPost': {
+      const { clipId, postId } = payload as { clipId: string; postId: string };
+      if (!clipId || !postId) throw new Error('clipId and postId are required.');
+      return unassignClipFromPost(env.PIPELINE_DB, session.userId, clipId, postId);
     }
     case 'getNodeCatalog': {
       return Response.json({ nodes: nodeRegistry.list().map(n => ({ id: n.id, name: n.name, description: n.description })) });

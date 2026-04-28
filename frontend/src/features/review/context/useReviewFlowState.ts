@@ -386,6 +386,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [researchContextArticles, setResearchContextArticles] = useState<ResearchArticleRef[]>([]);
   const [postType, setPostType] = useState('');
   const [dimensionWeights, setDimensionWeights] = useState<Record<string, number>>({});
+  const [rewriteIntensity, setRewriteIntensity] = useState<'polish' | 'light-touch' | 'balanced' | 'guided-rewrite' | 'rewrite'>('balanced');
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [generatedCards, setGeneratedCards] = useState<GeneratedStyleCard[]>([]);
@@ -666,6 +667,8 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setPostType,
     dimensionWeights,
     setDimensionWeights,
+    rewriteIntensity,
+    setRewriteIntensity,
     selectedCardId,
     setSelectedCardId,
     generatedCards,

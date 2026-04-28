@@ -10,6 +10,8 @@ import { LivePreviewSidebar } from '../components/LivePreviewSidebar';
 
 import { ContentReviewReport } from '@/features/content-review/ContentReviewReport';
 import type { ContentReviewReport as ContentReviewReportData } from '@/features/content-review/types';
+import { GenerationJustificationPanel } from '@/features/review/GenerationJustificationPanel';
+import type { NodeRunItem } from '@/services/backendApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -47,9 +49,12 @@ export function EditorScreen() {
     routed,
     editorStartMediaPanel,
     sheetVariants,
+    editorVariantIndex,
+    handleLoadSheetVariant,
     selectedImageUrls,
     onRunContentReview,
     onAfterContentReview,
+    nodeRuns,
   } = useReviewFlow();
   const {
     editorText,
@@ -113,44 +118,78 @@ export function EditorScreen() {
       className="order-1 flex min-h-0 min-w-0 flex-col overflow-hidden border-b border-violet-200/30 xl:order-none xl:h-full xl:max-h-full xl:flex-1 xl:border-b-0"
     >
       {/* Tab bar */}
-      <div className="shrink-0 border-b border-violet-200/40 px-3 pt-2">
+      <div className="shrink-0 flex items-center gap-2 border-b border-violet-200/40 px-4 pb-2 pt-3">
         <div
-          className="grid gap-1 rounded-lg bg-violet-50/60 p-1"
+          className="grid gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm"
           style={{ gridTemplateColumns: `repeat(${RIGHT_TABS.length}, minmax(0, 1fr))` }}
+          role="tablist"
         >
           {RIGHT_TABS.map(tab => (
-            <button
+            <Button
               key={tab.id}
               type="button"
+              variant="ghost"
+              size="inline"
+              role="tab"
+              aria-selected={rightTab === tab.id}
               onClick={() => setRightTab(tab.id)}
               className={cn(
-                'rounded-md py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all duration-150',
+                'rounded-lg px-1.5 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
                 rightTab === tab.id
-                  ? 'bg-white text-violet-700 shadow-sm'
-                  : 'text-ink/45 hover:text-ink/70',
+                  ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70'
+                  : 'text-muted hover:bg-white/60 hover:text-ink/70',
               )}
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
+        </div>
+
+        {sheetVariants.length > 0 && (
+          <div
+            className="flex gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm"
+            role="group"
+            aria-label="Variants"
+          >
+            {sheetVariants.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => handleLoadSheetVariant(index)}
+                aria-pressed={editorVariantIndex === index}
+                className={cn(
+                  'rounded-lg px-2 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
+                  editorVariantIndex === index
+                    ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70'
+                    : 'text-muted hover:bg-white/60 hover:text-ink/70',
+                )}
+              >
+                V{index + 1}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="flex items-center gap-1 rounded-lg px-2 py-2 text-[0.65rem] font-semibold leading-tight text-muted transition-all duration-200 hover:bg-white/60 hover:text-ink/70 focus-visible:ring-2 focus-visible:ring-primary/35"
+          >
+            <Eye className="h-3 w-3" aria-hidden />
+            Preview
+          </button>
         </div>
       </div>
 
       {/* Tab content */}
       {rightTab === 'editor' ? (
         <div className="flex min-h-0 flex-1 flex-col px-4 py-3">
-          <div className="mb-2 flex shrink-0 items-center justify-end">
-            <Button
-              type="button"
-              variant="ghost"
-              size="inline"
-              onClick={() => setPreviewOpen(true)}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold text-primary hover:bg-violet-50 hover:text-primary-hover focus-visible:ring-2 focus-visible:ring-primary/35"
-            >
-              <Eye className="h-3.5 w-3.5" aria-hidden />
-              Preview
-            </Button>
-          </div>
+          {nodeRuns && nodeRuns.length > 0 && (
+            <div className="shrink-0 pb-2">
+              <GenerationJustificationPanel nodeRuns={nodeRuns as NodeRunItem[]} />
+            </div>
+          )}
           <DraftEditor
             value={editorText}
             selection={selection}

@@ -2,6 +2,17 @@ import { buildRulesPrefix } from './rules';
 import type { GenerationScope, ResearchArticleRef, SheetRow, TextSelectionRange } from './types';
 import type { GapReport } from '../engine/gap-scorer';
 
+const INTENSITY_DIRECTIVES: Record<string, string> = {
+  'polish':
+    'WRITING MODE: Polish only. Preserve the author\'s sentence structure, word choices, and voice exactly. Make only minimal changes to fix flow, tighten phrasing, or strengthen the hook. Do not restructure or reframe.',
+  'light-touch':
+    'WRITING MODE: Light touch. Preserve the author\'s overall structure and key phrases. Improve clarity, flow, and hook strength. Light restructuring is allowed but the author\'s voice must remain dominant.',
+  'guided-rewrite':
+    'WRITING MODE: Guided rewrite. Use the draft as a content source. Preserve the author\'s ideas and facts but rewrite phrasing and structure substantially for maximum impact.',
+  'rewrite':
+    'WRITING MODE: Full rewrite. Use the draft only as a content brief. Generate fresh hooks, structure, and phrasing for maximum impact. The author\'s exact words are not constraints.',
+};
+
 function buildResearchContextAppendix(articles: ResearchArticleRef[] | undefined): string {
   if (!articles || articles.length === 0) {
     return '';
@@ -93,13 +104,19 @@ export function buildVariantsPrompt(
   authorProfileBlock: string,
   researchArticles?: ResearchArticleRef[],
   workflowInstruction?: string,
+  rewriteIntensity?: string,
 ): string {
   const rulesPrefix = prependAuthorToRulesPrefix(authorProfileBlock, buildRulesPrefix(sharedRules, instruction));
   const researchBlock = buildResearchContextAppendix(researchArticles);
+  const intensityDirective = rewriteIntensity ? INTENSITY_DIRECTIVES[rewriteIntensity] : null;
+  const rewriteVerb = (rewriteIntensity === 'polish' || rewriteIntensity === 'light-touch')
+    ? 'Polish and enhance the draft below, following the WRITING MODE instruction above.'
+    : 'Rewrite the full draft. Each variant must contain the full revised post text.';
   const promptLines = [
     'You are generating four distinct LinkedIn draft options.',
     rulesPrefix,
     ...(workflowInstruction ? [`Optimization target: ${workflowInstruction}`] : []),
+    ...(intensityDirective ? [intensityDirective] : []),
     'Return strict JSON with the shape {"variants":["...","...","...","..."]}.',
     'Return exactly four non-empty plain-text options.',
     'Each option should take a clearly different angle while staying on-topic and ready for downstream posting.',
@@ -109,9 +126,12 @@ export function buildVariantsPrompt(
   ];
 
   if (scope === 'selection' && selection) {
+    const selectionVerb = (rewriteIntensity === 'polish' || rewriteIntensity === 'light-touch')
+      ? 'Polish and enhance only the selected segment, following the WRITING MODE instruction above. Each variant must contain only the replacement text for that selected segment, not the entire post.'
+      : 'Rewrite only the selected segment. Each variant must contain only the replacement text for that selected segment, not the entire post.';
     return [
       ...promptLines,
-      'Rewrite only the selected segment. Each variant must contain only the replacement text for that selected segment, not the entire post.',
+      selectionVerb,
       'Full draft:',
       editorText,
       '',
@@ -123,7 +143,7 @@ export function buildVariantsPrompt(
 
   return [
     ...promptLines,
-    'Rewrite the full draft. Each variant must contain the full revised post text.',
+    rewriteVerb,
     'Draft:',
     editorText,
     researchBlock,

@@ -8,6 +8,18 @@ import type { QuickChangePreviewResult, VariantsPreviewResponse } from '../../se
 import { WorkflowCardPicker, type CustomWorkflowSummary } from './WorkflowCardPicker';
 import { EnrichmentProgressPanel } from './EnrichmentProgressPanel';
 import { type EnrichmentNodeEvent } from './nodeProgressLabels';
+import { BUILT_IN_WORKFLOW_CARDS } from './builtInWorkflowCards';
+
+const INTENSITY_STOPS = ['polish', 'light-touch', 'balanced', 'guided-rewrite', 'rewrite'] as const;
+type RewriteIntensity = typeof INTENSITY_STOPS[number];
+
+const INTENSITY_LABELS: Record<RewriteIntensity, { name: string; description: string }> = {
+  'polish':         { name: 'Polish',         description: 'Keeps your sentence structure and voice. Tightens phrasing and flow only.' },
+  'light-touch':    { name: 'Light touch',    description: 'Preserves your structure and key phrases. Improves clarity and hook strength.' },
+  'balanced':       { name: 'Balanced',       description: 'Blends your draft with AI suggestions for a natural result.' },
+  'guided-rewrite': { name: 'Guided rewrite', description: 'Keeps your ideas but rewrites substantially for impact.' },
+  'rewrite':        { name: 'Full rewrite',   description: 'AI rewrites freely using your draft as a content brief only.' },
+};
 
 type VariantSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -69,6 +81,8 @@ interface GenerationPanelProps {
   onPostTypeChange?: (postType: string) => void;
   dimensionWeights?: Record<string, number>;
   onDimensionWeightsChange?: (weights: Record<string, number>) => void;
+  rewriteIntensity?: RewriteIntensity;
+  onRewriteIntensityChange?: (intensity: RewriteIntensity) => void;
   customWorkflows?: CustomWorkflowSummary[];
   isLoadingCustomWorkflows?: boolean;
   onOpenWorkflowBuilder?: (workflow?: CustomWorkflowSummary) => void;
@@ -100,6 +114,8 @@ export function GenerationPanel({
   onPostTypeChange,
   dimensionWeights: dimensionWeightsProp,
   onDimensionWeightsChange,
+  rewriteIntensity: rewriteIntensityProp,
+  onRewriteIntensityChange,
   customWorkflows = [],
   isLoadingCustomWorkflows = false,
   onOpenWorkflowBuilder,
@@ -110,9 +126,11 @@ export function GenerationPanel({
 }: GenerationPanelProps) {
   const [localPostType, setLocalPostType] = useState('');
   const [localWeights, setLocalWeights] = useState<Record<string, number>>(DEFAULT_WEIGHTS);
+  const [localRewriteIntensity, setLocalRewriteIntensity] = useState<RewriteIntensity>('balanced');
 
   const postType = postTypeProp !== undefined ? postTypeProp : localPostType;
   const weights = dimensionWeightsProp !== undefined ? dimensionWeightsProp : localWeights;
+  const rewriteIntensity = rewriteIntensityProp !== undefined ? rewriteIntensityProp : localRewriteIntensity;
 
   function handlePostTypeChange(value: string) {
     if (postTypeProp === undefined) setLocalPostType(value);
@@ -123,6 +141,11 @@ export function GenerationPanel({
     const newWeights = { ...weights, [key]: value };
     if (dimensionWeightsProp === undefined) setLocalWeights(newWeights);
     onDimensionWeightsChange?.(newWeights);
+  }
+
+  function handleRewriteIntensityChange(intensity: RewriteIntensity) {
+    if (rewriteIntensityProp === undefined) setLocalRewriteIntensity(intensity);
+    onRewriteIntensityChange?.(intensity);
   }
   const pad = compact ? 'p-3' : 'p-4';
   const title = compact ? 'text-base' : 'text-lg';
@@ -166,6 +189,28 @@ export function GenerationPanel({
           </CollapsibleContent>
         </Collapsible>
       ) : null}
+
+      {/* Rewrite intensity — always visible */}
+      <div className="mt-4 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[0.7rem] font-semibold text-ink/70 uppercase tracking-wide">Writing mode</span>
+          <span className="text-[0.68rem] font-semibold text-violet-600">{INTENSITY_LABELS[rewriteIntensity].name}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[0.62rem] text-muted shrink-0">Polish</span>
+          <input
+            type="range"
+            min={0}
+            max={4}
+            step={1}
+            value={INTENSITY_STOPS.indexOf(rewriteIntensity)}
+            onChange={e => handleRewriteIntensityChange(INTENSITY_STOPS[Number(e.target.value)])}
+            className="flex-1 accent-violet-500 cursor-pointer"
+          />
+          <span className="text-[0.62rem] text-muted shrink-0">Rewrite</span>
+        </div>
+        <p className="text-[0.65rem] text-ink/50 leading-snug">{INTENSITY_LABELS[rewriteIntensity].description}</p>
+      </div>
 
       {/* Workflow Card Picker + Dimension Controls — hidden when the Writing Styles tab owns them */}
       {!hideStyleControls ? (
@@ -302,31 +347,39 @@ export function GenerationPanel({
             return (
               <div key={variant.id} className={`rounded-xl border border-violet-200/70 bg-gradient-to-br from-violet-50/40 to-white/80 backdrop-blur-sm shadow-sm transition-all duration-200 hover:shadow-md hover:border-violet-300/80 ${compact ? 'p-3' : 'p-4'}`}>
                 <div className="flex flex-col gap-2">
-                  {/* Header: variant label left, badges right */}
+                  {/* Header: variant label left, workflow name right */}
                   <div className="flex items-center justify-between gap-2">
                     <p className={`font-bold uppercase tracking-[0.2em] text-violet-700/80 ${compact ? 'text-[0.65rem]' : 'text-xs'}`}>
                       Variant {index + 1}
                     </p>
-                    <div className="flex flex-wrap justify-end gap-1">
-                      {variant.hookType && (
-                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[0.58rem] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
-                          {variant.hookType.replace(/_/g, ' ')}
-                        </span>
-                      )}
-                      {variant.arcType && (
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[0.58rem] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                          {variant.arcType.replace(/_/g, ' ')}
-                        </span>
-                      )}
-                    </div>
+                    {postType && (() => {
+                      const card = BUILT_IN_WORKFLOW_CARDS.find(c => c.id === postType);
+                      return card ? (
+                        <span className="text-[0.68rem] text-muted font-medium">{card.name}</span>
+                      ) : null;
+                    })()}
                   </div>
 
-                  {/* Rationale */}
+                  {/* Rationale as headline */}
                   {variant.variant_rationale && (
-                    <p className={`italic text-ink/60 leading-snug ${compact ? 'text-[0.68rem]' : 'text-xs'}`}>
+                    <p className="font-semibold text-sm text-ink/90 leading-snug">
                       "{variant.variant_rationale}"
                     </p>
                   )}
+
+                  {/* Badges */}
+                  <div className="flex flex-wrap gap-1">
+                    {variant.hookType && (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[0.58rem] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+                        {variant.hookType.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                    {variant.arcType && (
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[0.58rem] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                        {variant.arcType.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Text preview */}
                   {textPreview && (

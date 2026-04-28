@@ -25,6 +25,7 @@ export function InstagramChannelPreview({
   pickMode = false,
   previewAuthorName,
   onOpenMedia,
+  hideVariantHeader = false,
 }: ChannelPreviewProps) {
   const authorLabel = previewAuthorName?.trim() || 'your_channel';
   const authorInitials = previewAuthorInitials(authorLabel);
@@ -169,7 +170,7 @@ export function InstagramChannelPreview({
         className,
       )}
     >
-      {!isSidebar && (
+      {!isSidebar && !hideVariantHeader && (
         <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-3'}`}>
           <div>
             <p className="font-heading text-xs font-bold uppercase tracking-widest text-muted">Draft {optionNumber}</p>

@@ -6,6 +6,7 @@ import type { ContentReviewReport } from '../features/content-review/types';
 import type { TrendingSearchRequest, TrendingSearchResult } from '../features/trending/types';
 import type { NewsletterRecord } from '../features/campaign/schema/newsletterTypes';
 import type { CustomWorkflowSummary } from '../features/generation/WorkflowCardPicker';
+import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload } from '../features/feed/types';
 
 export interface SocialIntegration {
   provider: string;
@@ -280,6 +281,8 @@ export interface GenerationRequest {
   postType?: string;
   /** Quality dimension weights (0–100 per dimension). */
   dimensionWeights?: Record<string, number>;
+  /** Controls how much the AI rewrites the existing draft. Defaults to 'balanced'. */
+  rewriteIntensity?: 'polish' | 'light-touch' | 'balanced' | 'guided-rewrite' | 'rewrite';
 }
 
 export interface RunContentReviewRequest {
@@ -1407,6 +1410,48 @@ export class BackendApi {
       __method: 'POST',
       budget,
     });
+  }
+
+  // --- Interest Groups ---
+  listInterestGroups(idToken: string): Promise<InterestGroup[]> {
+    return this.post<InterestGroup[]>('listInterestGroups', idToken);
+  }
+
+  createInterestGroup(idToken: string, payload: CreateInterestGroupPayload): Promise<InterestGroup> {
+    return this.post<InterestGroup>('createInterestGroup', idToken, payload);
+  }
+
+  updateInterestGroup(idToken: string, payload: UpdateInterestGroupPayload): Promise<InterestGroup> {
+    return this.post<InterestGroup>('updateInterestGroup', idToken, payload);
+  }
+
+  deleteInterestGroup(idToken: string, id: string): Promise<{ success: boolean }> {
+    return this.post<{ success: boolean }>('deleteInterestGroup', idToken, { id });
+  }
+
+  // --- Clips ---
+  listClips(idToken: string): Promise<Clip[]> {
+    return this.post<Clip[]>('listClips', idToken);
+  }
+
+  createClip(idToken: string, payload: CreateClipPayload): Promise<Clip> {
+    return this.post<Clip>('createClip', idToken, payload);
+  }
+
+  updateClip(idToken: string, payload: UpdateClipPayload): Promise<Clip> {
+    return this.post<Clip>('updateClip', idToken, payload);
+  }
+
+  deleteClip(idToken: string, id: string): Promise<{ success: boolean }> {
+    return this.post<{ success: boolean }>('deleteClip', idToken, { id });
+  }
+
+  assignClipToPost(idToken: string, clipId: string, postId: string): Promise<Clip> {
+    return this.post<Clip>('assignClipToPost', idToken, { clipId, postId });
+  }
+
+  unassignClipFromPost(idToken: string, clipId: string, postId: string): Promise<Clip> {
+    return this.post<Clip>('unassignClipFromPost', idToken, { clipId, postId });
   }
 }
 

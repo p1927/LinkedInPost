@@ -93,6 +93,8 @@ export interface GenerationRequestPayload {
   dimensionWeights?: DimensionWeights;
   /** Post type workflow ID. */
   postType?: string;
+  /** Controls how much the AI rewrites the existing draft. Defaults to 'balanced'. */
+  rewriteIntensity?: string;
 }
 
 export interface QuickChangePreviewResult {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pencil, Plus, Loader2 } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GenerationPanel } from '../../generation/GenerationPanel';
 import { GenerationJustificationPanel } from '../../review/GenerationJustificationPanel';
@@ -47,7 +47,7 @@ function getLevelName(v: number) {
 function getLevelPill(v: number) {
   if (v <= 10) return 'bg-slate-100 text-slate-500';
   if (v <= 30) return 'bg-blue-100 text-blue-600';
-  if (v <= 50) return 'bg-amber-100 text-amber-600';
+  if (v <= 50) return 'bg-violet-100 text-violet-600';
   if (v <= 80) return 'bg-orange-100 text-orange-600';
   return 'bg-red-100 text-red-600';
 }
@@ -166,6 +166,8 @@ export function EditorSidebar() {
     setPostType,
     dimensionWeights,
     setDimensionWeights,
+    rewriteIntensity,
+    setRewriteIntensity,
     selectedCardId,
     setSelectedCardId,
     generatedCards,
@@ -311,57 +313,83 @@ export function EditorSidebar() {
           ))}
         </div>
 
-        {sheetVariants.length > 0 && (
-          <div
-            className="flex gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm"
-            role="group"
-            aria-label="Variants"
+        <div className="flex gap-0.5 rounded-xl border border-border bg-white p-1 shadow-sm">
+          <button
+            type="button"
+            disabled={isGenerateDisabled}
+            onClick={() => void handleGenerateAndSave()}
+            className={cn(
+              'rounded-lg px-2.5 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
+              isGenerateDisabled
+                ? 'cursor-not-allowed text-muted/50'
+                : 'text-muted hover:bg-white/60 hover:text-ink/70',
+            )}
           >
-            {sheetVariants.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => handleLoadSheetVariant(index)}
-                aria-pressed={editorVariantIndex === index}
-                className={cn(
-                  'rounded-lg px-2 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
-                  editorVariantIndex === index
-                    ? 'bg-white text-ink shadow-md ring-1 ring-violet-200/70'
-                    : 'text-muted hover:bg-white/60 hover:text-ink/70',
-                )}
-              >
-                V{index + 1}
-              </button>
-            ))}
-          </div>
-        )}
+            {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
+          </button>
+        </div>
       </div>
 
       {/* ── Writing Styles — fills remaining height with internal scroll for cards ── */}
       {isStylesTab ? (
         <section className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-3">
-          {/* Generate button */}
-          <div className="flex shrink-0 items-center justify-end">
-            <button
-              type="button"
-              disabled={isGenerateDisabled}
-              onClick={() => void handleGenerateAndSave()}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-150',
-                isGenerateDisabled
-                  ? 'cursor-not-allowed bg-gray-100 text-gray-400'
-                  : 'bg-primary text-white shadow-sm hover:bg-primary/90 active:scale-[0.98]',
-              )}
-            >
-              {generationLoading === 'quick-change' && (
-                <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-              )}
-              {generationLoading === 'quick-change' ? 'Generating…' : 'Generate'}
-            </button>
+          {/* Dimension sliders — at top, fixed height */}
+          <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-4 py-3.5 shadow-sm">
+            <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-widest text-ink/40">Writing emphasis</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+              {DIMENSIONS.map(({ key, label }) => {
+                const val = weights[key] ?? 50;
+                const levelName = getLevelName(val);
+                return (
+                  <div key={key} className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="truncate text-[0.68rem] font-semibold text-ink/70">{label}</span>
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                          key={levelName}
+                          initial={{ opacity: 0, scale: 0.75 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.75 }}
+                          transition={{ duration: 0.12, ease: 'easeOut' }}
+                          className={cn(
+                            'shrink-0 rounded-full px-1.5 py-px text-[0.55rem] font-bold tabular-nums',
+                            getLevelPill(val),
+                          )}
+                        >
+                          {levelName}
+                        </motion.span>
+                      </AnimatePresence>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={val}
+                      onChange={e => handleWeightChange(key, Number(e.target.value))}
+                      style={{ '--pct': `${val}%` } as React.CSSProperties}
+                      className={cn(
+                        'w-full h-[3px] cursor-pointer appearance-none rounded-full',
+                        '[background:linear-gradient(to_right,#7c3aed_var(--pct),#e2e8f0_var(--pct))]',
+                        '[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3',
+                        '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
+                        '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-600',
+                        '[&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2',
+                        '[&::-webkit-slider-thumb]:ring-white',
+                        '[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3',
+                        '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
+                        '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-violet-600',
+                        '[&::-moz-range-thumb]:shadow-md',
+                      )}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Card grid — scrolls internally, fixed proportion so sliders stay visible */}
-          <div className="min-h-0 max-h-[38vh] overflow-y-auto rounded-xl border border-gray-100">
+          {/* Card grid — takes all remaining space, scrolls internally */}
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100">
             <div className="grid grid-cols-2 gap-2 p-1">
 
               {/* Create your own — always top-left */}
@@ -470,60 +498,6 @@ export function EditorSidebar() {
             </div>
           </div>
 
-          {/* Dimension sliders — 2-column grid, spacious, animated */}
-          <div className="shrink-0 rounded-xl border border-violet-200/60 bg-white/80 px-4 py-3.5 shadow-sm">
-            <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-widest text-ink/40">Writing emphasis</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-              {DIMENSIONS.map(({ key, label }) => {
-                const val = weights[key] ?? 50;
-                const levelName = getLevelName(val);
-                return (
-                  <div key={key} className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="truncate text-[0.68rem] font-semibold text-ink/70">{label}</span>
-                      <AnimatePresence mode="wait" initial={false}>
-                        <motion.span
-                          key={levelName}
-                          initial={{ opacity: 0, scale: 0.75 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.75 }}
-                          transition={{ duration: 0.12, ease: 'easeOut' }}
-                          className={cn(
-                            'shrink-0 rounded-full px-1.5 py-px text-[0.55rem] font-bold tabular-nums',
-                            getLevelPill(val),
-                          )}
-                        >
-                          {levelName}
-                        </motion.span>
-                      </AnimatePresence>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={val}
-                      onChange={e => handleWeightChange(key, Number(e.target.value))}
-                      style={{ '--pct': `${val}%` } as React.CSSProperties}
-                      className={cn(
-                        'w-full h-[3px] cursor-pointer appearance-none rounded-full',
-                        '[background:linear-gradient(to_right,#7c3aed_var(--pct),#e2e8f0_var(--pct))]',
-                        '[&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3',
-                        '[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none',
-                        '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-600',
-                        '[&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:ring-2',
-                        '[&::-webkit-slider-thumb]:ring-white',
-                        '[&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3',
-                        '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full',
-                        '[&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-violet-600',
-                        '[&::-moz-range-thumb]:shadow-md',
-                      )}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </section>
       ) : (
         /* All other tabs — simple scroll container */
@@ -541,6 +515,8 @@ export function EditorSidebar() {
                   onInstructionChange={setInstruction}
                   onGenerateQuickChange={() => void handleGenerateQuickChange()}
                   onGenerateVariants={() => void handleGenerateVariants()}
+                  rewriteIntensity={rewriteIntensity}
+                  onRewriteIntensityChange={setRewriteIntensity}
                   onApplyQuickChange={handleApplyQuickChange}
                   onApplyVariant={handleApplyVariant}
                   onLoadVariant={handleLoadVariantIntoEditor}

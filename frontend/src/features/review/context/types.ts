@@ -76,6 +76,8 @@ export interface ReviewFlowEditorContextValue {
   setPostType: React.Dispatch<React.SetStateAction<string>>;
   dimensionWeights: Record<string, number>;
   setDimensionWeights: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  rewriteIntensity: 'polish' | 'light-touch' | 'balanced' | 'guided-rewrite' | 'rewrite';
+  setRewriteIntensity: React.Dispatch<React.SetStateAction<'polish' | 'light-touch' | 'balanced' | 'guided-rewrite' | 'rewrite'>>;
   // Generation state
   generationLoading: 'quick-change' | 'variants' | null;
   quickChangePreview: QuickChangePreviewResult | null;

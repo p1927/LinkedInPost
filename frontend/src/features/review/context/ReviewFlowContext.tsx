@@ -56,6 +56,8 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     setPostType: restState.setPostType,
     dimensionWeights: restState.dimensionWeights,
     setDimensionWeights: restState.setDimensionWeights,
+    rewriteIntensity: restState.rewriteIntensity,
+    setRewriteIntensity: restState.setRewriteIntensity,
     applySheetVariantBase: actions.applySheetVariantBase,
     handleGenerateQuickChange: actions.handleGenerateQuickChange,
     handleGenerateVariants: actions.handleGenerateVariants,

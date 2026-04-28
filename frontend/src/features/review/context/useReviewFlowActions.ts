@@ -93,6 +93,8 @@ export function useReviewFlowActions(
     researchContextArticles,
     postType,
     dimensionWeights,
+    rewriteIntensity,
+    setRewriteIntensity,
     selectedCardId,
     setGeneratedCards,
     setLastGeneratedConfig,
@@ -176,6 +178,7 @@ export function useReviewFlowActions(
     };
     if (postType) base.postType = postType;
     if (Object.keys(dimensionWeights).length > 0) base.dimensionWeights = dimensionWeights;
+    if (rewriteIntensity !== 'balanced') base.rewriteIntensity = rewriteIntensity;
     if (FEATURE_MULTI_PROVIDER_LLM && generationLlm) {
       base.llm = { provider: generationLlm.provider, model: generationLlm.model };
       if (generationLlm.provider === 'gemini') {

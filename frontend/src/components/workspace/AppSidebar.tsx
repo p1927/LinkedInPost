@@ -212,9 +212,9 @@ export function AppSidebar({
         id="workspace-sidebar"
         data-collapsed={collapsed ? 'true' : 'false'}
         className={clsx(
-          'custom-scrollbar glass-sidebar flex min-h-screen w-60 max-w-[85vw] shrink-0 flex-col self-stretch border-r border-white/50 transition-[transform,width] duration-200 ease-out motion-reduce:transition-none',
+          'custom-scrollbar glass-sidebar flex h-screen w-60 max-w-[85vw] shrink-0 flex-col border-r border-white/50 transition-[transform,width] duration-200 ease-out motion-reduce:transition-none',
           collapsed ? 'md:w-[4.5rem]' : 'md:w-60',
-          'fixed bottom-0 left-0 top-0 z-50 md:static md:max-w-none',
+          'fixed bottom-0 left-0 top-0 z-50 md:sticky md:top-0 md:max-w-none',
           mobileOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full md:translate-x-0 md:shadow-none',
         )}
       >

@@ -159,6 +159,7 @@ export async function generateVariantsPreview(
   );
   const researchRefs = FEATURE_NEWS_RESEARCH ? coerceResearchArticles(request.researchArticles) : undefined;
   const authorBlock = formatAuthorProfileForPrompt(storedConfig.userWhoAmI || storedConfig.authorProfile || '');
+  const rewriteIntensity = typeof request.rewriteIntensity === 'string' ? request.rewriteIntensity : undefined;
   const prompt = buildVariantsPrompt(
     row,
     editorText,
@@ -169,6 +170,7 @@ export async function generateVariantsPreview(
     authorBlock,
     researchRefs,
     workflowInstruction,
+    rewriteIntensity,
   );
   const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt, {
     db: env.PIPELINE_DB,

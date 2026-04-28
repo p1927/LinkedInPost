@@ -29,6 +29,7 @@ export function WhatsAppChannelPreview({
   pickMode = false,
   previewAuthorName: _previewAuthorName, // eslint-disable-line @typescript-eslint/no-unused-vars
   onOpenMedia,
+  hideVariantHeader = false,
 }: ChannelPreviewProps) {
   const isCarousel = mode === 'carousel';
   const isPickCarousel = pickMode && isCarousel;
@@ -85,7 +86,7 @@ export function WhatsAppChannelPreview({
         className,
       )}
     >
-      {!isSidebar && (
+      {!isSidebar && !hideVariantHeader && (
         <div className={`flex items-center justify-between gap-3 px-1 ${compact ? 'mb-2' : 'mb-3'}`}>
           <div>
             <p className="font-heading text-xs font-bold uppercase tracking-widest text-muted">Draft {optionNumber}</p>

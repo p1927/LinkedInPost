@@ -200,18 +200,27 @@ function PreviewPane({
         scrollbarWidth: 'none',
       }}
     >
-      {/* Sticky channel tabs — no extra labels, just the tabs */}
+      {/* Sticky channel tabs */}
       <div
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 5,
           background: '#EDE5FB',
-          padding: '14px 18px 0',
+          padding: '12px 16px',
           borderBottom: `1px solid ${T.line}`,
         }}
       >
-        <div style={{ display: 'flex', gap: 2 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 4,
+            background: 'rgba(255,255,255,0.55)',
+            borderRadius: 10,
+            padding: 3,
+            border: `1px solid ${T.line}`,
+          }}
+        >
           {TABS.map((ch) => {
             const active = ch === activeChannel;
             const cs = channelStyle(ch);
@@ -221,42 +230,24 @@ function PreviewPane({
                 type="button"
                 onClick={() => setActiveChannel(ch)}
                 style={{
-                  padding: '7px 12px 8px',
+                  flex: 1,
+                  padding: '5px 8px',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6,
-                  background: active ? T.surface : 'transparent',
+                  justifyContent: 'center',
                   border: 'none',
-                  borderRadius: '7px 7px 0 0',
+                  borderRadius: 7,
                   cursor: 'pointer',
-                  borderTop: active ? `1px solid ${T.line}` : '1px solid transparent',
-                  borderLeft: active ? `1px solid ${T.line}` : '1px solid transparent',
-                  borderRight: active ? `1px solid ${T.line}` : '1px solid transparent',
-                  borderBottom: active ? `1px solid ${T.surface}` : '1px solid transparent',
-                  marginBottom: active ? -1 : 0,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 600,
-                  color: active ? T.ink : T.muted,
-                  letterSpacing: '-0.005em',
+                  letterSpacing: '-0.01em',
                   fontFamily: 'inherit',
+                  transition: 'all 150ms ease',
+                  background: active ? '#fff' : 'transparent',
+                  color: active ? T.ink : T.muted,
+                  boxShadow: active ? '0 1px 3px rgba(17,17,19,0.10), 0 0 0 1px rgba(216,206,235,0.6)' : 'none',
                 }}
               >
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 14,
-                    height: 14,
-                    borderRadius: 3,
-                    background: cs.color,
-                    color: '#fff',
-                    fontSize: 7,
-                    fontWeight: 700,
-                  }}
-                >
-                  {cs.letter.toUpperCase()}
-                </span>
                 {cs.label}
               </button>
             );
