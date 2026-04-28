@@ -79,3 +79,42 @@ export interface ClipClusterResult {
   support: number[]
   challenge: number[]
 }
+
+export interface DraftConnection {
+  topicId: string
+  topic: string
+  reason: string
+}
+
+export interface DraftConnectionsResult {
+  connections: DraftConnection[]
+}
+
+export interface DebateArticle {
+  title: string
+  summary: string
+  source: string
+  opposingAngle: string
+  keyArguments: string[]
+}
+
+export interface CrossDomainInsight {
+  domain: string
+  connection: string
+  postAngle: string
+}
+
+export interface CrossDomainResult {
+  insights: CrossDomainInsight[]
+}
+
+export interface OpinionLeaderInsight {
+  name: string
+  role: string
+  perspective: string
+  postAngle: string
+}
+
+export interface OpinionLeadersResult {
+  leaders: OpinionLeaderInsight[]
+}
