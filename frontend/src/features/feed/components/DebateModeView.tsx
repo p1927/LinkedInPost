@@ -62,7 +62,7 @@ export function DebateModeView({
           className="flex items-center gap-1.5 text-sm text-muted hover:text-primary transition-colors cursor-pointer"
         >
           <ArrowLeft size={15} aria-hidden="true" />
-          Back to Feed
+          Back to Article
         </button>
         <div className="flex items-center gap-1.5 ml-2">
           <Scale size={15} className="text-amber-500" />

@@ -432,7 +432,7 @@ export function FeedPage({
               onClip={handleClip}
               isClipped={clippedUrls.has(openArticle.url)}
               rows={rows}
-              onOpenDraft={(row) => { setOpenArticle(null); setOpenDraft(row); }}
+              onOpenDraft={(row) => { setOpenArticle(null); setDebateMode(false); setOpenDraft(row); }}
               onDebate={() => setDebateMode(true)}
             />
           )}
