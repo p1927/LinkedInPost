@@ -3,6 +3,8 @@ import { ArrowLeft, Scissors, ExternalLink, Copy, Check, Scale, ChevronDown } fr
 import type { NewsArticle } from '../../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { ArticleAnalysis } from '../types';
+import type { SheetRow } from '../../../services/sheets';
+import type { DraftConnection } from '../types';
 
 interface ArticleDetailViewProps {
   article: NewsArticle;
@@ -11,6 +13,9 @@ interface ArticleDetailViewProps {
   onBack: () => void;
   onClip: (article: NewsArticle) => void;
   isClipped: boolean;
+  rows?: SheetRow[];
+  onOpenDraft?: (row: SheetRow) => void;
+  onDebate?: () => void;
 }
 
 type TabKey = 'opinion' | 'perspectives' | 'connection';
@@ -48,12 +53,17 @@ export function ArticleDetailView({
   onBack,
   onClip,
   isClipped,
+  rows = [],
+  onOpenDraft,
+  onDebate,
 }: ArticleDetailViewProps) {
   const [analysis, setAnalysis] = useState<ArticleAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('opinion');
   const [opinionResponse, setOpinionResponse] = useState('');
+  const [connections, setConnections] = useState<DraftConnection[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
 
   const fetchAnalysis = () => {
     setAnalysisLoading(true);
@@ -78,6 +88,20 @@ export function ArticleDetailView({
     fetchAnalysis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article.url, idToken]);
+
+  useEffect(() => {
+    if (rows.length === 0) return;
+    setConnectionsLoading(true);
+    api
+      .findDraftConnections(idToken, {
+        title: article.title,
+        description: article.description ?? '',
+        drafts: rows.map(r => ({ topicId: r.topicId ?? '', topic: r.topic ?? '' })).filter(d => d.topicId && d.topic),
+      })
+      .then(result => setConnections(result.connections))
+      .catch(() => setConnections([]))
+      .finally(() => setConnectionsLoading(false));
+  }, [article.url, idToken, rows.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formattedDate = article.publishedAt
     ? new Date(article.publishedAt).toLocaleDateString(undefined, {
@@ -166,6 +190,18 @@ export function ArticleDetailView({
             <Scissors size={14} className={isClipped ? 'fill-primary' : ''} />
             {isClipped ? 'Clipped' : 'Clip'}
           </button>
+
+          {onDebate && (
+            <button
+              type="button"
+              onClick={onDebate}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-2 text-sm font-semibold text-muted hover:border-amber-400/60 hover:text-amber-700 transition-colors"
+              title="Find an opposing article"
+            >
+              <Scale size={14} />
+              Debate
+            </button>
+          )}
         </div>
 
         {/* Note */}
@@ -386,9 +422,42 @@ export function ArticleDetailView({
 
           {/* Tab L — Connection */}
           {activeTab === 'connection' && (
-            <p className="text-xs text-muted leading-relaxed">
-              This feature connects your research to existing drafts. Open a draft from the Clips Dock to see connections.
-            </p>
+            <div className="space-y-2">
+              {connectionsLoading && (
+                <div className="space-y-2">
+                  <SkeletonLine />
+                  <SkeletonLine width="w-4/5" />
+                </div>
+              )}
+              {!connectionsLoading && connections.length === 0 && (
+                <p className="text-xs text-muted leading-relaxed italic">
+                  {rows.length === 0
+                    ? 'Open a draft from the Clips Dock to see connections.'
+                    : 'No drafts seem to relate to this article.'}
+                </p>
+              )}
+              {!connectionsLoading && connections.map(conn => (
+                <div
+                  key={conn.topicId}
+                  className="rounded-lg border border-border/40 bg-white/50 px-3 py-2.5 space-y-1"
+                >
+                  <p className="text-xs font-semibold text-ink line-clamp-1">{conn.topic}</p>
+                  <p className="text-[11px] text-muted leading-relaxed">{conn.reason}</p>
+                  {onOpenDraft && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const row = rows.find(r => r.topicId === conn.topicId);
+                        if (row) onOpenDraft(row);
+                      }}
+                      className="text-[11px] font-semibold text-primary hover:underline"
+                    >
+                      Open Draft →
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
