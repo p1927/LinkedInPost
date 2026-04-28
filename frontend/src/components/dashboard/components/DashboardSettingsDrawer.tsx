@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Plus, RefreshCw, MessageCircle, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, RefreshCw, MessageCircle, Trash2, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
 import { type GoogleModelOption } from '../../../services/configService';
 import { type ChannelId } from '../../../integrations/channels';
@@ -139,6 +139,7 @@ type DashboardSettingsDrawerProps = {
   llmCatalog?: Array<{ id: LlmProviderId; name: string; models: GoogleModelOption[] }> | null;
   enrichmentSkills?: EnrichmentSkillConfig[];
   onToggleEnrichmentSkill?: (id: EnrichmentSkillId, enabled: boolean) => void;
+  publishingHealth?: { linkedin: boolean; instagram: boolean; telegram: boolean; whatsapp: boolean; gmail: boolean };
 };
 
 interface ImageGenCatalogEntry {
@@ -1171,6 +1172,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       llmCatalog,
       enrichmentSkills,
       onToggleEnrichmentSkill,
+      publishingHealth,
     },
     ref,
   ) {
@@ -1209,15 +1211,42 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const [activeSectionId, setActiveSectionId] = useState<string>(settingsSections[0]?.id ?? ALL_SETTINGS_SECTIONS[0].id);
+    const [navSearch, setNavSearch] = useState('');
+
+    const filteredSections = useMemo(
+      () =>
+        navSearch.trim()
+          ? settingsSections.filter((s) => s.label.toLowerCase().includes(navSearch.toLowerCase()))
+          : settingsSections,
+      [settingsSections, navSearch],
+    );
+
+    const CHANNEL_HEALTH_SECTION_IDS: Partial<Record<SettingsSectionId, keyof NonNullable<typeof publishingHealth>>> = {
+      'settings-linkedin': 'linkedin',
+      'settings-instagram': 'instagram',
+      'settings-telegram': 'telegram',
+      'settings-whatsapp': 'whatsapp',
+      'settings-gmail': 'gmail',
+    };
 
     const scrollToSection = useCallback((id: SettingsSectionId) => {
       setActiveSectionId(id);
+      history.replaceState(null, '', `#${id}`);
       const root = scrollRef.current;
       const el = (root?.querySelector(`#${CSS.escape(id)}`) ?? document.getElementById(id)) as HTMLElement | null;
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, []);
 
     useImperativeHandle(ref, () => ({ scrollToSection }), [scrollToSection]);
+
+    useEffect(() => {
+      const hash = window.location.hash.slice(1) as SettingsSectionId;
+      if (hash && settingsSections.some((s) => s.id === hash)) {
+        const timer = setTimeout(() => scrollToSection(hash), 120);
+        return () => clearTimeout(timer);
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -1248,28 +1277,52 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
   return (
     <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
       <aside className="sticky top-4 z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:self-start">
+        {/* Search */}
+        <div className="relative mb-2 hidden lg:block">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted" />
+          <input
+            type="text"
+            placeholder="Search sections…"
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+            className="w-full rounded-lg border border-border/60 bg-canvas py-1.5 pl-7 pr-3 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
         <nav
           className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:pr-1"
           aria-label="Settings sections"
         >
           <p className="mb-2 hidden text-xs font-bold uppercase tracking-[0.14em] text-muted lg:block">Jump to</p>
-          {settingsSections.map(({ id, label }) => (
-            <Button
-              key={id}
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => scrollToSection(id)}
-              className={cn(
-                'w-full shrink-0 justify-start rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
-                activeSectionId === id
-                  ? 'bg-primary/12 font-semibold text-ink'
-                  : 'text-muted hover:bg-white/60 hover:text-ink',
-              )}
-            >
-              {label}
-            </Button>
-          ))}
+          {filteredSections.length === 0 && (
+            <p className="hidden py-2 text-center text-xs text-muted lg:block">No sections found</p>
+          )}
+          {filteredSections.map(({ id, label }) => {
+            const healthKey = CHANNEL_HEALTH_SECTION_IDS[id];
+            const isConnected = healthKey != null && publishingHealth != null ? publishingHealth[healthKey] : null;
+            return (
+              <Button
+                key={id}
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => scrollToSection(id)}
+                className={cn(
+                  'w-full shrink-0 justify-start rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                  activeSectionId === id
+                    ? 'bg-primary/12 font-semibold text-ink'
+                    : 'text-muted hover:bg-white/60 hover:text-ink',
+                )}
+              >
+                <span className="flex-1 truncate">{label}</span>
+                {isConnected !== null && (
+                  <span
+                    className={cn('ml-1.5 h-1.5 w-1.5 shrink-0 rounded-full', isConnected ? 'bg-emerald-500' : 'bg-slate-300')}
+                    aria-label={isConnected ? 'Connected' : 'Not connected'}
+                  />
+                )}
+              </Button>
+            );
+          })}
         </nav>
         <div className="mt-3 border-t border-border pt-3">
           <Button

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Tour } from '@/components/Tour';
 import { Loader2, Mail, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import type { BackendApi, AppSession } from '@/services/backendApi';
@@ -153,6 +154,15 @@ export function NewsletterTab({ idToken, session, api }: Props) {
   }
 
   return (
+    <>
+    <Tour
+      tourKey="newsletter"
+      steps={[
+        { title: 'Your newsletters', body: 'Create and manage recurring newsletters here. Each one has its own schedule, audience, and AI editorial voice.' },
+        { title: 'Configure before sending', body: 'Click the gear icon on a newsletter to set subject lines, recipients, and tone. A live preview appears on the right so you know what subscribers will see.' },
+        { title: 'Schedule issues', body: 'Switch to Calendar view to see upcoming issues by date. Click an issue to approve it, edit it, or send it immediately.' },
+      ]}
+    />
     <div className="space-y-4">
       {/* Top bar: toggle + create button */}
       <div className="flex items-center justify-between">
@@ -274,5 +284,6 @@ export function NewsletterTab({ idToken, session, api }: Props) {
         />
       )}
     </div>
+    </>
   );
 }

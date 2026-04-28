@@ -9,7 +9,7 @@ import {
   dbSoftDeleteCustomWorkflow,
 } from './customWorkflowD1';
 import { dimensionWeightsToNodeConfigs } from './customWorkflowToDefinition';
-import type { CreateCustomWorkflowPayload, UpdateCustomWorkflowPayload } from './types';
+import type { CreateCustomWorkflowPayload, CustomWorkflowSummary, UpdateCustomWorkflowPayload } from './types';
 import { workflowRegistry } from '../../engine/registry/WorkflowRegistry';
 
 function nanoid10(): string {
@@ -30,18 +30,21 @@ function validatePayload(p: CreateCustomWorkflowPayload): string | null {
   return null;
 }
 
-export async function handleListCustomWorkflows(db: D1Database, userId: string): Promise<Response> {
+export async function handleListCustomWorkflows(
+  db: D1Database,
+  userId: string,
+): Promise<{ workflows: CustomWorkflowSummary[] }> {
   const workflows = await dbListCustomWorkflows(db, userId);
-  return Response.json({ workflows });
+  return { workflows };
 }
 
 export async function handleCreateCustomWorkflow(
   db: D1Database,
   userId: string,
   payload: CreateCustomWorkflowPayload,
-): Promise<Response> {
+): Promise<{ id: string }> {
   const error = validatePayload(payload);
-  if (error) return Response.json({ error }, { status: 400 });
+  if (error) throw new Error(error);
 
   // Resolve base workflow to get its node configs as starting point
   let baseNodeConfigs = workflowRegistry.resolve('base').nodeConfigs;
@@ -73,20 +76,20 @@ export async function handleCreateCustomWorkflow(
     updatedAt: now,
   });
 
-  return Response.json({ id }, { status: 201 });
+  return { id };
 }
 
 export async function handleUpdateCustomWorkflow(
   db: D1Database,
   userId: string,
   payload: UpdateCustomWorkflowPayload,
-): Promise<Response> {
-  if (!payload.id) return Response.json({ error: 'id is required' }, { status: 400 });
+): Promise<{ ok: boolean }> {
+  if (!payload.id) throw new Error('id is required');
   const error = validatePayload(payload);
-  if (error) return Response.json({ error }, { status: 400 });
+  if (error) throw new Error(error);
 
   const existing = await dbGetCustomWorkflow(db, payload.id, userId);
-  if (!existing) return Response.json({ error: 'Not found' }, { status: 404 });
+  if (!existing) throw new Error('Workflow not found.');
 
   let baseNodeConfigs = workflowRegistry.resolve('base').nodeConfigs;
   try {
@@ -113,17 +116,17 @@ export async function handleUpdateCustomWorkflow(
     new Date().toISOString(),
   );
 
-  if (!updated) return Response.json({ error: 'Update failed' }, { status: 500 });
-  return Response.json({ ok: true });
+  if (!updated) throw new Error('Update failed.');
+  return { ok: true };
 }
 
 export async function handleDeleteCustomWorkflow(
   db: D1Database,
   userId: string,
   id: string,
-): Promise<Response> {
-  if (!id) return Response.json({ error: 'id is required' }, { status: 400 });
+): Promise<{ ok: boolean }> {
+  if (!id) throw new Error('id is required');
   const deleted = await dbSoftDeleteCustomWorkflow(db, id, userId);
-  if (!deleted) return Response.json({ error: 'Not found' }, { status: 404 });
-  return Response.json({ ok: true });
+  if (!deleted) throw new Error('Workflow not found.');
+  return { ok: true };
 }

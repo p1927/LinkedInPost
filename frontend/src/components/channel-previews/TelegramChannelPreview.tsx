@@ -31,6 +31,8 @@ export function TelegramChannelPreview({
   onOpenMedia,
   hideVariantHeader = false,
 }: ChannelPreviewProps) {
+  const CAPTION_LIMIT = 1024;
+  const TEXT_LIMIT = 4096;
   const isCarousel = mode === 'carousel';
   const isPickCarousel = pickMode && isCarousel;
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
@@ -235,6 +237,28 @@ export function TelegramChannelPreview({
                   {bodyExpanded ? 'Show less' : 'Read more'}
                 </button>
               ) : null}
+              {(() => {
+                const hasImage = urls.length > 0;
+                const limit = hasImage ? CAPTION_LIMIT : TEXT_LIMIT;
+                const overLimit = text.length > limit;
+                if (!overLimit && text.length < limit * 0.85) return null;
+                return (
+                  <div
+                    className={cn(
+                      'mt-1.5 rounded px-1.5 py-0.5 text-[0.6rem] font-medium',
+                      overLimit
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-black/5 text-current opacity-60',
+                    )}
+                  >
+                    {overLimit && hasImage
+                      ? `${text.length.toLocaleString()} chars · exceeds ${limit.toLocaleString()} caption limit — full text sent separately`
+                      : overLimit
+                      ? `${text.length.toLocaleString()} / ${limit.toLocaleString()} chars — near message limit`
+                      : `${text.length.toLocaleString()} / ${limit.toLocaleString()}`}
+                  </div>
+                );
+              })()}
               <div className="mt-1 flex items-end justify-end gap-1 pb-1">
                 <span className="text-[11px] leading-none tabular-nums" style={{ color: `${TG.text}99` }}>
                   12:42

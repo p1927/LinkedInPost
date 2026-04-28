@@ -23,7 +23,7 @@ import { buildCampaignClaudePrompt } from './prompt/defaultPrompt';
 import { parseCampaignPaste, campaignPostToImportPayload } from './validate/parseCampaignDoc';
 import { CampaignPostList } from './views/CampaignPostList';
 import { CampaignPreviewToolbar } from './views/CampaignPreviewToolbar';
-import type { CampaignPostV1 } from './schema/types';
+import type { CampaignPostV1, CampaignDiagnostic, ParseCampaignResult } from './schema/types';
 import { NewsletterTab } from './components/newsletter/NewsletterTab';
 import clsx from 'clsx';
 import { Copy, LayoutList, CalendarDays, Loader2, ArrowRight, Mail } from 'lucide-react';
@@ -32,10 +32,93 @@ type CampaignTab = 'bulk' | 'newsletter';
 
 type PreviewTab = 'list' | 'calendar';
 
+type ImportMode = 'generate' | 'upload' | 'paste';
+
 const CAMPAIGN_STEPS = [
   { id: 'import', label: 'Import', name: 'Import Campaign JSON' },
   { id: 'preview', label: 'Preview', name: 'Preview & Publish' },
 ];
+
+function JsonPasteEditor({
+  pasteText,
+  setPasteText,
+  errorLines,
+  diagnostics,
+  parseResult,
+  onNext,
+}: {
+  pasteText: string;
+  setPasteText: (v: string) => void;
+  errorLines: ReadonlySet<number>;
+  diagnostics: CampaignDiagnostic[];
+  parseResult: ParseCampaignResult;
+  onNext: () => void;
+}) {
+  return (
+    <>
+      <div className="flex flex-1 gap-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
+        <div
+          className="hidden w-10 shrink-0 select-none border-r border-slate-200 bg-slate-100/60 py-2 text-right font-mono text-[10px] leading-5 text-slate-400 sm:block"
+          aria-hidden
+        >
+          {pasteText.split('\n').map((_, i) => (
+            <div
+              key={i}
+              className={clsx('pr-1', errorLines.has(i + 1) && 'bg-rose-200/80 font-semibold text-rose-950')}
+            >
+              {i + 1}
+            </div>
+          ))}
+          {pasteText === '' ? <div className="pr-1">1</div> : null}
+        </div>
+        <Textarea
+          value={pasteText}
+          onChange={(e) => setPasteText(e.target.value)}
+          placeholder='{ "version": 1, "posts": [ … ] }'
+          className="min-h-[14rem] flex-1 resize-y border-0 bg-transparent font-mono text-xs leading-5 shadow-none focus-visible:ring-0 md:min-h-[24rem]"
+          spellCheck={false}
+          aria-label="Campaign JSON"
+        />
+      </div>
+
+      {diagnostics.length > 0 ? (
+        <ul role="alert" className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
+          {diagnostics.map((d, i) => (
+            <li key={i}>
+              <span className="font-mono font-semibold">Line {d.line}:{d.column}</span>{' '}
+              {d.message}
+            </li>
+          ))}
+        </ul>
+      ) : pasteText.trim() ? (
+        <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Document looks valid
+        </p>
+      ) : null}
+
+      <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          disabled={!parseResult.ok}
+          onClick={onNext}
+          className={clsx(
+            'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
+            'transition-colors duration-150 hover:bg-indigo-700',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+            'disabled:cursor-not-allowed disabled:bg-indigo-300 cursor-pointer',
+          )}
+        >
+          Preview &amp; Publish
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </button>
+        {!parseResult.ok && pasteText.trim() && (
+          <p className="text-xs text-slate-400">Fix JSON errors above to continue.</p>
+        )}
+      </div>
+    </>
+  );
+}
 
 export function CampaignPage(props: {
   idToken: string;
@@ -47,8 +130,16 @@ export function CampaignPage(props: {
   const { idToken, session, api, onAuthExpired } = props;
   const { showAlert } = useAlert();
   const { onRefreshQueue } = useWorkspaceChrome();
+  const DRAFT_KEY = 'campaign_bulk_draft';
   const [topicsIdeas, setTopicsIdeas] = useState('');
-  const [pasteText, setPasteText] = useState('');
+  const [pasteText, setPasteText] = useState(() => {
+    try { return localStorage.getItem(DRAFT_KEY) ?? ''; } catch { return ''; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem(DRAFT_KEY, pasteText); } catch { /* quota exceeded */ }
+  }, [pasteText]);
+  const [importMode, setImportMode] = useState<ImportMode>('generate');
   const [previewTab, setPreviewTab] = useState<PreviewTab>('calendar');
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -113,6 +204,10 @@ export function CampaignPage(props: {
       }
       return next;
     });
+  }, []);
+
+  const updatePostAt = useCallback((index: number, patch: Partial<CampaignPostV1>) => {
+    setEditedPosts((prev) => prev.map((p, i) => i === index ? { ...p, ...patch } : p));
   }, []);
 
   const draftAllPosts = useCallback(() => {
@@ -344,9 +439,36 @@ export function CampaignPage(props: {
       {campaignTab === 'bulk' && (
         <>
         <CarouselContent currentStep={currentStep}>
-          {/* Step 0: Import — topic ideas → Claude prompt → paste JSON */}
+          {/* Step 0: Import — three modes */}
         <div className="mx-auto max-w-6xl px-4 sm:px-8">
           <div className="flex flex-col gap-5">
+
+            {/* Mode switcher tabs */}
+            <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1 w-fit">
+              {([
+                { id: 'generate', label: 'Generate with Claude' },
+                { id: 'upload',   label: 'Upload file' },
+                { id: 'paste',    label: 'Paste JSON' },
+              ] as const).map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setImportMode(id)}
+                  className={clsx(
+                    'rounded-lg px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer',
+                    importMode === id
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Generate mode ─────────────────────────────────────── */}
+            {importMode === 'generate' && (
+              <>
               {/* Section 1: Topic ideas */}
               <section className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
@@ -402,78 +524,101 @@ export function CampaignPage(props: {
                 </div>
               </section>
 
-            {/* Section 3: JSON paste */}
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {/* Section 3: paste response */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Paste Claude's response</h3>
+                    <p className="text-xs text-slate-500">Paste the JSON returned by Claude here.</p>
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col p-5">
+                  <JsonPasteEditor pasteText={pasteText} setPasteText={setPasteText} errorLines={errorLines} diagnostics={diagnostics} parseResult={parseResult} onNext={() => handleStepChange(1)} />
+                </div>
+              </section>
+              </>
+            )}
+
+            {/* ── Upload mode ────────────────────────────────────────── */}
+            {importMode === 'upload' && (
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Upload JSON or CSV</h3>
+                    <p className="text-xs text-slate-500">CSV: columns topic, date, channels (comma-separated), body. JSON: same schema as the Generate mode.</p>
+                  </div>
+                </div>
+                <div className="flex flex-1 flex-col p-5 gap-4">
+                  <label
+                    className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/60 py-14 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors"
+                  >
+                    <input
+                      type="file"
+                      accept=".json,.jsonc,.csv"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const text = ev.target?.result as string;
+                          if (file.name.endsWith('.csv')) {
+                            const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                            const headers = lines[0]?.split(',').map(h => h.trim().toLowerCase()) ?? [];
+                            const posts = lines.slice(1).map(line => {
+                              const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+                              const obj: Record<string, string> = {};
+                              headers.forEach((h, i) => { obj[h] = cols[i] ?? ''; });
+                              return {
+                                topic: obj['topic'] ?? '',
+                                date: obj['date'] ?? '',
+                                channels: obj['channels'] ? obj['channels'].split('|').map(s => s.trim()) : [],
+                                body: obj['body'] ?? '',
+                              };
+                            }).filter(p => p.topic);
+                            setPasteText(JSON.stringify({ version: 1, posts }, null, 2));
+                          } else {
+                            setPasteText(text);
+                          }
+                          setImportMode('paste');
+                        };
+                        reader.readAsText(file);
+                      }}
+                    />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
+                      <ArrowRight className="h-5 w-5 text-indigo-600 -rotate-90" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-slate-700">Drop a file or click to browse</p>
+                      <p className="text-xs text-slate-400 mt-0.5">.json, .jsonc, .csv</p>
+                    </div>
+                  </label>
+                  <a
+                    href="data:text/csv;charset=utf-8,topic%2Cdate%2Cchannels%2Cbody%0AExample+topic%2C2025-02-01%2Clinkedin%2CSample+body+text"
+                    download="campaign-template.csv"
+                    className="self-start text-xs text-indigo-600 hover:underline"
+                  >
+                    Download CSV template
+                  </a>
+                </div>
+              </section>
+            )}
+
+            {/* ── Paste mode ─────────────────────────────────────────── */}
+            {importMode === 'paste' && (
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900">Paste campaign JSON</h3>
                     <p className="text-xs text-slate-500">JSON or JSONC (comments and trailing commas allowed).</p>
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col p-5">
-                  <div className="flex flex-1 gap-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50">
-                    <div
-                      className="hidden w-10 shrink-0 select-none border-r border-slate-200 bg-slate-100/60 py-2 text-right font-mono text-[10px] leading-5 text-slate-400 sm:block"
-                      aria-hidden
-                    >
-                      {pasteText.split('\n').map((_, i) => (
-                        <div
-                          key={i}
-                          className={clsx('pr-1', errorLines.has(i + 1) && 'bg-rose-200/80 font-semibold text-rose-950')}
-                        >
-                          {i + 1}
-                        </div>
-                      ))}
-                      {pasteText === '' ? <div className="pr-1">1</div> : null}
-                    </div>
-                    <Textarea
-                      value={pasteText}
-                      onChange={(e) => setPasteText(e.target.value)}
-                      placeholder='{ "version": 1, "posts": [ … ] }'
-                      className="min-h-[14rem] flex-1 resize-y border-0 bg-transparent font-mono text-xs leading-5 shadow-none focus-visible:ring-0 md:min-h-[24rem]"
-                      spellCheck={false}
-                      aria-label="Campaign JSON"
-                    />
-                  </div>
-
-                  {diagnostics.length > 0 ? (
-                    <ul role="alert" className="mt-3 list-none space-y-1.5 rounded-xl border border-rose-200/80 bg-rose-50/90 p-3 text-xs text-rose-950">
-                      {diagnostics.map((d, i) => (
-                        <li key={i}>
-                          <span className="font-mono font-semibold">Line {d.line}:{d.column}</span>{' '}
-                          {d.message}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : pasteText.trim() ? (
-                    <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700" role="status">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Document looks valid
-                    </p>
-                  ) : null}
-
-                  <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
-                    <button
-                      type="button"
-                      disabled={!parseResult.ok}
-                      onClick={() => handleStepChange(1)}
-                      className={clsx(
-                        'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
-                        'transition-colors duration-150 hover:bg-indigo-700',
-                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
-                        'disabled:cursor-not-allowed disabled:bg-indigo-300 cursor-pointer',
-                      )}
-                    >
-                      Preview &amp; Publish
-                      <ArrowRight className="h-4 w-4" aria-hidden />
-                    </button>
-                    {!parseResult.ok && pasteText.trim() && (
-                      <p className="text-xs text-slate-400">Fix JSON errors above to continue.</p>
-                    )}
-                  </div>
+                  <JsonPasteEditor pasteText={pasteText} setPasteText={setPasteText} errorLines={errorLines} diagnostics={diagnostics} parseResult={parseResult} onNext={() => handleStepChange(1)} />
                 </div>
-            </section>
+              </section>
+            )}
 
           </div>
         </div>
@@ -545,12 +690,15 @@ export function CampaignPage(props: {
             <div className="p-4 sm:p-5">
               {parseResult.ok ? (
                 previewTab === 'list' ? (
+                  <div className="overflow-x-auto">
                   <CampaignPostList
                     posts={editedPosts}
                     selectedIndices={selectedIndices}
                     onToggleSelect={toggleSelect}
                     onDeletePost={deletePostAt}
+                    onUpdatePost={updatePostAt}
                   />
+                  </div>
                 ) : (
                   <ContentScheduleCalendar
                     topics={calendarTopics}

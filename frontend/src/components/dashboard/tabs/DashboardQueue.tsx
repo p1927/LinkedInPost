@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Tour } from '@/components/Tour';
 import { RefreshCw, RotateCw, Send, Trash2, Bot, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest, type BackendApi } from '../../../services/backendApi';
@@ -25,6 +26,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { type PendingScheduledPublish, rowMatchesPendingScheduledPublish } from '@/features/scheduled-publish';
 import { type ChannelId, CHANNEL_OPTIONS } from '@/integrations/channels';
 import { topicLabelForQueueActions, topicNeedsFullTooltip, truncateTopicForUi } from '../../../lib/topicDisplay';
+import { WORKSPACE_PATHS } from '@/features/topic-navigation/utils/workspaceRoutes';
 import {
   ContentScheduleCalendar,
   deriveCalendarFieldsFromSheetRow,
@@ -156,6 +158,7 @@ export function DashboardQueue({
   // Generation worker draft dialog
   const [genWorkerDialogRow, setGenWorkerDialogRow] = useState<SheetRow | null>(null);
   const [genWorkerBusy, setGenWorkerBusy] = useState(false);
+  const [publishConfirmRow, setPublishConfirmRow] = useState<{ row: SheetRow; isRepublish: boolean } | null>(null);
   const [gwAudience, setGwAudience] = useState('');
   const [gwTone, setGwTone] = useState('');
   const [gwCta, setGwCta] = useState('');
@@ -411,6 +414,15 @@ export function DashboardQueue({
   );
 
   return (
+    <>
+    <Tour
+      tourKey="topics"
+      steps={[
+        { title: 'Your content queue', body: 'Each row is a topic you\'re working on. The action buttons on every row let you Draft, Edit, or Publish without opening anything extra.' },
+        { title: 'Channel & status at a glance', body: 'The channel pill shows where a post will be published. The status pill shows where it is in the workflow — Pending, Drafted, Approved, Scheduled, or Published.' },
+        { title: 'Filter & bulk actions', body: 'Use the status chips to filter the queue. Select multiple rows with the checkboxes to bulk-schedule, bulk-delete, or set channels all at once.' },
+      ]}
+    />
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div
@@ -538,17 +550,43 @@ export function DashboardQueue({
 
       <div>
         {filteredRows.length === 0 ? (
-          <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-6 py-16 text-center">
-            <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
-              <Bot className="h-6 w-6" strokeWidth={1.5} />
+          rows.length === 0 ? (
+            <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-8 py-14 text-center">
+              <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
+                <Bot className="h-6 w-6" strokeWidth={1.5} />
+              </div>
+              <p className="text-base font-semibold text-ink mb-1">Ready to publish your first topic?</p>
+              <p className="text-sm text-muted mb-6">Create a topic and generate a draft in seconds.</p>
+              <div className="flex flex-wrap justify-center gap-2 mb-6">
+                {['AI in the workplace', 'Leadership lessons', 'Industry trends'].map((idea) => (
+                  <a
+                    key={idea}
+                    href={`${WORKSPACE_PATHS.addTopic}?topic=${encodeURIComponent(idea)}`}
+                    className="inline-flex items-center rounded-full border border-violet-200/80 bg-violet-50/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-violet-100/70 hover:border-primary/40 transition-colors"
+                  >
+                    {idea}
+                  </a>
+                ))}
+              </div>
+              <a
+                href={WORKSPACE_PATHS.addTopic}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
+              >
+                <Bot className="h-4 w-4" aria-hidden />
+                Create your first topic
+              </a>
             </div>
-            <p className="text-base font-semibold text-ink">
-              {rows.length === 0 ? 'No topics yet' : `No ${statusFilter === 'all' ? '' : statusFilter} topics`}
-            </p>
-            {rows.length === 0 ? (
-              <p className="mt-2 text-sm text-muted">Use the bar at the top to add your first topic.</p>
-            ) : null}
-          </div>
+          ) : (
+            <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-6 py-16 text-center">
+              <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
+                <Bot className="h-6 w-6" strokeWidth={1.5} />
+              </div>
+              <p className="text-base font-semibold text-ink">
+                {`No ${statusFilter === 'all' ? '' : statusFilter} topics`}
+              </p>
+              <p className="mt-2 text-sm text-muted">Try a different filter above.</p>
+            </div>
+          )
         ) : topicsViewMode === 'calendar' ? (
           topicsWithCalendarDate.length === 0 ? (
             <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-6 py-14 text-center">
@@ -720,11 +758,8 @@ export function DashboardQueue({
                     ) : null}
                   </div>
 
-                  {/* Actions column — always visible for selected row, revealed on hover for others */}
-                  <div className={cn(
-                    'flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-2 transition-opacity duration-150',
-                    isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto',
-                  )}>
+                  {/* Actions column */}
+                  <div className="flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-2">
                     {normalizedStatus === 'pending'
                       && !showDraftActions
                       && session.config.hasGenerationWorker
@@ -768,7 +803,7 @@ export function DashboardQueue({
                           variant="primary"
                           onClick={(e) => {
                             e.stopPropagation();
-                            void publishRowToSelectedChannel(row);
+                            setPublishConfirmRow({ row, isRepublish: false });
                           }}
                           disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
                           title={
@@ -812,7 +847,7 @@ export function DashboardQueue({
                         variant="primary"
                         onClick={(e) => {
                           e.stopPropagation();
-                          void publishRowToSelectedChannel(row);
+                          setPublishConfirmRow({ row, isRepublish: false });
                         }}
                         disabled={actionLoading !== null || rowHasActiveScheduledPublish(row)}
                         title={
@@ -838,7 +873,7 @@ export function DashboardQueue({
                         variant="secondary"
                         onClick={(e) => {
                           e.stopPropagation();
-                          void republishRowToSelectedChannel(row);
+                          setPublishConfirmRow({ row, isRepublish: true });
                         }}
                         disabled={actionLoading !== null}
                         title="Republish to channel"
@@ -1170,6 +1205,53 @@ export function DashboardQueue({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pre-publish confirmation dialog */}
+      <Dialog
+        open={publishConfirmRow !== null}
+        onOpenChange={(open) => { if (!open) setPublishConfirmRow(null); }}
+      >
+        <DialogContent className="sm:max-w-sm" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>
+              {publishConfirmRow?.isRepublish ? 'Republish topic?' : 'Publish topic now?'}
+            </DialogTitle>
+          </DialogHeader>
+          {publishConfirmRow && (
+            <div className="py-2 space-y-2">
+              <p className="text-sm font-medium text-ink line-clamp-2">{publishConfirmRow.row.topic}</p>
+              <p className="text-xs text-muted">
+                {publishConfirmRow.isRepublish ? 'Will republish to' : 'Will publish to'}{' '}
+                <span className="font-semibold text-ink">
+                  {CHANNEL_OPTIONS.find(c => c.value === effectiveChannel(publishConfirmRow.row, selectedChannel))?.label
+                    ?? effectiveChannel(publishConfirmRow.row, selectedChannel)}
+                </span>
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPublishConfirmRow(null)}>Cancel</Button>
+            <Button
+              variant="primary"
+              disabled={actionLoading !== null}
+              onClick={async () => {
+                if (!publishConfirmRow) return;
+                const { row, isRepublish } = publishConfirmRow;
+                setPublishConfirmRow(null);
+                if (isRepublish) {
+                  await republishRowToSelectedChannel(row);
+                } else {
+                  await publishRowToSelectedChannel(row);
+                }
+              }}
+            >
+              <Send className="h-3.5 w-3.5 mr-1" aria-hidden />
+              {publishConfirmRow?.isRepublish ? 'Republish' : 'Publish'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+    </>
   );
 }

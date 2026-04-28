@@ -114,6 +114,7 @@ export function ClipsDock({
           onClick={() => setExpanded(true)}
           className="mb-1 flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white/60 transition-colors"
           title="Open clips panel"
+          aria-label="Open clips panel"
         >
           <ChevronLeft size={14} />
         </button>
@@ -232,10 +233,25 @@ export function ClipsDock({
                   type="button"
                   onClick={() => setExpanded(false)}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-white/60 transition-colors"
+                  aria-label="Collapse clips panel"
                 >
                   <ChevronRight size={14} />
                 </button>
               </div>
+
+              {/* Compose CTA — visible when clips exist */}
+              {clips.length > 0 && (
+                <div className="px-3 py-2 border-b border-border/50 shrink-0">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-center gap-1.5 h-8 rounded-lg bg-primary text-primary-fg text-xs font-semibold hover:bg-primary/90 transition-colors"
+                    onClick={() => { /* navigate to compose with clips context */ }}
+                  >
+                    <Plus size={13} />
+                    Compose from {clips.length} clip{clips.length > 1 ? 's' : ''}
+                  </button>
+                </div>
+              )}
 
               {/* Clips grid */}
               <div className="flex-1 overflow-y-auto p-3 min-h-0">
@@ -319,6 +335,7 @@ export function ClipsDock({
                               onClick={(e) => handleStartEditClip(clip, e)}
                               className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-muted shadow hover:text-primary"
                               title="Edit passage"
+                              aria-label="Edit clip passage"
                             >
                               <Pencil size={9} />
                             </button>
@@ -330,6 +347,7 @@ export function ClipsDock({
                               }}
                               className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[9px] shadow hover:bg-red-600"
                               title="Delete clip"
+                              aria-label="Delete clip"
                             >
                               <XIcon size={9} />
                             </button>

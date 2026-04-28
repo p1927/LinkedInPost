@@ -46,16 +46,45 @@ export function NewsletterConfigDrawer({
   const [localName, setLocalName] = useState(newsletter.name);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     setLocalConfig(newsletter.config);
     setLocalName(newsletter.name);
     setError(null);
+    setSubmitted(false);
   }, [newsletter.id, open]);
 
   if (!open) return null;
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validationErrors = {
+    name: !localName.trim() ? 'Newsletter name is required.' : null,
+    subjectTemplate:
+      localConfig.primaryChannel === 'email' && !localConfig.subjectTemplate.trim()
+        ? 'Subject template is required for email delivery.'
+        : localConfig.subjectTemplate.length > 200
+          ? 'Subject template should be 200 characters or fewer.'
+          : null,
+    emailRecipients:
+      localConfig.primaryChannel === 'email' && localConfig.emailRecipients.length === 0
+        ? 'Add at least one recipient.'
+        : localConfig.primaryChannel === 'email' &&
+            localConfig.emailRecipients.some((e) => !EMAIL_RE.test(e))
+          ? 'One or more email addresses are invalid.'
+          : null,
+    authorPersona:
+      localConfig.authorPersona.trim().length > 0 && localConfig.authorPersona.trim().length < 10
+        ? 'Author voice should be at least 10 characters.'
+        : null,
+  };
+
+  const hasErrors = Object.values(validationErrors).some(Boolean);
+
   const handleSave = async () => {
+    setSubmitted(true);
+    if (hasErrors) return;
     setSaving(true);
     setError(null);
     try {
@@ -83,10 +112,10 @@ export function NewsletterConfigDrawer({
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/30" onClick={onClose} />
 
-      {/* Drawer panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-xl flex flex-col z-50">
+      {/* Drawer panel — wide split layout */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-4xl bg-white shadow-xl flex flex-col z-50">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
           <h2 className="text-base font-semibold text-slate-800">Newsletter Settings</h2>
           <button
             type="button"
@@ -98,8 +127,11 @@ export function NewsletterConfigDrawer({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+        {/* Split body: config left, preview right */}
+        <div className="flex flex-1 min-h-0">
+
+        {/* Config panel */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 border-r border-slate-100">
           {/* Newsletter Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Newsletter Name</label>
@@ -107,8 +139,14 @@ export function NewsletterConfigDrawer({
               type="text"
               value={localName}
               onChange={e => setLocalName(e.target.value)}
-              className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-300"
+              className={clsx(
+                'border rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-300',
+                submitted && validationErrors.name ? 'border-red-400' : 'border-slate-200',
+              )}
             />
+            {submitted && validationErrors.name && (
+              <p className="mt-1 text-xs text-red-500">{validationErrors.name}</p>
+            )}
           </div>
 
           {/* Section 1: Sources */}
@@ -269,20 +307,37 @@ export function NewsletterConfigDrawer({
                       }
                       placeholder="Add email address..."
                     />
+                    {submitted && validationErrors.emailRecipients && (
+                      <p className="mt-1 text-xs text-red-500">{validationErrors.emailRecipients}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Subject template
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-slate-700">
+                        Subject template
+                      </label>
+                      <span className={clsx(
+                        'text-xs',
+                        localConfig.subjectTemplate.length > 200 ? 'text-red-500' : 'text-slate-400',
+                      )}>
+                        {localConfig.subjectTemplate.length}/200
+                      </span>
+                    </div>
                     <input
                       type="text"
                       value={localConfig.subjectTemplate}
                       onChange={e =>
                         setLocalConfig(prev => ({ ...prev, subjectTemplate: e.target.value }))
                       }
-                      className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-300"
+                      className={clsx(
+                        'border rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-300',
+                        submitted && validationErrors.subjectTemplate ? 'border-red-400' : 'border-slate-200',
+                      )}
                       placeholder="Weekly Newsletter"
                     />
+                    {submitted && validationErrors.subjectTemplate && (
+                      <p className="mt-1 text-xs text-red-500">{validationErrors.subjectTemplate}</p>
+                    )}
                   </div>
                 </div>
               ) : localConfig.primaryChannel ? (
@@ -385,10 +440,19 @@ export function NewsletterConfigDrawer({
             </div>
           </details>
 
-          {/* Section 4: Voice & Topics (closed by default) */}
-          <details>
-            <summary className="text-sm font-semibold text-slate-700 cursor-pointer py-2">
-              Voice &amp; Topics
+          {/* Section 4: Voice & Topics */}
+          <details open>
+            <summary className="text-sm font-semibold text-slate-700 cursor-pointer py-2 flex items-center justify-between">
+              <span>Voice &amp; Topics</span>
+              {(localConfig.authorPersona || localConfig.emotionTarget || localConfig.storyFramework) && (
+                <span className="text-xs font-normal text-slate-400 ml-2 truncate max-w-[180px]">
+                  {[
+                    localConfig.emotionTarget && `Tone: ${localConfig.emotionTarget}`,
+                    localConfig.storyFramework && `Structure: ${localConfig.storyFramework}`,
+                    localConfig.authorPersona && `Voice set`,
+                  ].filter(Boolean).join(' · ')}
+                </span>
+              )}
             </summary>
             <div className="flex flex-col gap-6 pt-2">
               {/* Processing template grid */}
@@ -420,9 +484,10 @@ export function NewsletterConfigDrawer({
 
               {/* Author persona */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Author Voice
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-slate-700">Author Voice</label>
+                  <span className="text-xs text-slate-400">{localConfig.authorPersona.length} chars</span>
+                </div>
                 <textarea
                   rows={3}
                   value={localConfig.authorPersona}
@@ -430,8 +495,14 @@ export function NewsletterConfigDrawer({
                     setLocalConfig(prev => ({ ...prev, authorPersona: e.target.value }))
                   }
                   placeholder="Describe your writing voice and tone..."
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+                  className={clsx(
+                    'border rounded-lg px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-300 resize-none',
+                    submitted && validationErrors.authorPersona ? 'border-red-400' : 'border-slate-200',
+                  )}
                 />
+                {submitted && validationErrors.authorPersona && (
+                  <p className="mt-1 text-xs text-red-500">{validationErrors.authorPersona}</p>
+                )}
               </div>
 
               {/* Always cover keywords */}
@@ -519,12 +590,15 @@ export function NewsletterConfigDrawer({
           </details>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
-          <div>
+        {/* Footer inside config panel */}
+        <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4 shrink-0">
+          <div className="min-w-0">
             {error && <p className="text-sm text-red-600">{error}</p>}
+            {submitted && hasErrors && !error && (
+              <p className="text-xs text-red-500">Fix the errors above before saving.</p>
+            )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
@@ -535,13 +609,87 @@ export function NewsletterConfigDrawer({
             <button
               type="button"
               onClick={() => void handleSave()}
-              disabled={saving}
+              disabled={saving || (submitted && hasErrors)}
               className="bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </div>
+        </div>{/* end config panel */}
+
+        {/* Preview pane */}
+        <div className="hidden lg:flex w-80 shrink-0 flex-col bg-slate-50 overflow-y-auto">
+          <div className="px-4 py-3 border-b border-slate-200 shrink-0">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Preview</p>
+          </div>
+          <div className="flex-1 p-4">
+            {/* Mock email envelope */}
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden text-sm">
+              {/* Email header */}
+              <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200 space-y-1">
+                <div className="flex gap-2 text-xs text-slate-500">
+                  <span className="font-medium w-10 shrink-0">From:</span>
+                  <span>{localName || 'Your Newsletter'}</span>
+                </div>
+                <div className="flex gap-2 text-xs text-slate-500">
+                  <span className="font-medium w-10 shrink-0">Subject:</span>
+                  <span className="truncate font-medium text-slate-700">{localConfig.subjectTemplate || 'Weekly Newsletter'}</span>
+                </div>
+                <div className="flex gap-2 text-xs text-slate-500">
+                  <span className="font-medium w-10 shrink-0">To:</span>
+                  <span>
+                    {localConfig.emailRecipients.length > 0
+                      ? localConfig.emailRecipients.slice(0, 2).join(', ') + (localConfig.emailRecipients.length > 2 ? ` +${localConfig.emailRecipients.length - 2}` : '')
+                      : 'subscribers'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Email body mock */}
+              <div className="px-4 py-5 space-y-4">
+                <div className="text-center border-b border-slate-100 pb-4">
+                  <p className="font-bold text-slate-800 text-base">{localName || 'Your Newsletter'}</p>
+                  {localConfig.scheduleFrequency && (
+                    <p className="text-xs text-slate-400 mt-0.5 capitalize">{localConfig.scheduleFrequency} edition</p>
+                  )}
+                </div>
+
+                {/* Mock articles */}
+                {Array.from({ length: Math.min(localConfig.itemCount, 3) }).map((_, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="h-2.5 bg-slate-100 rounded w-3/4" />
+                    <div className="h-2 bg-slate-100 rounded w-full" />
+                    <div className="h-2 bg-slate-100 rounded w-5/6" />
+                  </div>
+                ))}
+                {localConfig.itemCount > 3 && (
+                  <p className="text-xs text-slate-400 text-center">+ {localConfig.itemCount - 3} more articles</p>
+                )}
+
+                {/* Style info */}
+                {(localConfig.emotionTarget || localConfig.storyFramework) && (
+                  <div className="border-t border-slate-100 pt-3 flex flex-wrap gap-1.5">
+                    {localConfig.emotionTarget && (
+                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600">
+                        {localConfig.emotionTarget}
+                      </span>
+                    )}
+                    {localConfig.storyFramework && (
+                      <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
+                        {localConfig.storyFramework}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <p className="mt-3 text-center text-[10px] text-slate-400">This is a layout preview — actual content is generated at send time.</p>
+          </div>
+        </div>
+
+        </div>{/* end split body */}
       </div>
     </div>
   );

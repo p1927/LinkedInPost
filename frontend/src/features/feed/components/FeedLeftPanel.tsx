@@ -29,7 +29,7 @@ function SkeletonCard() {
   );
 }
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 20;
 
 export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, feedbackMap = {}, onThumbsUp, onThumbsDown }: FeedLeftPanelProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);

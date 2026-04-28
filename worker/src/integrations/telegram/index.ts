@@ -116,6 +116,22 @@ async function postTelegramForm(
   return payload;
 }
 
+const TELEGRAM_CAPTION_LIMIT = 1024;
+
+async function sendTelegramTextOnly(botToken: string, chatId: string, text: string): Promise<string | null> {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: false }),
+  });
+  const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
+  if (!response.ok || !payload?.ok) {
+    throw new Error(formatTelegramApiError(payload?.description, chatId, response.status, 'delivery'));
+  }
+  const r = payload.result as { message_id?: number } | undefined;
+  return r?.message_id ? String(r.message_id) : null;
+}
+
 export async function sendTelegramMessage(request: TelegramSendRequest): Promise<{ messageId: string | null }> {
   const urls = resolveTelegramPhotoUrls(request);
 
@@ -137,13 +153,15 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
     return { messageId: r?.message_id ? String(r.message_id) : null };
   }
 
+  const textOverCaptionLimit = request.text.length > TELEGRAM_CAPTION_LIMIT;
+
   if (urls.length === 1) {
     const [{ bytes, blob, filename }] = await fetchTelegramImageParts(urls);
     const asPhoto = rasterBytesQualifyForTelegramPhoto(bytes);
     const form = new FormData();
     form.append('chat_id', request.chatId);
     form.append(asPhoto ? 'photo' : 'document', blob, filename);
-    if (request.text) {
+    if (request.text && !textOverCaptionLimit) {
       form.append('caption', request.text);
     }
 
@@ -154,7 +172,13 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
       request.chatId,
     );
     const r = payload?.result as { message_id?: number } | undefined;
-    return { messageId: r?.message_id ? String(r.message_id) : null };
+    const imageMessageId = r?.message_id ? String(r.message_id) : null;
+
+    if (textOverCaptionLimit) {
+      const textMessageId = await sendTelegramTextOnly(request.botToken, request.chatId, request.text);
+      return { messageId: textMessageId ?? imageMessageId };
+    }
+    return { messageId: imageMessageId };
   }
 
   const parts = await fetchTelegramImageParts(urls);
@@ -163,7 +187,8 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
   if (allAsPhotos) {
     const media = parts.map((_, index) => {
       const base = { type: 'photo' as const, media: `attach://photo${index}` };
-      return index === 0 ? { ...base, caption: request.text } : base;
+      if (index === 0 && !textOverCaptionLimit) return { ...base, caption: request.text };
+      return base;
     });
 
     const form = new FormData();
@@ -176,9 +201,13 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
     const payload = await postTelegramForm(request.botToken, 'sendMediaGroup', form, request.chatId);
     const results = payload?.result;
     const firstId = Array.isArray(results) ? results[0]?.message_id : results?.message_id;
-    return {
-      messageId: firstId != null ? String(firstId) : null,
-    };
+    const albumMessageId = firstId != null ? String(firstId) : null;
+
+    if (textOverCaptionLimit) {
+      const textMessageId = await sendTelegramTextOnly(request.botToken, request.chatId, request.text);
+      return { messageId: textMessageId ?? albumMessageId };
+    }
+    return { messageId: albumMessageId };
   }
 
   let lastMessageId: string | null = null;
@@ -187,7 +216,7 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
     const form = new FormData();
     form.append('chat_id', request.chatId);
     form.append('document', blob, filename);
-    if (i === 0 && request.text) {
+    if (i === 0 && request.text && !textOverCaptionLimit) {
       form.append('caption', request.text);
     }
     const payload = await postTelegramForm(request.botToken, 'sendDocument', form, request.chatId);
@@ -197,6 +226,10 @@ export async function sendTelegramMessage(request: TelegramSendRequest): Promise
     }
   }
 
+  if (textOverCaptionLimit) {
+    const textMessageId = await sendTelegramTextOnly(request.botToken, request.chatId, request.text);
+    return { messageId: textMessageId ?? lastMessageId };
+  }
   return { messageId: lastMessageId };
 }
 

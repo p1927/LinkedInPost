@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Tour } from '@/components/Tour';
 import { type ReactNode } from 'react';
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
 import { containerVariants, cardItemVariants, fadeUpVariants, skeletonPulseVariants, spring } from '@/lib/motion';
@@ -51,6 +52,7 @@ export function FeedPage({
   const [topic, setTopic] = useState('');
   const [searchTopic, setSearchTopic] = useState('');
   const [enabledPanels] = useState<string[]>(DEFAULT_ENABLED);
+  const [feedSort, setFeedSort] = useState<'latest' | 'trending' | 'foryou'>('latest');
 
   const [region, setRegion] = useState(() => readFilterDefaults().region);
   const [genre, setGenre] = useState(() => readFilterDefaults().genre);
@@ -389,6 +391,20 @@ export function FeedPage({
     return feedArticles.length > 0 ? feedArticles : (data?.news ?? []);
   }, [searchTopic, trendingSearch.data, data, feedArticles]);
 
+  const sortedDisplayArticles = useMemo(() => {
+    if (feedSort === 'trending') {
+      return [...displayArticles].sort((a, b) => {
+        const aUp = feedbackMap[a.url] === 'up' ? 1 : 0;
+        const bUp = feedbackMap[b.url] === 'up' ? 1 : 0;
+        return bUp - aUp;
+      });
+    }
+    if (feedSort === 'foryou') {
+      return displayArticles.filter(a => feedbackMap[a.url] !== 'down');
+    }
+    return displayArticles;
+  }, [displayArticles, feedSort, feedbackMap]);
+
   const leftPanelLoading = searchTopic ? trendingSearch.loading : feedLoading;
   const hasNoGroups = !groupsLoading && interestGroups.length === 0;
 
@@ -399,6 +415,15 @@ export function FeedPage({
     : { initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 }, transition: { duration: 0.2 } };
 
   return (
+    <>
+    <Tour
+      tourKey="feed"
+      steps={[
+        { title: 'Your discovery feed', body: 'Articles are pulled from your connected sources and interest groups. Switch between Latest, Trending, and For You at the top.' },
+        { title: 'Like, dismiss, or clip', body: 'Use the thumbs up/down buttons to train your feed, or the clip icon to save a passage as a draft idea for a post.' },
+        { title: 'Filter by interest group', body: 'Use the interest group tabs to narrow the stream to topics you care about, or search for a specific subject.' },
+      ]}
+    />
     <MotionConfig transition={spring.smooth}>
       <div className="flex flex-col h-full overflow-hidden">
 
@@ -719,33 +744,37 @@ export function FeedPage({
               </motion.div>
             )}
 
-            {/* Article detail mode (key="article") */}
-            {!openDraft && openArticle && !debateMode && (
-              <motion.div key="article" {...motionProps} className="h-full overflow-y-auto">
-                <div className="p-6 pr-20">
-                  <ArticleDetailView
-                    article={openArticle}
-                    idToken={idToken}
-                    api={api}
-                    onBack={() => { setOpenArticle(null); setDebateMode(false); }}
-                    onClip={handleClip}
-                    onClipPassage={(text) => handleClipPassage(text, openArticle)}
-                    isClipped={clippedUrls.has(openArticle.url)}
-                    rows={rows}
-                    onOpenDraft={(row) => { setOpenArticle(null); setDebateMode(false); setOpenDraft(row); }}
-                    onDebate={() => setDebateMode(true)}
-                  />
-                </div>
-              </motion.div>
-            )}
-
-            {/* Reading feed mode (key="feed") */}
-            {!openDraft && !openArticle && (
+            {/* Reading feed mode (key="feed") — always visible when no draft/debate */}
+            {!openDraft && !debateMode && (
               <motion.div key="feed" {...motionProps} className="h-full overflow-y-auto">
                 <div className="flex gap-6 p-6 pr-20 items-start">
 
                   {/* Left: platform feed */}
                   <div className="flex-1 min-w-0">
+
+                    {/* Sort filter bar */}
+                    {(!hasNoGroups || searchTopic) && (displayArticles.length > 0 || leftPanelLoading) && (
+                      <div className="flex items-center gap-1.5 mb-3">
+                        {(['latest', 'trending', 'foryou'] as const).map(sort => {
+                          const labels: Record<string, string> = { latest: 'Latest', trending: 'Trending', foryou: 'For You' };
+                          return (
+                            <button
+                              key={sort}
+                              type="button"
+                              onClick={() => setFeedSort(sort)}
+                              className={[
+                                'h-6 rounded-full px-3 text-xs font-semibold transition-colors',
+                                feedSort === sort
+                                  ? 'bg-primary text-primary-fg'
+                                  : 'text-muted hover:text-ink bg-white/40 border border-white/60',
+                              ].join(' ')}
+                            >
+                              {labels[sort]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* No interest groups — onboarding */}
                     {hasNoGroups && !searchTopic && (
@@ -848,7 +877,7 @@ export function FeedPage({
                     {(leftPanelLoading || displayArticles.length > 0) && (
                       <motion.div className="mb-4" variants={cardItemVariants} initial="hidden" animate="show">
                         <FeedLeftPanel
-                          articles={displayArticles}
+                          articles={sortedDisplayArticles}
                           loading={leftPanelLoading}
                           onClip={handleClip}
                           onOpen={(a) => { setDebateMode(false); setOpenArticle(a); }}
@@ -902,39 +931,78 @@ export function FeedPage({
                     )}
                   </div>
 
-                  {/* Right: curated sidebar */}
-                  <div className="w-80 shrink-0 hidden lg:block sticky top-0 self-start">
-                    <FeedCuratedPanel
-                      idToken={idToken}
-                      api={api}
-                      searchTopic={searchTopic}
-                      newsProviderKeys={newsProviderKeys}
-                      capabilities={capabilities}
-                      trendingData={{
-                        youtube: data?.youtube ?? [],
-                        instagram: data?.instagram ?? [],
-                        linkedin: data?.linkedin ?? [],
-                        news: (() => {
-                          const articles = trendingSearch.data?.articles?.length
-                            ? trendingSearch.data.articles : (data?.news ?? []);
-                          return articles;
-                        })(),
-                      }}
-                      trendingWords={trendingWords}
-                      recommendedTopics={recommendedTopics}
-                      loading={isLoading}
-                      onClip={handleClip}
-                      clippedUrls={clippedUrls}
-                      onOpenArticle={(a) => { setDebateMode(false); setOpenArticle(a); }}
-                      onSelectWord={(w) => { setTopic(w); setSearchTopic(w); }}
-                      onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
-                    />
-                  </div>
+                  {/* Right: curated sidebar — hidden when article detail is open */}
+                  {!openArticle && (
+                    <div className="w-80 shrink-0 hidden lg:block sticky top-0 self-start">
+                      <FeedCuratedPanel
+                        idToken={idToken}
+                        api={api}
+                        searchTopic={searchTopic}
+                        newsProviderKeys={newsProviderKeys}
+                        capabilities={capabilities}
+                        trendingData={{
+                          youtube: data?.youtube ?? [],
+                          instagram: data?.instagram ?? [],
+                          linkedin: data?.linkedin ?? [],
+                          news: (() => {
+                            const articles = trendingSearch.data?.articles?.length
+                              ? trendingSearch.data.articles : (data?.news ?? []);
+                            return articles;
+                          })(),
+                        }}
+                        trendingWords={trendingWords}
+                        recommendedTopics={recommendedTopics}
+                        loading={isLoading}
+                        onClip={handleClip}
+                        clippedUrls={clippedUrls}
+                        onOpenArticle={(a) => { setDebateMode(false); setOpenArticle(a); }}
+                        onSelectWord={(w) => { setTopic(w); setSearchTopic(w); }}
+                        onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
+                      />
+                    </div>
+                  )}
 
                 </div>
               </motion.div>
             )}
 
+          </AnimatePresence>
+
+          {/* Article detail side-sheet — slides in from right, overlays feed on desktop */}
+          <AnimatePresence>
+            {!openDraft && openArticle && !debateMode && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-10 bg-black/20 lg:hidden"
+                  onClick={() => { setOpenArticle(null); setDebateMode(false); }}
+                />
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="absolute inset-y-0 right-0 z-20 w-full lg:w-[65%] xl:w-[60%] overflow-y-auto bg-white/95 backdrop-blur-xl border-l border-border/50 shadow-2xl"
+                >
+                  <div className="p-6 pr-20">
+                    <ArticleDetailView
+                      article={openArticle}
+                      idToken={idToken}
+                      api={api}
+                      onBack={() => { setOpenArticle(null); setDebateMode(false); }}
+                      onClip={handleClip}
+                      onClipPassage={(text) => handleClipPassage(text, openArticle)}
+                      isClipped={clippedUrls.has(openArticle.url)}
+                      rows={rows}
+                      onOpenDraft={(row) => { setOpenArticle(null); setDebateMode(false); setOpenDraft(row); }}
+                      onDebate={() => setDebateMode(true)}
+                    />
+                  </div>
+                </motion.div>
+              </>
+            )}
           </AnimatePresence>
         </div>
 
@@ -964,5 +1032,6 @@ export function FeedPage({
         />
       </div>
     </MotionConfig>
+    </>
   );
 }

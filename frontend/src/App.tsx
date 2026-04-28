@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BrowserRouter, Link, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
 import { LogOut, Settings, Share2, Sparkles, TableProperties } from 'lucide-react'
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts'
+import { HelpOverlay } from './components/HelpOverlay'
 import { googleLogout } from '@react-oauth/google'
 import { GoogleLoginButton } from './components/GoogleLoginButton'
 import { Button } from '@/components/ui/button'
@@ -118,12 +120,16 @@ function WorkspaceSession({
                       : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
   const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
+  const [helpOpen, setHelpOpen] = useState(false)
+  useGlobalShortcuts(() => setHelpOpen((v) => !v))
 
   useEffect(() => {
     document.title = getWorkspaceDocumentTitle(location.pathname)
   }, [location.pathname])
 
   return (
+    <>
+    <HelpOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
     <WorkspaceShell
       session={session}
       googleProfile={googleProfile}
@@ -177,6 +183,7 @@ function WorkspaceSession({
         onAuthExpired={onAuthExpired}
       />
     </WorkspaceShell>
+    </>
   )
 }
 

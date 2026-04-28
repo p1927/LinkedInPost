@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, Rss, ScrollText, Settings, Wrench, Zap } from 'lucide-react';
+import { BarChart2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, GitBranch, ListOrdered, Megaphone, MoreHorizontal, PlusCircle, PlugZap, Rss, ScrollText, Settings, Wrench, Zap } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -123,6 +123,7 @@ export function AppSidebar({
 }) {
   const { hasUnsavedChanges } = useWorkspaceChrome();
   const closeMobile = () => onMobileOpenChange(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const displayName = googleProfile?.name?.trim() || null;
   const pictureUrl = googleProfile?.picture?.trim() || null;
   const buildLabel = getAppBuildLabel();
@@ -274,9 +275,49 @@ export function AppSidebar({
             {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
             {link('feed', <Rss aria-hidden />, 'Feed')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
-            {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}
-            {session.isAdmin ? link('setup', <Wrench aria-hidden />, 'Setup') : null}
-            {session.isAdmin ? link('admin', <Settings aria-hidden />, 'Admin') : null}
+            {session.isAdmin && (
+              <>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setMoreOpen((v) => !v)}
+                    aria-expanded={moreOpen}
+                    className={clsx(
+                      navButtonBase,
+                      RAIL_RADIUS,
+                      focusRing,
+                      navInactive,
+                      'overflow-hidden backdrop-blur-sm',
+                      collapsed ? 'h-10 justify-center gap-0 px-2 py-0' : 'gap-3 px-2 py-2',
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        'flex shrink-0 items-center justify-center text-ink',
+                        RAIL_ICON,
+                        collapsed ? 'h-6 w-6' : clsx(RAIL_TILE, RAIL_RADIUS),
+                      )}
+                      aria-hidden
+                    >
+                      <MoreHorizontal />
+                    </span>
+                    {!collapsed && (
+                      <>
+                        <span className="min-w-0 flex-1 truncate text-left">More</span>
+                        {moreOpen ? <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" />}
+                      </>
+                    )}
+                  </button>
+                </li>
+                {moreOpen && (
+                  <>
+                    {link('automations', <Zap aria-hidden />, 'Automations')}
+                    {link('setup', <Wrench aria-hidden />, 'Setup')}
+                    {link('admin', <Settings aria-hidden />, 'Admin')}
+                  </>
+                )}
+              </>
+            )}
           </ul>
         </nav>
 

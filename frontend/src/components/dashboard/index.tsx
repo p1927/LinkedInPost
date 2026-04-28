@@ -762,6 +762,7 @@ export function Dashboard({
       llmCatalog={llmCatalog}
       enrichmentSkills={session.config.enrichmentSkills}
       onToggleEnrichmentSkill={handleToggleEnrichmentSkill}
+      publishingHealth={publishingHealth}
     />
   );
 
