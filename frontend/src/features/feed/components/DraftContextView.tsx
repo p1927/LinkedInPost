@@ -33,10 +33,9 @@ function SkeletonCard() {
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   function handleCopy() {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(text)
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })
+      .catch(() => {});
   }
   return (
     <button
@@ -72,10 +71,12 @@ export function DraftContextView({
   const [crossDomain, setCrossDomain] = useState<CrossDomainInsight[]>([]);
   const [crossDomainLoading, setCrossDomainLoading] = useState(false);
   const [crossDomainError, setCrossDomainError] = useState<string | null>(null);
+  const [crossDomainTrigger, setCrossDomainTrigger] = useState(0);
 
   const [opinionLeaders, setOpinionLeaders] = useState<OpinionLeaderInsight[]>([]);
   const [opinionLeadersLoading, setOpinionLeadersLoading] = useState(false);
   const [opinionLeadersError, setOpinionLeadersError] = useState<string | null>(null);
+  const [opinionLeadersTrigger, setOpinionLeadersTrigger] = useState(0);
 
   const assignedClips = clips.filter(c => c.assignedPostIds.includes(row.topicId ?? ''));
 
@@ -119,7 +120,7 @@ export function DraftContextView({
       .catch(() => { if (active) setCrossDomainError('Failed to load insights. Try again.'); })
       .finally(() => { if (active) setCrossDomainLoading(false); });
     return () => { active = false; };
-  }, [activeContextTab, row.topic, idToken, api]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeContextTab, row.topic, idToken, api, crossDomainTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Opinion leaders: fetch when tab R becomes active, only once per topic
   useEffect(() => {
@@ -135,7 +136,7 @@ export function DraftContextView({
       .catch(() => { if (active) setOpinionLeadersError('Failed to load leaders. Try again.'); })
       .finally(() => { if (active) setOpinionLeadersLoading(false); });
     return () => { active = false; };
-  }, [activeContextTab, row.topic, idToken, api]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeContextTab, row.topic, idToken, api, opinionLeadersTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const wordCount = draftText.trim() ? draftText.trim().split(/\s+/).length : 0;
   const charCount = draftText.length;
@@ -455,7 +456,7 @@ export function DraftContextView({
                     <span>{crossDomainError}</span>
                     <button
                       type="button"
-                      onClick={() => { setCrossDomain([]); setCrossDomainError(null); }}
+                      onClick={() => { setCrossDomain([]); setCrossDomainError(null); setCrossDomainTrigger(t => t + 1); }}
                       className="shrink-0 underline hover:no-underline"
                     >
                       Retry
@@ -496,7 +497,7 @@ export function DraftContextView({
                     <span>{opinionLeadersError}</span>
                     <button
                       type="button"
-                      onClick={() => { setOpinionLeaders([]); setOpinionLeadersError(null); }}
+                      onClick={() => { setOpinionLeaders([]); setOpinionLeadersError(null); setOpinionLeadersTrigger(t => t + 1); }}
                       className="shrink-0 underline hover:no-underline"
                     >
                       Retry
