@@ -1343,7 +1343,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
       <div
         ref={scrollRef}
-        className="custom-scrollbar flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto lg:max-h-[min(72vh,calc(100vh-10rem))] lg:pr-1"
+        className="custom-scrollbar flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto lg:pr-1"
       >
         <SettingsSectionCard id="settings-workspace-core" title="Workspace core" variant="canvas">
           <div className="space-y-4">

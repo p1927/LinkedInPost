@@ -55,95 +55,101 @@ export function FeedArticleCard({
   return (
     <div
       className={[
-        'group relative flex gap-3 rounded-xl border border-white/40 bg-white/30 p-3 backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-white/50 hover:ring-2 hover:ring-primary/10 cursor-pointer',
+        'flex flex-col rounded-xl border border-white/40 bg-white/30 backdrop-blur-sm overflow-hidden cursor-pointer transition-all hover:border-primary/30 hover:bg-white/50 hover:ring-2 hover:ring-primary/10',
         isDownvoted ? 'opacity-40 hover:opacity-60' : '',
       ].join(' ')}
       onClick={handleCardClick}
     >
-      {/* Thumbnail — bigger square (96px) for image-prominent layout */}
-      <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden">
+      {/* Image block — full width, fixed height */}
+      <div className="h-36 w-full overflow-hidden shrink-0">
         {article.imageUrl ? (
           <img
             src={article.imageUrl}
             alt=""
-            className="w-full h-full object-cover"
+            className="h-36 w-full object-cover"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = 'none';
               const parent = e.currentTarget.parentElement as HTMLElement;
               parent.classList.add(sourceColor(article.source), 'flex', 'items-center', 'justify-center');
-              parent.innerHTML = `<span class="text-white text-2xl font-bold">${article.source[0]?.toUpperCase() ?? '?'}</span>`;
+              parent.innerHTML = `<span class="text-white text-3xl font-bold">${article.source[0]?.toUpperCase() ?? '?'}</span>`;
             }}
           />
         ) : (
-          <div className={`w-full h-full ${sourceColor(article.source)} flex items-center justify-center`}>
-            <span className="text-white text-2xl font-bold">{article.source[0]?.toUpperCase() ?? '?'}</span>
+          <div className={`h-36 w-full ${sourceColor(article.source)} flex items-center justify-center`}>
+            <span className="text-white text-3xl font-bold">{article.source[0]?.toUpperCase() ?? '?'}</span>
           </div>
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold leading-snug text-ink group-hover:text-primary transition-colors line-clamp-2">
+      {/* Content block */}
+      <div className="p-3 flex-1 flex flex-col gap-2">
+        <p className="text-sm font-semibold leading-snug text-ink line-clamp-2">
           {article.title}
         </p>
         {description ? (
-          <p className="mt-1.5 text-[12px] leading-snug text-muted line-clamp-2">{description}</p>
+          <p className="text-xs leading-relaxed text-muted line-clamp-2">{description}</p>
         ) : (
-          <p className="mt-1.5 text-[12px] italic text-muted/60">No summary available.</p>
+          <p className="text-xs italic text-muted/60">No summary available.</p>
         )}
-        <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted">
-          <span className="truncate text-primary/80 font-medium">{article.source}</span>
-          <span>·</span>
-          <span className="shrink-0">{formatRelativeTime(article.publishedAt)}</span>
-        </div>
-      </div>
 
-      {/* Hover-only action toolbar — top-right, white pill background */}
-      <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full border border-white/60 bg-white/95 p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onThumbsUp?.(article); }}
-          aria-label="Mark article helpful"
-          title="Helpful"
-          className={[
-            'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150',
-            feedbackVote === 'up'
-              ? 'bg-green-100 text-green-600'
-              : 'text-muted hover:bg-green-50 hover:text-green-500',
-          ].join(' ')}
-        >
-          <ThumbsUp size={13} aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onThumbsDown?.(article); }}
-          aria-label="Mark article not helpful"
-          title="Not helpful"
-          className={[
-            'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150',
-            feedbackVote === 'down'
-              ? 'bg-red-100 text-red-500'
-              : 'text-muted hover:bg-red-50 hover:text-red-400',
-          ].join(' ')}
-        >
-          <ThumbsDown size={13} aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={handleClip}
-          aria-label={isClipped ? 'Already clipped' : 'Clip article'}
-          title={isClipped ? 'Already clipped' : 'Clip this article'}
-          className={[
-            'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150',
-            isClipped ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-primary/10 hover:text-primary',
-          ].join(' ')}
-        >
-          <Scissors
-            size={13}
-            className={clipping ? 'scale-[1.3] text-green-500 transition-transform' : ''}
-            aria-hidden
-          />
-        </button>
+        {/* Footer — always visible */}
+        <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/30">
+          {/* Left: source + time */}
+          <div className="flex items-center gap-1.5 text-[11px] text-muted min-w-0">
+            <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${sourceColor(article.source)}`} />
+            <span className="truncate font-medium text-primary/80">{article.source}</span>
+            <span>·</span>
+            <span className="shrink-0">{formatRelativeTime(article.publishedAt)}</span>
+          </div>
+
+          {/* Right: action buttons — always visible */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onThumbsUp?.(article); }}
+              aria-label="Mark article helpful"
+              title="Helpful"
+              className={[
+                'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150 opacity-100',
+                feedbackVote === 'up'
+                  ? 'bg-green-100 text-green-600'
+                  : 'text-muted hover:bg-green-50 hover:text-green-500',
+              ].join(' ')}
+            >
+              <ThumbsUp size={13} aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onThumbsDown?.(article); }}
+              aria-label="Mark article not helpful"
+              title="Not helpful"
+              className={[
+                'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150 opacity-100',
+                feedbackVote === 'down'
+                  ? 'bg-red-100 text-red-500'
+                  : 'text-muted hover:bg-red-50 hover:text-red-400',
+              ].join(' ')}
+            >
+              <ThumbsDown size={13} aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={handleClip}
+              aria-label={isClipped ? 'Already clipped' : 'Clip article'}
+              title={isClipped ? 'Already clipped' : 'Clip this article'}
+              className={[
+                'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150 opacity-100',
+                isClipped ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-primary/10 hover:text-primary',
+              ].join(' ')}
+            >
+              <Scissors
+                size={13}
+                className={clipping ? 'scale-[1.3] text-green-500 transition-transform' : ''}
+                aria-hidden
+              />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

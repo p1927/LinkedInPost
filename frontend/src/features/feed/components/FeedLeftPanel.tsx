@@ -18,12 +18,11 @@ export interface FeedLeftPanelProps {
 
 function SkeletonCard() {
   return (
-    <div className="flex gap-3 rounded-xl border border-white/40 bg-white/30 p-3 animate-pulse">
-      <div className="w-14 h-14 rounded-lg bg-gray-200/60 shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3 bg-gray-200/60 rounded w-3/4" />
-        <div className="h-3 bg-gray-200/60 rounded w-1/2" />
-        <div className="h-2 bg-gray-200/60 rounded w-1/3" />
+    <div className="rounded-xl border border-white/40 bg-white/30 animate-pulse overflow-hidden">
+      <div className="h-36 w-full bg-gray-200/60" />
+      <div className="p-3 space-y-2">
+        <div className="h-3 w-3/4 rounded bg-gray-200/60" />
+        <div className="h-3 w-1/2 rounded bg-gray-200/60" />
       </div>
     </div>
   );
@@ -68,7 +67,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
   // Initial loading skeleton
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
         {[0, 1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
       </div>
     );
@@ -87,9 +86,9 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
   const hasMore = visibleCount < sortedArticles.length;
 
   return (
-    <div className="space-y-3">
+    <div className="">
       <motion.div
-        className="space-y-3"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3"
         variants={containerVariants}
         initial="hidden"
         animate="show"
@@ -112,7 +111,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
       {/* Sentinel + load-more skeleton */}
       <div ref={sentinelRef} className="h-1" />
       {hasMore && (
-        <div className="space-y-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 pt-1">
           {[0, 1, 2].map(i => <SkeletonCard key={i} />)}
         </div>
       )}

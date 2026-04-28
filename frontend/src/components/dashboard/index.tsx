@@ -773,9 +773,9 @@ export function Dashboard({
   );
 
   const settingsHome = (
-    <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-start">
-      <div className="glass-panel rounded-2xl p-5 shadow-card sm:p-6">{settingsContent}</div>
-      <div className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-4 lg:self-start">
+    <div className="mx-auto flex max-w-6xl flex-col gap-5 lg:flex-row lg:items-start">
+      <div className="glass-panel min-w-0 flex-1 rounded-2xl p-4 shadow-card sm:p-6">{settingsContent}</div>
+      <div className="flex w-full min-w-0 shrink-0 flex-col gap-5 lg:sticky lg:top-4 lg:w-72 lg:self-start">
         <div className="glass-panel rounded-2xl border border-white/55 p-3 shadow-lift ring-1 ring-white/55">
           <h2 className="text-[10px] font-semibold uppercase tracking-wider text-ink/70">Channel delivery</h2>
           <div className="mt-2">{deliveryContent}</div>
