@@ -21,6 +21,7 @@ import type { InterestGroup, CreateInterestGroupPayload, Clip } from './types';
 import type { SheetRow } from '../../services/sheets';
 import { ClipsDock } from './components/ClipsDock';
 import { ArticleDetailView } from './components/ArticleDetailView';
+import { DebateModeView } from './components/DebateModeView';
 import { DraftContextView } from './components/DraftContextView';
 
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
@@ -74,6 +75,7 @@ export function FeedPage({
 
   const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
   const [openDraft, setOpenDraft] = useState<SheetRow | null>(null);
+  const [debateMode, setDebateMode] = useState(false);
 
   async function handleDeleteClip(clipId: string) {
     try {
@@ -421,16 +423,30 @@ export function FeedPage({
         <div className="flex gap-6 p-6 items-start">
 
           {/* Article Detail View (Mode 2) */}
-          {openArticle ? (
+          {openArticle && !debateMode && (
             <ArticleDetailView
               article={openArticle}
               idToken={idToken}
               api={api}
-              onBack={() => setOpenArticle(null)}
+              onBack={() => { setOpenArticle(null); setDebateMode(false); }}
+              onClip={handleClip}
+              isClipped={clippedUrls.has(openArticle.url)}
+              rows={rows}
+              onOpenDraft={(row) => { setOpenArticle(null); setOpenDraft(row); }}
+              onDebate={() => setDebateMode(true)}
+            />
+          )}
+          {openArticle && debateMode && (
+            <DebateModeView
+              article={openArticle}
+              idToken={idToken}
+              api={api}
+              onBack={() => setDebateMode(false)}
               onClip={handleClip}
               isClipped={clippedUrls.has(openArticle.url)}
             />
-          ) : (
+          )}
+          {!openArticle && (
           <>
 
           {/* Left: platform feed */}
@@ -543,7 +559,7 @@ export function FeedPage({
                           articles={articles}
                           loading={false}
                           onClip={handleClip}
-                          onOpen={setOpenArticle}
+                          onOpen={(a) => { setDebateMode(false); setOpenArticle(a); }}
                           clippedUrls={clippedUrls}
                         />
                       </motion.div>
@@ -582,7 +598,7 @@ export function FeedPage({
               loading={isLoading}
               onClip={handleClip}
               clippedUrls={clippedUrls}
-              onOpenArticle={setOpenArticle}
+              onOpenArticle={(a) => { setDebateMode(false); setOpenArticle(a); }}
               onSelectWord={(w) => { setTopic(w); setSearchTopic(w); }}
               onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
             />
@@ -602,6 +618,7 @@ export function FeedPage({
           api={api}
           onDeleteClip={handleDeleteClip}
           onOpenArticle={(clip) => {
+            setDebateMode(false);
             setOpenArticle({
               id: clip.id,
               title: clip.articleTitle,
