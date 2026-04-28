@@ -47,7 +47,6 @@ import {
   FEATURE_NEWS_RESEARCH,
 } from '../../generated/features';
 import { CampaignPage } from '../../features/campaign';
-import { TrendingDashboard } from '../../features/trending';
 import { FeedPage } from '../../features/feed/FeedPage';
 import type { TrendingCapabilities } from '../../features/trending/hooks/useTrending';
 import { AddTopicPage } from '../../features/add-topic/AddTopicPage';

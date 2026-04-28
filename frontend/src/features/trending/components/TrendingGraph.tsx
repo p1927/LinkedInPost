@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { BarChart3, ArrowUpDown, ZoomIn, ZoomOut, RotateCcw, Youtube, Instagram, Newspaper } from 'lucide-react';
+import { BarChart3, ArrowUpDown, ZoomIn, ZoomOut, RotateCcw, Play, Camera, Newspaper } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/cn';
 import type { TrendingData, GraphNode } from '../types';
@@ -22,7 +22,7 @@ const PLATFORM_CONFIG = {
     border: 'border-red-100',
     text: 'text-red-700',
     bar: '#FF0000',
-    icon: <Youtube size={12} />,
+    icon: <Play size={12} />,
     label: 'YouTube',
     order: 0,
   },
@@ -32,7 +32,7 @@ const PLATFORM_CONFIG = {
     border: 'border-pink-100',
     text: 'text-pink-700',
     bar: '#E1306C',
-    icon: <Instagram size={12} />,
+    icon: <Camera size={12} />,
     label: 'Instagram',
     order: 1,
   },
