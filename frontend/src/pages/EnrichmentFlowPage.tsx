@@ -7,6 +7,8 @@ import {
   Clock,
   AlertTriangle,
   Loader2,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import type { LlmProviderId } from '@repo/llm-core';
 import type { GoogleModelOption } from '../services/configService';
@@ -343,12 +345,22 @@ function buildTopicGroups(rows: SheetRow[]): TopicGroup[] {
 
 // ─── DraggableCanvas ───────────────────────────────────────────────────────────
 
+const CANVAS_ZOOM_LEVELS = [0.4, 0.5, 0.65, 0.75, 1, 1.25, 1.5, 2];
+const DEFAULT_CANVAS_ZOOM_IDX = 4;
+
 function DraggableCanvas({ children, resetKey }: { children: React.ReactNode; resetKey: number }) {
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [zoomIdx, setZoomIdx] = useState(DEFAULT_CANVAS_ZOOM_IDX);
   const isDragging = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setPos({ x: 0, y: 0 }); }, [resetKey]);
+  const scale = CANVAS_ZOOM_LEVELS[zoomIdx];
+
+  useEffect(() => {
+    setPos({ x: 0, y: 0 });
+    setZoomIdx(DEFAULT_CANVAS_ZOOM_IDX);
+  }, [resetKey]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -373,11 +385,27 @@ function DraggableCanvas({ children, resetKey }: { children: React.ReactNode; re
     };
   }, []);
 
+  // Scroll-to-zoom (non-passive so we can preventDefault)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoomIdx(i => e.deltaY < 0
+        ? Math.min(i + 1, CANVAS_ZOOM_LEVELS.length - 1)
+        : Math.max(i - 1, 0));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
   return (
     <div
+      ref={containerRef}
       className="relative flex-1 min-w-0 overflow-hidden rounded-xl border border-border bg-canvas cursor-grab active:cursor-grabbing select-none"
       onMouseDown={handleMouseDown}
     >
+      {/* Dot-grid background */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         animate={{ opacity: [0.5, 0.8, 0.5] }}
@@ -387,11 +415,63 @@ function DraggableCanvas({ children, resetKey }: { children: React.ReactNode; re
           backgroundSize: '24px 24px',
         }}
       />
+
+      {/* Canvas content */}
       <div
         className="absolute left-1/2 top-1/2"
-        style={{ transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))` }}
+        style={{
+          transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px)) scale(${scale})`,
+          transformOrigin: 'center center',
+          transition: isDragging.current ? 'none' : 'transform 0.15s ease',
+        }}
       >
         {children}
+      </div>
+
+      {/* Zoom controls — floating bottom-right */}
+      <div className="absolute bottom-3 right-3 flex items-center gap-1 pointer-events-auto z-10">
+        <div className="flex items-center gap-1 rounded-lg border border-border/80 bg-canvas/90 backdrop-blur-sm px-1.5 py-1 shadow-sm">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setZoomIdx(i => Math.max(i - 1, 0)); }}
+            disabled={zoomIdx === 0}
+            title="Zoom out"
+            className="flex items-center justify-center h-6 w-6 rounded-md text-muted hover:text-ink hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+          >
+            <ZoomOut size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setZoomIdx(DEFAULT_CANVAS_ZOOM_IDX); setPos({ x: 0, y: 0 }); }}
+            title="Reset zoom and pan"
+            className="flex items-center justify-center h-6 px-1.5 rounded-md text-[10px] font-semibold text-muted hover:text-ink hover:bg-secondary/60 transition-all cursor-pointer min-w-[36px]"
+          >
+            {Math.round(scale * 100)}%
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setZoomIdx(i => Math.min(i + 1, CANVAS_ZOOM_LEVELS.length - 1)); }}
+            disabled={zoomIdx === CANVAS_ZOOM_LEVELS.length - 1}
+            title="Zoom in"
+            className="flex items-center justify-center h-6 w-6 rounded-md text-muted hover:text-ink hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+          >
+            <ZoomIn size={13} />
+          </button>
+          <span className="w-px h-4 bg-border/60 mx-0.5" />
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setZoomIdx(DEFAULT_CANVAS_ZOOM_IDX); setPos({ x: 0, y: 0 }); }}
+            title="Reset view"
+            className="flex items-center justify-center h-6 w-6 rounded-md text-muted hover:text-ink hover:bg-secondary/60 transition-all cursor-pointer"
+          >
+            <RotateCcw size={11} />
+          </button>
+        </div>
+      </div>
+
+      {/* Pan hint */}
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
+        <span className="text-[10px] text-muted/50 select-none">drag to pan · scroll to zoom</span>
       </div>
     </div>
   );

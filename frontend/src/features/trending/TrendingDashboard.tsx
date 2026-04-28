@@ -14,7 +14,7 @@ import { TrendingGraph } from './components/TrendingGraph';
 import { type PanelConfig } from './components/PanelToggle';
 import { useTrending, type TrendingCapabilities } from './hooks/useTrending';
 import { useTrendingSearch } from './hooks/useTrendingSearch';
-import { Newspaper, Sparkles, PlugZap } from 'lucide-react';
+import { Newspaper, Sparkles, PlugZap, Youtube, Instagram, Linkedin } from 'lucide-react';
 import type { GraphNode } from './types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
@@ -29,9 +29,9 @@ const ALL_PANELS: PanelConfig[] = [
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
 
 const PLATFORM_META: Record<string, { color: string; icon: ReactNode }> = {
-  youtube:   { color: '#FF0000', icon: <span style={{ fontWeight: 700, fontSize: 11, color: '#FF0000' }}>YT</span> },
-  instagram: { color: '#E1306C', icon: <span style={{ fontWeight: 700, fontSize: 11, color: '#E1306C' }}>IG</span> },
-  linkedin:  { color: '#0A66C2', icon: <span style={{ fontWeight: 700, fontSize: 11, color: '#0A66C2' }}>LI</span> },
+  youtube:   { color: '#FF0000', icon: <Youtube size={16} /> },
+  instagram: { color: '#E1306C', icon: <Instagram size={16} /> },
+  linkedin:  { color: '#0A66C2', icon: <Linkedin size={16} /> },
   news:      { color: '#3B82F6', icon: <Newspaper size={16} /> },
 };
 
