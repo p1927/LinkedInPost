@@ -49,8 +49,8 @@ function InlineChannelCell({
   channels,
   onChange,
 }: {
-  channels: string[];
-  onChange: (v: string[]) => void;
+  channels: ChannelId[];
+  onChange: (v: ChannelId[]) => void;
 }) {
   const [editing, setEditing] = useState(false);
   if (editing) {
