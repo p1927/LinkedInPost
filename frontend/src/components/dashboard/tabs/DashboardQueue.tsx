@@ -13,8 +13,6 @@ import {
   shouldShowDraftedQueueActions,
 } from '../utils';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
-import { ChannelPicker } from '@/components/channels';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TopicPostPreviewCard } from '../components/TopicPostPreviewCard';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
@@ -763,61 +761,6 @@ export function DashboardQueue({
                       status={deriveStatus(row.status, { isScheduled: rowHasActiveScheduledPublish(row) })}
                       size="sm"
                     />
-                  </div>
-
-                  {/* Channel pill column — click to change channel via popover */}
-                  <div className="hidden w-[90px] shrink-0 items-center pr-1 sm:flex">
-                    {(() => {
-                      const ch = parseTopicDeliveryChannel(row.topicDeliveryChannel);
-                      const pillClass = ch
-                        ? ({
-                            linkedin: 'bg-blue-100 text-blue-700',
-                            gmail: 'bg-red-100 text-red-700',
-                            telegram: 'bg-sky-100 text-sky-700',
-                            whatsapp: 'bg-green-100 text-green-700',
-                            instagram: 'bg-fuchsia-100 text-fuchsia-700',
-                            youtube: 'bg-red-100 text-red-700',
-                          }[ch] ?? 'bg-slate-100 text-slate-600')
-                        : 'bg-slate-100 text-slate-400';
-                      const label = ch
-                        ? (CHANNEL_OPTIONS.find((o) => o.value === ch)?.label ?? ch)
-                        : 'Set channel';
-                      return (
-                        <Popover>
-                          <PopoverTrigger
-                            onClick={(e) => e.stopPropagation()}
-                            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-full"
-                            aria-label={`Channel: ${label}. Click to change.`}
-                          >
-                            <span
-                              className={cn(
-                                'inline-flex cursor-pointer items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none transition-opacity hover:opacity-75',
-                                pillClass,
-                              )}
-                            >
-                              {label}
-                            </span>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            side="bottom"
-                            align="start"
-                            className="w-52 p-2"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
-                              Set channel
-                            </p>
-                            <ChannelPicker
-                              value={ch ?? null}
-                              onChange={(newChannel) => {
-                                void onBulkSetChannel([row], newChannel);
-                              }}
-                              className="h-8 text-xs"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      );
-                    })()}
                   </div>
 
                   {/* Topic column */}

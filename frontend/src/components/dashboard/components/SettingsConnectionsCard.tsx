@@ -20,7 +20,7 @@ export function SettingsConnectionsCard({
 }: SettingsConnectionsCardProps) {
   return (
     <section
-      className={cn('border border-white/50 ring-1 ring-white/40', className)}
+      className={cn('glass-panel rounded-2xl shadow-card border border-border/60', className)}
       aria-labelledby="settings-connections-heading"
     >
       <h2

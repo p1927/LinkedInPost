@@ -1295,8 +1295,8 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
   };
 
   return (
-    <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:h-full lg:items-start lg:gap-8">
-      <aside className="z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:self-start">
+    <div className="flex min-h-0 flex-col gap-4 lg:flex-row lg:h-full lg:items-stretch lg:gap-4">
+      <aside className="z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:h-full lg:flex lg:flex-col lg:overflow-hidden">
         {/* Search — desktop only */}
         <div className="relative mb-3 hidden lg:flex items-center gap-1.5 rounded-lg border border-border/60 bg-canvas px-2 py-1.5">
           <Search className="h-3 w-3 shrink-0 text-muted" />
@@ -1314,7 +1314,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
         {/* Nav — horizontal scroll on mobile, grouped vertical on desktop */}
         <nav
-          className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:space-y-3"
+          className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:flex-1 lg:overflow-y-auto lg:min-h-0 lg:pb-0 lg:space-y-3"
           aria-label="Settings sections"
         >
           {navSearch.trim() ? (
@@ -1389,7 +1389,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           )}
         </nav>
 
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-3 shrink-0 border-t border-border pt-3">
           <Button
             type="button"
             variant="primary"
@@ -1411,7 +1411,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
       <div
         ref={scrollRef}
-        className="custom-scrollbar flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto lg:pr-1"
+        className="custom-scrollbar glass-panel flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto rounded-2xl p-4 shadow-card sm:p-6"
       >
         <SettingsSectionCard id="settings-workspace-core" title="Workspace core" variant="canvas">
           <div className="space-y-4">
