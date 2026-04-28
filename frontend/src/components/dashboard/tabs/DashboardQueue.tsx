@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Tour } from '@/components/Tour';
-import { RefreshCw, RotateCw, Send, Trash2, Bot, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle } from 'lucide-react';
+import { RefreshCw, RotateCw, Send, Trash2, Bot, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle, Search, PlusCircle } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest, type BackendApi } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
@@ -15,10 +15,8 @@ import {
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
 import { TopicPostPreviewCard } from '../components/TopicPostPreviewCard';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
-import { filterOptions } from '../constants';
 import { type BadgeVariant } from '@/components/ui/badge';
 import { StatusPill, deriveStatus } from '@/components/ui/StatusPill';
-import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -152,6 +150,7 @@ export function DashboardQueue({
   const [bulkDate, setBulkDate] = useState('');
   const [bulkTime, setBulkTime] = useState('');
   const [topicsViewMode, setTopicsViewMode] = useState<'list' | 'calendar'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     onViewModeChange?.(topicsViewMode);
@@ -248,9 +247,20 @@ export function DashboardQueue({
   ]);
 
   const getTopicId = (row: SheetRow) => String(row.topicId).trim();
-  const selectedRows = filteredRows.filter((r) => selectedTopicIds.has(getTopicId(r)));
+
+  const displayRows = useMemo(
+    () =>
+      searchQuery.trim()
+        ? filteredRows.filter((r) =>
+            r.topic.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+        : filteredRows,
+    [filteredRows, searchQuery],
+  );
+
+  const selectedRows = displayRows.filter((r) => selectedTopicIds.has(getTopicId(r)));
   const allFilteredSelected =
-    filteredRows.length > 0 && filteredRows.every((r) => selectedTopicIds.has(getTopicId(r)));
+    displayRows.length > 0 && displayRows.every((r) => selectedTopicIds.has(getTopicId(r)));
 
   const toggleRow = (row: SheetRow) => {
     const id = getTopicId(row);
@@ -266,13 +276,13 @@ export function DashboardQueue({
     if (allFilteredSelected) {
       setSelectedTopicIds((prev) => {
         const next = new Set(prev);
-        filteredRows.forEach((r) => next.delete(getTopicId(r)));
+        displayRows.forEach((r) => next.delete(getTopicId(r)));
         return next;
       });
     } else {
       setSelectedTopicIds((prev) => {
         const next = new Set(prev);
-        filteredRows.forEach((r) => next.add(getTopicId(r)));
+        displayRows.forEach((r) => next.add(getTopicId(r)));
         return next;
       });
     }
@@ -426,65 +436,63 @@ export function DashboardQueue({
       ]}
     />
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label="Filter topics by status"
-        >
-          {filterOptions.map((option) => (
-            <ChipToggle
-              key={`chip-${option.value}`}
-              type="button"
-              selected={statusFilter === option.value}
-              onClick={() => setStatusFilter(option.value)}
-            >
-              {option.label}
-              {queueCounts[option.value] > 0 && (
-                <span className="ml-1 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-violet-700 leading-none">
-                  {queueCounts[option.value]}
-                </span>
-              )}
-            </ChipToggle>
-          ))}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" aria-hidden />
+          <input
+            type="search"
+            placeholder="Search topics…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9 w-full rounded-xl border border-white/50 bg-white/60 pl-9 pr-3 text-sm text-ink placeholder:text-muted/60 backdrop-blur-sm transition-all focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
         </div>
-        <div
-          role="tablist"
-          aria-label="Topics layout"
-          className="flex shrink-0 rounded-lg border border-violet-200/70 bg-white/60 p-0.5 shadow-sm"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={topicsViewMode === 'list'}
-            onClick={() => setTopicsViewMode('list')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary/50',
-              topicsViewMode === 'list'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-muted hover:text-ink',
-            )}
+        <div className="flex shrink-0 items-center gap-2">
+          <a
+            href={WORKSPACE_PATHS.addTopic}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-fg shadow-sm transition-colors hover:bg-primary/90 cursor-pointer"
           >
-            <LayoutList className="h-3.5 w-3.5" aria-hidden />
-            List
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={topicsViewMode === 'calendar'}
-            onClick={() => setTopicsViewMode('calendar')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary/50',
-              topicsViewMode === 'calendar'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-muted hover:text-ink',
-            )}
+            <PlusCircle className="h-3.5 w-3.5" aria-hidden />
+            New Post
+          </a>
+          <div
+            role="tablist"
+            aria-label="Posts layout"
+            className="flex rounded-lg border border-violet-200/70 bg-white/60 p-0.5 shadow-sm"
           >
-            <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-            Calendar
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={topicsViewMode === 'list'}
+              onClick={() => setTopicsViewMode('list')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary/50',
+                topicsViewMode === 'list'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-muted hover:text-ink',
+              )}
+            >
+              <LayoutList className="h-3.5 w-3.5" aria-hidden />
+              List
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={topicsViewMode === 'calendar'}
+              onClick={() => setTopicsViewMode('calendar')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary/50',
+                topicsViewMode === 'calendar'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-muted hover:text-ink',
+              )}
+            >
+              <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+              Calendar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -618,9 +626,11 @@ export function DashboardQueue({
                 <Bot className="h-6 w-6" strokeWidth={1.5} />
               </div>
               <p className="text-base font-semibold text-ink">
-                {`No ${statusFilter === 'all' ? '' : statusFilter} topics`}
+                {searchQuery.trim() ? `No results for "${searchQuery.trim()}"` : 'No posts'}
               </p>
-              <p className="mt-2 text-sm text-muted">Try a different filter above.</p>
+              <p className="mt-2 text-sm text-muted">
+                {searchQuery.trim() ? 'Try a different search term.' : 'Create your first post above.'}
+              </p>
             </div>
           )
         ) : topicsViewMode === 'calendar' ? (
@@ -711,7 +721,7 @@ export function DashboardQueue({
               <div className="w-9 shrink-0 pl-0.5" aria-hidden="true" />
             </div>
 
-            {filteredRows.map((row, rowIndex) => {
+            {displayRows.map((row, rowIndex) => {
               const normalizedStatus = getNormalizedRowStatus(row.status);
               const showDraftActions = shouldShowDraftedQueueActions(row);
               const dateRaw = row.date?.trim() ?? '';
