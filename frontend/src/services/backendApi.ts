@@ -6,7 +6,7 @@ import type { ContentReviewReport } from '../features/content-review/types';
 import type { TrendingSearchRequest, TrendingSearchResult } from '../features/trending/types';
 import type { NewsletterRecord } from '../features/campaign/schema/newsletterTypes';
 import type { CustomWorkflowSummary } from '../features/generation/WorkflowCardPicker';
-import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload, ArticleAnalysis, ClipClusterResult } from '../features/feed/types';
+import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload, ArticleAnalysis, ClipClusterResult, DraftConnectionsResult, DebateArticle, CrossDomainResult, OpinionLeadersResult } from '../features/feed/types';
 
 export interface SocialIntegration {
   provider: string;
@@ -1460,6 +1460,25 @@ export class BackendApi {
 
   clusterDraftClips(idToken: string, payload: { draftText: string; clips: { title: string; snippet: string }[] }): Promise<ClipClusterResult> {
     return this.post<ClipClusterResult>('clusterDraftClips', idToken, payload as unknown as Record<string, unknown>);
+  }
+
+  findDraftConnections(
+    idToken: string,
+    payload: { title: string; description: string; drafts: { topicId: string; topic: string }[] },
+  ): Promise<DraftConnectionsResult> {
+    return this.post<DraftConnectionsResult>('findDraftConnections', idToken, payload as unknown as Record<string, unknown>);
+  }
+
+  findDebateArticle(idToken: string, payload: { title: string; description: string }): Promise<DebateArticle> {
+    return this.post<DebateArticle>('findDebateArticle', idToken, payload);
+  }
+
+  crossDomainInsight(idToken: string, payload: { topic: string }): Promise<CrossDomainResult> {
+    return this.post<CrossDomainResult>('crossDomainInsight', idToken, payload);
+  }
+
+  opinionLeaderInsights(idToken: string, payload: { topic: string }): Promise<OpinionLeadersResult> {
+    return this.post<OpinionLeadersResult>('opinionLeaderInsights', idToken, payload);
   }
 }
 
