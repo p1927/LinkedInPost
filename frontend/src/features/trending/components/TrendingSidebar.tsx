@@ -3,9 +3,10 @@ import { containerVariants, cardItemVariants } from '@/lib/motion';
 import { TrendingWordsWidget } from './TrendingWordsWidget';
 import { RecommendationsPanel } from './RecommendationsPanel';
 import { PanelToggle, type PanelConfig } from './PanelToggle';
+import type { TrendingWord } from '../types';
 
 interface TrendingSidebarProps {
-  trendingWords: Array<{ word: string; tier: 'high' | 'mid' | 'low' }>;
+  trendingWords: TrendingWord[];
   recommendedTopics: string[];
   panels: PanelConfig[];
   enabledPanels: string[];
