@@ -18,6 +18,8 @@ import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
 import type { InterestGroup, CreateInterestGroupPayload, Clip } from './types';
+import type { SheetRow } from '../../services/sheets';
+import { ClipsDock } from './components/ClipsDock';
 
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
 
@@ -35,11 +37,13 @@ export function FeedPage({
   api,
   newsProviderKeys,
   capabilities,
+  rows,
 }: {
   idToken: string;
   api: BackendApi;
   newsProviderKeys?: NewsProviderKeys;
   capabilities: TrendingCapabilities;
+  rows?: SheetRow[];
 }) {
   const [topic, setTopic] = useState('');
   const [searchTopic, setSearchTopic] = useState('');
@@ -67,6 +71,25 @@ export function FeedPage({
   const clippedUrls = useMemo(() => new Set(clips.map(c => c.articleUrl)), [clips]);
 
   const [_openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
+  const [_openDraft, setOpenDraft] = useState<SheetRow | null>(null); // for Task 8
+
+  async function handleDeleteClip(clipId: string) {
+    try {
+      await api.deleteClip(idToken, clipId);
+      setClips(prev => prev.filter(c => c.id !== clipId));
+    } catch { /* silent */ }
+  }
+
+  async function handleAssignClipToPost(clipId: string, postId: string) {
+    try {
+      const updated = await api.assignClipToPost(idToken, clipId, postId);
+      setClips(prev => prev.map(c => c.id === clipId ? updated : c));
+    } catch { /* silent */ }
+  }
+
+  function handleOpenDraft(row: SheetRow) {
+    setOpenDraft(row);
+  }
 
   async function handleClip(article: NewsArticle) {
     try {
@@ -530,6 +553,27 @@ export function FeedPage({
         </div>
 
         {/* ClipsDock — added in Task 6 */}
+        <ClipsDock
+          clips={clips}
+          rows={rows ?? []}
+          idToken={idToken}
+          api={api}
+          onDeleteClip={handleDeleteClip}
+          onOpenArticle={(clip) => {
+            setOpenArticle({
+              id: clip.id,
+              title: clip.articleTitle,
+              description: clip.passageText,
+              source: clip.source,
+              publishedAt: clip.publishedAt,
+              url: clip.articleUrl,
+              imageUrl: clip.thumbnailUrl || undefined,
+              platform: 'news',
+            });
+          }}
+          onOpenDraft={handleOpenDraft}
+          onAssignClip={handleAssignClipToPost}
+        />
       </div>
     </MotionConfig>
   );

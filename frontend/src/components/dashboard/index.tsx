@@ -914,6 +914,7 @@ export function Dashboard({
                 instagram: session.config.hasInstagramAccessToken,
                 linkedin: session.config.hasLinkedInAccessToken,
               }}
+              rows={queueHook.rows}
             />
           }
         />
