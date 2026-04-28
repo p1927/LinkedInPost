@@ -73,3 +73,9 @@ export interface UpdateClipPayload {
   id: string
   passageText?: string
 }
+
+export interface ClipClusterResult {
+  themes: { name: string; indices: number[] }[]
+  support: number[]
+  challenge: number[]
+}

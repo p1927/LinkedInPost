@@ -1707,6 +1707,52 @@ Rules:
         },
       };
     }
+    case 'clusterDraftClips': {
+      const draftText = String(payload.draftText || '').trim();
+      const clipsData = Array.isArray(payload.clips) ? payload.clips : [];
+      if (clipsData.length === 0) return { themes: [], support: [], challenge: [] };
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const clipsContext = clipsData.map((c: { title: string; snippet: string }, i: number) =>
+        `[${i}] "${c.title}" — ${c.snippet}`
+      ).join('\n');
+      const prompt = `You are a content strategy assistant. A LinkedIn creator has collected research clips and is working on a post draft.
+
+Draft (first 280 chars): ${draftText.slice(0, 280) || '(no draft text yet)'}
+
+Research clips (index: title — snippet):
+${clipsContext}
+
+Task:
+1. Group these clips into 2–4 thematic clusters
+2. Identify which clips SUPPORT the draft's main point and which CHALLENGE it
+
+Return ONLY valid JSON:
+{
+  "themes": [
+    { "name": "Theme name (3–5 words)", "indices": [0, 2, 4] }
+  ],
+  "support": [0, 2],
+  "challenge": [1, 3]
+}
+
+Rules:
+- Every clip index must appear in exactly one theme
+- A clip can appear in both support and challenge arrays if ambiguous
+- theme name should be descriptive, not generic
+- No markdown, just JSON`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: { themes: { name: string; indices: number[] }[]; support: number[]; challenge: number[] };
+      try { parsed = JSON.parse(cleaned); }
+      catch { throw new Error('AI returned unexpected format.'); }
+      return {
+        themes: Array.isArray(parsed.themes) ? parsed.themes : [],
+        support: Array.isArray(parsed.support) ? parsed.support : [],
+        challenge: Array.isArray(parsed.challenge) ? parsed.challenge : [],
+      };
+    }
     case 'updateRowStatus':
       return pipeline.updateRowStatus(
         storedConfig.spreadsheetId,

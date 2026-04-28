@@ -21,6 +21,7 @@ import type { InterestGroup, CreateInterestGroupPayload, Clip } from './types';
 import type { SheetRow } from '../../services/sheets';
 import { ClipsDock } from './components/ClipsDock';
 import { ArticleDetailView } from './components/ArticleDetailView';
+import { DraftContextView } from './components/DraftContextView';
 
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
 
@@ -72,7 +73,7 @@ export function FeedPage({
   const clippedUrls = useMemo(() => new Set(clips.map(c => c.articleUrl)), [clips]);
 
   const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
-  const [_openDraft, setOpenDraft] = useState<SheetRow | null>(null); // for Task 8
+  const [openDraft, setOpenDraft] = useState<SheetRow | null>(null);
 
   async function handleDeleteClip(clipId: string) {
     try {
@@ -84,6 +85,13 @@ export function FeedPage({
   async function handleAssignClipToPost(clipId: string, postId: string) {
     try {
       const updated = await api.assignClipToPost(idToken, clipId, postId);
+      setClips(prev => prev.map(c => c.id === clipId ? updated : c));
+    } catch { /* silent */ }
+  }
+
+  async function handleUnassignClip(clipId: string, postId: string) {
+    try {
+      const updated = await api.unassignClipFromPost(idToken, clipId, postId);
       setClips(prev => prev.map(c => c.id === clipId ? updated : c));
     } catch { /* silent */ }
   }
@@ -394,7 +402,22 @@ export function FeedPage({
           </div>
         )}
 
-        {/* ── Main 2-col layout ──────────────────────────────── */}
+        {/* ── Main layout ──────────────────────────────── */}
+
+        {/* Draft Context View (Mode 3) */}
+        {openDraft ? (
+          <div className="flex flex-1 min-h-0" style={{ height: 'calc(100vh - 120px)' }}>
+            <DraftContextView
+              row={openDraft}
+              clips={clips}
+              idToken={idToken}
+              api={api}
+              onBack={() => setOpenDraft(null)}
+              onUnassignClip={handleUnassignClip}
+            />
+          </div>
+        ) : (
+
         <div className="flex gap-6 p-6 items-start">
 
           {/* Article Detail View (Mode 2) */}
@@ -568,6 +591,8 @@ export function FeedPage({
           </>
           )}
         </div>
+
+        )} {/* end openDraft conditional */}
 
         {/* ClipsDock — added in Task 6 */}
         <ClipsDock
