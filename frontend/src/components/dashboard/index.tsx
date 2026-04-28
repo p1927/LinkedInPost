@@ -920,18 +920,7 @@ export function Dashboard({
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.trending}
-          element={
-            <TrendingDashboard
-              idToken={idToken}
-              api={api}
-              newsProviderKeys={FEATURE_NEWS_RESEARCH ? session.config.newsProviderKeys : undefined}
-              capabilities={{
-                youtube: session.config.youtubeAuthAvailable,
-                instagram: session.config.hasInstagramAccessToken,
-                linkedin: session.config.hasLinkedInAccessToken,
-              }}
-            />
-          }
+          element={<Navigate to={WORKSPACE_PATHS.feed} replace />}
         />
         <Route
           path={WORKSPACE_ROUTE_PATHS.automations}

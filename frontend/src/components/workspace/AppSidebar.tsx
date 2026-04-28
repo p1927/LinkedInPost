@@ -273,7 +273,6 @@ export function AppSidebar({
             {link('connections', <PlugZap aria-hidden />, 'Connections')}
             {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
             {link('feed', <Rss aria-hidden />, 'Feed')}
-            {link('trending', <TrendingUp aria-hidden />, 'Trending')}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
             {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}
             {session.isAdmin ? link('setup', <Wrench aria-hidden />, 'Setup') : null}
