@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, X, CheckCircle2, Zap } from 'lucide-react';
+import { ArrowLeft, RefreshCw, X, CheckCircle2, Zap, Copy, Check } from 'lucide-react';
 import type { Clip } from '../types';
-import type { ClipClusterResult } from '../types';
+import type { ClipClusterResult, CrossDomainInsight, OpinionLeaderInsight } from '../types';
 import type { SheetRow } from '../../../services/sheets';
 import type { BackendApi } from '@/services/backendApi';
 import { topicEditorPathForRow } from '../../topic-navigation/utils/workspaceRoutes';
@@ -30,6 +30,26 @@ function SkeletonCard() {
   );
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="shrink-0 text-muted hover:text-primary transition-colors"
+      title="Copy post angle"
+    >
+      {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+    </button>
+  );
+}
+
 export function DraftContextView({
   row,
   clips,
@@ -48,6 +68,14 @@ export function DraftContextView({
   const [clustering, setClustering] = useState<ClipClusterResult | null>(null);
   const [clusterLoading, setClusterLoading] = useState(false);
   const [clusterTrigger, setClusterTrigger] = useState(0);
+
+  const [crossDomain, setCrossDomain] = useState<CrossDomainInsight[]>([]);
+  const [crossDomainLoading, setCrossDomainLoading] = useState(false);
+  const [crossDomainError, setCrossDomainError] = useState<string | null>(null);
+
+  const [opinionLeaders, setOpinionLeaders] = useState<OpinionLeaderInsight[]>([]);
+  const [opinionLeadersLoading, setOpinionLeadersLoading] = useState(false);
+  const [opinionLeadersError, setOpinionLeadersError] = useState<string | null>(null);
 
   const assignedClips = clips.filter(c => c.assignedPostIds.includes(row.topicId ?? ''));
 
@@ -76,6 +104,38 @@ export function DraftContextView({
       setClusterTrigger(t => t + 1);
     }
   }, [assignedClips.length, row.topicId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cross-domain: fetch when tab Q becomes active, only once per topic
+  useEffect(() => {
+    if (activeContextTab !== 'q') return;
+    if (crossDomain.length > 0 || crossDomainLoading) return;
+    const topic = row.topic || '';
+    if (!topic) return;
+    let active = true;
+    setCrossDomainLoading(true);
+    setCrossDomainError(null);
+    api.crossDomainInsight(idToken, { topic })
+      .then(r => { if (active) setCrossDomain(r.insights); })
+      .catch(() => { if (active) setCrossDomainError('Failed to load insights. Try again.'); })
+      .finally(() => { if (active) setCrossDomainLoading(false); });
+    return () => { active = false; };
+  }, [activeContextTab, row.topic, idToken, api]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Opinion leaders: fetch when tab R becomes active, only once per topic
+  useEffect(() => {
+    if (activeContextTab !== 'r') return;
+    if (opinionLeaders.length > 0 || opinionLeadersLoading) return;
+    const topic = row.topic || '';
+    if (!topic) return;
+    let active = true;
+    setOpinionLeadersLoading(true);
+    setOpinionLeadersError(null);
+    api.opinionLeaderInsights(idToken, { topic })
+      .then(r => { if (active) setOpinionLeaders(r.leaders); })
+      .catch(() => { if (active) setOpinionLeadersError('Failed to load leaders. Try again.'); })
+      .finally(() => { if (active) setOpinionLeadersLoading(false); });
+    return () => { active = false; };
+  }, [activeContextTab, row.topic, idToken, api]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const wordCount = draftText.trim() ? draftText.trim().split(/\s+/).length : 0;
   const charCount = draftText.length;
@@ -382,18 +442,85 @@ export function DraftContextView({
             </div>
 
             {activeContextTab === 'q' && (
-              <div className="rounded-lg border border-border/30 bg-white/50 p-3">
-                <p className="text-xs text-muted leading-relaxed">
-                  Discovering surprising cross-domain connections... Add more clips to unlock this feature.
-                </p>
+              <div className="space-y-2">
+                {crossDomainLoading && (
+                  <div className="space-y-2">
+                    <SkeletonCard />
+                    <SkeletonCard />
+                    <SkeletonCard />
+                  </div>
+                )}
+                {crossDomainError && (
+                  <div className="rounded-lg border border-red-200/60 bg-red-50/60 p-3 text-xs text-red-700 flex items-center justify-between gap-2">
+                    <span>{crossDomainError}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setCrossDomain([]); setCrossDomainError(null); }}
+                      className="shrink-0 underline hover:no-underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {!crossDomainLoading && !crossDomainError && crossDomain.length > 0 && (
+                  crossDomain.map((insight, i) => (
+                    <div key={i} className="rounded-lg border border-border/30 bg-white/70 p-2.5 space-y-1.5">
+                      <span className="inline-block rounded-full bg-violet-100 border border-violet-200/60 px-2 py-0.5 text-xs font-medium text-violet-800">
+                        {insight.domain}
+                      </span>
+                      <p className="text-xs text-ink leading-relaxed">{insight.connection}</p>
+                      <div className="flex items-start gap-1.5">
+                        <p className="text-xs text-primary flex-1 italic leading-relaxed">{insight.postAngle}</p>
+                        <CopyButton text={insight.postAngle} />
+                      </div>
+                    </div>
+                  ))
+                )}
+                {!crossDomainLoading && !crossDomainError && crossDomain.length === 0 && (
+                  <p className="text-xs text-muted text-center py-4">No cross-domain insights yet.</p>
+                )}
               </div>
             )}
 
             {activeContextTab === 'r' && (
-              <div className="rounded-lg border border-border/30 bg-white/50 p-3">
-                <p className="text-xs text-muted leading-relaxed">
-                  Connect LinkedIn and search for opinion leaders on this topic in the Trending section.
-                </p>
+              <div className="space-y-2">
+                {opinionLeadersLoading && (
+                  <div className="space-y-2">
+                    <SkeletonCard />
+                    <SkeletonCard />
+                    <SkeletonCard />
+                  </div>
+                )}
+                {opinionLeadersError && (
+                  <div className="rounded-lg border border-red-200/60 bg-red-50/60 p-3 text-xs text-red-700 flex items-center justify-between gap-2">
+                    <span>{opinionLeadersError}</span>
+                    <button
+                      type="button"
+                      onClick={() => { setOpinionLeaders([]); setOpinionLeadersError(null); }}
+                      className="shrink-0 underline hover:no-underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {!opinionLeadersLoading && !opinionLeadersError && opinionLeaders.length > 0 && (
+                  opinionLeaders.map((leader, i) => (
+                    <div key={i} className="rounded-lg border border-border/30 bg-white/70 p-2.5 space-y-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-xs font-semibold text-ink">{leader.name}</span>
+                        <span className="text-xs text-muted">· {leader.role}</span>
+                      </div>
+                      <p className="text-xs text-ink/80 leading-relaxed">{leader.perspective}</p>
+                      <div className="flex items-start gap-1.5">
+                        <p className="text-xs text-primary flex-1 italic leading-relaxed">{leader.postAngle}</p>
+                        <CopyButton text={leader.postAngle} />
+                      </div>
+                    </div>
+                  ))
+                )}
+                {!opinionLeadersLoading && !opinionLeadersError && opinionLeaders.length === 0 && (
+                  <p className="text-xs text-muted text-center py-4">No opinion leader insights yet.</p>
+                )}
               </div>
             )}
           </div>
