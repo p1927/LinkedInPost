@@ -1,4 +1,5 @@
 import { Eye, EyeOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export interface PanelConfig {
   id: string;
@@ -18,18 +19,27 @@ export function PanelToggle({ panels, enabled, onToggle }: Props) {
       {panels.map((panel) => {
         const isEnabled = enabled.includes(panel.id);
         return (
-          <button
+          <motion.button
             key={panel.id}
             onClick={() => onToggle(panel.id, !isEnabled)}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors border ${
               isEnabled
                 ? 'bg-primary/10 text-primary border-primary/30'
                 : 'bg-secondary text-muted border-transparent hover:text-ink'
             }`}
           >
+            {isEnabled && (
+              <motion.span
+                layoutId={`panel-indicator-${panel.id}`}
+                className="w-1.5 h-1.5 rounded-full bg-primary"
+              />
+            )}
             {isEnabled ? <Eye size={14} /> : <EyeOff size={14} />}
             <span>{panel.label}</span>
-          </button>
+          </motion.button>
         );
       })}
     </div>

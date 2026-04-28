@@ -1,4 +1,6 @@
 import { Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { containerVariants, tagVariants } from '@/lib/motion';
 
 interface Props {
   topics: string[];
@@ -11,22 +13,31 @@ export function RecommendationsPanel({ topics, onSelectTopic }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-4">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="glass-panel rounded-xl p-4"
+    >
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="text-yellow-500" size={18} />
         <h3 className="text-ink font-medium">Recommended Topics</h3>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <motion.div className="flex flex-wrap gap-2" variants={containerVariants}>
         {topics.map((topic) => (
-          <button
+          <motion.button
             key={topic}
             onClick={() => onSelectTopic(topic)}
-            className="px-3 py-1.5 bg-secondary text-muted text-sm rounded-full hover:bg-tertiary hover:text-ink transition-colors border border-transparent hover:border-primary/50"
+            variants={tagVariants}
+            whileHover={{ scale: 1.06, y: -1 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            className="px-3 py-1.5 bg-secondary text-muted text-sm rounded-full hover:bg-tertiary hover:text-ink transition-colors border border-transparent hover:border-primary/50 cursor-pointer"
           >
             {topic}
-          </button>
+          </motion.button>
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

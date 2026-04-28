@@ -1,51 +1,50 @@
-import { Play } from 'lucide-react';
+import { Play, Eye, Clock } from 'lucide-react';
 import type { YouTubeVideo } from '../types';
 
-interface Props {
-  videos: YouTubeVideo[];
-}
+interface Props { videos: YouTubeVideo[]; }
 
 export function YouTubePanel({ videos }: Props) {
   if (videos.length === 0) {
-    return (
-      <div className="text-center text-muted py-8">
-        No YouTube videos found for this topic
-      </div>
-    );
+    return <p className="py-4 text-center text-xs text-muted">No videos found</p>;
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {videos.slice(0, 6).map((video) => (
+    <div className="space-y-1.5">
+      {videos.slice(0, 8).map((video) => (
         <a
           key={video.id}
           href={video.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="group block bg-secondary rounded-lg overflow-hidden hover:ring-2 hover:ring-red-500/50 transition-all"
+          className="group flex items-start gap-3 rounded-xl p-2.5 hover:bg-red-50/60 border border-transparent hover:border-red-100 transition-all cursor-pointer"
         >
-          <div className="relative aspect-video bg-tertiary">
+          <div className="relative shrink-0 w-20 h-12 rounded-lg overflow-hidden bg-red-50">
             {video.thumbnailUrl ? (
-              <img
-                src={video.thumbnailUrl}
-                alt={video.title}
-                className="w-full h-full object-cover"
-              />
+              <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
             ) : (
-              <div className="flex items-center justify-center h-full">
-                <Play className="text-red-500" size={32} />
+              <div className="flex h-full items-center justify-center">
+                <Play className="text-red-400" size={18} />
               </div>
             )}
           </div>
-          <div className="p-3">
-            <h4 className="text-ink text-sm font-medium line-clamp-2 group-hover:text-red-600 transition-colors">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-ink line-clamp-2 group-hover:text-red-700 leading-snug">
               {video.title}
-            </h4>
-            <p className="text-xs text-muted mt-1">{video.channelTitle}</p>
-            <div className="flex items-center gap-2 mt-2 text-xs text-muted">
-              <span>{video.viewCount} views</span>
-              <span>•</span>
-              <span>{video.publishedAt}</span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted truncate">{video.channelTitle}</p>
+            <div className="mt-1 flex items-center gap-2.5 text-[11px] text-muted">
+              {video.viewCount && (
+                <span className="flex items-center gap-1">
+                  <Eye size={10} />
+                  {video.viewCount}
+                </span>
+              )}
+              {video.publishedAt && (
+                <span className="flex items-center gap-1">
+                  <Clock size={10} />
+                  {video.publishedAt}
+                </span>
+              )}
             </div>
           </div>
         </a>

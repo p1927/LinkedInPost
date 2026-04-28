@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { ChevronDown, TrendingUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { tagVariants, containerVariants } from '@/lib/motion';
 import type { TrendingWord } from '../types';
 
 interface TrendingWordsWidgetProps {
@@ -23,31 +25,42 @@ export function TrendingWordsWidget({ words, onSelectWord }: TrendingWordsWidget
         <span className="flex-1 text-xs font-semibold uppercase tracking-wide text-muted/60">
           Trending Words
         </span>
-        {collapsed
-          ? <ChevronDown className="h-3.5 w-3.5 text-muted" />
-          : <ChevronUp className="h-3.5 w-3.5 text-muted" />
-        }
+        <motion.span animate={{ rotate: collapsed ? 0 : 180 }} transition={{ duration: 0.2 }}>
+          <ChevronDown className="h-3.5 w-3.5 text-muted" />
+        </motion.span>
       </button>
 
-      {!collapsed && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {words.map(({ word, tier }) => (
-            <button
-              key={word}
-              type="button"
-              onClick={() => onSelectWord(word)}
-              className={[
-                'rounded-full border border-white/50 bg-white/40 px-2.5 py-1 capitalize backdrop-blur-sm transition-colors hover:bg-primary/10 hover:border-primary/40 hover:text-primary',
-                tier === 'high' ? 'text-sm font-semibold text-ink' :
-                tier === 'mid'  ? 'text-xs font-medium text-ink/80' :
-                                  'text-xs text-muted',
-              ].join(' ')}
-            >
-              {word}
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.div
+            className="mt-2.5 flex flex-wrap gap-1.5"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            exit="hidden"
+          >
+            {words.map(({ word, tier }) => (
+              <motion.button
+                key={word}
+                type="button"
+                onClick={() => onSelectWord(word)}
+                variants={tagVariants}
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.94 }}
+                transition={{ type: "spring", stiffness: 450, damping: 28 }}
+                className={[
+                  'rounded-full border border-white/50 bg-white/40 px-2.5 py-1 capitalize backdrop-blur-sm transition-colors hover:bg-primary/10 hover:border-primary/40 hover:text-primary',
+                  tier === 'high' ? 'text-sm font-semibold text-ink' :
+                  tier === 'mid'  ? 'text-xs font-medium text-ink/80' :
+                                    'text-xs text-muted',
+                ].join(' ')}
+              >
+                {word}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
