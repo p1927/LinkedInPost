@@ -8,7 +8,6 @@ import { TrendingSidebar } from '../trending/components/TrendingSidebar';
 import { FeedSection } from '../trending/components/FeedSection';
 import { YouTubePanel } from '../trending/components/YouTubePanel';
 import { InstagramPanel } from '../trending/components/InstagramPanel';
-import { NewsPanel } from '../trending/components/NewsPanel';
 import { LinkedInPanel } from '../trending/components/LinkedInPanel';
 import { TrendingGraph } from '../trending/components/TrendingGraph';
 import { type PanelConfig } from '../trending/components/PanelToggle';
@@ -75,8 +74,7 @@ export function FeedPage({
   const [clips, setClips] = useState<Clip[]>([]);
   const clippedUrls = useMemo(() => new Set(clips.map(c => c.articleUrl)), [clips]);
 
-  // Article detail state (used in Task 7)
-  const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
+  const [_openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
 
   async function handleClip(article: NewsArticle) {
     try {

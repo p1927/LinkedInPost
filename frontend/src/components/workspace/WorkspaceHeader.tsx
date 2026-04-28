@@ -15,6 +15,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   connections: 'Connections',
   enrichment: 'Enrichment',
   trending: 'Trending',
+  feed: 'Feed',
   'add-topic': 'Add Topic',
   automations: 'Automations',
   setup: 'Setup',

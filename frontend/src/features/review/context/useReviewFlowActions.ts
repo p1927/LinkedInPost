@@ -94,7 +94,7 @@ export function useReviewFlowActions(
     postType,
     dimensionWeights,
     rewriteIntensity,
-    setRewriteIntensity,
+    setRewriteIntensity: _setRewriteIntensity,
     selectedCardId,
     setGeneratedCards,
     setLastGeneratedConfig,

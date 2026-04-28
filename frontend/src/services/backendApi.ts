@@ -1418,11 +1418,11 @@ export class BackendApi {
   }
 
   createInterestGroup(idToken: string, payload: CreateInterestGroupPayload): Promise<InterestGroup> {
-    return this.post<InterestGroup>('createInterestGroup', idToken, payload);
+    return this.post<InterestGroup>('createInterestGroup', idToken, payload as unknown as Record<string, unknown>);
   }
 
   updateInterestGroup(idToken: string, payload: UpdateInterestGroupPayload): Promise<InterestGroup> {
-    return this.post<InterestGroup>('updateInterestGroup', idToken, payload);
+    return this.post<InterestGroup>('updateInterestGroup', idToken, payload as unknown as Record<string, unknown>);
   }
 
   deleteInterestGroup(idToken: string, id: string): Promise<{ success: boolean }> {
@@ -1435,11 +1435,11 @@ export class BackendApi {
   }
 
   createClip(idToken: string, payload: CreateClipPayload): Promise<Clip> {
-    return this.post<Clip>('createClip', idToken, payload);
+    return this.post<Clip>('createClip', idToken, payload as unknown as Record<string, unknown>);
   }
 
   updateClip(idToken: string, payload: UpdateClipPayload): Promise<Clip> {
-    return this.post<Clip>('updateClip', idToken, payload);
+    return this.post<Clip>('updateClip', idToken, payload as unknown as Record<string, unknown>);
   }
 
   deleteClip(idToken: string, id: string): Promise<{ success: boolean }> {

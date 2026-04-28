@@ -142,9 +142,9 @@ export function EditorSidebar() {
     onCreateCustomWorkflow,
     onUpdateCustomWorkflow,
     onDeleteCustomWorkflow,
-    sheetVariants,
-    editorVariantIndex,
-    handleLoadSheetVariant,
+    sheetVariants: _sheetVariants,
+    editorVariantIndex: _editorVariantIndex,
+    handleLoadSheetVariant: _handleLoadSheetVariant,
   } = useReviewFlow();
 
   const {
