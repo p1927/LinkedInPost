@@ -156,6 +156,10 @@
     @apply border-white/50 bg-white/75 shadow-[4px_0_28px_rgba(91,33,182,0.07)] backdrop-blur-2xl;
   }
 
+  .dark .glass-sidebar {
+    @apply bg-slate-900 border-white/[0.06] shadow-[4px_0_32px_rgba(0,0,0,0.5)] backdrop-blur-none;
+  }
+
   .glass-header {
     @apply border-white/50 bg-white/80 backdrop-blur-2xl;
   }

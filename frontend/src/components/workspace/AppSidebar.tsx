@@ -26,10 +26,12 @@ const navButtonBase =
   'relative flex w-full min-h-10 cursor-pointer items-center text-sm font-semibold transition-[background-color,border-color,box-shadow,color] duration-200';
 
 const navInactive =
-  'border border-white/40 bg-white/30 text-muted hover:border-white/55 hover:bg-white/45 hover:text-ink';
+  'border border-white/40 bg-white/30 text-muted hover:border-white/55 hover:bg-white/45 hover:text-ink ' +
+  'dark:border-transparent dark:bg-transparent dark:text-slate-500 dark:hover:bg-white/[0.06] dark:hover:border-white/[0.06] dark:hover:text-slate-300';
 
 const navActive =
-  'border border-primary/25 bg-white/65 text-ink shadow-sm before:pointer-events-none before:absolute before:left-0 before:top-1/2 before:h-7 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-primary';
+  'border border-primary/25 bg-white/65 text-ink shadow-sm before:pointer-events-none before:absolute before:left-0 before:top-1/2 before:h-7 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-primary ' +
+  'dark:border-violet-500/35 dark:bg-violet-950/40 dark:text-violet-200 dark:shadow-none dark:before:bg-violet-400';
 
 export function readSidebarCollapsed(): boolean {
   try {
@@ -206,7 +208,7 @@ export function AppSidebar({
         id="workspace-sidebar"
         data-collapsed={collapsed ? 'true' : 'false'}
         className={clsx(
-          'custom-scrollbar glass-sidebar flex h-screen w-60 max-w-[85vw] shrink-0 flex-col border-r border-white/50 transition-[transform,width] duration-200 ease-out motion-reduce:transition-none',
+          'custom-scrollbar glass-sidebar flex h-screen w-60 max-w-[85vw] shrink-0 flex-col border-r border-white/50 dark:border-white/[0.06] transition-[transform,width] duration-200 ease-out motion-reduce:transition-none',
           collapsed ? 'md:w-[4.5rem]' : 'md:w-60',
           'fixed bottom-0 left-0 top-0 z-50 md:sticky md:top-0 md:max-w-none',
           mobileOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full md:translate-x-0 md:shadow-none',
@@ -214,7 +216,7 @@ export function AppSidebar({
       >
         <div
           className={clsx(
-            'shrink-0 border-b border-white/40 px-2 py-2.5',
+            'shrink-0 border-b border-white/40 dark:border-white/[0.07] px-2 py-2.5',
             collapsed ? 'flex flex-col items-center gap-1.5' : 'flex h-14 items-center justify-between gap-2',
           )}
         >
@@ -229,7 +231,7 @@ export function AppSidebar({
               >
                 CB
               </div>
-              <span className="truncate font-heading text-sm font-semibold text-ink">Channel Bot</span>
+              <span className="truncate font-heading text-sm font-semibold text-ink dark:text-slate-100">Channel Bot</span>
             </div>
           ) : null}
           <Button
@@ -241,7 +243,7 @@ export function AppSidebar({
             aria-controls="workspace-sidebar-nav"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className={clsx(
-              'glass-inset hidden cursor-pointer items-center justify-center border border-white/45 text-muted transition-colors duration-200 hover:bg-white/80 hover:text-ink md:flex',
+              'glass-inset hidden cursor-pointer items-center justify-center border border-white/45 text-muted transition-colors duration-200 hover:bg-white/80 hover:text-ink md:flex dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-slate-500 dark:hover:bg-white/[0.1] dark:hover:text-slate-200',
               RAIL_TILE,
               RAIL_RADIUS,
               focusRing,
@@ -272,10 +274,10 @@ export function AppSidebar({
           </ul>
         </nav>
 
-        <div className="mt-auto shrink-0 border-t border-white/40 p-2">
+        <div className="mt-auto shrink-0 border-t border-white/40 dark:border-white/[0.07] p-2">
           <div
             className={clsx(
-              'rounded-xl border border-white/40 bg-white/35 shadow-sm backdrop-blur-sm',
+              'rounded-xl border border-white/40 bg-white/35 shadow-sm backdrop-blur-sm dark:border-white/[0.08] dark:bg-white/[0.05] dark:shadow-none dark:backdrop-blur-none',
               collapsed ? 'flex flex-col items-center px-2 py-3' : 'flex flex-row items-center gap-2.5 p-2.5',
             )}
           >
@@ -288,12 +290,12 @@ export function AppSidebar({
             {!collapsed ? (
               <div className="min-w-0 flex-1">
                 {displayName ? (
-                  <p className="truncate text-xs font-semibold text-ink">{displayName}</p>
+                  <p className="truncate text-xs font-semibold text-ink dark:text-slate-100">{displayName}</p>
                 ) : null}
                 <p
                   className={clsx(
-                    'truncate text-xs font-medium text-ink',
-                    displayName ? 'text-muted' : 'font-semibold text-ink',
+                    'truncate text-xs font-medium text-ink dark:text-slate-400',
+                    displayName ? 'text-muted' : 'font-semibold text-ink dark:text-slate-100',
                   )}
                 >
                   {session.email}
