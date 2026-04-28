@@ -101,7 +101,7 @@ export function FeedPage({
   }
 
   async function handleUpdateClip(clipId: string, passageText: string) {
-    const updated = await api.updateClip(idToken, clipId, { passageText });
+    const updated = await api.updateClip(idToken, { id: clipId, passageText });
     setClips(prev => prev.map(c => c.id === clipId ? updated : c));
   }
 
@@ -313,12 +313,13 @@ export function FeedPage({
     setSavingEditGroup(true);
     try {
       const payload: UpdateInterestGroupPayload = {
+        id: editingGroupId,
         name: editGroupName.trim(),
         topics: editGroupTopics.split(',').map(t => t.trim()).filter(Boolean),
         domains: editGroupDomains.split(',').map(d => d.trim()).filter(Boolean),
         color: editGroupColor,
       };
-      const updated = await api.updateInterestGroup(idToken, editingGroupId, payload);
+      const updated = await api.updateInterestGroup(idToken, payload);
       setInterestGroups(prev => prev.map(g => g.id === editingGroupId ? updated : g));
       setEditingGroupId(null);
     } catch { /* silent */ } finally {
@@ -389,7 +390,6 @@ export function FeedPage({
   }, [searchTopic, trendingSearch.data, data, feedArticles]);
 
   const leftPanelLoading = searchTopic ? trendingSearch.loading : feedLoading;
-  const activeGroup = activeGroupId ? interestGroups.find(g => g.id === activeGroupId) : null;
   const hasNoGroups = !groupsLoading && interestGroups.length === 0;
 
   const shouldReduceMotion = useReducedMotion();
