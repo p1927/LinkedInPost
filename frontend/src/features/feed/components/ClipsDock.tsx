@@ -231,7 +231,8 @@ export function ClipsDock({
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                            className="rounded bg-gray-200 text-[10px] px-1.5 py-0.5"
+                            className="rounded bg-gray-200 text-[10px] px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label="Cancel delete"
                           >
                             ✕
                           </button>
@@ -281,10 +282,10 @@ export function ClipsDock({
                           <button
                             type="button"
                             onClick={(e) => handleStartEditClip(clip, e)}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-muted shadow hover:text-primary"
-                            title="Edit passage"
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-muted shadow hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label="Edit passage"
                           >
-                            <Pencil size={9} />
+                            <Pencil size={9} aria-hidden />
                           </button>
                           <button
                             type="button"
@@ -292,10 +293,10 @@ export function ClipsDock({
                               e.stopPropagation();
                               onDeleteClip(clip.id);
                             }}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
-                            title="Delete clip"
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            aria-label="Delete clip"
                           >
-                            <XIcon size={9} />
+                            <XIcon size={9} aria-hidden />
                           </button>
                         </div>
                       )}

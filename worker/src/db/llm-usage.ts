@@ -8,6 +8,8 @@ export interface UsageLogEntry {
   settingKey: string;
   promptTokens: number;
   completionTokens: number;
+  /** For image/video generation: pass a flat per-call cost and skip token-based estimation. */
+  costOverride?: number;
 }
 
 function nanoid16(): string {
@@ -20,7 +22,9 @@ function nanoid16(): string {
 }
 
 export async function logLlmUsage(db: D1Database, entry: UsageLogEntry): Promise<void> {
-  const cost = estimateCostUsd(entry.provider, entry.model, entry.promptTokens, entry.completionTokens);
+  const cost = entry.costOverride !== undefined
+    ? entry.costOverride
+    : estimateCostUsd(entry.provider, entry.model, entry.promptTokens, entry.completionTokens);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await db
     .prepare(

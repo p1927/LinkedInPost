@@ -35,7 +35,8 @@ import { checkUserAccess, checkTokenBudget } from './auth';
 import { handleWaitlist } from './modes/saas/waitlist';
 import { handleAdmin } from './modes/saas/admin';
 import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegration, getSocialIntegration, PublicIntegration } from './db/socialIntegrations';
-import { getUsageSummary, pruneOldLlmUsageLog } from './db/llm-usage';
+import { getUsageSummary, pruneOldLlmUsageLog, logLlmUsage } from './db/llm-usage';
+import { estimateImageGenCostUsd } from './llm/pricing';
 import { listInterestGroups, createInterestGroup, updateInterestGroup, deleteInterestGroup } from './db/interestGroups';
 import { listClips, createClip, updateClip, deleteClip, assignClipToPost, unassignClipFromPost } from './db/clips';
 import { getLatestFeedSnapshot, upsertArticleFeedback, listArticleFeedback, feedSpreadsheetId } from './db/feedArticles';
@@ -2064,9 +2065,9 @@ Rules:
     case 'uploadContextDocument':
       return handleUploadContextDocument(payload);
     case 'generateImageWithReference':
-      return generateImageWithReference(env, storedConfig, payload);
+      return generateImageWithReference(env, storedConfig, payload, { db: env.PIPELINE_DB, spreadsheetId: storedConfig.spreadsheetId ?? '', userId: session.userId });
     case 'generateImageFromText':
-      return generateImageFromText(env, storedConfig, payload);
+      return generateImageFromText(env, storedConfig, payload, { db: env.PIPELINE_DB, spreadsheetId: storedConfig.spreadsheetId ?? '', userId: session.userId });
     case 'publishContent':
       ensureSpreadsheetConfigured(storedConfig);
       return publishContent(env, session.userId, storedConfig, payload, sheets, pipeline);
@@ -5534,6 +5535,7 @@ async function generateImageWithReference(
   env: Env,
   storedConfig: StoredConfig,
   payload: Record<string, unknown>,
+  usageCtx?: { db: D1Database; spreadsheetId: string; userId: string },
 ): Promise<DraftImageUploadResult> {
   const referenceImageUrl = String(payload.referenceImageUrl || '').trim();
   const instructions = String(payload.instructions || '').trim();
@@ -5599,6 +5601,18 @@ async function generateImageWithReference(
   const imgContentType = imagePart.inlineData.mimeType ?? 'image/png';
   const imgBytes = Uint8Array.from(atob(imagePart.inlineData.data), (c) => c.charCodeAt(0));
   const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, imgBytes.buffer, imgContentType);
+  if (usageCtx) {
+    logLlmUsage(usageCtx.db, {
+      spreadsheetId: usageCtx.spreadsheetId,
+      userId: usageCtx.userId,
+      provider: 'gemini',
+      model,
+      settingKey: 'image_gen_reference',
+      promptTokens: 0,
+      completionTokens: 0,
+      costOverride: estimateImageGenCostUsd('gemini', model),
+    }).catch((e) => console.error('[image-gen] logLlmUsage failed', e));
+  }
   return { imageUrl };
 }
 
@@ -5606,6 +5620,7 @@ async function generateImageFromText(
   env: Env,
   storedConfig: StoredConfig,
   payload: Record<string, unknown>,
+  usageCtx?: { db: D1Database; spreadsheetId: string; userId: string },
 ): Promise<DraftImageUploadResult> {
   const prompt = String(payload.prompt || '').trim();
   const topicId = String(payload.topicId || '').trim();
@@ -5618,6 +5633,21 @@ async function generateImageFromText(
 
   const model = storedConfig.imageGen?.model;
 
+  const logImageUsage = (effectiveProvider: string, effectiveModel: string) => {
+    if (usageCtx) {
+      logLlmUsage(usageCtx.db, {
+        spreadsheetId: usageCtx.spreadsheetId,
+        userId: usageCtx.userId,
+        provider: effectiveProvider,
+        model: effectiveModel,
+        settingKey: 'image_gen_text',
+        promptTokens: 0,
+        completionTokens: 0,
+        costOverride: estimateImageGenCostUsd(effectiveProvider, effectiveModel),
+      }).catch((e) => console.error('[image-gen] logLlmUsage failed', e));
+    }
+  };
+
   const registeredProviders = ['flux-kontext', 'ideogram', 'dall-e', 'stability'] as const;
   type RegisteredProvider = typeof registeredProviders[number];
 
@@ -5627,6 +5657,7 @@ async function generateImageFromText(
       { prompt, provider: provider as RegisteredProvider, model },
       env as unknown as Record<string, string | undefined>,
     );
+    logImageUsage(provider, result.model);
     if (result.url.startsWith('data:')) {
       const decoded = decodeDataUrl(result.url);
       const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, decoded.bytes, decoded.contentType);
@@ -5676,6 +5707,7 @@ async function generateImageFromText(
     const imgContentType = imagePart.inlineData.mimeType ?? 'image/png';
     const imgBytes = Uint8Array.from(atob(imagePart.inlineData.data), (c) => c.charCodeAt(0));
     const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, imgBytes.buffer, imgContentType);
+    logImageUsage('gemini', geminiModel);
     return { imageUrl };
   }
 
@@ -5703,6 +5735,7 @@ async function generateImageFromText(
     const pixazoResult = await pixazoResponse.json() as { imageUrl: string };
     const asset = await fetchImageAsset(pixazoResult.imageUrl);
     const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, asset.bytes, asset.contentType);
+    logImageUsage('pixazo', 'sdxl');
     return { imageUrl };
   }
 
@@ -5727,11 +5760,13 @@ async function generateImageFromText(
     if (seedanceItem.url) {
       const asset = await fetchImageAsset(seedanceItem.url);
       const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, asset.bytes, asset.contentType);
+      logImageUsage('seedance', seedanceModel);
       return { imageUrl };
     }
     if (seedanceItem.b64_json) {
       const decoded = decodeDataUrl(`data:image/png;base64,${seedanceItem.b64_json}`);
       const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, decoded.bytes, decoded.contentType);
+      logImageUsage('seedance', seedanceModel);
       return { imageUrl };
     }
     throw new Error('Seedance response missing url and b64_json.');

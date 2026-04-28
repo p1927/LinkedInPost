@@ -28,7 +28,7 @@ import { NewsletterTab } from './components/newsletter/NewsletterTab';
 import clsx from 'clsx';
 import { Copy, LayoutList, CalendarDays, Loader2, ArrowRight, Mail } from 'lucide-react';
 
-type CampaignTab = 'bulk' | 'newsletter';
+type CampaignTab = 'bulk' | 'newsletter-list' | 'newsletter-calendar';
 
 type PreviewTab = 'list' | 'calendar';
 
@@ -121,6 +121,19 @@ function JsonPasteEditor({
   );
 }
 
+const CHANNEL_COLORS: Record<string, string> = {
+  linkedin: '#0A66C2',
+  instagram: '#E1306C',
+  telegram: '#2AABEE',
+  whatsapp: '#25D366',
+  gmail: '#EA4335',
+  youtube: '#FF0000',
+};
+
+function getChannelColor(id: string): string {
+  return CHANNEL_COLORS[id] ?? '#6366F1';
+}
+
 export function CampaignPage(props: {
   idToken: string;
   session: AppSession;
@@ -145,6 +158,7 @@ export function CampaignPage(props: {
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [campaignTab, setCampaignTab] = useState<CampaignTab>('bulk');
+  const newsletterSubView = campaignTab === 'newsletter-calendar' ? 'calendar' : 'list';
   const pageTopRef = useRef<HTMLDivElement>(null);
 
   const promptText = useMemo(() => buildCampaignClaudePrompt(topicsIdeas), [topicsIdeas]);
@@ -399,26 +413,41 @@ export function CampaignPage(props: {
           </button>
           <button
             type="button"
-            onClick={() => setCampaignTab('newsletter')}
+            onClick={() => setCampaignTab('newsletter-list')}
             className={clsx(
               'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer',
-              campaignTab === 'newsletter'
+              campaignTab === 'newsletter-list'
                 ? 'border-indigo-600 text-indigo-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             )}
           >
             <Mail className="h-4 w-4" />
-            Newsletter
+            Newsletters
+          </button>
+          <button
+            type="button"
+            onClick={() => setCampaignTab('newsletter-calendar')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer',
+              campaignTab === 'newsletter-calendar'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            )}
+          >
+            <CalendarDays className="h-4 w-4" />
+            Calendar
           </button>
         </div>
 
-        {/* Newsletter tab */}
-        {campaignTab === 'newsletter' ? (
+        {/* Newsletter / Calendar tabs */}
+        {(campaignTab === 'newsletter-list' || campaignTab === 'newsletter-calendar') ? (
           <NewsletterTab
             idToken={idToken}
             session={session}
             api={api}
             onAuthExpired={onAuthExpired}
+            subView={newsletterSubView}
+            onSubViewChange={(view) => setCampaignTab(view === 'list' ? 'newsletter-list' : 'newsletter-calendar')}
           />
         ) : (
           <>
@@ -870,24 +899,38 @@ export function CampaignPage(props: {
           <DialogHeader>
             <DialogTitle>Set channels for selected</DialogTitle>
             <DialogDescription>
-              Choose channels for {selectedCount} selected post(s). Uncheck all and apply to clear channels.
+              Select one or more channels for {selectedCount} post{selectedCount !== 1 ? 's' : ''}.
             </DialogDescription>
           </DialogHeader>
-          <div className="custom-scrollbar flex max-h-64 flex-col gap-2 overflow-y-auto py-1">
-            {CHANNEL_OPTIONS.map((opt) => (
-              <label
-                key={opt.value}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-transparent px-1 py-1 text-sm hover:bg-slate-50"
-              >
-                <input
-                  type="checkbox"
-                  checked={bulkChannels.has(opt.value)}
-                  onChange={() => toggleBulkChannel(opt.value)}
-                  className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                {opt.label}
-              </label>
-            ))}
+          <div className="grid grid-cols-2 gap-2 py-1 sm:grid-cols-3">
+            {CHANNEL_OPTIONS.map((opt) => {
+              const selected = bulkChannels.has(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggleBulkChannel(opt.value)}
+                  className={clsx(
+                    'flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all cursor-pointer',
+                    selected
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                      : 'border-slate-200 bg-slate-50/60 text-slate-600 hover:border-slate-300 hover:bg-white',
+                  )}
+                  aria-pressed={selected}
+                  aria-label={opt.label}
+                >
+                  {/* Brand color dot */}
+                  <span
+                    className="h-3 w-3 rounded-full"
+                    style={{ backgroundColor: getChannelColor(opt.value) }}
+                  />
+                  <span className="text-xs font-medium leading-tight">{opt.label}</span>
+                  {selected && (
+                    <span className="text-[10px] font-semibold text-indigo-600">✓ Selected</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
           <DialogFooter className="border-0 bg-transparent p-0 sm:justify-end">
             <Button type="button" variant="outline" onClick={() => setChannelsDialogOpen(false)}>

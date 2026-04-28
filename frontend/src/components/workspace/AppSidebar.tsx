@@ -1,6 +1,6 @@
 import clsx from 'clsx';
-import { type ReactNode, useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { BarChart2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, GitBranch, ListOrdered, Megaphone, MoreHorizontal, PlusCircle, PlugZap, Rss, ScrollText, Settings, Wrench, Zap } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
@@ -106,6 +106,23 @@ function SidebarUserAvatar({
   );
 }
 
+/** Map a nav page to its route path. */
+const PAGE_TO_PATH: Record<WorkspaceNavPage, string> = {
+  topics: WORKSPACE_PATHS.topics,
+  'add-topic': WORKSPACE_PATHS.addTopic,
+  rules: WORKSPACE_PATHS.rules,
+  campaign: WORKSPACE_PATHS.campaign,
+  usage: WORKSPACE_PATHS.usage,
+  connections: WORKSPACE_PATHS.connections,
+  enrichment: WORKSPACE_PATHS.enrichment,
+  trending: WORKSPACE_PATHS.trending,
+  feed: WORKSPACE_PATHS.feed,
+  settings: WORKSPACE_PATHS.settings,
+  setup: WORKSPACE_PATHS.setup,
+  admin: WORKSPACE_PATHS.admin,
+  automations: WORKSPACE_PATHS.automations,
+};
+
 export function AppSidebar({
   collapsed,
   onToggleCollapsed,
@@ -122,39 +139,33 @@ export function AppSidebar({
   onMobileOpenChange: (open: boolean) => void;
 }) {
   const { hasUnsavedChanges } = useWorkspaceChrome();
+  const location = useLocation();
   const closeMobile = () => onMobileOpenChange(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLLIElement>(null);
   const displayName = googleProfile?.name?.trim() || null;
   const pictureUrl = googleProfile?.picture?.trim() || null;
   const buildLabel = getAppBuildLabel();
 
+  // Close "More" on route change.
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location.pathname]);
+
+  // Close "More" on click outside.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [moreOpen]);
+
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
-    const to =
-      page === 'topics'
-        ? WORKSPACE_PATHS.topics
-        : page === 'add-topic'
-          ? WORKSPACE_PATHS.addTopic
-          : page === 'rules'
-            ? WORKSPACE_PATHS.rules
-            : page === 'campaign'
-              ? WORKSPACE_PATHS.campaign
-              : page === 'usage'
-                ? WORKSPACE_PATHS.usage
-                : page === 'connections'
-                  ? WORKSPACE_PATHS.connections
-                  : page === 'enrichment'
-                    ? WORKSPACE_PATHS.enrichment
-                    : page === 'trending'
-                      ? WORKSPACE_PATHS.trending
-                      : page === 'feed'
-                        ? WORKSPACE_PATHS.feed
-                        : page === 'settings'
-                        ? WORKSPACE_PATHS.settings
-                        : page === 'setup'
-                          ? WORKSPACE_PATHS.setup
-                          : page === 'admin'
-                            ? WORKSPACE_PATHS.admin
-                            : WORKSPACE_PATHS.automations; // explicit — not a fallthrough
+    const to = PAGE_TO_PATH[page];
     return (
       <li key={page}>
         <NavLink
@@ -197,6 +208,16 @@ export function AppSidebar({
       </li>
     );
   };
+
+  // Determine if any secondary nav path is currently active (for "More" button highlight).
+  const secondaryPaths: string[] = [
+    PAGE_TO_PATH['add-topic'],
+    PAGE_TO_PATH['rules'],
+    PAGE_TO_PATH['usage'],
+    PAGE_TO_PATH['connections'],
+    ...(session.isAdmin ? [PAGE_TO_PATH['enrichment'], PAGE_TO_PATH['automations'], PAGE_TO_PATH['setup'], PAGE_TO_PATH['admin']] : []),
+  ];
+  const moreIsActive = secondaryPaths.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
 
   return (
     <>
@@ -266,58 +287,69 @@ export function AppSidebar({
             id="workspace-sidebar-nav"
             className="custom-scrollbar flex-1 min-h-0 list-none flex flex-col gap-1.5 overflow-y-auto p-2"
           >
+            {/* Primary nav items — always visible */}
             {link('topics', <ListOrdered aria-hidden />, 'Topics')}
-            {link('add-topic', <PlusCircle aria-hidden />, 'New Topic')}
-            {FEATURE_CAMPAIGN ? link('campaign', <Megaphone aria-hidden />, 'Campaign') : null}
-            {link('rules', <ScrollText aria-hidden />, 'Rules')}
-            {link('usage', <BarChart2 aria-hidden />, 'Usage')}
-            {link('connections', <PlugZap aria-hidden />, 'Connections')}
-            {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
             {link('feed', <Rss aria-hidden />, 'Feed')}
+            {FEATURE_CAMPAIGN ? link('campaign', <Megaphone aria-hidden />, 'Campaign') : null}
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
-            {session.isAdmin && (
-              <>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setMoreOpen((v) => !v)}
-                    aria-expanded={moreOpen}
-                    className={clsx(
-                      navButtonBase,
-                      RAIL_RADIUS,
-                      focusRing,
-                      navInactive,
-                      'overflow-hidden backdrop-blur-sm',
-                      collapsed ? 'h-10 justify-center gap-0 px-2 py-0' : 'gap-3 px-2 py-2',
-                    )}
-                  >
-                    <span
-                      className={clsx(
-                        'flex shrink-0 items-center justify-center text-ink',
-                        RAIL_ICON,
-                        collapsed ? 'h-6 w-6' : clsx(RAIL_TILE, RAIL_RADIUS),
-                      )}
-                      aria-hidden
-                    >
-                      <MoreHorizontal />
-                    </span>
-                    {!collapsed && (
-                      <>
-                        <span className="min-w-0 flex-1 truncate text-left">More</span>
-                        {moreOpen ? <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" />}
-                      </>
-                    )}
-                  </button>
-                </li>
-                {moreOpen && (
+
+            {/* More button — visible to all users */}
+            <li ref={moreRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreOpen((v) => !v)}
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+                title={collapsed ? 'More' : undefined}
+                aria-label={collapsed ? 'More' : undefined}
+                className={clsx(
+                  navButtonBase,
+                  RAIL_RADIUS,
+                  focusRing,
+                  'overflow-hidden backdrop-blur-sm w-full',
+                  moreIsActive ? navActive : navInactive,
+                  collapsed ? 'h-10 justify-center gap-0 px-2 py-0' : 'gap-3 px-2 py-2',
+                )}
+              >
+                <span
+                  className={clsx(
+                    'flex shrink-0 items-center justify-center text-ink',
+                    RAIL_ICON,
+                    collapsed ? 'h-6 w-6' : clsx(RAIL_TILE, RAIL_RADIUS),
+                  )}
+                  aria-hidden
+                >
+                  <MoreHorizontal />
+                </span>
+                {!collapsed && (
                   <>
-                    {link('automations', <Zap aria-hidden />, 'Automations')}
-                    {link('setup', <Wrench aria-hidden />, 'Setup')}
-                    {link('admin', <Settings aria-hidden />, 'Admin')}
+                    <span className="min-w-0 flex-1 truncate text-left">More</span>
+                    {moreOpen ? <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" />}
                   </>
                 )}
-              </>
-            )}
+              </button>
+
+              {moreOpen && (
+                <ul
+                  role="menu"
+                  className={clsx(
+                    'absolute z-10 list-none flex flex-col gap-1 rounded-xl border border-white/50 bg-white/80 p-1.5 shadow-lg backdrop-blur-md',
+                    collapsed
+                      ? 'left-full top-0 ml-2 w-44'
+                      : 'bottom-full left-0 right-0 mb-1',
+                  )}
+                >
+                  {link('add-topic', <PlusCircle aria-hidden />, 'New Topic')}
+                  {link('rules', <ScrollText aria-hidden />, 'Rules')}
+                  {link('usage', <BarChart2 aria-hidden />, 'Usage')}
+                  {link('connections', <PlugZap aria-hidden />, 'Connections')}
+                  {session.isAdmin ? link('enrichment', <GitBranch aria-hidden />, 'Enrichment') : null}
+                  {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}
+                  {session.isAdmin ? link('setup', <Wrench aria-hidden />, 'Setup') : null}
+                  {session.isAdmin ? link('admin', <Settings aria-hidden />, 'Admin') : null}
+                </ul>
+              )}
+            </li>
           </ul>
         </nav>
 

@@ -92,14 +92,15 @@ function CompactArticleCard({ article, onClip, onOpen, isClipped }: CompactArtic
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onClip(article); }}
-        title={isClipped ? 'Already clipped' : 'Clip article'}
+        aria-label={isClipped ? 'Already clipped' : 'Clip article'}
         className={[
           'absolute top-1.5 right-1.5 rounded p-0.5 transition-all',
           'opacity-0 group-hover:opacity-100',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           isClipped ? 'text-primary' : 'text-muted hover:text-primary',
         ].join(' ')}
       >
-        <Scissors size={11} />
+        <Scissors size={11} aria-hidden />
       </button>
     </div>
   );

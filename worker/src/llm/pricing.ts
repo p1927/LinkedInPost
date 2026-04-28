@@ -29,6 +29,38 @@ const PRICING: Record<string, ModelPricing> = {
   'openrouter:meta-llama/llama-3.3-70b-instruct': { inputPer1M: 0.12, outputPer1M: 0.30 },
 };
 
+/** Flat cost per image generation call (USD). Unknown models default to $0. */
+const IMAGE_GEN_PRICING: Record<string, number> = {
+  // DALL-E
+  'dall-e:dall-e-3': 0.04,
+  'dall-e:dall-e-2': 0.02,
+  // Stability AI
+  'stability:stable-diffusion-3': 0.065,
+  'stability:stable-diffusion-xl-1024-v1-0': 0.002,
+  'stability:stable-image-ultra': 0.08,
+  'stability:stable-image-core': 0.03,
+  // Ideogram
+  'ideogram:ideogram-v2': 0.08,
+  'ideogram:ideogram-v2-turbo': 0.05,
+  // Flux (via fal.ai)
+  'flux-kontext:flux-kontext-pro': 0.04,
+  'flux-kontext:flux-kontext-max': 0.08,
+  'flux-kontext:flux-dev': 0.025,
+  'flux-kontext:flux-schnell': 0.003,
+  // Gemini image generation
+  'gemini:gemini-2.0-flash-preview-image-generation': 0.039,
+  // Seedance
+  'seedance:seedance-1-lite': 0.02,
+  'seedance:seedance-1': 0.04,
+  // Pixazo
+  'pixazo:sdxl': 0.002,
+};
+
+export function estimateImageGenCostUsd(provider: string, model: string): number {
+  const key = `${provider}:${model}`;
+  return IMAGE_GEN_PRICING[key] ?? 0;
+}
+
 export function estimateCostUsd(
   provider: string,
   model: string,

@@ -18,14 +18,13 @@ export interface FeedLeftPanelProps {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-lg border bg-card overflow-hidden animate-pulse">
-      <div className="h-[168px] bg-muted w-full" />
-      <div className="p-3 space-y-2">
-        <div className="h-3 bg-muted rounded w-1/3" />
-        <div className="h-4 bg-muted rounded w-full" />
-        <div className="h-4 bg-muted rounded w-3/4" />
-        <div className="h-3 bg-muted rounded w-full" />
-        <div className="h-3 bg-muted rounded w-2/3" />
+    <div className="flex gap-3 rounded-xl border border-slate-200 bg-white p-2.5 animate-pulse">
+      <div className="h-16 w-20 shrink-0 rounded-lg bg-slate-100" />
+      <div className="flex-1 space-y-2 py-0.5">
+        <div className="h-2.5 bg-slate-100 rounded w-1/3" />
+        <div className="h-3.5 bg-slate-100 rounded w-full" />
+        <div className="h-3.5 bg-slate-100 rounded w-3/4" />
+        <div className="h-2.5 bg-slate-100 rounded w-1/2" />
       </div>
     </div>
   );

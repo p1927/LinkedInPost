@@ -16,17 +16,26 @@ interface Props {
   session: AppSession;
   api: BackendApi;
   onAuthExpired: () => void;
+  subView?: 'list' | 'calendar';
+  onSubViewChange?: (view: 'list' | 'calendar') => void;
 }
 
-export function NewsletterTab({ idToken, session, api }: Props) {
+export function NewsletterTab({ idToken, session, api, subView: externalSubView, onSubViewChange }: Props) {
   const [newsletters, setNewsletters] = useState<NewsletterRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subView, setSubView] = useState<'list' | 'calendar'>('list');
+  const [internalSubView, setInternalSubView] = useState<'list' | 'calendar'>('list');
+  const subView = externalSubView ?? internalSubView;
+  const setSubView = (view: 'list' | 'calendar') => {
+    if (onSubViewChange) onSubViewChange(view);
+    else setInternalSubView(view);
+  };
   const [wizardOpen, setWizardOpen] = useState(false);
   const [configDrawerNewsletterId, setConfigDrawerNewsletterId] = useState<string | null>(null);
+  const [selectedNewsletter, setSelectedNewsletter] = useState<NewsletterRecord | null>(null);
   const [allIssues, setAllIssues] = useState<CalendarIssueEvent[]>([]);
   const [topicRows, setTopicRows] = useState<SheetRow[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<NewsletterIssueRow | null>(null);
+  const [selectedIssueNewsletter, setSelectedIssueNewsletter] = useState<NewsletterRecord | null>(null);
   const [issuePanelOpen, setIssuePanelOpen] = useState(false);
   const [creatingDraftIds, setCreatingDraftIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<{ kind: 'error' | 'success'; message: string } | null>(null);
@@ -142,6 +151,9 @@ export function NewsletterTab({ idToken, session, api }: Props) {
 
   const openIssuePanel = (issue: NewsletterIssueRow) => {
     setSelectedIssue(issue);
+    const event = allIssues.find(e => e.issue.id === issue.id);
+    const nl = event ? newsletters.find(n => n.id === event.newsletterId) ?? null : null;
+    setSelectedIssueNewsletter(nl);
     setIssuePanelOpen(true);
   };
 
@@ -188,6 +200,25 @@ export function NewsletterTab({ idToken, session, api }: Props) {
     );
   }
 
+  // Page mode: render full-page editor when a newsletter is selected
+  if (selectedNewsletter) {
+    return (
+      <NewsletterConfigDrawer
+        newsletter={selectedNewsletter}
+        session={session}
+        api={api}
+        idToken={idToken}
+        open={true}
+        asPage
+        onClose={() => setSelectedNewsletter(null)}
+        onSaved={(updated) => {
+          handleNewsletterUpdated(updated);
+          setSelectedNewsletter(updated);
+        }}
+      />
+    );
+  }
+
   return (
     <>
     <Tour
@@ -199,24 +230,26 @@ export function NewsletterTab({ idToken, session, api }: Props) {
       ]}
     />
     <div className="space-y-4">
-      {/* Top bar: toggle + create button */}
+      {/* Top bar: toggle (only shown when not externally controlled) + create button */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
-          {(['list', 'calendar'] as const).map(view => (
-            <button
-              key={view}
-              onClick={() => setSubView(view)}
-              className={clsx(
-                'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors cursor-pointer',
-                subView === view
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              )}
-            >
-              {view === 'list' ? 'Newsletters' : 'Calendar'}
-            </button>
-          ))}
-        </div>
+        {!externalSubView && (
+          <div className="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+            {(['list', 'calendar'] as const).map(view => (
+              <button
+                key={view}
+                onClick={() => setSubView(view)}
+                className={clsx(
+                  'px-4 py-1.5 text-sm font-medium rounded-lg transition-colors cursor-pointer',
+                  subView === view
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                )}
+              >
+                {view === 'list' ? 'Newsletters' : 'Calendar'}
+              </button>
+            ))}
+          </div>
+        )}
 
         {subView === 'list' && (
           <button
@@ -255,7 +288,10 @@ export function NewsletterTab({ idToken, session, api }: Props) {
                 newsletter={newsletter}
                 issues={issuesByNewsletterId[newsletter.id] ?? []}
                 creatingDraft={creatingDraftIds.has(newsletter.id)}
-                onConfig={(id) => setConfigDrawerNewsletterId(id)}
+                onConfig={(id) => {
+                  const nl = newsletters.find(n => n.id === id);
+                  if (nl) setSelectedNewsletter(nl);
+                }}
                 onToggleActive={handleToggleActive}
                 onDelete={handleDelete}
                 onCreateDraft={handleCreateDraft}
@@ -281,6 +317,7 @@ export function NewsletterTab({ idToken, session, api }: Props) {
       {/* Issue detail panel — shared across list + calendar */}
       <NewsletterIssuePanel
         issue={selectedIssue}
+        newsletter={selectedIssueNewsletter ?? undefined}
         open={issuePanelOpen}
         onClose={() => setIssuePanelOpen(false)}
         onApprove={async (issueId) => {

@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Check, Send, Eye, EyeOff, FileText, Newspaper, RefreshCw, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Check, Send, Eye, EyeOff, FileText, Newspaper, RefreshCw, AlertTriangle, Loader2, Rss, Mail, CalendarClock, Mic } from 'lucide-react';
 import { CSC_TOKENS as T } from '@/features/content-schedule-calendar/tokens';
-import type { NewsletterIssueRow } from '../../schema/newsletterTypes';
+import type { NewsletterIssueRow, NewsletterRecord } from '../../schema/newsletterTypes';
 import type { BackendApi } from '@/services/backendApi';
 
 interface Props {
   issue: NewsletterIssueRow | null;
+  newsletter?: NewsletterRecord;
   open: boolean;
   onClose: () => void;
   onApprove: (issueId: string) => Promise<void>;
@@ -37,30 +38,58 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const DAY_LABELS: Record<string, string> = {
+  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+};
+
+function buildScheduleSummary(days: string[], times: string[], frequency: string): string {
+  if (!days?.length) return 'No schedule set';
+  const dayStr = days.map(d => DAY_LABELS[d.toLowerCase()] ?? d).join(', ');
+  const freqLabel = frequency === 'biweekly' ? 'Every two weeks' : frequency === 'monthly' ? 'Monthly' : 'Weekly';
+  if (!times?.length) return `${freqLabel} · ${dayStr}`;
+  const [h, m] = times[0].split(':');
+  const hour = parseInt(h, 10);
+  const period = hour >= 12 ? 'pm' : 'am';
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${freqLabel} · ${dayStr} · ${hour12}:${m ?? '00'}${period}`;
+}
+
+function ConfigRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2.5 py-2.5" style={{ borderBottom: `1px solid ${T.line}` }}>
+      <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate-400" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mb-0.5">{label}</p>
+        <p className="text-xs text-slate-700 leading-snug">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 function EditPane({
   issue,
+  newsletter,
   idToken,
   api,
   onUpdated,
 }: {
   issue: NewsletterIssueRow;
+  newsletter?: NewsletterRecord;
   idToken: string;
   api: BackendApi;
   onUpdated: (patch: Partial<NewsletterIssueRow>) => void;
 }) {
   const [subject, setSubject] = useState(issue.subject || '');
-  const [content, setContent] = useState(issue.rendered_content || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSavedFlag] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setSubject(issue.subject || '');
-    setContent(issue.rendered_content || '');
   }, [issue.id]);
 
   const scheduleSave = useCallback(
-    (patch: { subject?: string; rendered_content?: string }) => {
+    (patch: { subject?: string }) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
         setSaving(true);
@@ -79,20 +108,50 @@ function EditPane({
     [api, idToken, issue.id, onUpdated],
   );
 
+  const cfg = newsletter?.config;
+
+  const sourcesValue = (() => {
+    const parts: string[] = [];
+    if (cfg?.enabledRssFeedIds?.length) parts.push(`${cfg.enabledRssFeedIds.length} RSS feed${cfg.enabledRssFeedIds.length > 1 ? 's' : ''}`);
+    if (cfg?.enabledNewsApiProviders?.length) parts.push(cfg.enabledNewsApiProviders.join(', '));
+    if (cfg?.itemCount) parts.push(`${cfg.itemCount} articles/issue`);
+    return parts.length ? parts.join(' · ') : 'Not configured';
+  })();
+
+  const scheduleValue = cfg
+    ? buildScheduleSummary(cfg.scheduleDays ?? [], cfg.scheduleTimes ?? [], cfg.scheduleFrequency ?? 'weekly')
+    : 'Not configured';
+
+  const deliveryValue = cfg?.primaryChannel
+    ? `${cfg.primaryChannel.charAt(0).toUpperCase()}${cfg.primaryChannel.slice(1)}${cfg.emailRecipients?.length ? ` · ${cfg.emailRecipients.length} recipient${cfg.emailRecipients.length > 1 ? 's' : ''}` : ''}`
+    : 'Not configured';
+
+  const voiceValue = (() => {
+    const parts: string[] = [];
+    if (cfg?.processingTemplate) parts.push(cfg.processingTemplate.replace(/-/g, ' '));
+    if (cfg?.emotionTarget) parts.push(cfg.emotionTarget);
+    if (cfg?.storyFramework) parts.push(cfg.storyFramework);
+    return parts.length ? parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' · ') : 'Default';
+  })();
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 px-6 py-4" style={{ borderBottom: `1px solid ${T.line}` }}>
         <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted, marginBottom: 10 }}>
-          Edit Issue
+          Issue Details
         </p>
         <div className="space-y-1.5">
-          <label className="text-xs text-slate-500 font-medium">Subject line</label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-slate-500 font-medium">Subject line</label>
+            {saving && <span className="text-[10px] text-slate-400">Saving…</span>}
+            {!saving && saved && <span className="text-[10px] text-emerald-500">Saved</span>}
+          </div>
           <input
             type="text"
             value={subject}
             onChange={e => {
               setSubject(e.target.value);
-              scheduleSave({ subject: e.target.value, rendered_content: content });
+              scheduleSave({ subject: e.target.value });
             }}
             placeholder="Newsletter subject…"
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
@@ -100,21 +159,27 @@ function EditPane({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col px-6 py-4 gap-2">
-        <div className="flex items-center justify-between">
-          <label className="text-xs text-slate-500 font-medium">HTML content</label>
-          {saving && <span className="text-[10px] text-slate-400">Saving…</span>}
-          {!saving && saved && <span className="text-[10px] text-emerald-500">Saved</span>}
-        </div>
-        <textarea
-          value={content}
-          onChange={e => {
-            setContent(e.target.value);
-            scheduleSave({ subject, rendered_content: e.target.value });
-          }}
-          placeholder="Paste or edit HTML content…"
-          className="flex-1 min-h-0 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-mono text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white resize-none"
-        />
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-2">
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: T.muted, marginBottom: 4, marginTop: 8 }}>
+          Newsletter Configuration
+        </p>
+        {newsletter ? (
+          <>
+            <p className="text-sm font-semibold text-slate-800 mb-2">{newsletter.name}</p>
+            <ConfigRow icon={CalendarClock} label="Schedule" value={scheduleValue} />
+            <ConfigRow icon={Rss} label="Sources" value={sourcesValue} />
+            <ConfigRow icon={Mail} label="Delivery" value={deliveryValue} />
+            <ConfigRow icon={Mic} label="Voice & Style" value={voiceValue} />
+            {cfg?.topicIncludeKeywords?.length ? (
+              <ConfigRow icon={Rss} label="Always cover" value={cfg.topicIncludeKeywords.join(', ')} />
+            ) : null}
+            {cfg?.topicExcludeKeywords?.length ? (
+              <ConfigRow icon={Rss} label="Never cover" value={cfg.topicExcludeKeywords.join(', ')} />
+            ) : null}
+          </>
+        ) : (
+          <p className="text-xs text-slate-400 py-2">Newsletter configuration unavailable.</p>
+        )}
       </div>
 
       <div className="shrink-0 px-6 py-3" style={{ borderTop: `1px solid ${T.line}` }}>
@@ -277,7 +342,7 @@ function RightPane({
   );
 }
 
-export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, onRegenerate, idToken, api }: Props) {
+export function NewsletterIssuePanel({ issue, newsletter, open, onClose, onApprove, onSend, onRegenerate, idToken, api }: Props) {
   const [visible, setVisible] = useState(false);
   const [localIssue, setLocalIssue] = useState<NewsletterIssueRow | null>(null);
   const [busy, setBusy] = useState(false);
@@ -429,6 +494,7 @@ export function NewsletterIssuePanel({ issue, open, onClose, onApprove, onSend, 
         <div className="flex-1 min-h-0 grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
           <EditPane
             issue={localIssue}
+            newsletter={newsletter}
             idToken={idToken}
             api={api}
             onUpdated={patch => setLocalIssue(prev => prev ? { ...prev, ...patch } : prev)}

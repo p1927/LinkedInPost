@@ -41,10 +41,10 @@ function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="ml-2 shrink-0 text-muted hover:text-primary transition-colors"
-      title="Copy"
+      className="ml-2 shrink-0 text-muted hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
+      aria-label="Copy"
     >
-      {copied ? <Check size={13} /> : <Copy size={13} />}
+      {copied ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
     </button>
   );
 }

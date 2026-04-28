@@ -1178,8 +1178,10 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
     }, [session.isAdmin]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
+    const navSearchRef = useRef<HTMLInputElement>(null);
     const [activeSectionId, setActiveSectionId] = useState<string>(settingsSections[0]?.id ?? ALL_SETTINGS_SECTIONS[0].id);
     const [navSearch, setNavSearch] = useState('');
+    const [savedToast, setSavedToast] = useState(false);
 
     const filteredSections = useMemo(
       () =>
@@ -1215,6 +1217,42 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Cmd+K / Ctrl+K → focus the nav search input
+    useEffect(() => {
+      const handler = (e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          navSearchRef.current?.focus();
+          navSearchRef.current?.select();
+        }
+      };
+      document.addEventListener('keydown', handler);
+      return () => document.removeEventListener('keydown', handler);
+    }, []);
+
+    // Warn before unload when there are unsaved changes
+    useEffect(() => {
+      if (!hasUnsavedSettingsChanges) return;
+      const handler = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = '';
+      };
+      window.addEventListener('beforeunload', handler);
+      return () => window.removeEventListener('beforeunload', handler);
+    }, [hasUnsavedSettingsChanges]);
+
+    // Show a brief "Settings saved" toast when savingConfig transitions true → false
+    const prevSavingRef = useRef(false);
+    useEffect(() => {
+      if (prevSavingRef.current && !savingConfig && !hasUnsavedSettingsChanges) {
+        setSavedToast(true);
+        const timer = setTimeout(() => setSavedToast(false), 2500);
+        prevSavingRef.current = false;
+        return () => clearTimeout(timer);
+      }
+      if (savingConfig) prevSavingRef.current = true;
+    }, [savingConfig, hasUnsavedSettingsChanges]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -1263,6 +1301,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
         <div className="relative mb-3 hidden lg:flex items-center gap-1.5 rounded-lg border border-border/60 bg-canvas px-2 py-1.5">
           <Search className="h-3 w-3 shrink-0 text-muted" />
           <input
+            ref={navSearchRef}
             type="text"
             placeholder="Search…"
             value={navSearch}
@@ -1361,6 +1400,9 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           >
             {savingConfig ? 'Saving...' : 'Save settings'}
           </Button>
+          {savedToast && (
+            <p className="mt-2 text-center text-[11px] leading-snug text-emerald-600 font-medium">Settings saved</p>
+          )}
           {!session.isAdmin ? (
             <p className="mt-2 text-center text-[11px] leading-snug text-muted">Only workspace admins can save shared settings.</p>
           ) : null}
