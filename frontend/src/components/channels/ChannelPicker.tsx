@@ -71,7 +71,7 @@ export function ChannelPicker({
   return (
     <Select
       value={value ?? ''}
-      onValueChange={(val) => onChange(val)}
+      onValueChange={(val) => { if (val !== null) onChange(val); }}
       disabled={disabled}
       itemToStringLabel={(v) => {
         if (prependLabelMap.has(v)) return prependLabelMap.get(v)!;
