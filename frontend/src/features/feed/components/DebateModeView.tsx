@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Scale, ExternalLink, Scissors, AlertTriangle, RefreshCw } from 'lucide-react';
 import type { NewsArticle } from '../../trending/types';
 import type { BackendApi } from '@/services/backendApi';
@@ -29,26 +29,28 @@ export function DebateModeView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDebate = () => {
+  const fetchDebate = useCallback(() => {
     setLoading(true);
     setError(null);
     setDebate(null);
+    let active = true;
     api
       .findDebateArticle(idToken, {
         title: article.title,
         description: article.description ?? '',
       })
-      .then(setDebate)
-      .catch((e: unknown) =>
-        setError((e instanceof Error ? e.message : null) || 'Could not find opposing article.'),
-      )
-      .finally(() => setLoading(false));
-  };
+      .then(d => { if (active) setDebate(d); })
+      .catch((e: unknown) => {
+        if (active) setError((e instanceof Error ? e.message : null) || 'Could not find opposing article.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [api, idToken, article.title, article.description]);
 
   useEffect(() => {
-    fetchDebate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [article.url, idToken]);
+    const cleanup = fetchDebate();
+    return cleanup;
+  }, [fetchDebate]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden gap-4">
@@ -59,7 +61,7 @@ export function DebateModeView({
           onClick={onBack}
           className="flex items-center gap-1.5 text-sm text-muted hover:text-primary transition-colors cursor-pointer"
         >
-          <ArrowLeft size={15} />
+          <ArrowLeft size={15} aria-hidden="true" />
           Back to Feed
         </button>
         <div className="flex items-center gap-1.5 ml-2">
@@ -127,7 +129,7 @@ export function DebateModeView({
         <div className="flex flex-col items-center justify-center gap-2 shrink-0">
           <div className="w-px flex-1 bg-amber-200/60" />
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 border border-amber-200">
-            <Scale size={14} className="text-amber-600" />
+            <Scale size={14} className="text-amber-600" aria-hidden="true" />
           </div>
           <div className="w-px flex-1 bg-amber-200/60" />
         </div>
@@ -141,17 +143,19 @@ export function DebateModeView({
             {debate?.source && (
               <span className="text-[11px] text-muted">{debate.source}</span>
             )}
-            {!loading && (
-              <button
-                type="button"
-                onClick={fetchDebate}
-                className="ml-auto flex items-center gap-1 text-[11px] text-muted hover:text-ink transition-colors cursor-pointer"
-                title="Regenerate opposing view"
-              >
-                <RefreshCw size={11} />
-                Regenerate
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={fetchDebate}
+              disabled={loading}
+              className={[
+                'ml-auto flex items-center gap-1 text-[11px] transition-colors cursor-pointer',
+                loading ? 'text-muted opacity-50' : 'text-muted hover:text-ink',
+              ].join(' ')}
+              title="Regenerate opposing view"
+            >
+              <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+              {loading ? 'Loading…' : 'Regenerate'}
+            </button>
           </div>
 
           {loading && (
@@ -199,7 +203,7 @@ export function DebateModeView({
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold text-muted uppercase tracking-wide">Key arguments</p>
                 {debate.keyArguments.map((arg, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-ink/80">
+                  <div key={`${i}-${arg.slice(0, 20)}`} className="flex items-start gap-2 text-xs text-ink/80">
                     <span className="shrink-0 font-bold text-amber-600">{i + 1}.</span>
                     {arg}
                   </div>
