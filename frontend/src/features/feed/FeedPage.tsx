@@ -710,28 +710,30 @@ export function FeedPage({
           </div>
         )}
 
-        {/* ── Main content area ────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-hidden relative">
-          <AnimatePresence mode="wait">
+        {/* ── Main content area ─ flex row: left feed | right panel ── */}
+        <div className="flex-1 min-h-0 overflow-hidden relative flex">
 
-            {/* Draft mode (key="draft") */}
-            {openDraft && (
-              <motion.div key="draft" {...motionProps} className="h-full overflow-hidden">
-                <DraftContextView
-                  row={openDraft}
-                  clips={clips}
-                  idToken={idToken}
-                  api={api}
-                  onBack={() => setOpenDraft(null)}
-                  onUnassignClip={handleUnassignClip}
-                />
-              </motion.div>
-            )}
+          {/* Left: scrollable feed column */}
+          <div className="flex-1 min-w-0 overflow-y-auto">
+            <AnimatePresence mode="wait">
 
-            {/* Debate mode (key="debate") */}
-            {!openDraft && openArticle && debateMode && (
-              <motion.div key="debate" {...motionProps} className="h-full overflow-y-auto">
-                <div className="p-6 pr-20">
+              {/* Draft mode */}
+              {openDraft && (
+                <motion.div key="draft" {...motionProps} className="h-full">
+                  <DraftContextView
+                    row={openDraft}
+                    clips={clips}
+                    idToken={idToken}
+                    api={api}
+                    onBack={() => setOpenDraft(null)}
+                    onUnassignClip={handleUnassignClip}
+                  />
+                </motion.div>
+              )}
+
+              {/* Debate mode */}
+              {!openDraft && openArticle && debateMode && (
+                <motion.div key="debate" {...motionProps} className="p-6 pb-16">
                   <DebateModeView
                     article={openArticle}
                     idToken={idToken}
@@ -740,235 +742,227 @@ export function FeedPage({
                     onClip={handleClip}
                     isClipped={clippedUrls.has(openArticle.url)}
                   />
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
 
-            {/* Reading feed mode (key="feed") — always visible when no draft/debate */}
-            {!openDraft && !debateMode && (
-              <motion.div key="feed" {...motionProps} className="h-full overflow-y-auto">
-                <div className="flex gap-6 p-6 pr-20 items-start">
+              {/* Reading feed mode */}
+              {!openDraft && !debateMode && (
+                <motion.div key="feed" {...motionProps} className="p-6 pb-16">
 
-                  {/* Left: platform feed */}
-                  <div className="flex-1 min-w-0">
-
-                    {/* Sort filter bar */}
-                    {(!hasNoGroups || searchTopic) && (displayArticles.length > 0 || leftPanelLoading) && (
-                      <div className="flex items-center gap-1.5 mb-3">
-                        {(['latest', 'trending', 'foryou'] as const).map(sort => {
-                          const labels: Record<string, string> = { latest: 'Latest', trending: 'Trending', foryou: 'For You' };
-                          return (
-                            <button
-                              key={sort}
-                              type="button"
-                              onClick={() => setFeedSort(sort)}
-                              className={[
-                                'h-6 rounded-full px-3 text-xs font-semibold transition-colors',
-                                feedSort === sort
-                                  ? 'bg-primary text-primary-fg'
-                                  : 'text-muted hover:text-ink bg-white/40 border border-white/60',
-                              ].join(' ')}
-                            >
-                              {labels[sort]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* No interest groups — onboarding */}
-                    {hasNoGroups && !searchTopic && (
-                      <motion.div
-                        className="flex flex-col items-center justify-center py-20 text-center"
-                        variants={containerVariants} initial="hidden" animate="show"
-                      >
-                        <motion.div
-                          className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-200/60 shadow-glass"
-                          animate={{ y: [0, -6, 0] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                        >
-                          <Settings2 className="text-primary" size={32} />
-                        </motion.div>
-                        <motion.h3 variants={fadeUpVariants} className="text-xl font-semibold text-ink mb-2">
-                          Set up your interests
-                        </motion.h3>
-                        <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed mb-5">
-                          Add an interest group and your feed will auto-fill with fresh articles every day — no searching needed.
-                        </motion.p>
-                        <motion.button
-                          variants={fadeUpVariants}
-                          type="button"
-                          onClick={() => setShowCreateGroup(true)}
-                          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
-                        >
-                          <Plus size={15} />
-                          Add your first interest group
-                        </motion.button>
-                      </motion.div>
-                    )}
-
-                    {/* Generic empty state — has groups but no active selection */}
-                    {!hasNoGroups && !activeGroupId && !leftPanelLoading && !hasError && !searchTopic && displayArticles.length === 0 && (
-                      <motion.div
-                        className="flex flex-col items-center justify-center py-24 text-center"
-                        variants={containerVariants} initial="hidden" animate="show"
-                      >
-                        <motion.div
-                          animate={{ y: [0, -8, 0] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                          className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-200/60 shadow-glass"
-                        >
-                          <Sparkles className="text-primary" size={36} />
-                        </motion.div>
-                        <motion.h3 variants={fadeUpVariants} className="text-xl font-semibold text-ink mb-2">
-                          Explore Your Feed
-                        </motion.h3>
-                        <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed">
-                          Select an interest group above or enter a topic to discover content.
-                        </motion.p>
-                      </motion.div>
-                    )}
-
-                    {/* No results */}
-                    {!data && !isLoading && !hasError && searchTopic && (
-                      <p className="py-16 text-center text-sm text-muted">
-                        No trending data found for &quot;<strong>{searchTopic}</strong>&quot;. Try a different topic.
-                      </p>
-                    )}
-
-                    {/* Error */}
-                    {hasError && (
-                      <div className="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-700">
-                        {error || trendingSearch.error}
-                      </div>
-                    )}
-
-                    {/* Skeleton loading */}
-                    {isLoading && (
-                      <motion.div
-                        className="space-y-4"
-                        variants={containerVariants} initial="hidden" animate="show"
-                      >
-                        {[0, 1, 2].map((i) => (
-                          <motion.div key={i} variants={cardItemVariants} className="glass-panel rounded-2xl overflow-hidden">
-                            <div className="h-0.5 w-full bg-violet-100" />
-                            <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
-                              <motion.div className="w-7 h-7 rounded-lg bg-violet-100" variants={skeletonPulseVariants} animate="animate" />
-                              <motion.div className="h-3 w-24 rounded bg-violet-100" variants={skeletonPulseVariants} animate="animate" />
-                              <motion.div className="ml-auto h-3 w-8 rounded-full bg-violet-50" variants={skeletonPulseVariants} animate="animate" />
-                            </div>
-                            <div className="p-3 space-y-2">
-                              {[0, 1, 2, 3].map((j) => (
-                                <motion.div key={j} className="flex gap-3" variants={skeletonPulseVariants} animate="animate">
-                                  <div className="shrink-0 w-16 h-10 rounded-lg bg-violet-50" />
-                                  <div className="flex-1 space-y-1.5 pt-0.5">
-                                    <div className="h-2.5 rounded bg-violet-50 w-full" />
-                                    <div className="h-2 rounded bg-violet-50/60 w-3/4" />
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    )}
-
-                    {/* News article feed — primary content, independent of live-search data */}
-                    {(leftPanelLoading || displayArticles.length > 0) && (
-                      <motion.div className="mb-4" variants={cardItemVariants} initial="hidden" animate="show">
-                        <FeedLeftPanel
-                          articles={sortedDisplayArticles}
-                          loading={leftPanelLoading}
-                          onClip={handleClip}
-                          onOpen={(a) => { setDebateMode(false); setOpenArticle(a); }}
-                          clippedUrls={clippedUrls}
-                          feedbackMap={feedbackMap}
-                          onThumbsUp={handleThumbsUp}
-                          onThumbsDown={handleThumbsDown}
-                        />
-                      </motion.div>
-                    )}
-
-                    {/* Platform feed */}
-                    {data && !isLoading && (
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={visiblePanels.join('-')}
-                          className="space-y-4"
-                          variants={containerVariants} initial="hidden" animate="show"
-                        >
-                          {visiblePanels.includes('youtube') && data.youtube.length > 0 && (
-                            <FeedSection
-                              title="YouTube" count={data.youtube.length}
-                              color={PLATFORM_META.youtube.color} icon={PLATFORM_META.youtube.icon}
-                            >
-                              <YouTubePanel videos={data.youtube} />
-                            </FeedSection>
-                          )}
-                          {visiblePanels.includes('instagram') && data.instagram.length > 0 && (
-                            <FeedSection
-                              title="Instagram" count={data.instagram.length}
-                              color={PLATFORM_META.instagram.color} icon={PLATFORM_META.instagram.icon}
-                            >
-                              <InstagramPanel posts={data.instagram} />
-                            </FeedSection>
-                          )}
-                          {visiblePanels.includes('linkedin') && data.linkedin && data.linkedin.length > 0 && (
-                            <FeedSection
-                              title="LinkedIn" count={data.linkedin.length}
-                              color={PLATFORM_META.linkedin.color} icon={PLATFORM_META.linkedin.icon}
-                            >
-                              <LinkedInPanel posts={data.linkedin} />
-                            </FeedSection>
-                          )}
-                          {visiblePanels.length > 1 && (
-                            <motion.div variants={cardItemVariants}>
-                              <TrendingGraph data={data} onNodeClick={handleNodeClick} />
-                            </motion.div>
-                          )}
-                        </motion.div>
-                      </AnimatePresence>
-                    )}
-                  </div>
-
-                  {/* Right: curated sidebar — hidden when article detail is open */}
-                  {!openArticle && (
-                    <div className="w-80 shrink-0 hidden lg:block sticky top-0 self-start">
-                      <FeedCuratedPanel
-                        idToken={idToken}
-                        api={api}
-                        searchTopic={searchTopic}
-                        newsProviderKeys={newsProviderKeys}
-                        capabilities={capabilities}
-                        trendingData={{
-                          youtube: data?.youtube ?? [],
-                          instagram: data?.instagram ?? [],
-                          linkedin: data?.linkedin ?? [],
-                          news: (() => {
-                            const articles = trendingSearch.data?.articles?.length
-                              ? trendingSearch.data.articles : (data?.news ?? []);
-                            return articles;
-                          })(),
-                        }}
-                        trendingWords={trendingWords}
-                        recommendedTopics={recommendedTopics}
-                        loading={isLoading}
-                        onClip={handleClip}
-                        clippedUrls={clippedUrls}
-                        onOpenArticle={(a) => { setDebateMode(false); setOpenArticle(a); }}
-                        onSelectWord={(w) => { setTopic(w); setSearchTopic(w); }}
-                        onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
-                      />
+                  {/* Sort filter bar */}
+                  {(!hasNoGroups || searchTopic) && (displayArticles.length > 0 || leftPanelLoading) && (
+                    <div className="flex items-center gap-1.5 mb-3">
+                      {(['latest', 'trending', 'foryou'] as const).map(sort => {
+                        const labels: Record<string, string> = { latest: 'Latest', trending: 'Trending', foryou: 'For You' };
+                        return (
+                          <button
+                            key={sort}
+                            type="button"
+                            onClick={() => setFeedSort(sort)}
+                            className={[
+                              'h-6 rounded-full px-3 text-xs font-semibold transition-colors',
+                              feedSort === sort
+                                ? 'bg-primary text-primary-fg'
+                                : 'text-muted hover:text-ink bg-white/40 border border-white/60',
+                            ].join(' ')}
+                          >
+                            {labels[sort]}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
-                </div>
-              </motion.div>
-            )}
+                  {/* No interest groups — onboarding */}
+                  {hasNoGroups && !searchTopic && (
+                    <motion.div
+                      className="flex flex-col items-center justify-center py-20 text-center"
+                      variants={containerVariants} initial="hidden" animate="show"
+                    >
+                      <motion.div
+                        className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-200/60 shadow-glass"
+                        animate={{ y: [0, -6, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <Settings2 className="text-primary" size={32} />
+                      </motion.div>
+                      <motion.h3 variants={fadeUpVariants} className="text-xl font-semibold text-ink mb-2">
+                        Set up your interests
+                      </motion.h3>
+                      <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed mb-5">
+                        Add an interest group and your feed will auto-fill with fresh articles every day — no searching needed.
+                      </motion.p>
+                      <motion.button
+                        variants={fadeUpVariants}
+                        type="button"
+                        onClick={() => setShowCreateGroup(true)}
+                        className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
+                      >
+                        <Plus size={15} />
+                        Add your first interest group
+                      </motion.button>
+                    </motion.div>
+                  )}
 
-          </AnimatePresence>
+                  {/* Generic empty state */}
+                  {!hasNoGroups && !activeGroupId && !leftPanelLoading && !hasError && !searchTopic && displayArticles.length === 0 && (
+                    <motion.div
+                      className="flex flex-col items-center justify-center py-24 text-center"
+                      variants={containerVariants} initial="hidden" animate="show"
+                    >
+                      <motion.div
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-200/60 shadow-glass"
+                      >
+                        <Sparkles className="text-primary" size={36} />
+                      </motion.div>
+                      <motion.h3 variants={fadeUpVariants} className="text-xl font-semibold text-ink mb-2">
+                        Explore Your Feed
+                      </motion.h3>
+                      <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed">
+                        Select an interest group above or enter a topic to discover content.
+                      </motion.p>
+                    </motion.div>
+                  )}
 
-          {/* Article detail side-sheet — slides in from right, overlays feed on desktop */}
+                  {/* No results */}
+                  {!data && !isLoading && !hasError && searchTopic && (
+                    <p className="py-16 text-center text-sm text-muted">
+                      No trending data found for &quot;<strong>{searchTopic}</strong>&quot;. Try a different topic.
+                    </p>
+                  )}
+
+                  {/* Error */}
+                  {hasError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-700">
+                      {error || trendingSearch.error}
+                    </div>
+                  )}
+
+                  {/* Skeleton loading */}
+                  {isLoading && (
+                    <motion.div
+                      className="space-y-4"
+                      variants={containerVariants} initial="hidden" animate="show"
+                    >
+                      {[0, 1, 2].map((i) => (
+                        <motion.div key={i} variants={cardItemVariants} className="glass-panel rounded-2xl overflow-hidden">
+                          <div className="h-0.5 w-full bg-violet-100" />
+                          <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+                            <motion.div className="w-7 h-7 rounded-lg bg-violet-100" variants={skeletonPulseVariants} animate="animate" />
+                            <motion.div className="h-3 w-24 rounded bg-violet-100" variants={skeletonPulseVariants} animate="animate" />
+                            <motion.div className="ml-auto h-3 w-8 rounded-full bg-violet-50" variants={skeletonPulseVariants} animate="animate" />
+                          </div>
+                          <div className="p-3 space-y-2">
+                            {[0, 1, 2, 3].map((j) => (
+                              <motion.div key={j} className="flex gap-3" variants={skeletonPulseVariants} animate="animate">
+                                <div className="shrink-0 w-16 h-10 rounded-lg bg-violet-50" />
+                                <div className="flex-1 space-y-1.5 pt-0.5">
+                                  <div className="h-2.5 rounded bg-violet-50 w-full" />
+                                  <div className="h-2 rounded bg-violet-50/60 w-3/4" />
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+
+                  {/* News article feed */}
+                  {(leftPanelLoading || displayArticles.length > 0) && (
+                    <motion.div className="mb-4" variants={cardItemVariants} initial="hidden" animate="show">
+                      <FeedLeftPanel
+                        articles={sortedDisplayArticles}
+                        loading={leftPanelLoading}
+                        onClip={handleClip}
+                        onOpen={(a) => { setDebateMode(false); setOpenArticle(a); }}
+                        clippedUrls={clippedUrls}
+                        feedbackMap={feedbackMap}
+                        onThumbsUp={handleThumbsUp}
+                        onThumbsDown={handleThumbsDown}
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* Platform feed sections */}
+                  {data && !isLoading && (
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={visiblePanels.join('-')}
+                        className="space-y-4"
+                        variants={containerVariants} initial="hidden" animate="show"
+                      >
+                        {visiblePanels.includes('youtube') && data.youtube.length > 0 && (
+                          <FeedSection
+                            title="YouTube" count={data.youtube.length}
+                            color={PLATFORM_META.youtube.color} icon={PLATFORM_META.youtube.icon}
+                          >
+                            <YouTubePanel videos={data.youtube} />
+                          </FeedSection>
+                        )}
+                        {visiblePanels.includes('instagram') && data.instagram.length > 0 && (
+                          <FeedSection
+                            title="Instagram" count={data.instagram.length}
+                            color={PLATFORM_META.instagram.color} icon={PLATFORM_META.instagram.icon}
+                          >
+                            <InstagramPanel posts={data.instagram} />
+                          </FeedSection>
+                        )}
+                        {visiblePanels.includes('linkedin') && data.linkedin && data.linkedin.length > 0 && (
+                          <FeedSection
+                            title="LinkedIn" count={data.linkedin.length}
+                            color={PLATFORM_META.linkedin.color} icon={PLATFORM_META.linkedin.icon}
+                          >
+                            <LinkedInPanel posts={data.linkedin} />
+                          </FeedSection>
+                        )}
+                        {visiblePanels.length > 1 && (
+                          <motion.div variants={cardItemVariants}>
+                            <TrendingGraph data={data} onNodeClick={handleNodeClick} />
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+                  )}
+
+                </motion.div>
+              )}
+
+            </AnimatePresence>
+          </div>
+
+          {/* Right: full-height curated sidebar */}
+          {!openArticle && !openDraft && !debateMode && (
+            <div className="w-80 xl:w-96 shrink-0 border-l border-border/40 hidden lg:flex flex-col overflow-hidden">
+              <FeedCuratedPanel
+                idToken={idToken}
+                api={api}
+                searchTopic={searchTopic}
+                newsProviderKeys={newsProviderKeys}
+                capabilities={capabilities}
+                trendingData={{
+                  youtube: data?.youtube ?? [],
+                  instagram: data?.instagram ?? [],
+                  linkedin: data?.linkedin ?? [],
+                  news: trendingSearch.data?.articles?.length
+                    ? trendingSearch.data.articles
+                    : (data?.news ?? []),
+                }}
+                trendingWords={trendingWords}
+                recommendedTopics={recommendedTopics}
+                loading={isLoading}
+                onClip={handleClip}
+                clippedUrls={clippedUrls}
+                onOpenArticle={(a) => { setDebateMode(false); setOpenArticle(a); }}
+                onSelectWord={(w) => { setTopic(w); setSearchTopic(w); }}
+                onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
+              />
+            </div>
+          )}
+
+          {/* Article detail side-sheet — slides over from right */}
           <AnimatePresence>
             {!openDraft && openArticle && !debateMode && (
               <>
@@ -984,9 +978,9 @@ export function FeedPage({
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="absolute inset-y-0 right-0 z-20 w-full lg:w-[65%] xl:w-[60%] overflow-y-auto bg-white/95 backdrop-blur-xl border-l border-border/50 shadow-2xl"
+                  className="absolute inset-y-0 right-0 z-20 w-full lg:w-[60%] overflow-y-auto bg-white/95 backdrop-blur-xl border-l border-border/50 shadow-2xl"
                 >
-                  <div className="p-6 pr-20">
+                  <div className="p-6 pb-16">
                     <ArticleDetailView
                       article={openArticle}
                       idToken={idToken}
