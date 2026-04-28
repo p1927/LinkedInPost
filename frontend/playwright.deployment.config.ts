@@ -12,11 +12,18 @@ export default defineConfig({
   ],
   outputDir: './test-results-deployment',
   use: {
-    baseURL: 'https://p1927.github.io/LinkedInPost',
+    baseURL: 'https://p1927.github.io/LinkedInPost/',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
+  // Exclude specs that require a local backend server (localhost:3456)
+  testIgnore: [
+    '**/setup-flow.spec.ts',
+    '**/setup/*.spec.ts',
+    '**/integration/worker-routes.spec.ts',
+    '**/integration/worker-auth.spec.ts',
+  ],
   projects: [
     {
       name: 'chromium',

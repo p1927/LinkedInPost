@@ -1684,22 +1684,17 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           <p className="text-xs leading-5 text-muted">
             Approved Instagram posts are published directly from the Worker using Instagram Login for professional accounts.
           </p>
+          <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-border bg-canvas px-3.5 py-2.5">
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-border-strong')} />
+            <span className="text-sm text-ink">
+              {session.config.hasInstagramAccessToken && session.config.instagramUserId
+                ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}`
+                : session.config.instagramAuthAvailable
+                  ? 'No Instagram professional account connected yet'
+                  : 'Instagram app credentials missing from Worker environment'}
+            </span>
+          </div>
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-              <div className="flex items-center gap-3">
-                <div
-                  className={`h-2.5 w-2.5 rounded-full ${session.config.hasInstagramAccessToken && session.config.instagramUserId ? 'bg-[#E1306C]' : 'bg-border-strong'}`}
-                />
-                <p className="text-sm font-medium text-ink">
-                  {session.config.hasInstagramAccessToken && session.config.instagramUserId
-                    ? `Connected as ${session.config.instagramUsername ? `@${session.config.instagramUsername}` : session.config.instagramUserId}.`
-                    : session.config.instagramAuthAvailable
-                      ? 'No Instagram professional account connected yet.'
-                      : 'Instagram app credentials are still missing from the Worker environment.'}
-                </p>
-              </div>
-            </div>
 
             <div className="flex flex-col gap-2">
               <Button
@@ -1741,20 +1736,17 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           <p className="text-xs leading-5 text-muted">
             Approved LinkedIn posts are published directly from the Worker, without going through GitHub Actions.
           </p>
+          <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-border bg-canvas px-3.5 py-2.5">
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-border-strong')} />
+            <span className="text-sm text-ink">
+              {session.config.hasLinkedInAccessToken
+                ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}`
+                : session.config.linkedinAuthAvailable
+                  ? 'No LinkedIn account connected yet'
+                  : 'LinkedIn OAuth credentials missing from Worker environment'}
+            </span>
+          </div>
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-              <div className="flex items-center gap-3">
-                <div className={`h-2.5 w-2.5 rounded-full ${session.config.hasLinkedInAccessToken ? 'bg-[#0A66C2]' : 'bg-border-strong'}`} />
-                <p className="text-sm font-medium text-ink">
-                  {session.config.hasLinkedInAccessToken
-                    ? `Connected as ${session.config.linkedinPersonUrn || 'a LinkedIn member account'}.`
-                    : session.config.linkedinAuthAvailable
-                      ? 'No LinkedIn account connected yet.'
-                      : 'LinkedIn OAuth app credentials are still missing from the Worker environment.'}
-                </p>
-              </div>
-            </div>
 
             <div className="flex flex-col gap-2">
               <Button
@@ -1945,23 +1937,21 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
         <SettingsSectionCard id="settings-whatsapp" title="WhatsApp Delivery">
           <p className="text-xs leading-5 text-muted">This path sends non-template WhatsApp messages directly through Meta Cloud API.</p>
+
+          {/* Inline status */}
+          <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-border bg-canvas px-3.5 py-2.5">
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-border-strong')} />
+            <span className="text-sm text-ink">
+              {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
+                ? `Connected · phone ${session.config.whatsappPhoneNumberId}`
+                : session.config.whatsappAuthAvailable
+                  ? 'No WhatsApp Business phone connected yet'
+                  : 'Meta OAuth credentials missing from Worker environment'}
+            </span>
+          </div>
+
           <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
             <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`h-2.5 w-2.5 rounded-full ${session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId ? 'bg-[#25D366]' : 'bg-border-strong'}`}
-                  />
-                  <p className="text-sm font-medium text-ink">
-                    {session.config.hasWhatsAppAccessToken && session.config.whatsappPhoneNumberId
-                      ? `Connected to WhatsApp phone ${session.config.whatsappPhoneNumberId}.`
-                      : session.config.whatsappAuthAvailable
-                        ? 'No WhatsApp Business phone connected yet.'
-                        : 'Meta OAuth app credentials are still missing from the Worker environment.'}
-                  </p>
-                </div>
-              </div>
 
               <div className="flex flex-col gap-2">
                 <Button
@@ -2051,24 +2041,21 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
         <SettingsSectionCard id="settings-gmail" title="Gmail Delivery">
           <p className="text-xs leading-5 text-muted">This path sends emails directly through the Gmail API.</p>
-          <div className="mt-4 grid gap-4 xl:grid-cols-2">
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`h-2.5 w-2.5 rounded-full ${session.config.hasGmailAccessToken ? 'bg-[#EA4335]' : 'bg-border-strong'}`}
-                  />
-                  <p className="text-sm font-medium text-ink">
-                    {session.config.hasGmailAccessToken
-                      ? `Connected as ${session.config.gmailEmailAddress || 'a Gmail account'}.`
-                      : session.config.gmailAuthAvailable
-                        ? 'No Gmail account connected yet.'
-                        : 'Gmail OAuth app credentials are still missing from the Worker environment.'}
-                  </p>
-                </div>
-              </div>
 
+          {/* Inline status */}
+          <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-border bg-canvas px-3.5 py-2.5">
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', session.config.hasGmailAccessToken ? 'bg-[#EA4335]' : 'bg-border-strong')} />
+            <span className="text-sm text-ink">
+              {session.config.hasGmailAccessToken
+                ? `Connected as ${session.config.gmailEmailAddress || 'a Gmail account'}`
+                : session.config.gmailAuthAvailable
+                  ? 'No Gmail account connected yet'
+                  : 'Gmail OAuth credentials missing from Worker environment'}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            <div className="space-y-3">
               <div className="flex flex-col gap-2">
                 <Button
                   type="button"
@@ -2103,60 +2090,67 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
                   : 'Set GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET in the Worker before this button can be used.'}
               </p>
             </div>
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Default recipient (global)</p>
-              <p className="text-xs text-muted">Applied to all topics that don't have their own email settings saved in the editor.</p>
-              <div>
-                <label htmlFor="gmail-default-to" className="block text-xs font-semibold text-ink mb-1">
-                  Default To
-                </label>
-                <Input
-                  id="gmail-default-to"
-                  value={gmailDefaultTo}
-                  onChange={(e) => setGmailDefaultTo(e.target.value)}
-                  placeholder="recipient@example.com"
-                  className="text-sm"
-                  aria-label="Default Gmail To"
-                />
+
+            <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+              <div className="border-b border-border bg-canvas/60 px-4 py-2.5">
+                <p className="text-xs font-medium text-ink">Default recipient</p>
+                <p className="mt-0.5 text-[11px] text-muted">Applied to topics without their own email settings</p>
               </div>
-              <div>
-                <label htmlFor="gmail-default-cc" className="block text-xs font-semibold text-ink mb-1">
-                  Default Cc
-                </label>
-                <Input
-                  id="gmail-default-cc"
-                  value={gmailDefaultCc}
-                  onChange={(e) => setGmailDefaultCc(e.target.value)}
-                  className="text-sm"
-                  placeholder="Optional Cc addresses"
-                  aria-label="Default Gmail Cc"
-                />
-              </div>
-              <div>
-                <label htmlFor="gmail-default-bcc" className="block text-xs font-semibold text-ink mb-1">
-                  Default Bcc
-                </label>
-                <Input
-                  id="gmail-default-bcc"
-                  value={gmailDefaultBcc}
-                  onChange={(e) => setGmailDefaultBcc(e.target.value)}
-                  className="text-sm"
-                  placeholder="Optional Bcc addresses"
-                  aria-label="Default Gmail Bcc"
-                />
-              </div>
-              <div>
-                <label htmlFor="gmail-default-subject" className="block text-xs font-semibold text-ink mb-1">
-                  Default Subject
-                </label>
-                <Input
-                  id="gmail-default-subject"
-                  value={gmailDefaultSubject}
-                  onChange={(e) => setGmailDefaultSubject(e.target.value)}
-                  placeholder="Subject line"
-                  className="text-sm"
-                  aria-label="Default Gmail subject"
-                />
+              <div className="space-y-3 p-4">
+                <div>
+                  <label htmlFor="gmail-default-to" className="block text-xs font-semibold text-ink mb-1">
+                    To
+                  </label>
+                  <Input
+                    id="gmail-default-to"
+                    value={gmailDefaultTo}
+                    onChange={(e) => setGmailDefaultTo(e.target.value)}
+                    placeholder="recipient@example.com"
+                    className="text-sm"
+                    aria-label="Default Gmail To"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="gmail-default-cc" className="block text-xs font-semibold text-ink mb-1">
+                      Cc
+                    </label>
+                    <Input
+                      id="gmail-default-cc"
+                      value={gmailDefaultCc}
+                      onChange={(e) => setGmailDefaultCc(e.target.value)}
+                      className="text-sm"
+                      placeholder="Optional"
+                      aria-label="Default Gmail Cc"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="gmail-default-bcc" className="block text-xs font-semibold text-ink mb-1">
+                      Bcc
+                    </label>
+                    <Input
+                      id="gmail-default-bcc"
+                      value={gmailDefaultBcc}
+                      onChange={(e) => setGmailDefaultBcc(e.target.value)}
+                      className="text-sm"
+                      placeholder="Optional"
+                      aria-label="Default Gmail Bcc"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="gmail-default-subject" className="block text-xs font-semibold text-ink mb-1">
+                    Subject
+                  </label>
+                  <Input
+                    id="gmail-default-subject"
+                    value={gmailDefaultSubject}
+                    onChange={(e) => setGmailDefaultSubject(e.target.value)}
+                    placeholder="Subject line"
+                    className="text-sm"
+                    aria-label="Default Gmail subject"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -2167,18 +2161,13 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             Configure YouTube API credentials and comment polling schedule. The Worker uses a YouTube Data API key to poll for new comments and apply auto-reply rules.
           </p>
           <div className="mt-4 space-y-4">
-            <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">Status</p>
-              <div className="flex items-center gap-3">
-                <div
-                  className={`h-2.5 w-2.5 rounded-full ${session.config.youtubeAuthAvailable ? 'bg-[#FF0000]' : 'bg-border-strong'}`}
-                />
-                <p className="text-sm font-medium text-ink">
-                  {session.config.youtubeAuthAvailable
-                    ? 'YouTube API key is configured in the Worker.'
-                    : 'YouTube API key is not configured in the Worker environment.'}
-                </p>
-              </div>
+            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-canvas px-3.5 py-2.5">
+              <span className={cn('h-2 w-2 shrink-0 rounded-full', session.config.youtubeAuthAvailable ? 'bg-[#FF0000]' : 'bg-border-strong')} />
+              <span className="text-sm text-ink">
+                {session.config.youtubeAuthAvailable
+                  ? 'YouTube API key is configured in the Worker'
+                  : 'YouTube API key is not configured in the Worker environment'}
+              </span>
             </div>
 
             <div className="rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">

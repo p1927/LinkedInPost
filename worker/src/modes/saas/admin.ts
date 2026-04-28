@@ -2,7 +2,7 @@
 import { listAllUsers, listAccessRequests, setUserStatus, setUserBudget, resolveAccessRequest, getMonthlyTokenUsage } from '../../db/users';
 
 function okJson(data: unknown): Response {
-  return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ ok: true, data }), { headers: { 'Content-Type': 'application/json' } });
 }
 
 export async function handleAdmin(request: Request, db: D1Database, path: string, method: string): Promise<Response> {

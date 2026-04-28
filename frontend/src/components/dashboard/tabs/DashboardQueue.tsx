@@ -87,6 +87,7 @@ export function DashboardQueue({
   contentPatterns = [],
   onViewModeChange,
   disableCalendarInternalDrawer,
+  loading = false,
   idToken,
   api,
 }: {
@@ -121,6 +122,7 @@ export function DashboardQueue({
   contentPatterns?: ContentPattern[];
   onViewModeChange?: (mode: 'list' | 'calendar') => void;
   disableCalendarInternalDrawer?: boolean;
+  loading?: boolean;
   idToken?: string;
   api?: BackendApi;
 }) {
@@ -552,19 +554,26 @@ export function DashboardQueue({
 
       <div>
         {filteredRows.length === 0 ? (
-          rows.length === 0 ? (
+          loading ? (
+            <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-8 py-16 text-center">
+              <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
+                <Loader2 className="h-6 w-6 animate-spin" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm text-muted">Loading your posts…</p>
+            </div>
+          ) : rows.length === 0 ? (
             <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-8 py-10 text-center">
               <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
                 <Bot className="h-6 w-6" strokeWidth={1.5} />
               </div>
-              <p className="text-base font-semibold text-ink mb-1">No topics yet</p>
-              <p className="text-sm text-muted mb-5">Add your first topic and let AI draft your next LinkedIn post.</p>
+              <p className="text-base font-semibold text-ink mb-1">No posts yet</p>
+              <p className="text-sm text-muted mb-5">Create your first post and let AI draft your next LinkedIn post.</p>
               <a
                 href={WORKSPACE_PATHS.addTopic}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
               >
                 <Bot className="h-4 w-4" aria-hidden />
-                Add topic
+                New Post
               </a>
               {/* Starter templates */}
               <div className="mt-8 text-left">

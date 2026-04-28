@@ -1,16 +1,17 @@
 import { useState, useCallback, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Sparkles, Loader2, ThumbsUp, ThumbsDown, X as XIcon } from 'lucide-react';
+import { Loader2, X as XIcon, Link2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { type BackendApi } from '../../services/backendApi';
 import { type SheetRow } from '../../services/sheets';
 import { WORKSPACE_PATHS } from '../topic-navigation/utils/workspaceRoutes';
-import { TrendingSidebar } from './TrendingSidebar';
+import { TopicRightPanel } from './TopicRightPanel';
 import type { TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useSpeechToText } from './useSpeechToText';
 import { MicButton } from './MicButton';
+import type { Clip } from '../feed/types';
 
 // Module-level draft — survives navigation so the form isn't wiped on unmount.
 const draft = {
@@ -46,6 +47,20 @@ const STYLE_OPTIONS = [
   'Controversial',
   'Conversational',
 ] as const;
+
+type SectionId = 'about' | 'meaning' | 'notes';
+
+interface SectionAttachment {
+  clip: Clip;
+  type: 'text' | 'link';
+}
+
+interface DropMenu {
+  section: SectionId;
+  clip: Clip;
+  x: number;
+  y: number;
+}
 
 /** Auto-resize a textarea to fit its content. */
 function autoResize(el: HTMLTextAreaElement | null) {
@@ -103,6 +118,56 @@ function SectionDivider({ label, action }: { label: string; action?: React.React
   );
 }
 
+/** Section wrapper that accepts clip drops and shows attachment chips. */
+function DroppableSection({
+  children, section, draggingClip, attachments, onDrop,
+}: {
+  children: React.ReactNode;
+  section: SectionId;
+  draggingClip: Clip | null;
+  attachments: SectionAttachment[];
+  onDrop: (section: SectionId, clip: Clip, x: number, y: number) => void;
+}) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  return (
+    <div
+      onDragOver={(e) => {
+        if (draggingClip) { e.preventDefault(); setIsDragOver(true); }
+      }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        if (draggingClip) onDrop(section, draggingClip, e.clientX, e.clientY);
+      }}
+      className={[
+        'rounded-lg transition-all duration-150',
+        isDragOver ? 'ring-2 ring-primary/40 bg-primary/5 px-2 -mx-2' : '',
+      ].join(' ')}
+    >
+      {children}
+      {attachments.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {attachments.map((att, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] text-primary"
+            >
+              {att.type === 'link' ? (
+                <Link2 className="h-2.5 w-2.5 shrink-0" />
+              ) : (
+                <FileText className="h-2.5 w-2.5 shrink-0" />
+              )}
+              <span className="max-w-[140px] truncate">{att.clip.articleTitle || 'Clip'}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AddTopicPage({
   idToken,
   api,
@@ -120,8 +185,6 @@ export function AddTopicPage({
   const [searchParams] = useSearchParams();
   const stt = useSpeechToText();
 
-  // Restore from the module-level draft when creating a new topic (not editing an existing one).
-  // If a ?topic= query param is present (e.g. from a starter template), pre-fill that value.
   const [topic, setTopic] = useState(() => {
     if (editRow) return '';
     const paramTopic = searchParams.get('topic');
@@ -133,6 +196,7 @@ export function AddTopicPage({
   const [notes, setNotes] = useState(() => editRow ? '' : draft.notes);
   const [pros, setPros] = useState<string[]>(() => editRow ? [] : draft.pros);
   const [cons, setCons] = useState<string[]>(() => editRow ? [] : draft.cons);
+
   useEffect(() => {
     if (!editRow) return;
     setTopic(editRow.topic);
@@ -163,6 +227,14 @@ export function AddTopicPage({
   const [showPersonaDialog, setShowPersonaDialog] = useState(false);
   const [deletingPersonaId, setDeletingPersonaId] = useState<string | null>(null);
 
+  // Drag-and-drop state
+  const [draggingClip, setDraggingClip] = useState<Clip | null>(null);
+  const [dropMenu, setDropMenu] = useState<DropMenu | null>(null);
+  const [sectionAttachments, setSectionAttachments] = useState<Record<SectionId, SectionAttachment[]>>({
+    about: [], meaning: [], notes: [],
+  });
+  const [attachedClipIds, setAttachedClipIds] = useState<Set<string>>(new Set());
+
   // Keep the draft in sync so changes survive navigation (only for new topics).
   useEffect(() => {
     if (editRow) return;
@@ -180,9 +252,7 @@ export function AddTopicPage({
 
   // Load custom personas on mount
   useEffect(() => {
-    api.listCustomPersonas(idToken).then(setCustomPersonas).catch(() => {
-      // Non-fatal: custom personas are optional
-    });
+    api.listCustomPersonas(idToken).then(setCustomPersonas).catch(() => {});
   }, [idToken, api]);
 
   const handleGenerateInsights = useCallback(async () => {
@@ -241,10 +311,74 @@ export function AddTopicPage({
     [idToken, api, topic, about, meaning, style, pros, cons, notes, selectedAudience, navigate, onSaved],
   );
 
-  const hasInsights = pros.length > 0 || cons.length > 0;
+  // Append text to a section textarea
+  const appendToSection = useCallback((section: SectionId, text: string) => {
+    switch (section) {
+      case 'about': setAbout(prev => prev ? `${prev}\n\n${text}` : text); break;
+      case 'meaning': setMeaning(prev => prev ? `${prev}\n\n${text}` : text); break;
+      case 'notes': setNotes(prev => prev ? `${prev}\n\n${text}` : text); break;
+    }
+  }, []);
+
+  const handleDropOnSection = useCallback((section: SectionId, clip: Clip, x: number, y: number) => {
+    setDropMenu({ section, clip, x, y });
+  }, []);
+
+  const handleDropMenuAction = useCallback((type: 'text' | 'link') => {
+    if (!dropMenu) return;
+    const { section, clip } = dropMenu;
+    const textToAdd = type === 'text'
+      ? (clip.passageText || clip.articleTitle)
+      : `[${clip.articleTitle}](${clip.articleUrl})`;
+    appendToSection(section, textToAdd);
+    setSectionAttachments(prev => ({
+      ...prev,
+      [section]: [...prev[section], { clip, type }],
+    }));
+    setAttachedClipIds(prev => new Set([...prev, clip.id]));
+    setDropMenu(null);
+  }, [dropMenu, appendToSection]);
 
   return (
     <div className="flex h-full min-h-0 flex-1">
+      {/* ── Drop context menu overlay ── */}
+      {dropMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setDropMenu(null)}
+          />
+          <div
+            className="fixed z-50 min-w-[160px] overflow-hidden rounded-xl border border-white/50 bg-white/95 shadow-2xl backdrop-blur-md"
+            style={{
+              left: dropMenu.x,
+              top: dropMenu.y,
+              transform: 'translate(-50%, -10px)',
+            }}
+          >
+            <div className="border-b border-black/5 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-black/40">
+              Attach clip
+            </div>
+            <button
+              type="button"
+              onClick={() => handleDropMenuAction('text')}
+              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-sm text-black/80 transition-colors hover:bg-primary/10 hover:text-primary"
+            >
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              Paste text
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDropMenuAction('link')}
+              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-sm text-black/80 transition-colors hover:bg-primary/10 hover:text-primary"
+            >
+              <Link2 className="h-3.5 w-3.5 shrink-0" />
+              Paste link
+            </button>
+          </div>
+        </>
+      )}
+
       {/* ── Left: document editor ── */}
       <div className="custom-scrollbar flex-1 overflow-y-auto">
         <form onSubmit={handleSubmit} className="mx-auto max-w-2xl px-8 py-10">
@@ -277,27 +411,41 @@ export function AddTopicPage({
           {/* About */}
           <div className="mb-6">
             <SectionDivider label="About this post" />
-            <div className="pt-3">
-              <DocTextarea
-                value={about}
-                onChange={setAbout}
-                placeholder="What is this post about? Describe the context, story, or angle you want to explore…"
-                minRows={3}
-              />
-            </div>
+            <DroppableSection
+              section="about"
+              draggingClip={draggingClip}
+              attachments={sectionAttachments.about}
+              onDrop={handleDropOnSection}
+            >
+              <div className="pt-3">
+                <DocTextarea
+                  value={about}
+                  onChange={setAbout}
+                  placeholder="What is this post about? Describe the context, story, or angle you want to explore…"
+                  minRows={3}
+                />
+              </div>
+            </DroppableSection>
           </div>
 
           {/* Message */}
           <div className="mb-6">
             <SectionDivider label="Message to convey" />
-            <div className="pt-3">
-              <DocTextarea
-                value={meaning}
-                onChange={setMeaning}
-                placeholder="What should readers walk away thinking or feeling? What's the core takeaway?"
-                minRows={2}
-              />
-            </div>
+            <DroppableSection
+              section="meaning"
+              draggingClip={draggingClip}
+              attachments={sectionAttachments.meaning}
+              onDrop={handleDropOnSection}
+            >
+              <div className="pt-3">
+                <DocTextarea
+                  value={meaning}
+                  onChange={setMeaning}
+                  placeholder="What should readers walk away thinking or feeling? What's the core takeaway?"
+                  minRows={2}
+                />
+              </div>
+            </DroppableSection>
           </div>
 
           {/* Persona */}
@@ -373,105 +521,27 @@ export function AddTopicPage({
             </div>
           </div>
 
-          {/* Research notes — main scratchpad */}
+          {/* Research notes */}
           <div className="mb-6">
             <SectionDivider label="Research notes" />
-            <div className="pt-3">
-              <DocTextarea
-                value={notes}
-                onChange={setNotes}
-                placeholder="Paste links, quotes, stats, anecdotes, or anything you want to remember. This is your scratchpad…"
-                minRows={5}
-              />
-              {stt.error && (
-                <p className="mt-1 text-xs text-red-500">{stt.error}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Pros & Cons — AI generated */}
-          <div className="mb-8">
-            <SectionDivider
-              label="Pros & cons"
-              action={
-                <button
-                  type="button"
-                  onClick={handleGenerateInsights}
-                  disabled={generatingInsights || !topic.trim()}
-                  className={[
-                    'flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150',
-                    generatingInsights || !topic.trim()
-                      ? 'cursor-not-allowed border-white/20 text-muted/40'
-                      : 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/20',
-                  ].join(' ')}
-                >
-                  {generatingInsights ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3 w-3" />
-                  )}
-                  {generatingInsights ? 'Analysing…' : 'Generate with AI'}
-                </button>
-              }
-            />
-
-            <div className="pt-3">
-              {insightsError && (
-                <p className="mb-3 text-xs text-red-500">{insightsError}</p>
-              )}
-
-              {generatingInsights && !hasInsights && (
-                <div className="flex flex-col gap-2">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="h-3 w-1/2 animate-pulse rounded bg-muted/20" />
-                      <div className="h-3 w-1/2 animate-pulse rounded bg-muted/20" />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {hasInsights && (
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Pros */}
-                  <div>
-                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600/70">
-                      <ThumbsUp className="h-3 w-3" />
-                      For
-                    </div>
-                    <ul className="flex flex-col gap-1.5 list-none p-0 m-0">
-                      {pros.map((p, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-sm text-ink/80">
-                          <span className="mt-0.5 shrink-0 text-emerald-500">✓</span>
-                          {p}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {/* Cons */}
-                  <div>
-                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600/70">
-                      <ThumbsDown className="h-3 w-3" />
-                      Watch out
-                    </div>
-                    <ul className="flex flex-col gap-1.5 list-none p-0 m-0">
-                      {cons.map((c, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-sm text-ink/80">
-                          <span className="mt-0.5 shrink-0 text-amber-500">!</span>
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {!hasInsights && !generatingInsights && (
-                <p className="text-xs text-muted/40">
-                  Enter a topic above then click "Generate with AI" to get strategic pros &amp; cons.
-                </p>
-              )}
-            </div>
+            <DroppableSection
+              section="notes"
+              draggingClip={draggingClip}
+              attachments={sectionAttachments.notes}
+              onDrop={handleDropOnSection}
+            >
+              <div className="pt-3">
+                <DocTextarea
+                  value={notes}
+                  onChange={setNotes}
+                  placeholder="Paste links, quotes, stats, anecdotes, or anything you want to remember. This is your scratchpad…"
+                  minRows={5}
+                />
+                {stt.error && (
+                  <p className="mt-1 text-xs text-red-500">{stt.error}</p>
+                )}
+              </div>
+            </DroppableSection>
           </div>
 
           {/* Error */}
@@ -516,9 +586,23 @@ export function AddTopicPage({
         </form>
       </div>
 
-      {/* ── Right: trending sidebar ── */}
-      <aside className="custom-scrollbar hidden w-72 shrink-0 overflow-y-auto border-l border-white/30 bg-white/5 p-4 backdrop-blur-sm lg:block">
-        <TrendingSidebar topic={debouncedTopic} idToken={idToken} api={api} onRefresh={() => {}} capabilities={capabilities} />
+      {/* ── Right: tabbed panel (Trending / Research / Analysis) ── */}
+      <aside className="hidden w-72 shrink-0 flex-col border-l border-white/30 bg-white/5 backdrop-blur-sm lg:flex">
+        <TopicRightPanel
+          topic={debouncedTopic}
+          idToken={idToken}
+          api={api}
+          capabilities={capabilities}
+          pros={pros}
+          cons={cons}
+          generatingInsights={generatingInsights}
+          insightsError={insightsError}
+          onGenerateInsights={handleGenerateInsights}
+          topicEntered={!!topic.trim()}
+          onClipDragStart={(clip) => setDraggingClip(clip)}
+          onClipDragEnd={() => setDraggingClip(null)}
+          attachedClipIds={attachedClipIds}
+        />
       </aside>
     </div>
   );

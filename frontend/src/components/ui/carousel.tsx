@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { Fragment, useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
 interface CarouselStep {
@@ -18,75 +18,74 @@ interface CarouselProps {
 
 function Carousel({ steps, currentStep, onStepChange, disabledSteps = [], className }: CarouselProps) {
   return (
-    <div
-      role="tablist"
-      aria-label="Steps"
-      className={cn("flex flex-row flex-wrap gap-2 sm:gap-3", className)}
-    >
-        {steps.map((step, index) => {
-          const isActive = index === currentStep
-          const isCompleted = index < currentStep
-          const isDisabled = disabledSteps.includes(index)
+    <div className={cn("flex items-center", className)} role="list" aria-label="Progress">
+      {steps.map((step, index) => {
+        const isActive = index === currentStep
+        const isCompleted = index < currentStep
+        const isDisabled = disabledSteps.includes(index)
+        const canGoBack = isCompleted && !isDisabled
+        const isLast = index === steps.length - 1
 
-          return (
+        return (
+          <Fragment key={step.id}>
+            {/* Step pill */}
             <button
-              key={step.id}
-              role="tab"
-              aria-selected={isActive}
+              role="listitem"
               aria-current={isActive ? "step" : undefined}
-              aria-disabled={isDisabled}
-              disabled={isDisabled}
-              onClick={() => !isDisabled && onStepChange(index)}
+              aria-label={`Step ${index + 1}: ${step.name}${isCompleted ? " (completed)" : isActive ? " (current)" : ""}`}
+              disabled={!canGoBack && !isActive}
+              onClick={() => canGoBack && onStepChange(index)}
               className={cn(
-                "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium",
-                "transition-colors duration-200 outline-none",
-                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500",
-                isDisabled
-                  ? "cursor-not-allowed opacity-50 bg-white/40 border-white/50 text-gray-400"
-                  : "cursor-pointer",
-                !isDisabled && isActive
-                  ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
-                  : !isDisabled && isCompleted
-                  ? "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-                  : !isDisabled
-                  ? "bg-white/40 border-white/50 text-gray-600 hover:bg-white/60 hover:border-gray-300"
-                  : ""
+                "flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 transition-all duration-200 outline-none",
+                "focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+                isActive && "bg-indigo-600 shadow-sm",
+                isCompleted && !isDisabled && "cursor-pointer hover:bg-indigo-50",
+                !isActive && "cursor-default",
               )}
             >
-              {/* Step number circle */}
+              {/* Circle */}
               <span
                 className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                  isActive
-                    ? "bg-white/20 text-white"
-                    : isCompleted
-                    ? "bg-indigo-200 text-indigo-700"
-                    : "bg-gray-200 text-gray-600"
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-all duration-200",
+                  isActive ? "bg-white/20 text-white" :
+                  isCompleted ? "bg-indigo-100 text-indigo-600" :
+                  "bg-slate-200 text-slate-400",
                 )}
               >
                 {isCompleted ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    fill="currentColor"
-                    className="size-3"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
-                      clipRule="evenodd"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-3">
+                    <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
                   </svg>
                 ) : (
                   index + 1
                 )}
               </span>
 
-              {/* Step name — hidden on mobile */}
-              <span className="hidden sm:inline">{step.name}</span>
+              {/* Label — always visible on active, hidden on mobile for others */}
+              <span
+                className={cn(
+                  "text-xs font-semibold leading-none transition-colors duration-200",
+                  isActive ? "text-white" :
+                  isCompleted ? "hidden sm:block text-indigo-600" :
+                  "hidden sm:block text-slate-400",
+                )}
+              >
+                {step.name}
+              </span>
             </button>
-          )
-        })}
+
+            {/* Connector line */}
+            {!isLast && (
+              <div
+                className={cn(
+                  "flex-1 h-px mx-1 transition-colors duration-300",
+                  isCompleted ? "bg-indigo-200" : "bg-slate-200",
+                )}
+              />
+            )}
+          </Fragment>
+        )
+      })}
     </div>
   )
 }
@@ -114,7 +113,7 @@ function CarouselContent({ currentStep, children, className }: CarouselContentPr
       setVisibleStep(currentStep)
       prevStep.current = currentStep
       setFading(false)
-    }, 150) // fade-out half; fade-in completes via CSS
+    }, 150)
     return () => clearTimeout(timer)
   }, [currentStep])
 

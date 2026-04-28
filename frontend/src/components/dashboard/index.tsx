@@ -624,6 +624,7 @@ export function Dashboard({
       onCalendarRescheduleCommit={handleCalendarRescheduleCommit}
       contentPatterns={queueHook.postTemplates}
       disableCalendarInternalDrawer={true}
+      loading={queueHook.loading}
       idToken={idToken}
       api={api}
     />
