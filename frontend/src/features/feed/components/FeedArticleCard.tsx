@@ -35,6 +35,8 @@ export function FeedArticleCard({
   onThumbsDown,
 }: FeedArticleCardProps) {
   const [clipping, setClipping] = useState(false);
+  const isDownvoted = feedbackVote === 'down';
+  const description = article.description?.trim() ?? '';
 
   function handleClip(e: React.MouseEvent) {
     e.preventDefault();
@@ -45,111 +47,108 @@ export function FeedArticleCard({
     setTimeout(() => setClipping(false), 600);
   }
 
-  function handleCardClick() {
-    onOpen(article);
-  }
-
-  const isDownvoted = feedbackVote === 'down';
-  const description = article.description?.trim() ?? '';
-
   return (
     <div
       className={[
-        'flex flex-col rounded-xl border border-white/40 bg-white/30 backdrop-blur-sm overflow-hidden cursor-pointer transition-all hover:border-primary/30 hover:bg-white/50 hover:ring-2 hover:ring-primary/10',
+        'group relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm cursor-pointer',
+        'transition-all duration-200 hover:shadow-md hover:border-slate-300',
         isDownvoted ? 'opacity-40 hover:opacity-60' : '',
       ].join(' ')}
-      onClick={handleCardClick}
+      onClick={() => onOpen(article)}
     >
-      {/* Image block — full width, fixed height */}
-      <div className="h-36 w-full overflow-hidden shrink-0">
+      {/* Hero image — 16:10 aspect ratio */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden">
         {article.imageUrl ? (
           <img
             src={article.imageUrl}
             alt=""
-            className="h-36 w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = 'none';
-              const parent = e.currentTarget.parentElement as HTMLElement;
-              parent.classList.add(sourceColor(article.source), 'flex', 'items-center', 'justify-center');
-              parent.innerHTML = `<span class="text-white text-3xl font-bold">${article.source[0]?.toUpperCase() ?? '?'}</span>`;
+              const el = e.currentTarget as HTMLImageElement;
+              el.style.display = 'none';
+              const parent = el.parentElement as HTMLElement;
+              const col = sourceColor(article.source);
+              parent.classList.add(col, 'flex', 'items-center', 'justify-center');
+              parent.innerHTML += `<span class="text-white text-4xl font-bold">${article.source[0]?.toUpperCase() ?? '?'}</span>`;
             }}
           />
         ) : (
-          <div className={`h-36 w-full ${sourceColor(article.source)} flex items-center justify-center`}>
-            <span className="text-white text-3xl font-bold">{article.source[0]?.toUpperCase() ?? '?'}</span>
+          <div className={`h-full w-full ${sourceColor(article.source)} flex items-center justify-center`}>
+            <span className="text-white text-4xl font-bold">{article.source[0]?.toUpperCase() ?? '?'}</span>
           </div>
         )}
+
+        {/* Source chip — top-left */}
+        <span className="absolute top-2 left-2 text-[10px] font-semibold text-white bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full">
+          {article.source}
+        </span>
+
+        {/* Time chip — top-right */}
+        <span className="absolute top-2 right-2 text-[10px] text-white bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-full">
+          {formatRelativeTime(article.publishedAt)}
+        </span>
+
+        {/* Hover-only action overlay — bottom-right */}
+        <div
+          className="absolute bottom-2 right-2 flex gap-1 bg-black/50 backdrop-blur-sm rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onThumbsUp?.(article); }}
+            aria-label="Mark helpful"
+            className={[
+              'h-7 w-7 rounded-full grid place-items-center transition-colors',
+              feedbackVote === 'up'
+                ? 'bg-green-500/80 text-white'
+                : 'text-white hover:bg-white/20',
+            ].join(' ')}
+          >
+            <ThumbsUp size={12} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onThumbsDown?.(article); }}
+            aria-label="Not helpful"
+            className={[
+              'h-7 w-7 rounded-full grid place-items-center transition-colors',
+              feedbackVote === 'down'
+                ? 'bg-red-500/80 text-white'
+                : 'text-white hover:bg-white/20',
+            ].join(' ')}
+          >
+            <ThumbsDown size={12} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={handleClip}
+            aria-label={isClipped ? 'Already clipped' : 'Clip article'}
+            className={[
+              'h-7 w-7 rounded-full grid place-items-center transition-colors',
+              isClipped
+                ? 'bg-violet-500/80 text-white'
+                : 'text-white hover:bg-white/20',
+            ].join(' ')}
+          >
+            <Scissors
+              size={12}
+              className={clipping ? 'scale-125 transition-transform' : ''}
+              aria-hidden
+            />
+          </button>
+        </div>
       </div>
 
-      {/* Content block */}
-      <div className="p-3 flex-1 flex flex-col gap-2">
-        <p className="text-sm font-semibold leading-snug text-ink line-clamp-2">
+      {/* Content */}
+      <div className="p-3">
+        <p className="text-sm font-semibold leading-snug text-slate-900 line-clamp-2">
           {article.title}
         </p>
-        {description ? (
-          <p className="text-xs leading-relaxed text-muted line-clamp-2">{description}</p>
-        ) : (
-          <p className="text-xs italic text-muted/60">No summary available.</p>
+        {description && (
+          <p className="mt-1.5 text-[12px] leading-snug text-slate-500 line-clamp-2">
+            {description}
+          </p>
         )}
-
-        {/* Footer — always visible */}
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-white/30">
-          {/* Left: source + time */}
-          <div className="flex items-center gap-1.5 text-[11px] text-muted min-w-0">
-            <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${sourceColor(article.source)}`} />
-            <span className="truncate font-medium text-primary/80">{article.source}</span>
-            <span>·</span>
-            <span className="shrink-0">{formatRelativeTime(article.publishedAt)}</span>
-          </div>
-
-          {/* Right: action buttons — always visible */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onThumbsUp?.(article); }}
-              aria-label="Mark article helpful"
-              title="Helpful"
-              className={[
-                'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150 opacity-100',
-                feedbackVote === 'up'
-                  ? 'bg-green-100 text-green-600'
-                  : 'text-muted hover:bg-green-50 hover:text-green-500',
-              ].join(' ')}
-            >
-              <ThumbsUp size={13} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onThumbsDown?.(article); }}
-              aria-label="Mark article not helpful"
-              title="Not helpful"
-              className={[
-                'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150 opacity-100',
-                feedbackVote === 'down'
-                  ? 'bg-red-100 text-red-500'
-                  : 'text-muted hover:bg-red-50 hover:text-red-400',
-              ].join(' ')}
-            >
-              <ThumbsDown size={13} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={handleClip}
-              aria-label={isClipped ? 'Already clipped' : 'Clip article'}
-              title={isClipped ? 'Already clipped' : 'Clip this article'}
-              className={[
-                'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150 opacity-100',
-                isClipped ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-primary/10 hover:text-primary',
-              ].join(' ')}
-            >
-              <Scissors
-                size={13}
-                className={clipping ? 'scale-[1.3] text-green-500 transition-transform' : ''}
-                aria-hidden
-              />
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

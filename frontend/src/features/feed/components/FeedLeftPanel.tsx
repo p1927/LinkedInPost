@@ -67,7 +67,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
   // Initial loading skeleton
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         {[0, 1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
       </div>
     );
@@ -88,7 +88,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
   return (
     <div className="">
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3"
+        className="grid grid-cols-1 gap-3"
         variants={containerVariants}
         initial="hidden"
         animate="show"
@@ -111,7 +111,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
       {/* Sentinel + load-more skeleton */}
       <div ref={sentinelRef} className="h-1" />
       {hasMore && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 pt-1">
+        <div className="grid grid-cols-1 gap-3 pt-1">
           {[0, 1, 2].map(i => <SkeletonCard key={i} />)}
         </div>
       )}

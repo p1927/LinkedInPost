@@ -32,11 +32,12 @@ type CampaignTab = 'bulk' | 'newsletter';
 
 type PreviewTab = 'list' | 'calendar';
 
-type ImportMode = 'generate' | 'upload' | 'paste';
+type ImportMode = 'upload' | 'paste';
 
 const CAMPAIGN_STEPS = [
-  { id: 'import', label: 'Import', name: 'Import Campaign JSON' },
-  { id: 'preview', label: 'Preview', name: 'Preview & Publish' },
+  { id: 'generate', label: 'Generate', name: 'Generate with Claude' },
+  { id: 'import',   label: 'Import',   name: 'Import JSON' },
+  { id: 'preview',  label: 'Preview',  name: 'Preview & Publish' },
 ];
 
 function JsonPasteEditor({
@@ -139,7 +140,7 @@ export function CampaignPage(props: {
   useEffect(() => {
     try { localStorage.setItem(DRAFT_KEY, pasteText); } catch { /* quota exceeded */ }
   }, [pasteText]);
-  const [importMode, setImportMode] = useState<ImportMode>('generate');
+  const [importMode, setImportMode] = useState<ImportMode>('paste');
   const [previewTab, setPreviewTab] = useState<PreviewTab>('calendar');
   const [submitting, setSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -370,8 +371,8 @@ export function CampaignPage(props: {
   ]);
 
   const handleStepChange = useCallback((step: number) => {
-    // Step 1 (Preview) requires valid JSON
-    if (step === 1 && !parseResult.ok) return;
+    // Step 2 (Preview) requires valid JSON
+    if (step === 2 && !parseResult.ok) return;
     setCurrentStep(step);
     pageTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [parseResult.ok]);
@@ -426,7 +427,7 @@ export function CampaignPage(props: {
               steps={CAMPAIGN_STEPS}
               currentStep={currentStep}
               onStepChange={handleStepChange}
-              disabledSteps={parseResult.ok ? [] : [1]}
+              disabledSteps={parseResult.ok ? [] : [2]}
               className="mb-5"
             />
           </>
@@ -437,36 +438,11 @@ export function CampaignPage(props: {
       {campaignTab === 'bulk' && (
         <>
         <CarouselContent currentStep={currentStep}>
-          {/* Step 0: Import — three modes */}
-        <div className="mx-auto max-w-6xl px-4 sm:px-8">
-          <div className="flex flex-col gap-5">
 
-            {/* Mode switcher tabs */}
-            <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1 w-fit">
-              {([
-                { id: 'generate', label: 'Generate with Claude' },
-                { id: 'upload',   label: 'Upload file' },
-                { id: 'paste',    label: 'Paste JSON' },
-              ] as const).map(({ id, label }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setImportMode(id)}
-                  className={clsx(
-                    'rounded-lg px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer',
-                    importMode === id
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+          {/* ── Step 0: Generate with Claude ── */}
+          <div className="mx-auto max-w-6xl px-4 sm:px-8">
+            <div className="flex flex-col gap-5">
 
-            {/* ── Generate mode ─────────────────────────────────────── */}
-            {importMode === 'generate' && (
-              <>
               {/* Section 1: Topic ideas */}
               <section className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
@@ -493,7 +469,7 @@ export function CampaignPage(props: {
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900">Claude prompt</h3>
-                    <p className="text-xs text-slate-500">Copy into Claude, or expand to preview the full prompt.</p>
+                    <p className="text-xs text-slate-500">Copy into Claude, then paste the response in the next step.</p>
                   </div>
                 </div>
                 <div className="p-5">
@@ -522,231 +498,261 @@ export function CampaignPage(props: {
                 </div>
               </section>
 
-              {/* Section 3: paste response */}
-              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">Paste Claude's response</h3>
-                    <p className="text-xs text-slate-500">Paste the JSON returned by Claude here.</p>
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col p-5">
-                  <JsonPasteEditor pasteText={pasteText} setPasteText={setPasteText} errorLines={errorLines} diagnostics={diagnostics} parseResult={parseResult} onNext={() => handleStepChange(1)} />
-                </div>
-              </section>
-              </>
-            )}
-
-            {/* ── Upload mode ────────────────────────────────────────── */}
-            {importMode === 'upload' && (
-              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">Upload JSON or CSV</h3>
-                    <p className="text-xs text-slate-500">CSV: columns topic, date, channels (comma-separated), body. JSON: same schema as the Generate mode.</p>
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col p-5 gap-4">
-                  <label
-                    className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/60 py-14 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors"
-                  >
-                    <input
-                      type="file"
-                      accept=".json,.jsonc,.csv"
-                      className="sr-only"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const text = ev.target?.result as string;
-                          if (file.name.endsWith('.csv')) {
-                            const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-                            const headers = lines[0]?.split(',').map(h => h.trim().toLowerCase()) ?? [];
-                            const posts = lines.slice(1).map(line => {
-                              const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-                              const obj: Record<string, string> = {};
-                              headers.forEach((h, i) => { obj[h] = cols[i] ?? ''; });
-                              return {
-                                topic: obj['topic'] ?? '',
-                                date: obj['date'] ?? '',
-                                channels: obj['channels'] ? obj['channels'].split('|').map(s => s.trim()) : [],
-                                body: obj['body'] ?? '',
-                              };
-                            }).filter(p => p.topic);
-                            setPasteText(JSON.stringify({ version: 1, posts }, null, 2));
-                          } else {
-                            setPasteText(text);
-                          }
-                          setImportMode('paste');
-                        };
-                        reader.readAsText(file);
-                      }}
-                    />
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
-                      <ArrowRight className="h-5 w-5 text-indigo-600 -rotate-90" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-slate-700">Drop a file or click to browse</p>
-                      <p className="text-xs text-slate-400 mt-0.5">.json, .jsonc, .csv</p>
-                    </div>
-                  </label>
-                  <a
-                    href="data:text/csv;charset=utf-8,topic%2Cdate%2Cchannels%2Cbody%0AExample+topic%2C2025-02-01%2Clinkedin%2CSample+body+text"
-                    download="campaign-template.csv"
-                    className="self-start text-xs text-indigo-600 hover:underline"
-                  >
-                    Download CSV template
-                  </a>
-                </div>
-              </section>
-            )}
-
-            {/* ── Paste mode ─────────────────────────────────────────── */}
-            {importMode === 'paste' && (
-              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">Paste campaign JSON</h3>
-                    <p className="text-xs text-slate-500">JSON or JSONC (comments and trailing commas allowed).</p>
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col p-5">
-                  <JsonPasteEditor pasteText={pasteText} setPasteText={setPasteText} errorLines={errorLines} diagnostics={diagnostics} parseResult={parseResult} onNext={() => handleStepChange(1)} />
-                </div>
-              </section>
-            )}
-
-          </div>
-        </div>
-
-        {/* Step 1: Preview & Publish */}
-        <div className="mx-auto max-w-6xl px-4 sm:px-8">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-            {/* Card header: tab switcher + post count */}
-            <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
-              <div className="flex items-center gap-2">
-                {parseResult.ok ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-                    {editedPosts.length} post{editedPosts.length !== 1 ? 's' : ''}
-                  </span>
-                ) : (
-                  <span className="text-xs text-slate-400">Fix JSON to see preview</span>
-                )}
-              </div>
-              <div role="tablist" aria-label="Preview view mode" className="flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
+              {/* Next navigation */}
+              <div className="flex items-center gap-3 border-t border-slate-100 pt-4">
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={previewTab === 'list'}
-                  onClick={() => setPreviewTab('list')}
+                  onClick={() => handleStepChange(1)}
                   className={clsx(
-                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
-                    previewTab === 'list' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
+                    'flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white',
+                    'transition-colors duration-150 hover:bg-indigo-700 cursor-pointer',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
                   )}
                 >
-                  <LayoutList className="h-3.5 w-3.5" aria-hidden />
-                  List
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={previewTab === 'calendar'}
-                  onClick={() => setPreviewTab('calendar')}
-                  className={clsx(
-                    'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
-                    previewTab === 'calendar' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
-                  )}
-                >
-                  <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-                  Calendar
+                  Next: Paste response
+                  <ArrowRight className="h-4 w-4" aria-hidden />
                 </button>
               </div>
+
             </div>
+          </div>
 
-            {/* Toolbar */}
-            {parseResult.ok && (
-              <div className="border-b border-slate-100 px-5 py-3">
-                <CampaignPreviewToolbar
-                  postCount={editedPosts.length}
-                  selectedCount={selectedCount}
-                  onSelectAll={selectAllPosts}
-                  onClearSelection={clearSelection}
-                  onDraftAll={draftAllPosts}
-                  onDeleteAll={deleteAllPosts}
-                  onOpenSetSchedule={openBulkSchedule}
-                  onOpenSetChannels={openBulkChannels}
-                />
+          {/* ── Step 1: Import JSON ── */}
+          <div className="mx-auto max-w-6xl px-4 sm:px-8">
+            <div className="flex flex-col gap-5">
+
+              {/* Mode tabs */}
+              <div className="flex gap-1 rounded-xl border border-slate-200 bg-slate-100/70 p-1 w-fit">
+                {([
+                  { id: 'paste',  label: 'Paste JSON' },
+                  { id: 'upload', label: 'Upload file' },
+                ] as const).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setImportMode(id)}
+                    className={clsx(
+                      'rounded-lg px-4 py-1.5 text-sm font-medium transition-colors cursor-pointer',
+                      importMode === id
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-            )}
 
-            {/* Preview content */}
-            <div className="p-4 sm:p-5">
-              {parseResult.ok ? (
-                previewTab === 'list' ? (
-                  <div className="overflow-x-auto">
-                  <CampaignPostList
-                    posts={editedPosts}
-                    selectedIndices={selectedIndices}
-                    onToggleSelect={toggleSelect}
-                    onDeletePost={deletePostAt}
-                    onUpdatePost={updatePostAt}
-                  />
+              {/* Paste mode */}
+              {importMode === 'paste' && (
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">Paste campaign JSON</h3>
+                      <p className="text-xs text-slate-500">Paste Claude's response or any JSON/JSONC here.</p>
+                    </div>
                   </div>
-                ) : (
-                  <ContentScheduleCalendar
-                    topics={calendarTopics}
-                    onTopicPatch={handleTopicPatch}
-                    onTopicScheduleChange={handleTopicScheduleChange}
-                    onTopicDelete={handleTopicDelete}
-                    selectedTopicIds={selectedTopicIds}
-                    onTopicSelectionToggle={toggleSelectByTopicId}
-                    initialView="month-grid"
-                    className="csc-compact"
+                  <div className="flex flex-1 flex-col p-5">
+                    <JsonPasteEditor pasteText={pasteText} setPasteText={setPasteText} errorLines={errorLines} diagnostics={diagnostics} parseResult={parseResult} onNext={() => handleStepChange(2)} />
+                  </div>
+                </section>
+              )}
+
+              {/* Upload mode */}
+              {importMode === 'upload' && (
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">Upload JSON or CSV</h3>
+                      <p className="text-xs text-slate-500">CSV: columns topic, date, channels (comma-separated), body. JSON: same schema as the Generate step.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-1 flex-col p-5 gap-4">
+                    <label
+                      className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/60 py-14 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors"
+                    >
+                      <input
+                        type="file"
+                        accept=".json,.jsonc,.csv"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const text = ev.target?.result as string;
+                            if (file.name.endsWith('.csv')) {
+                              const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+                              const headers = lines[0]?.split(',').map(h => h.trim().toLowerCase()) ?? [];
+                              const posts = lines.slice(1).map(line => {
+                                const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+                                const obj: Record<string, string> = {};
+                                headers.forEach((h, i) => { obj[h] = cols[i] ?? ''; });
+                                return {
+                                  topic: obj['topic'] ?? '',
+                                  date: obj['date'] ?? '',
+                                  channels: obj['channels'] ? obj['channels'].split('|').map(s => s.trim()) : [],
+                                  body: obj['body'] ?? '',
+                                };
+                              }).filter(p => p.topic);
+                              setPasteText(JSON.stringify({ version: 1, posts }, null, 2));
+                            } else {
+                              setPasteText(text);
+                            }
+                            setImportMode('paste');
+                          };
+                          reader.readAsText(file);
+                        }}
+                      />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
+                        <ArrowRight className="h-5 w-5 text-indigo-600 -rotate-90" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-slate-700">Drop a file or click to browse</p>
+                        <p className="text-xs text-slate-400 mt-0.5">.json, .jsonc, .csv</p>
+                      </div>
+                    </label>
+                    <a
+                      href="data:text/csv;charset=utf-8,topic%2Cdate%2Cchannels%2Cbody%0AExample+topic%2C2025-02-01%2Clinkedin%2CSample+body+text"
+                      download="campaign-template.csv"
+                      className="self-start text-xs text-indigo-600 hover:underline"
+                    >
+                      Download CSV template
+                    </a>
+                  </div>
+                </section>
+              )}
+
+            </div>
+          </div>
+
+          {/* ── Step 2: Preview & Publish ── */}
+          <div className="mx-auto max-w-6xl px-4 sm:px-8">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+              {/* Card header: view toggle + post count */}
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
+                <div className="flex items-center gap-2">
+                  {parseResult.ok ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                      {editedPosts.length} post{editedPosts.length !== 1 ? 's' : ''}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400">Fix JSON to see preview</span>
+                  )}
+                </div>
+                <div role="tablist" aria-label="Preview view mode" className="flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={previewTab === 'list'}
+                    onClick={() => setPreviewTab('list')}
+                    className={clsx(
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
+                      previewTab === 'list' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
+                    )}
+                  >
+                    <LayoutList className="h-3.5 w-3.5" aria-hidden />
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={previewTab === 'calendar'}
+                    onClick={() => setPreviewTab('calendar')}
+                    className={clsx(
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+                      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-600',
+                      previewTab === 'calendar' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
+                    )}
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                    Calendar
+                  </button>
+                </div>
+              </div>
+
+              {/* Toolbar */}
+              {parseResult.ok && (
+                <div className="border-b border-slate-100 px-5 py-3">
+                  <CampaignPreviewToolbar
+                    postCount={editedPosts.length}
+                    selectedCount={selectedCount}
+                    onSelectAll={selectAllPosts}
+                    onClearSelection={clearSelection}
+                    onDraftAll={draftAllPosts}
+                    onDeleteAll={deleteAllPosts}
+                    onOpenSetSchedule={openBulkSchedule}
+                    onOpenSetChannels={openBulkChannels}
                   />
-                )
-              ) : (
-                <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-slate-200">
-                  <p className="text-sm text-slate-400">No preview yet — go back and paste valid JSON.</p>
                 </div>
               )}
-            </div>
 
-            {/* Footer actions */}
-            <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
-              <button
-                type="button"
-                onClick={() => handleStepChange(0)}
-                className={clsx(
-                  'rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700',
-                  'transition-colors duration-150 hover:bg-slate-50 cursor-pointer',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+              {/* Preview content */}
+              <div className="p-4 sm:p-5">
+                {parseResult.ok ? (
+                  previewTab === 'list' ? (
+                    <div className="overflow-x-auto">
+                      <CampaignPostList
+                        posts={editedPosts}
+                        selectedIndices={selectedIndices}
+                        onToggleSelect={toggleSelect}
+                        onDeletePost={deletePostAt}
+                        onUpdatePost={updatePostAt}
+                      />
+                    </div>
+                  ) : (
+                    <ContentScheduleCalendar
+                      topics={calendarTopics}
+                      onTopicPatch={handleTopicPatch}
+                      onTopicScheduleChange={handleTopicScheduleChange}
+                      onTopicDelete={handleTopicDelete}
+                      selectedTopicIds={selectedTopicIds}
+                      onTopicSelectionToggle={toggleSelectByTopicId}
+                      initialView="month-grid"
+                      className="csc-compact"
+                    />
+                  )
+                ) : (
+                  <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-slate-200">
+                    <p className="text-sm text-slate-400">No preview yet — go back and paste valid JSON.</p>
+                  </div>
                 )}
-              >
-                ← Back
-              </button>
-              <button
-                type="button"
-                disabled={!parseResult.ok || submitting || editedPosts.length === 0}
-                onClick={() => void handleCreate()}
-                className={clsx(
-                  'flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white',
-                  'transition-colors duration-150 hover:bg-emerald-700',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600',
-                  'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
-                )}
-              >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
-                Create campaign
-              </button>
+              </div>
+
+              {/* Footer actions */}
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={() => handleStepChange(1)}
+                  className={clsx(
+                    'rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700',
+                    'transition-colors duration-150 hover:bg-slate-50 cursor-pointer',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                  )}
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  disabled={!parseResult.ok || submitting || editedPosts.length === 0}
+                  onClick={() => void handleCreate()}
+                  className={clsx(
+                    'flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white',
+                    'transition-colors duration-150 hover:bg-emerald-700',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600',
+                    'disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer',
+                  )}
+                >
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                  Create campaign
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </CarouselContent>
+
+        </CarouselContent>
 
       <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
         <DialogContent className="sm:max-w-md" showCloseButton>
