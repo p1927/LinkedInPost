@@ -339,7 +339,7 @@ export function AppSidebar({
                       : 'bottom-full left-0 right-0 mb-1',
                   )}
                 >
-                  {link('add-topic', <PlusCircle aria-hidden />, 'New Topic')}
+                  {link('add-topic', <PlusCircle aria-hidden />, 'New Post')}
                   {link('rules', <ScrollText aria-hidden />, 'Rules')}
                   {link('usage', <BarChart2 aria-hidden />, 'Usage')}
                   {link('connections', <PlugZap aria-hidden />, 'Connections')}
