@@ -6,7 +6,7 @@ import type { ContentReviewReport } from '../features/content-review/types';
 import type { TrendingSearchRequest, TrendingSearchResult } from '../features/trending/types';
 import type { NewsletterRecord } from '../features/campaign/schema/newsletterTypes';
 import type { CustomWorkflowSummary } from '../features/generation/WorkflowCardPicker';
-import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload } from '../features/feed/types';
+import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload, ArticleAnalysis } from '../features/feed/types';
 
 export interface SocialIntegration {
   provider: string;
@@ -829,6 +829,10 @@ export class BackendApi {
     notes?: string;
   }): Promise<{ pros: string[]; cons: string[] }> {
     return this.post<{ pros: string[]; cons: string[] }>('analyzeTopicInsights', idToken, payload);
+  }
+
+  analyzeFeedArticle(idToken: string, payload: { title: string; description: string; source: string }): Promise<ArticleAnalysis> {
+    return this.post<ArticleAnalysis>('analyzeFeedArticle', idToken, payload);
   }
 
   /** One field per post; optional fields omitted when empty. Sent to `bulkImportCampaign`. */

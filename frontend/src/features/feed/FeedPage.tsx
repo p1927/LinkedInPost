@@ -20,6 +20,7 @@ import type { NewsProviderKeys } from '@/services/configService';
 import type { InterestGroup, CreateInterestGroupPayload, Clip } from './types';
 import type { SheetRow } from '../../services/sheets';
 import { ClipsDock } from './components/ClipsDock';
+import { ArticleDetailView } from './components/ArticleDetailView';
 
 const DEFAULT_ENABLED = ['youtube', 'instagram', 'news'];
 
@@ -70,7 +71,7 @@ export function FeedPage({
   const [clips, setClips] = useState<Clip[]>([]);
   const clippedUrls = useMemo(() => new Set(clips.map(c => c.articleUrl)), [clips]);
 
-  const [_openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
+  const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
   const [_openDraft, setOpenDraft] = useState<SheetRow | null>(null); // for Task 8
 
   async function handleDeleteClip(clipId: string) {
@@ -396,6 +397,19 @@ export function FeedPage({
         {/* ── Main 2-col layout ──────────────────────────────── */}
         <div className="flex gap-6 p-6 items-start">
 
+          {/* Article Detail View (Mode 2) */}
+          {openArticle ? (
+            <ArticleDetailView
+              article={openArticle}
+              idToken={idToken}
+              api={api}
+              onBack={() => setOpenArticle(null)}
+              onClip={handleClip}
+              isClipped={clippedUrls.has(openArticle.url)}
+            />
+          ) : (
+          <>
+
           {/* Left: platform feed */}
           <div className="flex-1 min-w-0">
 
@@ -550,6 +564,9 @@ export function FeedPage({
               onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
             />
           </div>
+
+          </>
+          )}
         </div>
 
         {/* ClipsDock — added in Task 6 */}

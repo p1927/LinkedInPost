@@ -1,3 +1,16 @@
+export interface ArticleAnalysis {
+  summary: string
+  whyItMatters: string
+  postAngles: string[]
+  opposingView: string
+  opinionPrompt: string
+  perspectiveFlip: {
+    founder: string
+    expert: string
+    beginner: string
+  }
+}
+
 // Interest Groups
 export interface InterestGroup {
   id: string

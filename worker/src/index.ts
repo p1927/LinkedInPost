@@ -1654,6 +1654,59 @@ Rules:
         cons: Array.isArray(parsed.cons) ? parsed.cons.map(String).slice(0, 6) : [],
       };
     }
+    case 'analyzeFeedArticle': {
+      const title = String(payload.title || '').trim();
+      const description = String(payload.description || '').trim();
+      const source = String(payload.source || '').trim();
+      if (!title) throw new Error('title is required.');
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const articleContext = `Title: ${title}\nSource: ${source}\n${description ? `Description: ${description}` : ''}`;
+      const prompt = `You are a content strategy assistant helping a LinkedIn creator understand a news article and find inspiration for posts.
+
+${articleContext}
+
+Return ONLY valid JSON matching this exact shape:
+{
+  "summary": "2-sentence plain-English summary of what the article is about",
+  "whyItMatters": "1-2 sentences on why this matters to a professional LinkedIn audience",
+  "postAngles": ["angle1", "angle2", "angle3"],
+  "opposingView": "1-2 sentences presenting the strongest counterargument or opposing perspective",
+  "opinionPrompt": "A provocative 'Most people think X — do you agree?' style question based on this article",
+  "perspectiveFlip": {
+    "founder": "How a startup founder would frame this topic for a LinkedIn post",
+    "expert": "How a domain expert would frame this topic",
+    "beginner": "How someone new to the field would approach this topic"
+  }
+}
+
+Rules:
+- postAngles: exactly 3 distinct LinkedIn post angles (max 15 words each)
+- All values are plain strings, no markdown
+- No explanation, just the JSON object`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: {
+        summary: string; whyItMatters: string; postAngles: string[];
+        opposingView: string; opinionPrompt: string;
+        perspectiveFlip: { founder: string; expert: string; beginner: string };
+      };
+      try { parsed = JSON.parse(cleaned); }
+      catch { throw new Error('AI returned unexpected format. Please try again.'); }
+      return {
+        summary: String(parsed.summary || ''),
+        whyItMatters: String(parsed.whyItMatters || ''),
+        postAngles: Array.isArray(parsed.postAngles) ? parsed.postAngles.map(String).slice(0, 3) : [],
+        opposingView: String(parsed.opposingView || ''),
+        opinionPrompt: String(parsed.opinionPrompt || ''),
+        perspectiveFlip: {
+          founder: String(parsed.perspectiveFlip?.founder || ''),
+          expert: String(parsed.perspectiveFlip?.expert || ''),
+          beginner: String(parsed.perspectiveFlip?.beginner || ''),
+        },
+      };
+    }
     case 'updateRowStatus':
       return pipeline.updateRowStatus(
         storedConfig.spreadsheetId,
