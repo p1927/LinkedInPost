@@ -64,6 +64,7 @@ export function ArticleDetailView({
   const [opinionResponse, setOpinionResponse] = useState('');
   const [connections, setConnections] = useState<DraftConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [connectionsError, setConnectionsError] = useState<string | null>(null);
 
   const fetchAnalysis = () => {
     setAnalysisLoading(true);
@@ -90,8 +91,9 @@ export function ArticleDetailView({
   }, [article.url, idToken]);
 
   useEffect(() => {
-    if (rows.length === 0) return;
+    if (activeTab !== 'connection' || rows.length === 0) return;
     setConnectionsLoading(true);
+    setConnectionsError(null);
     api
       .findDraftConnections(idToken, {
         title: article.title,
@@ -99,9 +101,12 @@ export function ArticleDetailView({
         drafts: rows.map(r => ({ topicId: r.topicId ?? '', topic: r.topic ?? '' })).filter(d => d.topicId && d.topic),
       })
       .then(result => setConnections(result.connections))
-      .catch(() => setConnections([]))
+      .catch((e: unknown) => {
+        setConnections([]);
+        setConnectionsError((e instanceof Error ? e.message : null) || 'Could not load connections.');
+      })
       .finally(() => setConnectionsLoading(false));
-  }, [article.url, idToken, rows.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, article.url, idToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formattedDate = article.publishedAt
     ? new Date(article.publishedAt).toLocaleDateString(undefined, {
@@ -429,7 +434,34 @@ export function ArticleDetailView({
                   <SkeletonLine width="w-4/5" />
                 </div>
               )}
-              {!connectionsLoading && connections.length === 0 && (
+              {connectionsError && !connectionsLoading && (
+                <div className="space-y-1.5">
+                  <p className="text-xs text-red-500">{connectionsError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConnectionsError(null);
+                      setConnectionsLoading(true);
+                      api
+                        .findDraftConnections(idToken, {
+                          title: article.title,
+                          description: article.description ?? '',
+                          drafts: rows.map(r => ({ topicId: r.topicId ?? '', topic: r.topic ?? '' })).filter(d => d.topicId && d.topic),
+                        })
+                        .then(result => setConnections(result.connections))
+                        .catch((e: unknown) => {
+                          setConnections([]);
+                          setConnectionsError((e instanceof Error ? e.message : null) || 'Could not load connections.');
+                        })
+                        .finally(() => setConnectionsLoading(false));
+                    }}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+              {!connectionsLoading && !connectionsError && connections.length === 0 && (
                 <p className="text-xs text-muted leading-relaxed italic">
                   {rows.length === 0
                     ? 'Open a draft from the Clips Dock to see connections.'
@@ -443,7 +475,7 @@ export function ArticleDetailView({
                 >
                   <p className="text-xs font-semibold text-ink line-clamp-1">{conn.topic}</p>
                   <p className="text-[11px] text-muted leading-relaxed">{conn.reason}</p>
-                  {onOpenDraft && (
+                  {onOpenDraft && rows.some(r => r.topicId === conn.topicId) && (
                     <button
                       type="button"
                       onClick={() => {
