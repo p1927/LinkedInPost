@@ -159,10 +159,11 @@ export async function updateClip(
 }
 
 export async function deleteClip(db: D1Database, userId: string, id: string): Promise<void> {
-  await db
+  const result = await db
     .prepare('DELETE FROM clips WHERE id = ?1 AND user_id = ?2')
     .bind(id, userId)
     .run();
+  if ((result.meta?.changes ?? 0) === 0) throw new Error('Clip not found.');
 }
 
 export async function assignClipToPost(

@@ -50,6 +50,7 @@ export interface ReviewWorkspaceProps {
   onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;
   onGenerateReferenceImage?: (referenceImageUrl: string, instructions: string) => Promise<string>;
+  onGenerateImageFromText?: (prompt: string) => Promise<string>;
   imageGenConfig?: { provider: ImageGenProvider; model?: string };
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;

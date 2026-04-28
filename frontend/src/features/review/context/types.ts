@@ -221,6 +221,7 @@ export interface ReviewFlowContextValue {
   handleUploadImageOption: (file: File) => Promise<void>;
   handleUploadReferenceImage: (file: File) => Promise<string>;
   handleGenerateReferenceImage: (referenceImageUrl: string, instructions: string) => Promise<void>;
+  handleGenerateImageFromText: (prompt: string) => Promise<void>;
   handleSaveDraft: () => Promise<void>;
   savingDraft: boolean;
   handleApprove: () => Promise<void>;
@@ -281,6 +282,7 @@ export interface ReviewFlowProviderProps {
   onPromoteRemoteImage: (sourceUrl: string) => Promise<string>;
   onUploadImage: (file: File) => Promise<string>;
   onGenerateReferenceImage?: (referenceImageUrl: string, instructions: string) => Promise<string>;
+  onGenerateImageFromText?: (prompt: string) => Promise<string>;
   imageGenConfig?: { provider: ImageGenProvider; model?: string };
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   onCancel: () => void;

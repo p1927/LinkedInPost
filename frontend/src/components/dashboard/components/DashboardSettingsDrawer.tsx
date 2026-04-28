@@ -1274,56 +1274,114 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
   const saveEnabled = session.isAdmin && hasUnsavedSettingsChanges && !savingConfig;
 
+  const NAV_GROUPS: Array<{ label: string; ids: SettingsSectionId[] }> = [
+    { label: 'General', ids: ['settings-workspace-core'] },
+    { label: 'AI', ids: ['settings-llm', 'settings-enrichment', 'settings-image-generation', 'settings-speech-to-text'] },
+    { label: 'Channels', ids: ['settings-instagram', 'settings-linkedin', 'settings-telegram', 'settings-whatsapp', 'settings-gmail', 'settings-youtube'] },
+    { label: 'Content', ids: ['settings-generate-posts', 'settings-news', 'settings-content-review'] },
+  ];
+
+  const getChannelHealth = (id: SettingsSectionId): boolean | null => {
+    const healthKey = CHANNEL_HEALTH_SECTION_IDS[id];
+    if (healthKey != null && publishingHealth != null) return publishingHealth[healthKey];
+    if (id === 'settings-youtube') return Boolean(session.config.youtubeAuthAvailable);
+    return null;
+  };
+
   return (
     <div className="flex min-h-0 flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
       <aside className="sticky top-4 z-20 shrink-0 rounded-xl border border-border/60 bg-surface/95 p-3 shadow-sm backdrop-blur-md lg:w-52 lg:max-w-[13rem] lg:self-start">
-        {/* Search */}
-        <div className="relative mb-2 hidden lg:block">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted" />
+        {/* Search — desktop only */}
+        <div className="relative mb-3 hidden lg:flex items-center gap-1.5 rounded-lg border border-border/60 bg-canvas px-2 py-1.5">
+          <Search className="h-3 w-3 shrink-0 text-muted" />
           <input
             type="text"
-            placeholder="Search sections…"
+            placeholder="Search…"
             value={navSearch}
             onChange={(e) => setNavSearch(e.target.value)}
-            className="w-full rounded-lg border border-border/60 bg-canvas py-1.5 pl-7 pr-3 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+            onKeyDown={(e) => { if (e.key === 'Escape') setNavSearch(''); }}
+            className="flex-1 bg-transparent text-[11px] text-ink placeholder:text-muted focus:outline-none"
           />
+          {!navSearch && <span className="shrink-0 text-[10px] text-muted/60">⌘K</span>}
         </div>
+
+        {/* Nav — horizontal scroll on mobile, grouped vertical on desktop */}
         <nav
-          className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:pr-1"
+          className="flex flex-row gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0 lg:space-y-3"
           aria-label="Settings sections"
         >
-          <p className="mb-2 hidden text-xs font-bold uppercase tracking-[0.14em] text-muted lg:block">Jump to</p>
-          {filteredSections.length === 0 && (
-            <p className="hidden py-2 text-center text-xs text-muted lg:block">No sections found</p>
+          {navSearch.trim() ? (
+            /* Flat search results */
+            filteredSections.length === 0 ? (
+              <p className="hidden py-2 text-center text-xs text-muted lg:block">No sections found</p>
+            ) : (
+              filteredSections.map(({ id, label }) => {
+                const health = getChannelHealth(id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => scrollToSection(id)}
+                    className={cn(
+                      'flex w-full shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors',
+                      activeSectionId === id
+                        ? 'bg-white font-semibold text-violet-700 ring-1 ring-violet-200'
+                        : 'text-slate-600 hover:bg-white hover:text-slate-800',
+                    )}
+                  >
+                    <span className="flex-1 truncate">{label}</span>
+                    {health !== null && (
+                      <span
+                        className={cn('h-1.5 w-1.5 shrink-0 rounded-full', health ? 'bg-emerald-500' : 'bg-slate-300')}
+                        aria-label={health ? 'Connected' : 'Not connected'}
+                      />
+                    )}
+                  </button>
+                );
+              })
+            )
+          ) : (
+            /* Grouped nav */
+            NAV_GROUPS.map(({ label: groupLabel, ids }) => {
+              const groupSections = ids
+                .map((id) => settingsSections.find((s) => s.id === id))
+                .filter((s): s is NonNullable<typeof s> => s != null);
+              if (groupSections.length === 0) return null;
+              return (
+                <div key={groupLabel}>
+                  <p className="mb-0.5 hidden px-2 text-[9px] font-semibold uppercase tracking-wider text-slate-400 lg:block">
+                    {groupLabel}
+                  </p>
+                  {groupSections.map(({ id, label }) => {
+                    const health = getChannelHealth(id);
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => scrollToSection(id)}
+                        className={cn(
+                          'flex w-full shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[11px] transition-colors',
+                          activeSectionId === id
+                            ? 'bg-white font-semibold text-violet-700 ring-1 ring-violet-200'
+                            : 'text-slate-600 hover:bg-white hover:text-slate-800',
+                        )}
+                      >
+                        <span className="flex-1 truncate">{label}</span>
+                        {health !== null && (
+                          <span
+                            className={cn('h-1.5 w-1.5 shrink-0 rounded-full', health ? 'bg-emerald-500' : 'bg-slate-300')}
+                            aria-label={health ? 'Connected' : 'Not connected'}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })
           )}
-          {filteredSections.map(({ id, label }) => {
-            const healthKey = CHANNEL_HEALTH_SECTION_IDS[id];
-            const isConnected = healthKey != null && publishingHealth != null ? publishingHealth[healthKey] : null;
-            return (
-              <Button
-                key={id}
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollToSection(id)}
-                className={cn(
-                  'w-full shrink-0 justify-start rounded-lg px-3 py-2 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
-                  activeSectionId === id
-                    ? 'bg-primary/12 font-semibold text-ink'
-                    : 'text-muted hover:bg-white/60 hover:text-ink',
-                )}
-              >
-                <span className="flex-1 truncate">{label}</span>
-                {isConnected !== null && (
-                  <span
-                    className={cn('ml-1.5 h-1.5 w-1.5 shrink-0 rounded-full', isConnected ? 'bg-emerald-500' : 'bg-slate-300')}
-                    aria-label={isConnected ? 'Connected' : 'Not connected'}
-                  />
-                )}
-              </Button>
-            );
-          })}
         </nav>
+
         <div className="mt-3 border-t border-border pt-3">
           <Button
             type="button"

@@ -1096,6 +1096,10 @@ export class BackendApi {
     });
   }
 
+  async generateImageFromText(idToken: string, prompt: string, topicId: string): Promise<{ imageUrl: string }> {
+    return this.post<{ imageUrl: string }>('generateImageFromText', idToken, { prompt, topicId });
+  }
+
   async downloadDraftImage(idToken: string, imageUrl: string, fileName: string): Promise<Blob> {
     return this.postForBlob('downloadDraftImage', idToken, {
       url: imageUrl,

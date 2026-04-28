@@ -34,6 +34,7 @@ export function useReviewFlowActions(
     onPromoteRemoteImage,
     onUploadImage,
     onGenerateReferenceImage,
+    onGenerateImageFromText,
     onCancel,
     routed,
     googleModel,
@@ -571,6 +572,23 @@ export function useReviewFlowActions(
     autoSelectNewImage(imageUrl);
   };
 
+  const handleGenerateImageFromText = async (prompt: string): Promise<void> => {
+    if (!onGenerateImageFromText) {
+      throw new Error('Text-to-image generation is not configured for this workspace.');
+    }
+    const imageUrl = await onGenerateImageFromText(prompt);
+    const generatedOption: ImageAssetOption = {
+      id: `generated-text-${Date.now()}`,
+      imageUrl,
+      label: 'AI Generated',
+      kind: 'generated',
+    };
+    setUploadedImageOptions((current) =>
+      mergeUniqueImageOptions([generatedOption, ...current]).slice(0, DRAFT_IMAGE_SEARCH_CHOICE_COUNT),
+    );
+    autoSelectNewImage(imageUrl);
+  };
+
   const handleApprove = async () => {
     if (!(editorText || '').trim()) {
       void showAlert({ title: 'Notice', description: 'Post text cannot be empty.' });
@@ -1035,6 +1053,7 @@ export function useReviewFlowActions(
     handleClearSelectedImage,
     handleUploadImageOption,
     handleGenerateReferenceImage,
+    handleGenerateImageFromText,
     handleSaveDraft,
     savingDraft,
     handleApprove,

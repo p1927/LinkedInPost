@@ -135,8 +135,9 @@ export async function deleteInterestGroup(
   userId: string,
   id: string,
 ): Promise<void> {
-  await db
+  const result = await db
     .prepare('DELETE FROM interest_groups WHERE id = ?1 AND user_id = ?2')
     .bind(id, userId)
     .run();
+  if ((result.meta?.changes ?? 0) === 0) throw new Error('Interest group not found.');
 }

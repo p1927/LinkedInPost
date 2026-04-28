@@ -409,6 +409,7 @@ export function Dashboard({
     onListNewsResearchHistory: FEATURE_NEWS_RESEARCH ? queueHook.handleListNewsResearchHistory : undefined,
     onGetNewsResearchSnapshot: FEATURE_NEWS_RESEARCH ? queueHook.handleGetNewsResearchSnapshot : undefined,
     onGenerateReferenceImage: queueHook.handleGenerateReferenceImage,
+    onGenerateImageFromText: queueHook.handleGenerateImageFromText,
     onUploadContextDocument: queueHook.handleUploadContextDocument,
     imageGenConfig: session.config.imageGen,
     onGetNodeRuns: queueHook.getNodeRunsForRow,

@@ -7,6 +7,7 @@ import { useAlert } from './useAlert';
 import { Input } from './ui/input';
 import { Button } from '@/components/ui/button';
 import { ImageGenReferencePanel } from './ImageGenReferencePanel';
+import { ImageGenTextPanel } from './ImageGenTextPanel';
 import { ChannelImageRequirements } from '../features/review/components/ChannelImageRequirements';
 
 export interface ImageAssetOption {
@@ -38,6 +39,8 @@ interface Props {
   onUploadReferenceImage?: (file: File) => Promise<string>;
   /** Generate a new image from a reference URL + instructions; result is added to imageOptions by the caller. */
   onGenerateReferenceImage?: (referenceImageUrl: string, instructions: string) => Promise<void>;
+  /** Generate a new image from a text prompt; result is added to imageOptions by the caller. */
+  onGenerateImageFromText?: (prompt: string) => Promise<void>;
   /** Channel identifier used to show channel-specific image dimension requirements. */
   channel?: string;
   /** AI-suggested generation prompt surfaced from enrichment data. */
@@ -76,6 +79,7 @@ export function ImageAssetManager({
   supportsReferenceImage = false,
   onUploadReferenceImage,
   onGenerateReferenceImage,
+  onGenerateImageFromText,
   channel,
   aiGenerationPrompt,
 }: Props) {
@@ -217,6 +221,15 @@ export function ImageAssetManager({
             imageOptions={images}
             onUploadReferenceImage={onUploadReferenceImage}
             onGenerateReferenceImage={onGenerateReferenceImage}
+            aiGenerationPrompt={aiGenerationPrompt}
+          />
+        </div>
+      )}
+
+      {onGenerateImageFromText && (
+        <div className="mt-3">
+          <ImageGenTextPanel
+            onGenerateImageFromText={onGenerateImageFromText}
             aiGenerationPrompt={aiGenerationPrompt}
           />
         </div>

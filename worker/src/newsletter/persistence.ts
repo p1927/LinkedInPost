@@ -80,31 +80,31 @@ export async function saveNewsletterConfig(
       spreadsheetId,
       config.rssEnabled ? 1 : 0,
       config.newsApiEnabled ? 1 : 0,
-      JSON.stringify(config.customRssFeeds),
-      config.itemCount,
-      JSON.stringify(config.scheduleDays),
-      JSON.stringify(config.scheduleTimes),
-      config.scheduleFrequency,
-      JSON.stringify(config.emailRecipients),
-      config.subjectTemplate,
-      JSON.stringify(config.channelTargets),
-      config.processingTemplate,
-      config.processingNote,
-      config.emotionTarget,
-      config.colorEmotionTarget,
-      config.storyFramework,
-      config.previewChannel,
-      config.adminEmail,
-      config.authorPersona || '',
-      config.writingStyleExamples || '',
-      JSON.stringify(config.topicIncludeKeywords || []),
-      JSON.stringify(config.topicExcludeKeywords || []),
-      JSON.stringify(config.recurringSections || []),
-      config.newsletterIntro || '',
-      config.newsletterOutro || '',
-      config.primaryChannel || 'email',
-      JSON.stringify(config.enabledRssFeedIds || []),
-      JSON.stringify(config.enabledNewsApiProviders || []),
+      JSON.stringify(config.customRssFeeds ?? []),
+      config.itemCount ?? 5,
+      JSON.stringify(config.scheduleDays ?? []),
+      JSON.stringify(config.scheduleTimes ?? []),
+      config.scheduleFrequency ?? 'weekly',
+      JSON.stringify(config.emailRecipients ?? []),
+      config.subjectTemplate ?? '',
+      JSON.stringify(config.channelTargets ?? []),
+      config.processingTemplate ?? '',
+      config.processingNote ?? '',
+      config.emotionTarget ?? '',
+      config.colorEmotionTarget ?? '',
+      config.storyFramework ?? '',
+      config.previewChannel ?? 'email',
+      config.adminEmail ?? '',
+      config.authorPersona ?? '',
+      config.writingStyleExamples ?? '',
+      JSON.stringify(config.topicIncludeKeywords ?? []),
+      JSON.stringify(config.topicExcludeKeywords ?? []),
+      JSON.stringify(config.recurringSections ?? []),
+      config.newsletterIntro ?? '',
+      config.newsletterOutro ?? '',
+      config.primaryChannel ?? 'email',
+      JSON.stringify(config.enabledRssFeedIds ?? []),
+      JSON.stringify(config.enabledNewsApiProviders ?? []),
     )
     .run();
 }
@@ -150,7 +150,8 @@ export async function createNewsletterIssue(
     .prepare('SELECT * FROM newsletter_issues WHERE id = ?')
     .bind(id)
     .first<NewsletterIssueRow>();
-  return row!;
+  if (!row) throw new Error('Failed to create newsletter issue — INSERT did not persist.');
+  return row;
 }
 
 export async function approveNewsletterIssue(
@@ -245,7 +246,8 @@ export async function createNewsletterRecord(
     .prepare('SELECT * FROM newsletters WHERE id = ?')
     .bind(id)
     .first<NewsletterRow>();
-  return row!;
+  if (!row) throw new Error('Failed to create newsletter — INSERT did not persist.');
+  return row;;
 }
 
 export async function listNewsletterRecords(

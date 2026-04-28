@@ -1500,8 +1500,13 @@ async function dispatchAction(
       return listInterestGroups(env.PIPELINE_DB, session.userId);
     }
     case 'createInterestGroup': {
-      const { name, topics, domains, color } = payload as { name: string; topics: string[]; domains: string[]; color: string };
-      return createInterestGroup(env.PIPELINE_DB, session.userId, { name, topics: topics ?? [], domains: domains ?? [], color: color ?? '#6366f1' });
+      const raw = payload as Record<string, unknown>;
+      const name = String(raw.name || '').trim();
+      if (!name) throw new Error('name is required.');
+      const topics = Array.isArray(raw.topics) ? (raw.topics as unknown[]).map(String).filter(Boolean) : [];
+      const domains = Array.isArray(raw.domains) ? (raw.domains as unknown[]).map(String).filter(Boolean) : [];
+      const color = String(raw.color || '#6366f1');
+      return createInterestGroup(env.PIPELINE_DB, session.userId, { name, topics, domains, color });
     }
     case 'updateInterestGroup': {
       const { id, name, topics, domains, color } = payload as { id: string; name?: string; topics?: string[]; domains?: string[]; color?: string };
@@ -1548,8 +1553,22 @@ async function dispatchAction(
       return listClips(env.PIPELINE_DB, session.userId);
     }
     case 'createClip': {
-      const clipData = payload as { type: 'article' | 'passage'; articleTitle: string; articleUrl: string; source?: string; publishedAt?: string; thumbnailUrl?: string; passageText?: string };
-      return createClip(env.PIPELINE_DB, session.userId, { ...clipData, source: clipData.source ?? '', publishedAt: clipData.publishedAt ?? '' });
+      const raw = payload as Record<string, unknown>;
+      const clipType = String(raw.type || '').trim();
+      if (clipType !== 'article' && clipType !== 'passage') throw new Error('type must be "article" or "passage".');
+      const articleTitle = String(raw.articleTitle || '').trim();
+      if (!articleTitle) throw new Error('articleTitle is required.');
+      const articleUrl = String(raw.articleUrl || '').trim();
+      if (!articleUrl) throw new Error('articleUrl is required.');
+      return createClip(env.PIPELINE_DB, session.userId, {
+        type: clipType as 'article' | 'passage',
+        articleTitle,
+        articleUrl,
+        source: String(raw.source || ''),
+        publishedAt: String(raw.publishedAt || ''),
+        thumbnailUrl: String(raw.thumbnailUrl || ''),
+        passageText: String(raw.passageText || ''),
+      });
     }
     case 'updateClip': {
       const { id, passageText } = payload as { id: string; passageText?: string };
@@ -2046,6 +2065,8 @@ Rules:
       return handleUploadContextDocument(payload);
     case 'generateImageWithReference':
       return generateImageWithReference(env, storedConfig, payload);
+    case 'generateImageFromText':
+      return generateImageFromText(env, storedConfig, payload);
     case 'publishContent':
       ensureSpreadsheetConfigured(storedConfig);
       return publishContent(env, session.userId, storedConfig, payload, sheets, pipeline);
@@ -2491,13 +2512,17 @@ Rules:
       return handleListNewsletterIssues(env.PIPELINE_DB, sid);
     }
     case 'newsletter.approveIssue': {
+      const issueId = String(payload.issueId || '').trim();
+      if (!issueId) throw new Error('issueId is required.');
       const { handleApproveNewsletterIssue } = await import('./newsletter/handlers');
-      await handleApproveNewsletterIssue(env.PIPELINE_DB, String(payload.issueId || '').trim());
+      await handleApproveNewsletterIssue(env.PIPELINE_DB, issueId);
       return { ok: true };
     }
     case 'newsletter.rejectIssue': {
+      const issueId = String(payload.issueId || '').trim();
+      if (!issueId) throw new Error('issueId is required.');
       const { handleRejectNewsletterIssue } = await import('./newsletter/handlers');
-      await handleRejectNewsletterIssue(env.PIPELINE_DB, String(payload.issueId || '').trim());
+      await handleRejectNewsletterIssue(env.PIPELINE_DB, issueId);
       return { ok: true };
     }
     case 'newsletter.createDraftNow': {
@@ -2507,8 +2532,10 @@ Rules:
       return handleCreateNewsletterDraftNow(env, env.PIPELINE_DB, sid);
     }
     case 'newsletter.sendApproved': {
+      const issueId = String(payload.issueId || '').trim();
+      if (!issueId) throw new Error('issueId is required.');
       const { handleSendApprovedNewsletterIssue } = await import('./newsletter/handlers');
-      await handleSendApprovedNewsletterIssue(env, env.PIPELINE_DB, String(payload.issueId || '').trim());
+      await handleSendApprovedNewsletterIssue(env, env.PIPELINE_DB, issueId);
       return { ok: true };
     }
 
@@ -2521,19 +2548,23 @@ Rules:
     case 'newsletter.create': {
       const sid = String(storedConfig.spreadsheetId || '').trim();
       if (!sid) throw new Error('No spreadsheet configured.');
+      const name = String(payload.name || '').trim();
+      if (!name) throw new Error('Newsletter name is required.');
       const { handleCreateNewsletter } = await import('./newsletter/handlers');
       return handleCreateNewsletter(
         env,
         env.PIPELINE_DB,
         sid,
-        String(payload.name || '').trim(),
+        name,
         (payload.config as object) ?? {},
         Boolean(payload.autoApprove),
       );
     }
     case 'newsletter.update': {
+      const newsletterId = String(payload.newsletterId || '').trim();
+      if (!newsletterId) throw new Error('newsletterId is required.');
       const { handleUpdateNewsletter } = await import('./newsletter/handlers');
-      await handleUpdateNewsletter(env, env.PIPELINE_DB, String(payload.newsletterId || '').trim(), {
+      await handleUpdateNewsletter(env, env.PIPELINE_DB, newsletterId, {
         name: payload.name !== undefined ? String(payload.name) : undefined,
         config: payload.config !== undefined ? (payload.config as object) : undefined,
         autoApprove: payload.autoApprove !== undefined ? Boolean(payload.autoApprove) : undefined,
@@ -2542,25 +2573,35 @@ Rules:
       return { ok: true };
     }
     case 'newsletter.delete': {
+      const newsletterId = String(payload.newsletterId || '').trim();
+      if (!newsletterId) throw new Error('newsletterId is required.');
       const { handleDeleteNewsletter } = await import('./newsletter/handlers');
-      await handleDeleteNewsletter(env.PIPELINE_DB, String(payload.newsletterId || '').trim());
+      await handleDeleteNewsletter(env.PIPELINE_DB, newsletterId);
       return { ok: true };
     }
     case 'newsletter.listIssuesByNewsletter': {
+      const newsletterId = String(payload.newsletterId || '').trim();
+      if (!newsletterId) throw new Error('newsletterId is required.');
       const { handleListIssuesByNewsletter } = await import('./newsletter/handlers');
-      return handleListIssuesByNewsletter(env.PIPELINE_DB, String(payload.newsletterId || '').trim());
+      return handleListIssuesByNewsletter(env.PIPELINE_DB, newsletterId);
     }
     case 'newsletter.createDraftByNewsletter': {
+      const newsletterId = String(payload.newsletterId || '').trim();
+      if (!newsletterId) throw new Error('newsletterId is required.');
       const { handleCreateDraftByNewsletter } = await import('./newsletter/handlers');
-      return handleCreateDraftByNewsletter(env, env.PIPELINE_DB, String(payload.newsletterId || '').trim());
+      return handleCreateDraftByNewsletter(env, env.PIPELINE_DB, newsletterId);
     }
     case 'newsletter.regenerateIssue': {
+      const issueId = String(payload.issueId || '').trim();
+      if (!issueId) throw new Error('issueId is required.');
       const { handleRegenerateNewsletterIssue } = await import('./newsletter/handlers');
-      return handleRegenerateNewsletterIssue(env, env.PIPELINE_DB, String(payload.issueId || '').trim());
+      return handleRegenerateNewsletterIssue(env, env.PIPELINE_DB, issueId);
     }
     case 'newsletter.issue.update': {
+      const issueId = String(payload.issueId || '').trim();
+      if (!issueId) throw new Error('issueId is required.');
       const { handleUpdateNewsletterIssue } = await import('./newsletter/handlers');
-      await handleUpdateNewsletterIssue(env.PIPELINE_DB, String(payload.issueId || '').trim(), {
+      await handleUpdateNewsletterIssue(env.PIPELINE_DB, issueId, {
         subject: payload.subject !== undefined ? String(payload.subject) : undefined,
         rendered_content: payload.rendered_content !== undefined ? String(payload.rendered_content) : undefined,
       });
@@ -5559,6 +5600,86 @@ async function generateImageWithReference(
   const imgBytes = Uint8Array.from(atob(imagePart.inlineData.data), (c) => c.charCodeAt(0));
   const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, imgBytes.buffer, imgContentType);
   return { imageUrl };
+}
+
+async function generateImageFromText(
+  env: Env,
+  storedConfig: StoredConfig,
+  payload: Record<string, unknown>,
+): Promise<DraftImageUploadResult> {
+  const prompt = String(payload.prompt || '').trim();
+  const topicId = String(payload.topicId || '').trim();
+
+  if (!prompt) throw new Error('prompt is required.');
+  if (!topicId) throw new Error('topicId is required.');
+
+  const provider = storedConfig.imageGen?.provider;
+  if (!provider) throw new Error('Image generation is not configured for this workspace.');
+
+  const model = storedConfig.imageGen?.model;
+
+  const registeredProviders = ['flux-kontext', 'ideogram', 'dall-e', 'stability'] as const;
+  type RegisteredProvider = typeof registeredProviders[number];
+
+  if ((registeredProviders as readonly string[]).includes(provider)) {
+    const { getImageGenProvider } = await import('./image-gen');
+    const result = await getImageGenProvider(provider as RegisteredProvider).generate(
+      { prompt, provider: provider as RegisteredProvider, model },
+      env as unknown as Record<string, string | undefined>,
+    );
+    if (result.url.startsWith('data:')) {
+      const decoded = decodeDataUrl(result.url);
+      const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, decoded.bytes, decoded.contentType);
+      return { imageUrl };
+    }
+    const asset = await fetchImageAsset(result.url);
+    const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, asset.bytes, asset.contentType);
+    return { imageUrl };
+  }
+
+  if (provider === 'gemini') {
+    const geminiModel = model ?? 'gemini-2.0-flash-preview-image-generation';
+    const apiKey = String(env.GEMINI_API_KEY || '').trim();
+    if (!apiKey) throw new Error('GEMINI_API_KEY is not configured for image generation.');
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(`Gemini image generation failed with status ${response.status}: ${message.slice(0, 280)}`);
+    }
+
+    const result = (await response.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string } }> } }>;
+      promptFeedback?: { blockReason?: string };
+    };
+
+    if (result.promptFeedback?.blockReason) {
+      throw new Error(`Gemini blocked the image generation request: ${result.promptFeedback.blockReason}.`);
+    }
+
+    const imagePart = result.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+    if (!imagePart?.inlineData?.data) {
+      throw new Error('Gemini did not return an image in the response.');
+    }
+
+    const imgContentType = imagePart.inlineData.mimeType ?? 'image/png';
+    const imgBytes = Uint8Array.from(atob(imagePart.inlineData.data), (c) => c.charCodeAt(0));
+    const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, imgBytes.buffer, imgContentType);
+    return { imageUrl };
+  }
+
+  throw new Error(`Text-to-image generation is not supported for provider "${provider}".`);
 }
 
 function sanitizeDownloadFileName(fileName: string, contentType: string): string {

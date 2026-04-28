@@ -39,6 +39,7 @@ export type TopicReviewPagesBaseProps = {
   onPromoteRemoteImage: (row: SheetRow, sourceUrl: string) => Promise<string>;
   onUploadImage: (row: SheetRow, file: File) => Promise<string>;
   onGenerateReferenceImage?: (row: SheetRow, referenceImageUrl: string, instructions: string) => Promise<string>;
+  onGenerateImageFromText?: (row: SheetRow, prompt: string) => Promise<string>;
   imageGenConfig?: { provider: ImageGenProvider; model?: string };
   onDownloadImage: (imageUrl: string, fileName: string) => Promise<void>;
   queueLoading: boolean;

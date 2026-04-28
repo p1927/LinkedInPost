@@ -169,6 +169,7 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     handleUploadImageOption: actions.handleUploadImageOption,
     handleUploadReferenceImage: props.onUploadImage,
     handleGenerateReferenceImage: actions.handleGenerateReferenceImage,
+    handleGenerateImageFromText: actions.handleGenerateImageFromText,
     imageGenConfig: props.imageGenConfig,
     handleSaveDraft: actions.handleSaveDraft,
     savingDraft: actions.savingDraft,

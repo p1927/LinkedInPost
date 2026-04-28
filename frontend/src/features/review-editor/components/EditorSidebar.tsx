@@ -109,6 +109,7 @@ export function EditorSidebar() {
     handleUploadImageOption,
     handleUploadReferenceImage,
     handleGenerateReferenceImage,
+    handleGenerateImageFromText,
     imageGenConfig,
     onDownloadImage,
     sharedRules,
@@ -587,6 +588,7 @@ export function EditorSidebar() {
                   supportsReferenceImage={getImageGenCapabilities(imageGenConfig?.provider ?? 'pixazo', imageGenConfig?.model).supportsReferenceImage}
                   onUploadReferenceImage={handleUploadReferenceImage}
                   onGenerateReferenceImage={handleGenerateReferenceImage}
+                  onGenerateImageFromText={handleGenerateImageFromText}
                   channel={deliveryChannel}
                 />
               </section>
