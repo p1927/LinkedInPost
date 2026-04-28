@@ -413,14 +413,12 @@ export function CampaignPage(props: {
 
         {/* Newsletter tab */}
         {campaignTab === 'newsletter' ? (
-          <div className="mx-auto max-w-6xl px-4 sm:px-8">
-            <NewsletterTab
-              idToken={idToken}
-              session={session}
-              api={api}
-              onAuthExpired={onAuthExpired}
-            />
-          </div>
+          <NewsletterTab
+            idToken={idToken}
+            session={session}
+            api={api}
+            onAuthExpired={onAuthExpired}
+          />
         ) : (
           <>
             {/* Carousel step nav — page title lives in workspace header */}

@@ -194,8 +194,22 @@ export function NewsletterSectionCard({
       {expanded && (
         <div>
           {sorted.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-slate-400">
-              No issues yet — click <strong>Draft</strong> to generate the first one.
+            <div className="px-4 py-8 flex flex-col items-center gap-3 text-center">
+              <p className="text-sm text-slate-500">
+                No issues yet for this newsletter.
+              </p>
+              <button
+                type="button"
+                disabled={creatingDraft}
+                onClick={() => void onCreateDraft(newsletter.id)}
+                className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60 cursor-pointer"
+              >
+                {creatingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {creatingDraft ? 'Generating…' : 'Generate first draft'}
+              </button>
+              <p className="text-xs text-slate-400 max-w-xs">
+                Or open <strong>Settings</strong> to adjust sources, recipients, and voice before generating.
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-slate-50">

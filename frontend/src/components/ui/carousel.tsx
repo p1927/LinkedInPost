@@ -17,39 +17,12 @@ interface CarouselProps {
 }
 
 function Carousel({ steps, currentStep, onStepChange, disabledSteps = [], className }: CarouselProps) {
-  const totalSteps = steps.length
-
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      {/* Progress label — mobile: "Step 1/2", desktop: step name */}
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted sm:hidden">
-          Step {currentStep + 1}/{totalSteps}
-        </span>
-        <span className="hidden text-xs font-medium text-muted sm:block">
-          {steps[currentStep]?.name} — Step {currentStep + 1} of {totalSteps}
-        </span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-indigo-600 transition-all duration-300 ease-in-out"
-          style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
-          role="progressbar"
-          aria-valuenow={currentStep + 1}
-          aria-valuemin={1}
-          aria-valuemax={totalSteps}
-          aria-label={`Step ${currentStep + 1} of ${totalSteps}`}
-        />
-      </div>
-
-      {/* Step indicators */}
-      <div
-        role="tablist"
-        aria-label="Steps"
-        className="flex flex-row flex-wrap gap-2 sm:gap-3"
-      >
+    <div
+      role="tablist"
+      aria-label="Steps"
+      className={cn("flex flex-row flex-wrap gap-2 sm:gap-3", className)}
+    >
         {steps.map((step, index) => {
           const isActive = index === currentStep
           const isCompleted = index < currentStep
@@ -114,7 +87,6 @@ function Carousel({ steps, currentStep, onStepChange, disabledSteps = [], classN
             </button>
           )
         })}
-      </div>
     </div>
   )
 }
