@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Scissors, Newspaper } from 'lucide-react';
+import { Scissors, Newspaper, Sparkles, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { containerVariants, cardItemVariants, skeletonPulseVariants } from '@/lib/motion';
 import { TrendingWordsWidget } from '../../trending/components/TrendingWordsWidget';
@@ -12,11 +12,9 @@ import type { TrendingCapabilities } from '../../trending/hooks/useTrending';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
 
-type TabId = 'top10' | 'evergreen' | 'youtube' | 'instagram' | 'linkedin';
+type TabId = 'default' | 'youtube' | 'instagram' | 'linkedin';
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'top10', label: 'Top 10' },
-  { id: 'evergreen', label: 'Evergreen' },
   { id: 'youtube', label: 'YouTube' },
   { id: 'instagram', label: 'Instagram' },
   { id: 'linkedin', label: 'LinkedIn' },
@@ -132,7 +130,7 @@ export function FeedCuratedPanel({
   onSelectWord,
   onSelectTopic,
 }: FeedCuratedPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('top10');
+  const [activeTab, setActiveTab] = useState<TabId>('default');
 
   // Top 10: first 10 articles sorted by recency
   const top10Articles = [...trendingData.news]
@@ -152,78 +150,75 @@ export function FeedCuratedPanel({
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'top10':
+      case 'default':
         return (
-          <div className="space-y-0.5">
-            {loading ? (
-              [0, 1, 2, 3, 4].map((i) => (
-                <motion.div
-                  key={i}
-                  className="flex gap-2.5 rounded-lg p-2"
-                  variants={skeletonPulseVariants}
-                  animate="animate"
-                >
-                  <div className="shrink-0 w-10 h-10 rounded-md bg-violet-100" />
-                  <div className="flex-1 space-y-1.5 pt-0.5">
-                    <div className="h-2.5 rounded bg-violet-100 w-full" />
-                    <div className="h-2 rounded bg-violet-50 w-1/2" />
-                  </div>
-                </motion.div>
-              ))
-            ) : top10Articles.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted leading-relaxed px-3">
-                Search a topic or select an interest group to see today's top articles
-              </p>
-            ) : (
-              top10Articles.map((article) => (
-                <CompactArticleCard
-                  key={article.id}
-                  article={article}
-                  onClip={onClip}
-                  onOpen={onOpenArticle}
-                  isClipped={clippedUrls.has(article.url)}
-                />
-              ))
-            )}
-          </div>
-        );
+          <div className="space-y-5">
+            {/* AI Top 10 Today */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <Sparkles size={13} className="text-violet-500" />
+                <span className="text-xs font-semibold text-ink">AI Top 10 Today</span>
+                <span className="ml-auto rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+                  Refreshed hourly
+                </span>
+              </div>
+              <div className="space-y-0.5">
+                {loading ? (
+                  [0, 1, 2, 3, 4].map((i) => (
+                    <motion.div key={i} className="flex gap-2.5 rounded-lg p-2" variants={skeletonPulseVariants} animate="animate">
+                      <div className="shrink-0 w-10 h-10 rounded-md bg-violet-100" />
+                      <div className="flex-1 space-y-1.5 pt-0.5">
+                        <div className="h-2.5 rounded bg-violet-100 w-full" />
+                        <div className="h-2 rounded bg-violet-50 w-1/2" />
+                      </div>
+                    </motion.div>
+                  ))
+                ) : top10Articles.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-muted leading-relaxed px-3">
+                    Search a topic or select an interest group to see today's top articles
+                  </p>
+                ) : (
+                  top10Articles.map((article) => (
+                    <CompactArticleCard key={article.id} article={article} onClip={onClip} onOpen={onOpenArticle} isClipped={clippedUrls.has(article.url)} />
+                  ))
+                )}
+              </div>
+            </div>
 
-      case 'evergreen':
-        return (
-          <div className="space-y-0.5">
-            <p className="px-2 pb-2 text-[11px] text-muted leading-relaxed">
-              Background reading — deeper, more substantive articles on this topic
-            </p>
-            {loading ? (
-              [0, 1, 2, 3, 4].map((i) => (
-                <motion.div
-                  key={i}
-                  className="flex gap-2.5 rounded-lg p-2"
-                  variants={skeletonPulseVariants}
-                  animate="animate"
-                >
-                  <div className="shrink-0 w-10 h-10 rounded-md bg-violet-100" />
-                  <div className="flex-1 space-y-1.5 pt-0.5">
-                    <div className="h-2.5 rounded bg-violet-100 w-full" />
-                    <div className="h-2 rounded bg-violet-50 w-1/2" />
-                  </div>
-                </motion.div>
-              ))
-            ) : evergreenArticles.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted leading-relaxed px-3">
-                Search a topic or select an interest group to see background articles
+            {/* Evergreen Reads */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <BookOpen size={13} className="text-emerald-600" />
+                <span className="text-xs font-semibold text-ink">Evergreen Reads</span>
+                <span className="ml-auto rounded-full bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                  Timeless
+                </span>
+              </div>
+              <p className="px-1 pb-2 text-[11px] text-muted leading-relaxed">
+                Background reading — deeper, more substantive articles
               </p>
-            ) : (
-              evergreenArticles.map((article) => (
-                <CompactArticleCard
-                  key={article.id}
-                  article={article}
-                  onClip={onClip}
-                  onOpen={onOpenArticle}
-                  isClipped={clippedUrls.has(article.url)}
-                />
-              ))
-            )}
+              <div className="space-y-0.5">
+                {loading ? (
+                  [0, 1, 2].map((i) => (
+                    <motion.div key={i} className="flex gap-2.5 rounded-lg p-2" variants={skeletonPulseVariants} animate="animate">
+                      <div className="shrink-0 w-10 h-10 rounded-md bg-violet-100" />
+                      <div className="flex-1 space-y-1.5 pt-0.5">
+                        <div className="h-2.5 rounded bg-violet-100 w-full" />
+                        <div className="h-2 rounded bg-violet-50 w-1/2" />
+                      </div>
+                    </motion.div>
+                  ))
+                ) : evergreenArticles.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-muted leading-relaxed px-3">
+                    Search a topic or select an interest group to see background articles
+                  </p>
+                ) : (
+                  evergreenArticles.map((article) => (
+                    <CompactArticleCard key={article.id} article={article} onClip={onClip} onOpen={onOpenArticle} isClipped={clippedUrls.has(article.url)} />
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         );
 
@@ -250,6 +245,19 @@ export function FeedCuratedPanel({
 
         {/* Tab pills */}
         <div className="overflow-x-auto flex gap-1 px-3 pt-3 pb-2 border-b border-border/40">
+          {/* Default pill — goes back to combined feed view */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('default')}
+            className={[
+              'whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors',
+              activeTab === 'default'
+                ? 'bg-primary text-white'
+                : 'text-muted hover:text-ink cursor-pointer',
+            ].join(' ')}
+          >
+            Feed
+          </button>
           {TABS.map((tab) => (
             <button
               key={tab.id}

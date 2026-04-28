@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Scissors } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Scissors, Plus, Pencil, Check, X as XIcon } from 'lucide-react';
 import type { Clip } from '../types';
 import type { SheetRow } from '../../../services/sheets';
 import type { BackendApi } from '@/services/backendApi';
@@ -11,9 +11,41 @@ interface ClipsDockProps {
   idToken: string;
   api: BackendApi;
   onDeleteClip: (clipId: string) => void;
+  onUpdateClip: (clipId: string, passageText: string) => Promise<void>;
   onOpenArticle: (clip: Clip) => void;
   onOpenDraft: (row: SheetRow) => void;
   onAssignClip: (clipId: string, postId: string) => void;
+}
+
+function HoverDetailCard({ clip }: { clip: Clip }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 8 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 8 }}
+      transition={{ duration: 0.15 }}
+      className="absolute right-[calc(100%+8px)] top-0 z-50 w-56 rounded-xl bg-white/95 backdrop-blur-md border border-white/60 shadow-2xl pointer-events-none overflow-hidden"
+    >
+      {/* Thumbnail */}
+      {clip.thumbnailUrl ? (
+        <img src={clip.thumbnailUrl} alt="" className="w-full aspect-video object-cover" />
+      ) : (
+        <div className="w-full aspect-video bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+          <span className="text-primary font-bold text-2xl">
+            {clip.source[0]?.toUpperCase() ?? 'C'}
+          </span>
+        </div>
+      )}
+      {/* Content */}
+      <div className="p-2.5">
+        <p className="font-medium text-xs text-ink leading-snug line-clamp-2">{clip.articleTitle}</p>
+        <p className="text-[10px] text-muted mt-1">{clip.source}{clip.publishedAt ? ` · ${clip.publishedAt}` : ''}</p>
+        {clip.passageText && (
+          <p className="text-[10px] text-muted/80 mt-1.5 leading-relaxed line-clamp-3 italic">{clip.passageText}</p>
+        )}
+      </div>
+    </motion.div>
+  );
 }
 
 function getScale(i: number, hoveredIndex: number | null): number {
@@ -33,6 +65,7 @@ export function ClipsDock({
   idToken: _idToken,
   api: _api,
   onDeleteClip,
+  onUpdateClip,
   onOpenArticle,
   onOpenDraft,
   onAssignClip,
@@ -42,6 +75,27 @@ export function ClipsDock({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [dragClipId, setDragClipId] = useState<string | null>(null);
   const [dragOverPostId, setDragOverPostId] = useState<string | null>(null);
+
+  // Clip passage editing
+  const [editingClipId, setEditingClipId] = useState<string | null>(null);
+  const [editPassageText, setEditPassageText] = useState('');
+  const [savingClipEdit, setSavingClipEdit] = useState(false);
+
+  function handleStartEditClip(clip: Clip, e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditingClipId(clip.id);
+    setEditPassageText(clip.passageText ?? '');
+  }
+
+  async function handleSaveClipEdit(clipId: string) {
+    setSavingClipEdit(true);
+    try {
+      await onUpdateClip(clipId, editPassageText);
+      setEditingClipId(null);
+    } catch { /* silent */ } finally {
+      setSavingClipEdit(false);
+    }
+  }
 
   const visibleClips = clips.slice(0, MAX_VISIBLE);
   const extraCount = clips.length - MAX_VISIBLE;
@@ -97,11 +151,10 @@ export function ClipsDock({
               )}
             </div>
 
-            {/* Tooltip */}
-            <div className="absolute right-full top-0 mr-2 hidden group-hover/thumb:block z-50 w-48 rounded-lg bg-ink/90 text-white p-2 text-xs shadow-xl pointer-events-none">
-              <p className="font-medium line-clamp-2">{clip.articleTitle}</p>
-              <p className="text-white/60 mt-0.5">{clip.source}</p>
-            </div>
+            {/* Hover detail card */}
+            <AnimatePresence>
+              {hoveredIndex === i && <HoverDetailCard clip={clip} />}
+            </AnimatePresence>
 
             {/* Delete confirm */}
             {confirmDeleteId === clip.id && (
@@ -196,13 +249,15 @@ export function ClipsDock({
                     {clips.map((clip) => (
                       <div
                         key={clip.id}
-                        draggable
+                        draggable={editingClipId !== clip.id}
                         onDragStart={() => setDragClipId(clip.id)}
                         onDragEnd={() => setDragClipId(null)}
-                        className="relative group/expanded cursor-grab active:cursor-grabbing"
-                        onClick={() => onOpenArticle(clip)}
+                        className="relative group/expanded"
                       >
-                        <div className="w-full aspect-square rounded-lg overflow-hidden border border-white/50 shadow-sm bg-gradient-to-br from-primary/10 to-primary/20">
+                        <div
+                          className="w-full aspect-square rounded-lg overflow-hidden border border-white/50 shadow-sm bg-gradient-to-br from-primary/10 to-primary/20 group-hover/expanded:ring-2 group-hover/expanded:ring-primary/30 transition-all duration-150 cursor-grab active:cursor-grabbing"
+                          onClick={() => editingClipId !== clip.id && onOpenArticle(clip)}
+                        >
                           {clip.thumbnailUrl ? (
                             <img
                               src={clip.thumbnailUrl}
@@ -220,18 +275,66 @@ export function ClipsDock({
                         <p className="mt-1 text-[10px] text-ink leading-tight line-clamp-1">
                           {clip.articleTitle}
                         </p>
+                        {clip.passageText && editingClipId !== clip.id && (
+                          <p className="text-[9px] text-muted italic line-clamp-1">{clip.passageText}</p>
+                        )}
 
-                        {/* Delete overlay on hover */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteClip(clip.id);
-                          }}
-                          className="absolute top-0.5 right-0.5 hidden group-hover/expanded:flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[9px] shadow hover:bg-red-600"
-                        >
-                          ✕
-                        </button>
+                        {/* Inline passage editor */}
+                        {editingClipId === clip.id && (
+                          <div className="mt-1 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+                            <textarea
+                              value={editPassageText}
+                              onChange={e => setEditPassageText(e.target.value)}
+                              rows={3}
+                              className="w-full rounded border border-primary/40 bg-white/90 px-1.5 py-1 text-[10px] text-ink resize-none focus:outline-none focus:ring-1 focus:ring-primary/40"
+                              autoFocus
+                            />
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                disabled={savingClipEdit}
+                                onClick={() => void handleSaveClipEdit(clip.id)}
+                                className="flex items-center gap-0.5 rounded bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-white disabled:opacity-50"
+                              >
+                                <Check size={9} />
+                                {savingClipEdit ? '…' : 'Save'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingClipId(null)}
+                                className="flex items-center gap-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[9px] text-muted"
+                              >
+                                <XIcon size={9} />
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Hover actions: pencil + delete */}
+                        {editingClipId !== clip.id && (
+                          <div className="absolute top-0.5 right-0.5 hidden group-hover/expanded:flex items-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={(e) => handleStartEditClip(clip, e)}
+                              className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-muted shadow hover:text-primary"
+                              title="Edit passage"
+                            >
+                              <Pencil size={9} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteClip(clip.id);
+                              }}
+                              className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[9px] shadow hover:bg-red-600"
+                              title="Delete clip"
+                            >
+                              <XIcon size={9} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -274,8 +377,8 @@ export function ClipsDock({
                         className={[
                           'flex items-start gap-2 rounded-lg px-2.5 py-2 cursor-pointer transition-colors',
                           dragOverPostId === row.topicId
-                            ? 'bg-primary/10 ring-1 ring-primary/30'
-                            : 'hover:bg-white/60',
+                            ? 'bg-primary/10 border border-dashed border-primary/50'
+                            : 'border border-transparent hover:bg-white/60',
                         ].join(' ')}
                       >
                         <div className="flex-1 min-w-0">
@@ -297,9 +400,7 @@ export function ClipsDock({
                           </div>
                         </div>
                         {dragClipId && dragOverPostId === row.topicId && (
-                          <span className="text-[10px] text-primary font-medium shrink-0">
-                            Drop to assign
-                          </span>
+                          <Plus size={12} className="text-primary shrink-0" />
                         )}
                       </div>
                     ))}

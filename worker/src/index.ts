@@ -38,6 +38,7 @@ import { listSocialIntegrations, deleteSocialIntegration, upsertSocialIntegratio
 import { getUsageSummary, pruneOldLlmUsageLog } from './db/llm-usage';
 import { listInterestGroups, createInterestGroup, updateInterestGroup, deleteInterestGroup } from './db/interestGroups';
 import { listClips, createClip, updateClip, deleteClip, assignClipToPost, unassignClipFromPost } from './db/clips';
+import { getLatestFeedSnapshot, upsertArticleFeedback, listArticleFeedback, feedSpreadsheetId } from './db/feedArticles';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -1581,6 +1582,36 @@ async function dispatchAction(
       if (!id) throw new Error('id is required.');
       await deleteInterestGroup(env.PIPELINE_DB, session.userId, id);
       return { success: true };
+    }
+    case 'getFeedArticles': {
+      const { topics } = payload as { topics?: string[] };
+      const topicsArr = Array.isArray(topics) ? topics.filter(Boolean) : [];
+      return getLatestFeedSnapshot(env.PIPELINE_DB, session.userId, topicsArr);
+    }
+    case 'refreshFeedArticles': {
+      const req = payload as { topic: string; region?: string; genre?: string; windowDays?: number };
+      return trendingSearch(
+        env,
+        env.PIPELINE_DB,
+        normalizeNewsResearchStored(storedConfig.newsResearch),
+        feedSpreadsheetId(session.userId),
+        session.userId,
+        { topic: req.topic, region: req.region ?? 'US', genre: req.genre ?? 'general', windowDays: req.windowDays ?? 3 },
+      );
+    }
+    case 'setArticleFeedback': {
+      const { articleUrl, vote } = payload as { articleUrl: string; vote: 'up' | 'down' | null };
+      if (!articleUrl) throw new Error('articleUrl is required.');
+      if (vote === null) {
+        await env.PIPELINE_DB.prepare('DELETE FROM article_feedback WHERE user_id = ?1 AND article_url = ?2').bind(session.userId, articleUrl).run();
+        return { vote: null };
+      }
+      if (vote !== 'up' && vote !== 'down') throw new Error('vote must be "up" or "down".');
+      const newVote = await upsertArticleFeedback(env.PIPELINE_DB, session.userId, articleUrl, vote);
+      return { vote: newVote };
+    }
+    case 'getArticleFeedback': {
+      return listArticleFeedback(env.PIPELINE_DB, session.userId);
     }
     case 'listClips': {
       return listClips(env.PIPELINE_DB, session.userId);

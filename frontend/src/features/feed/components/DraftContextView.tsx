@@ -49,6 +49,14 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function getMiniDockScale(i: number, hoveredIndex: number | null): number {
+  if (hoveredIndex === null) return 1;
+  const dist = Math.abs(i - hoveredIndex);
+  if (dist === 0) return 1.4;
+  if (dist === 1) return 1.15;
+  return 1;
+}
+
 export function DraftContextView({
   row,
   clips,
@@ -59,8 +67,25 @@ export function DraftContextView({
 }: DraftContextViewProps) {
   const navigate = useNavigate();
 
-  const initialText = row.selectedText || row.variant1 || row.variant2 || row.variant3 || row.variant4 || '';
+  const AUTOSAVE_KEY = `feed_draft_${row.topicId ?? 'unknown'}`;
+  const initialText = (() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) return saved;
+    } catch { /* ignore */ }
+    return row.selectedText || row.variant1 || row.variant2 || row.variant3 || row.variant4 || '';
+  })();
   const [draftText, setDraftText] = useState(initialText);
+
+  // Autosave draft text to localStorage with 800ms debounce
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { localStorage.setItem(AUTOSAVE_KEY, draftText); } catch { /* ignore */ }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [draftText, AUTOSAVE_KEY]);
+
+  const [miniDockHovered, setMiniDockHovered] = useState<number | null>(null);
   const [addedClipIds, setAddedClipIds] = useState<string[]>([]);
   const [activeContextTab, setActiveContextTab] = useState<ContextTab>('q');
 
@@ -177,12 +202,12 @@ export function DraftContextView({
         </div>
 
         {/* Editor area */}
-        <div className="flex-1 flex flex-col p-6 gap-4">
+        <div className="flex-1 flex flex-col p-8 gap-4">
           <textarea
             value={draftText}
             onChange={e => setDraftText(e.target.value)}
             placeholder="Start writing your post here, or drag clips from the right panel as context..."
-            className="w-full flex-1 min-h-[320px] resize-none rounded-xl border border-border/40 bg-white/60 p-4 text-base text-ink leading-relaxed placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
+            className="w-full flex-1 min-h-[320px] resize-none rounded-xl border border-border/40 bg-white/60 p-6 text-base text-ink leading-relaxed tracking-normal placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all font-[inherit]"
           />
 
           {/* Word / char count */}
@@ -245,9 +270,9 @@ export function DraftContextView({
       </div>
 
       {/* RIGHT: Context Panel */}
-      <div className="w-96 shrink-0 flex flex-col overflow-y-auto bg-white/50 backdrop-blur-sm">
+      <div className="w-96 shrink-0 flex flex-col overflow-hidden bg-white/50 backdrop-blur-sm">
         {/* Panel header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/30 bg-white/80 backdrop-blur-sm px-4 py-3">
+        <div className="shrink-0 flex items-center justify-between border-b border-border/30 bg-white/80 backdrop-blur-sm px-4 py-3">
           <span className="text-sm font-semibold text-ink">Context Panel</span>
           {assignedClips.length >= 2 && (
             <button
@@ -262,7 +287,7 @@ export function DraftContextView({
           )}
         </div>
 
-        <div className="flex-1 flex flex-col p-4 gap-4">
+        <div className="flex-1 overflow-y-auto flex flex-col p-4 gap-4 min-h-0">
           {/* Clip sections */}
           {clusterLoading && (
             <div className="space-y-2">
@@ -325,10 +350,10 @@ export function DraftContextView({
 
               {/* Support / Challenge split */}
               {(clustering.support.length > 0 || clustering.challenge.length > 0) && (
-                <div className="rounded-xl border border-border/30 bg-white/60 p-3 space-y-3">
+                <div className="space-y-2">
                   {clustering.support.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/60 p-3">
+                      <div className="flex items-center gap-1.5 mb-2">
                         <CheckCircle2 size={13} className="text-emerald-500" />
                         <span className="text-xs font-semibold text-emerald-700">Supports your point</span>
                       </div>
@@ -339,7 +364,7 @@ export function DraftContextView({
                           return (
                             <span
                               key={idx}
-                              className="inline-block rounded-full bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 text-xs text-emerald-800 max-w-[180px] truncate"
+                              className="inline-block rounded-full bg-white/70 border border-emerald-200/60 px-2 py-0.5 text-xs text-emerald-800 max-w-[180px] truncate"
                               title={clip.articleTitle}
                             >
                               {clip.articleTitle}
@@ -349,10 +374,9 @@ export function DraftContextView({
                       </div>
                     </div>
                   )}
-
                   {clustering.challenge.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="rounded-xl border border-amber-200/60 bg-amber-50/60 p-3">
+                      <div className="flex items-center gap-1.5 mb-2">
                         <Zap size={13} className="text-amber-500" />
                         <span className="text-xs font-semibold text-amber-700">Challenges your point</span>
                       </div>
@@ -363,7 +387,7 @@ export function DraftContextView({
                           return (
                             <span
                               key={idx}
-                              className="inline-block rounded-full bg-amber-50 border border-amber-200/60 px-2 py-0.5 text-xs text-amber-800 max-w-[180px] truncate"
+                              className="inline-block rounded-full bg-white/70 border border-amber-200/60 px-2 py-0.5 text-xs text-amber-800 max-w-[180px] truncate"
                               title={clip.articleTitle}
                             >
                               {clip.articleTitle}
@@ -526,6 +550,48 @@ export function DraftContextView({
             )}
           </div>
         </div>
+
+        {/* Mini dock — pinned to bottom */}
+        {assignedClips.length > 0 && (
+          <div className="shrink-0 border-t border-border/30 bg-white/70 backdrop-blur-sm px-3 py-2">
+            <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-1.5">Assigned clips</p>
+            <div className="flex items-end gap-1.5 overflow-x-auto pb-0.5">
+              {assignedClips.map((clip, i) => (
+                <div
+                  key={clip.id}
+                  className="relative shrink-0 cursor-pointer group/mini"
+                  style={{
+                    transform: `scale(${getMiniDockScale(i, miniDockHovered)})`,
+                    transition: 'transform 200ms ease',
+                    transformOrigin: 'bottom center',
+                  }}
+                  onMouseEnter={() => setMiniDockHovered(i)}
+                  onMouseLeave={() => setMiniDockHovered(null)}
+                  onClick={() => onUnassignClip(clip.id, row.topicId ?? '')}
+                  title={`Click to unassign: ${clip.articleTitle}`}
+                >
+                  {/* Thumbnail */}
+                  <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/60 shadow-sm bg-gradient-to-br from-primary/10 to-primary/30">
+                    {clip.thumbnailUrl ? (
+                      <img src={clip.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-primary font-bold text-xs">
+                          {clip.source[0]?.toUpperCase() ?? 'C'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Tooltip above */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/mini:block z-50 w-32 rounded-lg bg-ink/90 text-white p-1.5 text-[10px] shadow-xl pointer-events-none text-center">
+                    <p className="line-clamp-2 leading-tight">{clip.articleTitle}</p>
+                    <p className="text-white/60 mt-0.5 text-[9px]">Click to unassign</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

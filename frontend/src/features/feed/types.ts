@@ -118,3 +118,17 @@ export interface OpinionLeaderInsight {
 export interface OpinionLeadersResult {
   leaders: OpinionLeaderInsight[]
 }
+
+// Feed cache + feedback
+export type FeedVote = 'up' | 'down'
+export type ArticleFeedbackMap = Record<string, FeedVote>
+
+export interface FeedArticlesResult {
+  articles: unknown[]
+  fetchedAt: string | null
+  stale: boolean
+}
+
+export interface SetFeedbackResult {
+  vote: FeedVote | null
+}

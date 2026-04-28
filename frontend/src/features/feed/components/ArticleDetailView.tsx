@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Scissors, ExternalLink, Copy, Check, Scale, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Scissors, ExternalLink, Copy, Check, Scale, ChevronDown, Sparkles } from 'lucide-react';
 import type { NewsArticle } from '../../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { ArticleAnalysis } from '../types';
 import type { SheetRow } from '../../../services/sheets';
 import type { DraftConnection } from '../types';
+import { useSelectionClipper, SelectionClipTooltip } from './SelectionClipper';
 
 interface ArticleDetailViewProps {
   article: NewsArticle;
@@ -12,13 +13,14 @@ interface ArticleDetailViewProps {
   api: BackendApi;
   onBack: () => void;
   onClip: (article: NewsArticle) => void;
+  onClipPassage?: (text: string) => void;
   isClipped: boolean;
   rows?: SheetRow[];
   onOpenDraft?: (row: SheetRow) => void;
   onDebate?: () => void;
 }
 
-type TabKey = 'opinion' | 'perspectives' | 'connection';
+type TabKey = 'opinion' | 'perspectives' | 'connection' | 'debate';
 
 function SkeletonLine({ width = 'w-full' }: { width?: string }) {
   return (
@@ -52,11 +54,20 @@ export function ArticleDetailView({
   api,
   onBack,
   onClip,
+  onClipPassage,
   isClipped,
   rows = [],
   onOpenDraft,
   onDebate,
 }: ArticleDetailViewProps) {
+  const articleContentRef = useRef<HTMLDivElement>(null);
+
+  const { tooltip: selectionTooltip, handleClip: handleSelectionClip } = useSelectionClipper({
+    containerRef: articleContentRef,
+    onClip: (text) => onClipPassage?.(text),
+    enabled: Boolean(onClipPassage),
+  });
+
   const [analysis, setAnalysis] = useState<ArticleAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -126,8 +137,16 @@ export function ArticleDetailView({
 
   return (
     <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
+      {selectionTooltip && (
+        <SelectionClipTooltip
+          x={selectionTooltip.x}
+          y={selectionTooltip.y}
+          onClip={handleSelectionClip}
+        />
+      )}
+
       {/* ── LEFT: Article Content ─────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 flex flex-col gap-4">
+      <div ref={articleContentRef} className="flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 flex flex-col gap-4">
         {/* Back button */}
         <button
           type="button"
@@ -219,10 +238,11 @@ export function ArticleDetailView({
       <div className="w-80 xl:w-96 shrink-0 overflow-y-auto flex flex-col gap-4">
 
         {/* [G] Article Intelligence */}
-        <div className="rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-4">
-          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">
-            Article Intelligence
-          </h3>
+        <div className="rounded-2xl border border-blue-200/60 bg-blue-50/60 backdrop-blur-sm p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Sparkles size={14} className="text-blue-500" />
+            <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Summary</h3>
+          </div>
 
           {analysisLoading && (
             <div className="space-y-2">
@@ -263,29 +283,15 @@ export function ArticleDetailView({
                 <p className="px-3 pb-3 pt-1 text-xs text-ink/80 leading-relaxed">{analysis.whyItMatters}</p>
               </details>
 
-              <details className="group rounded-lg border border-border/40 bg-white/50 overflow-hidden">
-                <summary className="flex cursor-pointer items-center justify-between px-3 py-2 text-xs font-semibold text-ink hover:bg-violet-50/60 list-none">
-                  What angle can you take?
-                  <ChevronDown size={13} className="text-muted transition-transform group-open:rotate-180" />
-                </summary>
-                <ul className="px-3 pb-3 pt-1 space-y-1">
-                  {analysis.postAngles.map((angle, i) => (
-                    <li key={i} className="text-xs text-ink/80 flex items-start gap-1">
-                      <span className="text-primary font-bold shrink-0">{i + 1}.</span>
-                      {angle}
-                    </li>
-                  ))}
-                </ul>
-              </details>
             </div>
           )}
         </div>
 
         {/* [H] Opposing View */}
-        <div className="rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-4">
+        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/60 backdrop-blur-sm p-4">
           <div className="flex items-center gap-1.5 mb-3">
-            <Scale size={14} className="text-muted" />
-            <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">Opposing View</h3>
+            <Scale size={14} className="text-amber-600" />
+            <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Opposing View</h3>
           </div>
 
           {analysisLoading && (
@@ -305,8 +311,11 @@ export function ArticleDetailView({
         </div>
 
         {/* [I] 3 Post Angles */}
-        <div className="rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-4">
-          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Post Angles</h3>
+        <div className="rounded-2xl border border-violet-200/60 bg-violet-50/60 backdrop-blur-sm p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Sparkles size={14} className="text-violet-500" />
+            <h3 className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Post Angles</h3>
+          </div>
 
           {analysisLoading && (
             <div className="space-y-2">
@@ -345,6 +354,7 @@ export function ArticleDetailView({
                 { key: 'opinion', label: 'Opinion' },
                 { key: 'perspectives', label: 'Perspectives' },
                 { key: 'connection', label: 'Connection' },
+                { key: 'debate' as TabKey, label: 'Debate' },
               ] as { key: TabKey; label: string }[]
             ).map(({ key, label }) => (
               <button
@@ -491,14 +501,36 @@ export function ArticleDetailView({
               ))}
             </div>
           )}
+
+          {/* Tab M — Debate */}
+          {activeTab === 'debate' && (
+            <div className="space-y-3">
+              <p className="text-xs text-ink/70 leading-relaxed">
+                Compare this article against an opposing perspective side by side.
+              </p>
+              {onDebate && (
+                <button
+                  type="button"
+                  onClick={onDebate}
+                  className="w-full rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Scale size={13} />
+                  Enter Debate Mode
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Related Reading note */}
         <div className="rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-4">
-          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Related Reading</h3>
-          <p className="text-xs text-muted leading-relaxed">
-            Search a topic in the feed to discover related articles here.
-          </p>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Related Reading</h3>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+            {/* Empty state placeholder card */}
+            <div className="shrink-0 w-36 h-24 rounded-xl border border-border/40 bg-white/50 flex items-center justify-center">
+              <p className="text-[10px] text-muted text-center px-2 leading-relaxed">Search a topic to see related articles</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import type { ContentReviewReport } from '../features/content-review/types';
 import type { TrendingSearchRequest, TrendingSearchResult } from '../features/trending/types';
 import type { NewsletterRecord } from '../features/campaign/schema/newsletterTypes';
 import type { CustomWorkflowSummary } from '../features/generation/WorkflowCardPicker';
-import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload, ArticleAnalysis, ClipClusterResult, DraftConnectionsResult, DebateArticle, CrossDomainResult, OpinionLeadersResult } from '../features/feed/types';
+import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload, ArticleAnalysis, ClipClusterResult, DraftConnectionsResult, DebateArticle, CrossDomainResult, OpinionLeadersResult, FeedArticlesResult, ArticleFeedbackMap, FeedVote, SetFeedbackResult } from '../features/feed/types';
 
 export interface SocialIntegration {
   provider: string;
@@ -1479,6 +1479,25 @@ export class BackendApi {
 
   opinionLeaderInsights(idToken: string, payload: { topic: string }): Promise<OpinionLeadersResult> {
     return this.post<OpinionLeadersResult>('opinionLeaderInsights', idToken, payload);
+  }
+
+  getFeedArticles(idToken: string, topics: string[]): Promise<FeedArticlesResult> {
+    return this.post<FeedArticlesResult>('getFeedArticles', idToken, { topics });
+  }
+
+  refreshFeedArticles(
+    idToken: string,
+    payload: { topic: string; region?: string; genre?: string; windowDays?: number },
+  ): Promise<FeedArticlesResult & { articles: unknown[]; trendingWords?: unknown[]; relatedTopics?: string[] }> {
+    return this.post('refreshFeedArticles', idToken, payload as Record<string, unknown>);
+  }
+
+  setArticleFeedback(idToken: string, articleUrl: string, vote: FeedVote | null): Promise<SetFeedbackResult> {
+    return this.post<SetFeedbackResult>('setArticleFeedback', idToken, { articleUrl, vote });
+  }
+
+  getArticleFeedback(idToken: string): Promise<ArticleFeedbackMap> {
+    return this.post<ArticleFeedbackMap>('getArticleFeedback', idToken);
   }
 }
 

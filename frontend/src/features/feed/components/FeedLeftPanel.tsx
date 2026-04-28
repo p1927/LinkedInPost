@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { containerVariants, cardItemVariants } from '@/lib/motion';
 import { FeedArticleCard } from './FeedArticleCard';
 import type { NewsArticle } from '../../trending/types';
+import type { ArticleFeedbackMap, FeedVote } from '../types';
 
 export interface FeedLeftPanelProps {
   articles: NewsArticle[];
@@ -10,6 +11,9 @@ export interface FeedLeftPanelProps {
   onClip: (article: NewsArticle) => void;
   onOpen: (article: NewsArticle) => void;
   clippedUrls: Set<string>;
+  feedbackMap?: ArticleFeedbackMap;
+  onThumbsUp?: (article: NewsArticle) => void;
+  onThumbsDown?: (article: NewsArticle) => void;
 }
 
 function SkeletonCard() {
@@ -27,9 +31,16 @@ function SkeletonCard() {
 
 const BATCH_SIZE = 10;
 
-export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls }: FeedLeftPanelProps) {
+export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, feedbackMap = {}, onThumbsUp, onThumbsDown }: FeedLeftPanelProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Sort thumbs-down articles to the bottom
+  const sortedArticles = useMemo(() => {
+    const downvoted = articles.filter(a => feedbackMap[a.url] === 'down');
+    const rest = articles.filter(a => feedbackMap[a.url] !== 'down');
+    return [...rest, ...downvoted];
+  }, [articles, feedbackMap]);
 
   // Reset visible count when articles change
   useEffect(() => {
@@ -43,8 +54,8 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls }
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && visibleCount < articles.length) {
-          setVisibleCount(prev => Math.min(prev + BATCH_SIZE, articles.length));
+        if (entries[0]?.isIntersecting && visibleCount < sortedArticles.length) {
+          setVisibleCount(prev => Math.min(prev + BATCH_SIZE, sortedArticles.length));
         }
       },
       { rootMargin: '200px' },
@@ -52,7 +63,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls }
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [visibleCount, articles.length]);
+  }, [visibleCount, sortedArticles.length]);
 
   // Initial loading skeleton
   if (loading) {
@@ -64,7 +75,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls }
   }
 
   // Empty state
-  if (articles.length === 0) {
+  if (sortedArticles.length === 0) {
     return (
       <div className="py-16 text-center text-sm text-muted">
         No articles yet. Select an interest group or search for a topic.
@@ -72,8 +83,8 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls }
     );
   }
 
-  const visibleArticles = articles.slice(0, visibleCount);
-  const hasMore = visibleCount < articles.length;
+  const visibleArticles = sortedArticles.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedArticles.length;
 
   return (
     <div className="space-y-3">
@@ -90,6 +101,9 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls }
               onClip={onClip}
               onOpen={onOpen}
               isClipped={clippedUrls.has(article.url)}
+              feedbackVote={feedbackMap[article.url] as FeedVote | undefined}
+              onThumbsUp={onThumbsUp}
+              onThumbsDown={onThumbsDown}
             />
           </motion.div>
         ))}
