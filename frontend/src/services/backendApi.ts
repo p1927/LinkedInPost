@@ -1096,19 +1096,6 @@ export class BackendApi {
     });
   }
 
-  async triggerGithubAction(
-    idToken: string,
-    action: 'draft' | 'publish' | 'refine',
-    eventType: 'trigger-draft' | 'trigger-publish',
-    payload: Record<string, unknown>,
-  ): Promise<void> {
-    await this.post<{ success: true }>('triggerGithubAction', idToken, {
-      action,
-      eventType,
-      payload,
-    });
-  }
-
   async publishContent(idToken: string, request: PublishContentRequest): Promise<PublishContentResult> {
     return this.post<PublishContentResult>('publishContent', idToken, { ...request });
   }

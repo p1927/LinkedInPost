@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Scissors, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Scissors, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/relativeTime';
 import type { NewsArticle } from '../../trending/types';
 import type { FeedVote } from '../types';
@@ -25,7 +25,15 @@ export interface FeedArticleCardProps {
   onThumbsDown?: (article: NewsArticle) => void;
 }
 
-export function FeedArticleCard({ article, onClip, onOpen, isClipped, feedbackVote, onThumbsUp, onThumbsDown }: FeedArticleCardProps) {
+export function FeedArticleCard({
+  article,
+  onClip,
+  onOpen,
+  isClipped,
+  feedbackVote,
+  onThumbsUp,
+  onThumbsDown,
+}: FeedArticleCardProps) {
   const [clipping, setClipping] = useState(false);
 
   function handleClip(e: React.MouseEvent) {
@@ -37,12 +45,12 @@ export function FeedArticleCard({ article, onClip, onOpen, isClipped, feedbackVo
     setTimeout(() => setClipping(false), 600);
   }
 
-  function handleCardClick(e: React.MouseEvent) {
-    e.preventDefault();
+  function handleCardClick() {
     onOpen(article);
   }
 
   const isDownvoted = feedbackVote === 'down';
+  const description = article.description?.trim() ?? '';
 
   return (
     <div
@@ -52,8 +60,8 @@ export function FeedArticleCard({ article, onClip, onOpen, isClipped, feedbackVo
       ].join(' ')}
       onClick={handleCardClick}
     >
-      {/* Thumbnail */}
-      <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden">
+      {/* Thumbnail — bigger square (96px) for image-prominent layout */}
+      <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden">
         {article.imageUrl ? (
           <img
             src={article.imageUrl}
@@ -63,75 +71,77 @@ export function FeedArticleCard({ article, onClip, onOpen, isClipped, feedbackVo
               (e.currentTarget as HTMLImageElement).style.display = 'none';
               const parent = e.currentTarget.parentElement as HTMLElement;
               parent.classList.add(sourceColor(article.source), 'flex', 'items-center', 'justify-center');
-              parent.innerHTML = `<span class="text-white text-lg font-bold">${article.source[0]?.toUpperCase() ?? '?'}</span>`;
+              parent.innerHTML = `<span class="text-white text-2xl font-bold">${article.source[0]?.toUpperCase() ?? '?'}</span>`;
             }}
           />
         ) : (
           <div className={`w-full h-full ${sourceColor(article.source)} flex items-center justify-center`}>
-            <span className="text-white text-lg font-bold">{article.source[0]?.toUpperCase() ?? '?'}</span>
+            <span className="text-white text-2xl font-bold">{article.source[0]?.toUpperCase() ?? '?'}</span>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 pr-24">
-        <p className="text-xs font-semibold leading-snug text-ink group-hover:text-primary transition-colors line-clamp-2">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold leading-snug text-ink group-hover:text-primary transition-colors line-clamp-2">
           {article.title}
         </p>
-        {article.description && (
-          <p className="text-[10px] text-muted mt-0.5 line-clamp-1">{article.description}</p>
+        {description ? (
+          <p className="mt-1.5 text-[12px] leading-snug text-muted line-clamp-2">{description}</p>
+        ) : (
+          <p className="mt-1.5 text-[12px] italic text-muted/60">No summary available.</p>
         )}
-        <span className="hidden group-hover:inline-flex items-center gap-0.5 text-[10px] text-muted/60 mt-0.5">
-          <Scissors size={9} />
-          Clip passage
-        </span>
-        <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-muted">
-          <span className="truncate text-primary/80">{article.source}</span>
+        <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted">
+          <span className="truncate text-primary/80 font-medium">{article.source}</span>
           <span>·</span>
           <span className="shrink-0">{formatRelativeTime(article.publishedAt)}</span>
         </div>
       </div>
 
-      {/* Action buttons: thumbs up, thumbs down, scissors */}
-      <div className="absolute top-2.5 right-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      {/* Hover-only action toolbar — top-right, white pill background */}
+      <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full border border-white/60 bg-white/95 p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onThumbsUp?.(article); }}
+          aria-label="Mark article helpful"
           title="Helpful"
           className={[
-            'flex items-center justify-center w-6 h-6 rounded-full transition-all duration-150',
+            'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150',
             feedbackVote === 'up'
               ? 'bg-green-100 text-green-600'
               : 'text-muted hover:bg-green-50 hover:text-green-500',
           ].join(' ')}
         >
-          <ThumbsUp size={12} />
+          <ThumbsUp size={13} aria-hidden />
         </button>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onThumbsDown?.(article); }}
+          aria-label="Mark article not helpful"
           title="Not helpful"
           className={[
-            'flex items-center justify-center w-6 h-6 rounded-full transition-all duration-150',
+            'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150',
             feedbackVote === 'down'
               ? 'bg-red-100 text-red-500'
               : 'text-muted hover:bg-red-50 hover:text-red-400',
           ].join(' ')}
         >
-          <ThumbsDown size={12} />
+          <ThumbsDown size={13} aria-hidden />
         </button>
         <button
           type="button"
           onClick={handleClip}
+          aria-label={isClipped ? 'Already clipped' : 'Clip article'}
           title={isClipped ? 'Already clipped' : 'Clip this article'}
           className={[
-            'flex items-center justify-center w-6 h-6 rounded-full transition-all duration-150',
+            'flex items-center justify-center w-7 h-7 rounded-full transition-colors duration-150',
             isClipped ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-primary/10 hover:text-primary',
           ].join(' ')}
         >
           <Scissors
-            size={12}
+            size={13}
             className={clipping ? 'scale-[1.3] text-green-500 transition-transform' : ''}
+            aria-hidden
           />
         </button>
       </div>

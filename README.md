@@ -1,59 +1,72 @@
----
-title: LinkedIn Automation Bot
-description: Shared LinkedIn content workflow using GitHub Pages, Cloudflare Workers, GitHub Actions, and Google Workspace resources.
-ms.date: 2026-03-26
-ms.topic: overview
----
+# LinkedIn-Post
 
-## Overview
+A multi-channel content pipeline. Approved users sign in to a React dashboard, manage topics in a shared Google Sheet, generate AI drafts, review and edit variants, and publish to LinkedIn, Instagram, Gmail, WhatsApp, Telegram, or YouTube — without ever touching Google APIs or channel tokens in the browser.
 
-This repository runs a shared LinkedIn content pipeline.
-Approved users sign in from a GitHub Pages dashboard, manage topics in one shared Google Sheet, review generated drafts, and trigger the existing GitHub Actions workflows without handling Google API credentials or GitHub tokens in the browser.
-Admins can now also connect shared Instagram, LinkedIn, and WhatsApp channels from the dashboard through popup OAuth flows handled by the Cloudflare Worker, and they can configure Telegram delivery with a stored bot token plus saved chat IDs.
+## Architecture at a glance
 
-## Architecture
+- **Frontend** — Vite + React 19 SPA (`frontend/`). Single API client; routes covered in [`frontend/README.md`](frontend/README.md).
+- **Main worker** — Cloudflare Worker `linkedin-bot-api` (`worker/`). One `POST /action` dispatcher (~100 cases), Google OAuth verification, OAuth popup callbacks, scheduled-publish Durable Object, D1 + KV.
+- **Generation worker** — separate Cloudflare Worker `linkedin-generation-worker` (`generation-worker/`). Pattern-based pipeline → optional news research → enrichment → review → image picking, with its own D1 (`GEN_DB`).
+- **Shared packages** — `packages/llm-core` (LLM provider types) and `packages/researcher` (RSS/NewsAPI/SerpAPI aggregator).
+- **Storage** — D1 SQLite for pipeline + generation state; Google Cloud Storage for generated images; Google Sheets as the human-editable source of truth for topics.
+- **LLMs** — Gemini, Grok, OpenRouter, Minimax (gated by `FEATURE_MULTI_PROVIDER_LLM`).
 
-The current deployment model is:
+For the full picture and a system diagram see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-* GitHub Pages hosts the React dashboard
-* Cloudflare Workers verifies Google ID tokens, enforces the allowlist, stores shared config in KV, and proxies GitHub dispatch calls
-* Cloudflare Workers also owns the Instagram, LinkedIn, and Meta OAuth callback flows, exchanges auth codes server-side, and stores channel tokens encrypted in KV
-* A Google service account gives the Worker access to the shared Google Sheet
-* SerpApi provides web research snippets and image search results for the Python draft workflow
-* GitHub Actions runs the Python draft and publish jobs
-* Google Cloud Storage stores generated draft images, while Google Docs keeps the published-post log
+## What the dashboard does
 
-## Workflow
+Once signed in (`/topics`), an approved user can:
 
-1. Add topics to the shared content calendar.
-2. Run or schedule the draft workflow with `python linkedin_bot.py draft` through GitHub Actions.
-3. Review variants in the dashboard and approve the final post.
-4. Run or schedule the publish workflow with `python linkedin_bot.py publish`.
+- **Capture topics** — scratchpad form with audience/tone/CTA, generate Pro/Con insight bullets.
+- **Generate drafts** — SSE-streamed pipeline produces 4 variants with image candidates and a review checklist.
+- **Refine in the editor** — 3-panel editor with Quick Change, manual edits, undo/redo, image manager, and live channel preview.
+- **Discover & enrich** — feed of news articles + clips with `findDraftConnections`, `findDebateArticle`, `crossDomainInsight`, and `opinionLeaderInsights` for richer angles. Trending panels for YouTube / LinkedIn / Instagram.
+- **Publish** — direct to any connected channel, or schedule for a future time (handled by a Durable Object alarm).
+- **Configure** — connect channels via popup OAuth at `/connections`, edit generation rules and post templates, manage tenants/budgets in admin mode (SaaS deployments).
+
+User journeys with their API mappings are documented in [`USE-CASES.md`](USE-CASES.md).
 
 ## Setup
 
-Use [SETUP.md](SETUP.md) for the full deployment checklist.
-
-### Self-hosting
+Use [`SETUP.md`](SETUP.md) for the full deployment checklist. The fastest self-host path:
 
 ```bash
-pip install -r requirements.txt && python setup.py --web
+pip install -r requirements.txt
+python setup.py --web        # browser wizard at http://localhost:4242
 ```
 
-The short version is:
-
-1. Run `python setup.py` to create the shared Google resources.
-2. Run `python setup.py --all` to bootstrap the Worker config, deploy the Worker, verify the production URL, and sync GitHub secrets when `wrangler` and `gh` are available.
-3. Create a SerpApi key and add `SERPAPI_API_KEY` to the environment used by the Python automation.
-4. Keep the GitHub Actions secrets used by the Python automation for any values you do not provide to the setup script.
-
-Only one Cloudflare deployment target is kept in this repository: the API Worker defined in [worker/wrangler.jsonc](worker/wrangler.jsonc). The frontend stays on GitHub Pages.
-
-## Local automation
-
-You can still run the Python jobs locally with a root `.env` file:
+Or the headless path:
 
 ```bash
-python linkedin_bot.py draft
-python linkedin_bot.py publish
+python setup.py --all        # provisions D1 + KV, deploys both workers, syncs secrets
 ```
+
+Both workers (`worker/` and `generation-worker/`) are deployed via Wrangler. The frontend can be served either by the main worker (root `wrangler.jsonc` has `assets.directory: "frontend"`) or by GitHub Pages (`.github/workflows/deploy-pages.yml`).
+
+## Local dev
+
+```bash
+# Worker (port 8787)
+cd worker && npm run dev
+
+# Frontend (port 5174 — also boots STT server + setup wizard)
+cd frontend && npm run dev
+```
+
+Set `VITE_WORKER_URL=http://localhost:8787` and `VITE_GOOGLE_CLIENT_ID=...` in `frontend/.env.local`. See [`frontend/README.md`](frontend/README.md) and [`worker/README.md`](worker/README.md).
+
+## Feature flags
+
+`features.yaml` is the source of truth. Run `python3 scripts/generate_features.py` after editing to regenerate the per-workspace TypeScript modules. Current flags: `deploymentMode` (`saas` | `selfHosted`), `newsResearch`, `campaign`, `multiProviderLlm`, `contentReview`, `contentFlow`, `enrichment`.
+
+## Documentation map
+
+| File | Purpose |
+|---|---|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Canonical architecture + system diagram |
+| [`SETUP.md`](SETUP.md) | Deployment checklist |
+| [`USE-CASES.md`](USE-CASES.md) | Wired user journeys with API mappings |
+| [`frontend/README.md`](frontend/README.md) | Frontend dev notes |
+| [`worker/README.md`](worker/README.md) | Main worker deployment + behaviour |
+| [`docs/plans/`](docs/plans/) | Active and historical implementation plans |
+| [`docs/superpowers/`](docs/superpowers/) | Exploratory plans and paired specs |

@@ -38,7 +38,7 @@ _WORKER_KEYS = {
     'META_APP_ID', 'META_APP_SECRET',
     'GMAIL_CLIENT_ID', 'GMAIL_CLIENT_SECRET',
     'TELEGRAM_BOT_TOKEN',
-    'WORKER_SCHEDULER_SECRET', 'GITHUB_TOKEN_ENCRYPTION_KEY',
+    'WORKER_SCHEDULER_SECRET', 'SECRET_ENCRYPTION_KEY',
     'GENERATION_WORKER_SECRET',
 }
 
@@ -101,7 +101,7 @@ def submit():
         'NEWSDATA_API_KEY': f.get('newsdata_api_key', '').strip(),
         # Security / infra
         'WORKER_SCHEDULER_SECRET': f.get('worker_scheduler_secret', '').strip(),
-        'GITHUB_TOKEN_ENCRYPTION_KEY': f.get('github_token_encryption_key', '').strip(),
+        'SECRET_ENCRYPTION_KEY': f.get('secret_encryption_key', '').strip(),
         'GENERATION_WORKER_SECRET': f.get('generation_worker_secret', '').strip(),
     }
 

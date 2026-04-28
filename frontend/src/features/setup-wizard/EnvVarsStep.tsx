@@ -321,7 +321,7 @@ const ENV_VAR_GROUPS: EnvVarGroup[] = [
         },
       },
       {
-        key: 'GITHUB_TOKEN_ENCRYPTION_KEY',
+        key: 'SECRET_ENCRYPTION_KEY',
         label: 'Encryption Key',
         description: 'Required for encrypting OAuth tokens in D1 (32+ chars)',
         required: false,

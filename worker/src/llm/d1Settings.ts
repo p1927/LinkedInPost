@@ -5,7 +5,6 @@ export type LlmSettingKey =
   | 'generation_worker'
   | 'content_review_text'
   | 'content_review_vision'
-  | 'github_automation'
   | 'enrichment_persona'
   | 'enrichment_emotion'
   | 'enrichment_psychology'
@@ -21,7 +20,6 @@ export const LLM_SETTING_KEYS: readonly LlmSettingKey[] = [
   'generation_worker',
   'content_review_text',
   'content_review_vision',
-  'github_automation',
   'enrichment_persona',
   'enrichment_emotion',
   'enrichment_psychology',
@@ -119,10 +117,6 @@ export async function seedLlmSettingsIfEmpty(
     generation_worker: existing.generation_worker ?? primaryRef,
     content_review_text: existing.content_review_text ?? textRef,
     content_review_vision: existing.content_review_vision ?? visionRef,
-    github_automation: existing.github_automation ?? {
-      provider: 'gemini',
-      model: storedConfig.googleModel || defaultModel,
-    },
     enrichment_persona: existing.enrichment_persona ?? primaryRef,
     enrichment_emotion: existing.enrichment_emotion ?? primaryRef,
     enrichment_psychology: existing.enrichment_psychology ?? primaryRef,

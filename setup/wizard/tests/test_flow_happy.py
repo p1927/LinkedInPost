@@ -63,7 +63,7 @@ def _walk_through(
         'fal_api_key': 'fal-mock',
         'pixazo_api_key': 'pixazo-mock',
         'worker_scheduler_secret': 'scheduler-secret',
-        'github_token_encryption_key': 'github-encrypt-key',
+        'secret_encryption_key': 'github-encrypt-key',
         'generation_worker_secret': 'shared-secret',
     })
     assert r.status_code == 302, r.data.decode()[:500]

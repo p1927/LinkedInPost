@@ -43,7 +43,7 @@ def test_apikeys_routes_keys_to_correct_files(client, tmp_env):
         'linkedin_client_id': 'li-id',
         'linkedin_client_secret': 'li-secret',
         'worker_scheduler_secret': 'sched-secret',
-        'github_token_encryption_key': 'gh-enc',
+        'secret_encryption_key': 'gh-enc',
         'generation_worker_secret': 'gen-shared',
     })
     assert r.status_code == 302
@@ -64,7 +64,7 @@ def test_apikeys_routes_keys_to_correct_files(client, tmp_env):
     assert worker['NEWSAPI_KEY'] == 'news-key'
     assert worker['LINKEDIN_CLIENT_ID'] == 'li-id'
     assert worker['WORKER_SCHEDULER_SECRET'] == 'sched-secret'
-    assert worker['GITHUB_TOKEN_ENCRYPTION_KEY'] == 'gh-enc'
+    assert worker['SECRET_ENCRYPTION_KEY'] == 'gh-enc'
     # MiniMax goes to worker but NOT gen worker
     assert worker['MINIMAX_API_KEY'] == 'minimax-key'
 

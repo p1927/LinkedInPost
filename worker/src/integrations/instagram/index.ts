@@ -1,4 +1,5 @@
 import { normalizeDeliveryImageUrl } from '../media';
+import { fetchWithRetry } from '../_shared/fetchWithRetry';
 
 const INSTAGRAM_GRAPH_VERSION = 'v25.0';
 
@@ -64,7 +65,7 @@ export async function publishInstagramPost(request: InstagramPublishRequest): Pr
 
   await waitForContainerReady(containerId, request.accessToken);
 
-  const response = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(request.instagramUserId)}/media_publish`, {
+  const response = await fetchWithRetry(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(request.instagramUserId)}/media_publish`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ export async function publishInstagramPost(request: InstagramPublishRequest): Pr
 async function createInstagramCarouselContainer(request: InstagramPublishRequest, imageUrls: string[]): Promise<string> {
   const childIds: string[] = [];
   for (const imageUrl of imageUrls) {
-    const response = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(request.instagramUserId)}/media`, {
+    const response = await fetchWithRetry(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(request.instagramUserId)}/media`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ async function createInstagramCarouselContainer(request: InstagramPublishRequest
     childIds.push(id);
   }
 
-  const parentResponse = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(request.instagramUserId)}/media`, {
+  const parentResponse = await fetchWithRetry(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(request.instagramUserId)}/media`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ async function createInstagramSingleImageContainer(
   imageUrl: string,
   altText?: string,
 ): Promise<string> {
-  const response = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(instagramUserId)}/media`, {
+  const response = await fetchWithRetry(`https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(instagramUserId)}/media`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -160,7 +161,7 @@ async function createInstagramSingleImageContainer(
 
 async function waitForContainerReady(containerId: string, accessToken: string): Promise<void> {
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://graph.instagram.com/${INSTAGRAM_GRAPH_VERSION}/${encodeURIComponent(containerId)}?fields=status_code&access_token=${encodeURIComponent(accessToken)}`,
     );
     const payload = (await response.json().catch(() => null)) as InstagramContainerStatusResponse | null;

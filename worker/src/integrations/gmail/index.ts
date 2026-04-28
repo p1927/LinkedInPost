@@ -1,3 +1,5 @@
+import { fetchWithRetry } from '../_shared/fetchWithRetry';
+
 export class GmailAuthError extends Error {
   constructor(message: string) {
     super(message);
@@ -255,7 +257,7 @@ function constructMimeMessage(request: GmailSendRequest): string {
 export async function sendGmailMessage(request: GmailSendRequest): Promise<{ messageId: string | null }> {
   const rawMessage = constructMimeMessage(request);
 
-  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+  const response = await fetchWithRetry('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${request.accessToken}`,

@@ -1,50 +1,80 @@
+# ─── Access control ──────────────────────────────────────────────────────────
 # ALLOWED_EMAILS — optional. If set, only listed emails can log in.
 # If empty or unset, any verified Google account can sign up.
 # ALLOWED_EMAILS=friend1@gmail.com,friend2@gmail.com
 ADMIN_EMAILS=you@gmail.com
-# Optional local dev: skip Google Sign-In — set the same value as VITE_DEV_GOOGLE_AUTH_BYPASS_SECRET in frontend .env
+
+# ─── Local dev conveniences ──────────────────────────────────────────────────
+# Skip Google Sign-In during local dev — set the same value as
+# VITE_DEV_GOOGLE_AUTH_BYPASS_SECRET in frontend .env
 # DEV_GOOGLE_AUTH_BYPASS_SECRET=use-a-long-random-string-only-on-localhost
 # Optional label for the synthetic session (default dev-bypass@local.invalid)
 # DEV_GOOGLE_AUTH_BYPASS_EMAIL=dev@example.com
-# Optional local dev: same spreadsheet as production when preview KV has no shared-config (sheet id from the Google Sheet URL)
+# Optional: same spreadsheet as production when preview KV has no shared-config
 # DEV_SPREADSHEET_ID=1AbCdEfGhIjKlMnOpQrStUvWxYz
+
+# ─── Google ──────────────────────────────────────────────────────────────────
 GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
 GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"linkedin-bot@your-project.iam.gserviceaccount.com","client_id":"...","token_uri":"https://oauth2.googleapis.com/token"}
-# GITHUB_TOKEN_ENCRYPTION_KEY — required for encrypting OAuth tokens in D1.
-# Generate with: openssl rand -base64 32
-GITHUB_TOKEN_ENCRYPTION_KEY=your-base64-32-byte-key-here
 GOOGLE_CLOUD_STORAGE_BUCKET=your-public-gcs-bucket-here
 DELETE_UNUSED_GENERATED_IMAGES=true
-CORS_ALLOWED_ORIGINS=http://localhost:5173 http://localhost:5174 http://127.0.0.1:5173 http://127.0.0.1:5174 https://your-username.github.io
+# Optional: Google Doc ID for the human-readable publish-history log.
+# When set, every successful publish appends a line to that Doc (service account must have edit access).
+# POSTED_LOG_DOC_ID=your-google-doc-id-here
 
-# LLM providers — required for generation
-GEMINI_API_KEY=your_gemini_api_key_here
-# xAI Grok (optional — only needed when multi-provider LLM is enabled)
-XAI_API_KEY=your_xai_grok_api_key_here
-# OpenRouter multi-model gateway (optional)
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-# MiniMax (optional)
-MINIMAX_API_KEY=your_minimax_api_key_here
-
-# Generation Worker integration
-# setup.py --cloudflare provisions D1 and fills these automatically, or set manually:
-# GENERATION_WORKER_URL=https://your-generation-worker.your-account.workers.dev
-# GENERATION_WORKER_SECRET — must match WORKER_SHARED_SECRET in generation-worker/.dev.vars
-# Generate with: openssl rand -base64 32
-# GENERATION_WORKER_SECRET=your-shared-secret-here
-GENERATION_WORKER_URL=http://127.0.0.1:8788
-
-# Scheduled publish auth secret (required for Durable Object alarm callbacks)
-# Generate with: openssl rand -base64 32
+# ─── Security secrets ────────────────────────────────────────────────────────
+# Generate any of these with: openssl rand -base64 32
+# Required for encrypting OAuth tokens and other secrets stored in D1.
+SECRET_ENCRYPTION_KEY=your-base64-32-byte-key-here
+# Required for scheduled-publish Durable Object alarm callbacks; must match
+# the WORKER_SCHEDULER_SECRET secret in GitHub Actions repo settings.
 WORKER_SCHEDULER_SECRET=use-a-long-random-string
 
-# News research API keys (optional — enable per-provider in Settings > News Research)
-# NEWSAPI_KEY=your_newsapi_key_here
-# GNEWS_API_KEY=your_gnews_key_here
-# NEWSDATA_API_KEY=your_newsdata_key_here
-# SERPAPI_API_KEY=your_serpapi_key_here
+# ─── CORS ────────────────────────────────────────────────────────────────────
+# Space-separated list. Add your Vite dev URLs + GitHub Pages origin.
+CORS_ALLOWED_ORIGINS=http://localhost:5173 http://localhost:5174 http://127.0.0.1:5173 http://127.0.0.1:5174 https://your-username.github.io
 
-# Social OAuth apps (for dashboard connect flow)
+# ─── OAuth redirect ──────────────────────────────────────────────────────────
+# Base URL for OAuth callback URIs. Defaults to the worker's own URL when unset
+# (e.g. https://your-worker.workers.dev). Override to use a custom domain.
+# Each platform's redirect URI is "<this>/oauth/<platform>/callback".
+# OAUTH_REDIRECT_BASE_URL=https://your-worker.workers.dev
+
+# ─── LLM providers (required for content generation) ─────────────────────────
+GEMINI_API_KEY=your_gemini_api_key_here
+# Optional alternative LLMs (multi-provider mode)
+XAI_API_KEY=your_xai_grok_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+MINIMAX_API_KEY=your_minimax_api_key_here
+
+# ─── Image generation providers ──────────────────────────────────────────────
+# Fal.ai backs Flux Kontext, Ideogram, Kling, and Seedance providers
+FAL_API_KEY=your_fal_api_key_here
+PIXAZO_API_KEY=your_pixazo_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+STABILITY_API_KEY=your_stability_api_key_here
+RUNWAY_API_KEY=your_runway_api_key_here
+SEEDANCE_API_KEY=your_seedance_api_key_here
+
+# ─── Generation Worker integration ───────────────────────────────────────────
+# setup.py --cloudflare provisions D1 + writes these. Or set manually:
+GENERATION_WORKER_URL=http://127.0.0.1:8788
+# Must match WORKER_SHARED_SECRET in generation-worker/.dev.vars
+# Generate with: openssl rand -base64 32
+GENERATION_WORKER_SECRET=your-shared-secret-here
+
+# ─── News research ───────────────────────────────────────────────────────────
+SERPAPI_API_KEY=your_serpapi_api_key_here
+NEWSAPI_KEY=your_newsapi_key_here
+GNEWS_API_KEY=your_gnews_key_here
+NEWSDATA_API_KEY=your_newsdata_key_here
+# Comma- or newline-separated RSS URLs (or a JSON array string)
+RESEARCHER_RSS_FEEDS=
+# Tuning (defaults are sane — set only if you want to override)
+NEWS_SNAPSHOT_MAX_PER_TOPIC=50
+NEWS_SNAPSHOT_MAX_AGE_DAYS=14
+
+# ─── Social platform OAuth apps (for dashboard connect flow) ─────────────────
 INSTAGRAM_APP_ID=your_instagram_app_id_here
 INSTAGRAM_APP_SECRET=your_instagram_app_secret_here
 LINKEDIN_CLIENT_ID=your_linkedin_client_id_here
@@ -57,12 +87,18 @@ GMAIL_CLIENT_ID=your_gmail_oauth_client_id_here
 GMAIL_CLIENT_SECRET=your_gmail_oauth_client_secret_here
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 
-# Optional direct-token fallbacks (legacy — prefer OAuth connect flow)
+# ─── Direct-token fallbacks (legacy — prefer OAuth connect flow) ─────────────
 LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token_here
 INSTAGRAM_ACCESS_TOKEN=your_instagram_access_token_here
+INSTAGRAM_USER_ID=your_instagram_user_id_here
+INSTAGRAM_USERNAME=your_instagram_username_here
 WHATSAPP_ACCESS_TOKEN=your_whatsapp_access_token_here
 
-# YouTube automations (optional)
+# ─── YouTube automations ─────────────────────────────────────────────────────
+# YOUTUBE_API_KEY: Google Cloud → APIs & Services → YouTube Data API v3
 YOUTUBE_API_KEY=your_youtube_api_key_here
-
-PIXAZO_API_KEY=your_pixazo_api_key_here
+# YOUTUBE_OAUTH: OAuth client + token for posting comment replies
+YOUTUBE_CLIENT_ID=your_youtube_client_id_here
+YOUTUBE_CLIENT_SECRET=your_youtube_client_secret_here
+YOUTUBE_OAUTH_TOKEN=your_youtube_oauth_token_here
+YOUTUBE_CHANNEL_ID=your_youtube_channel_id_here

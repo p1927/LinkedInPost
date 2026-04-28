@@ -92,7 +92,6 @@ export type LlmSettingKey =
   | 'generation_worker'
   | 'content_review_text'
   | 'content_review_vision'
-  | 'github_automation'
   | 'enrichment_persona'
   | 'enrichment_emotion'
   | 'enrichment_psychology'
@@ -108,7 +107,6 @@ export const LLM_SETTING_KEY_LABELS: Record<LlmSettingKey, string> = {
   generation_worker: 'Generation Worker',
   content_review_text: 'Content Review (Text)',
   content_review_vision: 'Content Review (Vision)',
-  github_automation: 'GitHub Automation',
   enrichment_persona: 'Enrichment: Persona',
   enrichment_emotion: 'Enrichment: Emotion',
   enrichment_psychology: 'Enrichment: Psychology',
@@ -311,7 +309,6 @@ export function normalizeContentReviewStored(raw: unknown): ContentReviewStored 
 
 export interface BotConfig {
   spreadsheetId: string;
-  githubRepo: string;
   googleModel: string;
   /** Gemini model IDs non-admins may use; admins edit this in Settings. */
   allowedGoogleModels: string[];
@@ -324,7 +321,6 @@ export interface BotConfig {
   userRules: string;
   /** Per-user "who am I" author profile (empty = fall back to global authorProfile). */
   userWhoAmI: string;
-  hasGitHubToken: boolean;
   hasGenerationWorker: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
@@ -436,7 +432,6 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
 
   const base: BotConfig = {
     spreadsheetId: config?.spreadsheetId || '',
-    githubRepo: config?.githubRepo || '',
     googleModel,
     allowedGoogleModels,
     generationRules: config?.generationRules || '',
@@ -444,7 +439,6 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
     authorProfile: config?.authorProfile || '',
     userRules: config?.userRules || '',
     userWhoAmI: config?.userWhoAmI || '',
-    hasGitHubToken: Boolean(config?.hasGitHubToken),
     hasGenerationWorker: Boolean(config?.hasGenerationWorker),
     defaultChannel,
     instagramAuthAvailable: Boolean(config?.instagramAuthAvailable),
@@ -530,13 +524,11 @@ export function normalizeBotConfig(config: Partial<BotConfig> | null | undefined
 
 export interface BotConfigUpdate {
   spreadsheetId?: string;
-  githubRepo?: string;
   googleModel?: string;
   allowedGoogleModels?: string[];
   generationRules?: string;
   brandContext?: string;
   authorProfile?: string;
-  githubToken?: string;
   defaultChannel?: ChannelId;
   instagramUserId?: string;
   instagramUsername?: string;

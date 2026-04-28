@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { type DraftPreviewSelection, type SheetRow } from '../../../services/sheets';
 import type { NewsResearchSearchPayload, NewsResearchSearchResult, GenWorkerGenerateRequest } from '../../../services/backendApi';
 import {
@@ -26,9 +26,6 @@ import {
   serializeRowImageUrls,
 } from '@/services/selectedImageUrls';
 
-/** Max time to keep a row's Draft control busy after dispatch if the sheet never updates. */
-const DRAFT_DISPATCH_PENDING_MAX_MS = 20 * 60 * 1000;
-
 export function useDashboardQueue({
   idToken,
   api,
@@ -47,14 +44,12 @@ export function useDashboardQueue({
   viewingTopicRouteId,
   onLeaveTopicRoute,
   onAfterApprove,
-  /** Called after a draft GitHub dispatch succeeds and the queue refresh finishes — e.g. to hint “refresh again” in the header. */
-  onDraftWorkflowStarted,
 }: {
   idToken: string;
   api: BackendApi;
   session: AppSession;
   onAuthExpired: () => void;
-  /** Workspace primary LLM; used with per-topic overrides for generation and GitHub dispatch. */
+  /** Workspace primary LLM; used with per-topic overrides for generation. */
   workspaceLlm: LlmRef;
   selectedChannel: ChannelId;
   resolvedRecipientId: string;
@@ -69,7 +64,6 @@ export function useDashboardQueue({
   viewingTopicRouteId?: string | null;
   onLeaveTopicRoute?: () => void;
   onAfterApprove?: () => void;
-  onDraftWorkflowStarted?: () => void;
 }) {
   const [rows, setRows] = useState<SheetRow[]>([]);
   /** Start true when a sheet is configured so first paint does not run “loaded” logic before loadData runs. */
@@ -79,34 +73,8 @@ export function useDashboardQueue({
   const [newTopic, setNewTopic] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deletingRowIndex, setDeletingRowIndex] = useState<number | null>(null);
-  /** Topic IDs with a draft GitHub dispatch already sent; row stays busy until sheet leaves Pending or timeout. */
-  const [draftDispatchPendingTopicIds, setDraftDispatchPendingTopicIds] = useState<string[]>([]);
-  const draftPendingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const { showAlert, showConfirm } = useAlert();
-
-  useEffect(() => {
-    return () => {
-      draftPendingTimersRef.current.forEach(clearTimeout);
-      draftPendingTimersRef.current.clear();
-    };
-  }, []);
-
-  useEffect(() => {
-    setDraftDispatchPendingTopicIds((prev) => {
-      const next = prev.filter((id) => {
-        const row = rows.find((r) => (r.topicId || '').trim() === id);
-        const keep = Boolean(row && getNormalizedRowStatus(row.status) === 'pending');
-        if (!keep) {
-          const t = draftPendingTimersRef.current.get(id);
-          if (t) clearTimeout(t);
-          draftPendingTimersRef.current.delete(id);
-        }
-        return keep;
-      });
-      return next.length === prev.length && next.every((x, i) => x === prev[i]) ? prev : next;
-    });
-  }, [rows]);
 
   const handleFailure = useCallback((error: unknown, fallbackMessage: string) => {
     const message = error instanceof Error ? error.message : fallbackMessage;
@@ -239,79 +207,6 @@ export function useDashboardQueue({
     } catch (error) {
       handleFailure(error, 'Failed to save email settings.');
       throw error;
-    }
-  };
-
-  const dispatchGithubAction = async (
-    rowForModel: SheetRow,
-    action: 'draft' | 'publish' | 'refine',
-    eventType: 'trigger-draft' | 'trigger-publish',
-    payload: Record<string, unknown>,
-    successMessage: string,
-    loadingKey: string = action,
-  ): Promise<boolean> => {
-    if (!session.config.githubRepo || !session.config.hasGitHubToken) {
-      if (session.isAdmin) {
-        void showAlert({ title: 'Notice', description: 'Complete the GitHub settings in the workspace drawer first.' });
-      } else {
-        void showAlert({ title: 'Notice', description: 'A workspace admin still needs to configure GitHub dispatch settings.' });
-      }
-      return false;
-    }
-
-    setActionLoading(loadingKey);
-    try {
-      await api.triggerGithubAction(idToken, action, eventType, {
-        google_model: effectiveLlmRef(rowForModel, workspaceLlm).model,
-        ...payload,
-      });
-      void showAlert({ title: 'Success', description: successMessage });
-      return true;
-    } catch (error) {
-      setActionLoading(null);
-      handleFailure(error, 'Failed to trigger the GitHub Action.');
-      throw error;
-    }
-  };
-
-  const triggerRowGithubAction = async (row: SheetRow, action: 'draft' | 'publish') => {
-    const actionKey = buildRowActionKey(action, row);
-    try {
-      const ok = await dispatchGithubAction(
-        row,
-        action,
-        action === 'draft' ? 'trigger-draft' : 'trigger-publish',
-        {
-          target_topic: row.topic,
-          target_date: row.date,
-        },
-        action === 'draft'
-          ? `Requested post generation for "${row.topic}" using ${effectiveLlmRef(row, workspaceLlm).model}. GitHub is generating the draft — the sheet updates when the workflow finishes. Refresh the queue in a few seconds if status is still Pending.`
-          : `Requested publishing for "${row.topic}". The queue will refresh from the sheet shortly.`,
-        actionKey,
-      );
-      if (ok) {
-        if (action === 'draft') {
-          const tid = (row.topicId || '').trim();
-          if (tid) {
-            setDraftDispatchPendingTopicIds((prev) => (prev.includes(tid) ? prev : [...prev, tid]));
-            const timers = draftPendingTimersRef.current;
-            const old = timers.get(tid);
-            if (old) clearTimeout(old);
-            timers.set(
-              tid,
-              setTimeout(() => {
-                timers.delete(tid);
-                setDraftDispatchPendingTopicIds((p) => p.filter((x) => x !== tid));
-              }, DRAFT_DISPATCH_PENDING_MAX_MS),
-            );
-          }
-          onDraftWorkflowStarted?.();
-        }
-        await loadData(true);
-      }
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -900,14 +795,12 @@ export function useDashboardQueue({
     newTopic,
     setNewTopic,
     actionLoading,
-    draftDispatchPendingTopicIds,
     deletingRowIndex,
     loadData,
     applyOptimisticPostSchedule,
     handleAddTopic,
     handleApproveVariant,
     handleSaveEmailFields,
-    triggerRowGithubAction,
     draftWithGenerationWorker,
     generationProgress,
     handleGenerateQuickChange,

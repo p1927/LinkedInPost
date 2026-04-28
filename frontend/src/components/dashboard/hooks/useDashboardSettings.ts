@@ -93,8 +93,6 @@ export function useDashboardSettings({
 }) {
   const { showAlert } = useAlert();
   const [sheetIdInput, setSheetIdInput] = useState(session.config.spreadsheetId);
-  const [githubRepo, setGithubRepo] = useState(session.config.githubRepo);
-  const [githubTokenInput, setGithubTokenInput] = useState('');
   const [llmPrimaryProvider, setLlmPrimaryProvider] = useState<LlmProviderId>(() =>
     FEATURE_MULTI_PROVIDER_LLM && session.config.llm?.primary ? session.config.llm.primary.provider : 'gemini',
   );
@@ -400,7 +398,6 @@ export function useDashboardSettings({
   const hasUnsavedSettingsChanges = useMemo(() => {
     const c = session.config;
     if (sheetIdInput.trim() !== c.spreadsheetId) return true;
-    if (githubRepo.trim() !== c.githubRepo) return true;
     if (googleModel !== serverToolbarModel || llmPrimaryProvider !== serverToolbarProvider) return true;
     if (FEATURE_MULTI_PROVIDER_LLM && draftFallbackKey !== serverFallbackKey) return true;
     const a = [...allowedGoogleModels].sort();
@@ -417,7 +414,6 @@ export function useDashboardSettings({
       const bm = [...(c.llm?.allowedMinimaxModels || [])].sort();
       if (am.length !== bm.length || am.some((id, i) => id !== bm[i])) return true;
     }
-    if (githubTokenInput.trim() !== '') return true;
     if (telegramBotTokenInput.trim() !== '') return true;
     if (selectedChannel !== c.defaultChannel) return true;
     if (
@@ -452,7 +448,6 @@ export function useDashboardSettings({
   }, [
     session.config,
     sheetIdInput,
-    githubRepo,
     googleModel,
     serverToolbarModel,
     llmPrimaryProvider,
@@ -463,7 +458,6 @@ export function useDashboardSettings({
     allowedGrokModels,
     allowedOpenrouterModels,
     allowedMinimaxModels,
-    githubTokenInput,
     telegramBotTokenInput,
     selectedChannel,
     telegramRecipientsInput,
@@ -486,11 +480,9 @@ export function useDashboardSettings({
     try {
       await onSaveConfig({
         spreadsheetId: sheetIdInput.trim(),
-        githubRepo: githubRepo.trim(),
         googleModel: llmPrimaryProvider === 'gemini' ? googleModel : session.config.googleModel,
         allowedGoogleModels,
         generationRules: session.config.generationRules.trim(),
-        githubToken: githubTokenInput.trim() || undefined,
         defaultChannel: selectedChannel,
         telegramBotToken: telegramBotTokenInput.trim() || undefined,
         telegramRecipients: parseTelegramRecipientsInput(telegramRecipientsInput),
@@ -514,7 +506,6 @@ export function useDashboardSettings({
           : {}),
         imageGen: { provider: imageGenProvider, model: imageGenModel || undefined },
       });
-      setGithubTokenInput('');
       setTelegramBotTokenInput('');
       if (sheetIdInput.trim()) {
         await loadData(true);
@@ -537,10 +528,6 @@ export function useDashboardSettings({
   return {
     sheetIdInput,
     setSheetIdInput,
-    githubRepo,
-    setGithubRepo,
-    githubTokenInput,
-    setGithubTokenInput,
     llmPrimaryProvider,
     setLlmPrimaryProvider,
     llmFallback,

@@ -8,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Link } from 'react-router-dom';
 import { Plus, RefreshCw, MessageCircle, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { type AppSession, type OAuthProvider } from '../../../services/backendApi';
 import { type GoogleModelOption } from '../../../services/configService';
@@ -16,7 +15,6 @@ import { type ChannelId } from '../../../integrations/channels';
 import { type TelegramChatVerificationResult, type WhatsAppPhoneOption } from '../../../services/backendApi';
 import { type TelegramRecipient } from '../../../integrations/telegram';
 import { cn } from '../../../lib/cn';
-import { WORKSPACE_PATHS } from '../../../features/topic-navigation/utils/workspaceRoutes';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -56,10 +54,6 @@ type DashboardSettingsDrawerProps = {
   sheetIdInput: string;
   setSheetIdInput: (val: string) => void;
   selectedChannel: ChannelId;
-  githubRepo: string;
-  setGithubRepo: (val: string) => void;
-  githubTokenInput: string;
-  setGithubTokenInput: (val: string) => void;
   telegramBotTokenInput: string;
   setTelegramBotTokenInput: (val: string) => void;
   telegramDraftLabel: string;
@@ -385,7 +379,6 @@ const LLM_SETTING_KEYS: LlmSettingKey[] = [
   'generation_worker',
   'content_review_text',
   'content_review_vision',
-  'github_automation',
 ];
 
 function AllowedModelList({
@@ -1103,10 +1096,6 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
       sheetIdInput,
       setSheetIdInput,
       selectedChannel,
-      githubRepo,
-      setGithubRepo,
-      githubTokenInput,
-      setGithubTokenInput,
       telegramBotTokenInput,
       setTelegramBotTokenInput,
       telegramDraftLabel,
@@ -1326,54 +1315,16 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
           <SpeechToTextSettingsSection />
         </SettingsSectionCard>
 
-        <SettingsSectionCard id="settings-github-actions" title="GitHub Actions">
-          <p className="text-xs leading-5 text-muted">
-            GitHub is still used for full draft jobs. Preview generation inside review uses the Worker model and workspace generation rules from the{' '}
-            <Link to={WORKSPACE_PATHS.rules} className="font-semibold text-primary underline-offset-2 hover:underline">
-              Rules
-            </Link>{' '}
-            page.
-          </p>
-          <div className="mt-4 space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-ink">GitHub Repository</label>
-              <Input
-                type="text"
-                value={githubRepo}
-                onChange={(e) => setGithubRepo(e.target.value)}
-                placeholder="e.g. username/repo-name"
-                className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-ink">Replace GitHub Personal Access Token</label>
-              <Input
-                type="password"
-                value={githubTokenInput}
-                onChange={(e) => setGithubTokenInput(e.target.value)}
-                placeholder={session.config.hasGitHubToken ? 'Leave blank to keep the current token' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}
-                className="w-full rounded-xl border border-border bg-canvas px-4 py-3 text-ink transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-              <p className="mt-1.5 text-xs text-muted">
-                {session.config.hasGitHubToken
-                  ? 'A token is already stored. Enter a new one only when you want to rotate it.'
-                  : 'Required once so the backend can dispatch the GitHub workflows.'}
-              </p>
-            </div>
-          </div>
-        </SettingsSectionCard>
-
         {session.isAdmin ? (
           <SettingsSectionCard id="settings-llm" title="AI / LLM" variant="canvas">
             {multiLlmReady ? (
               <p className="text-xs leading-relaxed text-muted">
-                Preview generation uses the Worker. Set <code className="rounded bg-border/40 px-1">GEMINI_API_KEY</code> and optional{' '}
-                <code className="rounded bg-border/40 px-1">XAI_API_KEY</code> in the Worker. GitHub Actions draft jobs stay Gemini-only; the worker picks a valid Gemini model for dispatch when your primary is Grok.
+                Generation runs through the Worker (and the generation worker for full drafts). Set <code className="rounded bg-border/40 px-1">GEMINI_API_KEY</code> and optional{' '}
+                <code className="rounded bg-border/40 px-1">XAI_API_KEY</code> in the Worker.
               </p>
             ) : (
               <p className="text-xs leading-relaxed text-muted">
-                Preview generation uses the Worker. Set <code className="rounded bg-border/40 px-1">GEMINI_API_KEY</code> in the Worker. Allowed Gemini models below apply to GitHub Actions draft workflows and the model picker on Home.
+                Generation runs through the Worker (and the generation worker for full drafts). Set <code className="rounded bg-border/40 px-1">GEMINI_API_KEY</code> in the Worker. Allowed Gemini models below appear in the Home model picker.
               </p>
             )}
             {multiLlmReady ? (
@@ -1481,7 +1432,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             <div className={multiLlmReady ? 'mt-6 space-y-4' : 'mt-4 space-y-4'}>
               <CollapsibleAllowedModels
                 title="Allowed Gemini models"
-                description="These models are used for GitHub Actions draft workflows and appear in the Home model picker when Gemini is available. Only admins can change this list. Everyone else can choose among allowed models (or use the single model when only one is enabled)."
+                description="These Gemini models appear in the Home model picker. Only admins can change this list. Everyone else can choose among allowed models (or use the single model when only one is enabled)."
                 catalog={adminModelCatalog}
                 allowedModels={allowedGoogleModels}
                 onToggle={toggleAllowedGoogleModel}

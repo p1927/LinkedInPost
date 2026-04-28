@@ -1,4 +1,5 @@
 import { fetchImageAsset } from '../media';
+import { fetchWithRetry } from '../_shared/fetchWithRetry';
 
 /** Pinned LinkedIn REST API product version (required for `rest/posts` MultiImage). See Microsoft Learn versioning. */
 export const LINKEDIN_REST_API_VERSION = '202502';
@@ -48,7 +49,7 @@ export async function publishLinkedInPost(request: LinkedInPublishRequest): Prom
       urls.map((url) => uploadLinkedInImage(request.accessToken, request.personUrn, url)),
     );
 
-    const response = await fetch('https://api.linkedin.com/rest/posts', {
+    const response = await fetchWithRetry('https://api.linkedin.com/rest/posts', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${request.accessToken}`,
@@ -95,7 +96,7 @@ export async function publishLinkedInPost(request: LinkedInPublishRequest): Prom
 
   const media = urls.length === 1 ? await uploadLinkedInImage(request.accessToken, request.personUrn, urls[0]!) : null;
 
-  const response = await fetch('https://api.linkedin.com/v2/ugcPosts', {
+  const response = await fetchWithRetry('https://api.linkedin.com/v2/ugcPosts', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${request.accessToken}`,
@@ -147,7 +148,7 @@ export async function publishLinkedInPost(request: LinkedInPublishRequest): Prom
 }
 
 async function uploadLinkedInImage(accessToken: string, personUrn: string, imageUrl: string): Promise<{ asset: string }> {
-  const registerResponse = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
+  const registerResponse = await fetchWithRetry('https://api.linkedin.com/v2/assets?action=registerUpload', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -180,7 +181,7 @@ async function uploadLinkedInImage(accessToken: string, personUrn: string, image
   }
 
   const imageAsset = await fetchImageAsset(imageUrl);
-  let uploadResponse = await fetch(uploadUrl, {
+  let uploadResponse = await fetchWithRetry(uploadUrl, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -190,7 +191,7 @@ async function uploadLinkedInImage(accessToken: string, personUrn: string, image
   });
 
   if (uploadResponse.status === 401 || uploadResponse.status === 403) {
-    uploadResponse = await fetch(uploadUrl, {
+    uploadResponse = await fetchWithRetry(uploadUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': imageAsset.contentType,

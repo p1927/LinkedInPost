@@ -142,27 +142,7 @@ export function Dashboard({
   const [statusFilter, setStatusFilter] = useState<QueueFilter>('all');
   const [lastDeliverySummary, setLastDeliverySummary] = useState<DeliverySummary | null>(null);
   const [queueScrollTargetId, setQueueScrollTargetId] = useState<string | null>(null);
-  const [highlightRefreshQueue, setHighlightRefreshQueue] = useState(false);
-  const refreshGlowTimerRef = useRef<{ start?: ReturnType<typeof setTimeout>; end?: ReturnType<typeof setTimeout> }>({});
   const settingsDrawerRef = useRef<DashboardSettingsDrawerHandle>(null);
-
-  const clearRefreshGlowTimers = useCallback(() => {
-    const t = refreshGlowTimerRef.current;
-    if (t.start) clearTimeout(t.start);
-    if (t.end) clearTimeout(t.end);
-    refreshGlowTimerRef.current = {};
-  }, []);
-
-  const onDraftWorkflowStarted = useCallback(() => {
-    clearRefreshGlowTimers();
-    setHighlightRefreshQueue(false);
-    refreshGlowTimerRef.current.start = setTimeout(() => {
-      setHighlightRefreshQueue(true);
-      refreshGlowTimerRef.current.end = setTimeout(() => setHighlightRefreshQueue(false), 10000);
-    }, 2800);
-  }, [clearRefreshGlowTimers]);
-
-  useEffect(() => () => clearRefreshGlowTimers(), [clearRefreshGlowTimers]);
 
   const channelsHook = useDashboardChannels({
     idToken,
@@ -296,7 +276,6 @@ export function Dashboard({
     viewingTopicRouteId: topicIdFromPath,
     onLeaveTopicRoute: () => navigate(WORKSPACE_PATHS.topics),
     onAfterApprove: () => navigate(WORKSPACE_PATHS.topics),
-    onDraftWorkflowStarted,
   });
 
   const queueCounts = queueHook.rows.reduce<Record<QueueFilter, number>>((acc, row) => {
@@ -370,10 +349,8 @@ export function Dashboard({
 
   const refreshQueue = useCallback(() => {
     if (!session.config.spreadsheetId) return;
-    setHighlightRefreshQueue(false);
-    clearRefreshGlowTimers();
     void queueHook.loadData();
-  }, [session.config.spreadsheetId, queueHook.loadData, clearRefreshGlowTimers]);
+  }, [session.config.spreadsheetId, queueHook.loadData]);
 
   const publishingHealth = useMemo(
     () => ({
@@ -481,7 +458,6 @@ export function Dashboard({
   useRegisterWorkspaceChrome({
     onRefreshQueue: session.config.spreadsheetId ? refreshQueue : null,
     queueLoading: queueHook.loading,
-    highlightRefreshQueue,
     health: publishingHealth,
     headerOverride,
     clearTopicReviewHeader: !topicIdFromPath,
@@ -623,11 +599,9 @@ export function Dashboard({
       filteredRows={filteredRows}
       rows={queueHook.rows}
       getQueueStatusVariant={queueStatusToBadgeVariant}
-      triggerRowGithubAction={queueHook.triggerRowGithubAction}
       onGenerationWorkerDraft={queueHook.draftWithGenerationWorker}
       generationProgress={queueHook.generationProgress}
       actionLoading={queueHook.actionLoading}
-      draftDispatchPendingTopicIds={queueHook.draftDispatchPendingTopicIds}
       session={session}
       onOpenTopicReview={(row) => navigate(topicEditorPathForRow(row))}
       selectedTopicId={railSelectedTopicId}
@@ -707,10 +681,6 @@ export function Dashboard({
       sheetIdInput={settingsHook.sheetIdInput}
       setSheetIdInput={settingsHook.setSheetIdInput}
       selectedChannel={channelsHook.selectedChannel}
-      githubRepo={settingsHook.githubRepo}
-      setGithubRepo={settingsHook.setGithubRepo}
-      githubTokenInput={settingsHook.githubTokenInput}
-      setGithubTokenInput={settingsHook.setGithubTokenInput}
       telegramBotTokenInput={settingsHook.telegramBotTokenInput}
       setTelegramBotTokenInput={settingsHook.setTelegramBotTokenInput}
       telegramDraftLabel={channelsHook.telegramDraftLabel}

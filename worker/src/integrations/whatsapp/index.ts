@@ -1,4 +1,5 @@
 import { normalizeDeliveryImageUrl } from '../media';
+import { fetchWithRetry } from '../_shared/fetchWithRetry';
 
 export interface WhatsAppSendRequest {
   accessToken: string;
@@ -34,7 +35,7 @@ async function postWhatsAppMessage(
   request: WhatsAppSendRequest,
   body: Record<string, unknown>,
 ): Promise<string | null> {
-  const response = await fetch(`https://graph.facebook.com/v22.0/${encodeURIComponent(request.phoneNumberId)}/messages`, {
+  const response = await fetchWithRetry(`https://graph.facebook.com/v22.0/${encodeURIComponent(request.phoneNumberId)}/messages`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${request.accessToken}`,

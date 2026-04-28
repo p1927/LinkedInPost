@@ -51,7 +51,6 @@ import {
   resolveAllowedGrokModelIds,
   resolveAllowedOpenrouterModelIds,
   resolveAllowedMinimaxModelIds,
-  resolveGithubAutomationGeminiModel,
   resolveStoredFallback,
   resolveStoredPrimary,
   workspaceConfigFromStored,
@@ -63,7 +62,6 @@ import {
   type LlmSettingKey,
   type LlmSettingsMap,
 } from './llm';
-import { runGithubAutomationGenerateVariants } from './internal/githubAutomationGenerateVariants';
 import { syncImageGenCatalog, getImageGenCatalog, seedImageGenCatalogIfEmpty } from './image-gen/model-catalog';
 import { listGeminiModels, STATIC_GEMINI_MODELS } from './llm/providers/gemini';
 import { listGrokModels, STATIC_GROK_MODELS } from './llm/providers/grok';
@@ -128,7 +126,9 @@ export interface Env {
   NEWSDATA_API_KEY?: string;
   /** Comma/newline-separated RSS URLs or JSON array string; merged with Settings feeds. */
   RESEARCHER_RSS_FEEDS?: string;
-  GITHUB_TOKEN_ENCRYPTION_KEY?: string;
+  SECRET_ENCRYPTION_KEY?: string;
+  /** Optional Google Doc ID. When set, every successful publish appends a line to that Doc as a human-readable history log. */
+  POSTED_LOG_DOC_ID?: string;
   CORS_ALLOWED_ORIGINS?: string;
   INSTAGRAM_APP_ID?: string;
   INSTAGRAM_APP_SECRET?: string;
@@ -172,7 +172,6 @@ export interface Env {
 
 interface BotConfig {
   spreadsheetId: string;
-  githubRepo: string;
   googleModel: string;
   /** Model IDs users may pick from; only admins can change this list. */
   allowedGoogleModels: string[];
@@ -197,7 +196,6 @@ interface BotConfig {
   userRules: string;
   /** Per-user "who am I" author profile (empty = fall back to global authorProfile). */
   userWhoAmI: string;
-  hasGitHubToken: boolean;
   hasGenerationWorker: boolean;
   defaultChannel: ChannelId;
   instagramAuthAvailable: boolean;
@@ -254,7 +252,6 @@ interface GenerationRulesVersion {
 
 export interface StoredConfig {
   spreadsheetId: string;
-  githubRepo: string;
   googleModel: string;
   /** When absent, the worker defaults to Gemini 2.5 Flash only. */
   allowedGoogleModels?: string[];
@@ -268,7 +265,6 @@ export interface StoredConfig {
   /** Prior snapshots when global rules change (newest first). */
   generationRulesHistory?: GenerationRulesVersion[];
   disconnectedAuthProviders?: AuthProvider[];
-  githubTokenCiphertext?: string;
   defaultChannel: ChannelId;
   instagramUserId: string;
   instagramUsername: string;
@@ -320,12 +316,10 @@ export interface StoredConfig {
 
 interface BotConfigUpdate {
   spreadsheetId?: string;
-  githubRepo?: string;
   googleModel?: string;
   allowedGoogleModels?: string[];
   generationRules?: string;
   authorProfile?: string;
-  githubToken?: string;
   defaultChannel?: ChannelId;
   instagramUserId?: string;
   instagramUsername?: string;
@@ -584,7 +578,6 @@ interface SerpApiSearchResponse {
 }
 
 const CONFIG_KEY = 'shared-config';
-const GITHUB_TOKEN_REAUTH_MESSAGE = 'The stored GitHub token can no longer be decrypted. This usually means GITHUB_TOKEN_ENCRYPTION_KEY changed after the token was saved. Ask an admin to open Settings and save the GitHub token again.';
 const INSTAGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Instagram access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const LINKEDIN_TOKEN_REAUTH_MESSAGE = 'The stored LinkedIn access token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
 const TELEGRAM_TOKEN_REAUTH_MESSAGE = 'The stored Telegram bot token can no longer be decrypted. Ask an admin to open Settings and save the token again.';
@@ -593,6 +586,7 @@ const GMAIL_TOKEN_REAUTH_MESSAGE = 'The stored Gmail access token can no longer 
 const GOOGLE_API_SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/devstorage.read_write',
+  'https://www.googleapis.com/auth/documents',
 ].join(' ');
 const OAUTH_STATE_PREFIX = 'oauth-state:';
 const WHATSAPP_PENDING_PREFIX = 'whatsapp-pending:';
@@ -766,14 +760,6 @@ export default {
 
     if (url.pathname === '/internal/pipeline-upsert') {
       return handleInternalPipelineUpsertRequest(request, env);
-    }
-
-    if (url.pathname === '/internal/github-automation-gemini-model') {
-      return handleInternalGithubAutomationGeminiModelRequest(request, env);
-    }
-
-    if (url.pathname === '/internal/github-automation-generate-variants') {
-      return handleInternalGithubAutomationGenerateVariantsRequest(request, env);
     }
 
     // SSE streaming generation endpoint
@@ -1190,61 +1176,6 @@ async function handleInternalPipelineUpsertRequest(request: Request, env: Env): 
   const { pipeline } = buildServices(env);
   await pipeline.upsertFull(config.spreadsheetId, row);
   return Response.json({ ok: true });
-}
-
-/** Same Gemini model id the Worker injects into GitHub `repository_dispatch` for draft automation. */
-async function handleInternalGithubAutomationGeminiModelRequest(request: Request, env: Env): Promise<Response> {
-  const authError = await verifySchedulerSecret(request, env);
-  if (authError) {
-    return authError;
-  }
-
-  const config = await loadStoredConfig(env);
-  ensureSpreadsheetConfigured(config);
-  const llmSettings = await seedLlmSettingsIfEmpty(
-    env.PIPELINE_DB,
-    config.spreadsheetId,
-    config,
-    GOOGLE_MODEL_DEFAULT,
-  );
-  const auto = llmSettings.github_automation;
-  if (auto.provider === 'gemini') {
-    return Response.json({ ok: true, data: { googleModel: auto.model } });
-  }
-  const ws = workspaceConfigFromStored(config.googleModel, config.allowedGoogleModels, config.llm);
-  const googleModel = resolveGithubAutomationGeminiModel(ws, FEATURE_MULTI_PROVIDER_LLM);
-  return Response.json({ ok: true, data: { googleModel } });
-}
-
-async function handleInternalGithubAutomationGenerateVariantsRequest(request: Request, env: Env): Promise<Response> {
-  const authError = await verifySchedulerSecret(request, env);
-  if (authError) {
-    return authError;
-  }
-
-  const config = await loadStoredConfig(env);
-  ensureSpreadsheetConfigured(config);
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 });
-  }
-
-  try {
-    const data = await runGithubAutomationGenerateVariants(
-      env,
-      config.spreadsheetId,
-      config,
-      body,
-      GOOGLE_MODEL_DEFAULT,
-    );
-    return Response.json({ ok: true, data });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'GitHub automation generation failed.';
-    return Response.json({ ok: false, error: message }, { status: 400 });
-  }
 }
 
 async function dispatchAction(
@@ -2115,8 +2046,6 @@ Rules:
       return handleUploadContextDocument(payload);
     case 'generateImageWithReference':
       return generateImageWithReference(env, storedConfig, payload);
-    case 'triggerGithubAction':
-      return triggerGithubAction(env, storedConfig, payload);
     case 'publishContent':
       ensureSpreadsheetConfigured(storedConfig);
       return publishContent(env, session.userId, storedConfig, payload, sheets, pipeline);
@@ -2806,7 +2735,6 @@ async function loadStoredConfig(
 
   return {
     spreadsheetId,
-    githubRepo: config?.githubRepo || '',
     googleModel: config?.googleModel || GOOGLE_MODEL_DEFAULT,
     allowedGoogleModels: config?.allowedGoogleModels,
     generationRules: config?.generationRules || '',
@@ -2814,7 +2742,6 @@ async function loadStoredConfig(
     userRules,
     userWhoAmI,
     disconnectedAuthProviders,
-    githubTokenCiphertext: config?.githubTokenCiphertext || undefined,
     defaultChannel,
     instagramUserId: instagramDisconnected ? '' : (config?.instagramUserId || String(env.INSTAGRAM_USER_ID || '').trim()),
     instagramUsername: instagramDisconnected ? '' : (config?.instagramUsername || String(env.INSTAGRAM_USERNAME || '').trim()),
@@ -2852,14 +2779,12 @@ function toPublicConfig(config: StoredConfig, env: Env): BotConfig {
   const allowedGoogleModels = resolveAllowedGoogleModelIds(config);
   let base: BotConfig = {
     spreadsheetId: config.spreadsheetId,
-    githubRepo: config.githubRepo,
     googleModel: resolveEffectiveGoogleModel(config, config.googleModel),
     allowedGoogleModels,
     generationRules: config.generationRules || '',
     authorProfile: config.authorProfile || '',
     userRules: config.userRules || '',
     userWhoAmI: config.userWhoAmI || '',
-    hasGitHubToken: Boolean(config.githubTokenCiphertext),
     hasGenerationWorker: isGenerationWorkerConfigured(env),
     defaultChannel: config.defaultChannel,
     instagramAuthAvailable: hasInstagramOAuthConfig(env),
@@ -4331,13 +4256,11 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
 
   const nextConfig: StoredConfig = {
     spreadsheetId: typeof update.spreadsheetId === 'string' ? update.spreadsheetId.trim() : current.spreadsheetId,
-    githubRepo: typeof update.githubRepo === 'string' ? update.githubRepo.trim() : current.githubRepo,
     googleModel: resolvedGoogleModel,
     allowedGoogleModels: nextAllowed,
     generationRules: typeof update.generationRules === 'string' ? update.generationRules.trim() : current.generationRules,
     authorProfile: typeof update.authorProfile === 'string' ? update.authorProfile.trim() : (current.authorProfile || ''),
     disconnectedAuthProviders: current.disconnectedAuthProviders || [],
-    githubTokenCiphertext: current.githubTokenCiphertext,
     defaultChannel: update.defaultChannel === 'whatsapp'
       ? 'whatsapp'
       : update.defaultChannel === 'telegram'
@@ -4389,10 +4312,6 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
       : current.enrichmentSkills,
   };
 
-  if (update.githubToken) {
-    nextConfig.githubTokenCiphertext = await encryptSecret(update.githubToken.trim(), requireSecretEncryptionKey(env));
-  }
-
   if (update.instagramAccessToken) {
     nextConfig.instagramAccessTokenCiphertext = await encryptSecret(update.instagramAccessToken.trim(), requireSecretEncryptionKey(env));
     nextConfig.disconnectedAuthProviders = withoutDisconnectedAuthProvider(nextConfig.disconnectedAuthProviders || [], 'instagram');
@@ -4424,78 +4343,6 @@ async function saveConfig(env: Env, current: StoredConfig, update: BotConfigUpda
   await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
   await setUserSpreadsheetId(env.PIPELINE_DB, session.userId, String(nextConfig.spreadsheetId || '').trim());
   return toPublicConfig(nextConfig, env);
-}
-
-async function triggerGithubAction(env: Env, config: StoredConfig, payload: Record<string, unknown>): Promise<{ success: true }> {
-  if (!config.githubRepo || !config.githubTokenCiphertext) {
-    throw new Error('GitHub dispatch is not configured. Ask an admin to complete the shared settings.');
-  }
-
-  const eventType = String(payload.eventType || '');
-  if (!eventType) {
-    throw new Error('Missing repository dispatch event type.');
-  }
-
-  let githubToken: string;
-  try {
-    githubToken = await decryptSecret(config.githubTokenCiphertext, requireSecretEncryptionKey(env), GITHUB_TOKEN_REAUTH_MESSAGE);
-  } catch (error) {
-    if (error instanceof Error && error.message === GITHUB_TOKEN_REAUTH_MESSAGE) {
-      const nextConfig: StoredConfig = {
-        ...config,
-        githubTokenCiphertext: undefined,
-      };
-      await env.CONFIG_KV.put(CONFIG_KEY, JSON.stringify(nextConfig));
-    }
-    throw error;
-  }
-
-  const innerBase =
-    payload.payload && typeof payload.payload === 'object' && !Array.isArray(payload.payload)
-      ? (payload.payload as Record<string, unknown>)
-      : {};
-  const innerPayload = { ...innerBase };
-  const ws = workspaceConfigFromStored(config.googleModel, config.allowedGoogleModels, config.llm);
-  const llmSettings = await seedLlmSettingsIfEmpty(
-    env.PIPELINE_DB,
-    config.spreadsheetId,
-    config,
-    GOOGLE_MODEL_DEFAULT,
-  );
-  const auto = llmSettings.github_automation;
-  const automationGemini =
-    auto.provider === 'gemini'
-      ? auto.model
-      : resolveGithubAutomationGeminiModel(ws, FEATURE_MULTI_PROVIDER_LLM);
-  const requested = String(innerPayload.google_model ?? '').trim();
-  innerPayload.google_model = requested
-    ? resolveEffectiveGoogleModel(
-        { googleModel: config.googleModel, allowedGoogleModels: config.allowedGoogleModels },
-        requested,
-      )
-    : automationGemini;
-
-  const response = await fetch(`https://api.github.com/repos/${config.githubRepo}/dispatches`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${githubToken}`,
-      'Content-Type': 'application/json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'linkedin-bot-worker',
-    },
-    body: JSON.stringify({
-      event_type: eventType,
-      client_payload: innerPayload,
-    }),
-  });
-
-  if (response.status !== 204) {
-    const message = await response.text();
-    throw new Error(`GitHub dispatch failed: ${message || response.status}`);
-  }
-
-  return { success: true };
 }
 
 export async function executeScheduledPublish(env: Env, task: ScheduledPublishTask): Promise<void> {
@@ -4598,7 +4445,7 @@ async function publishContent(
   const imageUrls = resolvePublishImageUrls(payload, row);
   const publishedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
 
-  async function markPublishedForChannel(): Promise<void> {
+  async function markPublishedForChannel(channelForLog: ChannelId, messageIdForLog: string | null): Promise<void> {
     const cleanedRow = await cleanupUnusedGeneratedImages(env, row, imageUrls);
     const { selectedImageId, selectedImageUrlsJson } = serializeRowImageUrls(imageUrls);
     await pipeline.markRowPublished(config.spreadsheetId, {
@@ -4608,6 +4455,14 @@ async function publishContent(
       selectedImageId,
       selectedImageUrlsJson,
       postTime: publishedAt,
+    });
+    await appendToPostedDoc(env, {
+      topic: row.topic,
+      channel: channelForLog,
+      text: message,
+      imageUrls,
+      messageId: messageIdForLog,
+      publishedAtIso: new Date().toISOString(),
     });
   }
 
@@ -4696,7 +4551,7 @@ async function publishContent(
       altText: row.topic,
     });
 
-    await markPublishedForChannel();
+    await markPublishedForChannel(channel, publishResult.postId);
 
     return {
       success: true,
@@ -4761,7 +4616,7 @@ async function publishContent(
       imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
     });
 
-    await markPublishedForChannel();
+    await markPublishedForChannel(channel, publishResult.postId);
 
     return {
       success: true,
@@ -4788,7 +4643,7 @@ async function publishContent(
       imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
     });
 
-    await markPublishedForChannel();
+    await markPublishedForChannel(channel, sendResult.messageId);
 
     return {
       success: true,
@@ -4874,7 +4729,7 @@ async function publishContent(
       }
     }
 
-    await markPublishedForChannel();
+    await markPublishedForChannel(channel, sendResult.messageId);
 
     const gmailTo = String(payload.emailTo || row.emailTo || '').trim();
 
@@ -4927,7 +4782,7 @@ async function publishContent(
     imageUrls: imageUrls.length > 1 ? imageUrls : undefined,
   });
 
-  await markPublishedForChannel();
+  await markPublishedForChannel(channel, sendResult.messageId);
 
   return {
     success: true,
@@ -5173,11 +5028,11 @@ function normalizePhoneNumber(value: string): string {
 }
 
 function requireSecretEncryptionKey(env: Env): string {
-  if (!env.GITHUB_TOKEN_ENCRYPTION_KEY) {
-    throw new Error('Missing GITHUB_TOKEN_ENCRYPTION_KEY in the Worker environment.');
+  if (!env.SECRET_ENCRYPTION_KEY) {
+    throw new Error('Missing SECRET_ENCRYPTION_KEY in the Worker environment.');
   }
 
-  return env.GITHUB_TOKEN_ENCRYPTION_KEY;
+  return env.SECRET_ENCRYPTION_KEY;
 }
 
 
@@ -5733,6 +5588,65 @@ async function downloadDraftImage(payload: Record<string, unknown>): Promise<Res
 
 
 
+interface PostedDocEntry {
+  topic: string;
+  channel: ChannelId;
+  text: string;
+  imageUrls: string[];
+  messageId: string | null;
+  publishedAtIso: string;
+}
+
+function formatPostedDocLine(entry: PostedDocEntry): string {
+  const ts = entry.publishedAtIso.replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+  const headline = `[${ts}] ${entry.channel} — ${entry.topic.trim() || '(untitled)'}`;
+  const idLine = entry.messageId ? `Post id: ${entry.messageId}` : 'Post id: (none returned)';
+  const images = entry.imageUrls.length > 0 ? `Images: ${entry.imageUrls.join(', ')}` : 'Images: (none)';
+  return `${headline}\n${entry.text.trim()}\n${images}\n${idLine}\n---\n`;
+}
+
+/**
+ * Appends a human-readable line to the configured Google Doc after a successful publish.
+ * No-ops when `POSTED_LOG_DOC_ID` is unset. Errors are logged and swallowed — the publish
+ * itself stays successful even if the Doc append fails.
+ */
+async function appendToPostedDoc(env: Env, entry: PostedDocEntry): Promise<void> {
+  const docId = String(env.POSTED_LOG_DOC_ID || '').trim();
+  if (!docId) return;
+  try {
+    const accessToken = await mintGoogleAccessToken(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    const response = await fetch(
+      `https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [
+            {
+              insertText: {
+                endOfSegmentLocation: {},
+                text: formatPostedDocLine(entry),
+              },
+            },
+          ],
+        }),
+      },
+    );
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      console.error('Posted-log Doc append failed', {
+        status: response.status,
+        detail: detail.slice(0, 200),
+      });
+    }
+  } catch (err) {
+    console.error('Posted-log Doc append threw', err);
+  }
+}
+
 export async function mintGoogleAccessToken(serviceAccountJson: string): Promise<string> {
   let credentials: ServiceAccountCredentials;
   try {
@@ -5887,7 +5801,7 @@ async function decryptSecret(ciphertext: string, base64Key: string, reauthMessag
 async function importAesKey(base64Key: string, usages: Array<'encrypt' | 'decrypt'>): Promise<CryptoKey> {
   const keyBytes = base64ToBytes(base64Key);
   if (keyBytes.byteLength !== 32) {
-    throw new Error('GITHUB_TOKEN_ENCRYPTION_KEY must be a base64-encoded 32-byte key.');
+    throw new Error('SECRET_ENCRYPTION_KEY must be a base64-encoded 32-byte key.');
   }
 
   return crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, usages);

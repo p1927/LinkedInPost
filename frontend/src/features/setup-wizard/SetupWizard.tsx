@@ -56,6 +56,93 @@ export interface SetupConfig {
   envVars: Record<string, string>;
 }
 
+/**
+ * Linear-progress steps shown in the vertical sidebar.
+ * Excludes special states (deploymentMode picker, status dashboard, welcome
+ * splash, install progress, final success) which render full-width without
+ * the sidebar.
+ */
+const LINEAR_STEPS: SetupStep[] = [
+  'directory',
+  'integrations',
+  'trending',
+  'imagegen',
+  'stt',
+  'envvars',
+];
+
+/** Human-readable label per step, used in the sidebar and the progress bar. */
+const STEP_LABEL: Record<SetupStep, string> = {
+  deploymentMode: 'Deployment mode',
+  status: 'Status',
+  welcome: 'Welcome',
+  directory: 'Project directory',
+  progress: 'Installation',
+  integrations: 'Integrations',
+  trending: 'Trending sources',
+  imagegen: 'Image generation',
+  stt: 'Voice transcription',
+  envvars: 'Environment variables',
+  final: 'All set',
+};
+
+function WizardSidebar({ currentStep }: { currentStep: SetupStep }) {
+  const total = LINEAR_STEPS.length;
+  const idx = LINEAR_STEPS.indexOf(currentStep);
+  const stepNumber = idx + 1;
+  const percent = idx >= 0 ? Math.round((stepNumber / total) * 100) : 0;
+  return (
+    <aside
+      aria-label="Setup wizard progress"
+      className="sticky top-6 self-start rounded-2xl border border-violet-200 bg-violet-50/40 p-5 shadow-sm"
+    >
+      <div className="mb-4">
+        <p className="text-[10px] uppercase tracking-wider text-muted">Setup</p>
+        <p className="text-sm font-semibold text-ink">
+          Step {stepNumber} of {total}
+        </p>
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-violet-100">
+          <div
+            className="h-full bg-gradient-to-r from-violet-500 to-violet-700 transition-all"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+      </div>
+      <ol className="space-y-1">
+        {LINEAR_STEPS.map((s, i) => {
+          const isCurrent = s === currentStep;
+          const isDone = i < idx;
+          const dotClass = isCurrent
+            ? 'bg-violet-600 text-white'
+            : isDone
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'bg-slate-100 text-slate-400';
+          const rowClass = isCurrent
+            ? 'bg-violet-100/70 text-violet-700 font-bold'
+            : isDone
+              ? 'text-emerald-700'
+              : 'text-slate-500';
+          return (
+            <li
+              key={s}
+              aria-current={isCurrent ? 'step' : undefined}
+              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${rowClass}`}
+            >
+              <span
+                aria-hidden
+                className={`inline-grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${dotClass}`}
+              >
+                {isDone ? '✓' : isCurrent ? '●' : i + 1}
+              </span>
+              <span>{STEP_LABEL[s]}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </aside>
+  );
+}
+
 const DEFAULT_CONFIG: SetupConfig = {
   projectDir: '',
   deploymentMode: 'saas',
@@ -294,12 +381,24 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
     }
   }, [config.projectDir]);
 
+  const showSidebar = !embedded && LINEAR_STEPS.includes(step);
+  const outerClass = embedded
+    ? 'w-full mx-auto py-6 px-4'
+    : 'min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-start justify-center p-4 sm:p-8';
+  const innerClass = embedded
+    ? 'w-full'
+    : showSidebar
+      ? 'w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-6'
+      : 'w-full max-w-2xl';
   return (
-    <div className={embedded
-      ? 'w-full max-w-2xl mx-auto py-6 px-4'
-      : 'min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-center justify-center p-4'
-    }>
-      <div className={embedded ? 'w-full' : 'w-full max-w-2xl'}>
+    <div className={outerClass}>
+      <div className={innerClass}>
+        {showSidebar && (
+          <div className="md:col-span-4">
+            <WizardSidebar currentStep={step} />
+          </div>
+        )}
+        <div className={showSidebar ? 'md:col-span-8' : ''}>
         <AnimatePresence mode="wait">
           {isDetectingState && (
             <motion.div
@@ -544,6 +643,7 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedInPost — UX Mockups (review before coding)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .ink { color: #111113; }
+    .muted { color: #6b7280; }
+    .glass { background: rgba(255,255,255,0.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.6); }
+    .tab-active { background: #6d28d9; color: white; }
+    .ann { font-size: 11px; line-height: 1.4; color: #6b7280; }
+    .ann strong { color: #6d28d9; font-weight: 600; }
+    .pill { display:inline-flex; align-items:center; gap:4px; border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:600; line-height:1; }
+    /* Status pill colors (kept for the "Today" comparison and Option C) */
+    .pill-pending   { background:#f1f5f9; color:#334155; box-shadow: inset 0 0 0 1px #cbd5e1aa; }
+    .pill-drafted   { background:#eff6ff; color:#1d4ed8; box-shadow: inset 0 0 0 1px #bfdbfe; }
+    .pill-approved  { background:#f5f3ff; color:#6d28d9; box-shadow: inset 0 0 0 1px #ddd6fe; }
+    .pill-scheduled { background:#fffbeb; color:#92400e; box-shadow: inset 0 0 0 1px #fde68a; }
+    .pill-published { background:#ecfdf5; color:#047857; box-shadow: inset 0 0 0 1px #a7f3d0; }
+    /* Channel pill colors (still used in Bulk + Newsletter mock) */
+    .ch-linkedin   { background:#f0f9ff; color:#0369a1; box-shadow: inset 0 0 0 1px #bae6fd; }
+    .ch-newsletter { background:#fffbeb; color:#92400e; box-shadow: inset 0 0 0 1px #fde68a; }
+    .ch-telegram   { background:#ecfeff; color:#0e7490; box-shadow: inset 0 0 0 1px #a5f3fc; }
+    .ch-gmail      { background:#fff1f2; color:#be123c; box-shadow: inset 0 0 0 1px #fecdd3; }
+    .ch-instagram  { background:#fdf2f8; color:#a21caf; box-shadow: inset 0 0 0 1px #fbcfe8; }
+    .ch-whatsapp   { background:#ecfdf5; color:#047857; box-shadow: inset 0 0 0 1px #a7f3d0; }
+    /* Compare card */
+    .compare-label { display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:2px 8px; border-radius:9999px; }
+    .compare-today { background:#f1f5f9; color:#475569; }
+    .compare-after { background:#ede9fe; color:#6d28d9; }
+    /* Card frame */
+    .frame { border:1px solid rgba(126,34,206,0.18); border-radius:14px; background:white; box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 6px 24px -12px rgba(17,17,19,0.10); }
+    .row-hover:hover { background: rgba(124,58,237,0.04); }
+    .btn-primary { background:#6d28d9; color:white; border-radius:8px; padding:6px 10px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
+    .btn-secondary { background:white; color:#6d28d9; border:1px solid #c4b5fd; border-radius:8px; padding:5px 10px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
+    .btn-ghost { color:#6b7280; border-radius:8px; padding:5px 8px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
+    .icon-sm { width:12px; height:12px; }
+    .icon-xs { width:10px; height:10px; }
+    .surface-section { scroll-margin-top: 88px; }
+    [hidden] { display: none !important; }
+    /* Show inner action toolbar only on hover (used by Feed proposed) */
+    .hover-only { opacity: 0; transition: opacity 150ms; }
+    .ig-card:hover .hover-only { opacity: 1; }
+    /* Vertical step list (Setup wizard) */
+    .step { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-size:12px; color:#334155; }
+    .step.done { color:#047857; }
+    .step.current { background:#ede9fe; color:#5b21b6; font-weight:700; }
+    .step.todo { color:#94a3b8; }
+    .step .dot { width:18px; height:18px; border-radius:9999px; display:grid; place-items:center; font-size:10px; font-weight:700; }
+    .step.done .dot { background:#d1fae5; color:#047857; }
+    .step.current .dot { background:#7c3aed; color:white; }
+    .step.todo .dot { background:#e2e8f0; color:#94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 ink">
+
+  <!-- Sticky header / nav -->
+  <header class="sticky top-0 z-30 border-b border-violet-100 bg-white/85 backdrop-blur-md">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 to-violet-800 grid place-items-center text-white text-xs font-bold">LP</div>
+        <div class="leading-tight">
+          <p class="text-sm font-semibold ink">UX mockups · v2 (after feedback)</p>
+          <p class="text-[11px] muted hidden sm:block">6 surfaces · today vs proposed · LinkedInPost UX overhaul</p>
+        </div>
+      </div>
+      <nav class="-mx-1 flex gap-1 sm:ml-auto overflow-x-auto rounded-full border border-violet-200 bg-white p-1 shadow-sm" role="tablist">
+        <button data-tab="topics" class="tab-btn tab-active shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full transition-colors" role="tab">Topics queue</button>
+        <button data-tab="feed" class="tab-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full text-slate-700 hover:text-violet-700" role="tab">Feed</button>
+        <button data-tab="newsletter" class="tab-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full text-slate-700 hover:text-violet-700" role="tab">Newsletter</button>
+        <button data-tab="bulk" class="tab-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full text-slate-700 hover:text-violet-700" role="tab">Bulk campaign</button>
+        <button data-tab="settings" class="tab-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full text-slate-700 hover:text-violet-700" role="tab">Settings</button>
+        <button data-tab="setup" class="tab-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full text-slate-700 hover:text-violet-700" role="tab">Setup wizard</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-6 py-8 space-y-12">
+
+    <!-- =================== TOPICS QUEUE =================== -->
+    <section id="topics" class="surface-section tab-panel">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold ink tracking-tight">Topics queue</h2>
+        <p class="muted text-sm mt-1 max-w-2xl">Per your feedback: <strong>keep today's layout</strong> (no channel column, hover-only actions). The <strong>only change</strong> is the status indicator. Three alternatives below — pick one.</p>
+        <p class="text-[11px] muted mt-1">Files: <code class="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700">DashboardQueue.tsx</code></p>
+      </div>
+
+      <!-- Today (unchanged) -->
+      <div class="mb-3"><span class="compare-label compare-today">Today (kept)</span> <span class="ann">Same layout · hover-only actions · current status badges</span></div>
+      <div class="frame overflow-hidden mb-10">
+        <div class="bg-slate-50/70 border-b border-violet-200/60 px-4 py-2 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <div class="w-6"><input type="checkbox" disabled class="size-3.5 rounded border-slate-300"></div>
+          <div class="w-[88px]">Status</div>
+          <div class="flex-1">Topic</div>
+          <div class="w-[8.5rem] text-right pr-3">Date</div>
+          <div class="w-[152px]"></div>
+          <div class="w-9"></div>
+        </div>
+        <div class="row-hover px-4 py-2.5 flex items-center gap-3 border-b border-violet-100/60">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="w-[88px]"><span class="pill pill-pending">Pending</span></div>
+          <div class="flex-1 text-sm font-medium truncate">How we cut p99 latency by 40% in our ingestion pipeline</div>
+          <div class="w-[8.5rem] text-right text-xs muted tabular-nums pr-3">Apr 30 · 09:00</div>
+          <div class="w-[152px] text-right opacity-30 italic text-[10px] muted">hover for actions</div>
+          <div class="w-9 text-right opacity-40"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+        <div class="row-hover px-4 py-2.5 flex items-center gap-3 border-b border-violet-100/60 bg-violet-50/30">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="w-[88px]"><span class="pill pill-drafted">Drafted</span></div>
+          <div class="flex-1 text-sm font-medium truncate">Why most "AI agents" are just LLMs in a for-loop</div>
+          <div class="w-[8.5rem] text-right text-xs muted tabular-nums pr-3">May 1 · 11:30</div>
+          <div class="w-[152px] text-right opacity-30 italic text-[10px] muted">hover for actions</div>
+          <div class="w-9 text-right opacity-40"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+        <div class="row-hover px-4 py-2.5 flex items-center gap-3">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="w-[88px]"><span class="pill pill-approved">Approved</span></div>
+          <div class="flex-1 text-sm font-medium truncate">Three lessons from migrating Postgres to a new region</div>
+          <div class="w-[8.5rem] text-right text-xs muted tabular-nums pr-3">May 2 · 08:00</div>
+          <div class="w-[152px] text-right opacity-30 italic text-[10px] muted">hover for actions</div>
+          <div class="w-9 text-right opacity-40"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+      </div>
+
+      <!-- Status alternatives -->
+      <h3 class="text-sm font-semibold mb-3">Status indicator · pick one</h3>
+      <div class="grid sm:grid-cols-3 gap-3">
+
+        <div class="rounded-xl border border-violet-200/60 bg-white p-4">
+          <p class="text-xs font-semibold mb-3">Option A — Plain colored text</p>
+          <div class="space-y-2 text-xs font-semibold">
+            <p><span class="text-slate-500">Pending</span></p>
+            <p><span class="text-blue-600">Drafted</span></p>
+            <p><span class="text-violet-600">Approved</span></p>
+            <p><span class="text-amber-600">Scheduled</span></p>
+            <p><span class="text-emerald-600">Published</span></p>
+          </div>
+          <p class="ann mt-3">No backgrounds, no icons. Just colored words. Lightest visual weight, blends into row.</p>
+        </div>
+
+        <div class="rounded-xl border-2 border-violet-500 bg-violet-50/40 p-4">
+          <p class="text-xs font-semibold mb-3">Option B — Dot + text <span class="text-[10px] text-violet-700 font-bold ml-1">SUGGESTED</span></p>
+          <div class="space-y-2 text-xs font-semibold">
+            <p class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span><span class="text-slate-700">Pending</span></p>
+            <p class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span><span class="text-slate-700">Drafted</span></p>
+            <p class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span><span class="text-slate-700">Approved</span></p>
+            <p class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span><span class="text-slate-700">Scheduled</span></p>
+            <p class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span><span class="text-slate-700">Published</span></p>
+          </div>
+          <p class="ann mt-3">Subtle colored dot prefix, neutral text. Reads like sentence text. Still scannable by color.</p>
+        </div>
+
+        <div class="rounded-xl border border-violet-200/60 bg-white p-4">
+          <p class="text-xs font-semibold mb-3">Option C — Today's badge (unchanged)</p>
+          <div class="space-y-2">
+            <p><span class="pill pill-pending">Pending</span></p>
+            <p><span class="pill pill-drafted">Drafted</span></p>
+            <p><span class="pill pill-approved">Approved</span></p>
+            <p><span class="pill pill-scheduled">Scheduled</span></p>
+            <p><span class="pill pill-published">Published</span></p>
+          </div>
+          <p class="ann mt-3">Existing tinted badges. Heaviest visual weight; current default.</p>
+        </div>
+      </div>
+
+      <p class="ann mt-4"><strong>Note:</strong> the "Scheduled" status is new — for rows that have a pending scheduled-publish entry. Today they show as "Approved" with a banner buried in the Delivery panel. With this change, the queue itself reflects scheduling at-a-glance.</p>
+    </section>
+
+    <!-- =================== FEED =================== -->
+    <section id="feed" hidden class="surface-section tab-panel">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold ink tracking-tight">Feed</h2>
+        <p class="muted text-sm mt-1 max-w-2xl">Per your feedback: <strong>single column</strong>, <strong>hover-only actions</strong>, keep descriptions, more <strong>Instagram-style</strong> — image-prominent layout. Two card variants below for the image treatment.</p>
+        <p class="text-[11px] muted mt-1">Files: <code class="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700">FeedArticleCard.tsx</code> · <code class="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700">FeedPage.tsx</code></p>
+      </div>
+
+      <!-- Variant A: image hero on top + body below (more Instagram-like) -->
+      <h3 class="text-sm font-semibold mb-3">Card variant A · Hero image on top <span class="text-[10px] text-violet-700 font-bold ml-1">SUGGESTED</span></h3>
+      <div class="grid lg:grid-cols-3 gap-4 mb-10">
+        <div class="ig-card frame overflow-hidden cursor-pointer relative">
+          <div class="aspect-[16/10] bg-gradient-to-br from-blue-400 to-blue-600 relative">
+            <span class="absolute top-2 left-2 text-[10px] font-semibold text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">arstechnica</span>
+            <span class="absolute top-2 right-2 text-[10px] text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">2h</span>
+            <!-- hover-only action overlay in image bottom-right -->
+            <div class="hover-only absolute bottom-2 right-2 flex gap-1 bg-black/40 backdrop-blur rounded-full p-1">
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Helpful"><i data-lucide="thumbs-up" class="icon-sm"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Not helpful"><i data-lucide="thumbs-down" class="icon-sm"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Clip"><i data-lucide="scissors" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <div class="p-3">
+            <p class="text-sm font-semibold leading-snug line-clamp-2">OpenAI's new model card hints at multi-modal reasoning improvements across long contexts</p>
+            <p class="text-[12px] leading-snug muted mt-1.5 line-clamp-2">Internal benchmarks suggest a 12% gain on long-context reasoning, plus better cross-modal grounding when images and text are mixed within a single prompt.</p>
+          </div>
+        </div>
+
+        <div class="ig-card frame overflow-hidden cursor-pointer relative">
+          <div class="aspect-[16/10] bg-gradient-to-br from-emerald-400 to-emerald-600 relative">
+            <span class="absolute top-2 left-2 text-[10px] font-semibold text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">theverge</span>
+            <span class="absolute top-2 right-2 text-[10px] text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">3h</span>
+            <div class="hover-only absolute bottom-2 right-2 flex gap-1 bg-black/40 backdrop-blur rounded-full p-1">
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Helpful"><i data-lucide="thumbs-up" class="icon-sm"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Not helpful"><i data-lucide="thumbs-down" class="icon-sm"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Clip"><i data-lucide="scissors" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <div class="p-3">
+            <p class="text-sm font-semibold leading-snug line-clamp-2">Inference cost dropped 30% across H200 deployments after a vendor compiler update</p>
+            <p class="text-[12px] leading-snug muted mt-1.5 line-clamp-2">Several teams reported substantial drops; serving margins shift accordingly. Implications for FinOps teams running open-source LLMs at scale.</p>
+          </div>
+        </div>
+
+        <div class="ig-card frame overflow-hidden cursor-pointer relative">
+          <div class="aspect-[16/10] bg-gradient-to-br from-pink-400 to-pink-600 relative">
+            <span class="absolute top-2 left-2 text-[10px] font-semibold text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">wired</span>
+            <span class="absolute top-2 right-2 text-[10px] text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">5h</span>
+            <div class="hover-only absolute bottom-2 right-2 flex gap-1 bg-black/40 backdrop-blur rounded-full p-1">
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Helpful"><i data-lucide="thumbs-up" class="icon-sm"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Not helpful"><i data-lucide="thumbs-down" class="icon-sm"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20" aria-label="Clip"><i data-lucide="scissors" class="icon-sm"></i></button>
+            </div>
+          </div>
+          <div class="p-3">
+            <p class="text-sm font-semibold leading-snug line-clamp-2">Open-weights model passes 1M-token long-context evaluation</p>
+            <p class="text-[12px] leading-snug muted mt-1.5 line-clamp-2">First open-weights release to clear the eval. Hands-on retrieval pipelines should rethink chunking strategies given the new effective context.</p>
+          </div>
+        </div>
+      </div>
+      <p class="ann mb-10"><em>Note:</em> the 3-up grid above is just so you can see three cards on screen at once. The real Feed will be a <strong>single-column stream</strong> (one card per row, full content width). Hover any card to see the action overlay (👍 👎 ✂︎) appear on the image.</p>
+
+      <!-- Variant B: square thumbnail on the left (closer to today, image-forward) -->
+      <h3 class="text-sm font-semibold mb-3">Card variant B · Square thumbnail on the left (alternative)</h3>
+      <div class="frame overflow-hidden mb-3">
+        <div class="ig-card relative flex gap-3 p-3 border-b border-violet-100">
+          <div class="w-24 h-24 shrink-0 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center text-white font-bold text-2xl">A</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold leading-snug line-clamp-2">OpenAI's new model card hints at multi-modal reasoning improvements across long contexts</p>
+            <p class="text-[12px] leading-snug muted mt-1.5 line-clamp-2">Internal benchmarks suggest a 12% gain on long-context reasoning, plus better cross-modal grounding when images and text are mixed within a single prompt.</p>
+            <div class="flex items-center gap-1.5 mt-2 text-[11px] muted">
+              <span class="text-violet-600 font-medium">arstechnica</span><span>·</span><span>2h ago</span>
+            </div>
+          </div>
+          <div class="hover-only absolute top-3 right-3 flex gap-1 bg-white/95 border border-violet-100 rounded-full p-1 shadow-sm">
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600" aria-label="Helpful"><i data-lucide="thumbs-up" class="icon-sm"></i></button>
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-rose-50 hover:text-rose-500" aria-label="Not helpful"><i data-lucide="thumbs-down" class="icon-sm"></i></button>
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-violet-50 hover:text-violet-600" aria-label="Clip"><i data-lucide="scissors" class="icon-sm"></i></button>
+          </div>
+        </div>
+        <div class="ig-card relative flex gap-3 p-3 border-b border-violet-100">
+          <div class="w-24 h-24 shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white font-bold text-2xl">T</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold leading-snug line-clamp-2">Inference cost dropped 30% across H200 deployments after a vendor compiler update</p>
+            <p class="text-[12px] leading-snug muted mt-1.5 line-clamp-2">Several teams reported substantial drops. Serving margins shift accordingly; FinOps teams running open-source LLMs at scale should revisit cost models.</p>
+            <div class="flex items-center gap-1.5 mt-2 text-[11px] muted">
+              <span class="text-violet-600 font-medium">theverge</span><span>·</span><span>3h ago</span>
+            </div>
+          </div>
+          <div class="hover-only absolute top-3 right-3 flex gap-1 bg-white/95 border border-violet-100 rounded-full p-1 shadow-sm">
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600" aria-label="Helpful"><i data-lucide="thumbs-up" class="icon-sm"></i></button>
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-rose-50 hover:text-rose-500" aria-label="Not helpful"><i data-lucide="thumbs-down" class="icon-sm"></i></button>
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-violet-50 hover:text-violet-600" aria-label="Clip"><i data-lucide="scissors" class="icon-sm"></i></button>
+          </div>
+        </div>
+        <div class="ig-card relative flex gap-3 p-3">
+          <div class="w-24 h-24 shrink-0 rounded-lg bg-gradient-to-br from-pink-400 to-pink-600 grid place-items-center text-white font-bold text-2xl">W</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold leading-snug line-clamp-2">Open-weights model passes 1M-token long-context evaluation</p>
+            <p class="text-[12px] leading-snug muted mt-1.5 line-clamp-2">First open-weights release to clear the eval. Hands-on retrieval pipelines should rethink chunking strategies given the new effective context.</p>
+            <div class="flex items-center gap-1.5 mt-2 text-[11px] muted">
+              <span class="text-violet-600 font-medium">wired</span><span>·</span><span>5h ago</span>
+            </div>
+          </div>
+          <div class="hover-only absolute top-3 right-3 flex gap-1 bg-white/95 border border-violet-100 rounded-full p-1 shadow-sm">
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600" aria-label="Helpful"><i data-lucide="thumbs-up" class="icon-sm"></i></button>
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-rose-50 hover:text-rose-500" aria-label="Not helpful"><i data-lucide="thumbs-down" class="icon-sm"></i></button>
+            <button class="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:bg-violet-50 hover:text-violet-600" aria-label="Clip"><i data-lucide="scissors" class="icon-sm"></i></button>
+          </div>
+        </div>
+      </div>
+      <p class="ann"><em>Variant B</em> is closer to today's layout — bigger thumbnail (96 px square instead of 56 px), description always visible, action toolbar overlays on hover. Less Instagram, more "card list".</p>
+    </section>
+
+    <!-- =================== NEWSLETTER =================== -->
+    <section id="newsletter" hidden class="surface-section tab-panel">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold ink tracking-tight">Newsletter editor</h2>
+        <p class="muted text-sm mt-1 max-w-2xl">Per your feedback: <strong>more spacious</strong> left config column. Generous padding, larger summary lines, fewer items visible at once but each one easier to read.</p>
+        <p class="text-[11px] muted mt-1">Files: <code class="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700">NewsletterConfigDrawer.tsx</code></p>
+      </div>
+
+      <div class="mb-3"><span class="compare-label compare-after">Proposed (v2 — more breathing room)</span></div>
+      <div class="frame overflow-hidden grid grid-cols-12 min-h-[600px]">
+        <!-- LEFT: spacious config -->
+        <aside class="col-span-5 p-7 space-y-5 text-sm border-r border-violet-100 bg-violet-50/15 overflow-y-auto">
+          <div class="flex items-center justify-between mb-1">
+            <h4 class="text-base font-semibold">Configure</h4>
+            <button class="btn-secondary"><i data-lucide="mail" class="icon-xs"></i>Send test to me</button>
+          </div>
+
+          <div class="rounded-xl border border-violet-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-2.5 mb-2">
+              <i data-lucide="rss" class="w-4 h-4 text-violet-600"></i>
+              <p class="font-semibold text-sm">Sources</p>
+              <span class="ml-auto text-[11px] muted">2 feeds · top 8 stories</span>
+            </div>
+            <p class="text-[12px] muted mb-3">Pick where the issue's stories come from each cycle.</p>
+            <div class="space-y-2.5 text-[13px]">
+              <label class="flex items-center gap-2.5"><input type="checkbox" checked class="size-4">RSS — Hacker News</label>
+              <label class="flex items-center gap-2.5"><input type="checkbox" checked class="size-4">News API — Tech</label>
+              <label class="flex items-center gap-2.5"><input type="checkbox" class="size-4">YouTube — AI channels</label>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-violet-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-2.5 mb-2">
+              <i data-lucide="send" class="w-4 h-4 text-violet-600"></i>
+              <p class="font-semibold text-sm">Delivery</p>
+              <span class="ml-auto text-[11px] muted">Email · 3 recipients</span>
+            </div>
+            <div class="space-y-3 text-[13px]">
+              <div>
+                <label class="font-medium">Subject template</label>
+                <input class="w-full px-3 py-2 border border-slate-200 rounded-lg mt-1.5 text-[13px]" value="{{date}} — Weekly AI digest">
+                <p class="text-[11px] muted mt-1.5">Use <code class="px-1 rounded bg-slate-100">{{date}}</code> · <code class="px-1 rounded bg-slate-100">{{issue_number}}</code></p>
+              </div>
+              <p class="flex items-center gap-1.5 text-emerald-700 text-[12px]"><i data-lucide="check-circle-2" class="icon-sm"></i>3 recipients valid</p>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-violet-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-2.5 mb-2">
+              <i data-lucide="calendar" class="w-4 h-4 text-violet-600"></i>
+              <p class="font-semibold text-sm">Schedule</p>
+              <span class="ml-auto text-[11px] muted">Mondays · 09:00</span>
+            </div>
+            <p class="text-[12px] muted">Weekly · auto-send unless paused. Tap to change.</p>
+          </div>
+
+          <div class="rounded-xl border border-violet-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center gap-2.5 mb-2">
+              <i data-lucide="mic" class="w-4 h-4 text-violet-600"></i>
+              <p class="font-semibold text-sm">Voice &amp; Topics</p>
+              <span class="ml-auto text-[11px] muted">Tone: analytical · 3 keywords</span>
+            </div>
+            <p class="text-[12px] muted">Open to tweak persona, keywords, story structure.</p>
+          </div>
+
+          <button class="btn-primary w-full justify-center mt-2 py-3 text-sm">Save changes</button>
+        </aside>
+
+        <!-- RIGHT: live preview -->
+        <section class="col-span-7 bg-white p-8 overflow-y-auto">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 mb-3">Live preview · what subscribers receive</div>
+          <div class="max-w-md mx-auto border border-slate-200 rounded-xl p-6 bg-white shadow-sm">
+            <div class="flex items-center gap-2.5 mb-4">
+              <div class="h-8 w-8 rounded bg-gradient-to-br from-violet-600 to-amber-500"></div>
+              <div class="leading-tight">
+                <p class="font-semibold text-sm">Weekly AI digest</p>
+                <p class="text-[11px] muted">Issue #14 · Apr 28, 2026</p>
+              </div>
+            </div>
+            <h1 class="text-xl font-bold mb-4 leading-tight">5 stories shaping AI infra this week</h1>
+            <div class="space-y-4">
+              <article>
+                <h3 class="text-sm font-semibold">1. Inference cost dropped 30% on H200s</h3>
+                <p class="text-[12px] leading-relaxed muted mt-1">Several teams reported substantial drops after vendor-side compiler updates. Why it matters: serving margins shift, FinOps revisits cost models…</p>
+                <a class="text-[11px] text-violet-700 font-semibold">Read more →</a>
+              </article>
+              <article>
+                <h3 class="text-sm font-semibold">2. Open-weights model passes 1M-token eval</h3>
+                <p class="text-[12px] leading-relaxed muted mt-1">First open-weights release to clear the long-context benchmark. Implications for retrieval pipelines: simpler chunking, fewer reranks.</p>
+                <a class="text-[11px] text-violet-700 font-semibold">Read more →</a>
+              </article>
+              <article>
+                <h3 class="text-sm font-semibold">3. Tooling: a new Python SDK for vector caches</h3>
+                <p class="text-[12px] leading-relaxed muted mt-1">Compatible with Pinecone, Qdrant, pgvector. Author claims 2× lower p99 on cache miss replays.</p>
+                <a class="text-[11px] text-violet-700 font-semibold">Read more →</a>
+              </article>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-200 text-[11px] muted">
+              You're receiving this because you opted in. <a class="underline">Unsubscribe</a>.
+            </div>
+          </div>
+        </section>
+      </div>
+      <p class="mt-3 ann"><strong>What changed from v1:</strong> left column padding 4 → 7, card padding 2.5 → 5, gap 2 → 5. Each section card has a description line. Easier to read, less anxious.</p>
+    </section>
+
+    <!-- =================== BULK CAMPAIGN =================== -->
+    <section id="bulk" hidden class="surface-section tab-panel">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold ink tracking-tight">Bulk campaign</h2>
+        <p class="muted text-sm mt-1 max-w-2xl">Step 1 (3-mode wizard) <strong>kept as-is</strong>. Step 2 channel display reworked — two alternatives below.</p>
+        <p class="text-[11px] muted mt-1">Files: <code class="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700">CampaignPage.tsx</code></p>
+      </div>
+
+      <!-- Step 1 keeps the v1 layout (kept) -->
+      <h3 class="text-sm font-semibold mb-3">Step 1 input · 3-mode wizard <span class="ml-1 compare-label compare-after">KEPT</span></h3>
+      <div class="frame p-4 text-xs mb-10">
+        <div class="flex gap-1 rounded-lg border border-violet-200 bg-violet-50/30 p-1 mb-3">
+          <button class="px-3 py-1.5 text-[11px] font-semibold rounded-md bg-white shadow-sm text-violet-700 flex items-center gap-1.5"><i data-lucide="bot" class="icon-xs"></i>Generate with Claude</button>
+          <button class="px-3 py-1.5 text-[11px] font-semibold rounded-md text-slate-600 flex items-center gap-1.5"><i data-lucide="upload" class="icon-xs"></i>Upload CSV / JSON</button>
+          <button class="px-3 py-1.5 text-[11px] font-semibold rounded-md text-slate-600 flex items-center gap-1.5"><i data-lucide="table" class="icon-xs"></i>Type rows</button>
+        </div>
+        <div class="space-y-3">
+          <textarea class="w-full h-20 border border-slate-200 rounded p-2 text-[11px]">Weekly product launches over 4 weeks — alternate LinkedIn + newsletter, growth-focused tone, 1 customer story per week.</textarea>
+          <div class="flex items-center gap-2">
+            <label class="text-[11px]">How many topics?</label>
+            <input type="number" value="8" class="w-16 border border-slate-200 rounded px-2 py-1 text-[11px]">
+            <button class="btn-primary ml-auto"><i data-lucide="sparkles" class="icon-xs"></i>Generate 8 topics</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 alternatives -->
+      <h3 class="text-sm font-semibold mb-3">Step 2 channel display · pick one</h3>
+
+      <!-- Alt 1: plain text + click-to-edit (no pill cell) -->
+      <div class="mb-4 flex items-center gap-2"><span class="compare-label compare-after">Option 1</span> <span class="ann">Plain text channel name · click cell to open a small picker · no full-width pill button in the cell</span></div>
+      <div class="frame overflow-hidden mb-8">
+        <div class="bg-slate-50/70 border-b border-violet-200/60 px-4 py-2 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <div class="w-6"><input type="checkbox" disabled class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1">Topic</div>
+          <div class="w-[110px]">Channel</div>
+          <div class="w-[110px]">Date</div>
+          <div class="w-9"></div>
+        </div>
+        <div class="row-hover px-4 py-2 flex items-center gap-3 border-b border-violet-100/60">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1 text-sm font-medium truncate">Week 1 launch — new ingest engine</div>
+          <div class="w-[110px] text-[12px] text-slate-700"><button class="hover:text-violet-700 hover:underline cursor-pointer flex items-center gap-1.5"><i data-lucide="linkedin" class="icon-xs text-sky-600"></i>LinkedIn</button></div>
+          <div class="w-[110px] text-[12px] text-slate-700 tabular-nums"><button class="hover:text-violet-700 hover:underline cursor-pointer">May 4</button></div>
+          <div class="w-9 text-right text-slate-400"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+        <div class="row-hover px-4 py-2 flex items-center gap-3 border-b border-violet-100/60 bg-violet-50/30">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1 text-sm font-medium truncate">Week 1 customer story — how Acme cut cost</div>
+          <div class="w-[110px] text-[12px] text-slate-700"><button class="hover:text-violet-700 hover:underline cursor-pointer flex items-center gap-1.5"><i data-lucide="megaphone" class="icon-xs text-amber-600"></i>Newsletter</button></div>
+          <div class="w-[110px] text-[12px] text-slate-700 tabular-nums"><button class="hover:text-violet-700 hover:underline cursor-pointer">May 7</button></div>
+          <div class="w-9 text-right text-slate-400"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+        <div class="row-hover px-4 py-2 flex items-center gap-3">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1 text-sm font-medium truncate">Week 2 launch — observability dashboard</div>
+          <div class="w-[110px] text-[12px] text-slate-700"><button class="hover:text-violet-700 hover:underline cursor-pointer flex items-center gap-1.5"><i data-lucide="linkedin" class="icon-xs text-sky-600"></i>LinkedIn</button></div>
+          <div class="w-[110px] text-[12px] text-slate-700 tabular-nums"><button class="hover:text-violet-700 hover:underline cursor-pointer">May 11</button></div>
+          <div class="w-9 text-right text-slate-400"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+      </div>
+
+      <!-- Alt 2: tiny icon-only chip -->
+      <div class="mb-4 flex items-center gap-2"><span class="compare-label compare-after">Option 2</span> <span class="ann">Icon-only channel chip · channel name on hover (tooltip) · cleanest, but icon must be recognisable</span></div>
+      <div class="frame overflow-hidden mb-8">
+        <div class="bg-slate-50/70 border-b border-violet-200/60 px-4 py-2 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <div class="w-6"><input type="checkbox" disabled class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1">Topic</div>
+          <div class="w-[60px] text-center">Ch.</div>
+          <div class="w-[110px]">Date</div>
+          <div class="w-9"></div>
+        </div>
+        <div class="row-hover px-4 py-2 flex items-center gap-3 border-b border-violet-100/60">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1 text-sm font-medium truncate">Week 1 launch — new ingest engine</div>
+          <div class="w-[60px] text-center"><button title="LinkedIn" class="h-7 w-7 rounded-full bg-sky-50 text-sky-700 grid place-items-center hover:ring-2 hover:ring-sky-300"><i data-lucide="linkedin" class="icon-sm"></i></button></div>
+          <div class="w-[110px] text-[12px] text-slate-700 tabular-nums"><button class="hover:text-violet-700 hover:underline cursor-pointer">May 4</button></div>
+          <div class="w-9 text-right text-slate-400"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+        <div class="row-hover px-4 py-2 flex items-center gap-3 border-b border-violet-100/60 bg-violet-50/30">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1 text-sm font-medium truncate">Week 1 customer story — how Acme cut cost</div>
+          <div class="w-[60px] text-center"><button title="Newsletter" class="h-7 w-7 rounded-full bg-amber-50 text-amber-700 grid place-items-center hover:ring-2 hover:ring-amber-300"><i data-lucide="megaphone" class="icon-sm"></i></button></div>
+          <div class="w-[110px] text-[12px] text-slate-700 tabular-nums"><button class="hover:text-violet-700 hover:underline cursor-pointer">May 7</button></div>
+          <div class="w-9 text-right text-slate-400"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+        <div class="row-hover px-4 py-2 flex items-center gap-3">
+          <div class="w-6"><input type="checkbox" class="size-3.5 rounded border-slate-300"></div>
+          <div class="flex-1 text-sm font-medium truncate">Week 2 launch — observability dashboard</div>
+          <div class="w-[60px] text-center"><button title="LinkedIn" class="h-7 w-7 rounded-full bg-sky-50 text-sky-700 grid place-items-center hover:ring-2 hover:ring-sky-300"><i data-lucide="linkedin" class="icon-sm"></i></button></div>
+          <div class="w-[110px] text-[12px] text-slate-700 tabular-nums"><button class="hover:text-violet-700 hover:underline cursor-pointer">May 11</button></div>
+          <div class="w-9 text-right text-slate-400"><i data-lucide="trash-2" class="icon-sm inline-block"></i></div>
+        </div>
+      </div>
+
+      <p class="ann">Both options drop the full-width "LinkedIn ⌄" pill button in the cell. Bulk-edit modal still available for changing many rows at once (select rows → "Set channel" → modal).</p>
+    </section>
+
+    <!-- =================== SETTINGS =================== -->
+    <section id="settings" hidden class="surface-section tab-panel">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold ink tracking-tight">Settings page <span class="ml-1 compare-label compare-after">KEPT</span></h2>
+        <p class="muted text-sm mt-1 max-w-2xl">You approved this approach. Dedicated <code class="bg-violet-50 text-violet-700 px-1 rounded text-[11px]">/settings</code> page with grouped left-nav, URL-routed sections, Cmd-K palette, channel health dots.</p>
+      </div>
+
+      <div class="frame overflow-hidden grid grid-cols-12 min-h-[480px]">
+        <!-- left nav -->
+        <aside class="col-span-3 border-r border-violet-100 bg-violet-50/20 p-3 text-[11px] overflow-y-auto">
+          <div class="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 mb-3">
+            <i data-lucide="search" class="icon-xs text-slate-400"></i>
+            <span class="text-slate-400 text-[10px]">⌘K</span>
+            <span class="ml-auto text-slate-300 text-[10px]">search</span>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">General</p>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Workspace</a>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Members</a>
+            </div>
+            <div>
+              <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">AI</p>
+              <a class="block px-2 py-1.5 rounded bg-white text-violet-700 font-semibold ring-1 ring-violet-200">LLM provider</a>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Image generation</a>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Voice transcription</a>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Enrichment</a>
+            </div>
+            <div>
+              <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">Channels</p>
+              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>LinkedIn</a>
+              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Newsletter</a>
+              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Telegram</a>
+              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>WhatsApp</a>
+              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Gmail</a>
+              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span>Instagram</a>
+              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span>YouTube</a>
+            </div>
+            <div>
+              <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">Content</p>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Generate posts</a>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">News research</a>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Review &amp; approval</a>
+            </div>
+            <div>
+              <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">Integrations</p>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">GitHub Actions</a>
+              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Google Sheets</a>
+            </div>
+          </div>
+        </aside>
+
+        <!-- right pane -->
+        <section class="col-span-9 bg-white p-6 overflow-y-auto">
+          <div class="text-[10px] muted mb-2">/settings/llm</div>
+          <h3 class="text-lg font-bold mb-1">LLM provider</h3>
+          <p class="muted text-sm mb-5">Pick the model behind drafting, summarising and enrichment. Per-task overrides available below.</p>
+
+          <div class="grid sm:grid-cols-2 gap-3 mb-6">
+            <label class="rounded-lg border-2 border-violet-500 bg-violet-50/50 p-3 cursor-pointer">
+              <div class="flex items-center justify-between">
+                <p class="font-semibold text-sm">Anthropic — Claude</p>
+                <i data-lucide="check-circle-2" class="icon-sm text-violet-600"></i>
+              </div>
+              <p class="muted text-[11px] mt-1">Recommended for editorial tone</p>
+            </label>
+            <label class="rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-violet-300">
+              <div class="flex items-center justify-between">
+                <p class="font-semibold text-sm">OpenAI — GPT</p>
+              </div>
+              <p class="muted text-[11px] mt-1">Strong reasoning · good for research</p>
+            </label>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 p-3 mb-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-semibold text-sm">Default model</p>
+                <p class="muted text-[11px]">Used for any task without an override</p>
+              </div>
+              <select class="text-xs border border-slate-200 rounded px-2 py-1.5">
+                <option>Claude Opus 4.7</option>
+                <option>Claude Sonnet 4.6</option>
+                <option>Claude Haiku 4.5</option>
+              </select>
+            </div>
+          </div>
+          <div class="rounded-lg border border-slate-200 p-3 mb-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="font-semibold text-sm">API key</p>
+                <p class="muted text-[11px]">Encrypted at rest · last rotated 11 days ago</p>
+              </div>
+              <span class="pill bg-emerald-50 text-emerald-700 ring-emerald-200"><i data-lucide="check" class="icon-xs"></i>Connected</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between border-t border-slate-200 pt-3">
+            <p class="ann"><strong>Auto-saving</strong> on field change · last saved 4 sec ago</p>
+            <div class="flex gap-2">
+              <button class="btn-ghost">Reset to defaults</button>
+              <button class="btn-primary">Save</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- =================== SETUP WIZARD =================== -->
+    <section id="setup" hidden class="surface-section tab-panel">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold ink tracking-tight">Setup wizard</h2>
+        <p class="muted text-sm mt-1 max-w-2xl">Per your feedback: <strong>vertical step list on the left</strong>, content on the right. Less compact, more breathing room. Env vars step (which you liked) is unchanged.</p>
+        <p class="text-[11px] muted mt-1">Files: <code class="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700">SetupWizard.tsx</code></p>
+      </div>
+
+      <h3 class="text-sm font-semibold mb-3">Step layout · Vertical progress sidebar</h3>
+      <div class="frame overflow-hidden grid grid-cols-12 min-h-[560px] mb-10">
+        <!-- left: vertical progress -->
+        <aside class="col-span-4 border-r border-violet-100 bg-violet-50/15 p-5">
+          <div class="mb-4">
+            <p class="text-[10px] uppercase tracking-wider text-slate-400">Setup</p>
+            <p class="text-sm font-semibold">Step 8 of 11</p>
+            <div class="mt-2 h-1 rounded-full bg-violet-100 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-violet-500 to-violet-700" style="width:73%"></div>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <div class="step done"><span class="dot">✓</span>Deployment mode</div>
+            <div class="step done"><span class="dot">✓</span>Welcome</div>
+            <div class="step done"><span class="dot">✓</span>Project directory</div>
+            <div class="step done"><span class="dot">✓</span>Installation</div>
+            <div class="step done"><span class="dot">✓</span>Integrations</div>
+            <div class="step done"><span class="dot">✓</span>Trending sources</div>
+            <div class="step done"><span class="dot">✓</span>Image generation</div>
+            <div class="step current"><span class="dot">●</span>Voice transcription</div>
+            <div class="step todo"><span class="dot">9</span>Environment variables</div>
+            <div class="step todo"><span class="dot">10</span>Review</div>
+            <div class="step todo"><span class="dot">11</span>All set</div>
+          </div>
+        </aside>
+        <!-- right: step content -->
+        <section class="col-span-8 p-8">
+          <h2 class="text-2xl font-semibold">Voice transcription</h2>
+          <p class="muted text-sm mt-1">Optional. Add a keyboard shortcut to dictate posts and notes. You can change this later in Settings.</p>
+
+          <div class="mt-7 space-y-3 text-sm">
+            <label class="flex items-start gap-3 border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-violet-300">
+              <input type="radio" name="stt-vert" class="mt-1">
+              <div>
+                <p class="font-medium">Faster (base.en)</p>
+                <p class="muted text-[12px] mt-1">~70 MB · low latency · English only</p>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 border-2 border-violet-500 bg-violet-50/40 rounded-xl p-4 cursor-pointer">
+              <input type="radio" name="stt-vert" checked class="mt-1">
+              <div>
+                <p class="font-medium">Higher quality (small.en) <span class="text-violet-600 text-[10px] font-bold ml-1">RECOMMENDED</span></p>
+                <p class="muted text-[12px] mt-1">~250 MB · best accuracy · English only</p>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-violet-300">
+              <input type="radio" name="stt-vert" class="mt-1">
+              <div>
+                <p class="font-medium">Skip — I'll type</p>
+                <p class="muted text-[12px] mt-1">No transcription model installed</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="mt-8 flex justify-between items-center">
+            <button class="btn-secondary"><i data-lucide="arrow-left" class="icon-xs"></i>Back</button>
+            <div class="flex gap-2">
+              <button class="btn-ghost">Skip</button>
+              <button class="btn-primary">Continue <i data-lucide="arrow-right" class="icon-xs"></i></button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <h3 class="text-sm font-semibold mb-3">Env vars step · grouped <span class="ml-1 compare-label compare-after">KEPT</span></h3>
+      <div class="frame overflow-hidden grid grid-cols-12 min-h-[400px]">
+        <aside class="col-span-4 border-r border-violet-100 bg-violet-50/15 p-5">
+          <div class="mb-4">
+            <p class="text-[10px] uppercase tracking-wider text-slate-400">Setup</p>
+            <p class="text-sm font-semibold">Step 9 of 11</p>
+          </div>
+          <div class="space-y-1 text-[12px]">
+            <div class="step done"><span class="dot">✓</span>Voice transcription</div>
+            <div class="step current"><span class="dot">●</span>Environment variables</div>
+            <div class="step todo"><span class="dot">10</span>Review</div>
+            <div class="step todo"><span class="dot">11</span>All set</div>
+          </div>
+        </aside>
+        <section class="col-span-8 p-7">
+          <h2 class="text-xl font-semibold">Environment variables</h2>
+          <p class="muted text-[13px] mt-1">Grouped by purpose. Each row links to docs and shows an example.</p>
+          <div class="mt-5 space-y-3">
+            <details open class="rounded-lg border border-violet-200 bg-white p-3.5">
+              <summary class="cursor-pointer font-semibold flex items-center gap-2"><i data-lucide="brain" class="icon-sm text-violet-600"></i>AI providers <span class="ml-auto pill bg-emerald-50 text-emerald-700 ring-emerald-200">2 of 2 set</span></summary>
+              <div class="mt-3 space-y-2.5 text-[12px]">
+                <div class="grid grid-cols-3 items-center gap-2">
+                  <label class="font-medium">Anthropic key <a class="text-violet-600 text-[10px]">docs ↗</a></label>
+                  <input type="password" class="col-span-2 border border-slate-200 rounded px-2 py-1.5" value="••••••••••••••••">
+                </div>
+                <div class="grid grid-cols-3 items-center gap-2">
+                  <label class="font-medium">OpenAI key <a class="text-violet-600 text-[10px]">docs ↗</a></label>
+                  <input type="password" class="col-span-2 border border-slate-200 rounded px-2 py-1.5" value="••••••••••••••••">
+                </div>
+              </div>
+            </details>
+            <details class="rounded-lg border border-slate-200 bg-white p-3.5">
+              <summary class="cursor-pointer font-semibold flex items-center gap-2"><i data-lucide="database" class="icon-sm text-violet-600"></i>Storage <span class="ml-auto pill bg-amber-50 text-amber-800 ring-amber-200">1 of 2 set</span></summary>
+            </details>
+            <details class="rounded-lg border border-slate-200 bg-white p-3.5">
+              <summary class="cursor-pointer font-semibold flex items-center gap-2"><i data-lucide="send" class="icon-sm text-violet-600"></i>Channels <span class="ml-auto pill bg-slate-100 text-slate-600 ring-slate-300/60">0 of 5 set</span></summary>
+            </details>
+          </div>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="mx-auto max-w-7xl px-6 pb-10 text-center text-xs muted">
+    Static HTML mockups · Tailwind via CDN · v2 (after feedback) · No production code touched.
+  </footer>
+
+  <script>
+    lucide.createIcons();
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-panel').forEach((p) => { p.hidden = (p.id !== target); });
+        document.querySelectorAll('.tab-btn').forEach((b) => {
+          b.classList.toggle('tab-active', b === btn);
+          b.classList.toggle('text-slate-700', b !== btn);
+          b.classList.toggle('hover:text-violet-700', b !== btn);
+        });
+        lucide.createIcons();
+      });
+    });
+  </script>
+</body>
+</html>

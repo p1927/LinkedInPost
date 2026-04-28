@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, RotateCw, Send, Trash2, Bot, PenLine, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle } from 'lucide-react';
+import { RefreshCw, RotateCw, Send, Trash2, Bot, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { type AppSession, type ContentPattern, type GenWorkerGenerateRequest, type BackendApi } from '../../../services/backendApi';
 import { type SheetRow } from '../../../services/sheets';
@@ -15,7 +15,8 @@ import { effectiveChannel } from '@/lib/topicEffectivePrefs';
 import { TopicPostPreviewCard } from '../components/TopicPostPreviewCard';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
-import { Badge, type BadgeVariant } from '@/components/ui/badge';
+import { type BadgeVariant } from '@/components/ui/badge';
+import { StatusPill, deriveStatus } from '@/components/ui/StatusPill';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,10 +57,7 @@ export function DashboardQueue({
   queueCounts,
   filteredRows,
   rows,
-  getQueueStatusVariant,
-  triggerRowGithubAction,
   actionLoading,
-  draftDispatchPendingTopicIds,
   session,
   onOpenTopicReview,
   selectedTopicId,
@@ -94,10 +92,7 @@ export function DashboardQueue({
   filteredRows: SheetRow[];
   rows: SheetRow[];
   getQueueStatusVariant: (status: string) => BadgeVariant;
-  triggerRowGithubAction: (row: SheetRow, action: 'draft' | 'publish') => Promise<void>;
   actionLoading: string | null;
-  /** Topic IDs where draft was dispatched; that row stays disabled with busy UI until status updates. */
-  draftDispatchPendingTopicIds: readonly string[];
   session: AppSession;
   onOpenTopicReview: (row: SheetRow) => void;
   selectedTopicId: string | null;
@@ -645,10 +640,6 @@ export function DashboardQueue({
               const dateRaw = row.date?.trim() ?? '';
               const dateLabel = formatQueueDate(dateRaw);
               const actionTopic = topicLabelForQueueActions(row.topic);
-              const topicIdKey = String(row.topicId ?? '').trim();
-              const draftDispatchSentBusy = topicIdKey !== '' && draftDispatchPendingTopicIds.includes(topicIdKey);
-              const draftActionKey = buildRowActionKey('draft', row);
-              const draftButtonBusy = actionLoading === draftActionKey || draftDispatchSentBusy;
               const isSelected =
                 selectedTopicId !== null && String(row.topicId).trim() === String(selectedTopicId).trim();
               return (
@@ -689,9 +680,10 @@ export function DashboardQueue({
 
                   {/* Status column */}
                   <div className="flex w-[88px] shrink-0 items-center pr-1">
-                    <Badge variant={getQueueStatusVariant(row.status)} size="sm">
-                      {row.status || 'Pending'}
-                    </Badge>
+                    <StatusPill
+                      status={deriveStatus(row.status, { isScheduled: rowHasActiveScheduledPublish(row) })}
+                      size="sm"
+                    />
                   </div>
 
                   {/* Topic column */}
@@ -733,61 +725,26 @@ export function DashboardQueue({
                     'flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-2 transition-opacity duration-150',
                     isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto',
                   )}>
-                    {normalizedStatus === 'pending' && !showDraftActions ? (
-                      <>
-                        {session.config.hasGenerationWorker && onGenerationWorkerDraft ? (
-                          <Button
-                            type="button"
-                            variant="primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              resetGenWorkerForm();
-                              setGenWorkerDialogRow(row);
-                            }}
-                            disabled={actionLoading !== null || genWorkerBusy}
-                            aria-label={`AI generate draft for ${actionTopic}`}
-                            title="Generate draft with AI generation worker"
-                            className={rowActionClass}
-                          >
-                            <Bot className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                            <span>AI Draft</span>
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void triggerRowGithubAction(row, 'draft');
-                            }}
-                            disabled={
-                              actionLoading !== null ||
-                              draftDispatchSentBusy ||
-                              !session.config.githubRepo ||
-                              !session.config.hasGitHubToken
-                            }
-                            aria-busy={draftButtonBusy}
-                            title={
-                              !session.config.githubRepo || !session.config.hasGitHubToken
-                                ? 'Configure GitHub repo and token in Settings to enable drafting'
-                                : draftDispatchSentBusy
-                                  ? 'Draft job sent — GitHub is generating; use Refresh until this row shows Drafted'
-                                  : actionLoading === draftActionKey
-                                    ? 'Sending draft request…'
-                                    : 'Generate draft'
-                            }
-                            aria-label={`Generate draft for ${actionTopic}`}
-                            className={rowActionClass}
-                          >
-                            {draftButtonBusy ? (
-                              <RefreshCw className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-                            ) : (
-                              <PenLine className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                            )}
-                            <span>{draftButtonBusy ? 'Drafting…' : 'Draft'}</span>
-                          </Button>
-                        )}
-                      </>
+                    {normalizedStatus === 'pending'
+                      && !showDraftActions
+                      && session.config.hasGenerationWorker
+                      && onGenerationWorkerDraft ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          resetGenWorkerForm();
+                          setGenWorkerDialogRow(row);
+                        }}
+                        disabled={actionLoading !== null || genWorkerBusy}
+                        aria-label={`AI generate draft for ${actionTopic}`}
+                        title="Generate draft with AI generation worker"
+                        className={rowActionClass}
+                      >
+                        <Bot className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        <span>AI Draft</span>
+                      </Button>
                     ) : null}
 
                     {showDraftActions ? (

@@ -5,8 +5,7 @@ import { deriveCalendarFieldsFromSheetRow } from '@/features/content-schedule-ca
 import { CSC_TOKENS as T } from '@/features/content-schedule-calendar/tokens';
 import { channelStyle } from '@/features/content-schedule-calendar/channelStyles';
 import { TopicDetailView } from '@/features/add-topic/TopicDetailView';
-import { Badge } from '@/components/ui/badge';
-import { queueStatusToBadgeVariant } from '@/components/dashboard/utils';
+import { StatusPill, deriveStatus } from '@/components/ui/StatusPill';
 import { WORKSPACE_PATHS } from '@/features/topic-navigation/utils/workspaceRoutes';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -79,9 +78,7 @@ export function TopicDetailPanel({
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             {row && (
               <div className="self-start">
-                <Badge variant={queueStatusToBadgeVariant(row.status)} size="sm">
-                  {row.status || 'Pending'}
-                </Badge>
+                <StatusPill status={deriveStatus(row.status)} size="sm" />
               </div>
             )}
             <h2

@@ -197,8 +197,8 @@
       <p class="text-xs text-gray-400 mt-1">Required for scheduled LinkedIn publishing (Durable Object alarm auth).</p>
     </div>
     <div>
-      <label class="block text-sm font-medium mb-1">GitHub Token Encryption Key</label>
-      <input name="github_token_encryption_key" type="password" placeholder="base64-encoded-32-byte-key"
+      <label class="block text-sm font-medium mb-1">Secret Encryption Key</label>
+      <input name="secret_encryption_key" type="password" placeholder="base64-encoded-32-byte-key"
              class="w-full border rounded-lg px-3 py-2 text-sm bg-white font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none">
       <p class="text-xs text-gray-400 mt-1">Required for encrypting OAuth tokens stored in D1. Run: <code class="font-mono bg-gray-100 px-1 rounded">openssl rand -base64 32</code></p>
     </div>

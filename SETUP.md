@@ -11,12 +11,17 @@ This setup keeps the project free while allowing approved Gmail users to work ag
 
 The deployed shape is:
 
-* GitHub Pages hosts the React dashboard
-* Cloudflare Workers acts as the shared backend
-* A Google service account gives the Worker access to the shared sheet
-* GitHub Actions continues to run the Python bot for draft and publish workflows
+* GitHub Pages **or** the main Cloudflare Worker (root `wrangler.jsonc` has `assets.directory: "frontend"`) hosts the React dashboard
+* **Two** Cloudflare Workers run the backend: `linkedin-bot-api` (main API + asset host) and `linkedin-generation-worker` (content pipeline). Each has its own D1 database (`linkedin-pipeline-db` and `linkedin-gen-worker-db`).
+* A Google service account gives the main worker access to the shared sheet
+* All publishing flows directly through the worker; there is no GitHub-Actions-driven publish path.
 
-Only the API Worker is deployed to Cloudflare. The repository does not keep a second root Cloudflare deployment config for the frontend.
+The deployment style is controlled by `deploymentMode` in `features.yaml`:
+
+* `saas` — hosted multi-tenant. Public landing + waitlist on `/`, per-user tenant rows in D1, token usage meter, admin tier visible in header.
+* `selfHosted` — single-owner. Direct sign-in on `/`, no waitlist or usage meter.
+
+For the architecture diagram and a full route/binding inventory, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Quick Start (Web Wizard)
 
@@ -139,8 +144,9 @@ At minimum, configure these Worker values:
 * `GOOGLE_CLOUD_STORAGE_BUCKET`
 * `DELETE_UNUSED_GENERATED_IMAGES`
 * `GOOGLE_SERVICE_ACCOUNT_JSON`
-* `GITHUB_TOKEN_ENCRYPTION_KEY`
+* `SECRET_ENCRYPTION_KEY`
 * `CORS_ALLOWED_ORIGINS`
+* `POSTED_LOG_DOC_ID` *(optional — Google Doc ID for the human-readable publish-history log; service account needs edit access)*
 
 To enable the new admin connect buttons for shared Instagram, LinkedIn, WhatsApp, and Gmail delivery, also configure these Worker values:
 
@@ -181,41 +187,15 @@ Set these frontend variables for your GitHub Pages build:
 
 Do not expose GitHub tokens, service-account JSON, or owner-only configuration in the frontend.
 
-If you run `python setup.py --all` and `gh` is authenticated, the script will try to write these repository secrets automatically.
+If you run `python setup.py --all` and `gh` is authenticated, the script will try to write these repository secrets automatically (only `VITE_GOOGLE_CLIENT_ID` and `VITE_WORKER_URL` are needed for the GitHub Pages build).
 
-## Step 5: Configure SerpApi
+## Step 5: (Optional) Configure news-research providers
 
-SerpApi is the supported search backend for research and image discovery in the Python draft workflow.
+The generation worker's news-research aggregator (`packages/researcher`) supports RSS, NewsAPI, NewsData, Google News, and SerpAPI. None are required — the LLM providers (Gemini / Grok / OpenRouter / Minimax) cover most research needs without external web search.
 
-1. Create a SerpApi account.
-2. Generate an API key from the SerpApi dashboard.
-3. Add the key to your local environment and to GitHub Actions as `SERPAPI_API_KEY`.
+If you want richer news context during generation, set any of `NEWSAPI_KEY`, `GNEWS_API_KEY`, `NEWSDATA_API_KEY`, `SERPAPI_API_KEY`, or `RESEARCHER_RSS_FEEDS` in your `.env`. `python setup.py --deploy-worker` passes through whichever ones are present to the generation worker.
 
-The Python draft job uses SerpApi organic results for research context and Google Images results for image discovery.
-
-## Step 6: Configure GitHub Actions secrets
-
-The scheduled Python jobs still need their existing secrets.
-Keep these configured in GitHub Actions:
-
-* `GOOGLE_SHEET_ID`
-* `GOOGLE_CLOUD_STORAGE_BUCKET`
-* `GOOGLE_CLOUD_STORAGE_PREFIX`
-* `GOOGLE_DOC_ID`
-* `GOOGLE_CREDENTIALS_JSON`
-* `DELETE_UNUSED_GENERATED_IMAGES`
-* `GEMINI_API_KEY`
-* `SERPAPI_API_KEY`
-* `LINKEDIN_ACCESS_TOKEN`
-* `LINKEDIN_PERSON_URN`
-
-If you only publish through the dashboard's direct Worker delivery path, the Worker can manage the Instagram, LinkedIn, and WhatsApp access tokens itself after an admin connects the channels. The GitHub Actions secrets above are still relevant for the older Python publish workflow.
-
-Telegram delivery is Worker-only. It does not require any additional GitHub Actions secrets.
-
-When `python setup.py --sync-github-secrets` runs with the corresponding environment variables present, it will sync any of these values that it can resolve.
-
-## Step 7: Deploy the frontend
+## Step 6: Deploy the frontend
 
 Enable GitHub Pages with GitHub Actions as the source.
 Set the `VITE_GOOGLE_CLIENT_ID` and `VITE_WORKER_URL` repository secrets used by [deploy-pages.yml](.github/workflows/deploy-pages.yml).
@@ -239,14 +219,6 @@ Set the `VITE_GOOGLE_CLIENT_ID` and `VITE_WORKER_URL` repository secrets used by
 * A non-allowed user is rejected by the Worker
 * Draft and publish dispatches succeed without exposing GitHub secrets in the browser
 
-## Important changes from the old flow
-
-* The browser no longer calls Google Sheets, Drive, or GitHub directly
-* The browser no longer stores the GitHub PAT
-* Config lives in Cloudflare KV, not in a user-specific Drive app-data file
-* Shared access is controlled by `ALLOWED_EMAILS` in the Worker
-* Generated draft images now live in Google Cloud Storage, and unused variants are deleted automatically after publish
-
 ## Suggested environment variables for setup.py
 
 Set these before running the broader bootstrap flow:
@@ -267,12 +239,16 @@ export META_APP_ID='your-meta-app-id'
 export META_APP_SECRET='your-meta-app-secret'
 ```
 
-Add these too if you want `setup.py --sync-github-secrets` to populate the automation secrets in one pass:
+Optional research and image-cleanup settings — pass any of these through `.env` when you want them on the worker side:
 
 ```bash
 export GEMINI_API_KEY='...'
-export SERPAPI_API_KEY='your-serpapi-api-key'
+export XAI_API_KEY='...'
+export OPENROUTER_API_KEY='...'
+export NEWSAPI_KEY='...'
+export GNEWS_API_KEY='...'
+export NEWSDATA_API_KEY='...'
+export SERPAPI_API_KEY='...'
 export GOOGLE_CLOUD_STORAGE_PREFIX='linkedin-images'
 export DELETE_UNUSED_GENERATED_IMAGES='true'
-export LINKEDIN_ACCESS_TOKEN='...'
 ```

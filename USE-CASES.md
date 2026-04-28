@@ -188,6 +188,24 @@ User discovers trending topics via YouTube/LinkedIn panels; searches news articl
 
 ---
 
+## Journey 12: Feed Enrichment & Debate Mode
+
+**Goal:** While editing a draft, the user can pull complementary or contrarian context from the feed (related articles, debate angles, cross-domain examples, opinion-leader takes) without leaving the editor.
+
+| User Action | Component | API Action | Expected Outcome | Wiring |
+|---|---|---|---|---|
+| Open `/feed` from the app sidebar | `FeedPage` | `getFeedArticles` (and `refreshFeedArticles` on demand) | Articles list with feedback controls | ✅ |
+| Cluster gathered clips on a draft | Editor sidebar | `clusterDraftClips` | Clips grouped by theme; surfaced inline | ✅ |
+| Click "Find related drafts" on an article | Feed enrichment panel | `findDraftConnections` | Related topics/drafts surfaced for re-use | ✅ |
+| Switch to **Debate Mode** in editor | `DebateModeView` | `findDebateArticle` | Counter-stance article retrieved and pinned alongside the draft | ✅ |
+| Request "Cross-domain insight" | Enrichment workspace | `crossDomainInsight` | Analogous example pulled from a different industry/topic | ✅ |
+| Request "Opinion-leader takes" | Enrichment workspace | `opinionLeaderInsights` | Curated quotes/positions from notable voices | ✅ |
+| Analyze a single article inline | Feed item action | `analyzeFeedArticle` | Per-article analysis (angle, hook, key facts) returned and rendered | ✅ |
+
+**Wiring Notes:** All five enrichment actions live in the worker action dispatcher. Feed UI is gated by `FEATURE_NEWS_RESEARCH`; the enrichment workspace at `/enrichment` is gated by `FEATURE_ENRICHMENT`. Browser → `POST /action` → worker case → LLM provider (default Gemini, or per-user override).
+
+---
+
 ## End-to-End Testing (Next Phase)
 
 All wiring is complete. Next priority: Validate core user flows end-to-end with E2E tests.
@@ -211,7 +229,7 @@ All wiring is complete. Next priority: Validate core user flows end-to-end with 
 
 ### Running Tests
 ```bash
-cd /home/openclaw/workspaces/linkedin-post/frontend
+cd frontend
 npm run test:e2e                # Run all tests headlessly
 npm run test:e2e:ui             # Run with UI mode
 npm run test:e2e:headed         # Run with visible browser

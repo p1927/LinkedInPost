@@ -103,10 +103,10 @@ app.get('/api/setup/state', (req, res) => {
     {
       id: 'github',
       name: 'GitHub',
-      connected: Boolean(workerEnv['GITHUB_TOKEN_ENCRYPTION_KEY']),
+      connected: Boolean(workerEnv['SECRET_ENCRYPTION_KEY']),
       icon: 'github',
       config: {},
-      status: workerEnv['GITHUB_TOKEN_ENCRYPTION_KEY'] ? 'connected' : 'disconnected',
+      status: workerEnv['SECRET_ENCRYPTION_KEY'] ? 'connected' : 'disconnected',
     },
     {
       id: 'cloudflare',
@@ -363,7 +363,7 @@ app.post('/api/setup/reset-database', (req, res) => {
 
   const workerDir = join(resolvedProject, 'worker');
   const child = spawn('bash', ['-c',
-    `cd "${workerDir}" && npx wrangler d1 execute github_automation --command="DELETE FROM drafts" --local 2>/dev/null && npx wrangler d1 execute github_automation --command="DELETE FROM posts" --local 2>/dev/null && echo "done"`
+    `cd "${workerDir}" && npx wrangler d1 execute linkedin-pipeline-db --command="DELETE FROM sheet_rows" --local 2>/dev/null && npx wrangler d1 execute linkedin-pipeline-db --command="DELETE FROM generation_runs" --local 2>/dev/null && echo "done"`
   ], { timeout: 60000 });
 
   let stderr = '';

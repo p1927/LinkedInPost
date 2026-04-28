@@ -98,10 +98,10 @@ def read_worker_dev_var(dev_vars_path: Path, name: str) -> str:
 
 
 def load_worker_encryption_key(dev_vars_path: Path, generate_encryption_key: Any) -> str:
-    env_key = os.environ.get('GITHUB_TOKEN_ENCRYPTION_KEY', '').strip()
+    env_key = os.environ.get('SECRET_ENCRYPTION_KEY', '').strip()
     if env_key:
         return env_key
-    persisted_key = read_worker_dev_var(dev_vars_path, 'GITHUB_TOKEN_ENCRYPTION_KEY')
+    persisted_key = read_worker_dev_var(dev_vars_path, 'SECRET_ENCRYPTION_KEY')
     if persisted_key:
         return persisted_key
     return generate_encryption_key()
@@ -220,7 +220,7 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'GNEWS_API_KEY': os.environ.get('GNEWS_API_KEY', '').strip(),
         'NEWSDATA_API_KEY': os.environ.get('NEWSDATA_API_KEY', '').strip(),
         'RESEARCHER_RSS_FEEDS': os.environ.get('RESEARCHER_RSS_FEEDS', '').strip(),
-        'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
+        'SECRET_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
         'CORS_ALLOWED_ORIGINS': worker_bootstrap.cors_allowed_origins,
         'INSTAGRAM_APP_ID': worker_bootstrap.instagram_app_id,
@@ -252,7 +252,7 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
 def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_json: str) -> dict[str, str]:
     secret_values: dict[str, str] = {
         'GOOGLE_SERVICE_ACCOUNT_JSON': credentials_json,
-        'GITHUB_TOKEN_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
+        'SECRET_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
         'GENERATION_WORKER_SECRET': worker_bootstrap.generation_worker_secret,
     }
@@ -411,7 +411,7 @@ def print_bootstrap_summary(
         print(f'WHATSAPP_PHONE_NUMBER_ID = {worker_bootstrap.whatsapp_phone_number_id or "<set this value>"}')
         print(f'GMAIL_CLIENT_ID         = {worker_bootstrap.gmail_client_id or "<optional: same Web client as sign-in, for Connect Gmail>"}')
         print(f'GMAIL_CLIENT_SECRET     = {"<configured>" if worker_bootstrap.gmail_client_secret else "<optional: Worker secret for Gmail OAuth>"}')
-        print(f'GITHUB_TOKEN_ENCRYPTION_KEY = {worker_bootstrap.encryption_key}')
+        print(f'SECRET_ENCRYPTION_KEY = {worker_bootstrap.encryption_key}')
         if worker_bootstrap.kv_namespace_id:
             print(f'CONFIG_KV production    = {worker_bootstrap.kv_namespace_id}')
         if worker_bootstrap.kv_preview_id:

@@ -1,8 +1,4 @@
-import {
-  GOOGLE_MODEL_DEFAULT,
-  resolveAllowedGoogleModelIds,
-  resolveEffectiveGoogleModel,
-} from '../google-model-policy';
+import { resolveEffectiveGoogleModel } from '../google-model-policy';
 import { STATIC_GROK_MODELS } from './providers/grok';
 import { STATIC_OPENROUTER_MODELS } from './providers/openrouter';
 import { STATIC_MINIMAX_MODELS } from './providers/minimax';
@@ -145,19 +141,6 @@ export function resolveFallbackForGeneration(
     return undefined;
   }
   return fb;
-}
-
-export function resolveGithubAutomationGeminiModel(config: LlmWorkspaceConfig, multiProvider: boolean): string {
-  const primary = resolveStoredPrimary(config, multiProvider);
-  if (primary.provider === 'gemini') {
-    return primary.model;
-  }
-  const allowed = resolveAllowedGoogleModelIds(config);
-  const stored = resolveEffectiveGoogleModel(config, config.googleModel);
-  if (stored && allowed.includes(stored)) {
-    return stored;
-  }
-  return allowed[0] || GOOGLE_MODEL_DEFAULT;
 }
 
 export function workspaceConfigFromStored(

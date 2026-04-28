@@ -5,8 +5,7 @@
 //   - Catalog:  getLlmProviderCatalog, listModelsForProvider, getConfiguredLlmProviderIds,
 //               hasAnyLlmProvider, isLlmProviderConfigured
 //   - Policy:   resolveAllowedGrokModelIds, resolveAllowedOpenrouterModelIds, resolveStoredPrimary, resolveStoredFallback,
-//               resolveGenerationRef, resolveFallbackForGeneration,
-//               resolveGithubAutomationGeminiModel, workspaceConfigFromStored
+//               resolveGenerationRef, resolveFallbackForGeneration, workspaceConfigFromStored
 //   - Helpers:  generateLlmParsedJson, resolveGenerationWorkerLlmRef
 //   - Types:    LlmModelOption, LlmProviderId, LlmRef, LlmWorkspaceConfig,
 //               GenerationLlmPayload, WorkerEnvForLlm
@@ -26,7 +25,6 @@ export {
   resolveStoredFallback,
   resolveGenerationRef,
   resolveFallbackForGeneration,
-  resolveGithubAutomationGeminiModel,
   workspaceConfigFromStored,
 } from './policy';
 export { generateTextJsonWithFallback, generateMultimodalForRef, generateForRef } from './gateway';
