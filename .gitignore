@@ -21,3 +21,8 @@ generation-worker/node_modules
 node_modules.worktrees/
 node_modules
 .worktrees/
+
+# Playwright transient outputs (also ignored under frontend/.gitignore but
+# tests have run from repo root in the past and left stale entries here)
+test-results/
+playwright-report/
