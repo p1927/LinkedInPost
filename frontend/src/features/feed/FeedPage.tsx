@@ -14,11 +14,12 @@ import { TrendingGraph } from '../trending/components/TrendingGraph';
 import { type PanelConfig } from '../trending/components/PanelToggle';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useTrendingSearch } from '../trending/hooks/useTrendingSearch';
+import { FeedLeftPanel } from './components/FeedLeftPanel';
 import { Newspaper, Sparkles, PlugZap, Plus, X } from 'lucide-react';
-import type { GraphNode } from '../trending/types';
+import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
-import type { InterestGroup, CreateInterestGroupPayload } from './types';
+import type { InterestGroup, CreateInterestGroupPayload, Clip } from './types';
 
 const ALL_PANELS: PanelConfig[] = [
   { id: 'youtube', label: 'YouTube' },
@@ -70,12 +71,42 @@ export function FeedPage({
   const [newGroupColor, setNewGroupColor] = useState(COLOR_PRESETS[0]);
   const [savingGroup, setSavingGroup] = useState(false);
 
+  // Clips state
+  const [clips, setClips] = useState<Clip[]>([]);
+  const clippedUrls = useMemo(() => new Set(clips.map(c => c.articleUrl)), [clips]);
+
+  // Article detail state (used in Task 7)
+  const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
+
+  async function handleClip(article: NewsArticle) {
+    try {
+      const clip = await api.createClip(idToken, {
+        type: 'article',
+        articleTitle: article.title,
+        articleUrl: article.url,
+        source: article.source,
+        publishedAt: article.publishedAt,
+        thumbnailUrl: article.imageUrl ?? '',
+      });
+      setClips(prev => [clip, ...prev]);
+    } catch {
+      // silently ignore — dock will show existing clips
+    }
+  }
+
   // Fetch groups on mount
   useEffect(() => {
     api.listInterestGroups(idToken)
       .then(setInterestGroups)
       .catch(() => {}) // silently ignore on error
       .finally(() => setGroupsLoading(false));
+  }, [idToken, api]);
+
+  // Load existing clips on mount
+  useEffect(() => {
+    api.listClips(idToken)
+      .then(setClips)
+      .catch(() => {});
   }, [idToken, api]);
 
   const { data, loading, error, enabledPlatforms } = useTrending(searchTopic, idToken, api, capabilities);
@@ -459,13 +490,16 @@ export function FeedPage({
                   {(() => {
                     const articles = trendingSearch.data?.articles?.length
                       ? trendingSearch.data.articles : data.news;
-                    return visiblePanels.includes('news') && articles.length > 0 ? (
-                      <FeedSection
-                        title="News" count={articles.length}
-                        color={PLATFORM_META.news.color} icon={PLATFORM_META.news.icon}
-                      >
-                        <NewsPanel articles={articles} />
-                      </FeedSection>
+                    return visiblePanels.includes('news') ? (
+                      <motion.div variants={cardItemVariants}>
+                        <FeedLeftPanel
+                          articles={articles}
+                          loading={false}
+                          onClip={handleClip}
+                          onOpen={setOpenArticle}
+                          clippedUrls={clippedUrls}
+                        />
+                      </motion.div>
                     ) : null;
                   })()}
                   {visiblePanels.length > 1 && (
