@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, X as XIcon, Link2, FileText } from 'lucide-react';
+import { X as XIcon, Link2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
