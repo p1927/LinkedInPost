@@ -1058,9 +1058,11 @@ export function EnrichmentFlowPage({
 
   const enrichmentNodesToRender = useMemo(() => {
     if (!executedEnrichmentNodeIds || executedEnrichmentNodeIds.length === 0) return ENRICHMENT_NODES;
+    const definedOrder = ENRICHMENT_NODES.map(n => n.id);
     return executedEnrichmentNodeIds
       .map(id => FLOW_NODES.find(n => n.id === id))
-      .filter((n): n is FlowNode => n !== undefined);
+      .filter((n): n is FlowNode => n !== undefined)
+      .sort((a, b) => definedOrder.indexOf(a.id) - definedOrder.indexOf(b.id));
   }, [executedEnrichmentNodeIds]);
 
   const triggerNode = FLOW_NODES.find(n => n.id === 'topic_created')!;
@@ -1144,7 +1146,7 @@ export function EnrichmentFlowPage({
             <p className="text-xs text-muted/60 mt-1">Topics exist but none have been generated yet.</p>
           </div>
         ) : showDag ? (
-          <div className="flex flex-1 min-h-0 p-3">
+          <div className="flex flex-1 min-h-0 p-3 gap-3">
             <DraggableCanvas resetKey={canvasResetKey}>
               <motion.div
                 className="flex flex-col items-center gap-0 p-8"
@@ -1156,9 +1158,7 @@ export function EnrichmentFlowPage({
                 <Arrow />
                 <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/40 p-4">
                   <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-widest text-blue-400">
-                    {executedEnrichmentNodeIds && executedEnrichmentNodeIds.length > 0
-                      ? 'Enrichment Modules (execution order)'
-                      : 'Enrichment Modules (parallel)'}
+                    Enrichment Modules
                   </p>
                   <motion.div className="flex flex-wrap justify-center gap-3" variants={containerVariants}>
                     {enrichmentNodesToRender.map(node => (
@@ -1182,6 +1182,52 @@ export function EnrichmentFlowPage({
                 <NodeCard {...dagCardProps(outputNode)} />
               </motion.div>
             </DraggableCanvas>
+
+            <AnimatePresence>
+              {expandedNodeId && (() => {
+                const selectedNode = FLOW_NODES.find(n => n.id === expandedNodeId);
+                if (!selectedNode) return null;
+                return (
+                  <motion.div
+                    key={expandedNodeId}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 16 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    className="w-80 shrink-0 flex flex-col rounded-xl border border-border bg-canvas overflow-hidden shadow-sm"
+                  >
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={cn(
+                          'h-2 w-2 rounded-full shrink-0',
+                          selectedNode.type === 'trigger' ? 'bg-violet-400' :
+                          selectedNode.type === 'output' ? 'bg-emerald-400' :
+                          selectedNode.group === 'enrichment' ? 'bg-blue-400' : 'bg-amber-400',
+                        )} />
+                        <span className="text-xs font-semibold text-ink truncate">{selectedNode.label}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedNodeId(null)}
+                        className="shrink-0 ml-2 text-muted hover:text-ink transition-colors text-lg leading-none"
+                        aria-label="Close"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                      <NodeInlineDetail
+                        node={selectedNode}
+                        nodeRun={getNodeRun(selectedNode.id)}
+                        hasRunSelected={!!selectedRun}
+                        isLoadingRuns={isLoadingRuns}
+                        session={session}
+                      />
+                    </div>
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto">
