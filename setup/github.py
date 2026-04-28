@@ -115,28 +115,15 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
     if worker_url:
         verify_worker_endpoint(worker_url, worker_bootstrap.cors_allowed_origins)
 
+    # Only sync secrets actually consumed by remaining GitHub Actions workflows:
+    # - deploy-pages.yml: VITE_GOOGLE_CLIENT_ID, VITE_WORKER_URL
+    # - youtube-comment-poll.yml: WORKER_SCHEDULER_SECRET, YOUTUBE_* vars, VITE_WORKER_URL
+    # All other secrets (API keys, OAuth tokens, GCS, etc.) are set directly on the
+    # Cloudflare Worker via `wrangler secret put` during --deploy-worker.
     secrets_to_sync: dict[str, str] = {
         'VITE_GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
         'VITE_WORKER_URL': worker_url,
         'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
-        'GOOGLE_CREDENTIALS_JSON': getattr(google_resources, 'credentials_json', None) or os.environ.get('GOOGLE_CREDENTIALS_JSON', '').strip(),
-        'GOOGLE_SHEET_ID': getattr(google_resources, 'sheet_id', None) or os.environ.get('GOOGLE_SHEET_ID', '').strip(),
-        'GOOGLE_CLOUD_STORAGE_BUCKET': os.environ.get('GOOGLE_CLOUD_STORAGE_BUCKET', '').strip(),
-        'GOOGLE_CLOUD_STORAGE_PREFIX': os.environ.get('GOOGLE_CLOUD_STORAGE_PREFIX', '').strip(),
-        'GOOGLE_DOC_ID': getattr(google_resources, 'doc_id', None) or os.environ.get('GOOGLE_DOC_ID', '').strip(),
-        'DELETE_UNUSED_GENERATED_IMAGES': os.environ.get('DELETE_UNUSED_GENERATED_IMAGES', 'true').strip(),
-        'GEMINI_API_KEY': os.environ.get('GEMINI_API_KEY', '').strip(),
-        'XAI_API_KEY': os.environ.get('XAI_API_KEY', '').strip(),
-        'SERPAPI_API_KEY': os.environ.get('SERPAPI_API_KEY', '').strip(),
-        'NEWSAPI_KEY': os.environ.get('NEWSAPI_KEY', '').strip(),
-        'GNEWS_API_KEY': os.environ.get('GNEWS_API_KEY', '').strip(),
-        'NEWSDATA_API_KEY': os.environ.get('NEWSDATA_API_KEY', '').strip(),
-        'RESEARCHER_RSS_FEEDS': os.environ.get('RESEARCHER_RSS_FEEDS', '').strip(),
-        'LINKEDIN_ACCESS_TOKEN': os.environ.get('LINKEDIN_ACCESS_TOKEN', '').strip(),
-        'LINKEDIN_PERSON_URN': getattr(google_resources, 'linkedin_person_urn', None) or os.environ.get('LINKEDIN_PERSON_URN', '').strip(),
-        'WHATSAPP_ACCESS_TOKEN': os.environ.get('WHATSAPP_ACCESS_TOKEN', '').strip(),
-        'WHATSAPP_PHONE_NUMBER_ID': os.environ.get('WHATSAPP_PHONE_NUMBER_ID', '').strip(),
-        # Automations: YouTube comment poller (GitHub Actions only)
         'YOUTUBE_API_KEY': os.environ.get('YOUTUBE_API_KEY', '').strip(),
         'YOUTUBE_OAUTH_TOKEN': os.environ.get('YOUTUBE_OAUTH_TOKEN', '').strip(),
         'YOUTUBE_CHANNEL_ID': os.environ.get('YOUTUBE_CHANNEL_ID', '').strip(),

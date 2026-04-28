@@ -213,9 +213,7 @@ function ImageGenAccordionSection({
         models: IMAGE_GEN_MODELS[p.value] ?? [],
       }));
 
-  const entries = allEntries.filter((e) => e.provider !== 'pixazo');
-  const pixazoIsSelected = imageGenProvider === 'pixazo';
-  const pixazoBadge = getApiKeyBadge('pixazo', session);
+  const entries = allEntries;
 
   return (
     <SettingsSectionCard id="settings-image-generation" title="Image Generation" variant="canvas">
@@ -315,36 +313,6 @@ function ImageGenAccordionSection({
             </div>
           );
         })}
-      </div>
-
-      {/* Pixazo: API-only provider, no model selection */}
-      <div className="mt-3 flex items-center justify-between rounded-xl border border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className={cn('text-sm font-semibold', pixazoIsSelected ? 'text-ink' : 'text-muted-foreground')}>
-            Pixazo SDXL
-          </span>
-          {pixazoIsSelected && (
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              active
-            </span>
-          )}
-          <span className={cn(
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-            pixazoBadge.hasKey ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800',
-          )}>
-            {pixazoBadge.text}
-          </span>
-        </div>
-        <button
-          type="button"
-          className={cn(
-            'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-            pixazoIsSelected ? 'bg-primary/10 text-primary' : 'bg-canvas-subtle text-muted-foreground hover:bg-primary/10 hover:text-primary',
-          )}
-          onClick={() => { setImageGenProvider('pixazo'); setImageGenModel(''); }}
-        >
-          {pixazoIsSelected ? 'Selected' : 'Select'}
-        </button>
       </div>
     </SettingsSectionCard>
   );

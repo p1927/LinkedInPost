@@ -7,6 +7,7 @@ import { channelStyle } from '@/features/content-schedule-calendar/channelStyles
 import { TopicDetailView } from '@/features/add-topic/TopicDetailView';
 import { StatusPill, deriveStatus } from '@/components/ui/StatusPill';
 import { WORKSPACE_PATHS } from '@/features/topic-navigation/utils/workspaceRoutes';
+import { ScheduleEditor } from '@/components/schedule';
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -278,23 +279,37 @@ function ScheduleSection({
   showBottomBorder?: boolean;
 }) {
   const base = deriveCalendarFieldsFromSheetRow(row);
-  const [date, setDate] = useState(base.date ?? '');
-  const [time, setTime] = useState(base.startTime ?? '');
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    const b = deriveCalendarFieldsFromSheetRow(row);
-    setDate(b.date ?? '');
-    setTime(b.startTime ?? '');
-  }, [row.topicId, row.date, row.postTime]);
+  // Build a Date | null from the base date+time strings so ScheduleEditor can
+  // track "dirty" relative to the original value.
+  const baseDate: Date | null = React.useMemo(() => {
+    if (!base.date) return null;
+    const [Y, M, D] = base.date.split('-').map(Number);
+    let h = 0;
+    let m = 0;
+    if (base.startTime) {
+      const parts = base.startTime.split(':').map(Number);
+      h = parts[0] ?? 0;
+      m = parts[1] ?? 0;
+    }
+    return new Date(Y!, M! - 1, D!, h, m, 0, 0);
+  }, [base.date, base.startTime]);
 
-  const dirty = date !== (base.date ?? '') || time !== (base.startTime ?? '');
-
-  const handleSave = async () => {
-    if (!date.trim()) return;
+  const handleApply = async (date: Date | null) => {
+    if (!date) return;
     setBusy(true);
     try {
-      const postTime = time.trim() ? `${date} ${time}` : date;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      const h = date.getHours();
+      const m = date.getMinutes();
+      const hasTime = h !== 0 || m !== 0;
+      const postTime = hasTime
+        ? `${dateStr} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+        : dateStr;
       await onSave(row, postTime);
     } finally {
       setBusy(false);
@@ -309,84 +324,13 @@ function ScheduleSection({
       }}
     >
       <SectionLabel>Schedule</SectionLabel>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div>
-          <label
-            style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}
-          >
-            Date
-          </label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            disabled={busy}
-            style={{
-              width: '100%',
-              height: 34,
-              padding: '0 10px',
-              fontSize: 13,
-              border: `1px solid ${T.lineStrong}`,
-              borderRadius: 8,
-              background: T.surface,
-              color: T.ink,
-              outline: 'none',
-              fontFamily: 'inherit',
-              boxSizing: 'border-box',
-              opacity: busy ? 0.5 : 1,
-            }}
-          />
-        </div>
-        <div>
-          <label
-            style={{ display: 'block', fontSize: 12, fontWeight: 500, color: T.muted, marginBottom: 5 }}
-          >
-            Time{' '}
-            <span style={{ fontWeight: 400, color: T.mutedSoft }}>(optional)</span>
-          </label>
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            disabled={busy}
-            style={{
-              width: '100%',
-              height: 34,
-              padding: '0 10px',
-              fontSize: 13,
-              border: `1px solid ${T.lineStrong}`,
-              borderRadius: 8,
-              background: T.surface,
-              color: T.ink,
-              outline: 'none',
-              fontFamily: 'inherit',
-              boxSizing: 'border-box',
-              opacity: busy ? 0.5 : 1,
-            }}
-          />
-        </div>
-      </div>
-      <button
-        type="button"
-        disabled={busy || !dirty}
-        onClick={() => void handleSave()}
-        style={{
-          marginTop: 12,
-          width: '100%',
-          height: 34,
-          borderRadius: 8,
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: busy || !dirty ? 'not-allowed' : 'pointer',
-          background: busy || !dirty ? T.accentSoft : T.accent,
-          color: busy || !dirty ? T.accent : '#fff',
-          border: 'none',
-          transition: 'background 150ms, color 150ms',
-          fontFamily: 'inherit',
-        }}
-      >
-        {busy ? 'Saving…' : 'Update schedule'}
-      </button>
+      <ScheduleEditor
+        value={baseDate}
+        onChange={() => { /* real-time updates not needed here; onApply handles submit */ }}
+        onApply={(date) => void handleApply(date)}
+        disablePastDates
+        disabled={busy}
+      />
     </div>
   );
 }

@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Eye, Info } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
-import { CHANNEL_OPTIONS, type ChannelId, getChannelLabel } from '@/integrations/channels';
+import { type ChannelId, getChannelLabel } from '@/integrations/channels';
+import { ChannelPicker } from '@/components/channels';
 import type { SheetRow } from '@/services/sheets';
 import type { GoogleModelOption, LlmRef } from '@/services/configService';
 import { FEATURE_MULTI_PROVIDER_LLM } from '@/generated/features';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TopicPostPreviewCard } from './TopicPostPreviewCard';
 import type { BackendApi } from '@/services/backendApi';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
@@ -254,31 +254,17 @@ export function TopicsRightRail({
                 <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
               </button>
             </div>
-            <Select
+            <ChannelPicker
               value={channelSelectValue}
               disabled={saving}
-              onValueChange={(val) => {
+              prependOptions={[{ value: WORKSPACE_DEFAULT_CHANNEL, label: workspaceDefaultChannelCaption }]}
+              onChange={(val) => {
                 if (!selectedRow) return;
                 const topicDeliveryChannel = val === WORKSPACE_DEFAULT_CHANNEL ? '' : (val as ChannelId);
                 void persist(selectedRow, { topicDeliveryChannel });
               }}
-              itemToStringLabel={(v) => {
-                if (v === WORKSPACE_DEFAULT_CHANNEL) return workspaceDefaultChannelCaption;
-                return getChannelLabel(v as ChannelId);
-              }}
-            >
-              <SelectTrigger className="h-9 py-2 text-left text-xs font-medium">
-                <SelectValue placeholder="Channel" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>{workspaceDefaultChannelCaption}</SelectItem>
-                {CHANNEL_OPTIONS.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              className="h-9 py-2 text-left text-xs font-medium"
+            />
           </div>
         </div>
         {saving && <p className="mt-2 text-[10px] text-muted">Saving…</p>}
@@ -400,31 +386,17 @@ export function TopicsRightRail({
                       <Info className="h-3 w-3" strokeWidth={2} aria-hidden />
                     </button>
                   </div>
-                  <Select
+                  <ChannelPicker
                     value={channelSelectValue}
                     disabled={saving}
-                    onValueChange={(val) => {
+                    prependOptions={[{ value: WORKSPACE_DEFAULT_CHANNEL, label: workspaceDefaultChannelCaption }]}
+                    onChange={(val) => {
                       if (!selectedRow) return;
                       const topicDeliveryChannel = val === WORKSPACE_DEFAULT_CHANNEL ? '' : (val as ChannelId);
                       void persist(selectedRow, { topicDeliveryChannel });
                     }}
-                    itemToStringLabel={(v) => {
-                      if (v === WORKSPACE_DEFAULT_CHANNEL) return workspaceDefaultChannelCaption;
-                      return getChannelLabel(v as ChannelId);
-                    }}
-                  >
-                    <SelectTrigger className="h-9 py-2 text-left text-xs font-medium">
-                      <SelectValue placeholder="Channel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={WORKSPACE_DEFAULT_CHANNEL}>{workspaceDefaultChannelCaption}</SelectItem>
-                      {CHANNEL_OPTIONS.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className="h-9 py-2 text-left text-xs font-medium"
+                  />
                 </div>
               </div>
               {saving ? <p className="mt-2 text-[10px] text-muted">Saving…</p> : null}

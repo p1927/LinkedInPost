@@ -3,7 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { ChipToggle } from '@/components/ui/ChipToggle';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { type ChannelId, CHANNEL_OPTIONS, getChannelLabel, type ChannelOption } from '../../../integrations/channels';
+import { type ChannelId, getChannelLabel, type ChannelOption } from '../../../integrations/channels';
+import { ChannelPicker } from '@/components/channels';
 import { type RecipientOption } from '../types';
 import { getInstagramDeliveryDescription, getInstagramDeliveryHint } from '../../../integrations/instagram';
 import { getLinkedInDeliveryDescription, getLinkedInDeliveryHint } from '../../../integrations/linkedin';
@@ -112,22 +113,11 @@ export function DashboardDelivery({
         <div className={`flex flex-col ${sectionGap}`}>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70">Target</p>
-            <Select
+            <ChannelPicker
               value={selectedChannel}
-              onValueChange={(val) => setSelectedChannel(val as ChannelId)}
-              itemToStringLabel={(v) => getChannelLabel(v as ChannelId)}
-            >
-              <SelectTrigger className={compact ? 'mt-1 h-9 min-h-9' : 'mt-1'}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHANNEL_OPTIONS.map((channel) => (
-                  <SelectItem key={channel.value} value={channel.value}>
-                    {channel.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(val) => setSelectedChannel(val as ChannelId)}
+              className={compact ? 'mt-1 h-9 min-h-9' : 'mt-1'}
+            />
           </div>
         </div>
 

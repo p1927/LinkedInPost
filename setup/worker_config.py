@@ -177,6 +177,7 @@ def update_wrangler_config(wrangler_config_path: Path, worker_bootstrap: WorkerB
         'bindings': [{'name': 'SCHEDULED_LINKEDIN_PUBLISH', 'class_name': 'ScheduledPublishAlarm'}]
     }
     config['migrations'] = [{'tag': 'v1', 'new_sqlite_classes': ['ScheduledPublishAlarm']}]
+    config['services'] = [{'binding': 'GENERATION_WORKER', 'service': 'linkedin-generation-worker'}]
     preview_binding_id = worker_bootstrap.kv_preview_id or 'REPLACE_WITH_KV_PREVIEW_ID'
     local_d1 = copy.deepcopy(existing_d1)
     config['env'] = {

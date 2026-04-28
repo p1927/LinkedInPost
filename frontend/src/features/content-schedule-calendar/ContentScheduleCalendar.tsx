@@ -21,10 +21,10 @@ import type {
 import type { DragEndArg } from './useTimeGridDrag';
 import { useAlert } from '@/components/useAlert';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { ScheduleEditor } from '@/components/schedule';
 
 export type CalendarView = 'week' | 'month-grid' | 'day';
 
@@ -360,28 +360,31 @@ export function ContentScheduleCalendar(props: ContentScheduleCalendarProps) {
                 ) : null}
               </ul>
             ) : null}
-            <div>
-              <label htmlFor="csc-reschedule-date" className="mb-1 block text-xs font-medium text-slate-700">Date</label>
-              <Input
-                id="csc-reschedule-date"
-                type="date"
-                value={rescheduleUi.date}
-                onChange={(e) => setRescheduleUi((p) => ({ ...p, date: e.target.value }))}
-                className="h-9"
-                disabled={rescheduleBusy}
-              />
-            </div>
-            <div>
-              <label htmlFor="csc-reschedule-time" className="mb-1 block text-xs font-medium text-slate-700">Time</label>
-              <Input
-                id="csc-reschedule-time"
-                type="time"
-                value={rescheduleUi.time}
-                onChange={(e) => setRescheduleUi((p) => ({ ...p, time: e.target.value }))}
-                className="h-9"
-                disabled={rescheduleBusy}
-              />
-            </div>
+            <ScheduleEditor
+              value={(() => {
+                if (!rescheduleUi.date) return null;
+                const [Y, M, D] = rescheduleUi.date.split('-').map(Number);
+                const [h, m] = (rescheduleUi.time || '').split(':').map(Number);
+                return new Date(Y!, M! - 1, D!, h ?? 0, m ?? 0, 0, 0);
+              })()}
+              onChange={(date) => {
+                if (!date) {
+                  setRescheduleUi((p) => ({ ...p, date: '', time: '' }));
+                  return;
+                }
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                const hh = date.getHours();
+                const mm = date.getMinutes();
+                const timeStr = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+                setRescheduleUi((p) => ({ ...p, date: dateStr, time: timeStr }));
+              }}
+              disablePastDates={disablePastDates}
+              showApplyButton={false}
+              disabled={rescheduleBusy}
+            />
             {rescheduleFieldError ? (
               <p className="text-xs font-medium text-rose-600">{rescheduleFieldError}</p>
             ) : null}

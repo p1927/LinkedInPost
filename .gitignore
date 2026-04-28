@@ -26,3 +26,4 @@ node_modules
 # tests have run from repo root in the past and left stale entries here)
 test-results/
 playwright-report/
+test-results-deployment/

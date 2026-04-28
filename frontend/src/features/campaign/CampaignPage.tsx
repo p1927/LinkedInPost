@@ -443,6 +443,72 @@ export function CampaignPage(props: {
           <div className="mx-auto max-w-6xl px-4 sm:px-8">
             <div className="flex flex-col gap-5">
 
+              {/* Starter templates */}
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Quick start</h3>
+                    <p className="text-xs text-slate-500">Load a starter campaign and edit from there.</p>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {([
+                      {
+                        emoji: '🚀',
+                        title: 'Product Launch',
+                        description: '4 posts over 2 weeks — announce, educate, case study, close.',
+                        json: JSON.stringify({ version: 1, posts: [
+                          { topic: 'Announcing [Product] — what we built and why', date: '', channels: ['linkedin'], body: '' },
+                          { topic: 'How [Product] solves [Problem] step by step', date: '', channels: ['linkedin'], body: '' },
+                          { topic: 'Customer story: how [Company] got results with [Product]', date: '', channels: ['linkedin'], body: '' },
+                          { topic: '[Product] is now available — here\'s how to get started', date: '', channels: ['linkedin'], body: '' },
+                        ] }, null, 2),
+                      },
+                      {
+                        emoji: '📰',
+                        title: 'Weekly Digest',
+                        description: '4 weekly recaps covering news, insights, and takeaways.',
+                        json: JSON.stringify({ version: 1, posts: [
+                          { topic: 'This week in [Industry]: top 3 things you need to know', date: '', channels: ['linkedin'], body: '' },
+                          { topic: 'The trend everyone in [Industry] is talking about this week', date: '', channels: ['linkedin'], body: '' },
+                          { topic: 'My key takeaway from [Event/Article] this week', date: '', channels: ['linkedin'], body: '' },
+                          { topic: 'Weekly roundup: what changed, what it means, what to do', date: '', channels: ['linkedin'], body: '' },
+                        ] }, null, 2),
+                      },
+                      {
+                        emoji: '🎤',
+                        title: 'Event Series',
+                        description: '4 posts covering before, during, after, and lessons from an event.',
+                        json: JSON.stringify({ version: 1, posts: [
+                          { topic: 'I\'m speaking at [Event] — here\'s what I\'ll cover', date: '', channels: ['linkedin'], body: '' },
+                          { topic: 'Live from [Event]: biggest insight from day 1', date: '', channels: ['linkedin'], body: '' },
+                          { topic: 'Best conversations I had at [Event] this year', date: '', channels: ['linkedin'], body: '' },
+                          { topic: '3 things I learned at [Event] that changed how I think', date: '', channels: ['linkedin'], body: '' },
+                        ] }, null, 2),
+                      },
+                    ] as const).map(({ emoji, title, description, json }) => (
+                      <button
+                        key={title}
+                        type="button"
+                        onClick={() => {
+                          setPasteText(json);
+                          handleStepChange(1);
+                        }}
+                        className={clsx(
+                          'flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3.5 text-left',
+                          'transition-all hover:border-indigo-300 hover:bg-indigo-50/40 hover:shadow-sm cursor-pointer',
+                        )}
+                      >
+                        <span className="text-2xl leading-none">{emoji}</span>
+                        <p className="text-sm font-semibold text-slate-900">{title}</p>
+                        <p className="text-xs text-slate-500 leading-snug">{description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
               {/* Section 1: Topic ideas */}
               <section className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-5 py-3.5">

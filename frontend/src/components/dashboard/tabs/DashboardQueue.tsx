@@ -13,6 +13,8 @@ import {
   shouldShowDraftedQueueActions,
 } from '../utils';
 import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
+import { ChannelPicker } from '@/components/channels';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TopicPostPreviewCard } from '../components/TopicPostPreviewCard';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { filterOptions } from '../constants';
@@ -551,12 +553,12 @@ export function DashboardQueue({
       <div>
         {filteredRows.length === 0 ? (
           rows.length === 0 ? (
-            <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-8 py-14 text-center">
+            <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-8 py-10 text-center">
               <div className="glass-inset mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-muted">
                 <Bot className="h-6 w-6" strokeWidth={1.5} />
               </div>
               <p className="text-base font-semibold text-ink mb-1">No topics yet</p>
-              <p className="text-sm text-muted mb-6">Add your first topic and let AI draft your next LinkedIn post.</p>
+              <p className="text-sm text-muted mb-5">Add your first topic and let AI draft your next LinkedIn post.</p>
               <a
                 href={WORKSPACE_PATHS.addTopic}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
@@ -564,6 +566,44 @@ export function DashboardQueue({
                 <Bot className="h-4 w-4" aria-hidden />
                 Add topic
               </a>
+              {/* Starter templates */}
+              <div className="mt-8 text-left">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-3">
+                  Or start from a template
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    {
+                      emoji: '💡',
+                      title: 'Lessons from my latest project',
+                      hint: 'Reflection · thought leadership',
+                      topic: 'Lessons learned from my latest project',
+                    },
+                    {
+                      emoji: '📈',
+                      title: 'Industry trend worth watching',
+                      hint: 'Insight · trend analysis',
+                      topic: 'An industry trend worth paying attention to right now',
+                    },
+                    {
+                      emoji: '🛠️',
+                      title: 'Tool that changed how I work',
+                      hint: 'Tips · productivity',
+                      topic: 'A tool or method that changed how I work',
+                    },
+                  ].map(({ emoji, title, hint, topic }) => (
+                    <a
+                      key={title}
+                      href={`${WORKSPACE_PATHS.addTopic}?topic=${encodeURIComponent(topic)}`}
+                      className="group flex flex-col gap-1.5 rounded-xl border border-violet-200/50 bg-white/60 px-3.5 py-3 text-left transition-all hover:bg-white/90 hover:border-violet-300/60 hover:shadow-sm"
+                    >
+                      <span className="text-xl leading-none">{emoji}</span>
+                      <p className="text-xs font-semibold text-ink leading-snug">{title}</p>
+                      <p className="text-[10px] text-muted">{hint}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="glass-panel rounded-2xl border border-dashed border-violet-200/50 px-6 py-16 text-center">
@@ -716,24 +756,57 @@ export function DashboardQueue({
                     />
                   </div>
 
-                  {/* Channel pill column */}
+                  {/* Channel pill column — click to change channel via popover */}
                   <div className="hidden w-[90px] shrink-0 items-center pr-1 sm:flex">
                     {(() => {
                       const ch = parseTopicDeliveryChannel(row.topicDeliveryChannel);
-                      if (!ch) return <span className="text-xs text-muted/60">–</span>;
-                      const pillClass = {
-                        linkedin: 'bg-blue-100 text-blue-700',
-                        gmail: 'bg-red-100 text-red-700',
-                        telegram: 'bg-sky-100 text-sky-700',
-                        whatsapp: 'bg-green-100 text-green-700',
-                        instagram: 'bg-fuchsia-100 text-fuchsia-700',
-                        youtube: 'bg-red-100 text-red-700',
-                      }[ch] ?? 'bg-slate-100 text-slate-600';
-                      const label = CHANNEL_OPTIONS.find((o) => o.value === ch)?.label ?? ch;
+                      const pillClass = ch
+                        ? ({
+                            linkedin: 'bg-blue-100 text-blue-700',
+                            gmail: 'bg-red-100 text-red-700',
+                            telegram: 'bg-sky-100 text-sky-700',
+                            whatsapp: 'bg-green-100 text-green-700',
+                            instagram: 'bg-fuchsia-100 text-fuchsia-700',
+                            youtube: 'bg-red-100 text-red-700',
+                          }[ch] ?? 'bg-slate-100 text-slate-600')
+                        : 'bg-slate-100 text-slate-400';
+                      const label = ch
+                        ? (CHANNEL_OPTIONS.find((o) => o.value === ch)?.label ?? ch)
+                        : 'Set channel';
                       return (
-                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none', pillClass)}>
-                          {label}
-                        </span>
+                        <Popover>
+                          <PopoverTrigger
+                            onClick={(e) => e.stopPropagation()}
+                            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-full"
+                            aria-label={`Channel: ${label}. Click to change.`}
+                          >
+                            <span
+                              className={cn(
+                                'inline-flex cursor-pointer items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none transition-opacity hover:opacity-75',
+                                pillClass,
+                              )}
+                            >
+                              {label}
+                            </span>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            side="bottom"
+                            align="start"
+                            className="w-52 p-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted/70">
+                              Set channel
+                            </p>
+                            <ChannelPicker
+                              value={ch ?? null}
+                              onChange={(newChannel) => {
+                                void onBulkSetChannel([row], newChannel);
+                              }}
+                              className="h-8 text-xs"
+                            />
+                          </PopoverContent>
+                        </Popover>
                       );
                     })()}
                   </div>

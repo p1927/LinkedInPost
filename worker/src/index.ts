@@ -5679,6 +5679,64 @@ async function generateImageFromText(
     return { imageUrl };
   }
 
+  if (provider === 'pixazo') {
+    const apiKey = String(env.PIXAZO_API_KEY || '').trim();
+    if (!apiKey) throw new Error('PIXAZO_API_KEY is not configured for image generation.');
+    const pixazoResponse = await fetch('https://gateway.pixazo.ai/getImage/v1/getSDXLImage', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Ocp-Apim-Subscription-Key': apiKey,
+      },
+      body: JSON.stringify({
+        prompt,
+        negative_prompt: 'blurry, low quality, distorted text, watermark, logo, signature, grainy, overexposed',
+        height: 1024,
+        width: 1024,
+        num_steps: 30,
+        guidance_scale: 7.5,
+      }),
+    });
+    if (!pixazoResponse.ok) {
+      throw new Error(`Pixazo API error: ${pixazoResponse.status} ${pixazoResponse.statusText}`);
+    }
+    const pixazoResult = await pixazoResponse.json() as { imageUrl: string };
+    const asset = await fetchImageAsset(pixazoResult.imageUrl);
+    const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, asset.bytes, asset.contentType);
+    return { imageUrl };
+  }
+
+  if (provider === 'seedance') {
+    const apiKey = String(env.SEEDANCE_API_KEY || '').trim();
+    if (!apiKey) throw new Error('SEEDANCE_API_KEY is not configured for image generation.');
+    const seedanceModel = model ?? 'seedance-1-lite';
+    const seedanceResponse = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ model: seedanceModel, prompt, size: '1024x1024', n: 1 }),
+    });
+    if (!seedanceResponse.ok) {
+      throw new Error(`Seedance API error: ${seedanceResponse.status} ${seedanceResponse.statusText}`);
+    }
+    const seedanceData = await seedanceResponse.json() as { data?: Array<{ url?: string; b64_json?: string }> };
+    const seedanceItem = seedanceData.data?.[0];
+    if (!seedanceItem) throw new Error('Seedance returned no image data.');
+    if (seedanceItem.url) {
+      const asset = await fetchImageAsset(seedanceItem.url);
+      const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, asset.bytes, asset.contentType);
+      return { imageUrl };
+    }
+    if (seedanceItem.b64_json) {
+      const decoded = decodeDataUrl(`data:image/png;base64,${seedanceItem.b64_json}`);
+      const imageUrl = await uploadBytesToGcs(env, gcsObjectPrefixFromTopicId(topicId), 1, decoded.bytes, decoded.contentType);
+      return { imageUrl };
+    }
+    throw new Error('Seedance response missing url and b64_json.');
+  }
+
   throw new Error(`Text-to-image generation is not supported for provider "${provider}".`);
 }
 

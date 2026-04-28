@@ -1134,7 +1134,7 @@ export function FeedPage({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-10 bg-black/20 lg:hidden"
+                  className="fixed inset-0 z-40 bg-black/40"
                   onClick={() => { setOpenArticle(null); setDebateMode(false); }}
                 />
                 <motion.div
@@ -1142,7 +1142,7 @@ export function FeedPage({
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="absolute inset-y-0 right-0 z-20 w-full lg:w-[60%] overflow-y-auto bg-white/95 backdrop-blur-xl border-l border-border/50 shadow-2xl"
+                  className="fixed inset-y-0 right-0 z-50 w-full lg:w-[480px] max-w-full overflow-y-auto bg-background border-l border-border/50 shadow-2xl"
                 >
                   <div className="p-6 pb-16">
                     <ArticleDetailView
@@ -1156,6 +1156,7 @@ export function FeedPage({
                       rows={rows}
                       onOpenDraft={(row) => { setOpenArticle(null); setDebateMode(false); setOpenDraft(row); }}
                       onDebate={() => setDebateMode(true)}
+                      asSheet={true}
                     />
                   </div>
                 </motion.div>

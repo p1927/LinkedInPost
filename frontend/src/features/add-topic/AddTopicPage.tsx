@@ -118,11 +118,15 @@ export function AddTopicPage({
 }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  void searchParams;
   const stt = useSpeechToText();
 
   // Restore from the module-level draft when creating a new topic (not editing an existing one).
-  const [topic, setTopic] = useState(() => editRow ? '' : draft.topic);
+  // If a ?topic= query param is present (e.g. from a starter template), pre-fill that value.
+  const [topic, setTopic] = useState(() => {
+    if (editRow) return '';
+    const paramTopic = searchParams.get('topic');
+    return paramTopic ? paramTopic : draft.topic;
+  });
   const [about, setAbout] = useState(() => editRow ? '' : draft.about);
   const [meaning, setMeaning] = useState(() => editRow ? '' : draft.meaning);
   const [style, setStyle] = useState(() => editRow ? '' : draft.style);
