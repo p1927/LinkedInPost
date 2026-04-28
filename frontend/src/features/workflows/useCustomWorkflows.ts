@@ -51,26 +51,18 @@ export function useCustomWorkflows({
 
   const create = useCallback(
     async (payload: CreateWorkflowFormValues): Promise<string | null> => {
-      try {
-        const res = await api.createCustomWorkflow(idToken, payload);
-        reload();
-        return res.id ?? null;
-      } catch {
-        return null;
-      }
+      const res = await api.createCustomWorkflow(idToken, payload);
+      reload();
+      return res.id ?? null;
     },
     [api, idToken, reload],
   );
 
   const update = useCallback(
     async (id: string, payload: CreateWorkflowFormValues): Promise<boolean> => {
-      try {
-        await api.updateCustomWorkflow(idToken, id, payload);
-        reload();
-        return true;
-      } catch {
-        return false;
-      }
+      await api.updateCustomWorkflow(idToken, id, payload);
+      reload();
+      return true;
     },
     [api, idToken, reload],
   );

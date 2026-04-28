@@ -178,6 +178,7 @@ export function EditorSidebar() {
 
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderWorkflow, setBuilderWorkflow] = useState<CustomWorkflowSummary | undefined>(undefined);
+  const [isSavingWorkflow, setIsSavingWorkflow] = useState(false);
   const [recentlySelectedIds, setRecentlySelectedIds] = useState<string[]>([]);
 
   function trackRecent(id: string) {
@@ -185,13 +186,18 @@ export function EditorSidebar() {
   }
 
   async function handleModalSave(values: CreateWorkflowFormValues) {
-    if (builderWorkflow) {
-      await onUpdateCustomWorkflow?.(builderWorkflow.id, values);
-    } else {
-      await onCreateCustomWorkflow?.(values);
+    setIsSavingWorkflow(true);
+    try {
+      if (builderWorkflow) {
+        await onUpdateCustomWorkflow?.(builderWorkflow.id, values);
+      } else {
+        await onCreateCustomWorkflow?.(values);
+      }
+      setBuilderOpen(false);
+      setBuilderWorkflow(undefined);
+    } finally {
+      setIsSavingWorkflow(false);
     }
-    setBuilderOpen(false);
-    setBuilderWorkflow(undefined);
   }
 
   async function handleModalDelete(id: string) {
@@ -644,6 +650,7 @@ export function EditorSidebar() {
         onClose={() => { setBuilderOpen(false); setBuilderWorkflow(undefined); }}
         onSave={handleModalSave}
         onDelete={onDeleteCustomWorkflow ? handleModalDelete : undefined}
+        isSaving={isSavingWorkflow}
       />
     </aside>
   );

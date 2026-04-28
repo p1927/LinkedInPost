@@ -55,6 +55,9 @@ export function WorkflowBuilderModal({
   const [extendsWorkflowId, setExtendsWorkflowId] = useState('base');
   const [weights, setWeights] = useState<Record<string, number>>(DEFAULT_WEIGHTS);
   const [nameError, setNameError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+  const [instructionError, setInstructionError] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     if (workflowToEdit) {
@@ -69,7 +72,7 @@ export function WorkflowBuilderModal({
       setGenerationInstruction(''); setExtendsWorkflowId('base');
       setWeights(DEFAULT_WEIGHTS);
     }
-    setNameError('');
+    setNameError(''); setDescriptionError(''); setInstructionError(''); setSaveError('');
   }, [workflowToEdit, isOpen]);
 
   if (!isOpen) return null;
@@ -80,17 +83,24 @@ export function WorkflowBuilderModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setNameError('Name is required'); return; }
-    if (name.trim().length > 40) { setNameError('Max 40 characters'); return; }
-    setNameError('');
-    await onSave({
-      name: name.trim(),
-      description,
-      optimizationTarget,
-      generationInstruction,
-      extendsWorkflowId,
-      dimensionWeights: weights,
-    });
+    let valid = true;
+    if (!name.trim()) { setNameError('Name is required'); valid = false; } else if (name.trim().length > 40) { setNameError('Max 40 characters'); valid = false; } else { setNameError(''); }
+    if (!description.trim()) { setDescriptionError('Description is required'); valid = false; } else { setDescriptionError(''); }
+    if (!generationInstruction.trim()) { setInstructionError('Generation instruction is required'); valid = false; } else { setInstructionError(''); }
+    if (!valid) return;
+    setSaveError('');
+    try {
+      await onSave({
+        name: name.trim(),
+        description: description.trim(),
+        optimizationTarget,
+        generationInstruction: generationInstruction.trim(),
+        extendsWorkflowId,
+        dimensionWeights: weights,
+      });
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed. Please try again.');
+    }
   }
 
   return (
@@ -121,14 +131,15 @@ export function WorkflowBuilderModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-ink mb-1">Description</label>
+            <label className="block text-xs font-bold text-ink mb-1">Description <span className="text-red-500">*</span></label>
             <input
               data-testid="workflow-builder-description"
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={e => { setDescription(e.target.value); if (descriptionError) setDescriptionError(''); }}
               placeholder="One sentence — what does this workflow produce?"
-              className="w-full rounded-xl border border-border px-3 py-2 text-sm text-ink focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none"
+              className={`w-full rounded-xl border px-3 py-2 text-sm text-ink focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none ${descriptionError ? 'border-red-400' : 'border-border'}`}
             />
+            {descriptionError && <p className="text-xs text-red-600 mt-1">{descriptionError}</p>}
           </div>
 
           <div>
@@ -146,15 +157,16 @@ export function WorkflowBuilderModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-ink mb-1">Generation instruction</label>
+            <label className="block text-xs font-bold text-ink mb-1">Generation instruction <span className="text-red-500">*</span></label>
             <textarea
               data-testid="workflow-builder-instruction"
               value={generationInstruction}
-              onChange={e => setGenerationInstruction(e.target.value)}
+              onChange={e => { setGenerationInstruction(e.target.value); if (instructionError) setInstructionError(''); }}
               rows={3}
               placeholder="e.g. Always open with a personal story. Never use lists. End with a vulnerable question."
-              className="w-full resize-y rounded-xl border border-border px-3 py-2 text-sm text-ink focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none"
+              className={`w-full resize-y rounded-xl border px-3 py-2 text-sm text-ink focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none ${instructionError ? 'border-red-400' : 'border-border'}`}
             />
+            {instructionError && <p className="text-xs text-red-600 mt-1">{instructionError}</p>}
           </div>
 
           <div>
@@ -180,6 +192,10 @@ export function WorkflowBuilderModal({
               })}
             </div>
           </div>
+
+          {saveError && (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{saveError}</p>
+          )}
 
           <div className="flex items-center justify-between pt-2 border-t border-border">
             {isEditing && onDelete ? (
