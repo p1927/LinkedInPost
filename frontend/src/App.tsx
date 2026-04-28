@@ -420,18 +420,19 @@ function App() {
 
   const handleCompleteOnboarding = useCallback(async (spreadsheetId?: string, driveAccessToken?: string) => {
     if (!idToken) return
+    const connectionsHref = (workspaceRouterBasename() ?? '') + WORKSPACE_PATHS.connections
     try {
       if (spreadsheetId && driveAccessToken) {
         await api.connectSpreadsheet(idToken, spreadsheetId, driveAccessToken)
       }
       await api.completeOnboarding(idToken)
       setShowOnboarding(false)
-      window.location.assign(WORKSPACE_PATHS.connections)
+      window.location.assign(connectionsHref)
     } catch (err) {
       console.error('Complete onboarding failed:', err)
       await api.completeOnboarding(idToken).catch(() => {})
       setShowOnboarding(false)
-      window.location.assign(WORKSPACE_PATHS.connections)
+      window.location.assign(connectionsHref)
     }
   }, [idToken, api])
 

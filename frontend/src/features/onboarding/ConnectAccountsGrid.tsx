@@ -83,7 +83,7 @@ export function ConnectAccountsGrid({
                 <div
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-full',
-                    platform.lightBg ? 'border border-gray-200 shadow-sm' : '',
+                    platform.lightBg ? 'border border-gray-200 shadow-sm' : 'text-white',
                   )}
                   style={{ background: platform.background }}
                 >
