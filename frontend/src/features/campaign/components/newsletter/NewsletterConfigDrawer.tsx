@@ -691,6 +691,5 @@ export function NewsletterConfigDrawer({
 
         </div>{/* end split body */}
       </div>
-    </div>
   );
 }

@@ -1292,7 +1292,7 @@ export class BackendApi {
       dimensionWeights: Record<string, number>;
     },
   ): Promise<{ id: string }> {
-    return this.post<{ id: string }>('createCustomWorkflow', idToken, { payload });
+    return this.post<{ id: string }>('createCustomWorkflow', idToken, payload);
   }
 
   updateCustomWorkflow(
@@ -1307,11 +1307,11 @@ export class BackendApi {
       dimensionWeights: Record<string, number>;
     },
   ): Promise<{ ok: boolean }> {
-    return this.post<{ ok: boolean }>('updateCustomWorkflow', idToken, { payload: { ...payload, id } });
+    return this.post<{ ok: boolean }>('updateCustomWorkflow', idToken, { ...payload, id });
   }
 
   deleteCustomWorkflow(idToken: string, id: string): Promise<{ ok: boolean }> {
-    return this.post<{ ok: boolean }>('deleteCustomWorkflow', idToken, { payload: { id } });
+    return this.post<{ ok: boolean }>('deleteCustomWorkflow', idToken, { id });
   }
 
   async loadImageGenModelCatalog(idToken: string): Promise<Array<{ provider: string; label: string; models: Array<{ value: string; label: string }> }>> {
