@@ -222,18 +222,9 @@ export function AppSidebar({
         >
           {!collapsed ? (
             <div className="flex min-w-0 items-center gap-2">
-              <div
-                className={clsx(
-                  'flex shrink-0 items-center justify-center bg-[#0A66C2] text-white shadow-sm',
-                  RAIL_TILE,
-                  RAIL_RADIUS,
-                )}
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-5 w-5">
-                  <path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM0 8h5V24H0V8zm7.75 0h4.79v2.19h.07C13.37 8.9 15.18 8 17.22 8 21.98 8 24 11.06 24 15.47V24h-5v-7.59c0-1.81-.03-4.14-2.52-4.14-2.52 0-2.91 1.97-2.91 4V24h-5V8z"/>
-                </svg>
-              </div>
-              <span className="truncate font-heading text-sm font-semibold text-ink dark:text-slate-100">LinkedIn Post</span>
+              <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-xl font-bold tracking-tight text-transparent">
+                Linked
+              </span>
             </div>
           ) : null}
           <Button
