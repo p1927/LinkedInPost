@@ -3,6 +3,8 @@
 // Feed snapshots are stored in news_snapshots with spreadsheet_id = 'feed:<userId>'
 // so they stay isolated from research-scoped snapshots.
 
+import { insertNewsSnapshotAndPrune } from '../persistence/pipeline-db/news';
+
 export const FEED_SPREADSHEET_PREFIX = 'feed:';
 
 export function feedSpreadsheetId(userId: string): string {
@@ -123,4 +125,35 @@ export async function listArticleFeedback(
     result[r.article_url] = r.vote as FeedVote;
   }
   return result;
+}
+
+/**
+ * Persists a fresh fetch result to news_snapshots under the feed namespace.
+ * Keeps the 3 most recent snapshots per topic.
+ */
+export async function saveFeedSnapshot(
+  db: D1Database,
+  userId: string,
+  topic: string,
+  articles: unknown[],
+  meta: {
+    windowStart: string;
+    windowEnd: string;
+    providersSummary?: string;
+    dedupeRemoved?: string;
+  },
+): Promise<void> {
+  const now = new Date().toISOString();
+  await insertNewsSnapshotAndPrune(db, {
+    spreadsheetId: feedSpreadsheetId(userId),
+    topicId: topic,
+    fetchedAt: now,
+    windowStart: meta.windowStart,
+    windowEnd: meta.windowEnd,
+    customQuery: '',
+    providersSummary: meta.providersSummary ?? '',
+    articlesJson: JSON.stringify(articles),
+    dedupeRemoved: meta.dedupeRemoved ?? '',
+    maxPerTopic: 3,
+  });
 }

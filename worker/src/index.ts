@@ -53,7 +53,7 @@ import { getUsageSummary, pruneOldLlmUsageLog, logLlmUsage } from './db/llm-usag
 import { estimateImageGenCostUsd } from './llm/pricing';
 import { listInterestGroups, createInterestGroup, updateInterestGroup, deleteInterestGroup } from './db/interestGroups';
 import { listClips, createClip, updateClip, deleteClip, assignClipToPost, unassignClipFromPost } from './db/clips';
-import { getLatestFeedSnapshot, upsertArticleFeedback, listArticleFeedback, feedSpreadsheetId } from './db/feedArticles';
+import { getLatestFeedSnapshot, upsertArticleFeedback, listArticleFeedback, feedSpreadsheetId, saveFeedSnapshot } from './db/feedArticles';
 import { MAX_IMAGES_PER_POST, parseRowImageUrls, serializeRowImageUrls } from './media/selectedImageUrls';
 import { tryResolveDevGoogleAuthBypassSession } from './plugins/dev-google-auth-bypass';
 import { GOOGLE_MODEL_DEFAULT, resolveAllowedGoogleModelIds, resolveEffectiveGoogleModel } from './google-model-policy';
@@ -1674,11 +1674,48 @@ async function dispatchAction(
     case 'getFeedArticles': {
       const { topics } = payload as { topics?: string[] };
       const topicsArr = Array.isArray(topics) ? topics.filter(Boolean) : [];
-      return getLatestFeedSnapshot(env.PIPELINE_DB, session.userId, topicsArr);
+
+      const cached = await getLatestFeedSnapshot(env.PIPELINE_DB, session.userId, topicsArr);
+
+      // If we have fresh data (< 24h), return it immediately
+      if (!cached.stale && cached.articles.length > 0) {
+        return cached;
+      }
+
+      // Stale or empty — auto-fetch fresh data for the first topic
+      if (topicsArr.length > 0) {
+        try {
+          const primaryTopic = topicsArr[0];
+          const result = await trendingSearch(
+            env,
+            env.PIPELINE_DB,
+            normalizeNewsResearchStored(storedConfig.newsResearch),
+            feedSpreadsheetId(session.userId),
+            session.userId,
+            { topic: primaryTopic, region: 'US', genre: 'general', windowDays: 3 },
+          );
+          if (Array.isArray(result.articles) && result.articles.length > 0) {
+            const now = new Date();
+            await saveFeedSnapshot(env.PIPELINE_DB, session.userId, primaryTopic, result.articles, {
+              windowStart: new Date(now.getTime() - 3 * 86400_000).toISOString(),
+              windowEnd: now.toISOString(),
+            });
+            return {
+              articles: result.articles,
+              fetchedAt: now.toISOString(),
+              stale: false,
+            };
+          }
+        } catch {
+          // Fall through to return cached (possibly empty) result
+        }
+      }
+
+      return cached;
     }
     case 'refreshFeedArticles': {
       const req = payload as { topic: string; region?: string; genre?: string; windowDays?: number };
-      return trendingSearch(
+      const result = await trendingSearch(
         env,
         env.PIPELINE_DB,
         normalizeNewsResearchStored(storedConfig.newsResearch),
@@ -1686,6 +1723,19 @@ async function dispatchAction(
         session.userId,
         { topic: req.topic, region: req.region ?? 'US', genre: req.genre ?? 'general', windowDays: req.windowDays ?? 3 },
       );
+      // Persist to DB so getFeedArticles returns fresh data next load
+      if (Array.isArray(result.articles) && result.articles.length > 0) {
+        const now = new Date();
+        const windowDays = req.windowDays ?? 3;
+        const windowStart = new Date(now.getTime() - windowDays * 86400_000).toISOString();
+        await saveFeedSnapshot(env.PIPELINE_DB, session.userId, req.topic, result.articles, {
+          windowStart,
+          windowEnd: now.toISOString(),
+          providersSummary: '',
+          dedupeRemoved: '',
+        });
+      }
+      return result;
     }
     case 'setArticleFeedback': {
       const { articleUrl, vote } = payload as { articleUrl: string; vote: 'up' | 'down' | null };

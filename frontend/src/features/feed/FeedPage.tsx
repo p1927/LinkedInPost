@@ -13,7 +13,8 @@ import { TrendingGraph } from '../trending/components/TrendingGraph';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useTrendingSearch } from '../trending/hooks/useTrendingSearch';
 import { FeedLeftPanel } from './components/FeedLeftPanel';
-import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2, Bookmark, Layers, ChevronDown, Search, Scissors } from 'lucide-react';
+import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2, Bookmark, Layers, ChevronDown, Search, Scissors, SlidersHorizontal } from 'lucide-react';
+import { useFeedStore } from '@/stores/feedStore';
 import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
@@ -82,6 +83,12 @@ export function FeedPage({
   const [feedArticles, setFeedArticles] = useState<NewsArticle[]>([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Collapsible left panel
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  // Zustand feed store — session-aware persistence
+  const feedStore = useFeedStore();
 
   // Search + filter bar state — client-side filter on already-loaded articles
   const [searchQuery, setSearchQuery] = useState('');
@@ -157,7 +164,10 @@ export function FeedPage({
     setRefreshing(true);
     try {
       const result = await api.refreshFeedArticles(idToken, { topic, region, genre, windowDays });
-      setFeedArticles((result.articles as NewsArticle[]).filter(Boolean));
+      const fresh = (result.articles as NewsArticle[]).filter(Boolean);
+      setFeedArticles(fresh);
+      feedStore.setArticles(fresh, activeGroupId, new Date().toISOString());
+      feedStore.markSessionFetched();
     } catch { /* silent */ } finally {
       setRefreshing(false);
     }
@@ -245,10 +255,25 @@ export function FeedPage({
       setFeedArticles([]);
       return;
     }
+
+    // If Zustand has fresh data for this group and we already fetched in this session, reuse it.
+    if (
+      feedStore.isSessionFetched() &&
+      feedStore.groupId === activeGroupId &&
+      !feedStore.isStale() &&
+      feedStore.articles.length > 0
+    ) {
+      setFeedArticles(feedStore.articles);
+      return;
+    }
+
     setFeedLoading(true);
     api.getFeedArticles(idToken, group.topics)
       .then(result => {
-        setFeedArticles((result.articles as NewsArticle[]).filter(Boolean));
+        const fresh = (result.articles as NewsArticle[]).filter(Boolean);
+        setFeedArticles(fresh);
+        feedStore.setArticles(fresh, activeGroupId, result.fetchedAt ?? new Date().toISOString());
+        feedStore.markSessionFetched();
         setFeedLoading(false);
         if (result.stale) {
           // Background refresh — update articles silently when done
@@ -257,8 +282,11 @@ export function FeedPage({
             region,
             genre,
             windowDays,
-          }).then(fresh => {
-            setFeedArticles((fresh.articles as NewsArticle[]).filter(Boolean));
+          }).then(refreshed => {
+            const refreshedArticles = (refreshed.articles as NewsArticle[]).filter(Boolean);
+            setFeedArticles(refreshedArticles);
+            feedStore.setArticles(refreshedArticles, activeGroupId, new Date().toISOString());
+            feedStore.markSessionFetched();
           }).catch(() => {});
         }
       })
@@ -491,11 +519,29 @@ export function FeedPage({
         {/* ── Main content area ─ flex row: sidebar | feed | right panel ── */}
         <div className="flex-1 min-h-0 overflow-hidden relative flex">
 
-          {/* ── Left sidebar: interest groups nav ──────────────── */}
-          <aside className="w-[220px] shrink-0 border-r border-border/40 bg-white/20 dark:bg-white/[0.03] overflow-y-auto flex flex-col gap-1 p-3">
-            <p className="px-2.5 pt-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-secondary">
-              Sections
-            </p>
+          {/* ── Collapsible left sidebar: interest groups nav ──────────────── */}
+          <AnimatePresence initial={false}>
+            {isPanelOpen && (
+              <motion.aside
+                key="left-panel"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 220, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="shrink-0 border-r border-border/40 bg-white/20 dark:bg-white/[0.03] overflow-y-auto overflow-x-hidden flex flex-col gap-1 p-3"
+                style={{ minWidth: 0 }}
+              >
+            <div className="flex items-center justify-between mb-1">
+              <p className="px-1 text-[10px] font-bold uppercase tracking-[0.1em] text-secondary">Sections</p>
+              <button
+                type="button"
+                onClick={() => setIsPanelOpen(false)}
+                className="flex h-6 w-6 items-center justify-center rounded-lg text-muted hover:bg-white/50 hover:text-ink transition-colors"
+                title="Collapse panel"
+              >
+                <X size={13} />
+              </button>
+            </div>
 
             {/* Loading skeleton */}
             {groupsLoading && (
@@ -794,7 +840,9 @@ export function FeedPage({
                 </div>
               )}
             </div>
-          </aside>
+              </motion.aside>
+            )}
+          </AnimatePresence>
 
           {/* Center: scrollable feed column */}
           <div className="flex-1 min-w-0 overflow-y-auto">
@@ -823,6 +871,20 @@ export function FeedPage({
                   </p>
                   {/* Search + filter pills row */}
                   <div className="flex items-center gap-2.5 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsPanelOpen(v => !v)}
+                      className={[
+                        'h-[38px] px-3 border rounded-[10px] text-[12.5px] font-medium flex items-center gap-1.5 transition-colors',
+                        isPanelOpen
+                          ? 'bg-primary/10 border-primary/30 text-primary'
+                          : 'bg-white/75 border-border text-muted hover:border-primary hover:text-primary',
+                      ].join(' ')}
+                      title={isPanelOpen ? 'Hide filters' : 'Show filters'}
+                    >
+                      <SlidersHorizontal size={13} />
+                      Filters
+                    </button>
                     <div className="relative flex-1 max-w-[520px]">
                       <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
                       <input
