@@ -64,8 +64,8 @@ export function WorkflowBuilderModal({
       setName(workflowToEdit.name);
       setDescription(workflowToEdit.description);
       setOptimizationTarget(workflowToEdit.optimizationTarget);
-      setExtendsWorkflowId((workflowToEdit as CustomWorkflowSummary & { extendsWorkflowId?: string }).extendsWorkflowId ?? 'base');
-      setGenerationInstruction('');
+      setExtendsWorkflowId(workflowToEdit.extendsWorkflowId ?? 'base');
+      setGenerationInstruction(workflowToEdit.generationInstruction ?? '');
       setWeights(DEFAULT_WEIGHTS);
     } else {
       setName(''); setDescription(''); setOptimizationTarget('');

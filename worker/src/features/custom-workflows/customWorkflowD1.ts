@@ -32,6 +32,7 @@ function rowToSummary(row: CustomWorkflowRow): CustomWorkflowSummary {
     name: row.name,
     description: row.description,
     optimizationTarget: row.optimization_target,
+    generationInstruction: row.generation_instruction,
     extendsWorkflowId: row.extends_workflow_id,
     createdAt: row.created_at,
   };
@@ -43,7 +44,7 @@ export async function dbListCustomWorkflows(
 ): Promise<CustomWorkflowSummary[]> {
   const result = await db
     .prepare(
-      `SELECT id, name, description, optimization_target, extends_workflow_id, created_at
+      `SELECT id, name, description, optimization_target, generation_instruction, extends_workflow_id, created_at
        FROM custom_workflows
        WHERE user_id = ? AND is_deleted = 0
        ORDER BY created_at DESC`,

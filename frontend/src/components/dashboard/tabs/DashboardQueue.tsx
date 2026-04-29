@@ -708,9 +708,6 @@ export function DashboardQueue({
               <div className="w-[88px] shrink-0 pr-1" aria-hidden="true">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Status</span>
               </div>
-              <div className="hidden w-[90px] shrink-0 pr-1 sm:block" aria-hidden="true">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Channel</span>
-              </div>
               <div className="min-w-0 flex-1 px-1" aria-hidden="true">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-muted/70">Topic</span>
               </div>

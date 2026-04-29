@@ -84,9 +84,7 @@ import {
   handleDeleteCustomWorkflow,
 } from './features/custom-workflows/customWorkflowActions';
 import type { CreateCustomWorkflowPayload, UpdateCustomWorkflowPayload } from './features/custom-workflows/types';
-import { nodeRegistry } from './engine/registry/NodeRegistry';
-import { workflowRegistry } from './engine/registry/WorkflowRegistry';
-import { lifecycleEventBus } from './engine/events/LifecycleEventBus';
+import { nodeRegistry, workflowRegistry, lifecycleEventBus } from './engine';
 import { buildNodeInsightSummary } from './generation/nodeInsightSummary';
 import type { NodeCompletedEvent } from './engine/types';
 

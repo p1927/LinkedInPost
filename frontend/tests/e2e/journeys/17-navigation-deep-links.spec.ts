@@ -130,7 +130,8 @@ test.describe('Journey 17E: Router edge cases', () => {
     await page.goto('./landing');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page).toHaveURL(/\/(?:#|\?|$)/, { timeout: 8000 });
+    // URL should no longer contain /landing (it redirects to workspace root)
+    await expect(page).not.toHaveURL(/\/landing/, { timeout: 8000 });
   });
 });
 

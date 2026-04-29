@@ -26,6 +26,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+type PanelTab = 'schedule' | 'details';
+
 export function TopicDetailPanel({
   row,
   onClose,
@@ -42,6 +44,7 @@ export function TopicDetailPanel({
   renderFooterActions?: () => React.ReactNode;
 }) {
   const [visible, setVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<PanelTab>('schedule');
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setVisible(true));
@@ -70,39 +73,75 @@ export function TopicDetailPanel({
       >
         {/* Header: status chip + topic title + close */}
         <div
-          className="shrink-0 flex items-start justify-between gap-4 px-6 py-4"
+          className="shrink-0"
           style={{
-            borderBottom: `1px solid ${T.line}`,
             background: 'linear-gradient(180deg, #F3EEFC 0%, #FFFFFF 100%)',
           }}
         >
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            {row && (
-              <div className="self-start">
-                <StatusPill status={deriveStatus(row.status)} size="sm" />
-              </div>
-            )}
-            <h2
-              style={{
-                fontSize: 17,
-                fontWeight: 700,
-                color: T.ink,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.3,
-                margin: 0,
-              }}
-            >
-              {row?.topic ?? 'Topic'}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="mt-0.5 shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Close"
+          <div
+            className="flex items-start justify-between gap-4 px-6 py-4"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              {row && (
+                <div className="self-start">
+                  <StatusPill status={deriveStatus(row.status)} size="sm" />
+                </div>
+              )}
+              <h2
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: T.ink,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.3,
+                  margin: 0,
+                }}
+              >
+                {row?.topic ?? 'Topic'}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-0.5 shrink-0 cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Tab bar */}
+          <div
+            className="flex gap-0 px-6"
+            style={{ borderBottom: `1px solid ${T.line}` }}
+          >
+            {(['schedule', 'details'] as PanelTab[]).map((tab) => {
+              const labels: Record<PanelTab, string> = { schedule: 'Schedule', details: 'Details' };
+              const active = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fontFamily: 'inherit',
+                    border: 'none',
+                    borderBottom: active ? `2px solid #7c3aed` : '2px solid transparent',
+                    background: 'transparent',
+                    color: active ? '#7c3aed' : T.muted,
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                    marginBottom: -1,
+                  }}
+                >
+                  {labels[tab]}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Body */}
@@ -114,7 +153,7 @@ export function TopicDetailPanel({
             gridTemplateColumns: renderPreview ? '1fr 1fr' : '1fr',
           }}
         >
-          {/* LEFT: topic details → schedule → settings */}
+          {/* LEFT: tab content */}
           <div
             className="[&::-webkit-scrollbar]:hidden"
             style={{
@@ -124,28 +163,31 @@ export function TopicDetailPanel({
               borderRight: renderPreview ? `1px solid ${T.line}` : 'none',
             }}
           >
-            {/* Topic Details */}
-            {row && (
-              <div style={{ padding: '20px 24px', borderBottom: `1px solid ${T.line}` }}>
+            {activeTab === 'schedule' && (
+              <>
+                {/* Schedule */}
+                {row && (
+                  <ScheduleSection
+                    row={row}
+                    onSave={onSaveSchedule}
+                    showBottomBorder={Boolean(children)}
+                  />
+                )}
+
+                {/* Settings */}
+                {children && (
+                  <div style={{ padding: '16px 24px 24px' }}>
+                    <SectionLabel>Settings</SectionLabel>
+                    {children}
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === 'details' && row && (
+              <div style={{ padding: '20px 24px' }}>
                 <SectionLabel>Topic Details</SectionLabel>
                 <TopicDetailView row={row} editPath={WORKSPACE_PATHS.addTopic} compact />
-              </div>
-            )}
-
-            {/* Schedule */}
-            {row && (
-              <ScheduleSection
-                row={row}
-                onSave={onSaveSchedule}
-                showBottomBorder={Boolean(children)}
-              />
-            )}
-
-            {/* Settings */}
-            {children && (
-              <div style={{ padding: '16px 24px 24px' }}>
-                <SectionLabel>Settings</SectionLabel>
-                {children}
               </div>
             )}
           </div>

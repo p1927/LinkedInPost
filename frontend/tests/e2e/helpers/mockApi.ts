@@ -254,6 +254,24 @@ export async function setupApiMocks(
   overrides: ApiMockOverrides = {},
 ): Promise<void> {
   // -------------------------------------------------------------------------
+  // Token usage endpoint — GET /api/usage (not a POST action)
+  // -------------------------------------------------------------------------
+  await page.route('**/api/usage', async (route) => {
+    const req = route.request();
+    if (req.method().toUpperCase() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    const tokenOverride = overrides['getTokenUsage'] as Record<string, unknown> | undefined;
+    if (tokenOverride && '__error' in tokenOverride) {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'usage-unavailable' }) });
+      return;
+    }
+    const data = tokenOverride ?? { used: 0, budget: 1000000, resetDate: '2026-05-01' };
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, data }) });
+  });
+
+  // -------------------------------------------------------------------------
   // SSE stream for content generation
   // -------------------------------------------------------------------------
   await page.route('**/api/generate/stream', (route) => {
@@ -750,6 +768,56 @@ export async function setupApiMocks(
       // -----------------------------------------------------------------------
       case 'getNodeRuns':
         data = { nodeRuns: MOCK_NODE_RUNS };
+        break;
+
+      // -----------------------------------------------------------------------
+      // Admin panel (action '__admin__' with __path routing)
+      // -----------------------------------------------------------------------
+      case '__admin__': {
+        const path = String(body.__path ?? '');
+        const method = String(body.__method ?? 'GET');
+
+        if (path === '/api/admin/users' && method === 'GET') {
+          const ov = overrides['getAdminUsers'];
+          if (ov && typeof ov === 'object' && '__error' in (ov as object)) {
+            await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'boom' }) });
+            return;
+          }
+          data = ov ?? [
+            { id: 'user-default', display_name: 'Default User', status: 'active', monthly_token_budget: 1000000, monthly_tokens_used: 0 },
+          ];
+        } else if (path === '/api/admin/waitlist' && method === 'GET') {
+          const ov = overrides['getAdminWaitlist'];
+          if (ov && typeof ov === 'object' && '__error' in (ov as object)) {
+            await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'boom' }) });
+            return;
+          }
+          data = ov ?? [];
+        } else if (path.includes('/approve')) {
+          data = overrides['approveUserAccess'] ?? { ok: true };
+        } else if (path.includes('/suspend')) {
+          data = overrides['suspendUserAccess'] ?? { ok: true };
+        } else if (path.includes('/budget')) {
+          data = { ok: true };
+        } else {
+          data = { ok: true };
+        }
+        break;
+      }
+
+      case 'getUsageSummaryByRange':
+        data = [
+          {
+            date: new Date().toISOString().slice(0, 10),
+            provider: 'google',
+            model: 'google/gemini-2.0-flash',
+            user_id: 'test@example.com',
+            calls: 12,
+            prompt_tokens: 180000,
+            completion_tokens: 35000,
+            estimated_cost_usd: 0.04,
+          },
+        ];
         break;
 
       default:

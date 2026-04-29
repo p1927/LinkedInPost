@@ -10,6 +10,8 @@ interface SheetConnectionCardProps {
   api: BackendApi;
   status: SpreadsheetStatus;
   onConnected: (title: string) => void;
+  /** When true, hides the card header (logo + title + status badge) */
+  headless?: boolean;
 }
 
 function extractSpreadsheetId(url: string): string {
@@ -25,7 +27,7 @@ function GoogleSheetsLogo({ className }: { className?: string }) {
   );
 }
 
-export function SheetConnectionCard({ idToken, api, status, onConnected }: SheetConnectionCardProps) {
+export function SheetConnectionCard({ idToken, api, status, onConnected, headless = false }: SheetConnectionCardProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,36 +140,38 @@ export function SheetConnectionCard({ idToken, api, status, onConnected }: Sheet
   const shouldShowForm = (showConnectForm && !isConnected) || showSwitchForm;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      {/* Header */}
-      <div className="mb-5 flex items-center gap-3">
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0F9D58] text-white"
-          aria-hidden
-        >
-          <GoogleSheetsLogo className="h-6 w-6" />
-        </div>
+    <div className={headless ? undefined : 'rounded-2xl border border-slate-200 bg-white p-6 shadow-sm'}>
+      {/* Header — hidden in headless mode (parent renders its own) */}
+      {!headless && (
+        <div className="mb-5 flex items-center gap-3">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0F9D58] text-white"
+            aria-hidden
+          >
+            <GoogleSheetsLogo className="h-6 w-6" />
+          </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-slate-900">Google Sheets</p>
-          {isConnected && status.title && !showSwitchForm ? (
-            <p className="mt-0.5 truncate text-xs text-slate-500">{status.title}</p>
-          ) : null}
-        </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-900">Google Sheets</p>
+            {isConnected && status.title && !showSwitchForm ? (
+              <p className="mt-0.5 truncate text-xs text-slate-500">{status.title}</p>
+            ) : null}
+          </div>
 
-        <span
-          className={clsx(
-            'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-            isConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500',
-          )}
-        >
-          {isConnected ? (
-            <><CheckCircle2 className="h-3 w-3" aria-hidden /> Connected</>
-          ) : (
-            <><XCircle className="h-3 w-3" aria-hidden /> Not connected</>
-          )}
-        </span>
-      </div>
+          <span
+            className={clsx(
+              'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+              isConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500',
+            )}
+          >
+            {isConnected ? (
+              <><CheckCircle2 className="h-3 w-3" aria-hidden /> Connected</>
+            ) : (
+              <><XCircle className="h-3 w-3" aria-hidden /> Not connected</>
+            )}
+          </span>
+        </div>
+      )}
 
       {/* Connected state: sheet name + actions (no form) */}
       {isConnected && !showSwitchForm && (

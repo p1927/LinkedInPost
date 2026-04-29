@@ -9,6 +9,8 @@ export interface CustomWorkflowSummary {
   name: string;
   description: string;
   optimizationTarget: string;
+  generationInstruction: string;
+  extendsWorkflowId: string;
 }
 
 interface WorkflowCardPickerProps {
