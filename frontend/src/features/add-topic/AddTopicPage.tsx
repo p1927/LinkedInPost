@@ -339,6 +339,21 @@ export function AddTopicPage({
     setDropMenu(null);
   }, [dropMenu, appendToSection]);
 
+  const handleRemoveClip = useCallback((clipId: string) => {
+    setSectionAttachments(prev => {
+      const next = { ...prev };
+      for (const key of Object.keys(next) as SectionId[]) {
+        next[key] = next[key].filter(a => a.clip.id !== clipId);
+      }
+      return next;
+    });
+    setAttachedClipIds(prev => {
+      const next = new Set(prev);
+      next.delete(clipId);
+      return next;
+    });
+  }, []);
+
   return (
     <div className="flex h-full min-h-0 flex-1">
       {/* ── Drop context menu overlay ── */}
@@ -586,8 +601,8 @@ export function AddTopicPage({
         </form>
       </div>
 
-      {/* ── Right: tabbed panel (Trending / Research / Analysis) ── */}
-      <aside className="hidden w-72 shrink-0 flex-col border-l border-white/30 bg-white/5 backdrop-blur-sm lg:flex">
+      {/* ── Right: tabbed panel (Trending / Research / Analysis / Clips) ── */}
+      <aside className="hidden w-[360px] shrink-0 flex-col border-l border-white/30 bg-white/5 backdrop-blur-sm lg:flex">
         <TopicRightPanel
           topic={debouncedTopic}
           idToken={idToken}
@@ -602,6 +617,7 @@ export function AddTopicPage({
           onClipDragStart={(clip) => setDraggingClip(clip)}
           onClipDragEnd={() => setDraggingClip(null)}
           attachedClipIds={attachedClipIds}
+          onRemoveClip={handleRemoveClip}
         />
       </aside>
     </div>

@@ -52,9 +52,9 @@ const iconBtn =
   'h-8 w-8 min-h-[44px] min-w-[44px] shrink-0 cursor-pointer rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none';
 
 export function DashboardQueue({
-  setStatusFilter,
-  statusFilter,
-  queueCounts,
+  setStatusFilter: _setStatusFilter,
+  statusFilter: _statusFilter,
+  queueCounts: _queueCounts,
   filteredRows,
   rows,
   actionLoading,

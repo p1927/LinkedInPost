@@ -531,7 +531,7 @@ export function CampaignPage(props: {
           {([
             { id: 'bulk' as CampaignTab, label: 'Bulk Posts' },
             { id: 'newsletter' as CampaignTab, label: 'Newsletter', icon: <Mail className="h-4 w-4" aria-hidden /> },
-          ] as const).map(({ id, label, icon }) => (
+          ] as { id: CampaignTab; label: string; icon?: React.ReactElement }[]).map(({ id, label, icon }) => (
             <button
               key={id}
               type="button"

@@ -85,11 +85,11 @@ export function FeedPage({
   const [refreshing, setRefreshing] = useState(false);
 
   // Search + filter bar state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [_searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 'all' = no group filter applied on top of sorted articles
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [activeFilter, _setActiveFilter] = useState<string>('all');
 
   // Feedback (thumbs up / down)
   const [feedbackMap, setFeedbackMap] = useState<ArticleFeedbackMap>({});
@@ -413,7 +413,7 @@ export function FeedPage({
   }, [displayArticles, feedSort, feedbackMap]);
 
   // Debounce search query updates
-  function handleSearchQueryChange(value: string) {
+  function _handleSearchQueryChange(value: string) {
     setSearchQuery(value);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {

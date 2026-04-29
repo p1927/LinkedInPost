@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   Sparkles, Loader2, ThumbsUp, ThumbsDown,
-  GripVertical, FileText, CheckCircle2,
+  GripVertical, FileText, CheckCircle2, X as XIcon,
 } from 'lucide-react';
 import { TrendingSidebar } from './TrendingSidebar';
 import type { BackendApi } from '@/services/backendApi';
 import type { TrendingCapabilities } from '../trending/hooks/useTrending';
 import type { Clip } from '../feed/types';
 
-type TabId = 'trending' | 'research' | 'analysis';
+type TabId = 'trending' | 'research' | 'analysis' | 'clips';
 
 export interface TopicRightPanelProps {
   topic: string;
@@ -24,13 +24,14 @@ export interface TopicRightPanelProps {
   onClipDragStart: (clip: Clip) => void;
   onClipDragEnd: () => void;
   attachedClipIds: Set<string>;
+  onRemoveClip?: (clipId: string) => void;
 }
 
 export function TopicRightPanel({
   topic, idToken, api, capabilities,
   pros, cons, generatingInsights, insightsError,
   onGenerateInsights, topicEntered,
-  onClipDragStart, onClipDragEnd, attachedClipIds,
+  onClipDragStart, onClipDragEnd, attachedClipIds, onRemoveClip,
 }: TopicRightPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('trending');
   const [clips, setClips] = useState<Clip[]>([]);
@@ -48,6 +49,7 @@ export function TopicRightPanel({
     { id: 'trending', label: 'Trending' },
     { id: 'research', label: 'Research' },
     { id: 'analysis', label: 'Analysis' },
+    { id: 'clips', label: 'Clips' },
   ];
 
   return (
@@ -74,12 +76,12 @@ export function TopicRightPanel({
       {/* Content */}
       <div className="custom-scrollbar flex-1 overflow-y-auto p-4">
         {activeTab === 'trending' && (
-          <ClipsPanel
-            clips={clips}
-            loading={loadingClips}
-            onDragStart={onClipDragStart}
-            onDragEnd={onClipDragEnd}
-            attachedClipIds={attachedClipIds}
+          <TrendingSidebar
+            topic={topic}
+            idToken={idToken}
+            api={api}
+            capabilities={capabilities}
+            onRefresh={() => {}}
           />
         )}
         {activeTab === 'research' && (
@@ -101,19 +103,30 @@ export function TopicRightPanel({
             canGenerate={topicEntered}
           />
         )}
+        {activeTab === 'clips' && (
+          <ClipsPanel
+            clips={clips}
+            loading={loadingClips}
+            onDragStart={onClipDragStart}
+            onDragEnd={onClipDragEnd}
+            attachedClipIds={attachedClipIds}
+            onRemove={onRemoveClip}
+          />
+        )}
       </div>
     </div>
   );
 }
 
 function ClipsPanel({
-  clips, loading, onDragStart, onDragEnd, attachedClipIds,
+  clips, loading, onDragStart, onDragEnd, attachedClipIds, onRemove,
 }: {
   clips: Clip[];
   loading: boolean;
   onDragStart: (clip: Clip) => void;
   onDragEnd: () => void;
   attachedClipIds: Set<string>;
+  onRemove?: (clipId: string) => void;
 }) {
   if (loading) {
     return (
@@ -153,6 +166,7 @@ function ClipsPanel({
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
           isAttached={attachedClipIds.has(clip.id)}
+          onRemove={onRemove}
         />
       ))}
     </div>
@@ -160,12 +174,13 @@ function ClipsPanel({
 }
 
 function ClipNode({
-  clip, onDragStart, onDragEnd, isAttached,
+  clip, onDragStart, onDragEnd, isAttached, onRemove,
 }: {
   clip: Clip;
   onDragStart: (clip: Clip) => void;
   onDragEnd: () => void;
   isAttached: boolean;
+  onRemove?: (clipId: string) => void;
 }) {
   return (
     <div
@@ -196,12 +211,24 @@ function ClipNode({
           <p className="text-xs font-semibold leading-snug text-ink line-clamp-1">
             {clip.articleTitle || 'Untitled'}
           </p>
-          {isAttached && (
-            <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-          )}
+          <div className="flex shrink-0 items-center gap-1">
+            {isAttached && (
+              <CheckCircle2 className="mt-0.5 h-3 w-3 text-primary" />
+            )}
+            {isAttached && onRemove && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onRemove(clip.id); }}
+                className="mt-0.5 rounded p-0.5 text-muted/40 hover:bg-red-50 hover:text-red-500"
+                title="Remove attachment"
+              >
+                <XIcon className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </div>
         {clip.passageText && (
-          <p className="mt-1 text-[11px] leading-relaxed text-muted/70 line-clamp-2">
+          <p className="mt-1 text-[11px] leading-relaxed text-muted/70">
             "{clip.passageText}"
           </p>
         )}

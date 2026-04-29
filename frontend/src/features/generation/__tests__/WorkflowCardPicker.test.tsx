@@ -32,7 +32,7 @@ describe('WorkflowCardPicker', () => {
     render(
       <WorkflowCardPicker
         {...defaultProps}
-        customWorkflows={[{ id: 'cw_1', name: 'My Voice', description: 'desc', optimizationTarget: 'target' }]}
+        customWorkflows={[{ id: 'cw_1', name: 'My Voice', description: 'desc', optimizationTarget: 'target', generationInstruction: '', extendsWorkflowId: '' }]}
       />
     );
     expect(screen.getByTestId('workflow-card-custom-cw_1')).toBeInTheDocument();
