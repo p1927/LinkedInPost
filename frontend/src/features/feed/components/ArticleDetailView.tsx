@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Scissors, ExternalLink, Copy, Check, Scale, ChevronDown, Sparkles } from 'lucide-react';
+import { ArrowLeft, Scissors, ExternalLink, Copy, Check, Scale, ChevronDown, Sparkles, Info, Link2, BookOpen } from 'lucide-react';
 import type { NewsArticle } from '../../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { ArticleAnalysis } from '../types';
@@ -161,22 +161,24 @@ export function ArticleDetailView({
 
         {/* Hero image */}
         {article.imageUrl && (
-          <div className="w-full overflow-hidden rounded-xl">
+          <div className="relative w-full overflow-hidden rounded-xl">
             <img
               src={article.imageUrl}
               alt={article.title}
               className="w-full max-h-48 object-cover"
             />
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-canvas/30 via-transparent to-transparent pointer-events-none" />
           </div>
         )}
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-ink leading-snug">{article.title}</h1>
+        <h1 className="text-2xl font-bold text-ink leading-tight tracking-tight">{article.title}</h1>
 
         {/* Meta: source + date */}
         <div className="flex items-center gap-2 flex-wrap">
           {article.source && (
-            <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
               {article.source}
             </span>
           )}
@@ -187,16 +189,18 @@ export function ArticleDetailView({
 
         {/* Description */}
         {article.description && (
-          <p className="text-sm text-ink/80 leading-relaxed">{article.description}</p>
+          <p className="text-sm text-ink/80 leading-relaxed border-l-2 border-primary/20 pl-3">
+            {article.description}
+          </p>
         )}
 
         {/* Action row */}
-        <div className="flex items-center gap-3 pt-1">
+        <div className="flex items-center gap-3 pt-1 flex-wrap">
           <a
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 hover:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] transition-all duration-200"
           >
             Read Full Article
             <ExternalLink size={14} />
@@ -206,9 +210,9 @@ export function ArticleDetailView({
             type="button"
             onClick={() => onClip(article)}
             className={[
-              'inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
+              'inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200',
               isClipped
-                ? 'border-primary bg-primary/10 text-primary'
+                ? 'border-primary bg-primary/10 text-primary shadow-sm'
                 : 'border-border/60 text-muted hover:border-primary/50 hover:text-primary',
             ].join(' ')}
             title={isClipped ? 'Clipped' : 'Clip article'}
@@ -221,7 +225,7 @@ export function ArticleDetailView({
             <button
               type="button"
               onClick={onDebate}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-2 text-sm font-semibold text-muted hover:border-amber-400/60 hover:text-amber-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-2 text-sm font-semibold text-muted hover:border-amber-400/60 hover:text-amber-700 active:scale-[0.97] transition-all duration-150"
               title="Find an opposing article"
             >
               <Scale size={14} />
@@ -231,18 +235,21 @@ export function ArticleDetailView({
         </div>
 
         {/* Note */}
-        <p className="text-xs text-muted italic border-t border-border/40 pt-3">
-          Article content is displayed as a preview. Click "Read Full Article" to view the complete article.
-        </p>
+        <div className="flex items-center gap-1.5 border-t border-border/40 pt-3">
+          <Info size={12} className="text-muted/60 shrink-0" />
+          <p className="text-xs text-muted italic">
+            Article content is displayed as a preview. Click "Read Full Article" to view the complete article.
+          </p>
+        </div>
       </div>
 
       {/* ── RIGHT: AI Insight Panel ───────────────────────────── */}
       <div className={asSheet ? 'flex flex-col gap-4' : 'w-80 xl:w-96 shrink-0 overflow-y-auto flex flex-col gap-4'}>
 
         {/* [G] Article Intelligence */}
-        <div className="rounded-2xl border border-blue-200/60 bg-blue-50/60 backdrop-blur-sm p-4">
+        <div className="rounded-2xl border border-blue-200/70 bg-gradient-to-br from-blue-50/90 to-sky-50/50 backdrop-blur-sm p-4">
           <div className="flex items-center gap-1.5 mb-3">
-            <Sparkles size={14} className="text-blue-500" />
+            <Sparkles size={14} className="text-blue-500 shrink-0" />
             <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Summary</h3>
           </div>
 
@@ -269,20 +276,20 @@ export function ArticleDetailView({
 
           {analysis && (
             <div className="space-y-2">
-              <details className="group rounded-lg border border-border/40 bg-white/50 overflow-hidden">
-                <summary className="flex cursor-pointer items-center justify-between px-3 py-2 text-xs font-semibold text-ink hover:bg-violet-50/60 list-none">
+              <details className="group rounded-lg border border-blue-200/50 bg-white/60 overflow-hidden">
+                <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-xs font-semibold text-blue-900/80 hover:bg-blue-50/60 list-none">
                   What is this about?
-                  <ChevronDown size={13} className="text-muted transition-transform group-open:rotate-180" />
+                  <ChevronDown size={13} className="text-blue-400 transition-transform group-open:rotate-180" />
                 </summary>
-                <p className="px-3 pb-3 pt-1 text-xs text-ink/80 leading-relaxed">{analysis.summary}</p>
+                <p className="px-3 pb-3 pt-1 text-[13px] text-blue-900/70 leading-relaxed">{analysis.summary}</p>
               </details>
 
-              <details className="group rounded-lg border border-border/40 bg-white/50 overflow-hidden">
-                <summary className="flex cursor-pointer items-center justify-between px-3 py-2 text-xs font-semibold text-ink hover:bg-violet-50/60 list-none">
+              <details className="group rounded-lg border border-blue-200/50 bg-white/60 overflow-hidden">
+                <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-xs font-semibold text-blue-900/80 hover:bg-blue-50/60 list-none">
                   Why does it matter?
-                  <ChevronDown size={13} className="text-muted transition-transform group-open:rotate-180" />
+                  <ChevronDown size={13} className="text-blue-400 transition-transform group-open:rotate-180" />
                 </summary>
-                <p className="px-3 pb-3 pt-1 text-xs text-ink/80 leading-relaxed">{analysis.whyItMatters}</p>
+                <p className="px-3 pb-3 pt-1 text-[13px] text-blue-900/70 leading-relaxed">{analysis.whyItMatters}</p>
               </details>
 
             </div>
@@ -290,9 +297,10 @@ export function ArticleDetailView({
         </div>
 
         {/* [H] Opposing View */}
-        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/60 backdrop-blur-sm p-4">
+        <div className="relative rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/90 to-orange-50/40 backdrop-blur-sm p-4 overflow-hidden">
+          <span aria-hidden className="absolute top-2 right-3 text-3xl font-serif text-amber-200/80 select-none leading-none pointer-events-none">"</span>
           <div className="flex items-center gap-1.5 mb-3">
-            <Scale size={14} className="text-amber-600" />
+            <Scale size={14} className="text-amber-500 shrink-0" />
             <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Opposing View</h3>
           </div>
 
@@ -304,7 +312,7 @@ export function ArticleDetailView({
           )}
 
           {analysis && (
-            <p className="text-xs text-ink/80 leading-relaxed">{analysis.opposingView}</p>
+            <p className="text-[13px] text-amber-900/75 leading-relaxed">{analysis.opposingView}</p>
           )}
 
           {!analysisLoading && !analysis && analysisError && (
@@ -313,9 +321,9 @@ export function ArticleDetailView({
         </div>
 
         {/* [I] 3 Post Angles */}
-        <div className="rounded-2xl border border-violet-200/60 bg-violet-50/60 backdrop-blur-sm p-4">
+        <div className="rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50/90 to-purple-50/40 backdrop-blur-sm p-4">
           <div className="flex items-center gap-1.5 mb-3">
-            <Sparkles size={14} className="text-violet-500" />
+            <Sparkles size={14} className="text-violet-500 shrink-0" />
             <h3 className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Post Angles</h3>
           </div>
 
@@ -332,9 +340,9 @@ export function ArticleDetailView({
               {analysis.postAngles.map((angle, i) => (
                 <li
                   key={i}
-                  className="group flex items-start gap-2 rounded-lg border border-border/40 bg-white/50 px-3 py-2 text-xs text-ink/80"
+                  className="group flex items-start gap-2 rounded-lg border border-border/40 bg-white/50 px-3 py-2 text-xs text-ink/80 hover:bg-white/60 hover:border-primary/20 transition-colors duration-150"
                 >
-                  <span className="shrink-0 font-bold text-primary">{i + 1}.</span>
+                  <span className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold mt-0.5">{i + 1}</span>
                   <span className="flex-1 leading-relaxed">{angle}</span>
                   <CopyButton text={angle} />
                 </li>
@@ -349,8 +357,8 @@ export function ArticleDetailView({
 
         {/* Tabs J/K/L */}
         <div className="rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-4 flex flex-col gap-3">
-          {/* Tab pills */}
-          <div className="flex gap-1.5">
+          {/* Segmented control tab strip */}
+          <div className="flex gap-0.5 bg-surface-muted/60 rounded-full p-0.5">
             {(
               [
                 { key: 'opinion', label: 'Opinion' },
@@ -364,10 +372,10 @@ export function ArticleDetailView({
                 type="button"
                 onClick={() => setActiveTab(key)}
                 className={[
-                  'flex-1 rounded-full px-2 py-1 text-xs font-semibold transition-colors',
+                  'flex-1 rounded-full px-2 py-1.5 text-xs font-semibold transition-all duration-150',
                   activeTab === key
-                    ? 'bg-primary text-primary-fg'
-                    : 'text-muted hover:text-ink bg-white/40',
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-muted hover:text-ink bg-transparent',
                 ].join(' ')}
               >
                 {label}
@@ -381,20 +389,21 @@ export function ArticleDetailView({
               {analysisLoading && <SkeletonLine />}
               {analysis && (
                 <>
-                  <p className="text-xs text-ink/80 italic leading-relaxed">{analysis.opinionPrompt}</p>
+                  <p className="text-xs text-ink/75 italic leading-relaxed border-l-2 border-primary/25 pl-2.5 py-0.5">{analysis.opinionPrompt}</p>
                   <textarea
                     value={opinionResponse}
                     onChange={(e) => setOpinionResponse(e.target.value)}
                     placeholder="Your take..."
                     rows={3}
-                    className="w-full rounded-lg border border-border/60 bg-white/80 px-3 py-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
+                    className="w-full min-h-[80px] rounded-lg border border-border/60 bg-white/80 px-3 py-2 text-xs text-ink placeholder:text-muted/60 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
                   />
                   <button
                     type="button"
                     onClick={handleClipOpinionResponse}
                     disabled={!opinionResponse.trim()}
-                    className="w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors disabled:opacity-40"
+                    className="w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
                   >
+                    <Scissors size={12} />
                     Clip this response
                   </button>
                 </>
@@ -425,8 +434,11 @@ export function ArticleDetailView({
                     ]
                   ).map(({ role, text }) => (
                     <div key={role} className="rounded-lg border border-border/40 bg-white/50 px-3 py-2">
-                      <p className="text-[10px] font-bold text-primary uppercase tracking-wide mb-1">{role}</p>
-                      <p className="text-xs text-ink/80 leading-relaxed">{text}</p>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{role[0]}</span>
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-wide">{role}</p>
+                      </div>
+                      <p className="text-[12px] text-ink/80 leading-relaxed">{text}</p>
                     </div>
                   ))}
                 </>
@@ -474,11 +486,14 @@ export function ArticleDetailView({
                 </div>
               )}
               {!connectionsLoading && !connectionsError && connections.length === 0 && (
-                <p className="text-xs text-muted leading-relaxed italic">
-                  {rows.length === 0
-                    ? 'Open a draft from the Clips Dock to see connections.'
-                    : 'No drafts seem to relate to this article.'}
-                </p>
+                <div className="flex flex-col items-center gap-1.5 py-4 text-center">
+                  <Link2 size={18} className="text-muted/50" />
+                  <p className="text-xs text-muted leading-relaxed italic">
+                    {rows.length === 0
+                      ? 'Open a draft from the Clips Dock to see connections.'
+                      : 'No drafts seem to relate to this article.'}
+                  </p>
+                </div>
               )}
               {!connectionsLoading && connections.map(conn => (
                 <div
@@ -514,9 +529,9 @@ export function ArticleDetailView({
                 <button
                   type="button"
                   onClick={onDebate}
-                  className="w-full rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Scale size={13} />
+                  <Scale size={14} />
                   Enter Debate Mode
                 </button>
               )}
@@ -529,7 +544,8 @@ export function ArticleDetailView({
           <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Related Reading</h3>
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
             {/* Empty state placeholder card */}
-            <div className="shrink-0 w-36 h-24 rounded-xl border border-border/40 bg-white/50 flex items-center justify-center">
+            <div className="shrink-0 w-36 h-24 rounded-xl border border-dashed border-border bg-white/50 flex flex-col items-center justify-center gap-1.5">
+              <BookOpen size={16} className="text-muted/40" />
               <p className="text-[10px] text-muted text-center px-2 leading-relaxed">Search a topic to see related articles</p>
             </div>
           </div>

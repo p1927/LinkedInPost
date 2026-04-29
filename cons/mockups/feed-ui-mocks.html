@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed UI Mocks — 3 Sections × 3 Variants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────
+   EXACT APP DESIGN TOKENS (from tailwind.config.js + index.css)
+───────────────────────────────────────── */
+:root {
+  --canvas:       #FAF5FF;
+  --surface:      #FFFFFF;
+  --surface-muted:#F3E8FF;
+  --ink:          #1E1B4B;
+  --ink-hover:    #312E81;
+  --muted:        #475569;
+  --border:       #E9D5FF;
+  --border-strong:#DDD6FE;
+  --primary:      #7C3AED;
+  --primary-hover:#6D28D9;
+  --primary-fg:   #FFFFFF;
+  --secondary:    #A78BFA;
+  --cta:          #10B981;
+  --radius-xl:    0.75rem;
+  --radius-2xl:   1rem;
+  --radius-3xl:   1.35rem;
+  --shadow-card:  0 1px 0 rgba(255,255,255,0.65) inset, 0 14px 48px rgba(109,40,217,0.1);
+  --shadow-glass: 0 8px 32px rgba(91,33,182,0.11), 0 2px 12px rgba(124,58,237,0.07);
+  --shadow-lift:  0 20px 56px rgba(91,33,182,0.16), 0 1px 0 rgba(255,255,255,0.5) inset;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  min-height: 100vh;
+  /* exact body bg from index.css */
+  background-color: #ede9fe;
+  background-image:
+    radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124,58,237,0.42), transparent 55%),
+    radial-gradient(ellipse 95% 75% at 100% 5%,  rgba(167,139,250,0.36), transparent 52%),
+    radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192,132,252,0.32), transparent 58%),
+    linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+  background-attachment: fixed;
+  color: var(--ink);
+}
+
+/* ─── Top nav ─── */
+.top-nav {
+  position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center; gap: 0; height: 52px; padding: 0 20px;
+  /* glass-header from index.css */
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(24px);
+}
+.nav-brand { font-size: 12px; font-weight: 700; color: var(--primary); letter-spacing: .06em; text-transform: uppercase; margin-right: 24px; white-space: nowrap; }
+.tab-group { display: flex; gap: 2px; }
+.tab-btn {
+  padding: 5px 14px; border: none; border-radius: 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit; background: transparent; color: var(--muted);
+  transition: all .15s;
+}
+.tab-btn.active { background: var(--primary); color: #fff; }
+.tab-btn:not(.active):hover { background: var(--surface-muted); color: var(--ink); }
+.variant-group { margin-left: auto; display: flex; gap: 2px; align-items: center; }
+.variant-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing:.04em; text-transform:uppercase; margin-right: 8px; }
+.var-btn {
+  padding: 5px 14px; border-radius: 20px; border: 1px solid transparent;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+  background: transparent; color: var(--muted); transition: all .15s;
+}
+.var-btn.active { border-color: var(--border-strong); background: var(--surface-muted); color: var(--ink); }
+.var-btn:not(.active):hover { background: rgba(124,58,237,0.06); color: var(--ink); }
+
+/* ─── Layout ─── */
+.page { display: none; padding: 32px 0 80px; }
+.page.visible { display: block; }
+.variant-block { display: none; }
+.variant-block.active { display: block; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+/* ─── Variant header ─── */
+.variant-header { margin-bottom: 20px; }
+.variant-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; margin-bottom: 10px;
+}
+.vtag-a { background: rgba(124,58,237,.1); color: var(--primary); border: 1px solid rgba(124,58,237,.25); }
+.vtag-b { background: rgba(16,185,129,.1); color: #059669; border: 1px solid rgba(16,185,129,.25); }
+.vtag-c { background: rgba(59,130,246,.1); color: #2563EB; border: 1px solid rgba(59,130,246,.25); }
+.variant-desc { font-size: 12px; color: var(--muted); line-height: 1.6; max-width: 520px; }
+.changes-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.change-pill {
+  padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 600;
+  background: rgba(124,58,237,.08); color: var(--primary); border: 1px solid rgba(124,58,237,.15);
+}
+
+
+/* ══════════════════════════════════════════════════════
+   SECTION 1 — FEED ARTICLE CARD
+   Source: FeedArticleCard.tsx
+   Base classes: rounded-xl border border-slate-200 bg-white shadow-sm p-2.5
+══════════════════════════════════════════════════════ */
+
+.feed-list {
+  display: grid; grid-template-columns: 1fr; gap: 10px;
+  max-width: 520px;  /* matches feed column width in app */
+}
+
+/* ── VARIANT A: Exact current + 21st.dev hover lift ── */
+/* Keep every class identical to FeedArticleCard.tsx, just improve hover */
+.card-base {
+  position: relative;
+  display: flex; gap: 12px;
+  border-radius: var(--radius-xl);          /* rounded-xl */
+  border: 1px solid #E2E8F0;               /* border-slate-200 */
+  background: var(--surface);              /* bg-white */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05); /* shadow-sm */
+  cursor: pointer;
+  padding: 10px;                           /* p-2.5 */
+  transition: box-shadow .2s, border-color .2s, background .2s;
+  overflow: hidden;
+}
+
+/* A: hover — matches "hover:shadow-md hover:border-slate-300 hover:bg-slate-50/50" */
+.card-a-hover:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #CBD5E1;
+  background: rgba(248,250,252,0.5);
+}
+
+/* B: 21st.dev-style violet lift + border glow */
+.card-b-hover:hover {
+  box-shadow: var(--shadow-lift);
+  border-color: rgba(124,58,237,0.3);
+  background: #fff;
+}
+
+/* C: Subtle inset left bar on hover */
+.card-c-hover {
+  border-left: 3px solid transparent;
+  transition: box-shadow .2s, border-color .2s, background .2s;
+}
+.card-c-hover:hover {
+  border-left-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(124,58,237,0.12);
+  background: #fff;
+}
+
+/* Thumbnail — h-16 w-20 shrink-0 overflow-hidden rounded-lg */
+.thumb {
+  width: 80px; height: 64px; flex-shrink: 0;
+  overflow: hidden; border-radius: 0.5rem; /* rounded-lg */
+  background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700; color: var(--primary);
+  position: relative;
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.card-base:hover .thumb img { transform: scale(1.04); }
+
+/* B: slightly larger thumb */
+.thumb-b { width: 96px; height: 72px; border-radius: 0.625rem; }
+
+/* C: reading time badge on thumb */
+.thumb-badge {
+  position: absolute; bottom: 4px; right: 4px;
+  background: rgba(0,0,0,0.55); color: #fff; border-radius: 4px;
+  font-size: 9px; font-weight: 700; padding: 1px 5px; line-height: 1.5;
+  backdrop-filter: blur(4px);
+}
+
+/* Content area — flex-1 flex-col justify-between */
+.card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 0; }
+
+/* Source row — text-[11px] text-slate-400 */
+.card-source { font-size: 11px; color: #94A3B8; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; }
+.source-name { font-weight: 500; color: #64748B; } /* text-slate-500 */
+.source-sep { color: #CBD5E1; }
+.source-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+/* Title — text-sm font-semibold leading-snug text-slate-900 line-clamp-2 */
+.card-title {
+  font-size: 14px; font-weight: 600; line-height: 1.4;
+  color: #0F172A; /* slate-900 */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Description — text-[12px] text-slate-500 line-clamp-1 */
+.card-desc {
+  margin-top: 2px; font-size: 12px; line-height: 1.45; color: #64748B;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Action row — opacity-0 group-hover:opacity-100 */
+.card-actions {
+  margin-top: 4px; display: flex; gap: 4px; align-items: center;
+  opacity: 0; transition: opacity .15s;
+}
+.card-base:hover .card-actions { opacity: 1; }
+
+/* Always visible actions (variant B) */
+.card-actions-visible { opacity: 1 !important; margin-top: 4px; display: flex; gap: 4px; align-items: center; }
+
+/* Icon button — h-6 w-6 rounded-full grid place-items-center */
+.icon-btn {
+  width: 24px; height: 24px; border-radius: 50%; border: none;
+  display: grid; place-items: center; cursor: pointer; font-family: inherit;
+  background: transparent; color: #94A3B8; transition: all .15s;
+  font-size: 11px;
+}
+.icon-btn:hover { background: #F1F5F9; color: #475569; }
+.icon-btn.up-active   { background: #DCFCE7; color: #16A34A; }
+.icon-btn.down-active { background: #FEE2E2; color: #EF4444; }
+.icon-btn.clip-active { background: #EDE9FE; color: var(--primary); }
+.icon-btn.clip:hover  { background: #EDE9FE; color: var(--primary); }
+
+/* Topic pill (variant B/C) */
+.topic-pill {
+  display: inline-flex; padding: 1px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  background: var(--surface-muted); color: var(--primary); margin-top: 3px;
+  align-self: flex-start;
+}
+.topic-pill.ai    { background: #DBEAFE; color: #1D4ED8; }
+.topic-pill.biz   { background: #FEF3C7; color: #92400E; }
+.topic-pill.tech  { background: #D1FAE5; color: #065F46; }
+
+/* Clip btn (variant B always-right) */
+.clip-right {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px;
+  border: 1px solid var(--border); background: transparent;
+  display: grid; place-items: center; cursor: pointer; color: #94A3B8;
+  transition: all .15s; align-self: flex-start; font-size: 12px;
+}
+.clip-right:hover { border-color: rgba(124,58,237,.4); background: #EDE9FE; color: var(--primary); }
+.clip-right.clipped { border-color: rgba(124,58,237,.4); background: #EDE9FE; color: var(--primary); }
+
+/* Unread dot (variant C) */
+.unread-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--primary); flex-shrink: 0; margin-top: 5px;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   SECTION 2 — ARTICLE DETAIL VIEW
+   Source: ArticleDetailView.tsx
+   Container: flex gap-6 flex-1 min-h-0 overflow-hidden
+══════════════════════════════════════════════════════ */
+
+.detail-shell {
+  display: flex; gap: 20px; min-height: 560px;
+  max-width: 900px;
+}
+
+/* Left panel — flex-1 rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 */
+.detail-left {
+  flex: 1; overflow-y: auto;
+  border-radius: var(--radius-2xl);
+  border: 1px solid rgba(233,213,255,0.5);
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* Right panel — w-80 xl:w-96 shrink-0 overflow-y-auto flex flex-col gap-4 */
+.detail-right {
+  width: 320px; flex-shrink: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* Back button — text-sm text-muted hover:text-primary */
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; color: var(--muted); cursor: pointer;
+  background: none; border: none; font-family: inherit;
+  transition: color .15s; width: fit-content;
+}
+.back-btn:hover { color: var(--primary); }
+
+/* Hero image — w-full overflow-hidden rounded-xl */
+.detail-hero {
+  width: 100%; border-radius: 0.75rem; overflow: hidden;
+  background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
+  height: 180px; display: flex; align-items: center; justify-content: center;
+  font-size: 56px; position: relative;
+}
+
+/* Source badge — rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-primary */
+.source-badge {
+  display: inline-flex; padding: 2px 10px; border-radius: 20px;
+  background: #EDE9FE; color: var(--primary);
+  font-size: 12px; font-weight: 600;
+}
+.date-badge { font-size: 12px; color: var(--muted); }
+
+/* Article title — text-2xl font-bold text-ink leading-snug */
+.detail-title { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1.3; letter-spacing: -.01em; }
+
+/* Description — text-sm text-ink/80 leading-relaxed */
+.detail-desc { font-size: 14px; color: rgba(30,27,75,0.8); line-height: 1.65; }
+
+/* Action row */
+.detail-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Primary button — bg-primary text-white rounded-lg px-4 py-2 text-sm font-semibold */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 0.5rem;
+  background: var(--primary); color: #fff; border: none;
+  font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background .15s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+/* Ghost button — border border-border/60 text-muted rounded-lg */
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 0.5rem;
+  border: 1px solid rgba(233,213,255,0.6); background: transparent;
+  color: var(--muted); font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all .15s;
+}
+.btn-ghost:hover { border-color: rgba(124,58,237,.5); color: var(--primary); }
+.btn-ghost.clipped { border-color: rgba(124,58,237,.4); background: rgba(124,58,237,.08); color: var(--primary); }
+
+/* Debate ghost */
+.btn-debate:hover { border-color: rgba(245,158,11,.5); color: #B45309; }
+
+/* Footer note — text-xs text-muted italic border-t */
+.detail-note {
+  font-size: 12px; color: var(--muted); font-style: italic;
+  border-top: 1px solid rgba(233,213,255,0.4); padding-top: 12px;
+}
+
+/* ── AI insight cards ── */
+/* Summary — rounded-2xl border border-blue-200/60 bg-blue-50/60 backdrop-blur-sm p-4 */
+.insight-card {
+  border-radius: var(--radius-2xl); padding: 16px;
+  backdrop-filter: blur(12px);
+}
+.insight-card.summary  { border: 1px solid rgba(147,197,253,0.6); background: rgba(239,246,255,0.6); }
+.insight-card.opposing { border: 1px solid rgba(253,211,77,0.6);  background: rgba(255,251,235,0.6); }
+.insight-card.angles   { border: 1px solid rgba(196,181,253,0.6); background: rgba(245,243,255,0.6); }
+.insight-card.tabs     { border: 1px solid rgba(233,213,255,0.5); background: rgba(255,255,255,0.7); }
+
+.insight-head { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.insight-icon { font-size: 13px; }
+.insight-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+}
+.insight-card.summary  .insight-label { color: #1D4ED8; }
+.insight-card.opposing .insight-label { color: #92400E; }
+.insight-card.angles   .insight-label { color: #5B21B6; }
+
+/* Skeleton lines — h-3 rounded bg-violet-100 animate-pulse */
+.skeleton-line {
+  height: 12px; border-radius: 6px;
+  background: #EDE9FE;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+/* Details accordion — group rounded-lg border border-border/40 bg-white/50 */
+.accord {
+  border-radius: 0.5rem; border: 1px solid rgba(233,213,255,0.4);
+  background: rgba(255,255,255,0.5); overflow: hidden; margin-bottom: 6px;
+}
+.accord-summary {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--ink);
+  cursor: pointer; list-style: none; transition: background .12s;
+}
+.accord-summary:hover { background: rgba(245,243,255,0.6); }
+.accord-body { padding: 4px 12px 12px; font-size: 12px; color: rgba(30,27,75,0.8); line-height: 1.6; }
+
+/* Post angles list item — rounded-lg border border-border/40 bg-white/50 px-3 py-2 */
+.angle-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  border-radius: 0.5rem; border: 1px solid rgba(233,213,255,0.4);
+  background: rgba(255,255,255,0.5); padding: 8px 12px;
+  margin-bottom: 6px; font-size: 12px;
+}
+.angle-num { font-weight: 700; color: var(--primary); flex-shrink: 0; }
+.angle-text { flex: 1; color: rgba(30,27,75,0.8); line-height: 1.5; }
+.copy-btn {
+  flex-shrink: 0; width: 20px; height: 20px; border-radius: 4px;
+  border: none; background: transparent; color: var(--muted);
+  display: grid; place-items: center; cursor: pointer; font-size: 11px;
+  transition: color .12s;
+}
+.copy-btn:hover { color: var(--primary); }
+
+/* Tab pills — flex gap-1.5 */
+.tab-pills { display: flex; gap: 6px; margin-bottom: 12px; }
+.tab-pill {
+  flex: 1; border-radius: 20px; padding: 5px; border: none;
+  font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer;
+  background: rgba(255,255,255,0.4); color: var(--muted); transition: all .15s;
+}
+.tab-pill.active { background: var(--primary); color: #fff; }
+.tab-pill:not(.active):hover { background: var(--surface-muted); color: var(--ink); }
+
+/* Opinion textarea */
+.opinion-prompt { font-size: 12px; color: rgba(30,27,75,0.8); font-style: italic; line-height: 1.6; margin-bottom: 8px; }
+.opinion-area {
+  width: 100%; border-radius: 0.5rem;
+  border: 1px solid rgba(233,213,255,0.6); background: rgba(255,255,255,0.8);
+  padding: 8px 12px; font-size: 12px; color: var(--ink); font-family: inherit;
+  resize: none; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.opinion-area:focus { border-color: rgba(124,58,237,.4); box-shadow: 0 0 0 2px rgba(124,58,237,.1); }
+.clip-response-btn {
+  width: 100%; border-radius: 0.5rem; border: 1px solid rgba(124,58,237,.4);
+  background: rgba(124,58,237,.08); padding: 6px 12px;
+  font-size: 12px; font-weight: 600; color: var(--primary); cursor: pointer; font-family: inherit;
+  transition: background .15s; margin-top: 6px;
+}
+.clip-response-btn:hover { background: rgba(124,58,237,.14); }
+
+/* Perspective card */
+.perspective-card {
+  border-radius: 0.5rem; border: 1px solid rgba(233,213,255,0.4);
+  background: rgba(255,255,255,0.5); padding: 8px 12px; margin-bottom: 6px;
+}
+.perspective-role { font-size: 10px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+.perspective-text { font-size: 12px; color: rgba(30,27,75,0.8); line-height: 1.5; }
+
+/* Related reading */
+.related-card-empty {
+  width: 144px; height: 96px; flex-shrink: 0; border-radius: 0.75rem;
+  border: 1px solid rgba(233,213,255,0.4); background: rgba(255,255,255,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--muted); text-align: center; padding: 8px; line-height: 1.4;
+}
+
+/* ── VARIANT B additions for detail view ── */
+/* Floating source badge overlaid on hero */
+.hero-overlay-badge {
+  position: absolute; bottom: 10px; left: 12px;
+  background: rgba(255,255,255,0.9); backdrop-filter: blur(8px);
+  border-radius: 20px; padding: 3px 10px;
+  font-size: 11px; font-weight: 700; color: var(--primary);
+  border: 1px solid rgba(124,58,237,.2);
+}
+.hero-overlay-date {
+  position: absolute; bottom: 10px; right: 12px;
+  background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
+  border-radius: 6px; padding: 2px 8px;
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.85);
+}
+
+/* ── VARIANT C additions for detail view ── */
+/* Inline mini-progress bar */
+.reading-progress {
+  height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
+  margin-bottom: 4px;
+}
+.reading-progress-bar {
+  height: 100%; width: 35%; background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 2px;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   SECTION 3 — CLIPS DOCK
+   Source: ClipsDock.tsx
+   Trigger: fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary
+   Panel: w-[320px] max-h-[420px] bg-background border rounded-xl shadow-2xl
+══════════════════════════════════════════════════════ */
+
+.dock-scene { display: flex; justify-content: flex-end; align-items: flex-start; gap: 20px; }
+
+/* Floating trigger — h-14 w-14 rounded-full bg-primary shadow-2xl */
+.dock-trigger {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--primary); color: #fff; border: none;
+  display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 10px 40px rgba(124,58,237,.4); font-size: 20px;
+  position: relative; flex-shrink: 0; margin-top: 8px;
+  transition: background .15s, box-shadow .15s;
+}
+.dock-trigger:hover { background: var(--primary-hover); box-shadow: 0 12px 48px rgba(124,58,237,.5); }
+.clip-count-badge {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 20px; height: 20px; border-radius: 10px; padding: 0 4px;
+  background: #fff; color: var(--primary); font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15); border: 1px solid rgba(124,58,237,.2);
+}
+
+/* Panel — w-[320px] max-h-[420px] bg-background border border-border/60 rounded-xl shadow-2xl */
+.dock-panel {
+  width: 320px; max-height: 420px;
+  background: var(--canvas);              /* bg-background = canvas */
+  border: 1px solid rgba(233,213,255,.6);
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 60px rgba(91,33,182,.2), 0 4px 16px rgba(0,0,0,.08);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+
+/* Panel header — px-4 py-3 border-b */
+.dock-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid rgba(233,213,255,.5); flex-shrink: 0;
+}
+.dock-title { font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+.dock-count { font-size: 12px; color: var(--muted); }
+.dock-close {
+  width: 28px; height: 28px; border-radius: 0.5rem; border: none;
+  background: transparent; color: var(--muted); display: grid; place-items: center;
+  cursor: pointer; font-size: 13px; transition: all .15s;
+}
+.dock-close:hover { background: rgba(255,255,255,0.6); color: var(--ink); }
+
+/* Compose CTA — w-full h-8 rounded-lg bg-primary text-white text-xs font-semibold */
+.compose-cta-wrap { padding: 8px 12px; border-bottom: 1px solid rgba(233,213,255,.5); flex-shrink: 0; }
+.compose-cta {
+  width: 100%; height: 32px; border-radius: 0.5rem;
+  background: var(--primary); color: #fff; border: none;
+  font-size: 12px; font-weight: 600; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; transition: background .15s;
+}
+.compose-cta:hover { background: var(--primary-hover); }
+
+/* Clips grid area — flex-1 overflow-y-auto p-3 */
+.clips-grid-area { flex: 1; overflow-y: auto; padding: 12px; min-height: 0; }
+
+/* Grid — grid-cols-3 gap-2 */
+.clips-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+/* Clip cell — aspect-square rounded-lg */
+.clip-cell { position: relative; }
+.clip-thumb {
+  width: 100%; aspect-ratio: 1; border-radius: 0.5rem; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  background: linear-gradient(135deg, rgba(124,58,237,.1), rgba(167,139,250,.2));
+  cursor: grab; transition: all .15s; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.clip-thumb:hover { box-shadow: 0 0 0 2px rgba(124,58,237,.3); }
+.clip-cell-title { margin-top: 4px; font-size: 10px; color: var(--ink); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.clip-cell-passage { font-size: 9px; color: var(--muted); font-style: italic; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Hover action buttons — top-0.5 right-0.5 */
+.clip-cell-actions {
+  position: absolute; top: 2px; right: 2px;
+  display: none; gap: 2px;
+}
+.clip-cell:hover .clip-cell-actions { display: flex; }
+.clip-cell-btn {
+  width: 18px; height: 18px; border-radius: 50%; border: none;
+  display: grid; place-items: center; cursor: pointer; font-size: 9px;
+  transition: all .12s;
+}
+.clip-edit-btn { background: rgba(255,255,255,0.9); color: var(--muted); }
+.clip-edit-btn:hover { color: var(--primary); }
+.clip-del-btn  { background: #EF4444; color: #fff; }
+.clip-del-btn:hover { background: #DC2626; }
+
+/* Drafts header */
+.drafts-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 16px; border-top: 1px solid rgba(233,213,255,.5); flex-shrink: 0;
+}
+.drafts-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+.drafts-count { font-size: 10px; color: var(--muted); }
+
+/* Draft rows — space-y-1 px-2, each: rounded-lg px-2.5 py-2 hover:bg-white/60 */
+.drafts-list { overflow-y: auto; min-height: 0; max-height: 140px; padding: 0 8px 8px; }
+.draft-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  border-radius: 0.5rem; border: 1px solid transparent;
+  padding: 8px 10px; cursor: pointer; transition: all .15s; margin-bottom: 4px;
+}
+.draft-row:hover { background: rgba(255,255,255,0.6); }
+.draft-row.drag-over { background: rgba(124,58,237,.08); border: 1px dashed rgba(124,58,237,.4); }
+.draft-body { flex: 1; min-width: 0; }
+.draft-topic { font-size: 12px; font-weight: 500; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.draft-status-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.draft-status {
+  font-size: 10px; padding: 1px 6px; border-radius: 20px; font-weight: 500;
+}
+.status-draft  { background: #FEF3C7; color: #92400E; }
+.status-queued { background: #D1FAE5; color: #065F46; }
+.draft-date { font-size: 10px; color: var(--muted); }
+
+/* ── VARIANT B: wider panel ── */
+.dock-panel-b { width: 360px; }
+
+/* ── VARIANT C: Hover detail card ── */
+/* HoverDetailCard — absolute bottom-[calc(100%+8px)] w-60 rounded-xl bg-white/98 shadow-2xl */
+.hover-detail {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  z-index: 50; width: 240px;
+  background: rgba(255,255,255,.98); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.6); border-radius: 0.75rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18); overflow: hidden;
+  display: none; pointer-events: none;
+}
+.clip-cell:hover .hover-detail { display: block; }
+.hover-detail-img {
+  width: 100%; aspect-ratio: 16/9; object-fit: cover;
+  background: linear-gradient(135deg, rgba(124,58,237,.2), rgba(167,139,250,.4));
+  display: flex; align-items: center; justify-content: center; font-size: 28px;
+}
+.hover-detail-body { padding: 10px; }
+.hover-detail-title { font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hover-detail-source { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.hover-detail-passage { font-size: 10px; color: rgba(71,85,105,.8); margin-top: 6px; line-height: 1.5; font-style: italic; border-top: 1px solid rgba(233,213,255,.3); padding-top: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
+</head>
+<body>
+
+<!-- ── Top Nav ── -->
+<nav class="top-nav">
+  <span class="nav-brand">Feed Mocks</span>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="showPage('feed')">① Feed Card</button>
+    <button class="tab-btn"        onclick="showPage('detail')">② Article Detail</button>
+    <button class="tab-btn"        onclick="showPage('clips')">③ Clips Dock</button>
+  </div>
+  <div class="variant-group">
+    <span class="variant-label">Variant</span>
+    <button class="var-btn active" onclick="showVariant('a')">A</button>
+    <button class="var-btn"        onclick="showVariant('b')">B</button>
+    <button class="var-btn"        onclick="showVariant('c')">C</button>
+  </div>
+</nav>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 1 — FEED ARTICLE CARD
+══════════════════════════════════════════════ -->
+<div id="p-feed" class="page visible">
+<div class="container">
+
+  <!-- A: Exact current + 21st.dev lift hover -->
+  <div id="feed-a" class="variant-block active">
+    <div class="variant-header">
+      <div class="variant-tag vtag-a">A — Current + 21st lift</div>
+      <p class="variant-desc">Exact same structure as <code>FeedArticleCard.tsx</code>. Only change: hover shadow becomes a violet-tinted lift (shadow-lift token) instead of plain shadow-md. Thumbnail gets subtle scale on hover.</p>
+      <div class="changes-row">
+        <span class="change-pill">hover → shadow-lift + violet border</span>
+        <span class="change-pill">thumb scale(1.04) on hover</span>
+        <span class="change-pill">everything else unchanged</span>
+      </div>
+    </div>
+    <div class="feed-list">
+
+      <div class="card-base card-a-hover">
+        <div class="thumb">
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#312E81,#4C1D95);display:flex;align-items:center;justify-content:center;font-size:22px;color:#C4B5FD">T</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <p class="card-source"><span class="source-name">TechCrunch</span><span class="source-sep"> · </span><span>2h ago</span></p>
+            <p class="card-title">OpenAI announces GPT-5 with real-time reasoning capabilities that surpass human performance</p>
+            <p class="card-desc">The new model shows dramatic improvements in multi-step reasoning and coding tasks.</p>
+          </div>
+          <div class="card-actions">
+            <button class="icon-btn up-active" title="Helpful">▲</button>
+            <button class="icon-btn" title="Not helpful">▼</button>
+            <button class="icon-btn clip-active" title="Clip">✂</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-base card-a-hover">
+        <div class="thumb">
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#064E3B,#065F46);display:flex;align-items:center;justify-content:center;font-size:22px;color:#6EE7B7">F</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <p class="card-source"><span class="source-name">Forbes</span><span class="source-sep"> · </span><span>4h ago</span></p>
+            <p class="card-title">Why the biggest companies are restructuring leadership around AI operations</p>
+            <p class="card-desc">Fortune 500 CEOs are creating new roles focused on AI transformation strategy.</p>
+          </div>
+          <div class="card-actions">
+            <button class="icon-btn" title="Helpful">▲</button>
+            <button class="icon-btn" title="Not helpful">▼</button>
+            <button class="icon-btn clip" title="Clip">✂</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-base card-a-hover">
+        <div class="thumb">
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#7C2D12,#9A3412);display:flex;align-items:center;justify-content:center;font-size:22px;color:#FED7AA">W</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <p class="card-source"><span class="source-name">Wired</span><span class="source-sep"> · </span><span>6h ago</span></p>
+            <p class="card-title">Startup raises $180M to build autonomous AI agents for enterprise workflows</p>
+            <p class="card-desc">Signed letters of intent with three Fortune 100 companies.</p>
+          </div>
+          <div class="card-actions">
+            <button class="icon-btn" title="Helpful">▲</button>
+            <button class="icon-btn down-active" title="Not helpful">▼</button>
+            <button class="icon-btn clip" title="Clip">✂</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- B: Topic pill + always-visible clip + violet hover -->
+  <div id="feed-b" class="variant-block">
+    <div class="variant-header">
+      <div class="variant-tag vtag-b">B — Topic pill + right-side clip</div>
+      <p class="variant-desc">Same base structure. Additions: topic category pill below title (scannable at a glance), clip button always visible on the right so users don't need to hover to access it, slightly wider thumbnail.</p>
+      <div class="changes-row">
+        <span class="change-pill">topic pill (AI / Biz / Tech)</span>
+        <span class="change-pill">clip btn always-right, not hover-only</span>
+        <span class="change-pill">thumb 96×72 instead of 80×64</span>
+        <span class="change-pill">violet-lift hover</span>
+      </div>
+    </div>
+    <div class="feed-list">
+
+      <div class="card-base card-b-hover" style="gap:14px">
+        <div class="thumb thumb-b">
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#312E81,#4C1D95);display:flex;align-items:center;justify-content:center;font-size:22px;color:#C4B5FD">T</div>
+        </div>
+        <div class="card-body" style="justify-content:flex-start;gap:2px">
+          <p class="card-source"><span class="source-name">TechCrunch</span><span class="source-sep"> · </span><span>2h ago</span></p>
+          <p class="card-title">OpenAI announces GPT-5 with real-time reasoning capabilities that surpass human performance</p>
+          <p class="card-desc">Dramatic improvements in multi-step reasoning and coding tasks.</p>
+          <span class="topic-pill ai">AI</span>
+        </div>
+        <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:2px">
+          <button class="clip-right clipped" title="Clipped">✂</button>
+        </div>
+      </div>
+
+      <div class="card-base card-b-hover" style="gap:14px">
+        <div class="thumb thumb-b">
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#064E3B,#065F46);display:flex;align-items:center;justify-content:center;font-size:22px;color:#6EE7B7">F</div>
+        </div>
+        <div class="card-body" style="justify-content:flex-start;gap:2px">
+          <p class="card-source"><span class="source-name">Forbes</span><span class="source-sep"> · </span><span>4h ago</span></p>
+          <p class="card-title">Why the biggest companies are restructuring leadership around AI operations</p>
+          <p class="card-desc">Fortune 500 CEOs creating new roles focused on AI transformation strategy.</p>
+          <span class="topic-pill biz">Business</span>
+        </div>
+        <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:2px">
+          <button class="clip-right" title="Clip">✂</button>
+        </div>
+      </div>
+
+      <div class="card-base card-b-hover" style="gap:14px">
+        <div class="thumb thumb-b">
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#1E3A5F,#1E40AF);display:flex;align-items:center;justify-content:center;font-size:22px;color:#BFDBFE">H</div>
+        </div>
+        <div class="card-body" style="justify-content:flex-start;gap:2px">
+          <p class="card-source"><span class="source-name">HBR</span><span class="source-sep"> · </span><span>8h ago</span></p>
+          <p class="card-title">The hidden cost of moving too fast with AI adoption in your organization</p>
+          <p class="card-desc">Companies rushing AI implementation see 23% higher error rates.</p>
+          <span class="topic-pill">Strategy</span>
+        </div>
+        <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-top:2px">
+          <button class="clip-right" title="Clip">✂</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- C: Reading time badge on thumb + source color dot + unread indicator -->
+  <div id="feed-c" class="variant-block">
+    <div class="variant-header">
+      <div class="variant-tag vtag-c">C — Reading time + source dot + unread</div>
+      <p class="variant-desc">Same base structure. Additions: reading time badge overlaid on thumbnail corner, colored source dot before source name (encodes category), purple unread dot for unseen articles — all without changing layout dimensions.</p>
+      <div class="changes-row">
+        <span class="change-pill">reading time badge on thumb</span>
+        <span class="change-pill">colored source dot</span>
+        <span class="change-pill">unread purple dot left of card</span>
+        <span class="change-pill">left border accent on hover</span>
+      </div>
+    </div>
+    <div class="feed-list">
+
+      <div style="display:flex;gap:6px;align-items:flex-start">
+        <div class="unread-dot"></div>
+        <div class="card-base card-c-hover" style="flex:1">
+          <div class="thumb">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg,#312E81,#4C1D95);display:flex;align-items:center;justify-content:center;font-size:22px;color:#C4B5FD">T</div>
+            <div class="thumb-badge">4 min</div>
+          </div>
+          <div class="card-body">
+            <div>
+              <p class="card-source">
+                <span class="source-dot" style="background:#3B82F6"></span>
+                <span class="source-name">TechCrunch</span><span class="source-sep"> · </span><span>2h ago</span>
+              </p>
+              <p class="card-title">OpenAI announces GPT-5 with real-time reasoning capabilities that surpass human performance</p>
+              <p class="card-desc">Dramatic improvements in multi-step reasoning and coding tasks.</p>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn" title="Helpful">▲</button>
+              <button class="icon-btn" title="Not helpful">▼</button>
+              <button class="icon-btn clip clip-active" title="Clip">✂</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;align-items:flex-start">
+        <div style="width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0;opacity:0"></div>
+        <div class="card-base card-c-hover" style="flex:1;opacity:0.45">
+          <div class="thumb">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg,#064E3B,#065F46);display:flex;align-items:center;justify-content:center;font-size:22px;color:#6EE7B7">F</div>
+            <div class="thumb-badge">6 min</div>
+          </div>
+          <div class="card-body">
+            <div>
+              <p class="card-source">
+                <span class="source-dot" style="background:#F59E0B"></span>
+                <span class="source-name">Forbes</span><span class="source-sep"> · </span><span>4h ago</span>
+              </p>
+              <p class="card-title">Why the biggest companies are restructuring leadership around AI operations</p>
+              <p class="card-desc">This article was marked not helpful.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;align-items:flex-start">
+        <div class="unread-dot"></div>
+        <div class="card-base card-c-hover" style="flex:1">
+          <div class="thumb">
+            <div style="width:100%;height:100%;background:linear-gradient(135deg,#1E3A5F,#1E40AF);display:flex;align-items:center;justify-content:center;font-size:22px;color:#BFDBFE">H</div>
+            <div class="thumb-badge">8 min</div>
+          </div>
+          <div class="card-body">
+            <div>
+              <p class="card-source">
+                <span class="source-dot" style="background:#8B5CF6"></span>
+                <span class="source-name">HBR</span><span class="source-sep"> · </span><span>8h ago</span>
+              </p>
+              <p class="card-title">The hidden cost of moving too fast with AI adoption in your organization</p>
+              <p class="card-desc">Companies rushing AI implementation see 23% higher error rates.</p>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn" title="Helpful">▲</button>
+              <button class="icon-btn" title="Not helpful">▼</button>
+              <button class="icon-btn clip" title="Clip">✂</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 2 — ARTICLE DETAIL VIEW
+══════════════════════════════════════════════ -->
+<div id="p-detail" class="page">
+<div class="container">
+
+  <!-- A: Exact code → HTML, no changes -->
+  <div id="detail-a" class="variant-block active">
+    <div class="variant-header">
+      <div class="variant-tag vtag-a">A — Current structure, exact</div>
+      <p class="variant-desc">Direct HTML translation of <code>ArticleDetailView.tsx</code>. Left: article content. Right: Summary (blue), Opposing View (amber), Post Angles (violet), Tab panel. All glass styles preserved.</p>
+      <div class="changes-row">
+        <span class="change-pill">exact component structure</span>
+        <span class="change-pill">glass-panel classes matched</span>
+        <span class="change-pill">skeletons shown for loading state</span>
+      </div>
+    </div>
+    <div class="detail-shell">
+
+      <!-- LEFT -->
+      <div class="detail-left">
+        <button class="back-btn">← Back to Feed</button>
+        <div class="detail-hero">🤖</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="source-badge">TechCrunch</span>
+          <span class="date-badge">Apr 29, 2026</span>
+        </div>
+        <h1 class="detail-title">OpenAI announces GPT-5 with real-time reasoning capabilities that surpass human performance</h1>
+        <p class="detail-desc">The new model shows dramatic improvements in multi-step reasoning, coding, and scientific analysis tasks — according to OpenAI's internal benchmarks, GPT-5 achieves near-human performance on graduate-level problem sets.</p>
+        <div class="detail-actions">
+          <button class="btn-primary">Read Full Article ↗</button>
+          <button class="btn-ghost clipped">✂ Clipped</button>
+          <button class="btn-ghost btn-debate">⚖ Debate</button>
+        </div>
+        <p class="detail-note">Article content is displayed as a preview. Click "Read Full Article" to view the complete article.</p>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="detail-right">
+        <!-- Summary -->
+        <div class="insight-card summary">
+          <div class="insight-head">
+            <span class="insight-icon">✦</span>
+            <span class="insight-label">Summary</span>
+          </div>
+          <div class="accord">
+            <div class="accord-summary">What is this about? <span style="font-size:11px;color:var(--muted)">▾</span></div>
+            <div class="accord-body">GPT-5 introduces a real-time reasoning layer that allows self-correction before responding. Benchmarks show 94% accuracy on graduate-level science problems.</div>
+          </div>
+          <div class="accord">
+            <div class="accord-summary">Why does it matter? <span style="font-size:11px;color:var(--muted)">▸</span></div>
+          </div>
+        </div>
+
+        <!-- Opposing View -->
+        <div class="insight-card opposing">
+          <div class="insight-head">
+            <span class="insight-icon">⚖</span>
+            <span class="insight-label">Opposing View</span>
+          </div>
+          <p style="font-size:12px;color:rgba(30,27,75,0.8);line-height:1.6">Critics argue these benchmarks are designed by OpenAI and may not reflect real-world utility. Independent researchers have not yet verified the claims.</p>
+        </div>
+
+        <!-- Post Angles -->
+        <div class="insight-card angles">
+          <div class="insight-head">
+            <span class="insight-icon">✦</span>
+            <span class="insight-label">Post Angles</span>
+          </div>
+          <div class="angle-item"><span class="angle-num">1.</span><span class="angle-text">What does "surpassing human performance" actually mean for your work?</span><button class="copy-btn">⎘</button></div>
+          <div class="angle-item"><span class="angle-num">2.</span><span class="angle-text">The AI arms race is accelerating — here's what founders should care about</span><button class="copy-btn">⎘</button></div>
+          <div class="angle-item"><span class="angle-num">3.</span><span class="angle-text">Unpacking the claims: why benchmark design matters more than the headline</span><button class="copy-btn">⎘</button></div>
+        </div>
+
+        <!-- Tab panel -->
+        <div class="insight-card tabs">
+          <div class="tab-pills">
+            <button class="tab-pill active">Opinion</button>
+            <button class="tab-pill">Perspectives</button>
+            <button class="tab-pill">Connection</button>
+            <button class="tab-pill">Debate</button>
+          </div>
+          <p class="opinion-prompt">If AI can now reason better than humans on many tasks — what does that mean for how you position your expertise on LinkedIn?</p>
+          <textarea class="opinion-area" rows="3" placeholder="Your take..."></textarea>
+          <button class="clip-response-btn">Clip this response</button>
+        </div>
+
+        <!-- Related -->
+        <div class="insight-card tabs">
+          <p style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Related Reading</p>
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">
+            <div class="related-card-empty">Search a topic to see related articles</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: Hero badge overlay + source in image -->
+  <div id="detail-b" class="variant-block">
+    <div class="variant-header">
+      <div class="variant-tag vtag-b">B — Hero overlay badges + date in image</div>
+      <p class="variant-desc">Same layout. Differences: source badge and date move inside the hero image (overlaid), giving the article a richer editorial header. The left panel source/date row below is removed since it's now in the image.</p>
+      <div class="changes-row">
+        <span class="change-pill">source pill overlaid on hero (bottom-left)</span>
+        <span class="change-pill">date badge overlaid on hero (bottom-right)</span>
+        <span class="change-pill">source/date row removed below title</span>
+        <span class="change-pill">summary: "what/why" accordions open by default</span>
+      </div>
+    </div>
+    <div class="detail-shell">
+
+      <!-- LEFT -->
+      <div class="detail-left">
+        <button class="back-btn">← Back to Feed</button>
+        <div class="detail-hero">
+          🤖
+          <span class="hero-overlay-badge">TechCrunch</span>
+          <span class="hero-overlay-date">Apr 29, 2026</span>
+        </div>
+        <h1 class="detail-title">OpenAI announces GPT-5 with real-time reasoning capabilities that surpass human performance</h1>
+        <p class="detail-desc">The new model shows dramatic improvements in multi-step reasoning, coding, and scientific analysis tasks — according to OpenAI's internal benchmarks, GPT-5 achieves near-human performance on graduate-level problem sets.</p>
+        <div class="detail-actions">
+          <button class="btn-primary">Read Full Article ↗</button>
+          <button class="btn-ghost clipped">✂ Clipped</button>
+          <button class="btn-ghost btn-debate">⚖ Debate</button>
+        </div>
+        <p class="detail-note">Article content is displayed as a preview. Click "Read Full Article" to view the complete article.</p>
+      </div>
+
+      <!-- RIGHT — same panels, accordions open -->
+      <div class="detail-right">
+        <div class="insight-card summary">
+          <div class="insight-head"><span class="insight-icon">✦</span><span class="insight-label">Summary</span></div>
+          <div class="accord">
+            <div class="accord-summary">What is this about? <span style="font-size:11px;color:var(--muted)">▾</span></div>
+            <div class="accord-body">GPT-5 introduces a real-time reasoning layer. Benchmarks: 94% accuracy on graduate-level science. 2× improvement in coding tasks.</div>
+          </div>
+          <div class="accord">
+            <div class="accord-summary">Why does it matter? <span style="font-size:11px;color:var(--muted)">▾</span></div>
+            <div class="accord-body">Self-correcting AI output fundamentally changes reliability in production environments — a key concern for enterprise adoption.</div>
+          </div>
+        </div>
+        <div class="insight-card opposing">
+          <div class="insight-head"><span class="insight-icon">⚖</span><span class="insight-label">Opposing View</span></div>
+          <p style="font-size:12px;color:rgba(30,27,75,0.8);line-height:1.6">Critics argue benchmarks are OpenAI-designed and may not reflect real-world utility. Independent verification pending.</p>
+        </div>
+        <div class="insight-card angles">
+          <div class="insight-head"><span class="insight-icon">✦</span><span class="insight-label">Post Angles</span></div>
+          <div class="angle-item"><span class="angle-num">1.</span><span class="angle-text">What does "surpassing human performance" actually mean for your work?</span><button class="copy-btn">⎘</button></div>
+          <div class="angle-item"><span class="angle-num">2.</span><span class="angle-text">The AI arms race is accelerating — here's what founders should care about</span><button class="copy-btn">⎘</button></div>
+          <div class="angle-item"><span class="angle-num">3.</span><span class="angle-text">Unpacking the claims: why benchmark design matters more than the headline</span><button class="copy-btn">⎘</button></div>
+        </div>
+        <div class="insight-card tabs">
+          <div class="tab-pills">
+            <button class="tab-pill active">Opinion</button>
+            <button class="tab-pill">Perspectives</button>
+            <button class="tab-pill">Connection</button>
+            <button class="tab-pill">Debate</button>
+          </div>
+          <p class="opinion-prompt">If AI can now reason better than humans on many tasks — what does that mean for how you position your expertise?</p>
+          <textarea class="opinion-area" rows="3" placeholder="Your take..."></textarea>
+          <button class="clip-response-btn">Clip this response</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: reading progress bar + perspectives open -->
+  <div id="detail-c" class="variant-block">
+    <div class="variant-header">
+      <div class="variant-tag vtag-c">C — Reading progress + Perspectives default</div>
+      <p class="variant-desc">Same layout. Differences: thin reading-progress bar at top of left panel (shows article scroll %). Right panel opens on "Perspectives" tab by default — shows the 3-role flip (Founder/Expert/Beginner) immediately without requiring a tab click.</p>
+      <div class="changes-row">
+        <span class="change-pill">reading progress bar (top of left panel)</span>
+        <span class="change-pill">Perspectives tab active by default</span>
+        <span class="change-pill">role cards shown immediately</span>
+        <span class="change-pill">all glass styles unchanged</span>
+      </div>
+    </div>
+    <div class="detail-shell">
+
+      <!-- LEFT -->
+      <div class="detail-left" style="padding-top:8px">
+        <div class="reading-progress"><div class="reading-progress-bar"></div></div>
+        <button class="back-btn" style="margin-top:4px">← Back to Feed</button>
+        <div class="detail-hero">🤖</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="source-badge">TechCrunch</span>
+          <span class="date-badge">Apr 29, 2026</span>
+        </div>
+        <h1 class="detail-title">OpenAI announces GPT-5 with real-time reasoning capabilities that surpass human performance</h1>
+        <p class="detail-desc">The new model shows dramatic improvements in multi-step reasoning, coding, and scientific analysis tasks — according to OpenAI's internal benchmarks, GPT-5 achieves near-human performance on graduate-level problem sets.</p>
+        <div class="detail-actions">
+          <button class="btn-primary">Read Full Article ↗</button>
+          <button class="btn-ghost clipped">✂ Clipped</button>
+          <button class="btn-ghost btn-debate">⚖ Debate</button>
+        </div>
+        <p class="detail-note">Article content is displayed as a preview. Click "Read Full Article" to view the complete article.</p>
+      </div>
+
+      <!-- RIGHT — Perspectives default -->
+      <div class="detail-right">
+        <div class="insight-card summary">
+          <div class="insight-head"><span class="insight-icon">✦</span><span class="insight-label">Summary</span></div>
+          <div class="accord"><div class="accord-summary">What is this about? <span style="font-size:11px;color:var(--muted)">▾</span></div><div class="accord-body">GPT-5 introduces a real-time reasoning layer. Benchmarks: 94% accuracy on graduate science, 2× coding improvement.</div></div>
+          <div class="accord"><div class="accord-summary">Why does it matter? <span style="font-size:11px;color:var(--muted)">▸</span></div></div>
+        </div>
+        <div class="insight-card opposing">
+          <div class="insight-head"><span class="insight-icon">⚖</span><span class="insight-label">Opposing View</span></div>
+          <p style="font-size:12px;color:rgba(30,27,75,0.8);line-height:1.6">Critics argue benchmarks are OpenAI-designed and not yet independently verified.</p>
+        </div>
+        <div class="insight-card angles">
+          <div class="insight-head"><span class="insight-icon">✦</span><span class="insight-label">Post Angles</span></div>
+          <div class="angle-item"><span class="angle-num">1.</span><span class="angle-text">What does "surpassing human performance" mean for your work?</span><button class="copy-btn">⎘</button></div>
+          <div class="angle-item"><span class="angle-num">2.</span><span class="angle-text">The AI arms race — what founders should care about</span><button class="copy-btn">⎘</button></div>
+          <div class="angle-item"><span class="angle-num">3.</span><span class="angle-text">Why benchmark design matters more than the headline</span><button class="copy-btn">⎘</button></div>
+        </div>
+        <div class="insight-card tabs">
+          <div class="tab-pills">
+            <button class="tab-pill">Opinion</button>
+            <button class="tab-pill active">Perspectives</button>
+            <button class="tab-pill">Connection</button>
+            <button class="tab-pill">Debate</button>
+          </div>
+          <div class="perspective-card"><div class="perspective-role">Founder</div><p class="perspective-text">This signals a platform shift — time to audit every workflow that relies on human verification. Build AI-native processes now before competitors do.</p></div>
+          <div class="perspective-card"><div class="perspective-role">Expert</div><p class="perspective-text">The self-correction mechanism is the real breakthrough, not the benchmark score. Production reliability is what the industry has been missing.</p></div>
+          <div class="perspective-card"><div class="perspective-role">Beginner</div><p class="perspective-text">In plain terms: GPT-5 checks its own work before answering. Like having a really smart assistant that double-checks before sending an email.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 3 — CLIPS DOCK
+══════════════════════════════════════════════ -->
+<div id="p-clips" class="page">
+<div class="container">
+
+  <!-- A: Exact current structure → HTML -->
+  <div id="clips-a" class="variant-block active">
+    <div class="variant-header">
+      <div class="variant-tag vtag-a">A — Current, exact</div>
+      <p class="variant-desc">Direct HTML translation of <code>ClipsDock.tsx</code>. Trigger pill (bottom-right), compose CTA bar, 3-col grid, title below each thumb, draft rows with drag-over state.</p>
+      <div class="changes-row">
+        <span class="change-pill">exact component structure</span>
+        <span class="change-pill">hover detail card shown on first thumb</span>
+        <span class="change-pill">draft-over state on second draft</span>
+      </div>
+    </div>
+    <div class="dock-scene">
+      <div class="dock-panel" style="margin-right:0">
+        <div class="dock-header">
+          <div class="dock-title">Clips <span class="dock-count">(6)</span></div>
+          <button class="dock-close">✕</button>
+        </div>
+        <div class="compose-cta-wrap">
+          <button class="compose-cta">+ Compose post from clips</button>
+        </div>
+        <div class="clips-grid-area">
+          <div class="clips-grid">
+
+            <!-- Clip 1 — hover detail shown -->
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(167,139,250,.3))">🤖</div>
+              <div class="clip-cell-actions">
+                <button class="clip-cell-btn clip-edit-btn">✎</button>
+                <button class="clip-cell-btn clip-del-btn">✕</button>
+              </div>
+              <div class="hover-detail">
+                <div class="hover-detail-img">🤖</div>
+                <div class="hover-detail-body">
+                  <div class="hover-detail-title">OpenAI announces GPT-5 with real-time reasoning capabilities</div>
+                  <div class="hover-detail-source">TechCrunch · 2h ago</div>
+                  <div class="hover-detail-passage">"The model self-corrects before responding, fundamentally changing how we think about AI reliability."</div>
+                </div>
+              </div>
+              <p class="clip-cell-title">OpenAI GPT-5 real-time reasoning</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(52,211,153,.2))">💼</div>
+              <div class="clip-cell-actions">
+                <button class="clip-cell-btn clip-edit-btn">✎</button>
+                <button class="clip-cell-btn clip-del-btn">✕</button>
+              </div>
+              <p class="clip-cell-title">AI leadership restructuring</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(251,191,36,.2))">🚀</div>
+              <div class="clip-cell-actions">
+                <button class="clip-cell-btn clip-edit-btn">✎</button>
+                <button class="clip-cell-btn clip-del-btn">✕</button>
+              </div>
+              <p class="clip-cell-title">$180M autonomous agents</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(96,165,250,.2))">📊</div>
+              <div class="clip-cell-actions">
+                <button class="clip-cell-btn clip-edit-btn">✎</button>
+                <button class="clip-cell-btn clip-del-btn">✕</button>
+              </div>
+              <p class="clip-cell-title">Hidden cost of AI adoption</p>
+              <p class="clip-cell-passage">"Rushing AI implementation leads to 23% higher error rates."</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(236,72,153,.1),rgba(244,114,182,.2))">🏦</div>
+              <div class="clip-cell-actions">
+                <button class="clip-cell-btn clip-edit-btn">✎</button>
+                <button class="clip-cell-btn clip-del-btn">✕</button>
+              </div>
+              <p class="clip-cell-title">Fed rate cut signals</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(167,139,250,.2))">🔬</div>
+              <div class="clip-cell-actions">
+                <button class="clip-cell-btn clip-edit-btn">✎</button>
+                <button class="clip-cell-btn clip-del-btn">✕</button>
+              </div>
+              <p class="clip-cell-title">MIT battery breakthrough</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="drafts-header">
+          <span class="drafts-label">Drafts</span>
+          <span class="drafts-count">(2)</span>
+        </div>
+        <div class="drafts-list">
+          <div class="draft-row">
+            <div class="draft-body">
+              <p class="draft-topic">Why AI is reshaping executive leadership in 2026</p>
+              <div class="draft-status-row">
+                <span class="draft-status status-draft">draft</span>
+                <span class="draft-date">May 2</span>
+              </div>
+            </div>
+          </div>
+          <div class="draft-row drag-over">
+            <div class="draft-body">
+              <p class="draft-topic">The future of autonomous AI agents in enterprise workflows</p>
+              <div class="draft-status-row">
+                <span class="draft-status status-queued">queued</span>
+                <span class="draft-date">May 5</span>
+              </div>
+            </div>
+            <span style="font-size:12px;color:var(--primary);flex-shrink:0">+</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="dock-trigger">
+        ✂
+        <span class="clip-count-badge">6</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- B: wider panel + clip type label (article vs passage) -->
+  <div id="clips-b" class="variant-block">
+    <div class="variant-header">
+      <div class="variant-tag vtag-b">B — Wider panel + clip type labels</div>
+      <p class="variant-desc">Panel widens to 360px. Each grid cell gets a tiny type label below the title — "Article" or "Passage (italic)" — so users can distinguish clip types without hovering. Passage clips get a violet left-border accent.</p>
+      <div class="changes-row">
+        <span class="change-pill">panel 320px → 360px</span>
+        <span class="change-pill">type label: Article / Passage</span>
+        <span class="change-pill">passage clips get violet left-border</span>
+        <span class="change-pill">grid + drafts unchanged</span>
+      </div>
+    </div>
+    <div class="dock-scene">
+      <div class="dock-panel dock-panel-b">
+        <div class="dock-header">
+          <div class="dock-title">Clips <span class="dock-count">(6)</span></div>
+          <button class="dock-close">✕</button>
+        </div>
+        <div class="compose-cta-wrap">
+          <button class="compose-cta">+ Compose post from clips</button>
+        </div>
+        <div class="clips-grid-area">
+          <div class="clips-grid" style="grid-template-columns:repeat(3,1fr)">
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(167,139,250,.3))">🤖</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">OpenAI GPT-5 reasoning</p>
+              <p style="font-size:9px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em">Article</p>
+            </div>
+
+            <!-- Passage clip — violet border -->
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(167,139,250,.4));border:1px solid rgba(124,58,237,.4)">💬</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title" style="font-style:italic;color:var(--primary)">"self-corrects before responding..."</p>
+              <p style="font-size:9px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.05em">Passage</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(52,211,153,.2))">💼</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">AI leadership restructure</p>
+              <p style="font-size:9px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em">Article</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(251,191,36,.2))">🚀</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">$180M autonomous agents</p>
+              <p style="font-size:9px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em">Article</p>
+            </div>
+
+            <!-- Passage -->
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(167,139,250,.4));border:1px solid rgba(124,58,237,.4)">💬</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title" style="font-style:italic;color:var(--primary)">"23% higher error rates..."</p>
+              <p style="font-size:9px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.05em">Passage</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(96,165,250,.2))">📊</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">Hidden cost of AI</p>
+              <p style="font-size:9px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.05em">Article</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="drafts-header">
+          <span class="drafts-label">Drafts</span>
+          <span class="drafts-count">(2)</span>
+        </div>
+        <div class="drafts-list">
+          <div class="draft-row">
+            <div class="draft-body">
+              <p class="draft-topic">Why AI is reshaping executive leadership in 2026</p>
+              <div class="draft-status-row"><span class="draft-status status-draft">draft</span><span class="draft-date">May 2</span></div>
+            </div>
+          </div>
+          <div class="draft-row">
+            <div class="draft-body">
+              <p class="draft-topic">The future of autonomous AI agents in enterprise</p>
+              <div class="draft-status-row"><span class="draft-status status-queued">queued</span><span class="draft-date">May 5</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="dock-trigger">✂<span class="clip-count-badge">6</span></button>
+    </div>
+  </div>
+
+  <!-- C: Hover detail card always shown for first cell -->
+  <div id="clips-c" class="variant-block">
+    <div class="variant-header">
+      <div class="variant-tag vtag-c">C — Rich hover card (HoverDetailCard)</div>
+      <p class="variant-desc">Same grid. The <code>HoverDetailCard</code> component (currently only on hover) is pinned open for the first clip to show what it looks like. The card includes thumbnail, title, source, and passage quote.</p>
+      <div class="changes-row">
+        <span class="change-pill">HoverDetailCard visible (pinned open)</span>
+        <span class="change-pill">shows thumbnail + title + source + passage</span>
+        <span class="change-pill">panel and grid unchanged</span>
+        <span class="change-pill">draft rows unchanged</span>
+      </div>
+    </div>
+    <div class="dock-scene">
+      <div class="dock-panel">
+        <div class="dock-header">
+          <div class="dock-title">Clips <span class="dock-count">(6)</span></div>
+          <button class="dock-close">✕</button>
+        </div>
+        <div class="compose-cta-wrap">
+          <button class="compose-cta">+ Compose post from clips</button>
+        </div>
+        <div class="clips-grid-area">
+          <div class="clips-grid">
+
+            <!-- Clip 1 — hover detail PINNED open for demo -->
+            <div class="clip-cell" style="z-index:10">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(167,139,250,.3))">🤖</div>
+              <!-- pinned hover card -->
+              <div class="hover-detail" style="display:block">
+                <div class="hover-detail-img">🤖</div>
+                <div class="hover-detail-body">
+                  <div class="hover-detail-title">OpenAI announces GPT-5 with real-time reasoning capabilities</div>
+                  <div class="hover-detail-source">TechCrunch · 2h ago</div>
+                  <div class="hover-detail-passage">"The model self-corrects before responding, fundamentally changing how we think about AI reliability in production."</div>
+                </div>
+              </div>
+              <div class="clip-cell-actions" style="display:flex"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">OpenAI GPT-5 reasoning</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(52,211,153,.2))">💼</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">AI leadership restructure</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(251,191,36,.2))">🚀</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">$180M autonomous agents</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(96,165,250,.2))">📊</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">Hidden cost of AI adoption</p>
+              <p class="clip-cell-passage">"Rushing AI leads to 23% higher error rates."</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(236,72,153,.1),rgba(244,114,182,.2))">🏦</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">Fed rate cut signals</p>
+            </div>
+
+            <div class="clip-cell">
+              <div class="clip-thumb" style="background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(167,139,250,.2))">🔬</div>
+              <div class="clip-cell-actions"><button class="clip-cell-btn clip-edit-btn">✎</button><button class="clip-cell-btn clip-del-btn">✕</button></div>
+              <p class="clip-cell-title">MIT battery breakthrough</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="drafts-header">
+          <span class="drafts-label">Drafts</span>
+          <span class="drafts-count">(2)</span>
+        </div>
+        <div class="drafts-list">
+          <div class="draft-row"><div class="draft-body"><p class="draft-topic">Why AI is reshaping executive leadership in 2026</p><div class="draft-status-row"><span class="draft-status status-draft">draft</span><span class="draft-date">May 2</span></div></div></div>
+          <div class="draft-row"><div class="draft-body"><p class="draft-topic">The future of autonomous AI agents in enterprise</p><div class="draft-status-row"><span class="draft-status status-queued">queued</span><span class="draft-date">May 5</span></div></div></div>
+        </div>
+      </div>
+
+      <button class="dock-trigger">✂<span class="clip-count-badge">6</span></button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+  const pages    = ['feed','detail','clips'];
+  const variants = ['a','b','c'];
+  let curPage = 'feed', curVar = 'a';
+
+  function showPage(p) {
+    curPage = p;
+    pages.forEach(x => document.getElementById('p-'+x).classList.toggle('visible', x===p));
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===pages.indexOf(p)));
+    updateVariant();
+  }
+
+  function showVariant(v) {
+    curVar = v;
+    document.querySelectorAll('.var-btn').forEach((b,i) => b.classList.toggle('active', variants[i]===v));
+    updateVariant();
+  }
+
+  function updateVariant() {
+    variants.forEach(v => {
+      const el = document.getElementById(curPage + '-' + v);
+      if (el) el.classList.toggle('active', v === curVar);
+    });
+  }
+</script>
+</body>
+</html>
