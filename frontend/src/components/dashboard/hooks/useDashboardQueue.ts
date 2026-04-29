@@ -796,11 +796,13 @@ export function useDashboardQueue({
       }
       await api.deleteRow(idToken, row);
       clearPendingIfMatchesRow(row);
+      // Remove immediately so the row disappears as soon as the API call completes.
+      setRows((prev) => prev.filter((r) => !isSameTopicId(r, row)));
       const viewingId = viewingTopicRouteId ? normalizeTopicRouteParam(viewingTopicRouteId) : '';
       if (viewingTopicRouteId && encodeTopicRouteId(row) === viewingId) {
         onLeaveTopicRoute?.();
       }
-      await loadData(true);
+      void loadData(true);
     } catch (error) {
       handleFailure(error, 'Failed to delete topic entry. Please try again.');
     } finally {

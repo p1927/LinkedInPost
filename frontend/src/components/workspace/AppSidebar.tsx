@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, Rss, ScrollText, Settings, Wrench, Zap } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, Linkedin, ListOrdered, Megaphone, PlusCircle, PlugZap, Rss, ScrollText, Settings, Wrench, Zap } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
@@ -224,14 +224,14 @@ export function AppSidebar({
             <div className="flex min-w-0 items-center gap-2">
               <div
                 className={clsx(
-                  'flex shrink-0 items-center justify-center bg-primary font-heading text-sm font-semibold text-primary-fg shadow-sm',
+                  'flex shrink-0 items-center justify-center bg-[#0A66C2] text-white shadow-sm',
                   RAIL_TILE,
                   RAIL_RADIUS,
                 )}
               >
-                CB
+                <Linkedin className="h-5 w-5" aria-hidden />
               </div>
-              <span className="truncate font-heading text-sm font-semibold text-ink dark:text-slate-100">Channel Bot</span>
+              <span className="truncate font-heading text-sm font-semibold text-ink dark:text-slate-100">LinkedIn Post</span>
             </div>
           ) : null}
           <Button

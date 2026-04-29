@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { BrowserRouter, Link, useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'
-import { LogOut, Settings, Share2, Sparkles, TableProperties } from 'lucide-react'
+import { Linkedin, LogOut, Settings, Share2, Sparkles, TableProperties } from 'lucide-react'
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts'
 import { HelpOverlay } from './components/HelpOverlay'
 import { googleLogout } from '@react-oauth/google'
@@ -477,10 +477,10 @@ function App() {
                   <header className="glass-header w-full border-b px-4 py-3.5 sm:px-6">
                     <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-sm font-semibold text-primary-fg">
-                          CB
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0A66C2] text-white">
+                          <Linkedin className="h-5 w-5" aria-hidden />
                         </div>
-                        <h1 className="font-heading text-lg font-semibold text-ink">Channel Bot</h1>
+                        <h1 className="font-heading text-lg font-semibold text-ink">LinkedIn Post</h1>
                       </div>
                       <div className="flex items-center gap-2">
                         {idToken ? (

@@ -953,7 +953,9 @@ export function DashboardQueue({
                       aria-label={`Delete topic: ${actionTopic}`}
                       className={iconBtn}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {deletingRowIndex === row.rowIndex
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <Trash2 className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
