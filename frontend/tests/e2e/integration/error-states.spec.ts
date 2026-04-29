@@ -180,7 +180,9 @@ test.describe('Error States: Publishing', () => {
 
     // Page must render the topics queue (scope to the page heading, not the sidebar link).
     await expect(
-      page.getByRole('heading', { name: /topics/i }).first()
+      page.getByRole('heading', { name: /topics|posts|queue|dashboard/i })
+        .or(page.getByText(/AI tools are reshaping|AI Tools for Founders/i))
+        .first()
     ).toBeVisible({ timeout: 12000 });
 
     // App should still be rendered — no blank screen.

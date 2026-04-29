@@ -28,8 +28,8 @@ function TokenBar({ used, budget }: { used: number; budget: number }) {
   const pct = budget > 0 ? Math.min(100, Math.round((used / budget) * 100)) : 0;
   const color = pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-500' : 'bg-primary';
   return (
-    <div className="mt-1 flex items-center gap-2">
-      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
+    <div className="mt-2 flex items-center gap-2.5">
+      <div className="h-1.5 w-32 overflow-hidden rounded-full bg-border">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
       <span className="text-[10px] tabular-nums text-muted">
@@ -89,21 +89,22 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
   const isSaas = deploymentMode === 'saas';
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 space-y-5">
+    <div className="mx-auto max-w-3xl px-4 py-6 space-y-4">
+
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <ShieldCheck className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-ink">Admin Panel</h1>
-            <p className="text-xs text-muted">Manage users and access</p>
+            <h1 className="text-base font-bold text-ink tracking-tight">Admin Panel</h1>
+            <p className="text-xs text-muted mt-0.5">Manage users and access</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-            isSaas ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold ${
+            isSaas ? 'bg-primary/8 text-primary border border-primary/15' : 'bg-amber-100 text-amber-700'
           }`}>
             {isSaas ? 'SaaS' : 'Self-Hosted'}
           </span>
@@ -111,7 +112,7 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-muted transition-colors hover:bg-slate-50 hover:text-ink disabled:opacity-50 cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-white/70 text-muted transition-colors hover:bg-white hover:text-ink disabled:opacity-50 cursor-pointer shadow-sm"
             aria-label="Refresh"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
@@ -121,7 +122,7 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
 
       {/* Loading */}
       {loading && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16 text-center">
           <Loader2 className="h-6 w-6 animate-spin text-primary mb-3" />
           <p className="text-sm text-muted">Loading admin data…</p>
         </div>
@@ -129,9 +130,9 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
 
       {/* Error state */}
       {!loading && error && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
+        <div className="glass-panel rounded-2xl p-5">
           <div className="flex gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-100">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100">
               <AlertTriangle className="h-4 w-4 text-rose-600" />
             </div>
             <div className="min-w-0 flex-1">
@@ -170,31 +171,31 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
         <>
           {/* Waitlist */}
           {waitlist.length > 0 && (
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-                <Clock className="h-4 w-4 text-amber-500" />
+            <section className="glass-panel overflow-hidden rounded-2xl">
+              <div className="flex items-center gap-2.5 border-b border-border/50 px-5 py-3.5">
+                <Clock className="h-4 w-4 text-secondary" />
                 <h2 className="text-sm font-semibold text-ink">Waitlist</h2>
-                <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
                   {waitlist.length}
                 </span>
               </div>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-border/40">
                 {waitlist.map((r) => (
-                  <div key={r.email} className="flex items-center gap-3 px-4 py-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-700">
+                  <div key={r.email} className="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-primary/[0.02]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
                       {initials(r.name || r.email)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">
+                      <p className="truncate text-sm font-semibold text-ink">
                         {r.name ? `${r.name}` : r.email}
                       </p>
-                      <p className="truncate text-xs text-muted">{r.email}</p>
-                      {r.reason && <p className="mt-0.5 text-xs text-muted">{r.reason}</p>}
+                      <p className="truncate text-xs text-muted mt-0.5">{r.email}</p>
+                      {r.reason && <p className="mt-0.5 text-xs text-muted/80 truncate">{r.reason}</p>}
                     </div>
                     <button
                       type="button"
                       onClick={() => void handleApprove(r.email)}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 cursor-pointer"
+                      className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 cursor-pointer shrink-0"
                     >
                       Approve
                     </button>
@@ -205,35 +206,35 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
           )}
 
           {/* Users */}
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-              <Users className="h-4 w-4 text-primary" />
+          <section className="glass-panel overflow-hidden rounded-2xl">
+            <div className="flex items-center gap-2.5 border-b border-border/50 px-5 py-3.5">
+              <Users className="h-4 w-4 text-secondary" />
               <h2 className="text-sm font-semibold text-ink">Users</h2>
-              <span className="ml-auto rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+              <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
                 {users.length}
               </span>
             </div>
             {users.length === 0 ? (
-              <div className="px-4 py-10 text-center">
+              <div className="px-5 py-12 text-center">
                 <p className="text-sm text-muted">No users found.</p>
                 {!isSaas && (
                   <p className="mt-1 text-xs text-muted/70">User management is not available in self-hosted mode.</p>
                 )}
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-border/40">
                 {users.map((u) => (
-                  <div key={u.id} className="flex items-start gap-3 px-4 py-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                  <div key={u.id} className="flex items-start gap-3.5 px-5 py-3.5 transition-colors hover:bg-primary/[0.02]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary mt-0.5">
                       {initials(u.display_name || u.id)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">{u.display_name || u.id}</p>
-                      <p className="text-[10px] text-muted font-mono">{u.id}</p>
+                      <p className="truncate text-sm font-semibold text-ink">{u.display_name || u.id}</p>
+                      <p className="text-[10px] text-muted font-mono mt-0.5">{u.id}</p>
                       <TokenBar used={u.monthly_tokens_used} budget={u.monthly_token_budget} />
                     </div>
-                    <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    <div className="flex shrink-0 items-center gap-2 pt-0.5">
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                         u.status === 'active'
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-slate-100 text-slate-500'
@@ -243,7 +244,7 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
                       <button
                         type="button"
                         onClick={() => void handleBudget(u.id, u.monthly_token_budget)}
-                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                        className="rounded-lg border border-border bg-white/70 px-2.5 py-1.5 text-[10px] font-semibold text-muted hover:bg-white hover:text-ink transition-colors cursor-pointer"
                       >
                         Budget
                       </button>
@@ -251,7 +252,7 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
                         <button
                           type="button"
                           onClick={() => void handleSuspend(u.id)}
-                          className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-600 hover:bg-rose-100 cursor-pointer"
+                          className="rounded-lg border border-rose-200 bg-rose-50/80 px-2.5 py-1.5 text-[10px] font-semibold text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
                         >
                           Suspend
                         </button>
@@ -259,7 +260,7 @@ export default function AdminPanel({ idToken, api: apiProp }: { idToken: string;
                         <button
                           type="button"
                           onClick={() => void handleApprove(u.id)}
-                          className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-100 cursor-pointer"
+                          className="rounded-lg border border-emerald-200 bg-emerald-50/80 px-2.5 py-1.5 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
                         >
                           Activate
                         </button>

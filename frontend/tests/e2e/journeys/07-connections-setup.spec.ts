@@ -20,7 +20,8 @@ async function clickTelegramProvider(page: import('@playwright/test').Page) {
   const telegramBtn = page.getByRole('button', { name: /telegram/i }).first();
   if (await telegramBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
     await telegramBtn.click();
-    await page.waitForTimeout(300);
+    // Wait for the Telegram detail panel (Chat ID input) to render
+    await page.getByPlaceholder(/chat id/i).first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
   }
 }
 

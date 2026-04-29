@@ -452,11 +452,16 @@ test.describe('Journey 14E: Create a Writing Style Card', () => {
       await descInput.fill('Personal, narrative-driven posts with vulnerable insights.');
     }
 
-    // Submit via requestSubmit so React's state is committed before validation runs
-    await page.evaluate(() => {
-      const form = document.querySelector('form:has([data-testid="workflow-builder-name"])') as HTMLFormElement;
-      if (form) form.requestSubmit();
-    });
+    // Click the submit button directly
+    const createBtn = page.getByRole('button', { name: /create workflow/i });
+    if (await createBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await createBtn.click();
+    } else {
+      await page.evaluate(() => {
+        const form = document.querySelector('form:has([data-testid="workflow-builder-name"])') as HTMLFormElement;
+        if (form) form.requestSubmit();
+      });
+    }
     await page.waitForTimeout(1000);
 
     expect.soft(capturedActions).toContain('createCustomWorkflow');

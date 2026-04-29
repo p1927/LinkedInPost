@@ -70,7 +70,7 @@ test.describe('Journey 20A: Workspace tour — every section loads', () => {
 
   test('add-topic page renders form fields', async ({ page }) => {
     await visit(page, '/topics/new');
-    const titleInput = page.getByPlaceholder(/untitled topic/i).first();
+    const titleInput = page.getByPlaceholder(/untitled post/i).first();
     await expect.soft(titleInput).toBeVisible({ timeout: 10000 });
   });
 
