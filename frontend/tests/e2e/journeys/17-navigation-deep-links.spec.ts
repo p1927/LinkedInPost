@@ -127,7 +127,7 @@ test.describe('Journey 17E: Router edge cases', () => {
   });
 
   test('navigating to /landing redirects to /', async ({ page }) => {
-    await page.goto('/landing');
+    await page.goto('./landing');
     await page.waitForLoadState('domcontentloaded');
 
     await expect(page).toHaveURL(/\/(?:#|\?|$)/, { timeout: 8000 });

@@ -2,13 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Connections Page', () => {
   test('should load /connections without errors', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('should show connections page heading', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const heading = page.getByRole('heading', { name: /connections/i }).first();
     await expect(heading).toBeVisible({ timeout: 10000 }).catch(() => {
@@ -17,14 +17,14 @@ test.describe('Connections Page', () => {
   });
 
   test('should show Content Source section', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const section = page.getByText(/content source/i).first();
     await expect(section).toBeVisible({ timeout: 10000 }).catch(() => {});
   });
 
   test('should show Publishing Channels section', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const section = page.getByText(/publishing channels/i).first();
     await expect(section).toBeVisible({ timeout: 10000 }).catch(() => {});
@@ -33,28 +33,28 @@ test.describe('Connections Page', () => {
 
 test.describe('OAuth Connect Flows (LinkedIn, Instagram, Gmail)', () => {
   test('should show LinkedIn connect option', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const linkedInLabel = page.getByText(/linkedin/i).first();
     await expect(linkedInLabel).toBeVisible({ timeout: 10000 }).catch(() => {});
   });
 
   test('should show Instagram connect option', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const instagramLabel = page.getByText(/instagram/i).first();
     await expect(instagramLabel).toBeVisible({ timeout: 10000 }).catch(() => {});
   });
 
   test('should show Gmail connect option', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const gmailLabel = page.getByText(/gmail/i).first();
     await expect(gmailLabel).toBeVisible({ timeout: 10000 }).catch(() => {});
   });
 
   test('Connect buttons are visible for unconnected providers', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const connectButtons = page.getByRole('button', { name: /connect/i });
     // May be 0 if auth required; if present, must be enabled
@@ -69,7 +69,7 @@ test.describe('OAuth Connect Flows (LinkedIn, Instagram, Gmail)', () => {
 // PATH-052: WhatsApp is BROKEN — ConnectionsPage omits it entirely
 test.describe('WhatsApp — PATH-052 (BROKEN)', () => {
   test('WhatsApp option is NOT shown on /connections (known gap)', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
 
     // ConnectionsPage hardcodes SOCIAL_PROVIDERS = [linkedin, instagram, gmail]
@@ -85,7 +85,7 @@ test.describe('WhatsApp — PATH-052 (BROKEN)', () => {
 // PATH-053: Telegram is BROKEN — ConnectionsPage omits it entirely
 test.describe('Telegram — PATH-053 (BROKEN)', () => {
   test('Telegram option is NOT shown on /connections (known gap)', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
 
     // ConnectionsPage has no Telegram section; Telegram setup only in Settings drawer
@@ -98,7 +98,7 @@ test.describe('Telegram — PATH-053 (BROKEN)', () => {
 
 test.describe('Disconnect Flow', () => {
   test('Disconnect buttons shown for connected providers', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
 
     const disconnectButtons = page.getByRole('button', { name: /disconnect/i });
@@ -110,7 +110,7 @@ test.describe('Disconnect Flow', () => {
   });
 
   test('Reconnect buttons shown for providers needing reauth', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
 
     const reauthButton = page.getByRole('button', { name: /reconnect|reauthorize|re-connect/i }).first();
@@ -122,14 +122,14 @@ test.describe('Disconnect Flow', () => {
 
 test.describe('Sheet Connection Card', () => {
   test('Sheet connection section renders', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     const sheetSection = page.getByText(/google sheet|spreadsheet|content source/i).first();
     await expect(sheetSection).toBeVisible({ timeout: 10000 }).catch(() => {});
   });
 
   test('Shows accessible status when sheet is connected', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
     // Look for sheet title display or "connected" indicator
     const statusIndicator = page.locator('[class*="accessible"], [class*="connected"], text=/connected|accessible/i').first();

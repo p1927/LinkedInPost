@@ -389,7 +389,7 @@ export function AddTopicPage({
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="Untitled topic…"
+              placeholder="Untitled post…"
               autoFocus
               className={[
                 'min-w-0 flex-1 bg-transparent font-heading text-3xl font-bold text-ink',

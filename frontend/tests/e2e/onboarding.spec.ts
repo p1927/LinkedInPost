@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Onboarding Flow', () => {
   test('should show onboarding modal for new users', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for onboarding modal or setup flow
@@ -10,7 +10,7 @@ test.describe('Onboarding Flow', () => {
   });
 
   test('should guide through connection setup', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for connection/integration UI
@@ -23,7 +23,7 @@ test.describe('Onboarding Flow', () => {
 
 test.describe('Settings Page', () => {
   test('should display settings page', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     // Settings page should render
@@ -32,7 +32,7 @@ test.describe('Settings Page', () => {
   });
 
   test('should show LLM provider configuration', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for LLM or model settings
@@ -43,7 +43,7 @@ test.describe('Settings Page', () => {
   });
 
   test('should show news research settings', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for news research configuration
@@ -54,7 +54,7 @@ test.describe('Settings Page', () => {
   });
 
   test('should allow social integration management', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for social account connection UI
@@ -67,7 +67,7 @@ test.describe('Settings Page', () => {
 
 test.describe('Connections Page', () => {
   test('should display connections page', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
 
     // Connections page should render
@@ -76,7 +76,7 @@ test.describe('Connections Page', () => {
   });
 
   test('should show integration status', async ({ page }) => {
-    await page.goto('/connections');
+    await page.goto('./connections');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for status indicators
@@ -89,7 +89,7 @@ test.describe('Connections Page', () => {
 
 test.describe('Usage Page', () => {
   test('should display usage statistics', async ({ page }) => {
-    await page.goto('/usage');
+    await page.goto('./usage');
     await page.waitForLoadState('domcontentloaded');
 
     // Usage page should render

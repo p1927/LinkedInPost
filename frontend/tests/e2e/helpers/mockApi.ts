@@ -794,6 +794,11 @@ export async function gotoAuthenticated(
 ): Promise<void> {
   await setupApiMocks(page, overrides);
   await injectFakeToken(page);
-  await page.goto(path);
+  // Convert absolute paths to base-URL-relative so Playwright resolves them
+  // correctly for both local (baseURL='http://localhost:5174') and sub-path
+  // deployments (baseURL='https://host/LinkedInPost/'). A leading '/' would
+  // always resolve against the origin, bypassing the sub-path prefix.
+  const relativePath = path === '/' ? '.' : path.startsWith('/') ? `.${path}` : path;
+  await page.goto(relativePath);
   await page.waitForLoadState('domcontentloaded');
 }

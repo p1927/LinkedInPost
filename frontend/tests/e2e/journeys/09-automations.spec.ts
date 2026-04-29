@@ -68,7 +68,7 @@ test.describe('Journey 09: Automations (Admin Only)', () => {
       }
     });
 
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const errorMsg = page
@@ -97,7 +97,7 @@ test.describe('Journey 09: Automations (Admin Only)', () => {
       });
     });
 
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const instagramBtn = page.getByRole('button', { name: /^instagram$/i });
@@ -146,7 +146,7 @@ test.describe('Journey 09: Automations (Admin Only)', () => {
       }
     });
 
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const addRuleBtn = page.getByRole('button', { name: /add rule|new rule|create rule/i });
@@ -207,7 +207,7 @@ test.describe('Journey 09: Automations (Admin Only)', () => {
       }
     });
 
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     // Wait for the existing rule to appear — RuleEditor shows 'Channel default' not channelId

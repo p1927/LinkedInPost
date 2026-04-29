@@ -4,7 +4,7 @@ import { generateTestCampaign } from './helpers/testData';
 test.describe('Campaign Feature', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to campaign page - assuming authenticated state
-    await page.goto('/campaign');
+    await page.goto('./campaign');
   });
 
   test('should display campaign page layout', async ({ page }) => {
@@ -27,12 +27,12 @@ test.describe('Campaign Feature', () => {
 
   test('should validate campaign schema', async ({ page }) => {
     // Test that invalid data is properly rejected
-    await page.goto('/campaign');
+    await page.goto('./campaign');
     await page.waitForLoadState('domcontentloaded');
   });
 
   test('should display topic list correctly', async ({ page }) => {
-    await page.goto('/campaign');
+    await page.goto('./campaign');
     await page.waitForLoadState('networkidle');
     // Verify topics are displayed in the list
   });
@@ -40,7 +40,7 @@ test.describe('Campaign Feature', () => {
 
 test.describe('Campaign Import', () => {
   test('should accept valid JSON import', async ({ page }) => {
-    await page.goto('/campaign');
+    await page.goto('./campaign');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for import UI elements
@@ -53,20 +53,20 @@ test.describe('Campaign Import', () => {
   });
 
   test('should reject invalid JSON format', async ({ page }) => {
-    await page.goto('/campaign');
+    await page.goto('./campaign');
     await page.waitForLoadState('domcontentloaded');
     // Invalid JSON should show error
   });
 
   test('should show validation errors for malformed data', async ({ page }) => {
-    await page.goto('/campaign');
+    await page.goto('./campaign');
     await page.waitForLoadState('domcontentloaded');
   });
 });
 
 test.describe('Campaign Calendar Integration', () => {
   test('should display calendar view', async ({ page }) => {
-    await page.goto('/campaign');
+    await page.goto('./campaign');
     await page.waitForLoadState('networkidle');
 
     // Calendar should render
@@ -77,7 +77,7 @@ test.describe('Campaign Calendar Integration', () => {
   });
 
   test('should sync topics to calendar events', async ({ page }) => {
-    await page.goto('/campaign');
+    await page.goto('./campaign');
     await page.waitForLoadState('domcontentloaded');
   });
 });

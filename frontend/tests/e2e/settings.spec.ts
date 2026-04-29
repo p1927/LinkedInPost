@@ -2,13 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Settings Page', () => {
   test('should load /settings without errors', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('shows settings content or auth redirect', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     // Either settings content loads or auth gate appears
@@ -23,7 +23,7 @@ test.describe('Settings Page', () => {
 
 test.describe('LLM Provider Config — PATH-078', () => {
   test('settings page shows LLM provider section', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     const llmSection = page.getByText(/llm|model|provider|gemini|grok|openrouter/i).first();
@@ -33,7 +33,7 @@ test.describe('LLM Provider Config — PATH-078', () => {
   });
 
   test('model picker select element is accessible', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     const modelSelect = page.locator('select').first();
@@ -43,7 +43,7 @@ test.describe('LLM Provider Config — PATH-078', () => {
   });
 
   test('primary provider selector is visible for admin', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     const providerLabel = page.getByText(/primary provider|primary model|generation model/i).first();
@@ -53,7 +53,7 @@ test.describe('LLM Provider Config — PATH-078', () => {
   });
 
   test('save button is present in settings', async ({ page }) => {
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     const saveBtn = page.getByRole('button', { name: /save|apply|update/i }).first();
@@ -65,13 +65,13 @@ test.describe('LLM Provider Config — PATH-078', () => {
 
 test.describe('Global Rules — PATH-076', () => {
   test('/rules page loads for admin', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('rules textarea or editor is present', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     const editor = page.locator('textarea, [contenteditable="true"]').first();
@@ -81,7 +81,7 @@ test.describe('Global Rules — PATH-076', () => {
   });
 
   test('global rules page has save button', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     const saveBtn = page.getByRole('button', { name: /save/i }).first();
@@ -91,7 +91,7 @@ test.describe('Global Rules — PATH-076', () => {
   });
 
   test('rules history section accessible to admin', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     const historySection = page.getByText(/history|previous|version/i).first();
@@ -103,7 +103,7 @@ test.describe('Global Rules — PATH-076', () => {
 
 test.describe('Who Am I — PATH-077', () => {
   test('Who Am I profile section is accessible', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     const whoAmITab = page.getByRole('tab', { name: /who am i|profile|author/i }).or(
@@ -124,7 +124,7 @@ test.describe('Who Am I — PATH-077', () => {
 
 test.describe('Tenant Overview (Admin Only) — PATH-079', () => {
   test('tenant overview tab exists for admin section', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     // Admin-only tab; non-admins should not see it
@@ -137,13 +137,13 @@ test.describe('Tenant Overview (Admin Only) — PATH-079', () => {
 
 test.describe('Usage Summary — PATH-080', () => {
   test('/usage page loads', async ({ page }) => {
-    await page.goto('/usage');
+    await page.goto('./usage');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('usage page shows summary data or empty state', async ({ page }) => {
-    await page.goto('/usage');
+    await page.goto('./usage');
     await page.waitForLoadState('domcontentloaded');
 
     const usageContent = page
@@ -156,7 +156,7 @@ test.describe('Usage Summary — PATH-080', () => {
   });
 
   test('date range selector is accessible', async ({ page }) => {
-    await page.goto('/usage');
+    await page.goto('./usage');
     await page.waitForLoadState('domcontentloaded');
 
     const dateRange = page
@@ -171,7 +171,7 @@ test.describe('Usage Summary — PATH-080', () => {
 
 test.describe('Post Templates (Admin Only)', () => {
   test('post templates tab only visible to admin', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     const templatesTab = page.getByRole('tab', { name: /template/i }).or(

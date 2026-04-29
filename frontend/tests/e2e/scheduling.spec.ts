@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Scheduled Publish Feature', () => {
   test('should display calendar view', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for schedule-x calendar component
@@ -13,7 +13,7 @@ test.describe('Scheduled Publish Feature', () => {
   });
 
   test('should have time input for posts when available', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for time input fields - may not be visible without proper context
@@ -24,7 +24,7 @@ test.describe('Scheduled Publish Feature', () => {
   });
 
   test('should display scheduled posts in calendar', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('networkidle');
 
     // Calendar events should be visible if there are scheduled posts
@@ -35,7 +35,7 @@ test.describe('Scheduled Publish Feature', () => {
 
 test.describe('Scheduling Operations', () => {
   test('should allow time selection', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     const timeInput = page.locator('input[type="time"]').first();
@@ -45,12 +45,12 @@ test.describe('Scheduling Operations', () => {
   });
 
   test('should handle timezone considerations', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
   });
 
   test('should show publish queue', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for queue or pending items

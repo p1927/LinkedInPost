@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
-  topics: 'Topics',
+  topics: 'Posts',
   settings: 'Settings',
   rules: 'Rules',
   campaign: 'Campaign',
@@ -16,7 +16,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   enrichment: 'Enrichment',
   trending: 'Trending',
   feed: 'Feed',
-  'add-topic': 'Add Topic',
+  'add-topic': 'New Post',
   automations: 'Automations',
   setup: 'Setup',
   admin: 'Admin',

@@ -12,7 +12,7 @@ import {
   formatQueuePostTime,
   shouldShowDraftedQueueActions,
 } from '../utils';
-import { effectiveChannel, parseTopicDeliveryChannel } from '@/lib/topicEffectivePrefs';
+import { effectiveChannel } from '@/lib/topicEffectivePrefs';
 import { TopicPostPreviewCard } from '../components/TopicPostPreviewCard';
 import { topicRowElementId } from '../../../features/topic-navigation/utils/topicRoute';
 import { type BadgeVariant } from '@/components/ui/badge';
@@ -441,7 +441,7 @@ export function DashboardQueue({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" aria-hidden />
           <input
             type="search"
-            placeholder="Search topics…"
+            placeholder="Search posts…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-9 w-full rounded-xl border border-white/50 bg-white/60 pl-9 pr-3 text-sm text-ink placeholder:text-muted/60 backdrop-blur-sm transition-all focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -641,7 +641,7 @@ export function DashboardQueue({
               </div>
               <p className="text-base font-semibold text-ink">Nothing scheduled on the calendar yet</p>
               <p className="mt-2 text-sm text-muted">
-                Switch to list view and set a date and post time for topics, or relax your status filter.
+                Switch to list view and set a date and post time for posts, or relax your status filter.
               </p>
             </div>
           ) : (
@@ -702,7 +702,7 @@ export function DashboardQueue({
                   checked={allFilteredSelected}
                   onChange={toggleAll}
                   className="size-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  aria-label="Select all topics"
+                  aria-label="Select all posts"
                 />
               </div>
               <div className="w-[88px] shrink-0 pr-1" aria-hidden="true">
@@ -840,7 +840,7 @@ export function DashboardQueue({
                             e.stopPropagation();
                             onOpenTopicReview(row);
                           }}
-                          title="Edit draft — updates this row (published topics get a new sheet copy when edited)"
+                          title="Edit draft — updates this row (published posts get a new sheet copy when edited)"
                           aria-label={`Edit draft: ${actionTopic}`}
                           className={cn(rowActionClass, 'border-primary/25 shadow-sm')}
                         >

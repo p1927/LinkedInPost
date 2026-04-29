@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Editor Feature', () => {
   test('should display editor workspace', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for workspace shell or editor
@@ -13,7 +13,7 @@ test.describe('Editor Feature', () => {
   });
 
   test('should have text input area', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     const textarea = page.locator('textarea').first();
@@ -23,7 +23,7 @@ test.describe('Editor Feature', () => {
   });
 
   test('should support undo/redo operations', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for undo/redo buttons or keyboard shortcuts
@@ -42,7 +42,7 @@ test.describe('Editor Feature', () => {
 
 test.describe('Review Workflow', () => {
   test('should display review workspace', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Check for review panel or workspace
@@ -53,12 +53,12 @@ test.describe('Review Workflow', () => {
   });
 
   test('should show variant comparison', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
   });
 
   test('should handle content approval', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for approve/confirm buttons

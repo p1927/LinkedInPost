@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('News Research Feature', () => {
   test('should display news research panel', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for news research section
@@ -13,7 +13,7 @@ test.describe('News Research Feature', () => {
   });
 
   test('should show date range inputs when available', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Check for datetime-local inputs - may not be visible without auth
@@ -24,7 +24,7 @@ test.describe('News Research Feature', () => {
   });
 
   test('should show search button', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for search functionality
@@ -35,7 +35,7 @@ test.describe('News Research Feature', () => {
   });
 
   test('should handle search errors gracefully', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Try to perform a search - verify error handling exists
@@ -49,7 +49,7 @@ test.describe('News Research Feature', () => {
 
 test.describe('News Research History', () => {
   test('should toggle history panel', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for history toggle
@@ -60,7 +60,7 @@ test.describe('News Research History', () => {
   });
 
   test('should display historical snapshots', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
   });
 });

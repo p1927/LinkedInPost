@@ -1431,7 +1431,7 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
 
         <SettingsSectionCard id="settings-speech-to-text" title="Speech to Text">
           <p className="mb-4 text-xs leading-relaxed text-muted">
-            On-device voice transcription for the New Topic page. Speak into any field — the mic button appears at the top of the page when the model is ready.
+            On-device voice transcription for the New Post page. Speak into any field — the mic button appears at the top of the page when the model is ready.
           </p>
           <SpeechToTextSettingsSection />
         </SettingsSectionCard>

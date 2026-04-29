@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-import { PROXY_PORT } from './tests/e2e/helpers/deployment-proxy';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -12,12 +11,10 @@ export default defineConfig({
     ['html', { outputFolder: 'playwright-report-deployment', open: 'never' }],
   ],
   outputDir: './test-results-deployment',
-  globalSetup: './tests/e2e/helpers/deployment-global-setup.ts',
-  globalTeardown: './tests/e2e/helpers/deployment-global-teardown.ts',
   use: {
-    // The local proxy forwards /* → https://p1927.github.io/LinkedInPost/*
-    // so all page.goto('/topics') calls hit the correct deployed path.
-    baseURL: `http://localhost:${PROXY_PORT}`,
+    // Trailing slash is required so that relative paths like './topics' resolve
+    // to https://p1927.github.io/LinkedInPost/topics (not the parent directory).
+    baseURL: 'https://p1927.github.io/LinkedInPost/',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

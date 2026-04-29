@@ -921,7 +921,7 @@ export function Dashboard({
           path={WORKSPACE_ROUTE_PATHS.admin}
           element={
             session.isAdmin ? (
-              <AdminPanel idToken={idToken} />
+              <AdminPanel idToken={idToken} api={api} />
             ) : (
               <Navigate to={WORKSPACE_PATHS.topics} replace />
             )

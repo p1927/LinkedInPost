@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Landing Page', () => {
   test('should load the landing page without errors', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('.');
 
     // Check page loads (either marketing content or error state)
     await expect(page.locator('body')).toBeVisible();
@@ -24,13 +24,13 @@ test.describe('Landing Page', () => {
   });
 
   test('should show terms of service page', async ({ page }) => {
-    await page.goto('/terms');
+    await page.goto('./terms');
     // Check page loads
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('should show privacy policy page', async ({ page }) => {
-    await page.goto('/privacy-policy');
+    await page.goto('./privacy-policy');
     // Check page loads
     await expect(page.locator('body')).toBeVisible();
   });

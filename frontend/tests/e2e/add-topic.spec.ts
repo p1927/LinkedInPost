@@ -114,7 +114,7 @@ async function injectFakeToken(page: Page) {
 async function gotoAddTopicAuthenticated(page: Page, overrides: Record<string, unknown> = {}) {
   await mockBackendApi(page, overrides);
   await injectFakeToken(page);
-  await page.goto('/topics/new');
+  await page.goto('./topics/new');
   await page.waitForLoadState('domcontentloaded');
 }
 
@@ -124,7 +124,7 @@ async function gotoAddTopicAuthenticated(page: Page, overrides: Record<string, u
 
 test.describe('Add Topic — unauthenticated', () => {
   test('redirects to login page when not authenticated', async ({ page }) => {
-    await page.goto('/topics/new');
+    await page.goto('./topics/new');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(500);
 
@@ -149,7 +149,7 @@ test.describe('Add Topic — unauthenticated', () => {
     const jsErrors: string[] = [];
     page.on('pageerror', (err) => jsErrors.push(err.message));
 
-    await page.goto('/topics/new');
+    await page.goto('./topics/new');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(500);
 

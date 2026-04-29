@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Content Review Feature', () => {
   test('should display content review workspace', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for review-related sections
@@ -13,11 +13,11 @@ test.describe('Content Review Feature', () => {
   });
 
   test('should show review settings when feature is enabled', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Navigate to settings if needed
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for content review settings
@@ -28,14 +28,14 @@ test.describe('Content Review Feature', () => {
   });
 
   test('should display review workflow', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
   });
 });
 
 test.describe('Content Flow', () => {
   test('should display pattern-based content selector', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for pattern or flow related UI
@@ -46,14 +46,14 @@ test.describe('Content Flow', () => {
   });
 
   test('should allow template selection', async ({ page }) => {
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
   });
 });
 
 test.describe('Generation Rules', () => {
   test('should display rules panel', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     // Check for rules page elements
@@ -64,7 +64,7 @@ test.describe('Generation Rules', () => {
   });
 
   test('should allow editing global rules', async ({ page }) => {
-    await page.goto('/rules');
+    await page.goto('./rules');
     await page.waitForLoadState('domcontentloaded');
 
     // Look for editable area

@@ -14,7 +14,7 @@ import { TrendingGraph } from '../trending/components/TrendingGraph';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useTrendingSearch } from '../trending/hooks/useTrendingSearch';
 import { FeedLeftPanel } from './components/FeedLeftPanel';
-import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2, Search } from 'lucide-react';
+import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2 } from 'lucide-react';
 import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
@@ -421,19 +421,6 @@ export function FeedPage({
     }, 200);
   }
 
-  // Top trending articles for mobile carousel (same source as FeedCuratedPanel's top10Articles)
-  const trendingCarouselArticles = useMemo(() => {
-    const base = trendingSearch.data?.articles?.length
-      ? trendingSearch.data.articles
-      : (data?.news ?? []);
-    return [...base]
-      .sort((a, b) => {
-        try { return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(); }
-        catch { return 0; }
-      })
-      .slice(0, 10);
-  }, [trendingSearch.data, data]);
-
   // Articles after applying client-side search + group filter on top of sorted feed
   const filteredDisplayArticles = useMemo(() => {
     let result = sortedDisplayArticles;
@@ -482,7 +469,7 @@ export function FeedPage({
       steps={[
         { title: 'Your discovery feed', body: 'Articles are pulled from your connected sources and interest groups. Switch between Latest, Trending, and For You at the top.' },
         { title: 'Like, dismiss, or clip', body: 'Use the thumbs up/down buttons to train your feed, or the clip icon to save a passage as a draft idea for a post.' },
-        { title: 'Filter by interest group', body: 'Use the interest group tabs to narrow the stream to topics you care about, or search for a specific subject.' },
+        { title: 'Filter by interest group', body: 'Use the interest group tabs in the left sidebar to narrow the stream to topics you care about, or search for a specific subject.' },
       ]}
     />
     <MotionConfig transition={spring.smooth}>
@@ -490,250 +477,6 @@ export function FeedPage({
 
         {/* ── Header ──────────────────────────────────────────── */}
         <div className="shrink-0 z-10 glass-header border-b border-border/50 px-6 py-3">
-
-          {/* Interest group switcher */}
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            {groupsLoading ? (
-              // Skeleton pills
-              <>
-                {[80, 100, 72, 90].map((w, i) => (
-                  <motion.div
-                    key={i}
-                    className="h-7 rounded-full bg-violet-100"
-                    style={{ width: w }}
-                    variants={skeletonPulseVariants}
-                    animate="animate"
-                  />
-                ))}
-              </>
-            ) : (
-              <>
-                {/* "All" pill */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectGroup(null)}
-                  className={[
-                    'h-7 rounded-full px-3 text-xs font-semibold transition-colors duration-150 border',
-                    activeGroupId === null
-                      ? 'bg-primary text-primary-fg border-primary shadow-sm'
-                      : 'bg-white/40 text-muted border-white/60 hover:bg-white/60 hover:text-ink',
-                  ].join(' ')}
-                >
-                  All
-                </button>
-
-                {/* Group pills */}
-                {interestGroups.map(group => {
-                  const isActive = activeGroupId === group.id;
-                  return (
-                    <div key={group.id} className="group/pill relative flex items-center">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectGroup(group.id)}
-                        style={isActive ? { backgroundColor: group.color, borderColor: group.color } : { borderLeftColor: group.color }}
-                        className={[
-                          'h-7 rounded-full pl-3 pr-1.5 text-xs font-semibold transition-colors duration-150 border border-l-4',
-                          isActive
-                            ? 'text-white shadow-sm'
-                            : 'bg-white/40 text-muted border-white/60 hover:bg-white/60 hover:text-ink',
-                        ].join(' ')}
-                      >
-                        {group.name}
-                      </button>
-                      {/* Edit / Delete icons — visible on pill hover */}
-                      <div className="ml-0.5 flex items-center gap-0.5 opacity-0 group-hover/pill:opacity-100 transition-opacity duration-150">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleStartEditGroup(group); }}
-                          className="flex h-5 w-5 items-center justify-center rounded-full text-muted hover:bg-primary/10 hover:text-primary transition-colors"
-                          title="Edit group"
-                        >
-                          <Pencil size={10} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); void handleDeleteGroup(group.id); }}
-                          className="flex h-5 w-5 items-center justify-center rounded-full text-muted hover:bg-red-50 hover:text-red-500 transition-colors"
-                          title="Delete group"
-                        >
-                          <Trash2 size={10} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* + New Group button */}
-                <button
-                  type="button"
-                  onClick={() => setShowCreateGroup(v => !v)}
-                  className="flex h-7 items-center gap-1 rounded-full border border-dashed border-primary/40 px-3 text-xs font-semibold text-primary/70 transition-colors hover:border-primary hover:text-primary"
-                >
-                  <Plus size={12} />
-                  New Group
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Create group inline form */}
-          <AnimatePresence>
-            {showCreateGroup && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-3 overflow-hidden rounded-xl border border-primary/20 bg-white/60 p-3 backdrop-blur-sm"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-ink">New Interest Group</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateGroup(false)}
-                    className="text-muted hover:text-ink"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <input
-                    type="text"
-                    placeholder="Group name *"
-                    value={newGroupName}
-                    onChange={e => setNewGroupName(e.target.value)}
-                    className="h-7 rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[120px] flex-1"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Topics (comma-separated)"
-                    value={newGroupTopics}
-                    onChange={e => setNewGroupTopics(e.target.value)}
-                    className="h-7 rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[160px] flex-1"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Domains (optional, comma-separated)"
-                    value={newGroupDomains}
-                    onChange={e => setNewGroupDomains(e.target.value)}
-                    className="h-7 rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[160px] flex-1"
-                  />
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs text-muted">Color:</span>
-                  <div className="flex gap-1.5">
-                    {COLOR_PRESETS.map(color => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => setNewGroupColor(color)}
-                        style={{ backgroundColor: color }}
-                        className={[
-                          'h-5 w-5 rounded-full transition-transform',
-                          newGroupColor === color ? 'ring-2 ring-offset-1 ring-primary scale-110' : 'hover:scale-110',
-                        ].join(' ')}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                  <div className="ml-auto flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateGroup(false)}
-                      className="h-6 rounded-md px-2 text-xs text-muted hover:text-ink"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveGroup}
-                      disabled={!newGroupName.trim() || savingGroup}
-                      className="h-6 rounded-md bg-primary px-2 text-xs font-semibold text-primary-fg disabled:opacity-50 hover:bg-primary/90"
-                    >
-                      {savingGroup ? 'Saving…' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Edit group inline form */}
-          <AnimatePresence>
-            {editingGroupId && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-3 overflow-hidden rounded-xl border border-amber-200/60 bg-amber-50/60 p-3 backdrop-blur-sm"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-ink">Edit Interest Group</span>
-                  <button type="button" onClick={handleCancelEditGroup} className="text-muted hover:text-ink">
-                    <X size={14} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <input
-                    type="text"
-                    placeholder="Group name *"
-                    value={editGroupName}
-                    onChange={e => setEditGroupName(e.target.value)}
-                    className="h-7 rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[120px] flex-1"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Topics (comma-separated)"
-                    value={editGroupTopics}
-                    onChange={e => setEditGroupTopics(e.target.value)}
-                    className="h-7 rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[160px] flex-1"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Domains (optional, comma-separated)"
-                    value={editGroupDomains}
-                    onChange={e => setEditGroupDomains(e.target.value)}
-                    className="h-7 rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 min-w-[160px] flex-1"
-                  />
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs text-muted">Color:</span>
-                  <div className="flex gap-1.5">
-                    {COLOR_PRESETS.map(color => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => setEditGroupColor(color)}
-                        style={{ backgroundColor: color }}
-                        className={[
-                          'h-5 w-5 rounded-full transition-transform',
-                          editGroupColor === color ? 'ring-2 ring-offset-1 ring-primary scale-110' : 'hover:scale-110',
-                        ].join(' ')}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                  <div className="ml-auto flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCancelEditGroup}
-                      className="h-6 rounded-md px-2 text-xs text-muted hover:text-ink"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleUpdateGroup()}
-                      disabled={!editGroupName.trim() || savingEditGroup}
-                      className="h-6 rounded-md bg-primary px-2 text-xs font-semibold text-primary-fg disabled:opacity-50 hover:bg-primary/90"
-                    >
-                      {savingEditGroup ? 'Saving…' : 'Save changes'}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-0">
               <TrendingSearchBar value={topic} onChange={setTopic} onSearch={handleSearch} />
@@ -742,6 +485,29 @@ export function FeedPage({
               region={region} genre={genre} windowDays={windowDays}
               onRegionChange={setRegion} onGenreChange={setGenre} onWindowChange={setWindowDays}
             />
+
+            {/* Sort pills */}
+            <div className="flex items-center gap-1">
+              {(['latest', 'trending', 'foryou'] as const).map(sort => {
+                const labels: Record<string, string> = { latest: 'Latest', trending: 'Trending', foryou: 'For You' };
+                return (
+                  <button
+                    key={sort}
+                    type="button"
+                    onClick={() => setFeedSort(sort)}
+                    className={[
+                      'h-7 rounded-full px-3 text-xs font-semibold transition-colors',
+                      feedSort === sort
+                        ? 'bg-primary text-primary-fg'
+                        : 'text-muted hover:text-ink bg-white/40 border border-white/60',
+                    ].join(' ')}
+                  >
+                    {labels[sort]}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Refresh icon — always visible when a group is active or search is set */}
             {(activeGroupId || searchTopic) && (
               <button
@@ -771,10 +537,262 @@ export function FeedPage({
           </div>
         )}
 
-        {/* ── Main content area ─ flex row: left feed | right panel ── */}
+        {/* ── Main content area ─ flex row: sidebar | feed | right panel ── */}
         <div className="flex-1 min-h-0 overflow-hidden relative flex">
 
-          {/* Left: scrollable feed column */}
+          {/* ── Left sidebar: interest groups nav ──────────────── */}
+          <aside className="w-48 shrink-0 border-r border-border/40 bg-white/20 dark:bg-white/[0.03] overflow-y-auto flex flex-col gap-1 p-2">
+            <p className="px-2 pt-1 pb-0.5 text-[9px] font-bold uppercase tracking-widest text-muted">
+              Interest Groups
+            </p>
+
+            {/* Loading skeleton */}
+            {groupsLoading && (
+              <div className="flex flex-col gap-1 mt-1">
+                {[100, 80, 110, 90].map((w, i) => (
+                  <motion.div
+                    key={i}
+                    className="h-7 rounded-lg bg-violet-100"
+                    style={{ width: `${w}%` }}
+                    variants={skeletonPulseVariants}
+                    animate="animate"
+                  />
+                ))}
+              </div>
+            )}
+
+            {!groupsLoading && (
+              <>
+                {/* All button */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectGroup(null)}
+                  className={[
+                    'flex items-center gap-2 w-full rounded-xl px-2 py-1.5 text-xs font-semibold transition-colors border',
+                    activeGroupId === null
+                      ? 'bg-primary/10 border-primary/25 text-primary'
+                      : 'text-muted hover:bg-white/40 hover:text-ink border-transparent',
+                  ].join(' ')}
+                >
+                  <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                  All groups
+                </button>
+
+                {/* Group items */}
+                {interestGroups.map(group => {
+                  const isActive = activeGroupId === group.id;
+                  return (
+                    <div key={group.id} className="group/item relative">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectGroup(group.id)}
+                        style={isActive ? { background: group.color + '22', borderColor: group.color + '55' } : {}}
+                        className={[
+                          'flex items-center gap-2 w-full rounded-xl px-2 py-1.5 text-xs font-semibold transition-colors border',
+                          isActive
+                            ? 'text-ink'
+                            : 'text-muted hover:bg-white/40 hover:text-ink border-transparent',
+                        ].join(' ')}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ background: group.color }}
+                        />
+                        <span className="flex-1 truncate text-left">{group.name}</span>
+                      </button>
+                      {/* Edit/delete appear on group/item hover */}
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover/item:flex gap-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleStartEditGroup(group); }}
+                          className="flex h-5 w-5 items-center justify-center rounded-full text-muted hover:bg-primary/10 hover:text-primary transition-colors"
+                          title="Edit group"
+                        >
+                          <Pencil size={10} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); void handleDeleteGroup(group.id); }}
+                          className="flex h-5 w-5 items-center justify-center rounded-full text-muted hover:bg-red-50 hover:text-red-500 transition-colors"
+                          title="Delete group"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* New Group button */}
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateGroup(v => !v); setEditingGroupId(null); }}
+                  className="flex items-center gap-1.5 w-full rounded-xl px-2 py-1.5 text-xs font-semibold text-primary/70 border border-dashed border-primary/40 hover:border-primary hover:text-primary transition-colors mt-1"
+                >
+                  <Plus size={12} />
+                  New group
+                </button>
+
+                {/* Create group form — inside sidebar */}
+                <AnimatePresence>
+                  {showCreateGroup && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden rounded-xl border border-primary/20 bg-white/60 p-2.5 backdrop-blur-sm mt-1"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-semibold text-ink">New Group</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateGroup(false)}
+                          className="text-muted hover:text-ink"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <input
+                          type="text"
+                          placeholder="Group name *"
+                          value={newGroupName}
+                          onChange={e => setNewGroupName(e.target.value)}
+                          className="h-7 w-full rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Topics (comma-sep.)"
+                          value={newGroupTopics}
+                          onChange={e => setNewGroupTopics(e.target.value)}
+                          className="h-7 w-full rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Domains (optional)"
+                          value={newGroupDomains}
+                          onChange={e => setNewGroupDomains(e.target.value)}
+                          className="h-7 w-full rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center gap-1">
+                        <div className="flex gap-1 flex-1">
+                          {COLOR_PRESETS.map(color => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => setNewGroupColor(color)}
+                              style={{ backgroundColor: color }}
+                              className={[
+                                'h-4 w-4 rounded-full transition-transform',
+                                newGroupColor === color ? 'ring-2 ring-offset-1 ring-primary scale-110' : 'hover:scale-110',
+                              ].join(' ')}
+                              title={color}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-1.5 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateGroup(false)}
+                          className="h-6 rounded-md px-2 text-xs text-muted hover:text-ink"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveGroup}
+                          disabled={!newGroupName.trim() || savingGroup}
+                          className="h-6 rounded-md bg-primary px-2 text-xs font-semibold text-primary-fg disabled:opacity-50 hover:bg-primary/90"
+                        >
+                          {savingGroup ? 'Saving…' : 'Save'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Edit group form — inside sidebar */}
+                <AnimatePresence>
+                  {editingGroupId && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden rounded-xl border border-amber-200/60 bg-amber-50/60 p-2.5 backdrop-blur-sm mt-1"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-semibold text-ink">Edit Group</span>
+                        <button type="button" onClick={handleCancelEditGroup} className="text-muted hover:text-ink">
+                          <X size={12} />
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <input
+                          type="text"
+                          placeholder="Group name *"
+                          value={editGroupName}
+                          onChange={e => setEditGroupName(e.target.value)}
+                          className="h-7 w-full rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Topics (comma-sep.)"
+                          value={editGroupTopics}
+                          onChange={e => setEditGroupTopics(e.target.value)}
+                          className="h-7 w-full rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Domains (optional)"
+                          value={editGroupDomains}
+                          onChange={e => setEditGroupDomains(e.target.value)}
+                          className="h-7 w-full rounded-lg border border-border/60 bg-white/80 px-2 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center gap-1">
+                        <div className="flex gap-1 flex-1">
+                          {COLOR_PRESETS.map(color => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => setEditGroupColor(color)}
+                              style={{ backgroundColor: color }}
+                              className={[
+                                'h-4 w-4 rounded-full transition-transform',
+                                editGroupColor === color ? 'ring-2 ring-offset-1 ring-primary scale-110' : 'hover:scale-110',
+                              ].join(' ')}
+                              title={color}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-1.5 justify-end">
+                        <button
+                          type="button"
+                          onClick={handleCancelEditGroup}
+                          className="h-6 rounded-md px-2 text-xs text-muted hover:text-ink"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleUpdateGroup()}
+                          disabled={!editGroupName.trim() || savingEditGroup}
+                          className="h-6 rounded-md bg-primary px-2 text-xs font-semibold text-primary-fg disabled:opacity-50 hover:bg-primary/90"
+                        >
+                          {savingEditGroup ? 'Saving…' : 'Save'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+          </aside>
+
+          {/* Center: scrollable feed column */}
           <div className="flex-1 min-w-0 overflow-y-auto">
             <AnimatePresence mode="wait">
 
@@ -808,133 +826,7 @@ export function FeedPage({
 
               {/* Reading feed mode */}
               {!openDraft && !debateMode && (
-                <motion.div key="feed" {...motionProps} className="pb-16">
-
-                  {/* ── Mobile trending carousel (< lg) ──────────────── */}
-                  {trendingCarouselArticles.length > 0 && (
-                    <div className="lg:hidden px-6 pt-4 pb-3">
-                      <p className="text-xs font-semibold text-muted mb-2 flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-violet-500" />
-                        Trending
-                      </p>
-                      <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                        {trendingCarouselArticles.map(article => (
-                          <button
-                            key={article.id}
-                            type="button"
-                            onClick={() => { setDebateMode(false); setOpenArticle(article); }}
-                            className="shrink-0 w-40 rounded-xl overflow-hidden border border-border/40 bg-white/60 hover:bg-white/90 transition-colors text-left shadow-sm"
-                            style={{ height: 100 }}
-                          >
-                            <div className="relative h-full flex flex-col">
-                              {article.imageUrl ? (
-                                <img
-                                  src={article.imageUrl}
-                                  alt=""
-                                  className="absolute inset-0 w-full h-full object-cover opacity-30"
-                                />
-                              ) : (
-                                <div className="absolute inset-0 bg-violet-50" />
-                              )}
-                              <div className="relative z-10 p-2 flex flex-col justify-between h-full">
-                                <p className="text-[11px] font-semibold text-ink line-clamp-3 leading-snug">
-                                  {article.title}
-                                </p>
-                                <p className="text-[10px] text-muted truncate mt-1">{article.source}</p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Search input + group filter bar (sticky) ─────── */}
-                  <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-6 py-2 border-b border-border/30">
-                    {/* Search */}
-                    <div className="relative mb-2">
-                      <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                      <input
-                        type="text"
-                        placeholder="Search articles…"
-                        value={searchQuery}
-                        onChange={e => handleSearchQueryChange(e.target.value)}
-                        className="w-full h-8 rounded-lg border border-border/60 bg-white/70 pl-7 pr-3 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => { setSearchQuery(''); setDebouncedSearchQuery(''); }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink transition-colors"
-                        >
-                          <X size={12} />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Group filter chips */}
-                    {interestGroups.length > 0 && (
-                      <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
-                        <button
-                          type="button"
-                          onClick={() => setActiveFilter('all')}
-                          className={[
-                            'shrink-0 h-6 rounded-full px-3 text-xs font-semibold transition-colors border',
-                            activeFilter === 'all'
-                              ? 'bg-primary text-primary-fg border-primary'
-                              : 'bg-white/40 text-muted border-white/60 hover:bg-white/60 hover:text-ink',
-                          ].join(' ')}
-                        >
-                          All
-                        </button>
-                        {interestGroups.map(group => {
-                          const isActive = activeFilter === group.id;
-                          return (
-                            <button
-                              key={group.id}
-                              type="button"
-                              onClick={() => setActiveFilter(isActive ? 'all' : group.id)}
-                              style={isActive ? { backgroundColor: group.color, borderColor: group.color } : { borderLeftColor: group.color }}
-                              className={[
-                                'shrink-0 h-6 rounded-full px-3 text-xs font-semibold transition-colors border border-l-4',
-                                isActive
-                                  ? 'text-white'
-                                  : 'bg-white/40 text-muted border-white/60 hover:bg-white/60 hover:text-ink',
-                              ].join(' ')}
-                            >
-                              {group.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="px-6 pt-3">
-
-                  {/* Sort filter bar */}
-                  {(!hasNoGroups || searchTopic) && (displayArticles.length > 0 || leftPanelLoading) && (
-                    <div className="flex items-center gap-1.5 mb-3">
-                      {(['latest', 'trending', 'foryou'] as const).map(sort => {
-                        const labels: Record<string, string> = { latest: 'Latest', trending: 'Trending', foryou: 'For You' };
-                        return (
-                          <button
-                            key={sort}
-                            type="button"
-                            onClick={() => setFeedSort(sort)}
-                            className={[
-                              'h-6 rounded-full px-3 text-xs font-semibold transition-colors',
-                              feedSort === sort
-                                ? 'bg-primary text-primary-fg'
-                                : 'text-muted hover:text-ink bg-white/40 border border-white/60',
-                            ].join(' ')}
-                          >
-                            {labels[sort]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                <motion.div key="feed" {...motionProps} className="px-6 pt-3 pb-16">
 
                   {/* No interest groups — onboarding */}
                   {hasNoGroups && !searchTopic && (
@@ -953,7 +845,7 @@ export function FeedPage({
                         Your feed is empty
                       </motion.h3>
                       <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed mb-5">
-                        Add interest groups in Settings to start seeing news here.
+                        Add interest groups in the sidebar to start seeing news here.
                       </motion.p>
                       <motion.button
                         variants={fadeUpVariants}
@@ -984,7 +876,7 @@ export function FeedPage({
                         Explore Your Feed
                       </motion.h3>
                       <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed">
-                        Select an interest group above or enter a topic to discover content.
+                        Select an interest group in the sidebar or enter a topic to discover content.
                       </motion.p>
                     </motion.div>
                   )}
@@ -1090,7 +982,6 @@ export function FeedPage({
                     </AnimatePresence>
                   )}
 
-                  </div>{/* end px-6 pt-3 wrapper */}
                 </motion.div>
               )}
 

@@ -2,13 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Trending Dashboard', () => {
   test('should load /trending without errors', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('shows trending search bar', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     const searchBar = page
@@ -21,7 +21,7 @@ test.describe('Trending Dashboard', () => {
   });
 
   test('shows panel toggle controls', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     // Platform toggles for YouTube, Instagram, LinkedIn, News
@@ -35,7 +35,7 @@ test.describe('Trending Dashboard', () => {
   });
 
   test('shows settings/config icon', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     const settingsBtn = page.locator('[aria-label*="setting"], [class*="Settings"], [data-lucide="settings"]').first();
@@ -47,7 +47,7 @@ test.describe('Trending Dashboard', () => {
 
 test.describe('YouTube Panel', () => {
   test('YouTube panel is visible by default', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     // YouTube is in DEFAULT_ENABLED panels
@@ -56,7 +56,7 @@ test.describe('YouTube Panel', () => {
   });
 
   test('YouTube panel shows mock/live video cards', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     await page.waitForTimeout(2000);
@@ -70,7 +70,7 @@ test.describe('YouTube Panel', () => {
 
 test.describe('News Panel', () => {
   test('News panel is visible by default', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     // News is in DEFAULT_ENABLED panels
@@ -79,7 +79,7 @@ test.describe('News Panel', () => {
   });
 
   test('News panel shows articles or empty state', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     await page.waitForTimeout(2000);
@@ -92,7 +92,7 @@ test.describe('News Panel', () => {
 
 test.describe('Instagram Panel', () => {
   test('Instagram panel is visible by default', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     const igPanel = page.getByText(/instagram/i).first();
@@ -103,7 +103,7 @@ test.describe('Instagram Panel', () => {
 // PATH-066/070: LinkedIn panel is NOT in DEFAULT_ENABLED
 test.describe('LinkedIn Panel — PATH-070 (PARTIAL: disabled by default)', () => {
   test('LinkedIn panel is NOT shown by default', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     await page.waitForTimeout(1000);
@@ -118,7 +118,7 @@ test.describe('LinkedIn Panel — PATH-070 (PARTIAL: disabled by default)', () =
   });
 
   test('LinkedIn panel activates when toggle enabled', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     const linkedInToggle = page.getByRole('button', { name: /linkedin/i }).first();
@@ -136,7 +136,7 @@ test.describe('LinkedIn Panel — PATH-070 (PARTIAL: disabled by default)', () =
 
 test.describe('Topic Search Flow', () => {
   test('user can type a topic and trigger search', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     const searchBar = page
@@ -152,7 +152,7 @@ test.describe('Topic Search Flow', () => {
   });
 
   test('search button triggers topic fetch', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     const searchBar = page
@@ -172,7 +172,7 @@ test.describe('Topic Search Flow', () => {
 
 test.describe('Trending Graph', () => {
   test('graph component renders when data available', async ({ page }) => {
-    await page.goto('/trending');
+    await page.goto('./trending');
     await page.waitForLoadState('domcontentloaded');
 
     await page.waitForTimeout(2000);

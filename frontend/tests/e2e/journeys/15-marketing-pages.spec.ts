@@ -11,7 +11,7 @@ import { setupApiMocks, gotoAuthenticated } from '../helpers/mockApi';
 
 test.describe('Journey 15A: Landing page (unauthenticated)', () => {
   test('root path renders the SaaS Landing or Sign-in panel', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     // Either the SaaS Landing CTA or the workspace Sign-in heading must show.
@@ -23,7 +23,7 @@ test.describe('Journey 15A: Landing page (unauthenticated)', () => {
   });
 
   test('landing page exposes legal footer links', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     const termsLink = page.getByRole('link', { name: /terms/i }).first();
@@ -36,7 +36,7 @@ test.describe('Journey 15A: Landing page (unauthenticated)', () => {
 
 test.describe('Journey 15B: Pricing page', () => {
   test('/pricing renders without authentication', async ({ page }) => {
-    await page.goto('/pricing');
+    await page.goto('./pricing');
     await page.waitForLoadState('domcontentloaded');
 
     // Must NOT redirect to sign-in. Pricing content must be visible.
@@ -48,7 +48,7 @@ test.describe('Journey 15B: Pricing page', () => {
   });
 
   test('/pricing shows at least one plan and one CTA', async ({ page }) => {
-    await page.goto('/pricing');
+    await page.goto('./pricing');
     await page.waitForLoadState('domcontentloaded');
 
     const plan = page.getByText(/starter|pro|team|free/i).first();
@@ -62,7 +62,7 @@ test.describe('Journey 15B: Pricing page', () => {
   });
 
   test('/pricing surfaces the marketing nav', async ({ page }) => {
-    await page.goto('/pricing');
+    await page.goto('./pricing');
     await page.waitForLoadState('domcontentloaded');
 
     const homeLink = page.getByRole('link', { name: /channel bot|home/i }).first();
@@ -72,7 +72,7 @@ test.describe('Journey 15B: Pricing page', () => {
 
 test.describe('Journey 15C: About page', () => {
   test('/about renders the company narrative', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('./about');
     await page.waitForLoadState('domcontentloaded');
 
     const aboutMarker = page
@@ -86,7 +86,7 @@ test.describe('Journey 15C: About page', () => {
     const errors: Error[] = [];
     page.on('pageerror', (err) => errors.push(err));
 
-    await page.goto('/about');
+    await page.goto('./about');
     await page.waitForLoadState('domcontentloaded');
 
     expect(errors, errors.map((e) => e.message).join('\n')).toHaveLength(0);
@@ -95,7 +95,7 @@ test.describe('Journey 15C: About page', () => {
 
 test.describe('Journey 15D: Terms of Service page', () => {
   test('/terms renders a Terms heading', async ({ page }) => {
-    await page.goto('/terms');
+    await page.goto('./terms');
     await page.waitForLoadState('domcontentloaded');
 
     const heading = page
@@ -106,7 +106,7 @@ test.describe('Journey 15D: Terms of Service page', () => {
   });
 
   test('/terms is reachable from the footer when visible', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     const link = page.getByRole('link', { name: /terms/i }).first();
@@ -119,7 +119,7 @@ test.describe('Journey 15D: Terms of Service page', () => {
 
 test.describe('Journey 15E: Privacy Policy page', () => {
   test('/privacy-policy renders a Privacy heading', async ({ page }) => {
-    await page.goto('/privacy-policy');
+    await page.goto('./privacy-policy');
     await page.waitForLoadState('domcontentloaded');
 
     const heading = page
@@ -146,7 +146,7 @@ test.describe('Journey 15F: Marketing routing guards', () => {
   test('post-login redirect captures the desired workspace path', async ({ page }) => {
     // Go to a workspace path while logged out — app captures it for post-login replay.
     await setupApiMocks(page, {});
-    await page.goto('/topics');
+    await page.goto('./topics');
     await page.waitForLoadState('domcontentloaded');
 
     // sessionStorage may receive a captured target. Read it through the page context.

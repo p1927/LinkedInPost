@@ -2,13 +2,13 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Automations Page', () => {
   test('should load /automations without errors', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('shows admin gate message for non-admin users', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
     // Non-admin users (or unauthenticated) see a gate message
     const gateMsg = page.getByText(/admins only|admin only|available to admins/i).first();
@@ -18,7 +18,7 @@ test.describe('Automations Page', () => {
   });
 
   test('platform tabs are rendered for admin users', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     // If admin, platforms (instagram, linkedin, telegram, gmail, youtube) are shown as tabs
@@ -34,7 +34,7 @@ test.describe('Automations Page', () => {
 // PATH-057: listRules uses authFetch (no res.ok check) — swallows 403/500 silently
 test.describe('Rule List — PATH-057 (PARTIAL: silent error swallow)', () => {
   test('automation rules section is present or gate is shown', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     // Either admin content or gate message must be visible — empty page is a sign of swallowed error
@@ -49,7 +49,7 @@ test.describe('Rule List — PATH-057 (PARTIAL: silent error swallow)', () => {
 
 test.describe('Rule Creation', () => {
   test('rule editor form fields are accessible when admin', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     // If admin: channel ID input should be present
@@ -60,7 +60,7 @@ test.describe('Rule Creation', () => {
   });
 
   test('Save rule button is present when admin', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const saveButton = page.getByRole('button', { name: /save|add rule|create rule/i }).first();
@@ -70,7 +70,7 @@ test.describe('Rule Creation', () => {
   });
 
   test('enabled checkbox is present in rule editor', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const enabledToggle = page.locator('input[type="checkbox"]').first();
@@ -82,7 +82,7 @@ test.describe('Rule Creation', () => {
 
 test.describe('YouTube Scheduler', () => {
   test('YouTube tab renders scheduler section', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const youtubeTab = page.getByRole('tab', { name: /youtube/i }).or(
@@ -102,7 +102,7 @@ test.describe('YouTube Scheduler', () => {
 // PATH-062: YouTube register webhook button shows confusing error
 test.describe('Webhook Registration — PATH-062 (PARTIAL: YouTube shows unhelpful error)', () => {
   test('Register Webhook button present when admin', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const registerBtn = page.getByRole('button', { name: /register webhook/i }).first();
@@ -112,7 +112,7 @@ test.describe('Webhook Registration — PATH-062 (PARTIAL: YouTube shows unhelpf
   });
 
   test('YouTube platform does not silently block webhook registration UI', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const youtubeTab = page.getByRole('button', { name: /youtube/i }).first();
@@ -134,7 +134,7 @@ test.describe('Webhook Registration — PATH-062 (PARTIAL: YouTube shows unhelpf
 
 test.describe('Platform Switching', () => {
   test('can switch between automation platforms', async ({ page }) => {
-    await page.goto('/automations');
+    await page.goto('./automations');
     await page.waitForLoadState('domcontentloaded');
 
     const platforms = ['Instagram', 'LinkedIn', 'Telegram', 'Gmail'];

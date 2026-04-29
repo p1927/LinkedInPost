@@ -10,7 +10,7 @@ test.describe('Worker Integration: Auth Bypass', () => {
     await page.addInitScript(() => {
       localStorage.setItem('google_id_token', 'e2e-test-token');
     });
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('networkidle');
     // Should NOT show sign-in page (bypass worked)
     const signInButton = page.getByRole('button', { name: /sign in/i });

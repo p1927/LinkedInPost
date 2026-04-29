@@ -37,7 +37,7 @@ test.describe('Error States: Bootstrap', () => {
     });
 
     await injectFakeToken(page);
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     // Page should not show a blank screen — either show login, an error message, or the workspace with empty state
@@ -59,7 +59,7 @@ test.describe('Error States: Bootstrap', () => {
     });
 
     // No injected token — triggers real auth flow
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     // Should show Google sign-in or some auth prompt
@@ -87,7 +87,7 @@ test.describe('Error States: Topic List', () => {
   test('getRows returning empty array shows empty dashboard', async ({ page }) => {
     await setupApiMocks(page, { getRows: [] });
     await injectFakeToken(page);
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     // Dashboard renders without topic rows — no crash
@@ -118,7 +118,7 @@ test.describe('Error States: Generation', () => {
       });
     });
 
-    await page.goto('/topics/eyJpZCI6InRvcGljLTEifQ');
+    await page.goto('./topics/eyJpZCI6InRvcGljLTEifQ');
     await page.waitForLoadState('domcontentloaded');
 
     // Open AI draft dialog
@@ -151,7 +151,7 @@ test.describe('Error States: Generation', () => {
       route.fulfill({ status: 500, body: 'Internal Server Error' });
     });
 
-    await page.goto('/topics/eyJpZCI6InRvcGljLTEifQ');
+    await page.goto('./topics/eyJpZCI6InRvcGljLTEifQ');
     await page.waitForLoadState('domcontentloaded');
 
     const content = await page.locator('body').textContent({ timeout: 10000 });
@@ -281,7 +281,7 @@ test.describe('Error States: Spreadsheet Config', () => {
       getSpreadsheetStatus: { accessible: false, title: null, error: 'Sheet not found' },
     });
     await injectFakeToken(page);
-    await page.goto('/settings');
+    await page.goto('./settings');
     await page.waitForLoadState('domcontentloaded');
 
     // Should show some indicator that the sheet is not accessible
@@ -334,7 +334,7 @@ test.describe('Error States: Network', () => {
     });
 
     await injectFakeToken(page);
-    await page.goto('/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
 
     // Core app should still render with bootstrap data
