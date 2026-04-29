@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed v2 · B — Briefing (themed)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --canvas: #FAF5FF; --surface:#FFFFFF; --surface-muted:#F3E8FF;
+    --ink:#1E1B4B; --ink-hover:#312E81; --muted:#475569; --faint:#94A3B8;
+    --border:#E9D5FF; --border-strong:#DDD6FE;
+    --primary:#7C3AED; --primary-hover:#6D28D9; --secondary:#A78BFA;
+    --deep-purple:#4C1D95;
+  }
+  body {
+    font-family: "Plus Jakarta Sans", "Open Sans", system-ui, sans-serif;
+    color: var(--ink); min-height: 100vh;
+    background-color: #ede9fe;
+    background-image:
+      radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124, 58, 237, 0.42), transparent 55%),
+      radial-gradient(ellipse 95% 75% at 100% 5%, rgba(167, 139, 250, 0.36), transparent 52%),
+      radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192, 132, 252, 0.32), transparent 58%),
+      linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: "Poppins", "Plus Jakarta Sans", sans-serif; color: var(--ink); letter-spacing: -0.012em; }
+
+  /* Glass utilities (mirror frontend index.css) */
+  .glass-header  { border-bottom: 1px solid rgba(255,255,255,0.55); background: rgba(255,255,255,0.78); backdrop-filter: blur(20px); }
+  .glass-sidebar { border-right: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.75); box-shadow: 4px 0 28px rgba(91,33,182,0.07); backdrop-filter: blur(20px); }
+  .glass-rail    { border-left: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.62); backdrop-filter: blur(18px); }
+  .glass-card    { border: 1px solid rgba(255,255,255,0.55); background: rgba(255,255,255,0.80); box-shadow: 0 8px 32px rgba(91,33,182,0.11), 0 2px 12px rgba(124,58,237,0.07); backdrop-filter: blur(18px); }
+
+  /* Layout */
+  .shell { display:grid; grid-template-columns: 220px minmax(0,1fr) 300px; height: 100vh; }
+  .pane { overflow-y: auto; }
+  .pane::-webkit-scrollbar { width: 6px; } .pane::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius:3px; }
+
+  /* Sidebar */
+  .navlink { display:flex; align-items:center; gap:10px; padding: 7px 10px; border-radius: 10px; font-size: 13px; color: var(--muted); cursor:pointer; line-height:1; font-weight: 500; }
+  .navlink:hover { background: rgba(255,255,255,0.55); color: var(--ink); }
+  .navlink.active { color: var(--primary); font-weight:600; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.15); padding: 6px 9px; }
+  .navlink .count { margin-left:auto; font-size: 11px; color: var(--faint); font-feature-settings: "tnum"; }
+  .group-mark { width:7px; height:7px; border-radius:50%; background: var(--border-strong); flex-shrink:0; }
+  .navlink.active .group-mark { background: var(--primary); }
+  .nav-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing: 0.1em; color: var(--secondary); padding: 18px 10px 6px; }
+
+  /* Masthead */
+  .mast { padding: 28px 40px 14px; }
+  .mast-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--secondary); }
+  .mast-title { font-size: 36px; line-height: 1.05; font-weight: 700; letter-spacing: -0.018em; color: var(--ink); margin-top: 6px; }
+  .mast-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  .mast-tools { display:flex; align-items:center; gap: 12px; margin-top: 22px; }
+  .search { flex:1; position:relative; }
+  .search input { width:100%; height: 40px; padding: 0 14px 0 38px; background: rgba(255,255,255,0.75); border: 1px solid var(--border); border-radius: 12px; font-family:inherit; font-size: 14px; color: var(--ink); outline: none; transition: all 120ms; }
+  .search input::placeholder { color: var(--faint); }
+  .search input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+  .search .icon { position:absolute; left: 12px; top:50%; transform: translateY(-50%); color: var(--secondary); }
+  .compose { font-size: 13px; font-weight: 600; color: white; padding: 0 14px; height: 40px; background: var(--primary); border-radius: 12px; cursor:pointer; display:inline-flex; align-items:center; gap: 6px; border: none; box-shadow: 0 6px 18px -6px rgba(124,58,237,0.45); }
+  .compose:hover { background: var(--primary-hover); }
+
+  /* Tabs */
+  .tabs { display:flex; gap: 22px; padding: 14px 40px 0; align-items: center; border-bottom: 1px solid rgba(221,214,254,0.55); }
+  .tab { font-size: 13px; color: var(--muted); padding: 12px 0; border-bottom: 2px solid transparent; cursor:pointer; line-height: 1; font-weight:500; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight:600; }
+  .tabs .right-tools { margin-left:auto; display:flex; gap: 4px; align-items:center; padding-bottom:10px; }
+  .tool { font-size: 12px; color: var(--muted); display:inline-flex; align-items:center; gap:5px; cursor:pointer; padding: 5px 8px; border-radius: 8px; }
+  .tool:hover { background: rgba(255,255,255,0.6); color: var(--ink); }
+
+  /* Body */
+  .body { padding: 28px 40px 80px; max-width: 760px; margin: 0 auto; }
+
+  /* Lead story (glass card, hero typography) */
+  .lead { padding: 24px 24px 22px; border-radius: 18px; margin-bottom: 28px; cursor: pointer; }
+  .lead .kicker { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--primary); margin-bottom: 10px; display: inline-flex; align-items: center; gap: 8px; }
+  .lead .kicker::before { content:""; display:inline-block; width: 18px; height: 1.5px; background: var(--primary); }
+  .lead h1 { font-size: 30px; line-height: 1.12; font-weight: 700; letter-spacing: -0.014em; color: var(--ink); margin-bottom: 12px; }
+  .lead .deck { font-size: 15.5px; line-height: 1.55; color: var(--ink); margin-bottom: 14px; max-width: 600px; opacity: 0.85; }
+  .lead .meta { font-size: 12.5px; color: var(--muted); display:flex; align-items: center; gap: 8px; }
+  .meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+  .source { color: var(--ink); font-weight: 500; }
+  .fav { width: 12px; height: 12px; border-radius: 3px; display:inline-block; flex-shrink: 0; background: var(--border-strong); }
+  .lead .actions { display:flex; gap: 6px; margin-top: 16px; }
+
+  /* Article rows */
+  .art { padding: 22px 0; border-bottom: 1px solid rgba(221,214,254,0.55); cursor: pointer; }
+  .art:last-child { border-bottom: 0; }
+  .art h2 { font-size: 19px; line-height: 1.25; font-weight: 600; letter-spacing: -0.005em; color: var(--ink); margin-bottom: 6px; }
+  .art .deck { font-size: 13.5px; line-height: 1.55; color: var(--muted); margin-bottom: 10px; max-width: 620px; }
+  .art .meta { font-size: 12.5px; color: var(--muted); display:flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .art .actions { display:flex; gap: 4px; opacity: 0.55; transition: opacity 120ms; align-items: center; }
+  .art:hover .actions { opacity: 1; }
+
+  .btn { height: 32px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink); display:inline-flex; align-items:center; gap: 6px; cursor:pointer; transition: all 120ms; }
+  .btn:hover { border-color: var(--primary); color: var(--primary); background: white; }
+  .btn.primary { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 6px 18px -6px rgba(124,58,237,0.45); }
+  .btn.primary:hover { background: var(--primary-hover); color: white; }
+  .ic { width: 30px; height: 30px; display:inline-flex; align-items:center; justify-content:center; border-radius: 8px; color: var(--muted); cursor:pointer; }
+  .ic:hover { background: rgba(124,58,237,0.10); color: var(--primary); }
+  .ic.on { color: var(--primary); background: rgba(124,58,237,0.10); }
+
+  .cluster-note { font-size: 11px; font-weight: 600; color: var(--primary); margin-bottom: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; background: rgba(124,58,237,0.08); border-radius: 6px; border: 1px solid rgba(124,58,237,0.18); }
+
+  /* Section header */
+  .sec-head { display:flex; align-items: baseline; justify-content:space-between; padding-bottom: 10px; border-bottom: 2px solid var(--primary); margin: 28px 0 18px; }
+  .sec-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink); }
+  .sec-meta { font-size: 11px; color: var(--muted); }
+
+  /* Right rail */
+  .right { padding: 24px 24px 32px; }
+  .r-section { margin-bottom: 28px; }
+  .r-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--secondary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-strong); }
+  .r-row { display:grid; grid-template-columns: 18px 1fr; gap: 10px; padding: 7px 0; cursor:pointer; }
+  .r-row:hover .r-row-title { color: var(--primary); }
+  .r-rank { color: var(--faint); font-size: 13px; font-weight: 600; padding-top: 1px; }
+  .r-row-title { color: var(--ink); font-weight: 600; font-size: 13px; line-height: 1.35; }
+  .r-row-meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+
+  .word-list { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; line-height: 1.7; }
+  .word-list a { color: var(--ink); cursor:pointer; }
+  .word-list a:hover { color: var(--primary); }
+  .word-list .hot { color: var(--primary); font-weight:600; }
+
+  .quote { padding: 14px 16px; border-left: 2px solid var(--primary); margin-top: 4px; background: rgba(124,58,237,0.04); border-radius: 0 10px 10px 0; }
+  .quote p { font-size: 14px; line-height: 1.5; color: var(--ink); font-style: italic; margin-bottom: 8px; font-weight: 500; }
+  .quote-attr { font-size: 11px; color: var(--muted); }
+
+  .src-row { display:flex; align-items:center; gap: 10px; padding: 6px 0; font-size: 13px; color: var(--ink); cursor:pointer; }
+  .src-row:hover { color: var(--primary); }
+  .src-row .ct { margin-left:auto; color: var(--faint); font-size: 12px; font-feature-settings: "tnum"; font-weight: 500; }
+
+  .design-label { position:fixed; top: 14px; right: 18px; font-size: 11px; font-weight: 700; padding: 5px 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.85); color: var(--primary); border-radius: 9999px; z-index: 50; backdrop-filter: blur(8px); }
+</style>
+</head>
+<body>
+<div class="design-label">B · Briefing</div>
+
+<div class="shell">
+
+  <aside class="glass-sidebar pane p-4">
+    <div class="flex items-center gap-2.5 px-2 py-2">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[12px] font-bold" style="background: linear-gradient(135deg, #7C3AED, #4C1D95);">L</div>
+      <span class="text-[13.5px] font-bold tracking-tight" style="font-family:'Poppins'; color:var(--ink)">Linkedinpost</span>
+    </div>
+
+    <div class="mt-4 space-y-0.5">
+      <a class="navlink active"><i data-lucide="newspaper" class="w-3.5 h-3.5"></i> Feed <span class="count">128</span></a>
+      <a class="navlink"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Topics</a>
+      <a class="navlink"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Drafts <span class="count">7</span></a>
+      <a class="navlink"><i data-lucide="mail" class="w-3.5 h-3.5"></i> Newsletter</a>
+      <a class="navlink"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</a>
+    </div>
+
+    <div class="nav-section">Sections</div>
+    <div class="space-y-0.5">
+      <a class="navlink active"><span class="group-mark"></span> All <span class="count">128</span></a>
+      <a class="navlink"><span class="group-mark"></span> AI &amp; Tech <span class="count">42</span></a>
+      <a class="navlink"><span class="group-mark"></span> Leadership <span class="count">31</span></a>
+      <a class="navlink"><span class="group-mark"></span> Marketing <span class="count">28</span></a>
+      <a class="navlink"><span class="group-mark"></span> Startups <span class="count">19</span></a>
+    </div>
+
+    <div class="nav-section">Library</div>
+    <div class="space-y-0.5">
+      <a class="navlink"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Saved <span class="count">14</span></a>
+      <a class="navlink"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> Clippings <span class="count">7</span></a>
+    </div>
+  </aside>
+
+  <section class="pane">
+
+    <header class="mast">
+      <div class="mast-eyebrow">Tuesday · April 29, 2026</div>
+      <h1 class="mast-title">Today's Briefing</h1>
+      <p class="mast-sub">128 stories curated across 24 sources · refreshed 4 minutes ago</p>
+
+      <div class="mast-tools">
+        <div class="search">
+          <i data-lucide="search" class="icon w-4 h-4"></i>
+          <input placeholder="Search by title, source, or topic…">
+        </div>
+        <button class="compose"><i data-lucide="pen-line" class="w-4 h-4"></i> Compose post</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <span class="tab active">Latest</span>
+      <span class="tab">Trending</span>
+      <span class="tab">For You</span>
+      <span class="tab">Evergreen</span>
+      <span class="tab">Quick reads</span>
+      <div class="right-tools">
+        <span class="tool"><i data-lucide="globe" class="w-3.5 h-3.5"></i> US</span>
+        <span class="tool"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 7 days</span>
+        <span class="tool"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></span>
+      </div>
+    </div>
+
+    <div class="body">
+
+      <article class="lead glass-card">
+        <div class="kicker">Lead story · 5 outlets covering</div>
+        <h1>OpenAI rolls out GPT-4o upgrades with real-time voice and vision capabilities</h1>
+        <p class="deck">The new multimodal updates bring voice latency to roughly 320 ms and add streaming video for live tutoring and accessibility use cases. Enterprise API ships next week with per-minute audio billing replacing the older token model.</p>
+        <div class="meta">
+          <span class="fav" style="background:#0BAB64"></span>
+          <span class="source">TechCrunch</span>
+          <span class="meta-dot"></span><span>By Sarah Perez</span>
+          <span class="meta-dot"></span><span>2 hours ago</span>
+          <span class="meta-dot"></span><span>4 min read</span>
+        </div>
+        <div class="actions">
+          <button class="btn primary"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose post</button>
+          <button class="btn"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> Clip</button>
+          <button class="btn"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save</button>
+          <button class="btn"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Read original</button>
+        </div>
+      </article>
+
+      <div class="sec-head">
+        <span class="sec-title">Top stories</span>
+        <span class="sec-meta">Sorted by editorial weight</span>
+      </div>
+
+      <article class="art">
+        <h2>Why productivity metrics are failing remote teams — and what leaders should measure instead</h2>
+        <p class="deck">Traditional KPIs miss what actually drives output in distributed environments. Forward-thinking leaders track engagement, async quality, and focus blocks instead.</p>
+        <div class="meta">
+          <span class="fav" style="background:#0066ff"></span>
+          <span class="source">Forbes</span>
+          <span class="meta-dot"></span><span>4 hours ago</span>
+          <span class="meta-dot"></span><span>6 min read</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+          <button class="btn ml-auto"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+        </div>
+      </article>
+
+      <article class="art">
+        <h2>The quiet AI revolution inside enterprise tools — and why most employees don't notice</h2>
+        <p class="deck">From Notion to Salesforce, AI features are being woven into existing workflows, changing how work gets done without anyone announcing it.</p>
+        <div class="meta">
+          <span class="fav" style="background:#000"></span>
+          <span class="source">Wired</span>
+          <span class="meta-dot"></span><span>5 hours ago</span>
+          <span class="meta-dot"></span><span>8 min read</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+          <button class="btn ml-auto"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+        </div>
+      </article>
+
+      <article class="art">
+        <span class="cluster-note"><i data-lucide="layers" class="w-3 h-3"></i> 5 outlets covering — DeepMind reasoning</span>
+        <h2>Google DeepMind's latest model scores near-perfect on reasoning benchmarks — sparking debate about AGI timelines</h2>
+        <p class="deck">Researchers are split on whether near-perfect benchmark scores translate to general intelligence — or simply better test-taking.</p>
+        <div class="meta">
+          <span class="fav" style="background:#FF7900"></span>
+          <span class="source">The Verge</span>
+          <span class="meta-dot"></span><span>8 hours ago</span>
+          <span class="meta-dot"></span><span>5 min read</span>
+        </div>
+        <div class="actions">
+          <button class="ic on"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic on"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+          <button class="btn ml-auto"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+        </div>
+      </article>
+
+      <article class="art">
+        <h2>How top CEOs are rethinking the 40-hour workweek in the age of AI copilots</h2>
+        <p class="deck">With AI handling routine cognitive tasks, the debate is shifting from quantity to quality of focus time.</p>
+        <div class="meta">
+          <span class="fav" style="background:#a8002b"></span>
+          <span class="source">Harvard Business Review</span>
+          <span class="meta-dot"></span><span>6 hours ago</span>
+          <span class="meta-dot"></span><span>9 min read</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+          <button class="btn ml-auto"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+        </div>
+      </article>
+
+      <div class="sec-head">
+        <span class="sec-title">In brief</span>
+        <span class="sec-meta">Quick scan · ≤3 min reads</span>
+      </div>
+
+      <article class="art">
+        <h2>Anthropic launches enterprise tier with audit logs, SSO, and dedicated capacity</h2>
+        <div class="meta"><span class="fav" style="background:#0077B5"></span><span class="source">LinkedIn News</span><span class="meta-dot"></span><span>12h ago</span></div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+          <button class="btn ml-auto"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+        </div>
+      </article>
+
+      <article class="art">
+        <h2>EU AI Act enforcement begins: first guidance on general-purpose model providers</h2>
+        <div class="meta"><span class="fav" style="background:#c8102e"></span><span class="source">Financial Times</span><span class="meta-dot"></span><span>1d ago</span></div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+          <button class="btn ml-auto"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+        </div>
+      </article>
+
+      <article class="art">
+        <h2>AI startup funding rebounds in Q1 — but late-stage rounds tell a different story</h2>
+        <div class="meta"><span class="fav" style="background:#1d4ed8"></span><span class="source">The Information</span><span class="meta-dot"></span><span>1d ago</span></div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+          <button class="btn ml-auto"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+        </div>
+      </article>
+
+      <button class="w-full mt-6 py-3 text-[12.5px] font-semibold border rounded-[12px] transition" style="color:var(--ink); border-color:var(--border); background: rgba(255,255,255,0.5);">Continue · 121 more stories</button>
+
+    </div>
+  </section>
+
+  <aside class="glass-rail right pane">
+
+    <div class="r-section">
+      <div class="r-title">Most discussed</div>
+      <div class="r-row"><span class="r-rank">1</span><div><div class="r-row-title">GPT-4o voice rollout</div><div class="r-row-meta">42 stories · ↑280%</div></div></div>
+      <div class="r-row"><span class="r-rank">2</span><div><div class="r-row-title">DeepMind reasoning benchmark</div><div class="r-row-meta">28 stories · ↑140%</div></div></div>
+      <div class="r-row"><span class="r-rank">3</span><div><div class="r-row-title">Anthropic enterprise tier</div><div class="r-row-meta">19 stories · ↑95%</div></div></div>
+      <div class="r-row"><span class="r-rank">4</span><div><div class="r-row-title">Remote productivity</div><div class="r-row-meta">14 stories · ↑32%</div></div></div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Quote of the day</div>
+      <div class="quote">
+        <p>“If voice models close the latency gap, typing becomes a niche input — the way handwriting did when keyboards arrived.”</p>
+        <div class="quote-attr">— Wired, “The end of typing?”</div>
+      </div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Trending words</div>
+      <div class="word-list">
+        <a class="hot">multimodal</a><a class="hot">agentic</a><a>copilot</a><a>reasoning</a><a>benchmark</a><a>async</a><a>RAG</a><a>eval</a>
+      </div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Suggested topics</div>
+      <a class="r-row"><span class="r-rank">+</span><div><div class="r-row-title">Multimodal AI</div><div class="r-row-meta">42 articles · refreshes daily</div></div></a>
+      <a class="r-row"><span class="r-rank">+</span><div><div class="r-row-title">Async work culture</div><div class="r-row-meta">14 articles · weekly</div></div></a>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Top sources · 7d</div>
+      <a class="src-row"><span class="fav" style="background:#0BAB64"></span> TechCrunch <span class="ct">18</span></a>
+      <a class="src-row"><span class="fav" style="background:#FF7900"></span> The Verge <span class="ct">12</span></a>
+      <a class="src-row"><span class="fav" style="background:#000"></span> Wired <span class="ct">9</span></a>
+      <a class="src-row"><span class="fav" style="background:#a8002b"></span> HBR <span class="ct">7</span></a>
+    </div>
+
+  </aside>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

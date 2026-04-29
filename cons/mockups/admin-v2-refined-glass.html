@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — V2 Refined Glass</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+  body {
+    background-color: #ede9fe;
+    background-image:
+      radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124,58,237,0.42), transparent 55%),
+      radial-gradient(ellipse 95% 75% at 100% 5%, rgba(167,139,250,0.36), transparent 52%),
+      radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192,132,252,0.32), transparent 58%),
+      linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Match exact app glass-panel utility */
+  .glass-panel {
+    background: rgba(255,255,255,0.80);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.55);
+    box-shadow: 0 8px 32px rgba(91,33,182,0.11), 0 2px 12px rgba(124,58,237,0.07);
+  }
+  .glass-header {
+    background: rgba(255,255,255,0.80);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(233,213,255,0.6);
+  }
+  .row-hover:hover { background: rgba(124,58,237,0.03); }
+  .bar { transition: width .6s cubic-bezier(.4,0,.2,1); }
+
+  /* Token bar: monochromatic — violet only, darkens at high usage */
+  .bar-low    { background: linear-gradient(90deg, #c4b5fd, #a78bfa); }
+  .bar-mid    { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+  .bar-high   { background: linear-gradient(90deg, #6d28d9, #4c1d95); }
+
+  /* Status — no rainbow. dot + text only */
+  .status-active   { color: #475569; }
+  .status-active .dot   { background: #7c3aed; }
+  .status-suspended     { color: #94a3b8; }
+  .status-suspended .dot { background: #cbd5e1; }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+</style>
+</head>
+<body class="p-6">
+<div class="max-w-3xl mx-auto space-y-4">
+
+  <!-- Page header -->
+  <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center gap-3">
+      <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9)" class="flex h-9 w-9 items-center justify-center rounded-xl shadow-lg" style="box-shadow:0 4px 14px rgba(109,40,217,.35)">
+        <!-- shield-check -->
+        <svg class="h-4.5 w-4.5 text-white" style="height:18px;width:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div>
+        <h1 class="text-base font-bold" style="color:#1e1b4b;letter-spacing:-.02em">Admin Panel</h1>
+        <p class="text-xs" style="color:#475569">Manage users and access</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Mode chip -->
+      <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold" style="background:rgba(124,58,237,.08);color:#7c3aed;border:1px solid rgba(124,58,237,.18)">
+        <span style="width:6px;height:6px;border-radius:50%;background:#7c3aed;display:inline-block"></span>
+        SaaS
+      </span>
+      <!-- Refresh -->
+      <button class="flex items-center justify-center rounded-xl border cursor-pointer transition-all" style="width:36px;height:36px;background:rgba(255,255,255,.8);border-color:rgba(233,213,255,.7);color:#7c3aed" onmouseover="this.style.background='white'" onmouseout="this.style.background='rgba(255,255,255,.8)'">
+        <svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary strip -->
+  <div class="glass-panel rounded-2xl px-5 py-3.5 flex items-center gap-6">
+    <div class="flex items-center gap-2.5">
+      <svg style="width:15px;height:15px;color:#7c3aed" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span class="text-sm font-bold" style="color:#1e1b4b">24</span>
+      <span class="text-xs" style="color:#475569">users</span>
+    </div>
+    <div style="width:1px;height:20px;background:rgba(233,213,255,.8)"></div>
+    <div class="flex items-center gap-2">
+      <span style="width:6px;height:6px;border-radius:50%;background:#7c3aed;display:inline-block"></span>
+      <span class="text-sm font-semibold" style="color:#1e1b4b">21</span>
+      <span class="text-xs" style="color:#475569">active</span>
+    </div>
+    <div style="width:1px;height:20px;background:rgba(233,213,255,.8)"></div>
+    <div class="flex items-center gap-2">
+      <span style="width:6px;height:6px;border-radius:50%;background:#cbd5e1;display:inline-block"></span>
+      <span class="text-sm font-semibold" style="color:#1e1b4b">3</span>
+      <span class="text-xs" style="color:#475569">suspended</span>
+    </div>
+    <div style="width:1px;height:20px;background:rgba(233,213,255,.8)"></div>
+    <div class="flex items-center gap-2">
+      <svg style="width:14px;height:14px;color:#a78bfa" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="text-sm font-semibold" style="color:#1e1b4b">3</span>
+      <span class="text-xs" style="color:#475569">pending approval</span>
+    </div>
+    <div class="ml-auto">
+      <div class="flex items-center gap-2">
+        <span class="text-[11px]" style="color:#475569">Avg usage</span>
+        <div style="width:80px;height:5px;background:rgba(233,213,255,.6);border-radius:999px;overflow:hidden">
+          <div class="bar bar-mid" style="width:68%;height:100%;border-radius:999px"></div>
+        </div>
+        <span class="text-[11px] font-semibold" style="color:#7c3aed">68%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waitlist -->
+  <section class="glass-panel rounded-2xl overflow-hidden">
+    <div class="flex items-center gap-2 px-5 py-3.5" style="border-bottom:1px solid rgba(233,213,255,.5)">
+      <svg style="width:14px;height:14px;color:#a78bfa" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <h2 class="text-sm font-semibold" style="color:#1e1b4b">Pending Approval</h2>
+      <span class="ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">3</span>
+    </div>
+    <div>
+
+      <!-- Row -->
+      <div class="row-hover flex items-center gap-4 px-5 py-3.5 cursor-default transition-colors" style="border-bottom:1px solid rgba(233,213,255,.35)">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">SK</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#1e1b4b">Sarah Kim</p>
+          <p class="text-xs truncate" style="color:#475569">sarah@startup.io · Building a content tool for the marketing team</p>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[10px] tabular-nums" style="color:#94a3b8">2h ago</span>
+          <button class="rounded-xl px-3.5 py-1.5 text-xs font-semibold text-white cursor-pointer transition-all" style="background:#7c3aed" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Approve</button>
+          <button class="rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors" style="color:#94a3b8;border:1px solid rgba(203,213,225,.5);background:rgba(255,255,255,.5)" onmouseover="this.style.color='#475569'" onmouseout="this.style.color='#94a3b8'">Decline</button>
+        </div>
+      </div>
+
+      <div class="row-hover flex items-center gap-4 px-5 py-3.5 cursor-default transition-colors" style="border-bottom:1px solid rgba(233,213,255,.35)">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">MJ</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#1e1b4b">Marcus Johnson</p>
+          <p class="text-xs truncate" style="color:#475569">marcus@corp.com · Enterprise team, 50 people, content pipeline</p>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[10px] tabular-nums" style="color:#94a3b8">1d ago</span>
+          <button class="rounded-xl px-3.5 py-1.5 text-xs font-semibold text-white cursor-pointer transition-all" style="background:#7c3aed" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Approve</button>
+          <button class="rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors" style="color:#94a3b8;border:1px solid rgba(203,213,225,.5);background:rgba(255,255,255,.5)" onmouseover="this.style.color='#475569'" onmouseout="this.style.color='#94a3b8'">Decline</button>
+        </div>
+      </div>
+
+      <div class="row-hover flex items-center gap-4 px-5 py-3.5 cursor-default transition-colors">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">PL</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#1e1b4b">Priya Lal</p>
+          <p class="text-xs truncate" style="color:#475569">priya@agency.co · Social media agency, 20+ clients</p>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[10px] tabular-nums" style="color:#94a3b8">3d ago</span>
+          <button class="rounded-xl px-3.5 py-1.5 text-xs font-semibold text-white cursor-pointer transition-all" style="background:#7c3aed" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Approve</button>
+          <button class="rounded-xl px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors" style="color:#94a3b8;border:1px solid rgba(203,213,225,.5);background:rgba(255,255,255,.5)" onmouseover="this.style.color='#475569'" onmouseout="this.style.color='#94a3b8'">Decline</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Users -->
+  <section class="glass-panel rounded-2xl overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center gap-2 px-5 py-3.5" style="border-bottom:1px solid rgba(233,213,255,.5)">
+      <svg style="width:14px;height:14px;color:#a78bfa" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <h2 class="text-sm font-semibold" style="color:#1e1b4b">Users</h2>
+      <span class="rounded-full px-2 py-0.5 text-[10px] font-bold ml-1" style="background:rgba(124,58,237,.1);color:#7c3aed">24</span>
+      <!-- Search -->
+      <div class="ml-auto relative">
+        <svg class="absolute" style="left:10px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:#94a3b8;pointer-events:none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" placeholder="Search users…" style="height:32px;width:176px;background:rgba(255,255,255,.65);border:1px solid rgba(233,213,255,.7);border-radius:10px;padding-left:30px;padding-right:12px;font-size:12px;color:#1e1b4b;outline:none;font-family:inherit" onfocus="this.style.borderColor='#a78bfa';this.style.boxShadow='0 0 0 3px rgba(124,58,237,.12)'" onblur="this.style.borderColor='rgba(233,213,255,.7)';this.style.boxShadow='none'" placeholder="Search users…" />
+      </div>
+    </div>
+
+    <!-- Column headers -->
+    <div class="grid px-5 py-2.5" style="grid-template-columns:2fr 1fr 2.2fr auto;gap:12px;background:rgba(243,232,255,.3);border-bottom:1px solid rgba(233,213,255,.4)">
+      <span class="text-[10px] font-semibold uppercase tracking-wider" style="color:#94a3b8">User</span>
+      <span class="text-[10px] font-semibold uppercase tracking-wider" style="color:#94a3b8">Status</span>
+      <span class="text-[10px] font-semibold uppercase tracking-wider" style="color:#94a3b8">Monthly budget</span>
+      <span class="text-[10px] font-semibold uppercase tracking-wider" style="color:#94a3b8">Actions</span>
+    </div>
+
+    <!-- User rows -->
+
+    <!-- Critical usage (> 90%) — bar darkens, no red -->
+    <div class="row-hover grid px-5 py-3.5 items-center transition-colors" style="grid-template-columns:2fr 1fr 2.2fr auto;gap:12px;border-bottom:1px solid rgba(233,213,255,.3)">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">PM</div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#1e1b4b">Pratyush Mishra</p>
+          <p class="text-[10px] font-mono" style="color:#94a3b8">uid_a1b2c3d4</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 status-active">
+        <span class="dot" style="width:6px;height:6px;border-radius:50%;flex-shrink:0"></span>
+        <span class="text-xs font-medium">Active</span>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[10px]" style="color:#94a3b8">455k / 500k</span>
+          <span class="text-[10px] font-bold" style="color:#4c1d95">91%</span>
+        </div>
+        <div style="height:4px;background:rgba(233,213,255,.6);border-radius:999px;overflow:hidden">
+          <div class="bar bar-high" style="width:91%;height:100%;border-radius:999px"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <!-- Inline budget edit -->
+        <div class="flex items-center gap-1 rounded-xl px-2.5 py-1.5" style="background:rgba(255,255,255,.7);border:1px solid rgba(233,213,255,.8)">
+          <input type="number" value="500" class="text-xs font-semibold focus:outline-none" style="width:36px;background:transparent;color:#7c3aed;font-family:inherit" />
+          <span class="text-[10px]" style="color:#a78bfa">k</span>
+        </div>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-white cursor-pointer transition-all" style="background:#7c3aed" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Save</button>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer transition-colors" style="color:#475569;border:1px solid rgba(233,213,255,.7);background:rgba(255,255,255,.5)" onmouseover="this.style.color='#1e1b4b'" onmouseout="this.style.color='#475569'">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Mid usage -->
+    <div class="row-hover grid px-5 py-3.5 items-center transition-colors" style="grid-template-columns:2fr 1fr 2.2fr auto;gap:12px;border-bottom:1px solid rgba(233,213,255,.3)">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">JD</div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#1e1b4b">Jane Doe</p>
+          <p class="text-[10px] font-mono" style="color:#94a3b8">uid_e5f6g7h8</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 status-active">
+        <span class="dot" style="width:6px;height:6px;border-radius:50%;flex-shrink:0"></span>
+        <span class="text-xs font-medium">Active</span>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[10px]" style="color:#94a3b8">360k / 500k</span>
+          <span class="text-[10px] font-semibold" style="color:#6d28d9">72%</span>
+        </div>
+        <div style="height:4px;background:rgba(233,213,255,.6);border-radius:999px;overflow:hidden">
+          <div class="bar bar-mid" style="width:72%;height:100%;border-radius:999px"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1 rounded-xl px-2.5 py-1.5" style="background:rgba(255,255,255,.7);border:1px solid rgba(233,213,255,.8)">
+          <input type="number" value="500" class="text-xs font-semibold focus:outline-none" style="width:36px;background:transparent;color:#7c3aed;font-family:inherit" />
+          <span class="text-[10px]" style="color:#a78bfa">k</span>
+        </div>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-white cursor-pointer transition-all" style="background:#7c3aed" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Save</button>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer transition-colors" style="color:#475569;border:1px solid rgba(233,213,255,.7);background:rgba(255,255,255,.5)" onmouseover="this.style.color='#1e1b4b'" onmouseout="this.style.color='#475569'">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Low usage -->
+    <div class="row-hover grid px-5 py-3.5 items-center transition-colors" style="grid-template-columns:2fr 1fr 2.2fr auto;gap:12px;border-bottom:1px solid rgba(233,213,255,.3)">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">AR</div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#1e1b4b">Alex Rodriguez</p>
+          <p class="text-[10px] font-mono" style="color:#94a3b8">uid_i9j0k1l2</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 status-active">
+        <span class="dot" style="width:6px;height:6px;border-radius:50%;flex-shrink:0"></span>
+        <span class="text-xs font-medium">Active</span>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[10px]" style="color:#94a3b8">175k / 500k</span>
+          <span class="text-[10px] font-medium" style="color:#7c3aed">35%</span>
+        </div>
+        <div style="height:4px;background:rgba(233,213,255,.6);border-radius:999px;overflow:hidden">
+          <div class="bar bar-low" style="width:35%;height:100%;border-radius:999px"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1 rounded-xl px-2.5 py-1.5" style="background:rgba(255,255,255,.7);border:1px solid rgba(233,213,255,.8)">
+          <input type="number" value="500" class="text-xs font-semibold focus:outline-none" style="width:36px;background:transparent;color:#7c3aed;font-family:inherit" />
+          <span class="text-[10px]" style="color:#a78bfa">k</span>
+        </div>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-white cursor-pointer transition-all" style="background:#7c3aed" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Save</button>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer transition-colors" style="color:#475569;border:1px solid rgba(233,213,255,.7);background:rgba(255,255,255,.5)" onmouseover="this.style.color='#1e1b4b'" onmouseout="this.style.color='#475569'">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Suspended — row fades, no red -->
+    <div class="row-hover grid px-5 py-3.5 items-center transition-colors" style="grid-template-columns:2fr 1fr 2.2fr auto;gap:12px;opacity:0.5">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(148,163,184,.12);color:#94a3b8">TK</div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#475569">Tom Kirk</p>
+          <p class="text-[10px] font-mono" style="color:#94a3b8">uid_m3n4o5p6</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 status-suspended">
+        <span class="dot" style="width:6px;height:6px;border-radius:50%;flex-shrink:0"></span>
+        <span class="text-xs font-medium">Suspended</span>
+      </div>
+      <div>
+        <div style="height:4px;background:rgba(233,213,255,.4);border-radius:999px;overflow:hidden">
+          <div style="width:0%;height:100%;background:#e2e8f0;border-radius:999px"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer transition-all" style="background:#7c3aed;color:white" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Activate</button>
+      </div>
+    </div>
+
+    <!-- Another active -->
+    <div class="row-hover grid px-5 py-3.5 items-center transition-colors" style="grid-template-columns:2fr 1fr 2.2fr auto;gap:12px">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold" style="background:rgba(124,58,237,.1);color:#7c3aed">LW</div>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold truncate" style="color:#1e1b4b">Liu Wei</p>
+          <p class="text-[10px] font-mono" style="color:#94a3b8">uid_q7r8s9t0</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 status-active">
+        <span class="dot" style="width:6px;height:6px;border-radius:50%;flex-shrink:0"></span>
+        <span class="text-xs font-medium">Active</span>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-[10px]" style="color:#94a3b8">60k / 200k</span>
+          <span class="text-[10px] font-medium" style="color:#7c3aed">30%</span>
+        </div>
+        <div style="height:4px;background:rgba(233,213,255,.6);border-radius:999px;overflow:hidden">
+          <div class="bar bar-low" style="width:30%;height:100%;border-radius:999px"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-1 rounded-xl px-2.5 py-1.5" style="background:rgba(255,255,255,.7);border:1px solid rgba(233,213,255,.8)">
+          <input type="number" value="200" class="text-xs font-semibold focus:outline-none" style="width:36px;background:transparent;color:#7c3aed;font-family:inherit" />
+          <span class="text-[10px]" style="color:#a78bfa">k</span>
+        </div>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-white cursor-pointer transition-all" style="background:#7c3aed" onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">Save</button>
+        <button class="rounded-xl px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer transition-colors" style="color:#475569;border:1px solid rgba(233,213,255,.7);background:rgba(255,255,255,.5)" onmouseover="this.style.color='#1e1b4b'" onmouseout="this.style.color='#475569'">Suspend</button>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<div class="fixed bottom-4 right-4 rounded-xl text-white text-xs font-semibold px-4 py-2 shadow-lg" style="background:rgba(30,27,75,.85)">
+  V2 · Refined Glass — matches app theme
+</div>
+</body>
+</html>

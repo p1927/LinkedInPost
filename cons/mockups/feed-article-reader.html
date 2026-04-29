@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed · Article Reader (themed)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --canvas: #FAF5FF; --surface:#FFFFFF; --surface-muted:#F3E8FF;
+    --ink:#1E1B4B; --ink-hover:#312E81; --muted:#475569; --faint:#94A3B8;
+    --border:#E9D5FF; --border-strong:#DDD6FE;
+    --primary:#7C3AED; --primary-hover:#6D28D9; --secondary:#A78BFA;
+    --deep-purple:#4C1D95;
+  }
+  body {
+    font-family: "Plus Jakarta Sans", "Open Sans", system-ui, sans-serif;
+    color: var(--ink); min-height: 100vh;
+    background-color: #ede9fe;
+    background-image:
+      radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124, 58, 237, 0.42), transparent 55%),
+      radial-gradient(ellipse 95% 75% at 100% 5%, rgba(167, 139, 250, 0.36), transparent 52%),
+      radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192, 132, 252, 0.32), transparent 58%),
+      linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: "Poppins", "Plus Jakarta Sans", sans-serif; color: var(--ink); letter-spacing: -0.012em; }
+
+  /* Glass utilities */
+  .glass-sidebar { border-right: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.75); box-shadow: 4px 0 28px rgba(91,33,182,0.07); backdrop-filter: blur(20px); }
+  .glass-rail    { border-left: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.62); backdrop-filter: blur(18px); }
+
+  /* Layout — same shell as approved feed page */
+  .shell { display:grid; grid-template-columns: 64px 220px minmax(0,1fr) 300px; height: 100vh; }
+  .pane { overflow-y: auto; }
+  .pane::-webkit-scrollbar { width: 6px; } .pane::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius:3px; }
+
+  /* App rail */
+  .app-rail { border-right: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.82); backdrop-filter: blur(20px); display: flex; flex-direction: column; align-items: center; padding: 14px 0 16px; gap: 6px; }
+  .app-rail-logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #7C3AED, #4C1D95); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; font-family: 'Poppins'; margin-bottom: 14px; }
+  .rail-nav-btn { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--muted); cursor: pointer; transition: all 120ms; background: transparent; border: none; position: relative; }
+  .rail-nav-btn:hover { background: rgba(255,255,255,0.55); color: var(--ink); }
+  .rail-nav-btn.active { background: rgba(124,58,237,0.10); color: var(--primary); }
+  .rail-nav-btn::after { content: attr(data-label); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); background: var(--ink); color: white; padding: 4px 9px; border-radius: 5px; font-size: 11px; font-weight: 600; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms; z-index: 100; box-shadow: 0 4px 12px rgba(91,33,182,0.18); }
+  .rail-nav-btn:hover::after { opacity: 1; }
+
+  /* Sidebar nav */
+  .navlink { display:flex; align-items:center; gap:10px; padding: 7px 10px; border-radius: 10px; font-size: 13px; color: var(--muted); cursor:pointer; line-height:1; font-weight: 500; }
+  .navlink:hover { background: rgba(255,255,255,0.55); color: var(--ink); }
+  .navlink.active { color: var(--primary); font-weight:600; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.15); padding: 6px 9px; }
+  .navlink .count { margin-left:auto; font-size: 11px; color: var(--faint); font-feature-settings: "tnum"; }
+  .group-mark { width:7px; height:7px; border-radius:50%; background: var(--border-strong); flex-shrink:0; }
+  .navlink.active .group-mark { background: var(--primary); }
+  .nav-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing: 0.1em; color: var(--secondary); padding: 18px 10px 6px; }
+
+  .platform-dropdown { width: 100%; height: 34px; padding: 0 12px; background: rgba(255,255,255,0.65); border: 1px solid var(--border); border-radius: 9px; font-size: 12.5px; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 7px; cursor: pointer; transition: all 120ms; font-family: inherit; }
+  .platform-dropdown:hover { border-color: var(--primary); color: var(--primary); }
+  .platform-dropdown .chev { margin-left: auto; color: var(--faint); }
+
+  /* ─── READER ─── */
+
+  /* Reading progress bar */
+  .progress-bar { position: sticky; top: 0; height: 2px; background: rgba(124,58,237,0.10); z-index: 20; }
+  .progress-bar > .fill { height: 100%; width: 28%; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+
+  /* Sticky reader header — back, breadcrumb, action toolbar */
+  .reader-header { position: sticky; top: 2px; background: rgba(255,255,255,0.78); backdrop-filter: blur(18px); border-bottom: 1px solid rgba(221,214,254,0.55); padding: 10px 32px; display: flex; align-items: center; gap: 14px; z-index: 18; }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 120ms; background: transparent; border: none; font-family: inherit; }
+  .back-link:hover { background: rgba(255,255,255,0.6); color: var(--ink); }
+  .reader-breadcrumb { font-size: 12px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
+  .reader-breadcrumb .slash { color: var(--border-strong); }
+  .reader-breadcrumb b { color: var(--muted); font-weight: 600; }
+
+  .reader-tools { margin-left: auto; display: flex; gap: 2px; align-items: center; }
+  .ic { width: 32px; height: 32px; display:inline-flex; align-items:center; justify-content:center; border-radius: 7px; color: var(--muted); cursor:pointer; background: transparent; border: none; padding: 0; transition: color 120ms; }
+  .ic:hover { color: var(--primary); }
+  .ic.on { color: var(--primary); }
+
+  /* Reader body */
+  .reader-body { max-width: 720px; margin: 0 auto; padding: 36px 32px 100px; }
+
+  /* Article header */
+  .cluster-note { font-size: 10px; font-weight: 700; color: var(--primary); display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; background: rgba(124,58,237,0.08); border-radius: 9999px; border: 1px solid rgba(124,58,237,0.18); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 14px; }
+
+  .reader-title { font-size: 32px; line-height: 1.15; font-weight: 600; letter-spacing: -0.018em; color: var(--ink); margin-bottom: 14px; }
+
+  .reader-meta { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; padding-bottom: 18px; border-bottom: 1px solid var(--border-strong); margin-bottom: 24px; flex-wrap: wrap; }
+  .meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+  .source { color: var(--ink); font-weight: 600; }
+  .author { color: var(--muted); }
+  .fav { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex-shrink: 0; background: var(--border-strong); }
+  .open-original { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; color: var(--primary); border: 1px solid var(--border); background: rgba(255,255,255,0.7); cursor: pointer; transition: all 120ms; }
+  .open-original:hover { border-color: var(--primary); background: white; }
+
+  /* Lede + body */
+  .reader-lede { font-size: 17px; line-height: 1.6; color: var(--ink); font-weight: 500; margin-bottom: 22px; letter-spacing: -0.005em; }
+  .reader-body p { font-size: 15px; line-height: 1.75; color: var(--ink); margin-bottom: 18px; }
+  .reader-body p strong { color: var(--ink); font-weight: 700; }
+
+  /* Selected text + clip popover (demo state) */
+  .selected-passage { background: linear-gradient(180deg, transparent 60%, rgba(124,58,237,0.18) 60%); padding: 1px 1px; border-radius: 2px; cursor: pointer; position: relative; }
+  .clip-popover { position: absolute; left: 50%; transform: translateX(-50%); top: -52px; display: inline-flex; gap: 4px; padding: 5px; background: var(--ink); border-radius: 9px; box-shadow: 0 10px 32px rgba(30,27,75,0.32); white-space: nowrap; z-index: 5; }
+  .clip-popover::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%) rotate(45deg); width: 10px; height: 10px; background: var(--ink); }
+  .clip-popover button { font-family: inherit; font-size: 11.5px; font-weight: 600; color: white; background: transparent; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: background 120ms; }
+  .clip-popover button:hover { background: rgba(255,255,255,0.10); }
+  .clip-popover button.primary { background: var(--primary); }
+  .clip-popover button.primary:hover { background: var(--primary-hover); }
+  .clip-popover .sep { width: 1px; background: rgba(255,255,255,0.15); margin: 4px 0; }
+
+  /* Pull quote / blockquote in body */
+  blockquote { margin: 26px 0; padding: 14px 18px; border-left: 3px solid var(--primary); background: linear-gradient(155deg, rgba(124,58,237,0.05), transparent); border-radius: 0 10px 10px 0; }
+  blockquote p { font-size: 16px !important; line-height: 1.55 !important; color: var(--ink); font-style: italic; font-weight: 500; margin-bottom: 6px !important; }
+  blockquote cite { font-size: 11.5px; color: var(--muted); font-style: normal; }
+
+  /* Also covered cluster */
+  .also-covered { margin: 32px 0 0; padding: 20px 22px; border-radius: 14px; background: rgba(255,255,255,0.65); border: 1px solid var(--border-strong); }
+  .also-covered h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--secondary); margin-bottom: 12px; }
+  .also-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; padding: 10px 0; align-items: center; cursor: pointer; border-bottom: 1px solid rgba(221,214,254,0.55); }
+  .also-row:last-child { border-bottom: 0; }
+  .also-row:hover .ar-title { color: var(--primary); }
+  .ar-title { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.35; }
+  .ar-source { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .ar-time { font-size: 11px; color: var(--faint); font-feature-settings: "tnum"; }
+
+  /* Compose CTA at bottom */
+  .compose-cta { margin: 40px 0 0; padding: 28px 24px; border-radius: 16px; background: linear-gradient(155deg, rgba(124,58,237,0.08), rgba(167,139,250,0.04)); border: 1px solid rgba(124,58,237,0.18); text-align: center; }
+  .compose-cta-eyebrow { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--secondary); margin-bottom: 8px; }
+  .compose-cta-title { font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: -0.012em; margin-bottom: 6px; }
+  .compose-cta-sub { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.55; }
+  .cta-row { display: flex; gap: 10px; justify-content: center; }
+  .btn-primary { background: var(--primary); color: white; height: 40px; padding: 0 18px; border-radius: 10px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; border: none; box-shadow: 0 8px 22px -6px rgba(124,58,237,0.5); transition: background 120ms; font-family: inherit; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-ghost { background: rgba(255,255,255,0.7); color: var(--ink); height: 40px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; border: 1px solid var(--border); transition: all 120ms; font-family: inherit; }
+  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Clipped passages chip rail (above CTA) */
+  .clipped-row { margin-top: 24px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.6); border: 1px dashed rgba(124,58,237,0.30); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .clipped-row .label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--secondary); }
+  .clip-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(124,58,237,0.07); color: var(--ink); font-size: 11.5px; border-radius: 7px; border: 1px solid rgba(124,58,237,0.18); max-width: 320px; }
+  .clip-chip .text { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 240px; font-style: italic; }
+  .clip-chip .x { color: var(--faint); cursor: pointer; }
+  .clip-chip .x:hover { color: var(--primary); }
+
+  /* Right rail (kept identical to feed page) */
+  .right { padding: 24px 24px 32px; }
+  .r-section { margin-bottom: 28px; }
+  .r-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--secondary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-strong); }
+  .r-row { display:grid; grid-template-columns: 18px 1fr; gap: 10px; padding: 7px 0; cursor:pointer; }
+  .r-row:hover .r-row-title { color: var(--primary); }
+  .r-rank { color: var(--faint); font-size: 13px; font-weight: 600; padding-top: 1px; }
+  .r-row-title { color: var(--ink); font-weight: 600; font-size: 13px; line-height: 1.35; }
+  .r-row-meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+
+  .design-label { position:fixed; top: 14px; right: 18px; font-size: 11px; font-weight: 700; padding: 5px 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.85); color: var(--primary); border-radius: 9999px; z-index: 50; backdrop-filter: blur(8px); }
+</style>
+</head>
+<body>
+<div class="design-label">Article Reader</div>
+
+<div class="shell">
+
+  <!-- App rail -->
+  <aside class="app-rail">
+    <div class="app-rail-logo">L</div>
+    <button class="rail-nav-btn active" data-label="Feed"><i data-lucide="newspaper" class="w-5 h-5"></i></button>
+    <button class="rail-nav-btn" data-label="Topics"><i data-lucide="layout-list" class="w-5 h-5"></i></button>
+    <button class="rail-nav-btn" data-label="Drafts"><i data-lucide="pen-line" class="w-5 h-5"></i></button>
+    <button class="rail-nav-btn" data-label="Newsletter"><i data-lucide="mail" class="w-5 h-5"></i></button>
+    <div style="flex: 1"></div>
+    <button class="rail-nav-btn" data-label="Settings"><i data-lucide="settings" class="w-5 h-5"></i></button>
+  </aside>
+
+  <!-- Feed left panel — preserved while reading so context isn't lost -->
+  <aside class="glass-sidebar pane p-4">
+    <div class="nav-section" style="padding-top: 4px">Sections</div>
+    <div class="space-y-0.5">
+      <a class="navlink active"><span class="group-mark"></span> All <span class="count">128</span></a>
+      <a class="navlink"><span class="group-mark"></span> AI &amp; Tech <span class="count">42</span></a>
+      <a class="navlink"><span class="group-mark"></span> Leadership <span class="count">31</span></a>
+      <a class="navlink"><span class="group-mark"></span> Marketing <span class="count">28</span></a>
+      <a class="navlink"><span class="group-mark"></span> Startups <span class="count">19</span></a>
+    </div>
+
+    <div class="nav-section">Library</div>
+    <div class="space-y-0.5">
+      <a class="navlink"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Saved <span class="count">14</span></a>
+      <a class="navlink"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> Clippings <span class="count">7</span></a>
+    </div>
+
+    <div class="nav-section">Filters</div>
+    <button class="platform-dropdown">
+      <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+      <span>All platforms</span>
+      <i data-lucide="chevron-down" class="w-3.5 h-3.5 chev"></i>
+    </button>
+  </aside>
+
+  <!-- Center: Article reader -->
+  <section class="pane">
+
+    <!-- Reading progress -->
+    <div class="progress-bar"><div class="fill"></div></div>
+
+    <!-- Sticky reader header -->
+    <div class="reader-header">
+      <button class="back-link"><i data-lucide="arrow-left" class="w-4 h-4"></i> Feed</button>
+      <span class="reader-breadcrumb"><span class="slash">/</span> <b>OpenAI rolls out GPT-4o upgrades…</b></span>
+      <div class="reader-tools">
+        <button class="ic" title="Like"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+        <button class="ic" title="Hide"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+        <button class="ic on" title="Clipped"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+        <button class="ic" title="Save"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        <button class="ic" title="Share"><i data-lucide="share-2" class="w-4 h-4"></i></button>
+        <button class="ic" title="Open original"><i data-lucide="external-link" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+
+    <!-- Article body -->
+    <article class="reader-body">
+
+      <span class="cluster-note"><i data-lucide="layers" class="w-3 h-3"></i> 5 outlets covering</span>
+
+      <h1 class="reader-title">OpenAI rolls out GPT-4o upgrades with real-time voice and vision capabilities</h1>
+
+      <div class="reader-meta">
+        <span class="fav" style="background:#0BAB64"></span>
+        <span class="source">TechCrunch</span>
+        <span class="meta-dot"></span><span class="author">By Sarah Perez</span>
+        <span class="meta-dot"></span><span>2 hours ago</span>
+        <span class="meta-dot"></span><span>4 min read</span>
+        <button class="open-original"><i data-lucide="external-link" class="w-3 h-3"></i> Read original</button>
+      </div>
+
+      <p class="reader-lede">OpenAI today announced upgrades to GPT-4o that bring full real-time voice and vision support to its flagship model. Voice latency drops to roughly 320 ms — matching human conversational pacing — and vision now handles streaming video for live tutoring, accessibility, and field-service use cases.</p>
+
+      <p>In a brief livestream, the company's research lead Mira Murati demoed a back-and-forth conversation with GPT-4o that handled interruptions, emotional cues, and multilingual switching without a perceptible pause. <span class="selected-passage">Independent benchmarks shared with TechCrunch show a 40% latency drop versus the previous voice-mode preview<span class="clip-popover" id="clipPop"><button class="primary"><i data-lucide="scissors" class="w-3 h-3"></i> Clip passage</button><span class="sep"></span><button><i data-lucide="pen-line" class="w-3 h-3"></i> Compose post</button><button><i data-lucide="copy" class="w-3 h-3"></i></button></span></span>, with notably better handling of background noise and overlapping speech.</p>
+
+      <p>The enterprise tier is the more consequential announcement. <strong>API access ships next week</strong>, and OpenAI is replacing the older token-based audio billing with per-minute streaming pricing. That shifts cost predictability significantly for high-volume use cases like contact centers, where audio can pile up unpredictably under load.</p>
+
+      <blockquote>
+        <p>“If voice models close the latency gap, typing becomes a niche input — the way handwriting did when keyboards arrived.”</p>
+        <cite>— excerpted from the company's developer blog post</cite>
+      </blockquote>
+
+      <p>Notably, video-in is restricted to 480p at launch and capped at 30-minute sessions per call — limits the company says are due to GPU capacity rather than capability. Higher-tier customers can apply for an exemption that lifts the cap to 4K and 2-hour sessions.</p>
+
+      <p>The move puts pressure on Anthropic and Google, both of which have hinted at multimodal roadmaps for Q3 but have yet to ship comparable real-time experiences. Anthropic in particular has been positioning around enterprise compliance posture rather than raw capability — a strategy that may need to adjust if voice latency becomes the new benchmark customers care about.</p>
+
+      <p>For developers already on the Assistants API, the upgrade should require no code changes. OpenAI's documentation lists a single new parameter — <code>voice_streaming</code> — that enables the lower-latency mode. Pricing details and rate limits are expected to land alongside the GA rollout next Tuesday.</p>
+
+      <!-- Already-clipped passages from this article -->
+      <div class="clipped-row">
+        <span class="label"><i data-lucide="scissors" class="w-3 h-3 inline-block mr-1"></i> 1 clip from this article</span>
+        <span class="clip-chip"><span class="text">“40% latency drop versus the previous voice-mode preview”</span><i data-lucide="x" class="w-3 h-3 x"></i></span>
+      </div>
+
+      <!-- Also covered cluster -->
+      <div class="also-covered">
+        <h3><i data-lucide="layers" class="w-3 h-3 inline-block mr-1"></i> Also covered by</h3>
+        <a class="also-row">
+          <span class="fav" style="background:#FF7900"></span>
+          <div>
+            <div class="ar-title">What changed in voice mode — a hands-on test</div>
+            <div class="ar-source">The Verge · Allison Johnson</div>
+          </div>
+          <span class="ar-time">3h ago</span>
+        </a>
+        <a class="also-row">
+          <span class="fav" style="background:#000"></span>
+          <div>
+            <div class="ar-title">The end of typing? GPT-4o voice and the next interface shift</div>
+            <div class="ar-source">Wired · Steven Levy</div>
+          </div>
+          <span class="ar-time">4h ago</span>
+        </a>
+        <a class="also-row">
+          <span class="fav" style="background:#dc2626"></span>
+          <div>
+            <div class="ar-title">OpenAI tightens enterprise pricing as audio costs become a line-item</div>
+            <div class="ar-source">Bloomberg · Rachel Metz</div>
+          </div>
+          <span class="ar-time">5h ago</span>
+        </a>
+        <a class="also-row">
+          <span class="fav" style="background:#0BAB64"></span>
+          <div>
+            <div class="ar-title">Inside the GPT-4o livestream: what they didn't say</div>
+            <div class="ar-source">TechCrunch · Devin Coldewey</div>
+          </div>
+          <span class="ar-time">6h ago</span>
+        </a>
+      </div>
+
+      <!-- Compose CTA — appears after the user has read -->
+      <div class="compose-cta">
+        <div class="compose-cta-eyebrow">Done reading?</div>
+        <div class="compose-cta-title">Turn this into a LinkedIn post</div>
+        <p class="compose-cta-sub">We'll seed your draft with this article's key points and your 1 clipped passage. You stay in the driver's seat — edit, set the channel and schedule, then publish.</p>
+        <div class="cta-row">
+          <button class="btn-primary"><i data-lucide="pen-line" class="w-4 h-4"></i> Compose post from this article</button>
+          <button class="btn-ghost"><i data-lucide="bookmark" class="w-4 h-4"></i> Save for later</button>
+          <button class="btn-ghost"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to feed</button>
+        </div>
+      </div>
+
+    </article>
+  </section>
+
+  <!-- Right rail — preserved while reading -->
+  <aside class="glass-rail right pane">
+
+    <div class="r-section">
+      <div class="r-title">Most discussed</div>
+      <div class="r-row"><span class="r-rank">1</span><div><div class="r-row-title">GPT-4o voice rollout</div><div class="r-row-meta">42 stories · ↑280%</div></div></div>
+      <div class="r-row"><span class="r-rank">2</span><div><div class="r-row-title">DeepMind reasoning benchmark</div><div class="r-row-meta">28 stories · ↑140%</div></div></div>
+      <div class="r-row"><span class="r-rank">3</span><div><div class="r-row-title">Anthropic enterprise tier</div><div class="r-row-meta">19 stories · ↑95%</div></div></div>
+      <div class="r-row"><span class="r-rank">4</span><div><div class="r-row-title">Remote productivity</div><div class="r-row-meta">14 stories · ↑32%</div></div></div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Trending words</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;line-height:1.7;">
+        <a style="color:var(--primary);font-weight:600;cursor:pointer;">multimodal</a>
+        <a style="color:var(--primary);font-weight:600;cursor:pointer;">agentic</a>
+        <a style="color:var(--ink);cursor:pointer;">copilot</a>
+        <a style="color:var(--ink);cursor:pointer;">reasoning</a>
+        <a style="color:var(--ink);cursor:pointer;">benchmark</a>
+        <a style="color:var(--ink);cursor:pointer;">async</a>
+        <a style="color:var(--ink);cursor:pointer;">RAG</a>
+        <a style="color:var(--ink);cursor:pointer;">eval</a>
+      </div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Top sources · 7d</div>
+      <a class="r-row"><span class="fav" style="background:#0BAB64"></span><div><div class="r-row-title">TechCrunch</div></div><span class="r-row-meta" style="margin-top:0">18</span></a>
+      <a class="r-row"><span class="fav" style="background:#FF7900"></span><div><div class="r-row-title">The Verge</div></div><span class="r-row-meta" style="margin-top:0">12</span></a>
+      <a class="r-row"><span class="fav" style="background:#000"></span><div><div class="r-row-title">Wired</div></div><span class="r-row-meta" style="margin-top:0">9</span></a>
+      <a class="r-row"><span class="fav" style="background:#a8002b"></span><div><div class="r-row-title">HBR</div></div><span class="r-row-meta" style="margin-top:0">7</span></a>
+    </div>
+
+  </aside>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

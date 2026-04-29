@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feed — Option B2 Design (Magazine + Dock)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, rgba(245,243,255,0.4) 0%, #ffffff 50%, rgba(255,251,235,0.3) 100%);
+    }
+
+    /* ── Glass utilities (matches codebase exactly) ── */
+    .glass-header { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.8); backdrop-filter: blur(24px); }
+    .glass-panel  { border: 1px solid rgba(255,255,255,0.55); background: rgba(255,255,255,0.8); box-shadow: 0 4px 24px -6px rgba(91,33,182,0.08), 0 1px 0 rgba(255,255,255,0.6) inset; backdrop-filter: blur(16px); }
+    .glass-sidebar { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.75); backdrop-filter: blur(24px); }
+
+    /* ── Article card (exact match to FeedArticleCard) ── */
+    .article-card {
+      display: flex; gap: 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 10px;
+      cursor: pointer;
+      transition: box-shadow 150ms, border-color 150ms, background 150ms;
+      position: relative;
+    }
+    .article-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+      border-color: #cbd5e1;
+      background: rgba(248,250,252,0.5);
+    }
+    .article-card .hover-row { opacity: 0; transition: opacity 150ms; }
+    .article-card:hover .hover-row { opacity: 1; }
+
+    /* ── Hero card ── */
+    .hero-card {
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      cursor: pointer;
+      overflow: hidden;
+      transition: box-shadow 150ms;
+    }
+    .hero-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.10); border-color: #cbd5e1; }
+    .hero-card .hover-row { opacity: 0; transition: opacity 150ms; }
+    .hero-card:hover .hover-row { opacity: 1; }
+
+    /* ── Compact curated card (matches CompactArticleCard exactly) ── */
+    .compact-card {
+      display: flex; gap: 10px;
+      border-radius: 8px;
+      padding: 8px;
+      cursor: pointer;
+      transition: background 100ms;
+      position: relative;
+    }
+    .compact-card:hover { background: rgba(255,255,255,0.5); }
+    .compact-card .clip-btn { opacity: 0; transition: opacity 100ms; }
+    .compact-card:hover .clip-btn { opacity: 1; }
+
+    /* ── Sort pill ── */
+    .sort-pill {
+      height: 28px; padding: 0 12px; border-radius: 9999px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.4);
+      color: #6b7280;
+      transition: all 100ms;
+    }
+    .sort-pill:hover { color: #111113; }
+    .sort-pill.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+
+    /* ── Interest group item ── */
+    .ig-item {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 6px 8px; border-radius: 10px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border: 1px solid transparent; transition: all 80ms; color: #6b7280;
+    }
+    .ig-item:hover { background: rgba(255,255,255,0.4); color: #111113; }
+    .ig-item.active { background: rgba(109,40,217,0.08); border-color: rgba(109,40,217,0.2); color: #6d28d9; }
+
+    /* ── Clips dock ── */
+    #clips-dock {
+      width: 44px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid rgba(226,232,240,0.8);
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(16px);
+      transition: width 220ms cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+      position: relative;
+    }
+    #clips-dock.expanded { width: 288px; }
+
+    /* The strip that's always visible at the far right */
+    #dock-strip {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      gap: 10px;
+      z-index: 2;
+      background: rgba(255,255,255,0.75);
+      border-left: 1px solid rgba(226,232,240,0.8);
+    }
+
+    /* The panel that appears when expanded */
+    #dock-panel {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 244px;
+      background: white;
+      border-right: 1px solid rgba(226,232,240,0.6);
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-12px);
+      transition: opacity 180ms ease, transform 200ms cubic-bezier(0.4,0,0.2,1);
+      overflow: hidden;
+    }
+    #clips-dock.expanded #dock-panel {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    /* ── Clip thumbnail in strip ── */
+    .dock-thumb {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      border: 1.5px solid rgba(124,58,237,0.25);
+      background: linear-gradient(135deg, rgba(237,233,254,0.9), rgba(196,181,253,0.6));
+      display: grid; place-items: center;
+      font-size: 10px; font-weight: 700; color: #6d28d9;
+      cursor: pointer; flex-shrink: 0;
+      transition: transform 100ms, box-shadow 100ms;
+      overflow: hidden;
+    }
+    .dock-thumb:hover { transform: scale(1.1); box-shadow: 0 3px 10px rgba(109,40,217,0.2); }
+
+    /* ── Clip node in panel ── */
+    .clip-node {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: white;
+      padding: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+      transition: border-color 100ms;
+    }
+    .clip-node:hover { border-color: rgba(124,58,237,0.3); }
+
+    /* ── Source dot colors ── */
+    .src-blue   { background: #3b82f6; }
+    .src-green  { background: #22c55e; }
+    .src-purple { background: #a855f7; }
+    .src-orange { background: #f97316; }
+    .src-rose   { background: #f43f5e; }
+    .src-teal   { background: #14b8a6; }
+    .src-indigo { background: #6366f1; }
+    .src-amber  { background: #f59e0b; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.4); border-radius: 9999px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col text-slate-900">
+
+  <!-- ══════════ HEADER (glass-header) ══════════ -->
+  <header class="glass-header border-b shrink-0 z-20 px-4 py-2.5" style="border-color: rgba(255,255,255,0.5);">
+    <div class="flex items-center gap-3">
+
+      <!-- Logo -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="h-7 w-7 rounded-lg grid place-items-center text-white text-[10px] font-bold" style="background: linear-gradient(135deg,#7c3aed,#5b21b6);">LP</div>
+        <span class="text-sm font-bold text-slate-800">Feed</span>
+      </div>
+
+      <!-- Search bar -->
+      <div class="relative flex-1 max-w-xs">
+        <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400"></i>
+        <input
+          class="w-full h-8 rounded-lg border pl-8 pr-3 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none"
+          style="border-color: rgba(226,232,240,0.8); background: rgba(255,255,255,0.8);"
+          placeholder="Search topics, articles…"
+          value="AI agents"
+        />
+      </div>
+
+      <!-- Filters -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <select class="h-8 rounded-lg border px-2.5 text-xs text-slate-600 focus:outline-none" style="border-color: rgba(226,232,240,0.8); background: rgba(255,255,255,0.8);">
+          <option>Global</option><option>US</option><option>Europe</option>
+        </select>
+        <select class="h-8 rounded-lg border px-2.5 text-xs text-slate-600 focus:outline-none" style="border-color: rgba(226,232,240,0.8); background: rgba(255,255,255,0.8);">
+          <option>All topics</option><option>AI</option><option>Leadership</option>
+        </select>
+        <select class="h-8 rounded-lg border px-2.5 text-xs text-slate-600 focus:outline-none" style="border-color: rgba(226,232,240,0.8); background: rgba(255,255,255,0.8);">
+          <option>Today</option><option>This week</option><option>This month</option>
+        </select>
+      </div>
+
+      <!-- Sort pills -->
+      <div class="flex items-center gap-1 shrink-0">
+        <button class="sort-pill active" onclick="setSortPill(this)">Latest</button>
+        <button class="sort-pill" onclick="setSortPill(this)">Trending</button>
+        <button class="sort-pill" onclick="setSortPill(this)">For You</button>
+      </div>
+
+      <!-- Refresh -->
+      <button class="ml-auto h-8 w-8 flex items-center justify-center rounded-lg border text-slate-400 hover:text-violet-600 hover:border-violet-300 transition-colors" style="border-color: rgba(226,232,240,0.8); background: rgba(255,255,255,0.6);">
+        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+      </button>
+      <div class="h-7 w-7 rounded-full grid place-items-center text-white text-[10px] font-bold" style="background: linear-gradient(135deg,#a78bfa,#7c3aed);">PM</div>
+    </div>
+  </header>
+
+  <!-- ══════════ BODY ══════════ -->
+  <div class="flex flex-1 min-h-0 overflow-hidden">
+
+    <!-- ── Left: Interest groups ── -->
+    <aside class="glass-sidebar w-44 shrink-0 border-r flex flex-col p-2 gap-0.5 overflow-y-auto" style="border-color: rgba(226,232,240,0.6);">
+      <p class="px-2 pt-1 pb-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">Groups</p>
+
+      <button class="ig-item active" onclick="setGroup(this)">
+        <span class="h-2 w-2 rounded-full bg-violet-500 shrink-0"></span>All groups
+      </button>
+      <button class="ig-item" onclick="setGroup(this)">
+        <span class="h-2 w-2 rounded-full bg-indigo-500 shrink-0"></span>AI &amp; Tech
+      </button>
+      <button class="ig-item" onclick="setGroup(this)">
+        <span class="h-2 w-2 rounded-full bg-rose-500 shrink-0"></span>Leadership
+      </button>
+      <button class="ig-item" onclick="setGroup(this)">
+        <span class="h-2 w-2 rounded-full bg-amber-500 shrink-0"></span>Marketing
+      </button>
+      <button class="ig-item" onclick="setGroup(this)">
+        <span class="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>Startups
+      </button>
+      <button class="ig-item" onclick="setGroup(this)">
+        <span class="h-2 w-2 rounded-full bg-sky-500 shrink-0"></span>Product
+      </button>
+
+      <div class="flex-1"></div>
+      <button class="ig-item border border-dashed text-violet-600 mt-1" style="border-color: rgba(109,40,217,0.35); color: rgba(109,40,217,0.7);">
+        <i data-lucide="plus" class="w-3 h-3"></i>New group
+      </button>
+    </aside>
+
+    <!-- ── Center: Magazine feed ── -->
+    <main class="flex-1 min-w-0 overflow-y-auto px-5 py-4">
+      <div class="max-w-2xl mx-auto flex flex-col gap-3">
+
+        <!-- HERO card (first article, bigger) -->
+        <div class="hero-card" onclick="void(0)">
+          <!-- Image banner -->
+          <div class="h-40 bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 relative flex items-end p-3">
+            <div class="absolute inset-0 flex items-center justify-center opacity-[0.07]">
+              <i data-lucide="brain-circuit" class="w-28 h-28 text-violet-700"></i>
+            </div>
+            <!-- Clip button hover -->
+            <button class="hover-row absolute top-2.5 right-2.5 h-7 flex items-center gap-1 rounded-full bg-white/90 border border-slate-200 px-2.5 text-[11px] font-semibold text-slate-600 shadow-sm hover:text-violet-600 hover:border-violet-300" onclick="addClip(event,'GPT-5 Signals a New Era of Autonomous AI Agents','OpenAI\'s upcoming model shows reasoning that rivals senior engineers in code tasks.','https://techcrunch.com/gpt5','TechCrunch')">
+              <i data-lucide="scissors" class="w-3 h-3"></i>Clip
+            </button>
+          </div>
+          <div class="p-3.5">
+            <p class="text-[11px] text-slate-400 mb-1 font-medium">TechCrunch · 2h ago</p>
+            <h2 class="text-sm font-bold text-slate-900 leading-snug mb-1">GPT-5 Signals a New Era of Autonomous AI Agents</h2>
+            <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">OpenAI's upcoming model benchmarks suggest reasoning capabilities that rival senior engineers in code tasks, reshaping how companies think about automation.</p>
+            <div class="flex items-center gap-2 mt-2.5 hover-row">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+                <i data-lucide="thumbs-up" class="w-3 h-3"></i>
+              </button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+                <i data-lucide="thumbs-down" class="w-3 h-3"></i>
+              </button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-100 hover:text-violet-600 transition-colors" onclick="addClip(event,'GPT-5 Signals a New Era of Autonomous AI Agents','OpenAI\'s upcoming model shows reasoning that rivals senior engineers.','https://techcrunch.com/gpt5','TechCrunch')">
+                <i data-lucide="scissors" class="w-3 h-3"></i>
+              </button>
+              <button class="ml-auto h-7 flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 text-[11px] font-semibold text-white hover:bg-violet-700 transition-colors">
+                <i data-lucide="pencil" class="w-3 h-3"></i>Write post
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-column grid of standard cards -->
+        <div class="grid grid-cols-2 gap-3">
+
+          <!-- Card 1 -->
+          <div class="article-card flex-col p-0 overflow-hidden" style="gap:0">
+            <div class="h-20 bg-rose-50 relative flex items-end p-2.5">
+              <div class="absolute inset-0 flex items-center justify-center opacity-[0.08]"><i data-lucide="users" class="w-14 h-14 text-rose-600"></i></div>
+              <span class="relative inline-flex items-center gap-1 rounded-full bg-rose-500/10 border border-rose-200 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">Leadership</span>
+              <button class="hover-row absolute top-2 right-2 h-6 flex items-center gap-1 rounded-full bg-white/90 border border-slate-200 px-2 text-[10px] font-semibold text-slate-500 hover:text-violet-600" onclick="addClip(event,'Why Great Managers Give Up Control','Research shows autonomy-granting managers see 34% higher team output.','https://hbr.org/managers','HBR')">
+                <i data-lucide="scissors" class="w-2.5 h-2.5"></i>Clip
+              </button>
+            </div>
+            <div class="p-3">
+              <p class="text-[11px] text-slate-400 mb-0.5">HBR · 5h ago</p>
+              <p class="text-xs font-semibold text-slate-900 leading-snug line-clamp-2">Why Great Managers Give Up Control</p>
+              <p class="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">Research shows autonomy-granting managers see 34% higher team output.</p>
+              <div class="flex items-center gap-1.5 mt-2 hover-row">
+                <button class="h-5 w-5 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-up" class="w-2.5 h-2.5"></i></button>
+                <button class="h-5 w-5 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-down" class="w-2.5 h-2.5"></i></button>
+                <button class="h-5 w-5 rounded-full grid place-items-center text-slate-400 hover:bg-violet-100 hover:text-violet-600" onclick="addClip(event,'Why Great Managers Give Up Control','Autonomy-granting managers see 34% higher output.','https://hbr.org/managers','HBR')"><i data-lucide="scissors" class="w-2.5 h-2.5"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="article-card flex-col p-0 overflow-hidden" style="gap:0">
+            <div class="h-20 bg-amber-50 relative flex items-end p-2.5">
+              <div class="absolute inset-0 flex items-center justify-center opacity-[0.08]"><i data-lucide="trending-up" class="w-14 h-14 text-amber-600"></i></div>
+              <span class="relative inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Startups</span>
+              <button class="hover-row absolute top-2 right-2 h-6 flex items-center gap-1 rounded-full bg-white/90 border border-slate-200 px-2 text-[10px] font-semibold text-slate-500 hover:text-violet-600" onclick="addClip(event,'The Death of the 5-Slide Pitch Deck','Founders who led with product demos closed 2.3× more seed rounds.','https://a16z.com/pitch-deck','a16z')">
+                <i data-lucide="scissors" class="w-2.5 h-2.5"></i>Clip
+              </button>
+            </div>
+            <div class="p-3">
+              <p class="text-[11px] text-slate-400 mb-0.5">a16z · 1d ago</p>
+              <p class="text-xs font-semibold text-slate-900 leading-snug line-clamp-2">The Death of the 5-Slide Pitch Deck</p>
+              <p class="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">Founders who led with product demos closed 2.3× more seed rounds in 2024.</p>
+              <div class="flex items-center gap-1.5 mt-2 hover-row">
+                <button class="h-5 w-5 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-up" class="w-2.5 h-2.5"></i></button>
+                <button class="h-5 w-5 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-down" class="w-2.5 h-2.5"></i></button>
+                <button class="h-5 w-5 rounded-full grid place-items-center text-slate-400 hover:bg-violet-100 hover:text-violet-600" onclick="addClip(event,'The Death of the 5-Slide Pitch Deck','Product-demo pitches close 2.3× more seed rounds.','https://a16z.com/pitch-deck','a16z')"><i data-lucide="scissors" class="w-2.5 h-2.5"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Standard list cards (same as FeedArticleCard exactly) -->
+
+        <!-- List card 1 -->
+        <div class="article-card">
+          <div class="h-16 w-20 shrink-0 rounded-lg overflow-hidden bg-indigo-500 flex items-center justify-center">
+            <span class="text-white text-xl font-bold">W</span>
+          </div>
+          <div class="flex flex-col flex-1 min-w-0 justify-between py-0.5">
+            <div>
+              <p class="text-[11px] text-slate-400 mb-0.5"><span class="font-medium text-slate-500">Wired</span> · 12h ago</p>
+              <p class="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">The Quiet Rise of Synthetic Training Data</p>
+              <p class="mt-0.5 text-xs text-slate-500 line-clamp-1">As real-world data becomes scarce, frontier labs pivot to AI-generated synthetic datasets.</p>
+            </div>
+            <div class="flex gap-1 mt-1 hover-row">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-100 hover:text-violet-600" onclick="addClip(event,'The Quiet Rise of Synthetic Training Data','Labs pivot to AI-generated synthetic datasets as real-world data becomes scarce.','https://wired.com/synthetic-data','Wired')"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- List card 2 -->
+        <div class="article-card">
+          <div class="h-16 w-20 shrink-0 rounded-lg overflow-hidden bg-green-500 flex items-center justify-center">
+            <span class="text-white text-xl font-bold">M</span>
+          </div>
+          <div class="flex flex-col flex-1 min-w-0 justify-between py-0.5">
+            <div>
+              <p class="text-[11px] text-slate-400 mb-0.5"><span class="font-medium text-slate-500">Medium</span> · 8h ago</p>
+              <p class="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">Jobs-to-Be-Done Is Still the Best Product Framework</p>
+              <p class="mt-0.5 text-xs text-slate-500 line-clamp-1">JTBD explains why users hire tools — more relevant than ever in an AI-first world.</p>
+            </div>
+            <div class="flex gap-1 mt-1 hover-row">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100 hover:text-slate-600"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-100 hover:text-violet-600" onclick="addClip(event,'Jobs-to-Be-Done Is Still the Best Product Framework','JTBD explains why users hire tools over features.','https://medium.com/jtbd','Medium')"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- List card 3 — thumbed down (dimmed) -->
+        <div class="article-card" style="opacity:0.4;">
+          <div class="h-16 w-20 shrink-0 rounded-lg overflow-hidden bg-rose-500 flex items-center justify-center">
+            <span class="text-white text-xl font-bold">F</span>
+          </div>
+          <div class="flex flex-col flex-1 min-w-0 justify-between py-0.5">
+            <div>
+              <p class="text-[11px] text-slate-400 mb-0.5"><span class="font-medium text-slate-500">Forbes</span> · 3d ago</p>
+              <p class="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">Ten Ways To Stay Productive Working From Home</p>
+              <p class="mt-0.5 text-xs text-slate-500 line-clamp-1">Classic productivity tips repackaged for remote workers in 2025.</p>
+            </div>
+            <div class="flex gap-1 mt-1">
+              <button class="h-6 w-6 rounded-full grid place-items-center bg-red-100 text-red-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <span class="text-[10px] text-slate-400 self-center ml-1">Dismissed</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Load more -->
+        <div class="flex justify-center py-3">
+          <button class="flex items-center gap-2 h-8 rounded-full border border-slate-200 bg-white/80 px-5 text-xs font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-all">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>Load more
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ── Right: Curated panel ── -->
+    <!-- Same visual style as left panel — compact article cards matching CompactArticleCard -->
+    <aside class="w-72 shrink-0 border-l flex flex-col overflow-hidden" style="border-color: rgba(226,232,240,0.6); background: rgba(255,255,255,0.75);">
+
+      <!-- Panel header -->
+      <div class="flex items-center justify-between px-4 py-3 border-b shrink-0" style="border-color: rgba(226,232,240,0.6);">
+        <span class="text-sm font-semibold text-slate-800">Curated</span>
+        <select class="h-7 rounded-lg border px-2 text-xs text-slate-500 focus:outline-none" style="border-color: rgba(226,232,240,0.8); background: rgba(255,255,255,0.8);">
+          <option>All Platforms</option><option>YouTube</option><option>LinkedIn</option>
+        </select>
+      </div>
+
+      <div class="flex-1 overflow-y-auto pb-4">
+
+        <!-- Top 5 Today -->
+        <div class="px-4 pt-4">
+          <div class="flex items-center gap-1.5 mb-2">
+            <i data-lucide="sparkles" class="w-3 h-3 text-violet-500 shrink-0"></i>
+            <span class="text-xs font-semibold text-slate-800">Top 5 Today</span>
+          </div>
+          <div class="space-y-0.5">
+            <!-- Compact card (matches CompactArticleCard) -->
+            <div class="compact-card">
+              <div class="shrink-0 h-9 w-9 rounded-md overflow-hidden bg-violet-100 flex items-center justify-center">
+                <span class="text-violet-500 font-bold text-sm">T</span>
+              </div>
+              <div class="flex-1 min-w-0 pr-4">
+                <p class="text-xs font-medium text-slate-800 line-clamp-2 leading-snug">GPT-5 Signals Autonomous AI Era</p>
+                <p class="mt-0.5 text-[10px] text-slate-400 truncate">TechCrunch · 2h ago</p>
+              </div>
+              <button class="clip-btn absolute top-1.5 right-1.5 rounded p-0.5 text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-2.5 h-2.5"></i></button>
+            </div>
+            <div class="compact-card">
+              <div class="shrink-0 h-9 w-9 rounded-md overflow-hidden bg-rose-100 flex items-center justify-center">
+                <span class="text-rose-500 font-bold text-sm">H</span>
+              </div>
+              <div class="flex-1 min-w-0 pr-4">
+                <p class="text-xs font-medium text-slate-800 line-clamp-2 leading-snug">Why Managers Give Up Control</p>
+                <p class="mt-0.5 text-[10px] text-slate-400 truncate">HBR · 5h ago</p>
+              </div>
+              <button class="clip-btn absolute top-1.5 right-1.5 rounded p-0.5 text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-2.5 h-2.5"></i></button>
+            </div>
+            <div class="compact-card">
+              <div class="shrink-0 h-9 w-9 rounded-md overflow-hidden bg-amber-100 flex items-center justify-center">
+                <span class="text-amber-500 font-bold text-sm">a</span>
+              </div>
+              <div class="flex-1 min-w-0 pr-4">
+                <p class="text-xs font-medium text-slate-800 line-clamp-2 leading-snug">Death of the 5-Slide Pitch Deck</p>
+                <p class="mt-0.5 text-[10px] text-slate-400 truncate">a16z · 1d ago</p>
+              </div>
+              <button class="clip-btn absolute top-1.5 right-1.5 rounded p-0.5 text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-2.5 h-2.5"></i></button>
+            </div>
+            <div class="compact-card">
+              <div class="shrink-0 h-9 w-9 rounded-md overflow-hidden bg-indigo-100 flex items-center justify-center">
+                <span class="text-indigo-500 font-bold text-sm">W</span>
+              </div>
+              <div class="flex-1 min-w-0 pr-4">
+                <p class="text-xs font-medium text-slate-800 line-clamp-2 leading-snug">Quiet Rise of Synthetic Training Data</p>
+                <p class="mt-0.5 text-[10px] text-slate-400 truncate">Wired · 12h ago</p>
+              </div>
+              <button class="clip-btn absolute top-1.5 right-1.5 rounded p-0.5 text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-2.5 h-2.5"></i></button>
+            </div>
+            <div class="compact-card">
+              <div class="shrink-0 h-9 w-9 rounded-md overflow-hidden bg-emerald-100 flex items-center justify-center">
+                <span class="text-emerald-500 font-bold text-sm">M</span>
+              </div>
+              <div class="flex-1 min-w-0 pr-4">
+                <p class="text-xs font-medium text-slate-800 line-clamp-2 leading-snug">Jobs-to-Be-Done Framework in AI Era</p>
+                <p class="mt-0.5 text-[10px] text-slate-400 truncate">Medium · 8h ago</p>
+              </div>
+              <button class="clip-btn absolute top-1.5 right-1.5 rounded p-0.5 text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-2.5 h-2.5"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t mx-4 my-3" style="border-color: rgba(226,232,240,0.6);"></div>
+
+        <!-- Trending Words -->
+        <div class="px-4">
+          <div class="flex items-center gap-1.5 mb-2">
+            <i data-lucide="bar-chart-2" class="w-3 h-3 text-violet-500 shrink-0"></i>
+            <span class="text-xs font-semibold text-slate-800">Trending Words</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-violet-50 text-violet-700 border border-violet-100">agentic</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-slate-50 text-slate-600 border border-slate-200">synthetic data</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-100">autonomy</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-100">vertical AI</span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">JTBD</span>
+          </div>
+        </div>
+
+        <div class="border-t mx-4 my-3" style="border-color: rgba(226,232,240,0.6);"></div>
+
+        <!-- Recommended Topics -->
+        <div class="px-4">
+          <div class="flex items-center gap-1.5 mb-2">
+            <i data-lucide="compass" class="w-3 h-3 text-violet-500 shrink-0"></i>
+            <span class="text-xs font-semibold text-slate-800">Recommended Topics</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <button class="flex items-center gap-2 text-[11px] font-semibold text-slate-500 hover:text-violet-600 text-left py-0.5">
+              <i data-lucide="plus-circle" class="w-3 h-3 text-slate-300 shrink-0"></i>AI safety &amp; alignment
+            </button>
+            <button class="flex items-center gap-2 text-[11px] font-semibold text-slate-500 hover:text-violet-600 text-left py-0.5">
+              <i data-lucide="plus-circle" class="w-3 h-3 text-slate-300 shrink-0"></i>Founder fundraising
+            </button>
+            <button class="flex items-center gap-2 text-[11px] font-semibold text-slate-500 hover:text-violet-600 text-left py-0.5">
+              <i data-lucide="plus-circle" class="w-3 h-3 text-slate-300 shrink-0"></i>Developer productivity
+            </button>
+            <button class="flex items-center gap-2 text-[11px] font-semibold text-slate-500 hover:text-violet-600 text-left py-0.5">
+              <i data-lucide="plus-circle" class="w-3 h-3 text-slate-300 shrink-0"></i>Remote-first teams
+            </button>
+            <button class="flex items-center gap-2 text-[11px] font-semibold text-slate-500 hover:text-violet-600 text-left py-0.5">
+              <i data-lucide="plus-circle" class="w-3 h-3 text-slate-300 shrink-0"></i>Go-to-market strategy
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Clips dock (Mac-style side strip) ── -->
+    <div id="clips-dock">
+
+      <!-- Expanded panel (left side of dock) -->
+      <div id="dock-panel">
+        <div class="flex items-center justify-between px-3 py-2.5 border-b shrink-0" style="border-color: rgba(226,232,240,0.6);">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="scissors" class="w-3.5 h-3.5 text-violet-500"></i>
+            <span class="text-xs font-semibold text-slate-800">My Clips</span>
+            <span id="clip-count-badge" class="text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-violet-100 text-violet-600">0</span>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="clips-empty" class="flex flex-col items-center gap-2 px-4 py-8 text-center">
+          <div class="h-9 w-9 rounded-xl bg-slate-50 border border-slate-200 grid place-items-center">
+            <i data-lucide="scissors" class="w-4 h-4 text-slate-300"></i>
+          </div>
+          <p class="text-xs font-semibold text-slate-400">No clips yet</p>
+          <p class="text-[11px] text-slate-300 leading-relaxed">Click ✂ on any article to clip it here</p>
+        </div>
+
+        <!-- Clips list -->
+        <div id="clips-list" class="flex flex-col gap-2 p-3 overflow-y-auto flex-1" hidden></div>
+      </div>
+
+      <!-- Strip (always visible on the far right) -->
+      <div id="dock-strip">
+        <!-- Toggle -->
+        <button onclick="toggleDock()" class="flex flex-col items-center gap-1 group" title="Open clips">
+          <div class="w-8 h-8 rounded-xl border grid place-items-center transition-colors group-hover:border-violet-300 group-hover:bg-violet-50" style="border-color: rgba(226,232,240,0.8); background: rgba(255,255,255,0.8);">
+            <i data-lucide="scissors" class="w-3.5 h-3.5 text-slate-500 group-hover:text-violet-600"></i>
+          </div>
+          <span id="dock-count" class="text-[8px] font-black text-slate-400">0</span>
+        </button>
+
+        <div class="w-5 h-px mx-auto" style="background: rgba(226,232,240,0.8);"></div>
+
+        <!-- Thumbnails -->
+        <div id="dock-thumbs" class="flex flex-col items-center gap-2"></div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <script>
+    lucide.createIcons();
+
+    function setSortPill(el) {
+      el.closest('.flex').querySelectorAll('.sort-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function setGroup(el) {
+      document.querySelectorAll('.ig-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // ── Clips state ──
+    let clips = [];
+
+    function addClip(evt, title, text, url, source) {
+      evt.stopPropagation();
+      if (clips.find(c => c.url === url)) return;
+      clips.push({ id: Date.now(), title, text, url, source: source || 'Unknown' });
+      renderClips();
+      document.getElementById('clips-dock').classList.add('expanded');
+    }
+
+    function removeClip(id) {
+      clips = clips.filter(c => c.id !== id);
+      renderClips();
+      if (clips.length === 0) {
+        document.getElementById('clips-dock').classList.remove('expanded');
+      }
+    }
+
+    function renderClips() {
+      const count = clips.length;
+      document.getElementById('clip-count-badge').textContent = count;
+      document.getElementById('dock-count').textContent = count;
+
+      // Thumbs
+      const thumbsEl = document.getElementById('dock-thumbs');
+      thumbsEl.innerHTML = clips.slice(0, 6).map(c => `
+        <div class="dock-thumb" onclick="document.getElementById('clips-dock').classList.add('expanded')" title="${c.title}">
+          ${c.source[0] || '?'}
+        </div>
+      `).join('');
+
+      // Empty/list toggle
+      document.getElementById('clips-empty').hidden = count > 0;
+      document.getElementById('clips-list').hidden = count === 0;
+
+      // Clip nodes — same structure as ClipNode in actual app
+      const listEl = document.getElementById('clips-list');
+      listEl.innerHTML = clips.map(c => `
+        <div class="clip-node">
+          <!-- Title row -->
+          <div class="flex items-start justify-between gap-1">
+            <p class="text-[11px] font-semibold text-slate-900 leading-snug flex-1 line-clamp-2">${c.title}</p>
+            <button onclick="removeClip(${c.id})" class="shrink-0 h-5 w-5 rounded-full grid place-items-center text-slate-300 hover:bg-red-50 hover:text-red-400 transition-colors ml-1">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+          </div>
+
+          <!-- Source + link -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-medium text-slate-500">${c.source}</span>
+            <span class="text-slate-200">·</span>
+            <a href="${c.url}" onclick="event.preventDefault()" class="flex items-center gap-1 text-[10px] text-violet-500 hover:text-violet-700 truncate font-medium">
+              <i data-lucide="link-2" class="w-2.5 h-2.5 shrink-0"></i>
+              <span class="truncate">${c.url.replace('https://','').replace('http://','')}</span>
+            </a>
+          </div>
+
+          ${c.text ? `
+          <!-- Extracted passage -->
+          <div class="rounded-lg bg-violet-50 border border-violet-100 px-2.5 py-2">
+            <p class="text-[9px] font-bold uppercase tracking-wider text-violet-400 mb-1">Clipped text</p>
+            <p class="text-[11px] text-slate-600 leading-relaxed italic">"${c.text}"</p>
+          </div>
+          ` : ''}
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2 pt-1.5 border-t" style="border-color: rgba(226,232,240,0.6);">
+            <button class="flex items-center gap-1 h-6 rounded-lg bg-violet-600 px-2.5 text-[10px] font-semibold text-white hover:bg-violet-700 transition-colors">
+              <i data-lucide="pencil" class="w-2.5 h-2.5"></i>Write post
+            </button>
+            <button class="flex items-center gap-1 h-6 rounded-lg border border-slate-200 px-2 text-[10px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors">
+              <i data-lucide="copy" class="w-2.5 h-2.5"></i>Copy
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function toggleDock() {
+      document.getElementById('clips-dock').classList.toggle('expanded');
+    }
+
+    renderClips();
+  </script>
+</body>
+</html>

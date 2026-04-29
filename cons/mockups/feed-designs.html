@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feed — 3 Design Options</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .ink { color: #111113; }
+    .muted { color: #6b7280; }
+    .glass { background: rgba(255,255,255,0.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.6); }
+    .frame { border:1px solid rgba(126,34,206,0.18); border-radius:14px; background:white; box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 6px 24px -12px rgba(17,17,19,0.10); }
+    .btn-primary { background:#6d28d9; color:white; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px; cursor:pointer; border:none; }
+    .btn-secondary { background:white; color:#6d28d9; border:1px solid #c4b5fd; border-radius:8px; padding:5px 10px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
+    .pill { display:inline-flex; align-items:center; gap:4px; border-radius:9999px; padding:2px 8px; font-size:10px; font-weight:600; line-height:1; }
+    .hover-only { opacity:0; transition:opacity 150ms; }
+    .ig-card:hover .hover-only { opacity:1; }
+    .tab-active { background:#6d28d9; color:white; }
+    .ann { font-size:11px; line-height:1.4; color:#6b7280; }
+    .ann strong { color:#6d28d9; font-weight:600; }
+    [hidden] { display:none !important; }
+
+    /* Clips drawer slide */
+    .clips-drawer { transition: width 200ms ease, opacity 150ms ease; }
+
+    /* Scrubber dots for option selector */
+    .opt-btn { border-radius:9999px; padding:6px 18px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid transparent; transition: all 120ms; }
+    .opt-btn.active { background:#6d28d9; color:white; border-color:#6d28d9; }
+    .opt-btn:not(.active) { background:white; color:#374151; border-color:#e5e7eb; }
+    .opt-btn:not(.active):hover { border-color:#c4b5fd; color:#6d28d9; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 ink">
+
+  <!-- Sticky header -->
+  <header class="sticky top-0 z-30 border-b border-violet-100 bg-white/85 backdrop-blur-md">
+    <div class="mx-auto max-w-7xl px-5 py-3 flex items-center gap-4">
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 to-violet-800 grid place-items-center text-white text-xs font-bold">LP</div>
+        <div class="leading-tight">
+          <p class="text-sm font-semibold ink">Feed — 3 design options</p>
+          <p class="text-[11px] muted">Pick one → implementation begins</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 ml-auto">
+        <button class="opt-btn active" onclick="show('A',this)">Option A — Spotlight</button>
+        <button class="opt-btn" onclick="show('B',this)">Option B — Magazine</button>
+        <button class="opt-btn" onclick="show('C',this)">Option C — Research Hub</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!--  OPTION A — Spotlight: single-column feed, clips rail on right -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="optA" class="h-[calc(100vh-56px)] flex overflow-hidden">
+
+    <!-- Left sidebar: interest groups -->
+    <aside class="w-44 shrink-0 border-r border-violet-100 bg-white/30 flex flex-col gap-0.5 p-2 overflow-y-auto">
+      <p class="px-2 pt-1 pb-1 text-[9px] font-bold uppercase tracking-widest muted">Interest Groups</p>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+        <span class="h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0"></span>All groups
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0"></span>AI &amp; Tech
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-pink-500 shrink-0"></span>Leadership
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>Marketing
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>Startups
+      </button>
+      <button class="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-violet-600 border border-dashed border-violet-300 mt-2 hover:border-violet-500">
+        <i data-lucide="plus" class="w-3 h-3"></i>New group
+      </button>
+    </aside>
+
+    <!-- Center: header + feed -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+      <!-- Header: search + filters row, then grouping chips row -->
+      <div class="shrink-0 border-b border-violet-100 bg-white/60 backdrop-blur-sm px-5 py-3 space-y-2.5">
+        <!-- Row 1: search + region/genre/time inline -->
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-400"></i>
+            <input class="w-full h-9 rounded-xl border border-violet-200 bg-white/80 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100" placeholder="Enter a topic to explore trending content…" value="AI productivity tools" />
+          </div>
+          <select class="h-9 rounded-xl border border-violet-200 bg-white/80 px-3 text-xs font-semibold text-slate-600 outline-none focus:border-violet-400 cursor-pointer">
+            <option>🌍 US</option><option>🇬🇧 UK</option><option>🌐 Global</option>
+          </select>
+          <select class="h-9 rounded-xl border border-violet-200 bg-white/80 px-3 text-xs font-semibold text-slate-600 outline-none focus:border-violet-400 cursor-pointer">
+            <option>📰 All genres</option><option>💻 Tech</option><option>💼 Business</option>
+          </select>
+          <select class="h-9 rounded-xl border border-violet-200 bg-white/80 px-3 text-xs font-semibold text-slate-600 outline-none focus:border-violet-400 cursor-pointer">
+            <option>⏱ 7 days</option><option>24h</option><option>30 days</option>
+          </select>
+        </div>
+        <!-- Row 2: sort pills -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-[9px] font-bold uppercase tracking-widest text-violet-400 mr-1">Sort</span>
+          <button class="h-7 px-3 rounded-full text-[11px] font-semibold bg-violet-700 text-white">Latest</button>
+          <button class="h-7 px-3 rounded-full text-[11px] font-semibold text-slate-500 bg-white/70 border border-violet-100 hover:border-violet-300">Trending</button>
+          <button class="h-7 px-3 rounded-full text-[11px] font-semibold text-slate-500 bg-white/70 border border-violet-100 hover:border-violet-300">For You</button>
+        </div>
+      </div>
+
+      <!-- Article feed — centered, single column -->
+      <div class="flex-1 overflow-y-auto py-5">
+        <div class="mx-auto max-w-2xl px-4 space-y-3">
+
+          <!-- Article card -->
+          <div class="ig-card frame p-0 overflow-hidden flex cursor-pointer relative">
+            <div class="w-28 h-24 shrink-0 bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center text-white font-bold text-2xl rounded-tl-[13px] rounded-bl-[13px]">AI</div>
+            <div class="flex-1 min-w-0 p-3">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5">TechCrunch</span>
+                <span class="text-[10px] muted">· 2h ago</span>
+              </div>
+              <p class="text-sm font-semibold leading-snug line-clamp-2 ink">OpenAI rolls out GPT-4o upgrades with real-time voice and vision capabilities</p>
+              <p class="text-[11.5px] leading-snug muted mt-1 line-clamp-1">Multimodal updates bring voice closer to human fluency, setting a new bar for AI assistants.</p>
+            </div>
+            <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1.5 py-1 shadow-sm">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-rose-50 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-50 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+
+          <div class="ig-card frame p-0 overflow-hidden flex cursor-pointer relative">
+            <div class="w-28 h-24 shrink-0 bg-gradient-to-br from-amber-400 to-amber-600 grid place-items-center text-white font-bold text-2xl rounded-tl-[13px] rounded-bl-[13px]">📊</div>
+            <div class="flex-1 min-w-0 p-3">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5">Forbes</span>
+                <span class="text-[10px] muted">· 4h ago</span>
+              </div>
+              <p class="text-sm font-semibold leading-snug line-clamp-2 ink">Why productivity metrics are failing remote teams — and what leaders should measure instead</p>
+              <p class="text-[11.5px] leading-snug muted mt-1 line-clamp-1">Traditional KPIs miss what drives output in distributed environments. Here's how to adapt.</p>
+            </div>
+            <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1.5 py-1 shadow-sm">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-rose-50 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-50 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+
+          <div class="ig-card frame p-0 overflow-hidden flex cursor-pointer relative">
+            <div class="w-28 h-24 shrink-0 bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white font-bold text-2xl rounded-tl-[13px] rounded-bl-[13px]">🚀</div>
+            <div class="flex-1 min-w-0 p-3">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5">Wired</span>
+                <span class="text-[10px] muted">· 5h ago</span>
+              </div>
+              <p class="text-sm font-semibold leading-snug line-clamp-2 ink">The quiet AI revolution happening inside enterprise tools most employees don't notice</p>
+              <p class="text-[11.5px] leading-snug muted mt-1 line-clamp-1">AI is woven into Notion, Salesforce, Slack without announcement, changing how work happens.</p>
+            </div>
+            <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1.5 py-1 shadow-sm">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-rose-50 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-50 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+
+          <div class="ig-card frame p-0 overflow-hidden flex cursor-pointer relative">
+            <div class="w-28 h-24 shrink-0 bg-gradient-to-br from-pink-400 to-pink-600 grid place-items-center text-white font-bold text-2xl rounded-tl-[13px] rounded-bl-[13px]">💡</div>
+            <div class="flex-1 min-w-0 p-3">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5">HBR</span>
+                <span class="text-[10px] muted">· 6h ago</span>
+              </div>
+              <p class="text-sm font-semibold leading-snug line-clamp-2 ink">How top CEOs are rethinking the 40-hour workweek in the age of AI copilots</p>
+              <p class="text-[11.5px] leading-snug muted mt-1 line-clamp-1">With AI handling routine tasks, the debate shifts from quantity to quality of focus time.</p>
+            </div>
+            <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1.5 py-1 shadow-sm">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-rose-50 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-50 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+
+          <div class="ig-card frame p-0 overflow-hidden flex cursor-pointer relative">
+            <div class="w-28 h-24 shrink-0 bg-gradient-to-br from-violet-400 to-violet-700 grid place-items-center text-white font-bold text-2xl rounded-tl-[13px] rounded-bl-[13px]">🎯</div>
+            <div class="flex-1 min-w-0 p-3">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded px-1.5 py-0.5">The Verge</span>
+                <span class="text-[10px] muted">· 8h ago</span>
+              </div>
+              <p class="text-sm font-semibold leading-snug line-clamp-2 ink">Google DeepMind's latest model scores near-perfect on reasoning benchmarks, sparking AGI debate</p>
+              <p class="text-[11.5px] leading-snug muted mt-1 line-clamp-1">Researchers divided on whether benchmark performance translates to real-world general intelligence.</p>
+            </div>
+            <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1.5 py-1 shadow-sm">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-rose-50 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-50 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: clips rail — collapsed by default, click to expand -->
+    <div id="clipsRailA" class="shrink-0 border-l border-violet-100 bg-white/30 flex flex-col items-center gap-2 py-3 px-1.5 transition-all duration-200 w-14 overflow-hidden">
+      <button onclick="toggleClipsA()" title="Clippings" class="w-9 h-9 rounded-xl border border-violet-200 bg-white/80 grid place-items-center text-violet-600 hover:border-violet-400 hover:bg-violet-50">
+        <i data-lucide="scissors" class="w-4 h-4"></i>
+      </button>
+      <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white text-[10px] font-bold">3</span>
+      <!-- Thumbnail stack -->
+      <div onclick="toggleClipsA()" class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center text-white text-xs font-bold cursor-pointer border-2 border-white shadow-sm hover:scale-105 transition-transform" title="OpenAI article">AI</div>
+      <div onclick="toggleClipsA()" class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 grid place-items-center text-white text-xs font-bold cursor-pointer border-2 border-white shadow-sm hover:scale-105 transition-transform" title="Forbes article">📊</div>
+      <div onclick="toggleClipsA()" class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white text-xs font-bold cursor-pointer border-2 border-white shadow-sm hover:scale-105 transition-transform" title="Wired article">🚀</div>
+    </div>
+
+    <!-- Clips expanded panel (hidden by default) -->
+    <div id="clipsExpandedA" class="hidden shrink-0 w-72 border-l border-violet-100 bg-white/80 backdrop-blur-sm flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-violet-100">
+        <div class="flex items-center gap-2">
+          <i data-lucide="scissors" class="w-3.5 h-3.5 text-violet-600"></i>
+          <span class="text-xs font-bold text-violet-700">Clippings (3)</span>
+        </div>
+        <button onclick="toggleClipsA()" class="w-6 h-6 rounded-full grid place-items-center text-slate-400 hover:bg-slate-100"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <div class="frame p-3 cursor-pointer hover:shadow-md transition-shadow">
+          <div class="flex items-start gap-2 mb-2">
+            <div class="w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center text-white text-xs font-bold">AI</div>
+            <div class="min-w-0">
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug">OpenAI rolls out GPT-4o upgrades with real-time voice and vision</p>
+              <p class="text-[9px] text-violet-600 font-medium mt-0.5">TechCrunch · 2h ago</p>
+            </div>
+          </div>
+          <p class="text-[11px] leading-relaxed text-slate-600 border-l-2 border-violet-300 pl-2">"The new multimodal updates bring voice interaction closer to human-level fluency, setting a new bar for AI assistants."</p>
+        </div>
+        <div class="frame p-3 cursor-pointer hover:shadow-md transition-shadow">
+          <div class="flex items-start gap-2 mb-2">
+            <div class="w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 grid place-items-center text-white text-xs">📊</div>
+            <div class="min-w-0">
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug">Why productivity metrics are failing remote teams</p>
+              <p class="text-[9px] text-violet-600 font-medium mt-0.5">Forbes · 4h ago</p>
+            </div>
+          </div>
+          <p class="text-[11px] leading-relaxed text-slate-600 border-l-2 border-violet-300 pl-2">"Traditional KPIs miss what actually drives output in distributed environments."</p>
+        </div>
+        <div class="frame p-3 cursor-pointer hover:shadow-md transition-shadow">
+          <div class="flex items-start gap-2 mb-2">
+            <div class="w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white text-xs">🚀</div>
+            <div class="min-w-0">
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug">The quiet AI revolution inside enterprise tools</p>
+              <p class="text-[9px] text-violet-600 font-medium mt-0.5">Wired · 5h ago</p>
+            </div>
+          </div>
+          <p class="text-[11px] leading-relaxed text-slate-600 border-l-2 border-violet-300 pl-2">"AI features are woven into existing workflows without announcement, changing how work gets done."</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /optA -->
+
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!--  OPTION B — Magazine: hero cards + curated right panel -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="optB" hidden class="h-[calc(100vh-56px)] flex overflow-hidden">
+
+    <!-- Left sidebar -->
+    <aside class="w-44 shrink-0 border-r border-violet-100 bg-white/30 flex flex-col gap-0.5 p-2 overflow-y-auto">
+      <p class="px-2 pt-1 pb-1 text-[9px] font-bold uppercase tracking-widest muted">Interest Groups</p>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+        <span class="h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0"></span>All groups
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0"></span>AI &amp; Tech
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-pink-500 shrink-0"></span>Leadership
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>Marketing
+      </button>
+      <button class="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-violet-600 border border-dashed border-violet-300 mt-2 hover:border-violet-500">
+        <i data-lucide="plus" class="w-3 h-3"></i>New group
+      </button>
+    </aside>
+
+    <!-- Center -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Header -->
+      <div class="shrink-0 border-b border-violet-100 bg-white/60 backdrop-blur-sm px-5 py-3 space-y-2.5">
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-400"></i>
+            <input class="w-full h-9 rounded-xl border border-violet-200 bg-white/80 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none" placeholder="Enter a topic to explore trending content…" value="AI productivity tools" />
+          </div>
+          <select class="h-9 rounded-xl border border-violet-200 bg-white/80 px-3 text-xs font-semibold text-slate-600 outline-none cursor-pointer"><option>🌍 US</option></select>
+          <select class="h-9 rounded-xl border border-violet-200 bg-white/80 px-3 text-xs font-semibold text-slate-600 outline-none cursor-pointer"><option>📰 All genres</option></select>
+          <select class="h-9 rounded-xl border border-violet-200 bg-white/80 px-3 text-xs font-semibold text-slate-600 outline-none cursor-pointer"><option>⏱ 7 days</option></select>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button class="h-7 px-3 rounded-full text-[11px] font-semibold bg-violet-700 text-white">Latest</button>
+          <button class="h-7 px-3 rounded-full text-[11px] font-semibold text-slate-500 bg-white/70 border border-violet-100">Trending</button>
+          <button class="h-7 px-3 rounded-full text-[11px] font-semibold text-slate-500 bg-white/70 border border-violet-100">For You</button>
+        </div>
+      </div>
+
+      <!-- Feed: hero card on top + list below -->
+      <div class="flex-1 overflow-y-auto py-5 px-5">
+        <!-- Hero card (top story) -->
+        <div class="ig-card frame overflow-hidden mb-4 cursor-pointer relative">
+          <div class="aspect-[21/7] bg-gradient-to-br from-blue-500 via-blue-600 to-violet-700 relative flex items-end p-5">
+            <div>
+              <span class="text-[10px] font-semibold text-white bg-white/20 border border-white/30 rounded-full px-2 py-0.5 backdrop-blur-sm mb-2 inline-block">TechCrunch · 2h ago</span>
+              <p class="text-xl font-bold text-white leading-tight max-w-2xl">OpenAI rolls out GPT-4o upgrades with real-time voice and vision capabilities</p>
+              <p class="text-sm text-white/80 mt-1.5 max-w-xl">Multimodal updates bring voice interaction closer to human-level fluency, setting a new bar for AI assistants in enterprise settings.</p>
+            </div>
+            <div class="hover-only absolute top-3 right-3 flex gap-1 bg-black/40 backdrop-blur rounded-full px-1.5 py-1">
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+              <button class="h-7 w-7 rounded-full grid place-items-center text-white hover:bg-white/20"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary cards: 2-col grid -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="ig-card frame overflow-hidden cursor-pointer relative">
+            <div class="h-28 bg-gradient-to-br from-amber-400 to-amber-600 relative">
+              <span class="absolute top-2 left-2 text-[10px] font-semibold text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">Forbes</span>
+              <span class="absolute top-2 right-2 text-[10px] text-white bg-black/30 backdrop-blur px-1.5 py-0.5 rounded-full">4h</span>
+              <div class="hover-only absolute bottom-2 right-2 flex gap-1 bg-black/40 backdrop-blur rounded-full px-1 py-0.5">
+                <button class="h-6 w-6 rounded-full grid place-items-center text-white hover:bg-white/20"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+            <div class="p-3">
+              <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">Why productivity metrics are failing remote teams</p>
+              <p class="text-[11px] muted mt-1 line-clamp-2">Traditional KPIs miss what drives output in distributed environments.</p>
+            </div>
+          </div>
+          <div class="ig-card frame overflow-hidden cursor-pointer relative">
+            <div class="h-28 bg-gradient-to-br from-emerald-400 to-emerald-600 relative">
+              <span class="absolute top-2 left-2 text-[10px] font-semibold text-white bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">Wired</span>
+              <span class="absolute top-2 right-2 text-[10px] text-white bg-black/30 backdrop-blur px-1.5 py-0.5 rounded-full">5h</span>
+              <div class="hover-only absolute bottom-2 right-2 flex gap-1 bg-black/40 backdrop-blur rounded-full px-1 py-0.5">
+                <button class="h-6 w-6 rounded-full grid place-items-center text-white hover:bg-white/20"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+            <div class="p-3">
+              <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">The quiet AI revolution inside enterprise tools</p>
+              <p class="text-[11px] muted mt-1 line-clamp-2">AI is woven into Notion, Salesforce, Slack without announcement.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Remaining as list -->
+        <div class="frame overflow-hidden divide-y divide-violet-50">
+          <div class="ig-card relative flex gap-3 p-3 cursor-pointer">
+            <div class="w-20 h-16 shrink-0 rounded-xl bg-gradient-to-br from-pink-400 to-pink-600 grid place-items-center text-white font-bold">💡</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">How top CEOs are rethinking the 40-hour workweek in the age of AI copilots</p>
+              <p class="text-[11px] muted mt-0.5 line-clamp-1">With AI handling routine tasks, the debate shifts to quality of focus time.</p>
+              <p class="text-[10px] text-violet-600 font-medium mt-1">HBR · 6h ago</p>
+            </div>
+            <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1.5 py-1 shadow-sm">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-rose-50 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-50 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+          <div class="ig-card relative flex gap-3 p-3 cursor-pointer">
+            <div class="w-20 h-16 shrink-0 rounded-xl bg-gradient-to-br from-violet-400 to-violet-700 grid place-items-center text-white font-bold">🎯</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">Google DeepMind scores near-perfect on reasoning benchmarks, sparking AGI debate</p>
+              <p class="text-[11px] muted mt-0.5 line-clamp-1">Researchers divided on whether benchmark performance translates to real intelligence.</p>
+              <p class="text-[10px] text-violet-600 font-medium mt-1">The Verge · 8h ago</p>
+            </div>
+            <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1.5 py-1 shadow-sm">
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-rose-50 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+              <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:bg-violet-50 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: curated + clips -->
+    <div class="w-72 shrink-0 border-l border-violet-100 bg-white/30 flex flex-col overflow-hidden">
+      <div class="shrink-0 px-4 py-3 border-b border-violet-100 flex items-center justify-between">
+        <span class="text-xs font-bold text-violet-700 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>Curated</span>
+        <button class="flex items-center gap-1 text-[11px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-lg px-2 py-1 hover:bg-violet-100">
+          <i data-lucide="scissors" class="w-3 h-3"></i>Clips <span class="ml-1 h-4 w-4 rounded-full bg-violet-600 text-white text-[9px] font-bold grid place-items-center">3</span>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-3 space-y-4">
+        <!-- Top 5 today -->
+        <div>
+          <p class="text-[9px] font-bold uppercase tracking-widest text-violet-400 mb-2">Top 5 Today</p>
+          <div class="space-y-2">
+            <div class="flex gap-2 items-start cursor-pointer group">
+              <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center text-white text-[10px] font-bold">AI</div>
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug group-hover:text-violet-700">OpenAI rolls out GPT-4o with real-time voice</p>
+            </div>
+            <div class="flex gap-2 items-start cursor-pointer group">
+              <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 grid place-items-center text-white text-[10px] font-bold">📊</div>
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug group-hover:text-violet-700">Productivity metrics failing remote teams</p>
+            </div>
+            <div class="flex gap-2 items-start cursor-pointer group">
+              <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white text-[10px] font-bold">🚀</div>
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug group-hover:text-violet-700">Quiet AI revolution inside enterprise tools</p>
+            </div>
+            <div class="flex gap-2 items-start cursor-pointer group">
+              <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-pink-400 to-pink-600 grid place-items-center text-white text-[10px] font-bold">💡</div>
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug group-hover:text-violet-700">CEOs rethinking 40-hour workweek with AI</p>
+            </div>
+            <div class="flex gap-2 items-start cursor-pointer group">
+              <div class="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-violet-400 to-violet-700 grid place-items-center text-white text-[10px] font-bold">🎯</div>
+              <p class="text-[11px] font-semibold ink line-clamp-2 leading-snug group-hover:text-violet-700">DeepMind near-perfect on reasoning benchmarks</p>
+            </div>
+          </div>
+        </div>
+        <!-- Trending words -->
+        <div>
+          <p class="text-[9px] font-bold uppercase tracking-widest text-violet-400 mb-2">Trending Words</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-semibold">GPT-4o</span>
+            <span class="px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-semibold">multimodal</span>
+            <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-semibold">DeepMind</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">agents</span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-semibold">inference cost</span>
+            <span class="px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 text-[10px] font-semibold">copilot</span>
+          </div>
+        </div>
+        <!-- Clips -->
+        <div>
+          <p class="text-[9px] font-bold uppercase tracking-widest text-violet-400 mb-2">Clippings (3)</p>
+          <div class="space-y-2">
+            <div class="frame p-2.5 cursor-pointer hover:shadow-md transition-shadow">
+              <p class="text-[10.5px] font-semibold ink line-clamp-1">OpenAI rolls out GPT-4o upgrades</p>
+              <p class="text-[10px] text-slate-500 mt-1 line-clamp-2 border-l border-violet-300 pl-1.5">"The new multimodal updates bring voice interaction closer to human-level fluency…"</p>
+            </div>
+            <div class="frame p-2.5 cursor-pointer hover:shadow-md transition-shadow">
+              <p class="text-[10.5px] font-semibold ink line-clamp-1">Why productivity metrics are failing</p>
+              <p class="text-[10px] text-slate-500 mt-1 line-clamp-2 border-l border-violet-300 pl-1.5">"Traditional KPIs miss what actually drives output in distributed environments."</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /optB -->
+
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!--  OPTION C — Research Hub: compact list + topic graph + full clips panel -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div id="optC" hidden class="h-[calc(100vh-56px)] flex overflow-hidden">
+
+    <!-- Left sidebar -->
+    <aside class="w-44 shrink-0 border-r border-violet-100 bg-white/30 flex flex-col gap-0.5 p-2 overflow-y-auto">
+      <p class="px-2 pt-1 pb-1 text-[9px] font-bold uppercase tracking-widest muted">Interest Groups</p>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+        <span class="h-1.5 w-1.5 rounded-full bg-violet-500 shrink-0"></span>All groups
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0"></span>AI &amp; Tech
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-pink-500 shrink-0"></span>Leadership
+      </button>
+      <button class="flex items-center gap-2 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-white/60 border border-transparent">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>Marketing
+      </button>
+      <button class="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-xl text-xs font-semibold text-violet-600 border border-dashed border-violet-300 mt-2">
+        <i data-lucide="plus" class="w-3 h-3"></i>New group
+      </button>
+    </aside>
+
+    <!-- Center -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <!-- Compact header -->
+      <div class="shrink-0 border-b border-violet-100 bg-white/60 backdrop-blur-sm px-4 py-2.5">
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-400"></i>
+            <input class="w-full h-8 rounded-xl border border-violet-200 bg-white/80 pl-9 pr-3 text-sm text-slate-700 outline-none" placeholder="Enter a topic…" value="AI productivity tools" />
+          </div>
+          <select class="h-8 rounded-xl border border-violet-200 bg-white/80 px-2.5 text-xs font-semibold text-slate-600 outline-none cursor-pointer"><option>🌍 US</option></select>
+          <select class="h-8 rounded-xl border border-violet-200 bg-white/80 px-2.5 text-xs font-semibold text-slate-600 outline-none cursor-pointer"><option>📰 All</option></select>
+          <select class="h-8 rounded-xl border border-violet-200 bg-white/80 px-2.5 text-xs font-semibold text-slate-600 outline-none cursor-pointer"><option>⏱ 7d</option></select>
+          <div class="flex gap-1 ml-1">
+            <button class="h-8 px-2.5 rounded-lg text-[11px] font-semibold bg-violet-700 text-white">Latest</button>
+            <button class="h-8 px-2.5 rounded-lg text-[11px] font-semibold text-slate-500 bg-white/70 border border-violet-100">Trending</button>
+            <button class="h-8 px-2.5 rounded-lg text-[11px] font-semibold text-slate-500 bg-white/70 border border-violet-100">For You</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed: dense list -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="max-w-2xl mx-auto py-4 px-4">
+          <div class="frame overflow-hidden divide-y divide-violet-50/80">
+
+            <div class="ig-card relative flex gap-3 p-3 cursor-pointer">
+              <div class="w-16 h-14 shrink-0 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center text-white font-bold text-lg">AI</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[10px] font-semibold text-violet-600">TechCrunch</span>
+                  <span class="text-[10px] muted">· 2h ago</span>
+                </div>
+                <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">OpenAI rolls out GPT-4o with real-time voice and vision capabilities</p>
+              </div>
+              <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1 py-0.5 shadow-sm">
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+
+            <div class="ig-card relative flex gap-3 p-3 cursor-pointer">
+              <div class="w-16 h-14 shrink-0 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 grid place-items-center text-white font-bold text-lg">📊</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[10px] font-semibold text-violet-600">Forbes</span>
+                  <span class="text-[10px] muted">· 4h ago</span>
+                </div>
+                <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">Why productivity metrics are failing remote teams — and what leaders should measure</p>
+              </div>
+              <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1 py-0.5 shadow-sm">
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+
+            <div class="ig-card relative flex gap-3 p-3 cursor-pointer">
+              <div class="w-16 h-14 shrink-0 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white font-bold text-lg">🚀</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[10px] font-semibold text-violet-600">Wired</span>
+                  <span class="text-[10px] muted">· 5h ago</span>
+                </div>
+                <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">The quiet AI revolution happening inside enterprise tools most employees don't notice</p>
+              </div>
+              <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1 py-0.5 shadow-sm">
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+
+            <div class="ig-card relative flex gap-3 p-3 cursor-pointer">
+              <div class="w-16 h-14 shrink-0 rounded-xl bg-gradient-to-br from-pink-400 to-pink-600 grid place-items-center text-white font-bold text-lg">💡</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[10px] font-semibold text-violet-600">HBR</span>
+                  <span class="text-[10px] muted">· 6h ago</span>
+                </div>
+                <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">How top CEOs are rethinking the 40-hour workweek in the age of AI copilots</p>
+              </div>
+              <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1 py-0.5 shadow-sm">
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+
+            <div class="ig-card relative flex gap-3 p-3 cursor-pointer">
+              <div class="w-16 h-14 shrink-0 rounded-xl bg-gradient-to-br from-violet-400 to-violet-700 grid place-items-center text-white font-bold text-lg">🎯</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[10px] font-semibold text-violet-600">The Verge</span>
+                  <span class="text-[10px] muted">· 8h ago</span>
+                </div>
+                <p class="text-[12.5px] font-semibold leading-snug line-clamp-2 ink">Google DeepMind scores near-perfect on reasoning benchmarks, sparking AGI debate</p>
+              </div>
+              <div class="hover-only absolute top-2 right-2 flex gap-1 bg-white/95 border border-violet-100 rounded-full px-1 py-0.5 shadow-sm">
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-emerald-600"><i data-lucide="thumbs-up" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-rose-500"><i data-lucide="thumbs-down" class="w-3 h-3"></i></button>
+                <button class="h-6 w-6 rounded-full grid place-items-center text-slate-400 hover:text-violet-600"><i data-lucide="scissors" class="w-3 h-3"></i></button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: clips panel always visible -->
+    <div class="w-80 shrink-0 border-l border-violet-100 bg-white/40 backdrop-blur-sm flex flex-col overflow-hidden">
+      <!-- Tabs: Curated / Clips -->
+      <div class="shrink-0 flex border-b border-violet-100">
+        <button class="flex-1 py-2.5 text-xs font-semibold text-slate-500 hover:text-violet-700 border-b-2 border-transparent hover:border-violet-300">Curated</button>
+        <button class="flex-1 py-2.5 text-xs font-semibold text-violet-700 border-b-2 border-violet-600 bg-violet-50/50">Clippings <span class="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-white text-[9px] font-bold">3</span></button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-3 space-y-3">
+        <p class="text-[10px] muted">Click any clip to see the full note. Drag clips into your post editor.</p>
+
+        <!-- Full note clip cards -->
+        <div class="frame p-3.5 cursor-pointer hover:shadow-md transition-all hover:border-violet-300 group">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 grid place-items-center text-white text-xs font-bold shrink-0">AI</div>
+              <div>
+                <p class="text-[11px] font-bold ink line-clamp-1">OpenAI GPT-4o Upgrade</p>
+                <p class="text-[9px] text-violet-600 font-medium">TechCrunch · 2h ago</p>
+              </div>
+            </div>
+            <button class="w-5 h-5 rounded-full grid place-items-center text-slate-300 hover:text-rose-400 hover:bg-rose-50 opacity-0 group-hover:opacity-100"><i data-lucide="x" class="w-3 h-3"></i></button>
+          </div>
+          <p class="text-[11.5px] leading-relaxed text-slate-700 border-l-2 border-violet-400 pl-2.5 bg-violet-50/50 rounded-r py-1">"The new multimodal updates bring voice interaction closer to human-level fluency, setting a new bar for AI assistants in enterprise and consumer settings."</p>
+        </div>
+
+        <div class="frame p-3.5 cursor-pointer hover:shadow-md transition-all hover:border-violet-300 group">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 grid place-items-center text-white text-xs shrink-0">📊</div>
+              <div>
+                <p class="text-[11px] font-bold ink line-clamp-1">Productivity Metrics Gap</p>
+                <p class="text-[9px] text-violet-600 font-medium">Forbes · 4h ago</p>
+              </div>
+            </div>
+            <button class="w-5 h-5 rounded-full grid place-items-center text-slate-300 hover:text-rose-400 hover:bg-rose-50 opacity-0 group-hover:opacity-100"><i data-lucide="x" class="w-3 h-3"></i></button>
+          </div>
+          <p class="text-[11.5px] leading-relaxed text-slate-700 border-l-2 border-amber-400 pl-2.5 bg-amber-50/50 rounded-r py-1">"Traditional KPIs miss what actually drives output in distributed environments. Engagement, focus time, and async quality matter far more than hours logged."</p>
+        </div>
+
+        <div class="frame p-3.5 cursor-pointer hover:shadow-md transition-all hover:border-violet-300 group">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 grid place-items-center text-white text-xs shrink-0">🚀</div>
+              <div>
+                <p class="text-[11px] font-bold ink line-clamp-1">AI in Enterprise Tools</p>
+                <p class="text-[9px] text-violet-600 font-medium">Wired · 5h ago</p>
+              </div>
+            </div>
+            <button class="w-5 h-5 rounded-full grid place-items-center text-slate-300 hover:text-rose-400 hover:bg-rose-50 opacity-0 group-hover:opacity-100"><i data-lucide="x" class="w-3 h-3"></i></button>
+          </div>
+          <p class="text-[11.5px] leading-relaxed text-slate-700 border-l-2 border-emerald-400 pl-2.5 bg-emerald-50/50 rounded-r py-1">"AI features are being woven into existing workflows without announcement — changing how work gets done without anyone noticing, a silent revolution."</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /optC -->
+
+  <script>
+    // Switch between options
+    function show(opt, btn) {
+      ['A','B','C'].forEach(o => {
+        const el = document.getElementById('opt'+o);
+        if (el) el.hidden = (o !== opt);
+      });
+      document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      lucide.createIcons();
+    }
+
+    // Option A clips toggle
+    function toggleClipsA() {
+      const rail = document.getElementById('clipsRailA');
+      const expanded = document.getElementById('clipsExpandedA');
+      const isOpen = !expanded.classList.contains('hidden');
+      expanded.classList.toggle('hidden', isOpen);
+      rail.classList.toggle('hidden', !isOpen);
+      lucide.createIcons();
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

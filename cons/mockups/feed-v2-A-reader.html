@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed v2 · A — Reader (themed)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  /* ─── App theme tokens (mirrors frontend/tailwind.config.js + index.css) ─── */
+  :root {
+    --canvas:        #FAF5FF;
+    --surface:       #FFFFFF;
+    --surface-muted: #F3E8FF;
+    --ink:           #1E1B4B;
+    --ink-hover:     #312E81;
+    --muted:         #475569;
+    --faint:         #94A3B8;
+    --border:        #E9D5FF;
+    --border-strong: #DDD6FE;
+    --primary:       #7C3AED;
+    --primary-hover: #6D28D9;
+    --secondary:     #A78BFA;
+    --cta:           #10B981;
+    --deep-indigo:   #312E81;
+    --deep-purple:   #4C1D95;
+  }
+
+  body {
+    font-family: "Plus Jakarta Sans", "Open Sans", system-ui, sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    background-color: #ede9fe;
+    background-image:
+      radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124, 58, 237, 0.42), transparent 55%),
+      radial-gradient(ellipse 95% 75% at 100% 5%, rgba(167, 139, 250, 0.36), transparent 52%),
+      radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192, 132, 252, 0.32), transparent 58%),
+      linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: "Poppins", "Plus Jakarta Sans", sans-serif; letter-spacing: -0.005em; color: var(--ink); }
+
+  /* glass utilities (matches frontend index.css) */
+  .glass-panel    { border: 1px solid rgba(255,255,255,0.55); background: rgba(255,255,255,0.80); box-shadow: 0 8px 32px rgba(91,33,182,0.11), 0 2px 12px rgba(124,58,237,0.07); backdrop-filter: blur(18px); }
+  .glass-header   { border-bottom: 1px solid rgba(255,255,255,0.55); background: rgba(255,255,255,0.78); backdrop-filter: blur(20px); }
+  .glass-sidebar  { border-right: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.75); box-shadow: 4px 0 28px rgba(91,33,182,0.07); backdrop-filter: blur(20px); }
+  .glass-rail     { border-left: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.62); backdrop-filter: blur(18px); }
+
+  /* layout */
+  .shell { display:grid; grid-template-columns: 220px minmax(0,1fr) 320px; height: 100vh; }
+  .pane { overflow-y: auto; }
+  .pane::-webkit-scrollbar { width: 6px; } .pane::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius:3px; }
+
+  /* nav */
+  .navlink { display:flex; align-items:center; gap:10px; padding: 7px 10px; border-radius: 10px; font-size: 13px; color: var(--muted); cursor:pointer; line-height:1; font-weight: 500; }
+  .navlink:hover { background: rgba(255,255,255,0.55); color: var(--ink); }
+  .navlink.active { color: var(--primary); font-weight:600; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.15); padding: 6px 9px; }
+  .navlink .count { margin-left:auto; font-size: 11px; color: var(--faint); font-feature-settings: "tnum"; font-weight: 500; }
+  .group-mark { width:7px; height:7px; border-radius:50%; background: var(--border-strong); flex-shrink:0; }
+  .navlink.active .group-mark { background: var(--primary); }
+  .nav-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing: 0.1em; color: var(--secondary); padding: 18px 10px 6px; }
+
+  /* header */
+  .top-row { display:flex; align-items:center; gap: 14px; padding: 14px 28px 0; }
+  .search { flex:1; position:relative; }
+  .search input {
+    width:100%; height: 38px; padding: 0 14px 0 38px;
+    background: rgba(255,255,255,0.75); border: 1px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 13.5px; color: var(--ink); outline: none;
+    transition: border-color 120ms, box-shadow 120ms, background 120ms;
+  }
+  .search input::placeholder { color: var(--faint); }
+  .search input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+  .search .icon { position:absolute; left: 12px; top:50%; transform: translateY(-50%); color: var(--secondary); }
+
+  /* tabs (text underlines, not pill chips) */
+  .tabs { display:flex; gap: 22px; padding: 12px 28px 0; align-items: center; }
+  .tab { font-size: 13px; color: var(--muted); padding: 9px 0; border-bottom: 2px solid transparent; cursor:pointer; line-height: 1; font-weight:500; transition: color 120ms, border-color 120ms; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight:600; }
+  .tabs .right-tools { margin-left:auto; display:flex; gap: 6px; align-items:center; padding-bottom: 7px; }
+  .tool { font-size: 12px; color: var(--muted); display:inline-flex; align-items:center; gap:5px; cursor:pointer; padding: 5px 9px; border-radius: 8px; }
+  .tool:hover { background: rgba(255,255,255,0.6); color: var(--ink); }
+
+  /* list */
+  .list { padding: 6px 28px 80px; max-width: 820px; margin: 0 auto; }
+  .row { display:grid; grid-template-columns: 22px 1fr auto; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(221,214,254,0.5); cursor: pointer; align-items: start; transition: background 120ms; }
+  .row:hover { background: rgba(255,255,255,0.35); }
+  .row .num { font-feature-settings:"tnum"; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--faint); padding-top: 5px; line-height: 1; font-weight: 500; }
+  .row .title { font-family: "Poppins", "Plus Jakarta Sans", sans-serif; font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--ink); letter-spacing: -0.005em; }
+  .row .meta { margin-top: 5px; font-size: 12px; color: var(--muted); display:flex; align-items: center; gap: 8px; line-height: 1; }
+  .row .meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+  .row .source { color: var(--ink); font-weight: 500; }
+  .row .actions { display:flex; gap: 2px; opacity: 0; transition: opacity 120ms; padding-top: 2px; }
+  .row:hover .actions, .row:focus-within .actions, .row.focused .actions { opacity: 1; }
+  .ic { width: 30px; height: 30px; display:inline-flex; align-items:center; justify-content:center; border-radius: 8px; color: var(--muted); cursor:pointer; }
+  .ic:hover { background: rgba(124,58,237,0.10); color: var(--primary); }
+  .ic.on { color: var(--primary); background: rgba(124,58,237,0.10); }
+
+  .fav { width: 12px; height: 12px; border-radius: 3px; display:inline-block; flex-shrink: 0; background: var(--border-strong); }
+
+  /* expanded row */
+  .row.expanded { background: rgba(255,255,255,0.55); border-radius: 12px; padding: 14px 14px 16px; margin-bottom: 6px; border-bottom: 1px solid var(--border-strong); }
+  .row.expanded .actions { opacity: 1; }
+  .expansion { grid-column: 2 / 4; padding-top: 12px; }
+  .summary { font-size: 13.5px; line-height: 1.65; color: var(--ink); margin-bottom: 12px; max-width: 660px; }
+  .also { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .also a { color: var(--ink); border-bottom: 1px dotted var(--border-strong); padding-bottom: 1px; cursor: pointer; }
+  .also a:hover { border-bottom-color: var(--primary); color: var(--primary); }
+  .exp-actions { display:flex; gap: 6px; }
+  .btn { height: 32px; padding: 0 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink); display:inline-flex; align-items:center; gap: 6px; cursor:pointer; transition: all 120ms; }
+  .btn:hover { border-color: var(--primary); color: var(--primary); background: white; }
+  .btn.primary { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 6px 18px -6px rgba(124,58,237,0.45); }
+  .btn.primary:hover { background: var(--primary-hover); color: white; }
+
+  /* right pane */
+  .right { padding: 24px 24px 32px; }
+  .r-section { margin-bottom: 28px; }
+  .r-title { font-family: "Poppins", sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--secondary); margin-bottom: 12px; }
+  .r-row { display:flex; gap: 10px; padding: 7px 0; cursor:pointer; line-height: 1.4; border-bottom: 1px solid transparent; }
+  .r-row:hover .r-row-title { color: var(--primary); }
+  .r-rank { color: var(--faint); font-feature-settings:"tnum"; font-variant-numeric: tabular-nums; width: 16px; flex-shrink:0; font-size: 12px; padding-top: 1px; }
+  .r-row-title { color: var(--ink); font-weight: 600; font-size: 13px; line-height: 1.35; }
+  .r-row-meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+
+  .word-list { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; line-height: 1.7; }
+  .word-list a { color: var(--ink); cursor:pointer; }
+  .word-list a:hover { color: var(--primary); }
+  .word-list .hot { color: var(--primary); font-weight:600; }
+
+  .src-row { display:flex; align-items:center; gap: 10px; padding: 6px 0; font-size: 13px; color: var(--ink); cursor:pointer; }
+  .src-row:hover { color: var(--primary); }
+  .src-row .ct { margin-left:auto; color: var(--faint); font-size: 12px; font-feature-settings: "tnum"; font-weight: 500; }
+
+  /* design label */
+  .design-label { position:fixed; top: 14px; right: 18px; font-size: 11px; font-weight: 700; padding: 5px 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.85); color: var(--primary); border-radius: 9999px; z-index: 50; backdrop-filter: blur(8px); }
+
+  .kbd { font-family: ui-monospace, "SF Mono", monospace; font-size: 10.5px; padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); background: rgba(255,255,255,0.7); }
+
+  .compose { font-size: 12px; font-weight: 600; color: white; padding: 0 12px; height: 38px; background: var(--primary); border-radius: 10px; cursor:pointer; display:inline-flex; align-items:center; gap: 6px; border: none; box-shadow: 0 6px 18px -6px rgba(124,58,237,0.45); transition: background 120ms; }
+  .compose:hover { background: var(--primary-hover); }
+
+  .row.read .title { color: var(--muted); font-weight: 500; }
+  .row.read .num { color: var(--border-strong); }
+</style>
+</head>
+<body>
+<div class="design-label">A · Reader</div>
+
+<div class="shell">
+
+  <aside class="glass-sidebar pane p-4">
+    <div class="flex items-center gap-2.5 px-2 py-2">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[12px] font-bold" style="background: linear-gradient(135deg, #7C3AED, #4C1D95);">L</div>
+      <span class="text-[13.5px] font-bold tracking-tight" style="font-family:'Poppins'; color:var(--ink)">Linkedinpost</span>
+    </div>
+
+    <div class="mt-4 space-y-0.5">
+      <a class="navlink active"><i data-lucide="newspaper" class="w-3.5 h-3.5"></i> Feed <span class="count">128</span></a>
+      <a class="navlink"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Topics</a>
+      <a class="navlink"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Drafts <span class="count">7</span></a>
+      <a class="navlink"><i data-lucide="mail" class="w-3.5 h-3.5"></i> Newsletter</a>
+      <a class="navlink"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</a>
+    </div>
+
+    <div class="nav-section">Groups</div>
+    <div class="space-y-0.5">
+      <a class="navlink active"><span class="group-mark"></span> All <span class="count">128</span></a>
+      <a class="navlink"><span class="group-mark"></span> AI &amp; Tech <span class="count">42</span></a>
+      <a class="navlink"><span class="group-mark"></span> Leadership <span class="count">31</span></a>
+      <a class="navlink"><span class="group-mark"></span> Marketing <span class="count">28</span></a>
+      <a class="navlink"><span class="group-mark"></span> Startups <span class="count">19</span></a>
+      <a class="navlink text-[12.5px]"><i data-lucide="plus" class="w-3 h-3"></i> New group</a>
+    </div>
+
+    <div class="nav-section">Library</div>
+    <div class="space-y-0.5">
+      <a class="navlink"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Saved <span class="count">14</span></a>
+      <a class="navlink"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> Clippings <span class="count">7</span></a>
+    </div>
+
+    <div class="mt-auto pt-8 px-2 text-[11px] leading-relaxed" style="color:var(--muted)">
+      <span class="kbd">j</span> <span class="kbd">k</span> next/prev &nbsp; <span class="kbd">o</span> open
+    </div>
+  </aside>
+
+  <section class="pane">
+
+    <div class="glass-header sticky top-0 z-10">
+      <div class="top-row">
+        <div class="search">
+          <i data-lucide="search" class="icon w-4 h-4"></i>
+          <input placeholder="Search 128 stories — title, source, summary…">
+        </div>
+        <button class="compose"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose</button>
+      </div>
+      <div class="tabs">
+        <span class="tab active">Latest</span>
+        <span class="tab">Trending</span>
+        <span class="tab">For You</span>
+        <span class="tab">Evergreen</span>
+        <span class="tab">Saved</span>
+        <div class="right-tools">
+          <span class="tool"><i data-lucide="globe" class="w-3.5 h-3.5"></i> US</span>
+          <span class="tool"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 7d</span>
+          <span class="tool"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="list">
+
+      <article class="row expanded focused">
+        <div class="num">01</div>
+        <div>
+          <h2 class="title">OpenAI rolls out GPT-4o upgrades with real-time voice and vision capabilities</h2>
+          <div class="meta"><span class="fav" style="background:#0BAB64"></span><span class="source">techcrunch.com</span><span class="dot"></span><span>2h ago</span><span class="dot"></span><span style="color:var(--primary); font-weight:600">5 outlets covering</span></div>
+
+          <div class="expansion">
+            <p class="summary">Multimodal updates bring voice latency to ~320 ms and add streaming video for live tutoring and accessibility. Enterprise API ships next week with per-minute audio billing replacing the older token model.</p>
+            <p class="also">Also covered: <a>The Verge</a> · <a>Wired</a> · <a>Bloomberg</a> · <a>+2</a></p>
+            <div class="exp-actions">
+              <button class="btn primary"><i data-lucide="pen-line" class="w-3.5 h-3.5"></i> Compose post</button>
+              <button class="btn"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> Clip</button>
+              <button class="btn"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save</button>
+              <button class="btn"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open</button>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="ic on"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic on"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row">
+        <div class="num">02</div>
+        <div>
+          <h2 class="title">Why productivity metrics are failing remote teams — and what leaders should measure instead</h2>
+          <div class="meta"><span class="fav" style="background:#0066ff"></span><span class="source">forbes.com</span><span class="dot"></span><span>4h ago</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row">
+        <div class="num">03</div>
+        <div>
+          <h2 class="title">The quiet AI revolution inside enterprise tools — and why most employees don't notice</h2>
+          <div class="meta"><span class="fav" style="background:#000"></span><span class="source">wired.com</span><span class="dot"></span><span>5h ago</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row read">
+        <div class="num">04</div>
+        <div>
+          <h2 class="title">How top CEOs are rethinking the 40-hour workweek in the age of AI copilots</h2>
+          <div class="meta"><span class="fav" style="background:#a8002b"></span><span class="source">hbr.org</span><span class="dot"></span><span>6h ago</span><span class="dot"></span><span class="italic" style="color:var(--faint)">read</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic on"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic on"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row">
+        <div class="num">05</div>
+        <div>
+          <h2 class="title">Google DeepMind's latest model scores near-perfect on reasoning benchmarks</h2>
+          <div class="meta"><span class="fav" style="background:#FF7900"></span><span class="source">theverge.com</span><span class="dot"></span><span>8h ago</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row">
+        <div class="num">06</div>
+        <div>
+          <h2 class="title">Anthropic launches enterprise tier with audit logs, SSO, and dedicated capacity</h2>
+          <div class="meta"><span class="fav" style="background:#0077B5"></span><span class="source">linkedin.com</span><span class="dot"></span><span>12h ago</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row">
+        <div class="num">07</div>
+        <div>
+          <h2 class="title">EU AI Act enforcement begins: first guidance on general-purpose model providers</h2>
+          <div class="meta"><span class="fav" style="background:#c8102e"></span><span class="source">ft.com</span><span class="dot"></span><span>1d ago</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row">
+        <div class="num">08</div>
+        <div>
+          <h2 class="title">AI startup funding rebounds in Q1 — but late-stage rounds tell a different story</h2>
+          <div class="meta"><span class="fav" style="background:#1d4ed8"></span><span class="source">theinformation.com</span><span class="dot"></span><span>1d ago</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <article class="row">
+        <div class="num">09</div>
+        <div>
+          <h2 class="title">The case against “async-only” — when synchronous still wins</h2>
+          <div class="meta"><span class="fav" style="background:#000"></span><span class="source">stratechery.com</span><span class="dot"></span><span>2d ago</span></div>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-4 h-4"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+        </div>
+      </article>
+
+      <div class="text-center pt-6 text-[12px]" style="color:var(--muted)">— scroll for more · 119 remaining —</div>
+
+    </div>
+  </section>
+
+  <aside class="glass-rail right pane">
+    <div class="r-section">
+      <div class="r-title">Trending</div>
+      <div class="r-row"><span class="r-rank">1</span><div><div class="r-row-title">GPT-4o voice rollout</div><div class="r-row-meta">42 stories · ↑280%</div></div></div>
+      <div class="r-row"><span class="r-rank">2</span><div><div class="r-row-title">DeepMind reasoning</div><div class="r-row-meta">28 stories · ↑140%</div></div></div>
+      <div class="r-row"><span class="r-rank">3</span><div><div class="r-row-title">Anthropic enterprise</div><div class="r-row-meta">19 stories · ↑95%</div></div></div>
+      <div class="r-row"><span class="r-rank">4</span><div><div class="r-row-title">Remote productivity</div><div class="r-row-meta">14 stories · ↑32%</div></div></div>
+      <div class="r-row"><span class="r-rank">5</span><div><div class="r-row-title">EU AI Act</div><div class="r-row-meta">11 stories · ↑22%</div></div></div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Trending words</div>
+      <div class="word-list">
+        <a class="hot">multimodal</a><a class="hot">agentic</a><a>copilot</a><a>reasoning</a><a>benchmark</a><a>async</a><a>RAG</a><a>eval</a><a>enterprise AI</a>
+      </div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Suggested topics</div>
+      <a class="r-row block"><div><div class="r-row-title">Add “Multimodal AI”</div><div class="r-row-meta">42 articles match · daily</div></div></a>
+      <a class="r-row block"><div><div class="r-row-title">Add “Async work culture”</div><div class="r-row-meta">14 articles match · weekly</div></div></a>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Top sources · 7d</div>
+      <a class="src-row"><span class="fav" style="background:#0BAB64"></span> TechCrunch <span class="ct">18</span></a>
+      <a class="src-row"><span class="fav" style="background:#FF7900"></span> The Verge <span class="ct">12</span></a>
+      <a class="src-row"><span class="fav" style="background:#000"></span> Wired <span class="ct">9</span></a>
+      <a class="src-row"><span class="fav" style="background:#a8002b"></span> HBR <span class="ct">7</span></a>
+    </div>
+  </aside>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

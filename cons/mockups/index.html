@@ -492,12 +492,12 @@
     <section id="settings" hidden class="surface-section tab-panel">
       <div class="mb-6">
         <h2 class="text-2xl font-bold ink tracking-tight">Settings page <span class="ml-1 compare-label compare-after">KEPT</span></h2>
-        <p class="muted text-sm mt-1 max-w-2xl">You approved this approach. Dedicated <code class="bg-violet-50 text-violet-700 px-1 rounded text-[11px]">/settings</code> page with grouped left-nav, URL-routed sections, Cmd-K palette, channel health dots.</p>
+        <p class="muted text-sm mt-1 max-w-2xl">Click any left-nav item to swap the content panel. Dedicated <code class="bg-violet-50 text-violet-700 px-1 rounded text-[11px]">/settings</code> page with grouped nav, URL-routed sections, Cmd-K palette, channel health dots.</p>
       </div>
 
-      <div class="frame overflow-hidden grid grid-cols-12 min-h-[480px]">
+      <div class="frame overflow-hidden grid grid-cols-12" style="min-height:520px">
         <!-- left nav -->
-        <aside class="col-span-3 border-r border-violet-100 bg-violet-50/20 p-3 text-[11px] overflow-y-auto">
+        <aside class="col-span-3 border-r border-violet-100 bg-violet-50/20 p-3 text-[11px] overflow-y-auto" style="max-height:520px">
           <div class="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 mb-3">
             <i data-lucide="search" class="icon-xs text-slate-400"></i>
             <span class="text-slate-400 text-[10px]">⌘K</span>
@@ -506,92 +506,343 @@
           <div class="space-y-3">
             <div>
               <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">General</p>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Workspace</a>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Members</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'workspace')">Workspace</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'members')">Members</a>
             </div>
             <div>
               <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">AI</p>
-              <a class="block px-2 py-1.5 rounded bg-white text-violet-700 font-semibold ring-1 ring-violet-200">LLM provider</a>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Image generation</a>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Voice transcription</a>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Enrichment</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer bg-white text-violet-700 font-semibold ring-1 ring-violet-200" onclick="showSection(this,'llm')">LLM provider</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'imagegen')">Image generation</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'stt')">Voice transcription</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'enrichment')">Enrichment</a>
             </div>
             <div>
               <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">Channels</p>
-              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>LinkedIn</a>
-              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Newsletter</a>
-              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Telegram</a>
-              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>WhatsApp</a>
-              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Gmail</a>
-              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span>Instagram</a>
-              <a class="flex items-center gap-2 px-2 py-1.5 rounded text-slate-700 hover:bg-white"><span class="h-1.5 w-1.5 rounded-full bg-slate-300"></span>YouTube</a>
+              <a class="settings-nav flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'linkedin')"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>LinkedIn</a>
+              <a class="settings-nav flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'newsletter-ch')"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>Newsletter</a>
+              <a class="settings-nav flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'telegram')"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>Telegram</a>
+              <a class="settings-nav flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'whatsapp')"><span class="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0"></span>WhatsApp</a>
+              <a class="settings-nav flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'gmail')"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>Gmail</a>
+              <a class="settings-nav flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'instagram')"><span class="h-1.5 w-1.5 rounded-full bg-slate-300 shrink-0"></span>Instagram</a>
+              <a class="settings-nav flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'youtube')"><span class="h-1.5 w-1.5 rounded-full bg-slate-300 shrink-0"></span>YouTube</a>
             </div>
             <div>
               <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">Content</p>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Generate posts</a>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">News research</a>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Review &amp; approval</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'generate')">Generate posts</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'research')">News research</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'approval')">Review &amp; approval</a>
             </div>
             <div>
               <p class="px-2 text-[9px] uppercase tracking-wider text-slate-400 mb-1">Integrations</p>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">GitHub Actions</a>
-              <a class="block px-2 py-1.5 rounded text-slate-700 hover:bg-white">Google Sheets</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'github')">GitHub Actions</a>
+              <a class="settings-nav block px-2 py-1.5 rounded cursor-pointer text-slate-700 hover:bg-white" onclick="showSection(this,'sheets')">Google Sheets</a>
             </div>
           </div>
         </aside>
 
-        <!-- right pane -->
-        <section class="col-span-9 bg-white p-6 overflow-y-auto">
-          <div class="text-[10px] muted mb-2">/settings/llm</div>
-          <h3 class="text-lg font-bold mb-1">LLM provider</h3>
-          <p class="muted text-sm mb-5">Pick the model behind drafting, summarising and enrichment. Per-task overrides available below.</p>
+        <!-- right pane — swappable content panels -->
+        <section class="col-span-9 bg-white overflow-y-auto" style="max-height:520px">
 
-          <div class="grid sm:grid-cols-2 gap-3 mb-6">
-            <label class="rounded-lg border-2 border-violet-500 bg-violet-50/50 p-3 cursor-pointer">
-              <div class="flex items-center justify-between">
-                <p class="font-semibold text-sm">Anthropic — Claude</p>
-                <i data-lucide="check-circle-2" class="icon-sm text-violet-600"></i>
-              </div>
-              <p class="muted text-[11px] mt-1">Recommended for editorial tone</p>
-            </label>
-            <label class="rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-violet-300">
-              <div class="flex items-center justify-between">
+          <!-- LLM provider (default) -->
+          <div id="sp-llm" class="settings-panel p-6">
+            <div class="text-[10px] muted mb-2">/settings/llm</div>
+            <h3 class="text-lg font-bold mb-1">LLM provider</h3>
+            <p class="muted text-sm mb-5">Pick the model behind drafting, summarising and enrichment. Per-task overrides available below.</p>
+            <div class="grid sm:grid-cols-2 gap-3 mb-6">
+              <label class="rounded-lg border-2 border-violet-500 bg-violet-50/50 p-3 cursor-pointer">
+                <div class="flex items-center justify-between"><p class="font-semibold text-sm">Anthropic — Claude</p><i data-lucide="check-circle-2" class="icon-sm text-violet-600"></i></div>
+                <p class="muted text-[11px] mt-1">Recommended for editorial tone</p>
+              </label>
+              <label class="rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-violet-300">
                 <p class="font-semibold text-sm">OpenAI — GPT</p>
-              </div>
-              <p class="muted text-[11px] mt-1">Strong reasoning · good for research</p>
-            </label>
-          </div>
-
-          <div class="rounded-lg border border-slate-200 p-3 mb-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-semibold text-sm">Default model</p>
-                <p class="muted text-[11px]">Used for any task without an override</p>
-              </div>
-              <select class="text-xs border border-slate-200 rounded px-2 py-1.5">
-                <option>Claude Opus 4.7</option>
-                <option>Claude Sonnet 4.6</option>
-                <option>Claude Haiku 4.5</option>
-              </select>
+                <p class="muted text-[11px] mt-1">Strong reasoning · good for research</p>
+              </label>
             </div>
-          </div>
-          <div class="rounded-lg border border-slate-200 p-3 mb-6">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-semibold text-sm">API key</p>
-                <p class="muted text-[11px]">Encrypted at rest · last rotated 11 days ago</p>
+            <div class="rounded-lg border border-slate-200 p-3 mb-3">
+              <div class="flex items-center justify-between">
+                <div><p class="font-semibold text-sm">Default model</p><p class="muted text-[11px]">Used for any task without an override</p></div>
+                <select class="text-xs border border-slate-200 rounded px-2 py-1.5"><option>Claude Opus 4.7</option><option>Claude Sonnet 4.6</option><option>Claude Haiku 4.5</option></select>
               </div>
-              <span class="pill bg-emerald-50 text-emerald-700 ring-emerald-200"><i data-lucide="check" class="icon-xs"></i>Connected</span>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-3 mb-6">
+              <div class="flex items-center justify-between">
+                <div><p class="font-semibold text-sm">API key</p><p class="muted text-[11px]">Encrypted at rest · last rotated 11 days ago</p></div>
+                <span class="pill bg-emerald-50 text-emerald-700 ring-emerald-200"><i data-lucide="check" class="icon-xs"></i>Connected</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between border-t border-slate-200 pt-3">
+              <p class="ann"><strong>Auto-saving</strong> on field change · last saved 4 sec ago</p>
+              <div class="flex gap-2"><button class="btn-ghost">Reset to defaults</button><button class="btn-primary">Save</button></div>
             </div>
           </div>
 
-          <div class="flex items-center justify-between border-t border-slate-200 pt-3">
-            <p class="ann"><strong>Auto-saving</strong> on field change · last saved 4 sec ago</p>
-            <div class="flex gap-2">
-              <button class="btn-ghost">Reset to defaults</button>
+          <!-- Workspace -->
+          <div id="sp-workspace" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/workspace</div>
+            <h3 class="text-lg font-bold mb-1">Workspace</h3>
+            <p class="muted text-sm mb-5">Name and timezone for this workspace.</p>
+            <div class="space-y-4 mb-6">
+              <div><label class="block text-xs font-semibold mb-1">Workspace name</label><input class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" value="Pratyush's workspace"></div>
+              <div><label class="block text-xs font-semibold mb-1">Timezone</label>
+                <select class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>America/New_York (UTC−5)</option><option selected>Asia/Kolkata (UTC+5:30)</option><option>Europe/London (UTC+0)</option></select>
+              </div>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Members -->
+          <div id="sp-members" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/members</div>
+            <h3 class="text-lg font-bold mb-1">Members</h3>
+            <p class="muted text-sm mb-5">Manage who has access to this workspace.</p>
+            <div class="space-y-2 mb-5">
+              <div class="flex items-center justify-between rounded-lg border border-slate-200 p-3">
+                <div class="flex items-center gap-3">
+                  <div class="h-7 w-7 rounded-full bg-violet-200 grid place-items-center text-violet-800 text-[11px] font-bold">PM</div>
+                  <div><p class="text-sm font-medium">Pratyush Mishra</p><p class="muted text-[11px]">99pratyush@gmail.com</p></div>
+                </div>
+                <span class="pill bg-violet-50 text-violet-700 ring-violet-200">Owner</span>
+              </div>
+            </div>
+            <button class="btn-secondary"><i data-lucide="user-plus" class="icon-xs"></i>Invite member</button>
+          </div>
+
+          <!-- Image generation -->
+          <div id="sp-imagegen" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/imagegen</div>
+            <h3 class="text-lg font-bold mb-1">Image generation</h3>
+            <p class="muted text-sm mb-5">Choose the provider used when generating post images.</p>
+            <div class="space-y-3 mb-6">
+              <label class="flex items-center gap-3 rounded-lg border-2 border-violet-500 bg-violet-50/50 p-3 cursor-pointer"><input type="radio" name="imggen" checked><div><p class="font-semibold text-sm">DALL-E 3 (OpenAI)</p><p class="muted text-[11px]">Best quality · requires OpenAI key</p></div></label>
+              <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-violet-300"><input type="radio" name="imggen"><div><p class="font-semibold text-sm">Stability AI</p><p class="muted text-[11px]">Cheaper · requires Stability key</p></div></label>
+              <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-violet-300"><input type="radio" name="imggen"><div><p class="font-semibold text-sm">Disabled</p><p class="muted text-[11px]">No images generated</p></div></label>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Voice transcription -->
+          <div id="sp-stt" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/voice</div>
+            <h3 class="text-lg font-bold mb-1">Voice transcription</h3>
+            <p class="muted text-sm mb-5">Whisper model used to transcribe dictated notes.</p>
+            <div class="space-y-3 mb-6">
+              <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-violet-300"><input type="radio" name="stt-s"><div><p class="font-semibold text-sm">Faster (base.en)</p><p class="muted text-[11px]">~70 MB · low latency</p></div></label>
+              <label class="flex items-center gap-3 rounded-lg border-2 border-violet-500 bg-violet-50/50 p-3 cursor-pointer"><input type="radio" name="stt-s" checked><div><p class="font-semibold text-sm">Higher quality (small.en) <span class="text-violet-600 text-[10px] font-bold ml-1">RECOMMENDED</span></p><p class="muted text-[11px]">~250 MB · best accuracy</p></div></label>
+              <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-violet-300"><input type="radio" name="stt-s"><div><p class="font-semibold text-sm">Disabled</p><p class="muted text-[11px]">No voice input</p></div></label>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Enrichment -->
+          <div id="sp-enrichment" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/enrichment</div>
+            <h3 class="text-lg font-bold mb-1">Enrichment</h3>
+            <p class="muted text-sm mb-5">Control which pipeline stages run and their prompts.</p>
+            <div class="space-y-2 mb-5">
+              <div class="flex items-center justify-between rounded-lg border border-slate-200 p-3">
+                <div><p class="text-sm font-medium">Summarise</p><p class="muted text-[11px]">Condense the article to 3 sentences</p></div>
+                <div class="w-8 h-4 bg-violet-600 rounded-full relative cursor-pointer"><div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div></div>
+              </div>
+              <div class="flex items-center justify-between rounded-lg border border-slate-200 p-3">
+                <div><p class="text-sm font-medium">Extract topics</p><p class="muted text-[11px]">Pull key themes as tags</p></div>
+                <div class="w-8 h-4 bg-violet-600 rounded-full relative cursor-pointer"><div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div></div>
+              </div>
+              <div class="flex items-center justify-between rounded-lg border border-slate-200 p-3">
+                <div><p class="text-sm font-medium">Score relevance</p><p class="muted text-[11px]">Rate 1–10 vs your topic list</p></div>
+                <div class="w-8 h-4 bg-slate-200 rounded-full relative cursor-pointer"><div class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div></div>
+              </div>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- LinkedIn -->
+          <div id="sp-linkedin" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/channels/linkedin</div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold">LinkedIn</h3>
+              <span class="pill bg-emerald-50 text-emerald-700 ring-emerald-200"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span>Connected</span>
+            </div>
+            <p class="muted text-sm mb-5">Posts published to your personal profile or a company page.</p>
+            <div class="space-y-3 mb-6">
+              <div class="rounded-lg border border-slate-200 p-3 flex items-center justify-between">
+                <div><p class="text-sm font-medium">Account</p><p class="muted text-[11px]">Pratyush Mishra · pratyush-mishra-xyz</p></div>
+                <button class="btn-ghost text-rose-600">Disconnect</button>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-3">
+                <p class="text-sm font-medium mb-2">Post as</p>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="li-as" checked> Personal profile</label>
+                  <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="li-as"> Company page</label>
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Newsletter channel -->
+          <div id="sp-newsletter-ch" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/channels/newsletter</div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold">Newsletter</h3>
+              <span class="pill bg-emerald-50 text-emerald-700 ring-emerald-200"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span>Connected</span>
+            </div>
+            <p class="muted text-sm mb-5">Sends via Beehiiv or direct SMTP.</p>
+            <div class="space-y-3 mb-6">
+              <div class="rounded-lg border border-slate-200 p-3 flex items-center justify-between">
+                <div><p class="text-sm font-medium">Provider</p><p class="muted text-[11px]">Beehiiv · publication id: pub_abc123</p></div>
+                <button class="btn-ghost">Change</button>
+              </div>
+              <div class="rounded-lg border border-slate-200 p-3">
+                <p class="text-sm font-medium mb-1">API key</p>
+                <input type="password" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" value="••••••••••••••••">
+              </div>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Telegram -->
+          <div id="sp-telegram" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/channels/telegram</div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold">Telegram</h3>
+              <span class="pill bg-amber-50 text-amber-700 ring-amber-200"><span class="h-1.5 w-1.5 rounded-full bg-amber-500 inline-block mr-1"></span>Token set · not verified</span>
+            </div>
+            <p class="muted text-sm mb-5">Post to a Telegram channel or group via bot.</p>
+            <div class="space-y-3 mb-6">
+              <div class="rounded-lg border border-amber-200 bg-amber-50/40 p-3">
+                <p class="text-sm font-medium mb-1">Bot token</p>
+                <input type="password" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" value="••••••••••••••••">
+              </div>
+              <div class="rounded-lg border border-slate-200 p-3">
+                <p class="text-sm font-medium mb-1">Chat ID</p>
+                <input type="text" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="-100xxxxxxxxxx">
+              </div>
+            </div>
+            <div class="flex items-center justify-between border-t border-slate-200 pt-3">
+              <button class="btn-secondary">Test connection</button>
               <button class="btn-primary">Save</button>
             </div>
           </div>
+
+          <!-- WhatsApp -->
+          <div id="sp-whatsapp" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/channels/whatsapp</div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold">WhatsApp</h3>
+              <span class="pill bg-rose-50 text-rose-700 ring-rose-200"><span class="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block mr-1"></span>Not connected</span>
+            </div>
+            <p class="muted text-sm mb-5">Send posts to a WhatsApp group via Business API.</p>
+            <div class="rounded-lg border border-rose-200 bg-rose-50/40 p-4 mb-5 text-sm">
+              <p class="font-semibold text-rose-700 mb-1">Setup required</p>
+              <p class="muted text-[12px]">You need a Meta Business account and a phone number approved for WhatsApp Business API.</p>
+            </div>
+            <button class="btn-primary">Connect WhatsApp Business</button>
+          </div>
+
+          <!-- Gmail -->
+          <div id="sp-gmail" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/channels/gmail</div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold">Gmail</h3>
+              <span class="pill bg-emerald-50 text-emerald-700 ring-emerald-200"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span>Connected</span>
+            </div>
+            <p class="muted text-sm mb-5">Send newsletter drafts via your Gmail account.</p>
+            <div class="rounded-lg border border-slate-200 p-3 flex items-center justify-between mb-5">
+              <div><p class="text-sm font-medium">Account</p><p class="muted text-[11px]">99pratyush@gmail.com</p></div>
+              <button class="btn-ghost text-rose-600">Disconnect</button>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Instagram -->
+          <div id="sp-instagram" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/channels/instagram</div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold">Instagram</h3>
+              <span class="pill bg-slate-100 text-slate-600 ring-slate-300/60"><span class="h-1.5 w-1.5 rounded-full bg-slate-400 inline-block mr-1"></span>Not connected</span>
+            </div>
+            <p class="muted text-sm mb-5">Post images and carousels to Instagram Business.</p>
+            <button class="btn-primary">Connect Instagram Business</button>
+          </div>
+
+          <!-- YouTube -->
+          <div id="sp-youtube" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/channels/youtube</div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold">YouTube</h3>
+              <span class="pill bg-slate-100 text-slate-600 ring-slate-300/60"><span class="h-1.5 w-1.5 rounded-full bg-slate-400 inline-block mr-1"></span>Not connected</span>
+            </div>
+            <p class="muted text-sm mb-5">Publish video content to your YouTube channel.</p>
+            <button class="btn-primary">Connect YouTube</button>
+          </div>
+
+          <!-- Generate posts -->
+          <div id="sp-generate" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/content/generate</div>
+            <h3 class="text-lg font-bold mb-1">Generate posts</h3>
+            <p class="muted text-sm mb-5">Default tone, length and style for AI-generated posts.</p>
+            <div class="space-y-4 mb-6">
+              <div><label class="block text-xs font-semibold mb-1">Default tone</label>
+                <select class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Analytical</option><option>Conversational</option><option>Inspirational</option></select>
+              </div>
+              <div><label class="block text-xs font-semibold mb-1">Default length</label>
+                <select class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Short (150–200 words)</option><option selected>Medium (250–350 words)</option><option>Long (500+ words)</option></select>
+              </div>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- News research -->
+          <div id="sp-research" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/content/research</div>
+            <h3 class="text-lg font-bold mb-1">News research</h3>
+            <p class="muted text-sm mb-5">Sources and refresh cadence for the feed.</p>
+            <div class="space-y-4 mb-6">
+              <div><label class="block text-xs font-semibold mb-1">Refresh every</label>
+                <select class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>1 hour</option><option selected>6 hours</option><option>24 hours</option></select>
+              </div>
+              <div><label class="block text-xs font-semibold mb-1">Max articles per source</label>
+                <input type="number" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" value="20">
+              </div>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Review & approval -->
+          <div id="sp-approval" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/content/approval</div>
+            <h3 class="text-lg font-bold mb-1">Review &amp; approval</h3>
+            <p class="muted text-sm mb-5">Control when posts require manual approval before publishing.</p>
+            <div class="space-y-2 mb-5">
+              <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer"><input type="checkbox" checked><div><p class="text-sm font-medium">Require approval for all AI-drafted posts</p></div></label>
+              <label class="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer"><input type="checkbox"><div><p class="text-sm font-medium">Allow scheduled posts to auto-publish without review</p></div></label>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- GitHub Actions -->
+          <div id="sp-github" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/integrations/github</div>
+            <h3 class="text-lg font-bold mb-1">GitHub Actions</h3>
+            <p class="muted text-sm mb-5">Trigger content runs from your CI/CD pipeline.</p>
+            <div class="rounded-lg border border-slate-200 p-3 mb-5">
+              <p class="text-sm font-medium mb-1">Webhook URL</p>
+              <div class="flex gap-2">
+                <input type="text" class="flex-1 border border-slate-200 rounded px-2 py-1.5 text-xs font-mono bg-slate-50" value="https://api.linkedinpost.app/hooks/gh/xxxx" readonly>
+                <button class="btn-ghost">Copy</button>
+              </div>
+            </div>
+            <div class="flex justify-end border-t border-slate-200 pt-3"><button class="btn-primary">Save</button></div>
+          </div>
+
+          <!-- Google Sheets -->
+          <div id="sp-sheets" class="settings-panel p-6 hidden">
+            <div class="text-[10px] muted mb-2">/settings/integrations/sheets</div>
+            <h3 class="text-lg font-bold mb-1">Google Sheets</h3>
+            <p class="muted text-sm mb-5">Import topics from a spreadsheet on a schedule.</p>
+            <button class="btn-primary">Connect Google account</button>
+          </div>
+
         </section>
       </div>
     </section>
@@ -730,6 +981,32 @@
         lucide.createIcons();
       });
     });
+
+    function showSection(el, id) {
+      // Show the matching panel, hide all others
+      document.querySelectorAll('.settings-panel').forEach((p) => {
+        p.classList.toggle('hidden', p.id !== 'sp-' + id);
+      });
+      // Scroll right pane to top
+      const rightPane = el.closest('aside').nextElementSibling;
+      if (rightPane) rightPane.scrollTop = 0;
+      // Update active state on nav items
+      document.querySelectorAll('.settings-nav').forEach((a) => {
+        const isActive = a === el;
+        a.classList.toggle('bg-white', isActive);
+        a.classList.toggle('text-violet-700', isActive);
+        a.classList.toggle('font-semibold', isActive);
+        a.classList.toggle('ring-1', isActive);
+        a.classList.toggle('ring-violet-200', isActive);
+        if (isActive) {
+          a.classList.remove('text-slate-700');
+        } else {
+          a.classList.add('text-slate-700');
+          a.classList.remove('bg-white', 'text-violet-700', 'font-semibold', 'ring-1', 'ring-violet-200');
+        }
+      });
+      lucide.createIcons();
+    }
   </script>
 </body>
 </html>

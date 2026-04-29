@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campaign Wizard — Design Review</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, rgba(245,243,255,0.4) 0%, #ffffff 55%, rgba(255,251,235,0.3) 100%);
+    }
+    .glass-header { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226,232,240,0.8); }
+
+    /* Stepper */
+    .step-circle {
+      width: 28px; height: 28px; border-radius: 9999px;
+      display: grid; place-items: center;
+      font-size: 12px; font-weight: 700;
+      flex-shrink: 0; transition: all 150ms;
+    }
+    .step-circle.done { background: #6d28d9; color: white; }
+    .step-circle.active { background: #6d28d9; color: white; box-shadow: 0 0 0 3px rgba(109,40,217,0.2); }
+    .step-circle.todo { background: #f1f5f9; color: #94a3b8; border: 1.5px solid #e2e8f0; }
+    .step-line { height: 2px; flex: 1; transition: background 150ms; }
+    .step-line.done { background: #6d28d9; }
+    .step-line.todo { background: #e2e8f0; }
+
+    /* Method cards */
+    .method-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      background: white;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 150ms;
+      display: flex; flex-direction: column; gap: 12px;
+      text-align: left;
+    }
+    .method-card:hover { border-color: #c4b5fd; box-shadow: 0 4px 16px rgba(109,40,217,0.10); }
+    .method-card.selected { border-color: #7c3aed; background: rgba(109,40,217,0.03); box-shadow: 0 0 0 3px rgba(109,40,217,0.12); }
+
+    /* Post preview card */
+    .post-card {
+      border: 1px solid #e2e8f0; border-radius: 12px;
+      background: white; padding: 14px;
+      transition: box-shadow 150ms;
+    }
+    .post-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+
+    /* Channel chip */
+    .channel-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      border: 1.5px solid #e2e8f0; border-radius: 9999px;
+      padding: 4px 10px; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 100ms; background: white; color: #64748b;
+    }
+    .channel-chip:hover { border-color: #c4b5fd; color: #6d28d9; }
+    .channel-chip.selected { border-color: #7c3aed; background: rgba(109,40,217,0.06); color: #6d28d9; }
+
+    /* Tabs */
+    .view-tab { padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 100ms; color: #64748b; }
+    .view-tab.active { background: #6d28d9; color: white; }
+
+    /* Status pill */
+    .status-draft { background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
+    .status-ok    { background: #f0fdf4; color: #166534; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
+
+    [hidden] { display: none !important; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.4); border-radius: 9999px; }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-slate-900">
+
+  <!-- Header -->
+  <header class="glass-header shrink-0 px-6 py-3 flex items-center gap-4 z-20">
+    <div class="flex items-center gap-2">
+      <div class="h-7 w-7 rounded-lg grid place-items-center text-white text-[10px] font-bold" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)">LP</div>
+      <span class="text-sm font-bold text-slate-800">Campaign Wizard</span>
+    </div>
+    <button onclick="location.reload()" class="ml-auto text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1">
+      <i data-lucide="x" class="w-3.5 h-3.5"></i>Exit wizard
+    </button>
+  </header>
+
+  <!-- Stepper -->
+  <div class="shrink-0 bg-white border-b border-slate-100 px-8 py-4">
+    <div class="max-w-2xl mx-auto flex items-center gap-0">
+
+      <!-- Step 1 -->
+      <div class="flex flex-col items-center gap-1.5 shrink-0">
+        <div id="circle-1" class="step-circle active">1</div>
+        <p id="label-1" class="text-[10px] font-semibold text-violet-700">Choose type</p>
+      </div>
+      <div id="line-12" class="step-line todo mx-2"></div>
+
+      <!-- Step 2 -->
+      <div class="flex flex-col items-center gap-1.5 shrink-0">
+        <div id="circle-2" class="step-circle todo">2</div>
+        <p id="label-2" class="text-[10px] font-semibold text-slate-400">Configure</p>
+      </div>
+      <div id="line-23" class="step-line todo mx-2"></div>
+
+      <!-- Step 3 -->
+      <div class="flex flex-col items-center gap-1.5 shrink-0">
+        <div id="circle-3" class="step-circle todo">3</div>
+        <p id="label-3" class="text-[10px] font-semibold text-slate-400">Preview</p>
+      </div>
+      <div id="line-34" class="step-line todo mx-2"></div>
+
+      <!-- Step 4 -->
+      <div class="flex flex-col items-center gap-1.5 shrink-0">
+        <div id="circle-4" class="step-circle todo">4</div>
+        <p id="label-4" class="text-[10px] font-semibold text-slate-400">Schedule</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step content -->
+  <div class="flex-1 overflow-y-auto">
+    <div class="max-w-2xl mx-auto px-6 py-8">
+
+      <!-- ══ STEP 1: Choose type ══ -->
+      <div id="step-1">
+        <h2 class="text-lg font-bold text-slate-900 mb-1">How would you like to create this campaign?</h2>
+        <p class="text-sm text-slate-500 mb-6">Choose a method — you can always switch later.</p>
+
+        <div class="grid grid-cols-3 gap-4 mb-8">
+
+          <button id="card-generate" class="method-card selected" onclick="selectMethod('generate')">
+            <div class="h-10 w-10 rounded-xl bg-violet-100 grid place-items-center">
+              <i data-lucide="sparkles" class="w-5 h-5 text-violet-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-900 mb-0.5">Generate with AI</p>
+              <p class="text-xs text-slate-500 leading-relaxed">Describe your campaign and let Claude draft all the posts.</p>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] font-semibold text-violet-600">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>Recommended
+            </div>
+          </button>
+
+          <button id="card-upload" class="method-card" onclick="selectMethod('upload')">
+            <div class="h-10 w-10 rounded-xl bg-sky-100 grid place-items-center">
+              <i data-lucide="upload" class="w-5 h-5 text-sky-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-900 mb-0.5">Upload file</p>
+              <p class="text-xs text-slate-500 leading-relaxed">Import a JSON or CSV file with pre-written posts.</p>
+            </div>
+            <div class="text-[11px] text-slate-400">.json · .csv supported</div>
+          </button>
+
+          <button id="card-paste" class="method-card" onclick="selectMethod('paste')">
+            <div class="h-10 w-10 rounded-xl bg-amber-100 grid place-items-center">
+              <i data-lucide="clipboard-paste" class="w-5 h-5 text-amber-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-900 mb-0.5">Paste JSON</p>
+              <p class="text-xs text-slate-500 leading-relaxed">Directly paste a campaign document in JSON format.</p>
+            </div>
+            <div class="text-[11px] text-slate-400">Advanced · manual</div>
+          </button>
+        </div>
+
+        <div class="flex justify-end">
+          <button onclick="goToStep(2)" class="flex items-center gap-2 h-10 rounded-xl bg-violet-600 px-6 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
+            Continue<i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ STEP 2: Configure ══ -->
+      <div id="step-2" hidden>
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Configure your campaign</h2>
+        <p class="text-sm text-slate-500 mb-6">Tell Claude what kind of posts to generate.</p>
+
+        <div class="flex flex-col gap-4 mb-8">
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Campaign name <span class="text-red-400">*</span></label>
+            <input class="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300" placeholder="e.g. Q2 Founder Content Sprint" value="Q2 AI Leadership Series" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">What should this campaign achieve?</label>
+            <textarea rows="3" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300 resize-none" placeholder="e.g. 10 LinkedIn posts on AI leadership for CTOs, mix of personal stories and thought leadership…">10 LinkedIn posts about how AI agents will reshape the future of work. Target: senior engineering leaders. Tone: thoughtful, not hype.</textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5">Number of posts</label>
+              <select class="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300">
+                <option>5 posts</option><option selected>10 posts</option><option>15 posts</option><option>20 posts</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5">Post style</label>
+              <select class="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300">
+                <option>Professional</option><option selected>Storytelling</option><option>Educational</option><option>Controversial</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Target audience</label>
+            <input class="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-300" placeholder="e.g. Startup founders, Engineering managers…" value="Senior engineering leaders, CTOs, VP Engineering" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Channels</label>
+            <div class="flex flex-wrap gap-2">
+              <button class="channel-chip selected" onclick="toggleChip(this)">
+                <i data-lucide="linkedin" class="w-3 h-3"></i>LinkedIn
+              </button>
+              <button class="channel-chip" onclick="toggleChip(this)">
+                <i data-lucide="mail" class="w-3 h-3"></i>Newsletter
+              </button>
+              <button class="channel-chip" onclick="toggleChip(this)">
+                <i data-lucide="send" class="w-3 h-3"></i>Telegram
+              </button>
+              <button class="channel-chip" onclick="toggleChip(this)">
+                <i data-lucide="instagram" class="w-3 h-3"></i>Instagram
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+          <button onclick="goToStep(1)" class="h-10 rounded-xl border border-slate-200 px-5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">← Back</button>
+          <button onclick="goToStep(3)" class="ml-auto flex items-center gap-2 h-10 rounded-xl bg-violet-600 px-6 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
+            Generate campaign<i data-lucide="sparkles" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ STEP 3: Preview ══ -->
+      <div id="step-3" hidden>
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Preview — Q2 AI Leadership Series</h2>
+            <p class="text-sm text-slate-500">10 posts generated · Review and edit before scheduling</p>
+          </div>
+          <div class="flex items-center gap-1 border border-slate-200 rounded-lg p-0.5">
+            <button id="tab-list" class="view-tab active" onclick="setPreviewTab('list')">
+              <i data-lucide="layout-list" class="w-3.5 h-3.5 inline-block mr-1"></i>List
+            </button>
+            <button id="tab-cal" class="view-tab" onclick="setPreviewTab('calendar')">
+              <i data-lucide="calendar-days" class="w-3.5 h-3.5 inline-block mr-1"></i>Calendar
+            </button>
+          </div>
+        </div>
+
+        <!-- List view -->
+        <div id="preview-list" class="flex flex-col gap-3 mb-6">
+          <div class="post-card">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Post 1</span>
+                <span class="status-draft">Draft</span>
+              </div>
+              <div class="flex gap-1">
+                <span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 border border-blue-100">
+                  <i data-lucide="linkedin" class="w-2.5 h-2.5"></i>LinkedIn
+                </span>
+              </div>
+            </div>
+            <p class="text-sm text-slate-800 leading-relaxed line-clamp-3">I used to think "AI will replace engineers" was a hot take. Now I think it's the wrong question entirely. The engineers who'll thrive in 2025 aren't fighting AI — they're learning to <em>direct</em> it. Here's what that actually looks like day-to-day…</p>
+            <div class="flex items-center gap-2 mt-3">
+              <button class="flex items-center gap-1 h-7 rounded-lg border border-slate-200 px-2.5 text-[11px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">
+                <i data-lucide="pencil" class="w-3 h-3"></i>Edit
+              </button>
+              <button class="flex items-center gap-1 h-7 rounded-lg border border-slate-200 px-2.5 text-[11px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">
+                <i data-lucide="refresh-cw" class="w-3 h-3"></i>Regenerate
+              </button>
+              <button class="flex items-center gap-1 h-7 rounded-lg border border-red-100 text-red-400 px-2.5 text-[11px] font-medium hover:bg-red-50 transition-colors ml-auto">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>Remove
+              </button>
+            </div>
+          </div>
+
+          <div class="post-card">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Post 2</span>
+                <span class="status-ok">Ready</span>
+              </div>
+              <span class="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 border border-blue-100">
+                <i data-lucide="linkedin" class="w-2.5 h-2.5"></i>LinkedIn
+              </span>
+            </div>
+            <p class="text-sm text-slate-800 leading-relaxed line-clamp-3">Three months ago, our team shipped a feature that would have taken 6 weeks in 2022. It took 4 days. Not because we worked harder. Because every engineer had an AI pair programming partner available 24/7. The leverage shift is real.</p>
+            <div class="flex items-center gap-2 mt-3">
+              <button class="flex items-center gap-1 h-7 rounded-lg border border-slate-200 px-2.5 text-[11px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"><i data-lucide="pencil" class="w-3 h-3"></i>Edit</button>
+              <button class="flex items-center gap-1 h-7 rounded-lg border border-slate-200 px-2.5 text-[11px] font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"><i data-lucide="refresh-cw" class="w-3 h-3"></i>Regenerate</button>
+              <button class="flex items-center gap-1 h-7 rounded-lg border border-red-100 text-red-400 px-2.5 text-[11px] font-medium hover:bg-red-50 transition-colors ml-auto"><i data-lucide="trash-2" class="w-3 h-3"></i>Remove</button>
+            </div>
+          </div>
+
+          <div class="post-card opacity-60">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Posts 3–10</span>
+              <span class="text-[10px] text-slate-400">(8 more)</span>
+            </div>
+            <div class="h-10 rounded-lg bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center">
+              <span class="text-xs text-slate-400">Scroll to see all posts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar view (hidden by default) -->
+        <div id="preview-calendar" hidden class="mb-6">
+          <div class="rounded-xl border border-slate-200 overflow-hidden bg-white">
+            <div class="grid grid-cols-7 border-b border-slate-100">
+              <div class="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">Mon</div>
+              <div class="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">Tue</div>
+              <div class="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">Wed</div>
+              <div class="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">Thu</div>
+              <div class="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">Fri</div>
+              <div class="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">Sat</div>
+              <div class="py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wide">Sun</div>
+            </div>
+            <div class="grid grid-cols-7">
+              <!-- Week 1 -->
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5">
+                <div class="text-[10px] text-slate-400 mb-1">5</div>
+                <div class="rounded-md bg-violet-100 border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 truncate">Post 1</div>
+              </div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">6</div></div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5">
+                <div class="text-[10px] text-slate-400 mb-1">7</div>
+                <div class="rounded-md bg-violet-100 border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 truncate">Post 2</div>
+              </div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">8</div></div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5">
+                <div class="text-[10px] text-slate-400 mb-1">9</div>
+                <div class="rounded-md bg-violet-100 border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 truncate">Post 3</div>
+              </div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">10</div></div>
+              <div class="min-h-[64px] border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">11</div></div>
+              <!-- Week 2 -->
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5">
+                <div class="text-[10px] text-slate-400 mb-1">12</div>
+                <div class="rounded-md bg-violet-100 border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 truncate">Post 4</div>
+              </div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">13</div></div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5">
+                <div class="text-[10px] text-slate-400 mb-1">14</div>
+                <div class="rounded-md bg-violet-100 border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 truncate">Post 5</div>
+              </div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">15</div></div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5">
+                <div class="text-[10px] text-slate-400 mb-1">16</div>
+                <div class="rounded-md bg-violet-100 border border-violet-200 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 truncate">Post 6</div>
+              </div>
+              <div class="min-h-[64px] border-r border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">17</div></div>
+              <div class="min-h-[64px] border-b border-slate-100 p-1.5"><div class="text-[10px] text-slate-400">18</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+          <button onclick="goToStep(2)" class="h-10 rounded-xl border border-slate-200 px-5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">← Back</button>
+          <p class="text-xs text-slate-400">10/10 posts · 0 warnings</p>
+          <button onclick="goToStep(4)" class="ml-auto flex items-center gap-2 h-10 rounded-xl bg-violet-600 px-6 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
+            Set schedule<i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ STEP 4: Schedule ══ -->
+      <div id="step-4" hidden>
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Schedule your campaign</h2>
+        <p class="text-sm text-slate-500 mb-6">Set when posts go out across your channels.</p>
+
+        <div class="flex flex-col gap-5 mb-8">
+
+          <!-- Date range -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Campaign date range</label>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <p class="text-[11px] text-slate-500 mb-1">Start date</p>
+                <input type="date" value="2025-05-05" class="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300" />
+              </div>
+              <div>
+                <p class="text-[11px] text-slate-500 mb-1">End date</p>
+                <input type="date" value="2025-06-30" class="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Frequency -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Publishing frequency</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button class="h-9 rounded-xl border border-slate-200 text-xs font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors">Daily</button>
+              <button class="h-9 rounded-xl border-2 border-violet-600 bg-violet-50 text-xs font-semibold text-violet-700">3× / week</button>
+              <button class="h-9 rounded-xl border border-slate-200 text-xs font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors">Weekly</button>
+              <button class="h-9 rounded-xl border border-slate-200 text-xs font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors">Custom</button>
+            </div>
+          </div>
+
+          <!-- Days -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Posting days</label>
+            <div class="flex gap-2">
+              <button class="h-9 w-10 rounded-xl border-2 border-violet-600 bg-violet-50 text-xs font-bold text-violet-700">M</button>
+              <button class="h-9 w-10 rounded-xl border border-slate-200 text-xs font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors">T</button>
+              <button class="h-9 w-10 rounded-xl border-2 border-violet-600 bg-violet-50 text-xs font-bold text-violet-700">W</button>
+              <button class="h-9 w-10 rounded-xl border border-slate-200 text-xs font-semibold text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors">T</button>
+              <button class="h-9 w-10 rounded-xl border-2 border-violet-600 bg-violet-50 text-xs font-bold text-violet-700">F</button>
+              <button class="h-9 w-10 rounded-xl border border-slate-200 text-xs font-semibold text-slate-400 opacity-50">S</button>
+              <button class="h-9 w-10 rounded-xl border border-slate-200 text-xs font-semibold text-slate-400 opacity-50">S</button>
+            </div>
+          </div>
+
+          <!-- Post time -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">Posting time</label>
+            <div class="flex items-center gap-3">
+              <input type="time" value="09:00" class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-300" />
+              <span class="text-xs text-slate-400">in your local timezone</span>
+            </div>
+          </div>
+
+          <!-- Channels confirm -->
+          <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <p class="text-xs font-bold text-slate-700 mb-3">Publishing to</p>
+            <div class="flex gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-[11px] font-semibold text-blue-700">
+                <i data-lucide="linkedin" class="w-3 h-3"></i>LinkedIn — connected
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">10 posts · Mon/Wed/Fri at 9:00 AM · May 5 – Jun 30</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+          <button onclick="goToStep(3)" class="h-10 rounded-xl border border-slate-200 px-5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">← Back</button>
+          <button onclick="void(0)" class="ml-auto flex items-center gap-2 h-10 rounded-xl bg-violet-600 px-6 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>Publish campaign
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let currentStep = 1;
+    let selectedMethod = 'generate';
+
+    function selectMethod(m) {
+      selectedMethod = m;
+      ['generate','upload','paste'].forEach(id => {
+        document.getElementById('card-' + id).classList.toggle('selected', id === m);
+      });
+    }
+
+    function toggleChip(el) {
+      el.classList.toggle('selected');
+    }
+
+    function setPreviewTab(tab) {
+      document.getElementById('tab-list').classList.toggle('active', tab === 'list');
+      document.getElementById('tab-cal').classList.toggle('active', tab === 'calendar');
+      document.getElementById('preview-list').hidden = tab !== 'list';
+      document.getElementById('preview-calendar').hidden = tab !== 'calendar';
+    }
+
+    function goToStep(step) {
+      // Hide current, show next
+      document.getElementById('step-' + currentStep).hidden = true;
+      document.getElementById('step-' + step).hidden = false;
+
+      // Update stepper
+      for (let i = 1; i <= 4; i++) {
+        const circle = document.getElementById('circle-' + i);
+        const label = document.getElementById('label-' + i);
+        circle.className = 'step-circle ' + (i < step ? 'done' : i === step ? 'active' : 'todo');
+        label.className = 'text-[10px] font-semibold ' + (i < step ? 'text-violet-600' : i === step ? 'text-violet-700' : 'text-slate-400');
+        if (i < step) circle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        else circle.textContent = i;
+      }
+      for (let i = 1; i <= 3; i++) {
+        const line = document.getElementById('line-' + i + '' + (i+1));
+        if (line) line.className = 'step-line ' + (i < step ? 'done' : 'todo') + ' mx-2';
+      }
+
+      currentStep = step;
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

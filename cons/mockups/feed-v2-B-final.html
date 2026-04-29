@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed v2 · B — Briefing (final, optimized)</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --canvas: #FAF5FF; --surface:#FFFFFF; --surface-muted:#F3E8FF;
+    --ink:#1E1B4B; --ink-hover:#312E81; --muted:#475569; --faint:#94A3B8;
+    --border:#E9D5FF; --border-strong:#DDD6FE;
+    --primary:#7C3AED; --primary-hover:#6D28D9; --secondary:#A78BFA;
+    --deep-purple:#4C1D95;
+  }
+  body {
+    font-family: "Plus Jakarta Sans", "Open Sans", system-ui, sans-serif;
+    color: var(--ink); min-height: 100vh;
+    background-color: #ede9fe;
+    background-image:
+      radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124, 58, 237, 0.42), transparent 55%),
+      radial-gradient(ellipse 95% 75% at 100% 5%, rgba(167, 139, 250, 0.36), transparent 52%),
+      radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192, 132, 252, 0.32), transparent 58%),
+      linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+    background-attachment: fixed;
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: "Poppins", "Plus Jakarta Sans", sans-serif; color: var(--ink); letter-spacing: -0.012em; }
+
+  /* Glass utilities */
+  .glass-sidebar { border-right: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.75); box-shadow: 4px 0 28px rgba(91,33,182,0.07); backdrop-filter: blur(20px); }
+  .glass-rail    { border-left: 1px solid rgba(255,255,255,0.50); background: rgba(255,255,255,0.62); backdrop-filter: blur(18px); }
+
+  /* Layout — 4 columns: app rail + feed left panel + center + right panel */
+  .shell { display:grid; grid-template-columns: 64px 220px minmax(0,1fr) 300px; height: 100vh; }
+  .pane { overflow-y: auto; }
+  .pane::-webkit-scrollbar { width: 6px; } .pane::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius:3px; }
+
+  /* App rail — slim icon-only navigation between top-level pages */
+  .app-rail { border-right: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.82); backdrop-filter: blur(20px); display: flex; flex-direction: column; align-items: center; padding: 14px 0 16px; gap: 6px; }
+  .app-rail-logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #7C3AED, #4C1D95); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; font-family: 'Poppins'; margin-bottom: 14px; }
+  .rail-nav-btn { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--muted); cursor: pointer; transition: all 120ms; background: transparent; border: none; position: relative; }
+  .rail-nav-btn:hover { background: rgba(255,255,255,0.55); color: var(--ink); }
+  .rail-nav-btn.active { background: rgba(124,58,237,0.10); color: var(--primary); }
+  .rail-nav-btn::after { content: attr(data-label); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); background: var(--ink); color: white; padding: 4px 9px; border-radius: 5px; font-size: 11px; font-weight: 600; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms; z-index: 100; box-shadow: 0 4px 12px rgba(91,33,182,0.18); }
+  .rail-nav-btn:hover::after { opacity: 1; }
+
+  /* Platform filter dropdown — used in both left and right panels */
+  .platform-dropdown { width: 100%; height: 34px; padding: 0 12px; background: rgba(255,255,255,0.65); border: 1px solid var(--border); border-radius: 9px; font-size: 12.5px; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 7px; cursor: pointer; transition: all 120ms; font-family: inherit; }
+  .platform-dropdown:hover { border-color: var(--primary); color: var(--primary); }
+  .platform-dropdown .chev { margin-left: auto; color: var(--faint); }
+  .platform-dropdown:hover .chev { color: var(--primary); }
+
+  /* Sidebar */
+  .navlink { display:flex; align-items:center; gap:10px; padding: 7px 10px; border-radius: 10px; font-size: 13px; color: var(--muted); cursor:pointer; line-height:1; font-weight: 500; }
+  .navlink:hover { background: rgba(255,255,255,0.55); color: var(--ink); }
+  .navlink.active { color: var(--primary); font-weight:600; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.15); padding: 6px 9px; }
+  .navlink .count { margin-left:auto; font-size: 11px; color: var(--faint); font-feature-settings: "tnum"; }
+  .group-mark { width:7px; height:7px; border-radius:50%; background: var(--border-strong); flex-shrink:0; }
+  .navlink.active .group-mark { background: var(--primary); }
+  .nav-section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing: 0.1em; color: var(--secondary); padding: 18px 10px 6px; }
+
+  /* Masthead — title + subtitle, no Compose */
+  .mast { padding: 24px 40px 14px; }
+  .mast-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--secondary); }
+  .mast-title { font-size: 32px; line-height: 1.05; font-weight: 700; letter-spacing: -0.018em; color: var(--ink); margin-top: 4px; }
+  .mast-sub { font-size: 13px; color: var(--muted); margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; }
+  .ghost-refresh { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; color: var(--muted); cursor: pointer; background: transparent; border: none; padding: 0; transition: color 120ms; }
+  .ghost-refresh:hover { color: var(--primary); background: transparent; }
+
+  /* Tools row — search + inline US/7d filters + refresh */
+  .mast-tools { display:flex; align-items:center; gap: 10px; margin-top: 18px; }
+  .search { flex: 1; position:relative; max-width: 520px; }
+  .search input { width:100%; height: 38px; padding: 0 14px 0 38px; background: rgba(255,255,255,0.75); border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13.5px; color: var(--ink); outline: none; transition: all 120ms; }
+  .search input::placeholder { color: var(--faint); }
+  .search input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+  .search .icon { position:absolute; left: 12px; top:50%; transform: translateY(-50%); color: var(--secondary); }
+
+  /* Inline filter pills (US, 7d) */
+  .filter-pill { height: 38px; padding: 0 12px; background: rgba(255,255,255,0.75); border: 1px solid var(--border); border-radius: 10px; font-size: 12.5px; font-weight: 500; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 120ms; }
+  .filter-pill:hover { border-color: var(--primary); color: var(--primary); }
+  .filter-pill .chev { color: var(--faint); }
+  .icon-btn { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.75); border: 1px solid var(--border); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 120ms; }
+  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Tabs */
+  .tabs { display:flex; gap: 22px; padding: 14px 40px 0; align-items: center; border-bottom: 1px solid rgba(221,214,254,0.55); }
+  .tab { font-size: 13px; color: var(--muted); padding: 12px 0; border-bottom: 2px solid transparent; cursor:pointer; line-height: 1; font-weight:500; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight:600; }
+
+  /* Body */
+  .body { padding: 22px 40px 80px; max-width: 760px; margin: 0 auto; }
+
+  /* Section header */
+  .sec-head { display:flex; align-items: baseline; justify-content:space-between; padding-bottom: 8px; border-bottom: 2px solid var(--primary); margin: 22px 0 8px; }
+  .sec-head:first-child { margin-top: 4px; }
+  .sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink); }
+  .sec-meta { font-size: 10.5px; color: var(--muted); }
+
+  /* Article rows — keeps deck/description, smaller meta, hover-only actions (space always reserved to prevent shift) */
+  .art { padding: 16px 0 12px; border-bottom: 1px solid rgba(221,214,254,0.55); cursor: pointer; }
+  .art:last-child { border-bottom: 0; }
+  .art h2 { font-size: 17px; line-height: 1.3; font-weight: 500; letter-spacing: -0.005em; color: var(--ink); margin-bottom: 6px; }
+  .art .deck { font-size: 13px; line-height: 1.55; color: var(--muted); margin-bottom: 8px; max-width: 620px; }
+  .art .meta { font-size: 11px; color: var(--muted); display:flex; align-items: center; gap: 7px; line-height: 1; font-weight: 500; }
+  .meta-dot { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--border-strong); }
+  .source { color: var(--ink); font-weight: 600; }
+  .author { color: var(--muted); }
+  .fav { width: 11px; height: 11px; border-radius: 3px; display:inline-block; flex-shrink: 0; background: var(--border-strong); }
+
+  /* Actions — always reserve vertical space (prevents layout shift), reveal on hover */
+  .art .actions { display:flex; gap: 2px; align-items: center; margin-top: 10px; min-height: 28px; opacity: 0; pointer-events: none; transition: opacity 150ms ease; }
+  .art:hover .actions, .art:focus-within .actions { opacity: 1; pointer-events: auto; }
+
+  /* Ghost icon buttons — color-only, no background fill */
+  .ic { width: 26px; height: 26px; display:inline-flex; align-items:center; justify-content:center; border-radius: 5px; color: var(--faint); cursor:pointer; background: transparent; border: none; padding: 0; transition: color 120ms; }
+  .ic:hover { color: var(--primary); background: transparent; }
+  .ic.on { color: var(--primary); background: transparent; }
+
+  .btn { height: 26px; padding: 0 10px; font-size: 11.5px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border); background: rgba(255,255,255,0.7); color: var(--ink); display:inline-flex; align-items:center; gap: 6px; cursor:pointer; transition: all 120ms; }
+  .btn:hover { border-color: var(--primary); color: var(--primary); background: white; }
+  .btn.primary { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 14px -4px rgba(124,58,237,0.5); }
+  .btn.primary:hover { background: var(--primary-hover); color: white; }
+
+  /* Cluster note (kept on grouped stories, smaller) */
+  .cluster-note { font-size: 10px; font-weight: 600; color: var(--primary); margin-bottom: 6px; display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; background: rgba(124,58,237,0.08); border-radius: 5px; border: 1px solid rgba(124,58,237,0.18); letter-spacing: 0.02em; }
+
+  /* Articles with media thumbnails (YouTube, Instagram) — flex layout, thumb on the right */
+  .art.with-thumb { display: flex; gap: 16px; align-items: flex-start; }
+  .art.with-thumb > .content-col { flex: 1; min-width: 0; }
+  .art.with-thumb > .media-thumb { flex-shrink: 0; margin-top: 2px; }
+
+  .media-thumb { border-radius: 8px; position: relative; overflow: hidden; background: linear-gradient(135deg, #F3E8FF 0%, #DDD6FE 60%, #C4B5FD 100%); display: flex; align-items: center; justify-content: center; }
+  .media-thumb.video-thumb { width: 116px; height: 66px; }
+  .media-thumb.square-thumb { width: 66px; height: 66px; }
+  .media-thumb .play-icon { width: 28px; height: 28px; color: white; opacity: 0.92; filter: drop-shadow(0 1px 3px rgba(76, 29, 149, 0.4)); }
+  .media-thumb .img-icon { width: 22px; height: 22px; color: rgba(124,58,237,0.45); }
+  .media-thumb .duration { position: absolute; bottom: 4px; right: 4px; background: rgba(30, 27, 75, 0.85); color: white; font-size: 9.5px; font-weight: 600; padding: 1px 5px; border-radius: 3px; line-height: 1.4; font-feature-settings: "tnum"; }
+
+  /* Read state (visited link feel) */
+  .art.read h2 { color: var(--muted); font-weight: 500; }
+
+  /* Right rail */
+  .right { padding: 24px 24px 32px; }
+  .r-section { margin-bottom: 28px; }
+  .r-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--secondary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-strong); }
+  .r-row { display:grid; grid-template-columns: 18px 1fr; gap: 10px; padding: 7px 0; cursor:pointer; }
+  .r-row:hover .r-row-title { color: var(--primary); }
+  .r-rank { color: var(--faint); font-size: 13px; font-weight: 600; padding-top: 1px; }
+  .r-row-title { color: var(--ink); font-weight: 600; font-size: 13px; line-height: 1.35; }
+  .r-row-meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+
+  .word-list { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; line-height: 1.7; }
+  .word-list a { color: var(--ink); cursor:pointer; }
+  .word-list a:hover { color: var(--primary); }
+  .word-list .hot { color: var(--primary); font-weight:600; }
+
+  .quote { position: relative; padding: 26px 18px 14px; border-radius: 12px; background: linear-gradient(155deg, rgba(124,58,237,0.07) 0%, rgba(167,139,250,0.025) 100%); border: 1px solid rgba(124,58,237,0.14); overflow: hidden; }
+  .quote::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, var(--primary) 0%, transparent 100%); }
+  .quote-mark { position: absolute; top: -8px; left: 12px; font-family: "Poppins", Georgia, serif; font-size: 72px; font-weight: 700; color: rgba(124,58,237,0.16); line-height: 1; pointer-events: none; user-select: none; }
+  .quote-text { position: relative; font-size: 14px; line-height: 1.6; color: var(--ink); font-style: italic; margin: 0 0 12px; font-weight: 500; letter-spacing: -0.005em; }
+  .quote-meta { display: flex; flex-direction: column; gap: 2px; padding-top: 10px; margin-top: 4px; border-top: 1px solid rgba(124,58,237,0.12); }
+  .quote-author { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--primary); }
+  .quote-piece { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+  .src-row { display:flex; align-items:center; gap: 10px; padding: 6px 0; font-size: 13px; color: var(--ink); cursor:pointer; }
+  .src-row:hover { color: var(--primary); }
+  .src-row .ct { margin-left:auto; color: var(--faint); font-size: 12px; font-feature-settings: "tnum"; font-weight: 500; }
+
+  .design-label { position:fixed; top: 14px; right: 18px; font-size: 11px; font-weight: 700; padding: 5px 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.85); color: var(--primary); border-radius: 9999px; z-index: 50; backdrop-filter: blur(8px); }
+</style>
+</head>
+<body>
+<div class="design-label">B · Briefing — final</div>
+
+<div class="shell">
+
+  <!-- App rail: slim icon-only navigation between top-level app pages -->
+  <aside class="app-rail">
+    <div class="app-rail-logo">L</div>
+    <button class="rail-nav-btn active" data-label="Feed"><i data-lucide="newspaper" class="w-5 h-5"></i></button>
+    <button class="rail-nav-btn" data-label="Topics"><i data-lucide="layout-list" class="w-5 h-5"></i></button>
+    <button class="rail-nav-btn" data-label="Drafts"><i data-lucide="pen-line" class="w-5 h-5"></i></button>
+    <button class="rail-nav-btn" data-label="Newsletter"><i data-lucide="mail" class="w-5 h-5"></i></button>
+    <div style="flex: 1"></div>
+    <button class="rail-nav-btn" data-label="Settings"><i data-lucide="settings" class="w-5 h-5"></i></button>
+  </aside>
+
+  <!-- Feed left panel: Sections + Library + Platforms filter -->
+  <aside class="glass-sidebar pane p-4">
+    <div class="nav-section" style="padding-top: 4px">Sections</div>
+    <div class="space-y-0.5">
+      <a class="navlink active"><span class="group-mark"></span> All <span class="count">128</span></a>
+      <a class="navlink"><span class="group-mark"></span> AI &amp; Tech <span class="count">42</span></a>
+      <a class="navlink"><span class="group-mark"></span> Leadership <span class="count">31</span></a>
+      <a class="navlink"><span class="group-mark"></span> Marketing <span class="count">28</span></a>
+      <a class="navlink"><span class="group-mark"></span> Startups <span class="count">19</span></a>
+    </div>
+
+    <div class="nav-section">Library</div>
+    <div class="space-y-0.5">
+      <a class="navlink"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Saved <span class="count">14</span></a>
+      <a class="navlink"><i data-lucide="scissors" class="w-3.5 h-3.5"></i> Clippings <span class="count">7</span></a>
+    </div>
+
+    <div class="nav-section">Filters</div>
+    <button class="platform-dropdown">
+      <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+      <span>All platforms</span>
+      <i data-lucide="chevron-down" class="w-3.5 h-3.5 chev"></i>
+    </button>
+  </aside>
+
+  <section class="pane">
+
+    <!-- Masthead: title only (no subtitle), no Compose button -->
+    <header class="mast">
+      <div class="mast-eyebrow">Tuesday · April 29, 2026</div>
+      <h1 class="mast-title">Today's Briefing</h1>
+      <p class="mast-sub">128 stories curated across 24 sources · refreshed 4 minutes ago<button class="ghost-refresh" title="Refresh now"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button></p>
+
+      <!-- Search + inline US/7d filters + refresh (no Compose) -->
+      <div class="mast-tools">
+        <div class="search">
+          <i data-lucide="search" class="icon w-4 h-4"></i>
+          <input placeholder="Search by title, source, or topic…">
+        </div>
+        <button class="filter-pill"><i data-lucide="globe" class="w-3.5 h-3.5"></i> US <i data-lucide="chevron-down" class="w-3.5 h-3.5 chev"></i></button>
+        <button class="filter-pill"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 7 days <i data-lucide="chevron-down" class="w-3.5 h-3.5 chev"></i></button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <span class="tab active">Latest</span>
+      <span class="tab">Trending</span>
+      <span class="tab">For You</span>
+      <span class="tab">Evergreen</span>
+      <span class="tab">Quick reads</span>
+    </div>
+
+    <!-- Body: no lead story, just sectioned rows -->
+    <div class="body">
+
+      <article class="art">
+        <span class="cluster-note"><i data-lucide="layers" class="w-3 h-3"></i> 5 outlets covering</span>
+        <h2>OpenAI rolls out GPT-4o upgrades with real-time voice and vision capabilities</h2>
+        <p class="deck">The new multimodal updates bring voice latency to roughly 320 ms and add streaming video for live tutoring and accessibility use cases. Enterprise API ships next week with per-minute audio billing replacing the older token model.</p>
+        <div class="meta">
+          <span class="fav" style="background:#0BAB64"></span>
+          <span class="source">TechCrunch</span>
+          <span class="meta-dot"></span><span class="author">Sarah Perez</span>
+          <span class="meta-dot"></span><span>2h ago</span>
+          <span class="meta-dot"></span><span>4 min</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                  </div>
+      </article>
+
+      <!-- YouTube post -->
+      <article class="art with-thumb">
+        <div class="content-col">
+          <h2>Building a one-person content engine with AI tools — full workflow walkthrough</h2>
+          <p class="deck">A step-by-step look at how solo creators are stitching ChatGPT, Notion, Descript, and CapCut into a daily publishing loop without burning out.</p>
+          <div class="meta">
+            <i data-lucide="youtube" class="w-3.5 h-3.5" style="color:#cc0000"></i>
+            <span class="source">Ali Abdaal</span>
+            <span class="meta-dot"></span><span>YouTube</span>
+            <span class="meta-dot"></span><span>18:42</span>
+            <span class="meta-dot"></span><span>124K views</span>
+            <span class="meta-dot"></span><span>5h ago</span>
+          </div>
+          <div class="actions">
+            <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+            <button class="ic"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+            <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+            <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                      </div>
+        </div>
+        <div class="media-thumb video-thumb">
+          <i data-lucide="play" class="play-icon"></i>
+          <span class="duration">18:42</span>
+        </div>
+      </article>
+
+      <!-- LinkedIn post -->
+      <article class="art">
+        <h2>I was wrong about async-only. After 3 years and 2 reorgs, here's what actually drives shipped work.</h2>
+        <p class="deck">Async unlocks deep work, but the highest-leverage decisions still need a 30-minute call with everyone present. The myth was treating "async vs sync" as a binary instead of as a budget.</p>
+        <div class="meta">
+          <i data-lucide="linkedin" class="w-3.5 h-3.5" style="color:#0A66C2"></i>
+          <span class="source">Sarah Chen</span>
+          <span class="meta-dot"></span><span class="author">VP Marketing · Notion</span>
+          <span class="meta-dot"></span><span>1.2K reactions</span>
+          <span class="meta-dot"></span><span>240 comments</span>
+          <span class="meta-dot"></span><span>5h ago</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                  </div>
+      </article>
+
+      <article class="art">
+        <span class="cluster-note"><i data-lucide="layers" class="w-3 h-3"></i> 5 outlets covering — DeepMind reasoning</span>
+        <h2>Google DeepMind's latest model scores near-perfect on reasoning benchmarks — sparking debate about AGI timelines</h2>
+        <p class="deck">Researchers are split on whether near-perfect benchmark scores translate to general intelligence — or simply better test-taking.</p>
+        <div class="meta">
+          <span class="fav" style="background:#FF7900"></span>
+          <span class="source">The Verge</span>
+          <span class="meta-dot"></span><span class="author">James Vincent</span>
+          <span class="meta-dot"></span><span>8h ago</span>
+          <span class="meta-dot"></span><span>5 min</span>
+        </div>
+        <div class="actions">
+          <button class="ic on"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+          <button class="ic on"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                  </div>
+      </article>
+
+      <!-- Instagram post -->
+      <article class="art with-thumb">
+        <div class="content-col">
+          <h2>5 productivity systems that actually work for solo founders — slide through the carousel ↓</h2>
+          <p class="deck">A 7-slide carousel breaking down time-blocking, the "two-list" rule, weekly review, async batching, and the energy-first calendar.</p>
+          <div class="meta">
+            <i data-lucide="instagram" class="w-3.5 h-3.5" style="color:#c81f6c"></i>
+            <span class="source">@ali.abdaal</span>
+            <span class="meta-dot"></span><span>Carousel · 7 slides</span>
+            <span class="meta-dot"></span><span>8.4K likes</span>
+            <span class="meta-dot"></span><span>112 comments</span>
+            <span class="meta-dot"></span><span>2d ago</span>
+          </div>
+          <div class="actions">
+            <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+            <button class="ic"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+            <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+            <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                      </div>
+        </div>
+        <div class="media-thumb square-thumb">
+          <i data-lucide="layers" class="img-icon"></i>
+        </div>
+      </article>
+
+      <article class="art">
+        <h2>Anthropic launches enterprise tier with audit logs, SSO, and dedicated capacity</h2>
+        <p class="deck">A direct shot at OpenAI's enterprise offering, with stronger compliance posture and dedicated GPU capacity for regulated industries.</p>
+        <div class="meta">
+          <span class="fav" style="background:#0077B5"></span>
+          <span class="source">LinkedIn News</span>
+          <span class="meta-dot"></span><span>12h ago</span>
+          <span class="meta-dot"></span><span>3 min</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                  </div>
+      </article>
+
+      <article class="art">
+        <h2>EU AI Act enforcement begins: first guidance on general-purpose model providers</h2>
+        <p class="deck">Smaller labs warn that disclosure rules favor incumbents who already have compliance teams in place.</p>
+        <div class="meta">
+          <span class="fav" style="background:#c8102e"></span>
+          <span class="source">Financial Times</span>
+          <span class="meta-dot"></span><span class="author">Madhumita Murgia</span>
+          <span class="meta-dot"></span><span>1d ago</span>
+          <span class="meta-dot"></span><span>4 min</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                  </div>
+      </article>
+
+      <article class="art">
+        <h2>AI startup funding rebounds in Q1 — but late-stage rounds tell a different story</h2>
+        <p class="deck">Seed and Series A volume is up 22% year-over-year while growth-stage deals are down 14%, signalling a barbell market.</p>
+        <div class="meta">
+          <span class="fav" style="background:#1d4ed8"></span>
+          <span class="source">The Information</span>
+          <span class="meta-dot"></span><span class="author">Cory Weinberg</span>
+          <span class="meta-dot"></span><span>1d ago</span>
+          <span class="meta-dot"></span><span>5 min</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                  </div>
+      </article>
+
+      <article class="art">
+        <h2>The case against “async-only” — when synchronous still wins</h2>
+        <p class="deck">Why deep collaborative problem-solving rarely fits in shared docs and Slack threads — and what teams lose when they over-correct toward async.</p>
+        <div class="meta">
+          <span class="fav" style="background:#000"></span>
+          <span class="source">Stratechery</span>
+          <span class="meta-dot"></span><span class="author">Ben Thompson</span>
+          <span class="meta-dot"></span><span>2d ago</span>
+          <span class="meta-dot"></span><span>11 min</span>
+        </div>
+        <div class="actions">
+          <button class="ic"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="scissors" class="w-3.5 h-3.5"></i></button>
+          <button class="ic"><i data-lucide="bookmark" class="w-3.5 h-3.5"></i></button>
+                  </div>
+      </article>
+
+      <button class="w-full mt-6 py-3 text-[12.5px] font-semibold border rounded-[12px] transition" style="color:var(--ink); border-color:var(--border); background: rgba(255,255,255,0.5);">Continue · 119 more stories</button>
+
+    </div>
+  </section>
+
+  <aside class="glass-rail right pane">
+
+    <div class="r-section">
+      <div class="r-title">Most discussed</div>
+      <div class="r-row"><span class="r-rank">1</span><div><div class="r-row-title">GPT-4o voice rollout</div><div class="r-row-meta">42 stories · ↑280%</div></div></div>
+      <div class="r-row"><span class="r-rank">2</span><div><div class="r-row-title">DeepMind reasoning benchmark</div><div class="r-row-meta">28 stories · ↑140%</div></div></div>
+      <div class="r-row"><span class="r-rank">3</span><div><div class="r-row-title">Anthropic enterprise tier</div><div class="r-row-meta">19 stories · ↑95%</div></div></div>
+      <div class="r-row"><span class="r-rank">4</span><div><div class="r-row-title">Remote productivity</div><div class="r-row-meta">14 stories · ↑32%</div></div></div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Quote of the day</div>
+      <div class="quote">
+        <span class="quote-mark">“</span>
+        <p class="quote-text">If voice models close the latency gap, typing becomes a niche input — the way handwriting did when keyboards arrived.</p>
+        <div class="quote-meta">
+          <span class="quote-author">Wired</span>
+          <span class="quote-piece">“The end of typing?”</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Trending words</div>
+      <div class="word-list">
+        <a class="hot">multimodal</a><a class="hot">agentic</a><a>copilot</a><a>reasoning</a><a>benchmark</a><a>async</a><a>RAG</a><a>eval</a>
+      </div>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Suggested topics</div>
+      <a class="r-row"><span class="r-rank">+</span><div><div class="r-row-title">Multimodal AI</div><div class="r-row-meta">42 articles · refreshes daily</div></div></a>
+      <a class="r-row"><span class="r-rank">+</span><div><div class="r-row-title">Async work culture</div><div class="r-row-meta">14 articles · weekly</div></div></a>
+    </div>
+
+    <div class="r-section">
+      <div class="r-title">Top sources · 7d</div>
+      <a class="src-row"><span class="fav" style="background:#0BAB64"></span> TechCrunch <span class="ct">18</span></a>
+      <a class="src-row"><span class="fav" style="background:#FF7900"></span> The Verge <span class="ct">12</span></a>
+      <a class="src-row"><span class="fav" style="background:#000"></span> Wired <span class="ct">9</span></a>
+      <a class="src-row"><span class="fav" style="background:#a8002b"></span> HBR <span class="ct">7</span></a>
+    </div>
+
+  </aside>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — V2 Minimal (shadcn/21st.dev style)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  *, body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+  :root {
+    --bg:        #FAFAFA;
+    --surface:   #FFFFFF;
+    --border:    #E4E4E7;
+    --border-2:  #F4F4F5;
+    --text:      #09090B;
+    --muted:     #71717A;
+    --subtle:    #A1A1AA;
+    --accent:    #7C3AED;
+    --accent-bg: #F5F3FF;
+    --accent-bd: #DDD6FE;
+    --accent-dk: #6D28D9;
+  }
+
+  body { background: var(--bg); min-height: 100vh; color: var(--text); }
+
+  /* table row hover */
+  .tr:hover { background: #FAFAFA; }
+
+  /* token bar — violet only, intensity encodes severity */
+  .bar { transition: width .5s cubic-bezier(.4,0,.2,1); border-radius: 999px; height: 100%; }
+  .bar-0  { background: #EDE9FE; }
+  .bar-30 { background: #C4B5FD; }
+  .bar-60 { background: #8B5CF6; }
+  .bar-80 { background: #7C3AED; }
+  .bar-90 { background: #4C1D95; }
+
+  /* badge — outline only, no fill color */
+  .badge-outline { border: 1px solid var(--border); color: var(--muted); border-radius: 9999px; padding: 2px 8px; font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
+  .badge-outline.active { border-color: var(--accent-bd); color: var(--accent); }
+
+  /* status dot — only color used for status */
+  .dot-active    { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .dot-suspended { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+
+  /* ghost button */
+  .btn-ghost { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: inherit; }
+  .btn-ghost:hover { border-color: var(--accent-bd); color: var(--accent); background: var(--accent-bg); }
+
+  /* primary button */
+  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background .15s; font-family: inherit; }
+  .btn-primary:hover { background: var(--accent-dk); }
+
+  /* secondary (danger-ish) ghost */
+  .btn-suspend { background: none; border: 1px solid var(--border); color: var(--subtle); border-radius: 8px; padding: 5px 10px; font-size: 11px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: inherit; }
+  .btn-suspend:hover { border-color: #D4D4D8; color: var(--muted); }
+
+  /* inline number input */
+  .budget-input { width: 38px; background: transparent; border: none; outline: none; font-size: 12px; font-weight: 600; color: var(--accent); font-family: inherit; text-align: right; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  /* search input */
+  .search-input { height: 32px; width: 188px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px 0 32px; font-size: 12px; color: var(--text); background: var(--surface); outline: none; font-family: inherit; transition: border-color .15s, box-shadow .15s; }
+  .search-input:focus { border-color: var(--accent-bd); box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+  .search-input::placeholder { color: var(--subtle); }
+
+  /* divider */
+  .divider { height: 1px; background: var(--border-2); }
+
+  /* card */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .card-sm { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+
+  /* section header */
+  .section-header { background: var(--bg); border-bottom: 1px solid var(--border-2); }
+
+  /* suspended row fades out entirely */
+  .row-suspended { opacity: 0.45; }
+
+  /* chip */
+  .chip { display: inline-flex; align-items: center; gap: 5px; border-radius: 9999px; padding: 3px 9px; font-size: 11px; font-weight: 600; }
+  .chip-saas { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd); }
+</style>
+</head>
+<body style="padding: 32px 24px">
+<div style="max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+
+  <!-- Page title -->
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px">
+      <!-- Icon -->
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-bg);border:1px solid var(--accent-bd);display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" fill="none" stroke="var(--accent)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div>
+        <h1 style="font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.025em;margin:0">Admin Panel</h1>
+        <p style="font-size:12px;color:var(--muted);margin:2px 0 0">User management and access control</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="chip chip-saas">
+        <span style="width:5px;height:5px;border-radius:50%;background:var(--accent)"></span>
+        SaaS
+      </span>
+      <button class="btn-ghost" style="width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px" aria-label="Refresh">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats row — no color, just numbers -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div class="card-sm" style="padding:14px 16px">
+      <p style="font-size:11px;font-weight:500;color:var(--subtle);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px">Total Users</p>
+      <p style="font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-.03em">24</p>
+    </div>
+    <div class="card-sm" style="padding:14px 16px">
+      <p style="font-size:11px;font-weight:500;color:var(--subtle);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px">Active</p>
+      <p style="font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-.03em">21</p>
+    </div>
+    <div class="card-sm" style="padding:14px 16px">
+      <p style="font-size:11px;font-weight:500;color:var(--subtle);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px">Suspended</p>
+      <p style="font-size:24px;font-weight:700;color:var(--text);margin:0;letter-spacing:-.03em">3</p>
+    </div>
+    <div class="card-sm" style="padding:14px 16px;border-color:var(--accent-bd);background:var(--accent-bg)">
+      <p style="font-size:11px;font-weight:500;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px">Pending</p>
+      <p style="font-size:24px;font-weight:700;color:var(--accent);margin:0;letter-spacing:-.03em">3</p>
+    </div>
+  </div>
+
+  <!-- Waitlist -->
+  <div class="card">
+    <div class="section-header" style="padding:11px 18px;display:flex;align-items:center;gap:8px">
+      <svg width="13" height="13" fill="none" stroke="var(--muted)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span style="font-size:12px;font-weight:600;color:var(--text)">Pending Approval</span>
+      <span style="margin-left:auto;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-bd);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700">3</span>
+    </div>
+
+    <div>
+      <!-- Row 1 -->
+      <div class="tr" style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--border-2);transition:background .12s">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--accent)">SK</div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--text);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sarah Kim</p>
+          <p style="font-size:11px;color:var(--muted);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">sarah@startup.io · Building a content tool for the marketing team</p>
+        </div>
+        <span style="font-size:10px;color:var(--subtle);flex-shrink:0">2h ago</span>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-primary">Approve</button>
+          <button class="btn-ghost" style="color:var(--subtle)">Decline</button>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="tr" style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--border-2);transition:background .12s">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--accent)">MJ</div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--text);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Marcus Johnson</p>
+          <p style="font-size:11px;color:var(--muted);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">marcus@corp.com · Enterprise, 50-person team, content pipeline automation</p>
+        </div>
+        <span style="font-size:10px;color:var(--subtle);flex-shrink:0">1d ago</span>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-primary">Approve</button>
+          <button class="btn-ghost" style="color:var(--subtle)">Decline</button>
+        </div>
+      </div>
+
+      <!-- Row 3 -->
+      <div class="tr" style="display:flex;align-items:center;gap:14px;padding:12px 18px;transition:background .12s">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent-bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--accent)">PL</div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--text);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Priya Lal</p>
+          <p style="font-size:11px;color:var(--muted);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">priya@agency.co · Social media agency managing 20+ clients</p>
+        </div>
+        <span style="font-size:10px;color:var(--subtle);flex-shrink:0">3d ago</span>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-primary">Approve</button>
+          <button class="btn-ghost" style="color:var(--subtle)">Decline</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users table -->
+  <div class="card">
+    <!-- Table header bar -->
+    <div class="section-header" style="padding:11px 18px;display:flex;align-items:center;gap:8px">
+      <svg width="13" height="13" fill="none" stroke="var(--muted)" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <span style="font-size:12px;font-weight:600;color:var(--text)">Users</span>
+      <span style="background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;color:var(--muted)">24</span>
+      <!-- right controls -->
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <!-- search -->
+        <div style="position:relative">
+          <svg width="13" height="13" fill="none" stroke="var(--subtle)" viewBox="0 0 24 24" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input class="search-input" type="text" placeholder="Search users…" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Column headers -->
+    <div style="display:grid;grid-template-columns:2fr 100px 1fr auto;gap:12px;padding:8px 18px;background:var(--bg);border-bottom:1px solid var(--border-2)">
+      <span style="font-size:10px;font-weight:600;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em">User</span>
+      <span style="font-size:10px;font-weight:600;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em">Status</span>
+      <span style="font-size:10px;font-weight:600;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em">Monthly Budget</span>
+      <span style="font-size:10px;font-weight:600;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em">Actions</span>
+    </div>
+
+    <!-- Rows -->
+
+    <!-- Active, critical (91%) — bar very dark violet, no red -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 100px 1fr auto;gap:12px;padding:12px 18px;align-items:center;border-bottom:1px solid var(--border-2);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">PM</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--text);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pratyush Mishra</p>
+          <p style="font-size:10px;color:var(--subtle);font-variant-numeric:tabular-nums;font-family:monospace;margin:2px 0 0">uid_a1b2c3d4</p>
+        </div>
+      </div>
+      <div>
+        <span class="badge-outline active">
+          <span class="dot-active"></span>
+          Active
+        </span>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:10px;color:var(--subtle)">455k / 500k</span>
+          <!-- High usage — just darker text, no red -->
+          <span style="font-size:10px;font-weight:700;color:#4C1D95">91%</span>
+        </div>
+        <div style="height:3px;background:var(--border-2);border-radius:999px;overflow:hidden">
+          <div class="bar bar-90" style="width:91%"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:center;gap:4px;border:1px solid var(--accent-bd);background:var(--accent-bg);border-radius:7px;padding:4px 8px">
+          <input type="number" class="budget-input" value="500" />
+          <span style="font-size:10px;color:var(--subtle)">k</span>
+        </div>
+        <button class="btn-primary" style="font-size:10px;padding:5px 10px">Save</button>
+        <button class="btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Active, mid (72%) -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 100px 1fr auto;gap:12px;padding:12px 18px;align-items:center;border-bottom:1px solid var(--border-2);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">JD</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--text);margin:0">Jane Doe</p>
+          <p style="font-size:10px;color:var(--subtle);font-family:monospace;margin:2px 0 0">uid_e5f6g7h8</p>
+        </div>
+      </div>
+      <div>
+        <span class="badge-outline active">
+          <span class="dot-active"></span>
+          Active
+        </span>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:10px;color:var(--subtle)">360k / 500k</span>
+          <span style="font-size:10px;font-weight:600;color:var(--accent)">72%</span>
+        </div>
+        <div style="height:3px;background:var(--border-2);border-radius:999px;overflow:hidden">
+          <div class="bar bar-80" style="width:72%"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:center;gap:4px;border:1px solid var(--accent-bd);background:var(--accent-bg);border-radius:7px;padding:4px 8px">
+          <input type="number" class="budget-input" value="500" />
+          <span style="font-size:10px;color:var(--subtle)">k</span>
+        </div>
+        <button class="btn-primary" style="font-size:10px;padding:5px 10px">Save</button>
+        <button class="btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Active, low (35%) -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 100px 1fr auto;gap:12px;padding:12px 18px;align-items:center;border-bottom:1px solid var(--border-2);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">AR</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--text);margin:0">Alex Rodriguez</p>
+          <p style="font-size:10px;color:var(--subtle);font-family:monospace;margin:2px 0 0">uid_i9j0k1l2</p>
+        </div>
+      </div>
+      <div>
+        <span class="badge-outline active">
+          <span class="dot-active"></span>
+          Active
+        </span>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:10px;color:var(--subtle)">175k / 500k</span>
+          <span style="font-size:10px;font-weight:500;color:var(--muted)">35%</span>
+        </div>
+        <div style="height:3px;background:var(--border-2);border-radius:999px;overflow:hidden">
+          <div class="bar bar-30" style="width:35%"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:center;gap:4px;border:1px solid var(--accent-bd);background:var(--accent-bg);border-radius:7px;padding:4px 8px">
+          <input type="number" class="budget-input" value="500" />
+          <span style="font-size:10px;color:var(--subtle)">k</span>
+        </div>
+        <button class="btn-primary" style="font-size:10px;padding:5px 10px">Save</button>
+        <button class="btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Suspended — entire row fades, no red anywhere -->
+    <div class="tr row-suspended" style="display:grid;grid-template-columns:2fr 100px 1fr auto;gap:12px;padding:12px 18px;align-items:center;border-bottom:1px solid var(--border-2);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--subtle);flex-shrink:0">TK</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--muted);margin:0">Tom Kirk</p>
+          <p style="font-size:10px;color:var(--subtle);font-family:monospace;margin:2px 0 0">uid_m3n4o5p6</p>
+        </div>
+      </div>
+      <div>
+        <span class="badge-outline">
+          <span class="dot-suspended"></span>
+          Suspended
+        </span>
+      </div>
+      <div>
+        <div style="height:3px;background:var(--border-2);border-radius:999px;overflow:hidden">
+          <div class="bar bar-0" style="width:0%"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn-primary" style="font-size:10px;padding:5px 10px">Activate</button>
+      </div>
+    </div>
+
+    <!-- Active, low (30%) -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 100px 1fr auto;gap:12px;padding:12px 18px;align-items:center;transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">LW</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:var(--text);margin:0">Liu Wei</p>
+          <p style="font-size:10px;color:var(--subtle);font-family:monospace;margin:2px 0 0">uid_q7r8s9t0</p>
+        </div>
+      </div>
+      <div>
+        <span class="badge-outline active">
+          <span class="dot-active"></span>
+          Active
+        </span>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:10px;color:var(--subtle)">60k / 200k</span>
+          <span style="font-size:10px;font-weight:500;color:var(--muted)">30%</span>
+        </div>
+        <div style="height:3px;background:var(--border-2);border-radius:999px;overflow:hidden">
+          <div class="bar bar-30" style="width:30%"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:center;gap:4px;border:1px solid var(--accent-bd);background:var(--accent-bg);border-radius:7px;padding:4px 8px">
+          <input type="number" class="budget-input" value="200" />
+          <span style="font-size:10px;color:var(--subtle)">k</span>
+        </div>
+        <button class="btn-primary" style="font-size:10px;padding:5px 10px">Save</button>
+        <button class="btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="position:fixed;bottom:16px;right:16px;background:rgba(9,9,11,.85);color:white;font-size:11px;font-weight:600;padding:7px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.25)">
+  V2 · Minimal — shadcn / 21st.dev style
+</div>
+</body>
+</html>

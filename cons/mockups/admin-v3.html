@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — V3</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+  body {
+    background-color: #ede9fe;
+    background-image:
+      radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124,58,237,0.42), transparent 55%),
+      radial-gradient(ellipse 95% 75% at 100% 5%, rgba(167,139,250,0.36), transparent 52%),
+      radial-gradient(ellipse 75% 55% at 72% 100%, rgba(192,132,252,0.32), transparent 58%),
+      linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  .glass-panel {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.58);
+    box-shadow: 0 8px 32px rgba(91,33,182,0.10), 0 2px 8px rgba(124,58,237,0.06);
+  }
+
+  /* Row hover — very subtle */
+  .tr:hover { background: rgba(124,58,237,0.025); }
+
+  /* Token bar — monochromatic violet, intensity = usage */
+  .bar { transition: width .55s cubic-bezier(.4,0,.2,1); border-radius: 999px; height: 100%; }
+  .bar-l { background: linear-gradient(90deg,#ddd6fe,#c4b5fd); }
+  .bar-m { background: linear-gradient(90deg,#8b5cf6,#7c3aed); }
+  .bar-h { background: linear-gradient(90deg,#6d28d9,#4c1d95); }
+
+  /* Status dot */
+  .dot-on  { width:6px;height:6px;border-radius:50%;background:#7c3aed;flex-shrink:0;display:inline-block; }
+  .dot-off { width:6px;height:6px;border-radius:50%;background:#cbd5e1;flex-shrink:0;display:inline-block; }
+
+  /* Budget cell — editable pill */
+  .budget-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    border: 1px solid rgba(233,213,255,.8);
+    border-radius: 8px; padding: 3px 8px 3px 10px;
+    background: rgba(255,255,255,.65);
+    cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .budget-pill:hover { border-color: #a78bfa; background: rgba(255,255,255,.9); }
+  .budget-pill.editing { border-color: #7c3aed; background: white; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+
+  .budget-val { font-size:12px; font-weight:600; color:#7c3aed; font-family:inherit; }
+  .budget-input {
+    width: 38px; background: transparent; border: none; outline: none;
+    font-size: 12px; font-weight: 600; color: #7c3aed; font-family: inherit; text-align:right;
+  }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  /* Pencil icon button */
+  .btn-edit {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 5px;
+    color: #a78bfa; cursor: pointer; transition: color .15s, background .15s;
+    border: none; background: none; padding: 0;
+  }
+  .btn-edit:hover { color: #7c3aed; background: rgba(124,58,237,.08); }
+
+  /* Save button — appears only in editing state */
+  .btn-save {
+    font-size: 10px; font-weight: 600; color: white;
+    background: #7c3aed; border: none; border-radius: 7px;
+    padding: 4px 9px; cursor: pointer; transition: background .15s; font-family: inherit;
+  }
+  .btn-save:hover { background: #6d28d9; }
+
+  /* Action text button — single per row */
+  .btn-action {
+    font-size: 11px; font-weight: 500; font-family: inherit;
+    background: none; border: none; cursor: pointer; padding: 4px 2px;
+    transition: color .15s; white-space: nowrap;
+  }
+  .btn-action.suspend { color: #94a3b8; }
+  .btn-action.suspend:hover { color: #475569; }
+  .btn-action.activate { color: #7c3aed; }
+  .btn-action.activate:hover { color: #6d28d9; }
+
+  /* Pagination */
+  .page-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 30px; height: 28px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    font-family: inherit; cursor: pointer; transition: all .15s;
+    border: 1px solid transparent; background: none; color: #475569;
+  }
+  .page-btn:hover { background: rgba(124,58,237,.07); color: #7c3aed; }
+  .page-btn.active { background: #7c3aed; color: white; border-color: #7c3aed; font-weight: 600; }
+  .page-btn:disabled { color: #cbd5e1; cursor: default; }
+  .page-btn:disabled:hover { background: none; color: #cbd5e1; }
+
+  /* Waitlist approve/decline */
+  .btn-approve {
+    font-size: 11px; font-weight: 600; color: white; font-family: inherit;
+    background: #7c3aed; border: none; border-radius: 8px;
+    padding: 5px 12px; cursor: pointer; transition: background .15s;
+  }
+  .btn-approve:hover { background: #6d28d9; }
+  .btn-decline {
+    font-size: 11px; font-weight: 500; color: #94a3b8; font-family: inherit;
+    background: rgba(255,255,255,.55); border: 1px solid rgba(203,213,225,.5);
+    border-radius: 8px; padding: 5px 10px; cursor: pointer; transition: color .15s;
+  }
+  .btn-decline:hover { color: #475569; }
+</style>
+</head>
+<body style="padding:24px">
+<div style="max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px">
+
+  <!-- ── Header ── -->
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#7c3aed,#6d28d9);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(109,40,217,.3);flex-shrink:0">
+        <svg width="17" height="17" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div>
+        <h1 style="font-size:15px;font-weight:700;color:#1e1b4b;letter-spacing:-.025em;margin:0">Admin Panel</h1>
+        <p style="font-size:11px;color:#475569;margin:2px 0 0">Manage users and access</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:600;background:rgba(124,58,237,.08);color:#7c3aed;border:1px solid rgba(124,58,237,.18)">
+        <span style="width:5px;height:5px;border-radius:50%;background:#7c3aed"></span>SaaS
+      </span>
+      <button style="width:34px;height:34px;border-radius:10px;border:1px solid rgba(233,213,255,.8);background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;color:#7c3aed;cursor:pointer" title="Refresh">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Summary strip ── -->
+  <div class="glass-panel" style="border-radius:16px;padding:12px 20px;display:flex;align-items:center;gap:20px">
+    <div style="display:flex;align-items:center;gap:7px">
+      <svg width="14" height="14" fill="none" stroke="#7c3aed" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span style="font-size:13px;font-weight:700;color:#1e1b4b">24</span>
+      <span style="font-size:11px;color:#475569">users</span>
+    </div>
+    <div style="width:1px;height:18px;background:rgba(233,213,255,.8)"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="dot-on"></span>
+      <span style="font-size:13px;font-weight:600;color:#1e1b4b">21</span>
+      <span style="font-size:11px;color:#475569">active</span>
+    </div>
+    <div style="width:1px;height:18px;background:rgba(233,213,255,.8)"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="dot-off"></span>
+      <span style="font-size:13px;font-weight:600;color:#1e1b4b">3</span>
+      <span style="font-size:11px;color:#475569">suspended</span>
+    </div>
+    <div style="width:1px;height:18px;background:rgba(233,213,255,.8)"></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <svg width="13" height="13" fill="none" stroke="#a78bfa" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span style="font-size:13px;font-weight:600;color:#1e1b4b">3</span>
+      <span style="font-size:11px;color:#475569">on waitlist</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:7px">
+      <span style="font-size:11px;color:#475569">Avg usage</span>
+      <div style="width:72px;height:4px;background:rgba(233,213,255,.6);border-radius:999px;overflow:hidden">
+        <div class="bar bar-m" style="width:68%;height:100%"></div>
+      </div>
+      <span style="font-size:11px;font-weight:600;color:#7c3aed">68%</span>
+    </div>
+  </div>
+
+  <!-- ── Waitlist ── -->
+  <section class="glass-panel" style="border-radius:16px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid rgba(233,213,255,.45)">
+      <svg width="13" height="13" fill="none" stroke="#a78bfa" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <h2 style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Waitlist</h2>
+      <span style="margin-left:auto;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700;background:rgba(124,58,237,.1);color:#7c3aed">3</span>
+    </div>
+
+    <!-- waitlist rows -->
+    <div class="tr" style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.25);transition:background .12s">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">SK</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sarah Kim</p>
+        <p style="font-size:11px;color:#475569;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">sarah@startup.io · Building a content tool for the marketing team</p>
+      </div>
+      <span style="font-size:10px;color:#94a3b8;flex-shrink:0;margin-right:4px">2h ago</span>
+      <button class="btn-approve">Approve</button>
+      <button class="btn-decline">Decline</button>
+    </div>
+
+    <div class="tr" style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.25);transition:background .12s">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">MJ</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Marcus Johnson</p>
+        <p style="font-size:11px;color:#475569;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">marcus@corp.com · Enterprise team, 50 people, content pipeline automation</p>
+      </div>
+      <span style="font-size:10px;color:#94a3b8;flex-shrink:0;margin-right:4px">1d ago</span>
+      <button class="btn-approve">Approve</button>
+      <button class="btn-decline">Decline</button>
+    </div>
+
+    <div class="tr" style="display:flex;align-items:center;gap:12px;padding:11px 18px;transition:background .12s">
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">PL</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Priya Lal</p>
+        <p style="font-size:11px;color:#475569;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">priya@agency.co · Social media agency managing 20+ clients</p>
+      </div>
+      <span style="font-size:10px;color:#94a3b8;flex-shrink:0;margin-right:4px">3d ago</span>
+      <button class="btn-approve">Approve</button>
+      <button class="btn-decline">Decline</button>
+    </div>
+  </section>
+
+  <!-- ── Users ── -->
+  <section class="glass-panel" style="border-radius:16px;overflow:hidden">
+
+    <!-- Table toolbar -->
+    <div style="display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid rgba(233,213,255,.45)">
+      <svg width="13" height="13" fill="none" stroke="#a78bfa" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <h2 style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Users</h2>
+      <span style="border-radius:999px;padding:1px 7px;font-size:10px;font-weight:600;background:rgba(124,58,237,.1);color:#7c3aed">24</span>
+      <div style="margin-left:auto;position:relative">
+        <svg width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24" stroke-width="2" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" placeholder="Search users…" style="height:30px;width:168px;background:rgba(255,255,255,.65);border:1px solid rgba(233,213,255,.75);border-radius:9px;padding-left:28px;padding-right:10px;font-size:12px;color:#1e1b4b;outline:none;font-family:inherit" onfocus="this.style.borderColor='#a78bfa';this.style.boxShadow='0 0 0 3px rgba(124,58,237,.1)'" onblur="this.style.borderColor='rgba(233,213,255,.75)';this.style.boxShadow='none'" />
+      </div>
+    </div>
+
+    <!-- Column headers -->
+    <div style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;padding:7px 18px;background:rgba(243,232,255,.28);border-bottom:1px solid rgba(233,213,255,.35)">
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8">User</span>
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8">Status</span>
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8">Token Usage</span>
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;text-align:right">Action</span>
+    </div>
+
+    <!-- ─ Row: active, critical (91%) – budget pill in "editing" state to show the pattern ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">PM</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pratyush Mishra</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_a1b2c3</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-on"></span>
+        <span style="font-size:12px;font-weight:500;color:#475569">Active</span>
+      </div>
+      <div>
+        <!-- Budget pill: editing state (one row shown open to demo the UX) -->
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+          <div class="budget-pill editing">
+            <input type="number" class="budget-input" value="500" />
+            <span style="font-size:10px;color:#a78bfa">k</span>
+            <button class="btn-save" style="margin-left:2px">Save</button>
+          </div>
+        </div>
+        <div style="height:3px;background:rgba(233,213,255,.55);border-radius:999px;overflow:hidden">
+          <div class="bar bar-h" style="width:91%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#94a3b8">455k / 500k</span>
+          <span style="font-size:10px;font-weight:700;color:#4c1d95">91%</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- ─ Row: active, mid (72%) – budget pill default (closed) ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">JD</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Jane Doe</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_e5f6g7</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-on"></span>
+        <span style="font-size:12px;font-weight:500;color:#475569">Active</span>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+          <div class="budget-pill" title="Click to edit budget">
+            <span class="budget-val">500k</span>
+            <button class="btn-edit" title="Edit budget">
+              <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="height:3px;background:rgba(233,213,255,.55);border-radius:999px;overflow:hidden">
+          <div class="bar bar-m" style="width:72%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#94a3b8">360k / 500k</span>
+          <span style="font-size:10px;font-weight:600;color:#6d28d9">72%</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- ─ Row: active, low (35%) ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">AR</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Alex Rodriguez</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_i9j0k1</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-on"></span>
+        <span style="font-size:12px;font-weight:500;color:#475569">Active</span>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+          <div class="budget-pill" title="Click to edit">
+            <span class="budget-val">500k</span>
+            <button class="btn-edit">
+              <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="height:3px;background:rgba(233,213,255,.55);border-radius:999px;overflow:hidden">
+          <div class="bar bar-l" style="width:35%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#94a3b8">175k / 500k</span>
+          <span style="font-size:10px;font-weight:500;color:#7c3aed">35%</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- ─ Row: suspended — faded ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);opacity:.45;transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(148,163,184,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#94a3b8;flex-shrink:0">TK</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#475569;margin:0">Tom Kirk</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_m3n4o5</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-off"></span>
+        <span style="font-size:12px;font-weight:500;color:#94a3b8">Suspended</span>
+      </div>
+      <div>
+        <div style="height:3px;background:rgba(233,213,255,.35);border-radius:999px"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#94a3b8">—</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action activate" style="opacity:1">Activate</button>
+      </div>
+    </div>
+
+    <!-- ─ Row: active ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">LW</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Liu Wei</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_q7r8s9</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-on"></span>
+        <span style="font-size:12px;font-weight:500;color:#475569">Active</span>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+          <div class="budget-pill" title="Click to edit">
+            <span class="budget-val">200k</span>
+            <button class="btn-edit">
+              <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="height:3px;background:rgba(233,213,255,.55);border-radius:999px;overflow:hidden">
+          <div class="bar bar-l" style="width:30%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#94a3b8">60k / 200k</span>
+          <span style="font-size:10px;font-weight:500;color:#7c3aed">30%</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- ─ Row ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">NP</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Nina Patel</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_b2c3d4</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-on"></span>
+        <span style="font-size:12px;font-weight:500;color:#475569">Active</span>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+          <div class="budget-pill">
+            <span class="budget-val">500k</span>
+            <button class="btn-edit">
+              <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="height:3px;background:rgba(233,213,255,.55);border-radius:999px;overflow:hidden">
+          <div class="bar bar-m" style="width:55%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#94a3b8">275k / 500k</span>
+          <span style="font-size:10px;font-weight:500;color:#6d28d9">55%</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- ─ Row ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#7c3aed;flex-shrink:0">RO</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#1e1b4b;margin:0">Ryan O'Brien</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_f5g6h7</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-on"></span>
+        <span style="font-size:12px;font-weight:500;color:#475569">Active</span>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+          <div class="budget-pill">
+            <span class="budget-val">1000k</span>
+            <button class="btn-edit">
+              <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="height:3px;background:rgba(233,213,255,.55);border-radius:999px;overflow:hidden">
+          <div class="bar bar-l" style="width:18%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:10px;color:#94a3b8">180k / 1000k</span>
+          <span style="font-size:10px;font-weight:500;color:#7c3aed">18%</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- ─ Row: suspended ─ -->
+    <div class="tr" style="display:grid;grid-template-columns:2fr 90px 1.8fr 80px;gap:12px;align-items:center;padding:11px 18px;border-bottom:1px solid rgba(233,213,255,.28);opacity:.45;transition:background .12s">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:30px;height:30px;border-radius:50%;background:rgba(148,163,184,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#94a3b8;flex-shrink:0">CL</div>
+        <div style="min-width:0">
+          <p style="font-size:13px;font-weight:600;color:#475569;margin:0">Clara Lee</p>
+          <p style="font-size:10px;color:#94a3b8;font-family:monospace;margin:1px 0 0">uid_k9l0m1</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <span class="dot-off"></span>
+        <span style="font-size:12px;font-weight:500;color:#94a3b8">Suspended</span>
+      </div>
+      <div>
+        <div style="height:3px;background:rgba(233,213,255,.35);border-radius:999px"></div>
+      </div>
+      <div style="text-align:right">
+        <button class="btn-action activate" style="opacity:1">Activate</button>
+      </div>
+    </div>
+
+    <!-- ── Pagination footer ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid rgba(233,213,255,.45);background:rgba(243,232,255,.15)">
+      <span style="font-size:11px;color:#94a3b8">Showing <strong style="color:#475569;font-weight:600">1–8</strong> of <strong style="color:#475569;font-weight:600">24</strong> users</span>
+      <div style="display:flex;align-items:center;gap:3px">
+        <!-- Prev -->
+        <button class="page-btn" disabled>
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <!-- Next -->
+        <button class="page-btn">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<div style="position:fixed;bottom:16px;right:16px;background:rgba(30,27,75,.85);color:white;font-size:11px;font-weight:600;padding:7px 14px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.2)">
+  V3 · Refined Glass
+</div>
+</body>
+</html>

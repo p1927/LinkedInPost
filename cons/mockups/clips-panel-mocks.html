@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clips Panel Mockups — A & B</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    background: #0f0e17;
+    color: #e8e3f4;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  h1 { font-size: 13px; font-weight: 700; color: #9b72cf; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .section-label { font-size: 11px; color: #6b5d82; margin-bottom: 16px; }
+
+  /* ─────────────── SHARED CHROME ─────────────── */
+  .mock-frame {
+    background: linear-gradient(135deg, #f0ebff 0%, #e8e0f8 50%, #ede8fa 100%);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(147,112,219,0.25);
+    display: flex;
+    flex-direction: column;
+    height: 580px;
+    position: relative;
+    color: #1a1523;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(147,112,219,0.18);
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Row 1: input + dropdowns */
+  .topbar-row1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .topic-input {
+    flex: 1;
+    min-width: 220px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(124,58,237,0.3);
+    background: rgba(255,255,255,0.85);
+    padding: 0 14px 0 38px;
+    font-size: 13px;
+    color: #1a1523;
+    outline: none;
+    position: relative;
+  }
+  .topic-input-wrap {
+    flex: 1;
+    min-width: 220px;
+    position: relative;
+  }
+  .topic-input-wrap input {
+    width: 100%;
+    height: 40px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(124,58,237,0.3);
+    background: rgba(255,255,255,0.85);
+    padding: 0 14px 0 38px;
+    font-size: 13px;
+    color: #1a1523;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(124,58,237,0.06);
+  }
+  .topic-input-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9b72cf;
+  }
+  .dropdowns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .dropdown {
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(147,112,219,0.3);
+    background: rgba(255,255,255,0.75);
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b2e83;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dropdown svg { color: #9b72cf; }
+
+  /* Row 2: section heading */
+  .section-heading {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9b72cf;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(147,112,219,0.2);
+  }
+
+  /* ── Feed area ── */
+  .feed-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+  .feed-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .article-card {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(147,112,219,0.16);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .thumb {
+    width: 68px;
+    height: 52px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+  }
+  .article-body { flex: 1; min-width: 0; }
+  .article-meta { font-size: 10px; color: #9b72cf; font-weight: 600; margin-bottom: 3px; }
+  .article-title { font-size: 13px; font-weight: 650; color: #1a1523; line-height: 1.4; margin-bottom: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .article-desc { font-size: 11px; color: #6b5d82; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ════════════════════════════════════════════
+     OPTION A — Arrow-tab strip + frosted overlay
+  ═══════════════════════════════════════════════ */
+
+  /* Collapsed strip */
+  .strip-a {
+    width: 44px;
+    flex-shrink: 0;
+    border-left: 1px solid rgba(147,112,219,0.18);
+    background: rgba(255,255,255,0.28);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 4px;
+    gap: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .strip-a:hover { background: rgba(255,255,255,0.42); }
+
+  .strip-arrow {
+    width: 28px;
+    height: 28px;
+    background: rgba(124,58,237,0.12);
+    border: 1px solid rgba(124,58,237,0.25);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7c3aed;
+    margin-bottom: 2px;
+  }
+  .strip-label-a {
+    font-size: 9px;
+    font-weight: 700;
+    color: #9b72cf;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+  .strip-mini-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(124,58,237,0.25);
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .strip-count {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #7c3aed;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto;
+  }
+
+  /* Expanded overlay panel A */
+  .panel-a {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 50%;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(24px);
+    border-left: 1px solid rgba(147,112,219,0.25);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 32px rgba(124,58,237,0.12);
+    z-index: 10;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid rgba(147,112,219,0.15);
+    flex-shrink: 0;
+  }
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1523;
+  }
+  .panel-count-badge {
+    background: rgba(124,58,237,0.12);
+    color: #7c3aed;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 8px;
+  }
+  .panel-close {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.06);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b5d82;
+    font-size: 14px;
+  }
+  .panel-cta {
+    margin: 10px 14px;
+    height: 36px;
+    border-radius: 10px;
+    background: #7c3aed;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .clips-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 14px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-content: start;
+  }
+  .clip-card {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(147,112,219,0.18);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .clip-card:hover {
+    border-color: rgba(124,58,237,0.4);
+    box-shadow: 0 4px 16px rgba(124,58,237,0.1);
+    transform: translateY(-1px);
+  }
+  .clip-thumb-img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .clip-card-body { padding: 9px 10px 10px; }
+  .clip-source-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9.5px;
+    color: #9b72cf;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .source-dot { width: 5px; height: 5px; border-radius: 50%; background: #7c3aed; }
+  .clip-card-title {
+    font-size: 11.5px;
+    font-weight: 650;
+    color: #1a1523;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 5px;
+  }
+  .clip-card-date {
+    font-size: 9.5px;
+    color: #9b72cf;
+    margin-bottom: 4px;
+  }
+  .clip-card-link {
+    font-size: 9.5px;
+    color: #7c3aed;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .clip-card-passage {
+    font-size: 10px;
+    color: #6b5d82;
+    font-style: italic;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    border-top: 1px solid rgba(147,112,219,0.12);
+    padding-top: 5px;
+    margin-top: 5px;
+  }
+
+
+  /* ════════════════════════════════════════════
+     OPTION B — Wider strip with visible thumbnails + labels
+  ═══════════════════════════════════════════════ */
+  .strip-b {
+    width: 68px;
+    flex-shrink: 0;
+    border-left: 1px solid rgba(147,112,219,0.18);
+    background: rgba(255,255,255,0.22);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    padding: 12px 6px;
+    gap: 0;
+    cursor: pointer;
+    position: relative;
+  }
+  .strip-b-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(147,112,219,0.15);
+    margin-bottom: 10px;
+  }
+  .strip-b-icon {
+    width: 24px; height: 24px;
+    background: rgba(124,58,237,0.12);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+  .strip-b-count {
+    font-size: 10px;
+    font-weight: 700;
+    color: #7c3aed;
+    background: rgba(124,58,237,0.1);
+    border-radius: 10px;
+    padding: 1px 6px;
+  }
+  .strip-b-thumbs {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    align-items: center;
+  }
+  .strip-b-item {
+    width: 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+  }
+  .strip-b-thumb {
+    width: 52px;
+    height: 40px;
+    border-radius: 7px;
+    border: 1.5px solid rgba(124,58,237,0.2);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .strip-b-thumb-label {
+    font-size: 8.5px;
+    color: #6b5d82;
+    text-align: center;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 52px;
+  }
+  .strip-b-expand {
+    margin-top: auto;
+    padding-top: 10px;
+    display: flex;
+    justify-content: center;
+    color: #9b72cf;
+    font-size: 14px;
+  }
+
+  /* Expanded panel B — same panel structure, slightly different header */
+  .panel-b {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 50%;
+    background: rgba(250,248,255,0.94);
+    backdrop-filter: blur(28px);
+    border-left: 1px solid rgba(147,112,219,0.2);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -6px 0 40px rgba(124,58,237,0.14);
+    z-index: 10;
+  }
+  .panel-b .panel-header {
+    background: rgba(124,58,237,0.06);
+    border-bottom: 1px solid rgba(147,112,219,0.18);
+  }
+
+  /* ── Row labels ── */
+  .row-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #7c3aed;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .variant-tag {
+    background: #7c3aed;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Page layout ── */
+  .page-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .states-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .state-label {
+    font-size: 10px;
+    color: #6b5d82;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .state-label::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #9b72cf;
+  }
+
+  /* ── divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(147,112,219,0.2);
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     SECTION 1 — Topic field layout (shared across both)
+════════════════════════════════════════════════════ -->
+<div class="page-section">
+  <h1>Topic field section — shared layout</h1>
+  <p class="section-label">Single-line input + inline dropdowns. No "filter articles". Wraps on smaller widths.</p>
+
+  <div class="mock-frame" style="height: auto;">
+    <div class="topbar">
+      <div class="topbar-row1">
+        <div class="topic-input-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Enter a topic to explore trending…" value="AI in product management" />
+        </div>
+        <div class="dropdowns">
+          <div class="dropdown">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            United States
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <div class="dropdown">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Technology
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <div class="dropdown">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Last 7 days
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="section-heading">Latest trending for you</div>
+    </div>
+    <!-- Show a few articles to show section context -->
+    <div style="padding: 14px 20px; display: flex; flex-direction: column; gap: 10px;">
+      <div class="article-card">
+        <div class="thumb" style="background: linear-gradient(135deg,#a78bfa,#7c3aed);">🤖</div>
+        <div class="article-body">
+          <div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">TechCrunch</span> · 2h ago</div>
+          <div class="article-title">How AI agents are reshaping product roadmaps in 2025</div>
+          <div class="article-desc">Product managers are increasingly leaning on AI to surface user signals faster than any analyst team could manage.</div>
+        </div>
+      </div>
+      <div class="article-card">
+        <div class="thumb" style="background: linear-gradient(135deg,#fcd34d,#f59e0b);">📊</div>
+        <div class="article-body">
+          <div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">Forbes</span> · 5h ago</div>
+          <div class="article-title">The silent killer of product teams: too many meetings, not enough context</div>
+          <div class="article-desc">Leaders who solved their async problem saw velocity double. Here's what changed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ═══════════════════════════════════════════════════
+     OPTION A — Minimal arrow-tab strip
+════════════════════════════════════════════════════ -->
+<div class="page-section">
+  <div class="row-label"><span class="variant-tag">OPTION A</span> Minimal arrow-tab strip · 44px collapsed</div>
+  <p class="section-label">Ultra-thin strip: arrow icon + vertical "Clips" label + stacked mini-thumbs. Count badge at bottom. Expands to frosted 50% overlay with 2-col card grid.</p>
+
+  <div class="states-row">
+    <!-- Collapsed A -->
+    <div>
+      <div class="state-label">Collapsed</div>
+      <div class="mock-frame">
+        <div class="topbar">
+          <div class="topbar-row1">
+            <div class="topic-input-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Enter a topic to explore trending…" value="AI in product management" />
+            </div>
+            <div class="dropdowns">
+              <div class="dropdown">🌍 United States <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">💻 Technology <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">🕐 Last 7 days <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+          </div>
+          <div class="section-heading">Latest trending for you</div>
+        </div>
+        <div class="feed-body">
+          <div class="feed-scroll">
+            <div class="article-card">
+              <div class="thumb" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div>
+              <div class="article-body">
+                <div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">TechCrunch</span> · 2h ago</div>
+                <div class="article-title">How AI agents are reshaping product roadmaps in 2025</div>
+                <div class="article-desc">Product managers are increasingly leaning on AI to surface signals faster.</div>
+              </div>
+            </div>
+            <div class="article-card">
+              <div class="thumb" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div>
+              <div class="article-body">
+                <div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">Forbes</span> · 5h ago</div>
+                <div class="article-title">The silent killer of product teams: too many meetings, not enough context</div>
+                <div class="article-desc">Leaders who solved async velocity doubled output.</div>
+              </div>
+            </div>
+            <div class="article-card">
+              <div class="thumb" style="background:linear-gradient(135deg,#6ee7b7,#059669)">🌱</div>
+              <div class="article-body">
+                <div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">HBR</span> · 8h ago</div>
+                <div class="article-title">Why product-led growth requires a different kind of PM</div>
+                <div class="article-desc">PLG flips the funnel — PMs need to think more like engineers.</div>
+              </div>
+            </div>
+            <div class="article-card">
+              <div class="thumb" style="background:linear-gradient(135deg,#fca5a5,#ef4444)">🔥</div>
+              <div class="article-body">
+                <div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">Wired</span> · 12h ago</div>
+                <div class="article-title">The case against feature flags: when configurability becomes a liability</div>
+                <div class="article-desc">Every flag is a debt. Here's what the data says.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strip A collapsed -->
+          <div class="strip-a" title="Click to open Clips (4)">
+            <!-- Arrow -->
+            <div class="strip-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+            <div class="strip-label-a">Clips</div>
+            <!-- Mini thumbs -->
+            <div class="strip-mini-thumb" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div>
+            <div class="strip-mini-thumb" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div>
+            <div class="strip-mini-thumb" style="background:linear-gradient(135deg,#6ee7b7,#059669)">🌱</div>
+            <div class="strip-mini-thumb" style="background:linear-gradient(135deg,#fca5a5,#ef4444)">🔥</div>
+            <!-- Count -->
+            <div class="strip-count">4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expanded A -->
+    <div>
+      <div class="state-label">Expanded — slides over content</div>
+      <div class="mock-frame">
+        <div class="topbar">
+          <div class="topbar-row1">
+            <div class="topic-input-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Enter a topic to explore trending…" value="AI in product management" />
+            </div>
+            <div class="dropdowns">
+              <div class="dropdown">🌍 United States <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">💻 Technology <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">🕐 Last 7 days <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+          </div>
+          <div class="section-heading">Latest trending for you</div>
+        </div>
+        <div class="feed-body">
+          <!-- Feed (dimmed) -->
+          <div class="feed-scroll" style="opacity:0.35; pointer-events:none;">
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div><div class="article-body"><div class="article-title">How AI agents are reshaping product roadmaps</div></div></div>
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div><div class="article-body"><div class="article-title">The silent killer of product teams</div></div></div>
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#6ee7b7,#059669)">🌱</div><div class="article-body"><div class="article-title">Why PLG requires a different kind of PM</div></div></div>
+          </div>
+
+          <!-- Strip A (still visible, collapsed state) -->
+          <div class="strip-a" style="pointer-events:none; opacity:0.5; z-index:1;">
+            <div class="strip-arrow">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+
+          <!-- Expanded panel A -->
+          <div class="panel-a">
+            <div class="panel-header">
+              <div class="panel-title">
+                ✂️ Clips
+                <span class="panel-count-badge">4 saved</span>
+              </div>
+              <button class="panel-close">✕</button>
+            </div>
+            <div class="panel-cta">✨ Compose post from clips</div>
+            <div class="clips-grid">
+              <!-- Card 1 -->
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> TechCrunch</div>
+                  <div class="clip-card-title">How AI agents are reshaping product roadmaps in 2025</div>
+                  <div class="clip-card-date">Apr 27, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 techcrunch.com/ai-agents-pm</a>
+                  <div class="clip-card-passage">"Product managers are increasingly leaning on AI to surface user signals faster than any analyst team could manage."</div>
+                </div>
+              </div>
+              <!-- Card 2 -->
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> Forbes</div>
+                  <div class="clip-card-title">The silent killer of product teams: too many meetings</div>
+                  <div class="clip-card-date">Apr 27, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 forbes.com/product-velocity</a>
+                  <div class="clip-card-passage">"Leaders who solved their async problem saw velocity double."</div>
+                </div>
+              </div>
+              <!-- Card 3 -->
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#6ee7b7,#059669)">🌱</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> HBR</div>
+                  <div class="clip-card-title">Why product-led growth requires a different kind of PM</div>
+                  <div class="clip-card-date">Apr 26, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 hbr.org/plg-product-managers</a>
+                </div>
+              </div>
+              <!-- Card 4 -->
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#fca5a5,#ef4444)">🔥</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> Wired</div>
+                  <div class="clip-card-title">The case against feature flags</div>
+                  <div class="clip-card-date">Apr 25, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 wired.com/feature-flag-debt</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ═══════════════════════════════════════════════════
+     OPTION B — Wider preview strip with thumb + source labels
+════════════════════════════════════════════════════ -->
+<div class="page-section">
+  <div class="row-label"><span class="variant-tag">OPTION B</span> Preview strip with thumb + title labels · 68px collapsed</div>
+  <p class="section-label">Wider strip: scissors icon + count, then stacked thumbnail + source label per clip. Slightly warmer, more informative at a glance. Same card grid when expanded.</p>
+
+  <div class="states-row">
+    <!-- Collapsed B -->
+    <div>
+      <div class="state-label">Collapsed</div>
+      <div class="mock-frame">
+        <div class="topbar">
+          <div class="topbar-row1">
+            <div class="topic-input-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Enter a topic to explore trending…" value="AI in product management" />
+            </div>
+            <div class="dropdowns">
+              <div class="dropdown">🌍 United States <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">💻 Technology <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">🕐 Last 7 days <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+          </div>
+          <div class="section-heading">Latest trending for you</div>
+        </div>
+        <div class="feed-body">
+          <div class="feed-scroll">
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div><div class="article-body"><div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">TechCrunch</span> · 2h ago</div><div class="article-title">How AI agents are reshaping product roadmaps in 2025</div><div class="article-desc">Product managers are increasingly leaning on AI to surface signals faster.</div></div></div>
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div><div class="article-body"><div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">Forbes</span> · 5h ago</div><div class="article-title">The silent killer of product teams: too many meetings</div><div class="article-desc">Leaders who solved async velocity doubled output.</div></div></div>
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#6ee7b7,#059669)">🌱</div><div class="article-body"><div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">HBR</span> · 8h ago</div><div class="article-title">Why product-led growth requires a different kind of PM</div></div></div>
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#fca5a5,#ef4444)">🔥</div><div class="article-body"><div class="article-meta"><span style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.15);border-radius:5px;padding:1px 6px;">Wired</span> · 12h ago</div><div class="article-title">The case against feature flags: when configurability becomes a liability</div></div></div>
+          </div>
+
+          <!-- Strip B collapsed -->
+          <div class="strip-b" title="Click to expand Clips">
+            <div class="strip-b-header">
+              <div class="strip-b-icon">✂️</div>
+              <div class="strip-b-count">4</div>
+            </div>
+            <div class="strip-b-thumbs">
+              <div class="strip-b-item">
+                <div class="strip-b-thumb" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div>
+                <div class="strip-b-thumb-label">TechCrunch</div>
+              </div>
+              <div class="strip-b-item">
+                <div class="strip-b-thumb" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div>
+                <div class="strip-b-thumb-label">Forbes</div>
+              </div>
+              <div class="strip-b-item">
+                <div class="strip-b-thumb" style="background:linear-gradient(135deg,#6ee7b7,#059669)">🌱</div>
+                <div class="strip-b-thumb-label">HBR</div>
+              </div>
+              <div class="strip-b-item">
+                <div class="strip-b-thumb" style="background:linear-gradient(135deg,#fca5a5,#ef4444)">🔥</div>
+                <div class="strip-b-thumb-label">Wired</div>
+              </div>
+            </div>
+            <div class="strip-b-expand">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expanded B -->
+    <div>
+      <div class="state-label">Expanded — slides over content</div>
+      <div class="mock-frame">
+        <div class="topbar">
+          <div class="topbar-row1">
+            <div class="topic-input-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Enter a topic to explore trending…" value="AI in product management" />
+            </div>
+            <div class="dropdowns">
+              <div class="dropdown">🌍 United States <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">💻 Technology <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <div class="dropdown">🕐 Last 7 days <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+          </div>
+          <div class="section-heading">Latest trending for you</div>
+        </div>
+        <div class="feed-body">
+          <div class="feed-scroll" style="opacity:0.35; pointer-events:none;">
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div><div class="article-body"><div class="article-title">How AI agents are reshaping product roadmaps</div></div></div>
+            <div class="article-card"><div class="thumb" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div><div class="article-body"><div class="article-title">The silent killer of product teams</div></div></div>
+          </div>
+
+          <!-- Strip B (still visible) -->
+          <div class="strip-b" style="pointer-events:none; opacity:0.4; z-index:1;">
+            <div class="strip-b-header"><div class="strip-b-icon">✂️</div><div class="strip-b-count">4</div></div>
+          </div>
+
+          <!-- Expanded panel B -->
+          <div class="panel-b">
+            <div class="panel-header">
+              <div class="panel-title">
+                ✂️ Clips
+                <span class="panel-count-badge">4 saved</span>
+              </div>
+              <button class="panel-close">✕</button>
+            </div>
+            <div class="panel-cta">✨ Compose post from clips</div>
+            <div class="clips-grid">
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">🤖</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> TechCrunch</div>
+                  <div class="clip-card-title">How AI agents are reshaping product roadmaps in 2025</div>
+                  <div class="clip-card-date">Apr 27, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 techcrunch.com/ai-agents-pm</a>
+                  <div class="clip-card-passage">"Product managers are increasingly leaning on AI to surface user signals faster."</div>
+                </div>
+              </div>
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">📊</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> Forbes</div>
+                  <div class="clip-card-title">The silent killer of product teams: too many meetings</div>
+                  <div class="clip-card-date">Apr 27, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 forbes.com/product-velocity</a>
+                  <div class="clip-card-passage">"Leaders who solved their async problem saw velocity double."</div>
+                </div>
+              </div>
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#6ee7b7,#059669)">🌱</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> HBR</div>
+                  <div class="clip-card-title">Why product-led growth requires a different kind of PM</div>
+                  <div class="clip-card-date">Apr 26, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 hbr.org/plg-product-managers</a>
+                </div>
+              </div>
+              <div class="clip-card">
+                <div class="clip-thumb-img" style="background:linear-gradient(135deg,#fca5a5,#ef4444)">🔥</div>
+                <div class="clip-card-body">
+                  <div class="clip-source-row"><span class="source-dot"></span> Wired</div>
+                  <div class="clip-card-title">The case against feature flags: when configurability becomes a liability</div>
+                  <div class="clip-card-date">Apr 25, 2025</div>
+                  <a class="clip-card-link" href="#">🔗 wired.com/feature-flag-debt</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

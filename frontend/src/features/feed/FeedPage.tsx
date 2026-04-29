@@ -3,7 +3,6 @@ import { Tour } from '@/components/Tour';
 import { type ReactNode } from 'react';
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
 import { containerVariants, cardItemVariants, fadeUpVariants, skeletonPulseVariants, spring } from '@/lib/motion';
-import { TrendingSearchBar } from '../trending/components/TrendingSearchBar';
 import { TrendingFilters, readFilterDefaults } from '../trending/components/TrendingFilters';
 import { FeedCuratedPanel } from './components/FeedCuratedPanel';
 import { FeedSection } from '../trending/components/FeedSection';
@@ -14,7 +13,7 @@ import { TrendingGraph } from '../trending/components/TrendingGraph';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useTrendingSearch } from '../trending/hooks/useTrendingSearch';
 import { FeedLeftPanel } from './components/FeedLeftPanel';
-import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2 } from 'lucide-react';
+import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2, Bookmark, Layers, ChevronDown, Search, Scissors } from 'lucide-react';
 import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
@@ -101,6 +100,10 @@ export function FeedPage({
   const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
   const [openDraft, setOpenDraft] = useState<SheetRow | null>(null);
   const [debateMode, setDebateMode] = useState(false);
+
+  // Platform filter dropdown (sidebar)
+  const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
+  const platformDropdownRef = useRef<HTMLDivElement>(null);
 
   async function handleDeleteClip(clipId: string) {
     try {
@@ -474,77 +477,6 @@ export function FeedPage({
     <MotionConfig transition={spring.smooth}>
       <div className="flex flex-col h-full overflow-hidden">
 
-        {/* ── Header ──────────────────────────────────────────── */}
-        <div className="shrink-0 z-10 glass-header border-b border-border/50 px-6 py-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <TrendingSearchBar value={topic} onChange={setTopic} onSearch={handleSearch} />
-            </div>
-            <TrendingFilters
-              region={region} genre={genre} windowDays={windowDays}
-              onRegionChange={setRegion} onGenreChange={setGenre} onWindowChange={setWindowDays}
-            />
-
-            {/* Article search — filters already-loaded feed articles client-side */}
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => handleSearchQueryChange(e.target.value)}
-                placeholder="Filter articles…"
-                className="h-8 w-40 rounded-lg border border-border/60 bg-white/60 pl-3 pr-7 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => handleSearchQueryChange('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-
-            {/* Sort pills */}
-            <div className="flex items-center gap-1">
-              {(['latest', 'trending', 'foryou'] as const).map(sort => {
-                const labels: Record<string, string> = { latest: 'Latest', trending: 'Trending', foryou: 'For You' };
-                return (
-                  <button
-                    key={sort}
-                    type="button"
-                    onClick={() => setFeedSort(sort)}
-                    className={[
-                      'h-7 rounded-full px-3 text-xs font-semibold transition-colors',
-                      feedSort === sort
-                        ? 'bg-primary text-primary-fg'
-                        : 'text-muted hover:text-ink bg-white/40 border border-white/60',
-                    ].join(' ')}
-                  >
-                    {labels[sort]}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Refresh icon — always visible when a group is active or search is set */}
-            {(activeGroupId || searchTopic) && (
-              <button
-                type="button"
-                onClick={handleRefresh}
-                disabled={refreshing || feedLoading}
-                title="Fetch fresh articles"
-                className="flex items-center justify-center h-8 w-8 rounded-lg border border-border/60 bg-white/60 text-muted hover:text-primary hover:border-primary/40 disabled:opacity-40 transition-colors"
-              >
-                <RefreshCw
-                  size={14}
-                  className={refreshing ? 'animate-spin' : ''}
-                />
-              </button>
-            )}
-          </div>
-        </div>
-
         {/* ── No news APIs banner ────────────────────────────── */}
         {!hasNewsApis && (
           <div className="shrink-0 mx-6 mt-4 rounded-xl border border-amber-200/60 bg-amber-50/60 p-3 flex items-center gap-2.5">
@@ -560,9 +492,9 @@ export function FeedPage({
         <div className="flex-1 min-h-0 overflow-hidden relative flex">
 
           {/* ── Left sidebar: interest groups nav ──────────────── */}
-          <aside className="w-48 shrink-0 border-r border-border/40 bg-white/20 dark:bg-white/[0.03] overflow-y-auto flex flex-col gap-1 p-2">
-            <p className="px-2 pt-1 pb-0.5 text-[9px] font-bold uppercase tracking-widest text-muted">
-              Interest Groups
+          <aside className="w-[220px] shrink-0 border-r border-border/40 bg-white/20 dark:bg-white/[0.03] overflow-y-auto flex flex-col gap-1 p-3">
+            <p className="px-2.5 pt-1 pb-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-secondary">
+              Sections
             </p>
 
             {/* Loading skeleton */}
@@ -809,10 +741,147 @@ export function FeedPage({
                 </AnimatePresence>
               </>
             )}
+
+            {/* LIBRARY header */}
+            <p className="px-2.5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-secondary">
+              Library
+            </p>
+            <button
+              type="button"
+              className="flex items-center gap-2 w-full rounded-xl px-2.5 py-1.5 text-xs font-medium text-muted hover:bg-white/40 hover:text-ink transition-colors"
+            >
+              <Bookmark size={13} />
+              <span className="flex-1 text-left">Saved</span>
+              <span className="text-[11px] text-muted/70 font-medium tabular-nums">
+                {Object.values(feedbackMap).filter(v => v === 'up').length}
+              </span>
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-2 w-full rounded-xl px-2.5 py-1.5 text-xs font-medium text-muted hover:bg-white/40 hover:text-ink transition-colors"
+            >
+              <Scissors size={13} />
+              <span className="flex-1 text-left">Clippings</span>
+              <span className="text-[11px] text-muted/70 font-medium tabular-nums">{clips.length}</span>
+            </button>
+
+            {/* FILTERS header */}
+            <p className="px-2.5 pt-5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-secondary">
+              Filters
+            </p>
+            <div className="relative" ref={platformDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setPlatformDropdownOpen(v => !v)}
+                className="w-full h-[34px] px-3 bg-white/65 border border-border rounded-[9px] text-[12.5px] font-medium text-ink flex items-center gap-1.5 hover:border-primary hover:text-primary transition-colors"
+              >
+                <Layers size={13} />
+                <span className="flex-1 text-left">All platforms</span>
+                <ChevronDown size={13} className="text-muted/60" />
+              </button>
+              {platformDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-xl border border-border/60 bg-white/95 backdrop-blur-md shadow-xl overflow-hidden">
+                  {['All platforms', 'YouTube', 'Instagram', 'LinkedIn'].map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setPlatformDropdownOpen(false)}
+                      className="w-full text-left px-3 py-2 text-xs text-ink hover:bg-primary/5 transition-colors"
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </aside>
 
           {/* Center: scrollable feed column */}
           <div className="flex-1 min-w-0 overflow-y-auto">
+
+            {/* Masthead — only visible in feed mode */}
+            {!openDraft && !debateMode && (
+              <>
+                <header className="px-10 pt-6 pb-3.5">
+                  <div className="text-[11px] font-bold tracking-[0.16em] uppercase text-secondary mb-1">
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  </div>
+                  <h1 className="text-[32px] leading-[1.05] font-bold tracking-[-0.018em] text-ink mt-1">
+                    Today&apos;s Briefing
+                  </h1>
+                  <p className="text-[13px] text-muted mt-1.5 flex items-center gap-1.5">
+                    {filteredDisplayArticles.length} stories curated
+                    <button
+                      type="button"
+                      onClick={handleRefresh}
+                      disabled={refreshing || feedLoading}
+                      className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-[5px] text-muted hover:text-primary transition-colors disabled:opacity-40"
+                      title="Refresh now"
+                    >
+                      <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
+                    </button>
+                  </p>
+                  {/* Search + filter pills row */}
+                  <div className="flex items-center gap-2.5 mt-4">
+                    <div className="relative flex-1 max-w-[520px]">
+                      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
+                      <input
+                        type="text"
+                        value={searchQuery || topic}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setTopic(val);
+                          handleSearchQueryChange(val);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSearch();
+                          }
+                        }}
+                        placeholder="Search by title, source, or topic…"
+                        className="w-full h-[38px] pl-9 pr-3 bg-white/75 border border-border rounded-[10px] text-[13.5px] text-ink placeholder:text-muted/60 focus:outline-none focus:ring-[3px] focus:ring-primary/15 focus:border-primary transition-all"
+                      />
+                      {(searchQuery || topic) && (
+                        <button
+                          type="button"
+                          onClick={() => { setTopic(''); handleSearchQueryChange(''); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                        >
+                          <X size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <TrendingFilters
+                      region={region} genre={genre} windowDays={windowDays}
+                      onRegionChange={setRegion} onGenreChange={setGenre} onWindowChange={setWindowDays}
+                    />
+                  </div>
+                </header>
+
+                {/* Tabs row */}
+                <div className="flex items-center gap-[22px] px-10 border-b border-border/55">
+                  {(['latest', 'trending', 'foryou'] as const).map(sort => {
+                    const labels: Record<string, string> = { latest: 'Latest', trending: 'Trending', foryou: 'For You' };
+                    return (
+                      <button
+                        key={sort}
+                        type="button"
+                        onClick={() => setFeedSort(sort)}
+                        className={[
+                          'text-[13px] py-3 border-b-2 transition-colors leading-none font-medium',
+                          feedSort === sort
+                            ? 'text-primary border-primary font-semibold'
+                            : 'text-muted border-transparent hover:text-ink',
+                        ].join(' ')}
+                      >
+                        {labels[sort]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
             <AnimatePresence mode="wait">
 
               {/* Draft mode */}
@@ -845,7 +914,7 @@ export function FeedPage({
 
               {/* Reading feed mode */}
               {!openDraft && !debateMode && (
-                <motion.div key="feed" {...motionProps} className="px-6 pt-3 pb-16">
+                <motion.div key="feed" {...motionProps} className="px-10 py-5 pb-20 max-w-[760px]">
 
                   {/* No interest groups — onboarding */}
                   {hasNoGroups && !searchTopic && (
@@ -1009,7 +1078,7 @@ export function FeedPage({
 
           {/* Right: full-height curated sidebar */}
           {!openArticle && !openDraft && !debateMode && (
-            <div className="w-80 xl:w-96 shrink-0 border-l border-border/40 hidden lg:flex flex-col overflow-hidden">
+            <div className="w-[300px] shrink-0 border-l border-border/40 hidden lg:flex flex-col overflow-hidden">
               <FeedCuratedPanel
                 idToken={idToken}
                 api={api}

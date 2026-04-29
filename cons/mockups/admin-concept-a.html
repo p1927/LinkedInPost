@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — Concept A: Command Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  * { font-family: 'Inter', sans-serif; }
+  .token-bar { transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+  .row-hover:hover { background: #f8fafc; }
+  .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
+  .shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- Top Stats Bar -->
+<div class="bg-white border-b border-slate-200 px-6 py-4">
+  <div class="max-w-5xl mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
+        <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <span class="text-sm font-bold text-slate-800">Admin Console</span>
+      <span class="badge bg-blue-100 text-blue-700 ml-1">SaaS</span>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="text-center">
+        <div class="text-xl font-bold text-slate-800">24</div>
+        <div class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Total Users</div>
+      </div>
+      <div class="h-8 w-px bg-slate-200"></div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-emerald-600">21</div>
+        <div class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Active</div>
+      </div>
+      <div class="h-8 w-px bg-slate-200"></div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-amber-600">3</div>
+        <div class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Waitlist</div>
+      </div>
+      <div class="h-8 w-px bg-slate-200"></div>
+      <div class="text-center">
+        <div class="text-xl font-bold text-violet-600">68%</div>
+        <div class="text-[10px] font-medium text-slate-500 uppercase tracking-wide">Avg Token Use</div>
+      </div>
+      <button class="ml-4 flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="max-w-5xl mx-auto px-6 py-6 space-y-5">
+
+  <!-- Waitlist Section -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <svg class="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h2 class="text-sm font-semibold text-slate-700">Pending Waitlist</h2>
+        <span class="badge bg-amber-100 text-amber-700">3 pending</span>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      <!-- Waitlist row -->
+      <div class="row-hover flex items-center gap-4 px-5 py-3.5 border-b border-slate-100 cursor-pointer transition-colors">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">SK</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-slate-800">Sarah Kim</p>
+            <span class="text-xs text-slate-400">·</span>
+            <p class="text-xs text-slate-500">sarah@startup.io</p>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5 truncate">Building a content tool for our marketing team, need AI-assisted drafting</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-[10px] text-slate-400">2h ago</span>
+          <button class="rounded-lg bg-violet-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 cursor-pointer transition-colors shadow-sm">Approve</button>
+          <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 cursor-pointer transition-colors">Decline</button>
+        </div>
+      </div>
+      <div class="row-hover flex items-center gap-4 px-5 py-3.5 border-b border-slate-100 cursor-pointer transition-colors">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">MJ</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-slate-800">Marcus Johnson</p>
+            <span class="text-xs text-slate-400">·</span>
+            <p class="text-xs text-slate-500">marcus@corp.com</p>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5 truncate">Enterprise use case, 50-person team</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-[10px] text-slate-400">1d ago</span>
+          <button class="rounded-lg bg-violet-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 cursor-pointer transition-colors shadow-sm">Approve</button>
+          <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 cursor-pointer transition-colors">Decline</button>
+        </div>
+      </div>
+      <div class="row-hover flex items-center gap-4 px-5 py-3.5 cursor-pointer transition-colors">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">PL</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-slate-800">Priya Lal</p>
+            <span class="text-xs text-slate-400">·</span>
+            <p class="text-xs text-slate-500">priya@agency.co</p>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5 truncate">Social media agency, managing 20+ clients</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-[10px] text-slate-400">3d ago</span>
+          <button class="rounded-lg bg-violet-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-violet-700 cursor-pointer transition-colors shadow-sm">Approve</button>
+          <button class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50 cursor-pointer transition-colors">Decline</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Users Section -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <svg class="h-4 w-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <h2 class="text-sm font-semibold text-slate-700">All Users</h2>
+        <span class="badge bg-violet-100 text-violet-700">24 total</span>
+      </div>
+      <!-- Search -->
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" placeholder="Search users…" class="h-8 w-52 rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all" />
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      <!-- Table header -->
+      <div class="grid grid-cols-[2fr_1fr_2fr_1fr] gap-4 px-5 py-2.5 bg-slate-50 border-b border-slate-200">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">User</div>
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Status</div>
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Token Usage</div>
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-right">Actions</div>
+      </div>
+
+      <!-- User rows -->
+      <!-- Active user – high usage -->
+      <div class="row-hover grid grid-cols-[2fr_1fr_2fr_1fr] gap-4 items-center px-5 py-3 border-b border-slate-100 transition-colors">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">PM</div>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-slate-800 truncate">Pratyush Mishra</p>
+            <p class="text-[10px] text-slate-400 font-mono truncate">uid_a1b2c3d4</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-emerald-100 text-emerald-700">active</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full bg-rose-500" style="width: 91%"></div>
+            </div>
+            <span class="text-[10px] tabular-nums text-slate-500 shrink-0">455k / 500k (91%)</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-1.5">
+          <button class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors">Budget</button>
+          <button class="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-semibold text-rose-600 hover:bg-rose-100 cursor-pointer transition-colors">Suspend</button>
+        </div>
+      </div>
+
+      <!-- Active user – medium usage -->
+      <div class="row-hover grid grid-cols-[2fr_1fr_2fr_1fr] gap-4 items-center px-5 py-3 border-b border-slate-100 transition-colors">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">JD</div>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-slate-800 truncate">Jane Doe</p>
+            <p class="text-[10px] text-slate-400 font-mono truncate">uid_e5f6g7h8</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-emerald-100 text-emerald-700">active</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full bg-amber-500" style="width: 72%"></div>
+            </div>
+            <span class="text-[10px] tabular-nums text-slate-500 shrink-0">360k / 500k (72%)</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-1.5">
+          <button class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors">Budget</button>
+          <button class="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-semibold text-rose-600 hover:bg-rose-100 cursor-pointer transition-colors">Suspend</button>
+        </div>
+      </div>
+
+      <!-- Active user – low usage -->
+      <div class="row-hover grid grid-cols-[2fr_1fr_2fr_1fr] gap-4 items-center px-5 py-3 border-b border-slate-100 transition-colors">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">AR</div>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-slate-800 truncate">Alex Rodriguez</p>
+            <p class="text-[10px] text-slate-400 font-mono truncate">uid_i9j0k1l2</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-emerald-100 text-emerald-700">active</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full bg-violet-500" style="width: 35%"></div>
+            </div>
+            <span class="text-[10px] tabular-nums text-slate-500 shrink-0">175k / 500k (35%)</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-1.5">
+          <button class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors">Budget</button>
+          <button class="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-semibold text-rose-600 hover:bg-rose-100 cursor-pointer transition-colors">Suspend</button>
+        </div>
+      </div>
+
+      <!-- Suspended user -->
+      <div class="row-hover grid grid-cols-[2fr_1fr_2fr_1fr] gap-4 items-center px-5 py-3 transition-colors opacity-60">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-500">TK</div>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-slate-600 truncate">Tom Kirk</p>
+            <p class="text-[10px] text-slate-400 font-mono truncate">uid_m3n4o5p6</p>
+          </div>
+        </div>
+        <div>
+          <span class="badge bg-slate-100 text-slate-500">suspended</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full bg-slate-300" style="width: 0%"></div>
+            </div>
+            <span class="text-[10px] tabular-nums text-slate-400 shrink-0">0k / 500k (0%)</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-1.5">
+          <button class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors">Budget</button>
+          <button class="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-100 cursor-pointer transition-colors">Activate</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Inline Budget Edit Modal (shown as overlay concept) -->
+  <div class="relative">
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none" style="display:none">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 w-72">
+        <h3 class="text-sm font-bold text-slate-800 mb-1">Edit Token Budget</h3>
+        <p class="text-xs text-slate-500 mb-3">Jane Doe · uid_e5f6g7h8</p>
+        <div class="flex items-center gap-2 mb-4">
+          <input type="number" value="500" class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400" />
+          <span class="text-sm text-slate-500 font-medium">k tokens</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="flex-1 rounded-lg border border-slate-200 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
+          <button class="flex-1 rounded-lg bg-violet-600 py-2 text-xs font-semibold text-white hover:bg-violet-700 cursor-pointer">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Concept label -->
+<div class="fixed bottom-4 right-4 rounded-xl bg-slate-900 text-white text-xs font-semibold px-4 py-2 shadow-lg opacity-80">
+  Concept A · Command Center
+</div>
+
+</body>
+</html>

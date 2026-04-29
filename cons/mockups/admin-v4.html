@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel — V4</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background-color: #ede9fe;
+  background-image:
+    radial-gradient(ellipse 130% 90% at 0% -15%, rgba(124,58,237,.42), transparent 55%),
+    radial-gradient(ellipse 95%  75% at 100%  5%, rgba(167,139,250,.36), transparent 52%),
+    radial-gradient(ellipse 75%  55% at 72% 100%, rgba(192,132,252,.32), transparent 58%),
+    linear-gradient(158deg, #faf5ff 0%, #f3e8ff 38%, #ede9fe 72%, #e9d5ff 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  color: #1e1b4b;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Glass panel (matches app .glass-panel utility) ── */
+.panel {
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,.58);
+  box-shadow: 0 8px 32px rgba(91,33,182,.10), 0 2px 8px rgba(124,58,237,.06);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Section header row ── */
+.sec-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(233,213,255,.45);
+  background: rgba(243,232,255,.18);
+}
+.sec-title { font-size: 13px; font-weight: 600; color: #1e1b4b; }
+.count-pill {
+  margin-left: auto;
+  border-radius: 999px; padding: 1px 8px;
+  font-size: 10px; font-weight: 700;
+  background: rgba(124,58,237,.1); color: #7c3aed;
+}
+
+/* ── Shared row ── */
+.row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 1px solid rgba(233,213,255,.28);
+  transition: background .12s;
+}
+.row:last-of-type { border-bottom: none; }
+.row:hover { background: rgba(124,58,237,.025); }
+
+/* Avatar */
+.av {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  background: rgba(124,58,237,.1); color: #7c3aed;
+}
+.av-off { background: rgba(148,163,184,.12); color: #94a3b8; }
+
+/* Name / id */
+.name { font-size: 13px; font-weight: 600; color: #1e1b4b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uid  { font-size: 10px; color: #94a3b8; font-family: monospace; margin-top: 2px; }
+.reason { font-size: 11px; color: #475569; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Token bar ── */
+.token-wrap { margin-top: 5px; display: flex; align-items: center; gap: 8px; }
+.bar-track { height: 3px; width: 120px; background: rgba(233,213,255,.6); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+.bar-fill { height: 100%; border-radius: 999px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.bar-lo { background: linear-gradient(90deg,#ddd6fe,#c4b5fd); }
+.bar-md { background: linear-gradient(90deg,#8b5cf6,#7c3aed); }
+.bar-hi { background: linear-gradient(90deg,#6d28d9,#4c1d95); }
+.bar-label { font-size: 10px; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar-pct-lo { color: #7c3aed; }
+.bar-pct-md { color: #6d28d9; }
+.bar-pct-hi { color: #4c1d95; font-weight: 700; }
+
+/* ── Status dot ── */
+.status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: #475569; white-space: nowrap; }
+.dot-on  { width: 6px; height: 6px; border-radius: 50%; background: #7c3aed; flex-shrink: 0; }
+.dot-off { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; }
+
+/* ── Actions area (right side of user row) ── */
+.actions { display: flex; flex-shrink: 0; align-items: center; gap: 6px; padding-top: 1px; }
+
+/* Budget pill — closed state */
+.budget-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid rgba(233,213,255,.9); border-radius: 8px;
+  padding: 3px 8px; background: rgba(255,255,255,.7);
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.budget-pill:hover { border-color: #a78bfa; background: #fff; }
+.budget-pill-val { font-size: 11px; font-weight: 600; color: #7c3aed; }
+
+/* Budget pill — open/editing state */
+.budget-pill.open { border-color: #7c3aed; background: #fff; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+.budget-input {
+  width: 34px; background: transparent; border: none; outline: none;
+  font-size: 11px; font-weight: 600; color: #7c3aed;
+  font-family: inherit; text-align: right;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.budget-unit { font-size: 10px; color: #a78bfa; }
+
+/* Pencil icon trigger */
+.btn-pencil {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 5px; cursor: pointer;
+  border: none; background: none; color: #c4b5fd; padding: 0;
+  transition: color .15s, background .15s;
+}
+.btn-pencil:hover { color: #7c3aed; background: rgba(124,58,237,.08); }
+
+/* Save button (shown only in edit state) */
+.btn-save {
+  font-size: 10px; font-weight: 600; color: #fff;
+  background: #7c3aed; border: none; border-radius: 6px;
+  padding: 3px 8px; cursor: pointer; font-family: inherit;
+  transition: background .15s;
+}
+.btn-save:hover { background: #6d28d9; }
+
+/* Suspend / Activate text buttons — minimal, no colored bg */
+.btn-text {
+  font-size: 11px; font-weight: 500; font-family: inherit;
+  background: none; border: none; cursor: pointer; padding: 2px 0;
+  transition: color .15s; white-space: nowrap;
+}
+.btn-suspend  { color: #94a3b8; }
+.btn-suspend:hover  { color: #475569; }
+.btn-activate { color: #7c3aed; }
+.btn-activate:hover { color: #6d28d9; }
+
+/* Approve (waitlist) */
+.btn-approve {
+  font-size: 11px; font-weight: 600; color: #fff; font-family: inherit;
+  background: #7c3aed; border: none; border-radius: 8px;
+  padding: 5px 13px; cursor: pointer; flex-shrink: 0;
+  transition: background .15s;
+}
+.btn-approve:hover { background: #6d28d9; }
+
+/* ── Pagination ── */
+.pager {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 18px;
+  border-top: 1px solid rgba(233,213,255,.4);
+  background: rgba(243,232,255,.15);
+}
+.pager-info { font-size: 11px; color: #94a3b8; }
+.pager-info strong { color: #475569; font-weight: 600; }
+.pager-btns { display: flex; align-items: center; gap: 2px; }
+.pg {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 26px; border-radius: 7px; padding: 0 6px;
+  font-size: 12px; font-weight: 500; font-family: inherit; cursor: pointer;
+  border: 1px solid transparent; background: none; color: #475569;
+  transition: all .12s;
+}
+.pg:hover:not(:disabled):not(.pg-active) { background: rgba(124,58,237,.07); color: #7c3aed; }
+.pg-active { background: #7c3aed; color: #fff; border-color: #7c3aed; font-weight: 600; cursor: default; }
+.pg:disabled { color: #cbd5e1; cursor: default; }
+
+/* ── Page header ── */
+.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.page-icon {
+  width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+  background: linear-gradient(135deg,#7c3aed,#6d28d9);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(109,40,217,.28);
+}
+.saas-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 999px; padding: 4px 11px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(124,58,237,.08); color: #7c3aed;
+  border: 1px solid rgba(124,58,237,.18);
+}
+.btn-refresh {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  border: 1px solid rgba(233,213,255,.85); background: rgba(255,255,255,.75);
+  display: flex; align-items: center; justify-content: center;
+  color: #7c3aed; cursor: pointer; transition: background .15s;
+}
+.btn-refresh:hover { background: #fff; }
+
+/* Suspended row dimmed */
+.row-off { opacity: .45; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ── Page header ── -->
+  <div class="page-head">
+    <div style="display:flex;align-items:center;gap:11px">
+      <div class="page-icon">
+        <!-- ShieldCheck -->
+        <svg width="17" height="17" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;letter-spacing:-.02em;color:#1e1b4b">Admin Panel</div>
+        <div style="font-size:11px;color:#475569;margin-top:1px">Manage users and access</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="saas-badge">
+        <span style="width:5px;height:5px;border-radius:50%;background:#7c3aed"></span>
+        SaaS
+      </span>
+      <button class="btn-refresh" aria-label="Refresh">
+        <!-- RefreshCw -->
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Waitlist ── -->
+  <section class="panel">
+    <div class="sec-head">
+      <!-- Clock icon -->
+      <svg width="13" height="13" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="sec-title">Waitlist</span>
+      <span class="count-pill">3</span>
+    </div>
+
+    <!-- Row: name + email + reason + Approve -->
+    <div class="row">
+      <div class="av">SK</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Sarah Kim</div>
+        <div class="reason">sarah@startup.io</div>
+        <div class="reason">Building a content tool for the marketing team</div>
+      </div>
+      <button class="btn-approve">Approve</button>
+    </div>
+
+    <div class="row">
+      <div class="av">MJ</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Marcus Johnson</div>
+        <div class="reason">marcus@corp.com</div>
+        <div class="reason">Enterprise team, 50 people, content pipeline automation</div>
+      </div>
+      <button class="btn-approve">Approve</button>
+    </div>
+
+    <div class="row" style="border-bottom:none">
+      <div class="av">PL</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Priya Lal</div>
+        <div class="reason">priya@agency.co</div>
+        <!-- no reason on this entry -->
+      </div>
+      <button class="btn-approve">Approve</button>
+    </div>
+  </section>
+
+  <!-- ── Users ── -->
+  <section class="panel">
+    <div class="sec-head">
+      <!-- Users icon -->
+      <svg width="13" height="13" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <span class="sec-title">Users</span>
+      <span class="count-pill">24</span>
+    </div>
+
+    <!-- Row: active, 91% — budget pill shown open (edit state demo) -->
+    <div class="row">
+      <div class="av">PM</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Pratyush Mishra</div>
+        <div class="uid">uid_a1b2c3d4</div>
+        <div class="token-wrap">
+          <div class="bar-track"><div class="bar-fill bar-hi" style="width:91%"></div></div>
+          <span class="bar-label">455k / 500k tokens · <span class="bar-pct-hi">91%</span></span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="status"><span class="dot-on"></span>active</div>
+        <!-- Budget pill: open/editing state -->
+        <div class="budget-pill open">
+          <input class="budget-input" type="number" value="500" />
+          <span class="budget-unit">k</span>
+          <button class="btn-save">Save</button>
+        </div>
+        <button class="btn-text btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Row: active, 72% — budget pill closed -->
+    <div class="row">
+      <div class="av">JD</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Jane Doe</div>
+        <div class="uid">uid_e5f6g7h8</div>
+        <div class="token-wrap">
+          <div class="bar-track"><div class="bar-fill bar-md" style="width:72%"></div></div>
+          <span class="bar-label">360k / 500k tokens · <span class="bar-pct-md">72%</span></span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="status"><span class="dot-on"></span>active</div>
+        <div class="budget-pill" title="Edit budget">
+          <span class="budget-pill-val">500k</span>
+          <button class="btn-pencil" aria-label="Edit budget">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+        </div>
+        <button class="btn-text btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Row: active, 35% -->
+    <div class="row">
+      <div class="av">AR</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Alex Rodriguez</div>
+        <div class="uid">uid_i9j0k1l2</div>
+        <div class="token-wrap">
+          <div class="bar-track"><div class="bar-fill bar-lo" style="width:35%"></div></div>
+          <span class="bar-label">175k / 500k tokens · <span class="bar-pct-lo">35%</span></span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="status"><span class="dot-on"></span>active</div>
+        <div class="budget-pill" title="Edit budget">
+          <span class="budget-pill-val">500k</span>
+          <button class="btn-pencil" aria-label="Edit budget">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+        </div>
+        <button class="btn-text btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Row: suspended -->
+    <div class="row row-off">
+      <div class="av av-off">TK</div>
+      <div style="flex:1;min-width:0">
+        <div class="name" style="color:#475569">Tom Kirk</div>
+        <div class="uid">uid_m3n4o5p6</div>
+        <div class="token-wrap">
+          <div class="bar-track"><div class="bar-fill bar-lo" style="width:0%"></div></div>
+          <span class="bar-label">0k / 500k tokens · 0%</span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="status"><span class="dot-off"></span>suspended</div>
+        <button class="btn-text btn-activate" style="opacity:1">Activate</button>
+      </div>
+    </div>
+
+    <!-- Row: active, 55% -->
+    <div class="row">
+      <div class="av">NP</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Nina Patel</div>
+        <div class="uid">uid_b2c3d4e5</div>
+        <div class="token-wrap">
+          <div class="bar-track"><div class="bar-fill bar-md" style="width:55%"></div></div>
+          <span class="bar-label">275k / 500k tokens · <span class="bar-pct-md">55%</span></span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="status"><span class="dot-on"></span>active</div>
+        <div class="budget-pill" title="Edit budget">
+          <span class="budget-pill-val">500k</span>
+          <button class="btn-pencil" aria-label="Edit budget">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+        </div>
+        <button class="btn-text btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Row: active, 18% -->
+    <div class="row">
+      <div class="av">RO</div>
+      <div style="flex:1;min-width:0">
+        <div class="name">Ryan O'Brien</div>
+        <div class="uid">uid_f5g6h7i8</div>
+        <div class="token-wrap">
+          <div class="bar-track"><div class="bar-fill bar-lo" style="width:18%"></div></div>
+          <span class="bar-label">180k / 1000k tokens · <span class="bar-pct-lo">18%</span></span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="status"><span class="dot-on"></span>active</div>
+        <div class="budget-pill" title="Edit budget">
+          <span class="budget-pill-val">1000k</span>
+          <button class="btn-pencil" aria-label="Edit budget">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+        </div>
+        <button class="btn-text btn-suspend">Suspend</button>
+      </div>
+    </div>
+
+    <!-- Row: suspended -->
+    <div class="row row-off">
+      <div class="av av-off">CL</div>
+      <div style="flex:1;min-width:0">
+        <div class="name" style="color:#475569">Clara Lee</div>
+        <div class="uid">uid_k9l0m1n2</div>
+        <div class="token-wrap">
+          <div class="bar-track"><div class="bar-fill bar-lo" style="width:0%"></div></div>
+          <span class="bar-label">0k / 500k tokens · 0%</span>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="status"><span class="dot-off"></span>suspended</div>
+        <button class="btn-text btn-activate" style="opacity:1">Activate</button>
+      </div>
+    </div>
+
+    <!-- ── Pagination ── -->
+    <div class="pager">
+      <span class="pager-info">Showing <strong>1–8</strong> of <strong>24</strong> users</span>
+      <div class="pager-btns">
+        <!-- Prev -->
+        <button class="pg" disabled aria-label="Previous page">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button class="pg pg-active">1</button>
+        <button class="pg">2</button>
+        <button class="pg">3</button>
+        <!-- Next -->
+        <button class="pg" aria-label="Next page">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

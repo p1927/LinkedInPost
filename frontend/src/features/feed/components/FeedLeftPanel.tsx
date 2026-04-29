@@ -18,14 +18,11 @@ export interface FeedLeftPanelProps {
 
 function SkeletonCard() {
   return (
-    <div className="flex gap-3 rounded-xl border border-slate-200 bg-white p-2.5 animate-pulse">
-      <div className="h-16 w-20 shrink-0 rounded-lg bg-slate-100" />
-      <div className="flex-1 space-y-2 py-0.5">
-        <div className="h-2.5 bg-slate-100 rounded w-1/3" />
-        <div className="h-3.5 bg-slate-100 rounded w-full" />
-        <div className="h-3.5 bg-slate-100 rounded w-3/4" />
-        <div className="h-2.5 bg-slate-100 rounded w-1/2" />
-      </div>
+    <div className="py-4 border-b border-border/40 animate-pulse space-y-2">
+      <div className="h-[17px] bg-slate-100 rounded w-3/4" />
+      <div className="h-3 bg-slate-100 rounded w-full" />
+      <div className="h-3 bg-slate-100 rounded w-1/2" />
+      <div className="h-2.5 bg-slate-100 rounded w-1/3 mt-1" />
     </div>
   );
 }
@@ -69,7 +66,7 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
   // Initial loading skeleton
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-3">
+      <div>
         {[0, 1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
       </div>
     );
@@ -88,9 +85,8 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
   const hasMore = visibleCount < sortedArticles.length;
 
   return (
-    <div className="">
+    <div>
       <motion.div
-        className="grid grid-cols-1 gap-3"
         variants={containerVariants}
         initial="hidden"
         animate="show"
@@ -110,12 +106,18 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
         ))}
       </motion.div>
 
-      {/* Sentinel + load-more skeleton */}
+      {/* Sentinel for IntersectionObserver auto-loading */}
       <div ref={sentinelRef} className="h-1" />
+
+      {/* Continue button as alternate manual load-more trigger */}
       {hasMore && (
-        <div className="grid grid-cols-1 gap-3 pt-1">
-          {[0, 1, 2].map(i => <SkeletonCard key={i} />)}
-        </div>
+        <button
+          type="button"
+          onClick={() => setVisibleCount(prev => Math.min(prev + BATCH_SIZE, sortedArticles.length))}
+          className="w-full mt-6 py-3 text-[12.5px] font-semibold border border-border rounded-xl transition-colors text-ink bg-white/50 hover:bg-white/80 hover:border-border-strong"
+        >
+          Continue · {sortedArticles.length - visibleCount} more stories
+        </button>
       )}
     </div>
   );

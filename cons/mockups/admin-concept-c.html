@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — Concept C: Split Layout + Glass</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  * { font-family: 'Inter', sans-serif; }
+  body { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 40%, #faf5ff 100%); min-height: 100vh; }
+  .glass { background: rgba(255,255,255,0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.8); }
+  .glass-dark { background: rgba(109,40,217,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(139,92,246,0.2); }
+  .token-bar { transition: width .7s cubic-bezier(.4,0,.2,1); }
+  .row { transition: background .15s; }
+  .row:hover { background: rgba(109,40,217,0.04); }
+  .ring-stat { transform: rotate(-90deg); }
+  @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+  .pulse { animation: pulse-dot 2s infinite; }
+</style>
+</head>
+<body class="p-5">
+
+<div class="flex gap-5 max-w-5xl mx-auto" style="min-height: calc(100vh - 40px)">
+
+  <!-- LEFT SIDEBAR: Stats & Waitlist -->
+  <div class="w-72 shrink-0 space-y-4">
+
+    <!-- Admin identity card -->
+    <div class="glass rounded-2xl p-5 shadow-xl shadow-violet-100">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 shadow-lg shadow-violet-300">
+          <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-slate-900">Admin Panel</h1>
+          <div class="flex items-center gap-1 mt-0.5">
+            <span class="h-1.5 w-1.5 rounded-full bg-blue-500 pulse"></span>
+            <span class="text-[10px] font-semibold text-blue-600">SaaS Mode</span>
+          </div>
+        </div>
+        <button class="ml-auto flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white/60 text-slate-400 hover:text-violet-600 cursor-pointer transition-colors">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+      </div>
+      <!-- Quick stats -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="glass-dark rounded-xl p-3">
+          <div class="text-xl font-bold text-violet-700">24</div>
+          <div class="text-[10px] font-semibold text-violet-500 mt-0.5">Total Users</div>
+        </div>
+        <div class="rounded-xl p-3 bg-emerald-50/80 border border-emerald-100">
+          <div class="text-xl font-bold text-emerald-600">21</div>
+          <div class="text-[10px] font-semibold text-emerald-500 mt-0.5">Active</div>
+        </div>
+        <div class="rounded-xl p-3 bg-amber-50/80 border border-amber-100">
+          <div class="text-xl font-bold text-amber-600">3</div>
+          <div class="text-[10px] font-semibold text-amber-500 mt-0.5">Waitlist</div>
+        </div>
+        <div class="rounded-xl p-3 bg-rose-50/80 border border-rose-100">
+          <div class="text-xl font-bold text-rose-600">2</div>
+          <div class="text-[10px] font-semibold text-rose-500 mt-0.5">High Usage</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avg token donut -->
+    <div class="glass rounded-2xl p-5 shadow-lg shadow-violet-50">
+      <p class="text-xs font-semibold text-slate-600 mb-3">Avg Monthly Token Usage</p>
+      <div class="flex items-center gap-4">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="28" fill="none" stroke="#ede9fe" stroke-width="8"/>
+          <circle cx="36" cy="36" r="28" fill="none" stroke="url(#grad)" stroke-width="8"
+            stroke-dasharray="175.9" stroke-dashoffset="56.3" class="ring-stat" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <text x="36" y="40" text-anchor="middle" font-size="13" font-weight="700" fill="#4c1d95" font-family="Inter,sans-serif">68%</text>
+        </svg>
+        <div class="space-y-2">
+          <div>
+            <div class="text-[10px] text-slate-400">Average</div>
+            <div class="text-sm font-bold text-slate-800">340k / 500k</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-400">Highest</div>
+            <div class="text-sm font-bold text-rose-600">455k / 500k</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waitlist -->
+    <div class="glass rounded-2xl overflow-hidden shadow-lg shadow-violet-50">
+      <div class="flex items-center gap-2 px-4 py-3 border-b border-violet-100/60">
+        <svg class="h-3.5 w-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h2 class="text-xs font-bold text-slate-700">Pending Waitlist</h2>
+        <span class="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">3</span>
+      </div>
+      <div class="divide-y divide-violet-50">
+
+        <div class="px-4 py-3 hover:bg-violet-50/50 transition-colors">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-400 text-white text-[9px] font-bold">SK</div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-800 truncate">Sarah Kim</p>
+              <p class="text-[10px] text-slate-400 truncate">sarah@startup.io</p>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-500 mb-2 leading-relaxed">Building a content tool for their marketing team.</p>
+          <div class="flex gap-1.5">
+            <button class="flex-1 rounded-lg bg-violet-600 py-1.5 text-[10px] font-bold text-white hover:bg-violet-700 cursor-pointer transition-colors">Approve</button>
+            <button class="rounded-lg border border-slate-200 bg-white/70 px-3 py-1.5 text-[10px] font-medium text-slate-500 hover:bg-white cursor-pointer transition-colors">Decline</button>
+          </div>
+        </div>
+
+        <div class="px-4 py-3 hover:bg-violet-50/50 transition-colors">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-400 text-white text-[9px] font-bold">MJ</div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-800 truncate">Marcus Johnson</p>
+              <p class="text-[10px] text-slate-400 truncate">marcus@corp.com</p>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-500 mb-2 leading-relaxed">Enterprise, 50-person team for content automation.</p>
+          <div class="flex gap-1.5">
+            <button class="flex-1 rounded-lg bg-violet-600 py-1.5 text-[10px] font-bold text-white hover:bg-violet-700 cursor-pointer transition-colors">Approve</button>
+            <button class="rounded-lg border border-slate-200 bg-white/70 px-3 py-1.5 text-[10px] font-medium text-slate-500 hover:bg-white cursor-pointer transition-colors">Decline</button>
+          </div>
+        </div>
+
+        <div class="px-4 py-3 hover:bg-violet-50/50 transition-colors">
+          <div class="flex items-center gap-2.5 mb-2">
+            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-400 text-white text-[9px] font-bold">PL</div>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold text-slate-800 truncate">Priya Lal</p>
+              <p class="text-[10px] text-slate-400 truncate">priya@agency.co</p>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-500 mb-2 leading-relaxed">Agency managing 20+ clients on social media.</p>
+          <div class="flex gap-1.5">
+            <button class="flex-1 rounded-lg bg-violet-600 py-1.5 text-[10px] font-bold text-white hover:bg-violet-700 cursor-pointer transition-colors">Approve</button>
+            <button class="rounded-lg border border-slate-200 bg-white/70 px-3 py-1.5 text-[10px] font-medium text-slate-500 hover:bg-white cursor-pointer transition-colors">Decline</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Users List -->
+  <div class="flex-1 min-w-0">
+    <div class="glass rounded-2xl overflow-hidden shadow-xl shadow-violet-100" style="height: 100%">
+      <!-- Users header -->
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-violet-100/60">
+        <svg class="h-4 w-4 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <h2 class="text-sm font-bold text-slate-800">All Users</h2>
+        <span class="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">24</span>
+        <div class="ml-auto relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" placeholder="Search users…" class="h-8 w-48 rounded-xl border border-violet-200 bg-white/70 pl-8 pr-3 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all" />
+        </div>
+      </div>
+
+      <!-- Column headers -->
+      <div class="grid grid-cols-[2.5fr_1fr_2fr_auto] gap-4 px-5 py-2.5 bg-violet-50/50 border-b border-violet-100/50">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">User</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Token Budget</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</div>
+      </div>
+
+      <!-- Rows -->
+      <div class="divide-y divide-violet-50/80 overflow-y-auto" style="max-height: calc(100vh - 220px)">
+
+        <!-- Row: critical usage -->
+        <div class="row grid grid-cols-[2.5fr_1fr_2fr_auto] gap-4 items-center px-5 py-3.5">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative shrink-0">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white text-[11px] font-bold shadow-md shadow-violet-200">PM</div>
+              <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white"></span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-800 truncate">Pratyush Mishra</p>
+              <p class="text-[10px] text-slate-400 font-mono truncate">uid_a1b2c3d4</p>
+            </div>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>active
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50/80 px-2.5 py-1">
+                <input type="number" value="500" class="w-10 bg-transparent text-xs font-bold text-violet-700 focus:outline-none" />
+                <span class="text-[10px] text-violet-400 font-medium">k tokens</span>
+              </div>
+              <span class="text-[10px] tabular-nums font-bold text-rose-600 ml-2">455k / 500k · 91%</span>
+            </div>
+            <div class="h-1.5 bg-violet-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full" style="width:91%; background: linear-gradient(90deg, #fb923c, #ef4444)"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button class="rounded-xl bg-violet-600/90 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-violet-700 cursor-pointer transition-colors shadow-sm">Save</button>
+            <button class="rounded-xl border border-rose-200 bg-rose-50/80 px-2.5 py-1.5 text-[10px] font-bold text-rose-600 hover:bg-rose-100 cursor-pointer transition-colors">Suspend</button>
+          </div>
+        </div>
+
+        <!-- Row: amber usage -->
+        <div class="row grid grid-cols-[2.5fr_1fr_2fr_auto] gap-4 items-center px-5 py-3.5">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative shrink-0">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">JD</div>
+              <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white"></span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-800 truncate">Jane Doe</p>
+              <p class="text-[10px] text-slate-400 font-mono truncate">uid_e5f6g7h8</p>
+            </div>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>active
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50/80 px-2.5 py-1">
+                <input type="number" value="500" class="w-10 bg-transparent text-xs font-bold text-violet-700 focus:outline-none" />
+                <span class="text-[10px] text-violet-400 font-medium">k tokens</span>
+              </div>
+              <span class="text-[10px] tabular-nums font-bold text-amber-600 ml-2">360k / 500k · 72%</span>
+            </div>
+            <div class="h-1.5 bg-violet-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full" style="width:72%; background: linear-gradient(90deg, #fbbf24, #f59e0b)"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button class="rounded-xl bg-violet-600/90 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-violet-700 cursor-pointer transition-colors shadow-sm">Save</button>
+            <button class="rounded-xl border border-rose-200 bg-rose-50/80 px-2.5 py-1.5 text-[10px] font-bold text-rose-600 hover:bg-rose-100 cursor-pointer transition-colors">Suspend</button>
+          </div>
+        </div>
+
+        <!-- Row: low usage -->
+        <div class="row grid grid-cols-[2.5fr_1fr_2fr_auto] gap-4 items-center px-5 py-3.5">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative shrink-0">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">AR</div>
+              <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white"></span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-800 truncate">Alex Rodriguez</p>
+              <p class="text-[10px] text-slate-400 font-mono truncate">uid_i9j0k1l2</p>
+            </div>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>active
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50/80 px-2.5 py-1">
+                <input type="number" value="500" class="w-10 bg-transparent text-xs font-bold text-violet-700 focus:outline-none" />
+                <span class="text-[10px] text-violet-400 font-medium">k tokens</span>
+              </div>
+              <span class="text-[10px] tabular-nums font-medium text-slate-500 ml-2">175k / 500k · 35%</span>
+            </div>
+            <div class="h-1.5 bg-violet-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full" style="width:35%; background: linear-gradient(90deg, #8b5cf6, #7c3aed)"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button class="rounded-xl bg-violet-600/90 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-violet-700 cursor-pointer transition-colors shadow-sm">Save</button>
+            <button class="rounded-xl border border-rose-200 bg-rose-50/80 px-2.5 py-1.5 text-[10px] font-bold text-rose-600 hover:bg-rose-100 cursor-pointer transition-colors">Suspend</button>
+          </div>
+        </div>
+
+        <!-- Row: suspended -->
+        <div class="row grid grid-cols-[2.5fr_1fr_2fr_auto] gap-4 items-center px-5 py-3.5 opacity-50">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative shrink-0">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-500">TK</div>
+              <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-slate-300 border-2 border-white"></span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-600 truncate">Tom Kirk</p>
+              <p class="text-[10px] text-slate-400 font-mono truncate">uid_m3n4o5p6</p>
+            </div>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">
+              <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>suspended
+            </span>
+          </div>
+          <div>
+            <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full rounded-full bg-slate-200" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button class="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-1.5 text-[10px] font-bold text-emerald-600 hover:bg-emerald-100 cursor-pointer transition-colors">Activate</button>
+          </div>
+        </div>
+
+        <!-- Row: another active -->
+        <div class="row grid grid-cols-[2.5fr_1fr_2fr_auto] gap-4 items-center px-5 py-3.5">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="relative shrink-0">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700">LW</div>
+              <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white"></span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-slate-800 truncate">Liu Wei</p>
+              <p class="text-[10px] text-slate-400 font-mono truncate">uid_q7r8s9t0</p>
+            </div>
+          </div>
+          <div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>active
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50/80 px-2.5 py-1">
+                <input type="number" value="200" class="w-10 bg-transparent text-xs font-bold text-violet-700 focus:outline-none" />
+                <span class="text-[10px] text-violet-400 font-medium">k tokens</span>
+              </div>
+              <span class="text-[10px] tabular-nums font-medium text-slate-500 ml-2">60k / 200k · 30%</span>
+            </div>
+            <div class="h-1.5 bg-violet-100 rounded-full overflow-hidden">
+              <div class="token-bar h-full rounded-full" style="width:30%; background: linear-gradient(90deg, #8b5cf6, #7c3aed)"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button class="rounded-xl bg-violet-600/90 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-violet-700 cursor-pointer transition-colors shadow-sm">Save</button>
+            <button class="rounded-xl border border-rose-200 bg-rose-50/80 px-2.5 py-1.5 text-[10px] font-bold text-rose-600 hover:bg-rose-100 cursor-pointer transition-colors">Suspend</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Concept label -->
+<div class="fixed bottom-4 right-4 rounded-xl bg-slate-900 text-white text-xs font-semibold px-4 py-2 shadow-lg opacity-80">
+  Concept C · Split Layout + Glass
+</div>
+
+</body>
+</html>
