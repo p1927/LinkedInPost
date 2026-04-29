@@ -70,7 +70,8 @@ test.describe('Journey 01: Auth & Onboarding', () => {
 
     const continueButton = page.getByRole('button', { name: /continue|skip for now/i }).first();
     await expect(continueButton).toBeVisible({ timeout: 10000 });
-    await continueButton.click();
+    // A tour tooltip may float above the modal and intercept pointer events; force-click bypasses this
+    await continueButton.click({ force: true });
 
     // Step 2 shows "Content source" heading and spreadsheet URL input
     const step2Heading = page.getByText('Content source', { exact: true });
@@ -91,12 +92,12 @@ test.describe('Journey 01: Auth & Onboarding', () => {
     // With no integrations the button reads "Skip for now →"; click it
     const skipButton = page.getByRole('button', { name: /skip for now/i }).first();
     await expect(skipButton).toBeVisible({ timeout: 10000 });
-    await skipButton.click();
+    await skipButton.click({ force: true });
 
     // Step 2: click "Skip, I'll add later →" to finish
     const finishButton = page.getByRole('button', { name: /skip.*later|connect.*start/i }).first();
     await expect(finishButton).toBeVisible({ timeout: 10000 });
-    await finishButton.click();
+    await finishButton.click({ force: true });
 
     // Modal overlay should disappear
     const modalOverlay = page.locator('.fixed.inset-0.z-50');

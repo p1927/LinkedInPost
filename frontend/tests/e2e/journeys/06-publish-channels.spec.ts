@@ -1,17 +1,31 @@
 import { test, expect, type Page } from '@playwright/test';
 import { setupApiMocks, injectFakeToken, gotoAuthenticated, MOCK_SESSION, MOCK_ROWS } from '../helpers/mockApi';
 
+// Connections page uses tab groups — "Social Channels" (LinkedIn, Instagram, YouTube) is
+// the default tab; Gmail, WhatsApp, and Telegram live in the "Messaging" tab.
+async function clickMessagingTab(page: import('@playwright/test').Page) {
+  const messagingTab = page.getByRole('button', { name: /messaging/i }).first();
+  if (await messagingTab.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await messagingTab.click();
+    await page.waitForTimeout(200);
+  }
+}
+
 test.describe('Journey 06: Multi-Channel Publishing Variations', () => {
   test('channel selector shows all channels', async ({ page }) => {
     // /connections lists all publishing channels by name
     await gotoAuthenticated(page, '/connections');
     await page.waitForLoadState('domcontentloaded');
 
+    // Social Channels tab (default): LinkedIn and Instagram are visible
     await expect(page.getByText(/linkedin/i).first()).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/instagram/i).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/gmail/i).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/telegram/i).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/whatsapp/i).first()).toBeVisible({ timeout: 10000 });
+
+    // Messaging tab: Gmail, WhatsApp, Telegram
+    await clickMessagingTab(page);
+    await expect(page.getByText(/gmail/i).first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/telegram/i).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/whatsapp/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('Instagram channel: publish payload includes imageUrls', async ({ page }) => {
@@ -124,9 +138,10 @@ test.describe('Journey 06: Multi-Channel Publishing Variations', () => {
   });
 
   test('Telegram channel shows chat ID selector', async ({ page }) => {
-    // The connections page has Telegram chat ID input
+    // The connections page has Telegram chat ID input — in the Messaging tab
     await gotoAuthenticated(page, '/connections');
     await page.waitForLoadState('domcontentloaded');
+    await clickMessagingTab(page);
 
     await expect(page.getByText(/telegram/i).first()).toBeVisible({ timeout: 10000 });
 
@@ -140,6 +155,7 @@ test.describe('Journey 06: Multi-Channel Publishing Variations', () => {
   test('WhatsApp channel shows phone selector if connected', async ({ page }) => {
     await gotoAuthenticated(page, '/connections');
     await page.waitForLoadState('domcontentloaded');
+    await clickMessagingTab(page);
 
     await expect(page.getByText(/whatsapp/i).first()).toBeVisible({ timeout: 10000 });
     // WhatsApp section is visible on connections page

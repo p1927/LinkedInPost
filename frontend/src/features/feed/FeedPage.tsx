@@ -84,8 +84,8 @@ export function FeedPage({
   const [feedLoading, setFeedLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Search + filter bar state
-  const [_searchQuery, setSearchQuery] = useState('');
+  // Search + filter bar state — client-side filter on already-loaded articles
+  const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 'all' = no group filter applied on top of sorted articles
@@ -412,8 +412,7 @@ export function FeedPage({
     return displayArticles;
   }, [displayArticles, feedSort, feedbackMap]);
 
-  // Debounce search query updates
-  function _handleSearchQueryChange(value: string) {
+  function handleSearchQueryChange(value: string) {
     setSearchQuery(value);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
@@ -485,6 +484,26 @@ export function FeedPage({
               region={region} genre={genre} windowDays={windowDays}
               onRegionChange={setRegion} onGenreChange={setGenre} onWindowChange={setWindowDays}
             />
+
+            {/* Article search — filters already-loaded feed articles client-side */}
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => handleSearchQueryChange(e.target.value)}
+                placeholder="Filter articles…"
+                className="h-8 w-40 rounded-lg border border-border/60 bg-white/60 pl-3 pr-7 text-xs text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/40"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleSearchQueryChange('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
 
             {/* Sort pills */}
             <div className="flex items-center gap-1">
