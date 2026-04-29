@@ -14,12 +14,13 @@ const DISCONNECTED_SESSION = {
   },
 };
 
-// Connections page uses tab groups — Gmail, WhatsApp, and Telegram are in the "Messaging" tab
-async function clickMessagingTab(page: import('@playwright/test').Page) {
-  const messagingTab = page.getByRole('button', { name: /messaging/i }).first();
-  if (await messagingTab.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await messagingTab.click();
-    await page.waitForTimeout(200);
+// ConnectionsPage uses a sidebar navigation — "Social", "Messaging", "Sources" are section headers (not buttons).
+// Individual providers (LinkedIn, Instagram, Gmail, WhatsApp, Telegram) are sidebar buttons that reveal a detail panel.
+async function clickTelegramProvider(page: import('@playwright/test').Page) {
+  const telegramBtn = page.getByRole('button', { name: /telegram/i }).first();
+  if (await telegramBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await telegramBtn.click();
+    await page.waitForTimeout(300);
   }
 }
 
@@ -32,14 +33,14 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
     await expect(page.getByText(/instagram/i).first()).toBeVisible({ timeout: 10000 });
 
     // Messaging tab: Gmail, WhatsApp
-    await clickMessagingTab(page);
+    await clickTelegramProvider(page);
     await expect(page.getByText(/gmail/i).first()).toBeVisible({ timeout: 8000 });
     await expect(page.getByText(/whatsapp/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('connections page shows Telegram section', async ({ page }) => {
     await gotoAuthenticated(page, '/connections');
-    await clickMessagingTab(page);
+    await clickTelegramProvider(page);
 
     await expect(page.getByText(/telegram/i).first()).toBeVisible({ timeout: 10000 });
 
@@ -178,7 +179,7 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
 
   test('Telegram chat ID input visible', async ({ page }) => {
     await gotoAuthenticated(page, '/connections');
-    await clickMessagingTab(page);
+    await clickTelegramProvider(page);
 
     const chatInput = page
       .getByPlaceholder(/chat id/i)
@@ -191,7 +192,7 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
     const capturedActions: string[] = [];
 
     await gotoAuthenticated(page, '/connections');
-    await clickMessagingTab(page);
+    await clickTelegramProvider(page);
 
     page.on('request', (req) => {
       if (req.method() === 'POST') {
@@ -224,7 +225,7 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
         type: 'group',
       },
     });
-    await clickMessagingTab(page);
+    await clickTelegramProvider(page);
 
     const chatInput = page
       .getByPlaceholder(/chat id/i)
@@ -241,7 +242,7 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
   test('invalid Telegram chat shows error', async ({ page }) => {
     // Navigate with standard auth + mock setup first
     await gotoAuthenticated(page, '/connections');
-    await clickMessagingTab(page);
+    await clickTelegramProvider(page);
 
     // Override verifyTelegramChat to return an error (added after navigation, still applies to future requests)
     await page.route('**', async (route) => {

@@ -33,6 +33,10 @@ const DEFAULT_WEIGHTS: Record<string, number> = {
 interface WorkflowBuilderModalProps {
   isOpen: boolean;
   workflowToEdit?: CustomWorkflowSummary;
+  /** Weights to load when the modal opens (edit: stored weights; create: current sidebar weights) */
+  initialWeights?: Record<string, number>;
+  /** Live weights to sync during creation when the user selects a card in the background */
+  liveWeights?: Record<string, number>;
   onClose: () => void;
   onSave: (values: CreateWorkflowFormValues) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
@@ -42,6 +46,8 @@ interface WorkflowBuilderModalProps {
 export function WorkflowBuilderModal({
   isOpen,
   workflowToEdit,
+  initialWeights,
+  liveWeights,
   onClose,
   onSave,
   onDelete,
@@ -66,14 +72,21 @@ export function WorkflowBuilderModal({
       setOptimizationTarget(workflowToEdit.optimizationTarget);
       setExtendsWorkflowId(workflowToEdit.extendsWorkflowId ?? 'base');
       setGenerationInstruction(workflowToEdit.generationInstruction ?? '');
-      setWeights(DEFAULT_WEIGHTS);
+      setWeights(initialWeights ?? DEFAULT_WEIGHTS);
     } else {
       setName(''); setDescription(''); setOptimizationTarget('');
       setGenerationInstruction(''); setExtendsWorkflowId('base');
-      setWeights(DEFAULT_WEIGHTS);
+      setWeights(initialWeights ?? DEFAULT_WEIGHTS);
     }
     setNameError(''); setDescriptionError(''); setInstructionError(''); setSaveError('');
-  }, [workflowToEdit, isOpen]);
+  }, [workflowToEdit, isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync sliders when the user selects a card in the background during creation
+  useEffect(() => {
+    if (isOpen && !workflowToEdit && liveWeights) {
+      setWeights({ ...liveWeights });
+    }
+  }, [liveWeights]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
 

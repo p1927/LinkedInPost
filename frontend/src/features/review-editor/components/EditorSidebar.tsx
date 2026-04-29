@@ -180,19 +180,25 @@ export function EditorSidebar() {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderWorkflow, setBuilderWorkflow] = useState<CustomWorkflowSummary | undefined>(undefined);
   const [isSavingWorkflow, setIsSavingWorkflow] = useState(false);
-  const [recentlySelectedIds, setRecentlySelectedIds] = useState<string[]>([]);
-
-  function trackRecent(id: string) {
-    setRecentlySelectedIds(prev => [id, ...prev.filter(x => x !== id)]);
-  }
+  const [usageCountMap, setUsageCountMap] = useState<Record<string, number>>({});
+  const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
+  const [customWorkflowWeights, setCustomWorkflowWeights] = useState<Record<string, Record<string, number>>>({});
 
   async function handleModalSave(values: CreateWorkflowFormValues) {
     setIsSavingWorkflow(true);
     try {
       if (builderWorkflow) {
         await onUpdateCustomWorkflow?.(builderWorkflow.id, values);
+        setCustomWorkflowWeights(prev => ({ ...prev, [builderWorkflow.id]: values.dimensionWeights }));
       } else {
-        await onCreateCustomWorkflow?.(values);
+        const newId = await onCreateCustomWorkflow?.(values);
+        if (newId) {
+          setCustomWorkflowWeights(prev => ({ ...prev, [newId]: values.dimensionWeights }));
+          setNewlyCreatedId(newId);
+          setSelectedCardId(newId);
+          setPostType(newId);
+          setDimensionWeights({ ...values.dimensionWeights });
+        }
       }
       setBuilderOpen(false);
       setBuilderWorkflow(undefined);
@@ -231,17 +237,16 @@ export function EditorSidebar() {
   }
 
   function selectStyle(id: string) {
-    const card = BUILT_IN_WORKFLOW_CARDS.find(c => c.id === id);
+    const builtInCard = BUILT_IN_WORKFLOW_CARDS.find(c => c.id === id);
+    const weights = builtInCard?.dimensionWeights ?? customWorkflowWeights[id] ?? DEFAULT_WEIGHTS;
     setSelectedCardId(id);
     setPostType(id);
-    setDimensionWeights(card ? { ...card.dimensionWeights } : { ...DEFAULT_WEIGHTS });
-    trackRecent(id);
+    setDimensionWeights({ ...weights });
   }
 
   function selectGeneratedCard(card: GeneratedStyleCard) {
     setSelectedCardId(card.id);
     setDimensionWeights({ ...card.dimensionWeights });
-    trackRecent(card.id);
   }
 
   type CardItem =
@@ -257,13 +262,14 @@ export function EditorSidebar() {
     ];
     const getId = (item: CardItem) =>
       item.kind === 'gen' ? item.gc.id : item.kind === 'builtin' ? item.c.id : item.wf.id;
-    const recentSet = new Set(recentlySelectedIds);
-    const recentItems = recentlySelectedIds
-      .map(id => pool.find(item => getId(item) === id))
-      .filter((x): x is CardItem => x !== undefined);
-    const restItems = pool.filter(item => !recentSet.has(getId(item)));
-    return [...recentItems, ...restItems];
-  }, [generatedCards, customWorkflows, recentlySelectedIds]);
+    return [...pool].sort((a, b) => {
+      const aId = getId(a);
+      const bId = getId(b);
+      if (aId === newlyCreatedId) return -1;
+      if (bId === newlyCreatedId) return 1;
+      return (usageCountMap[bId] ?? 0) - (usageCountMap[aId] ?? 0);
+    });
+  }, [generatedCards, customWorkflows, usageCountMap, newlyCreatedId]);
 
   const weights = dimensionWeights ?? DEFAULT_WEIGHTS;
   function handleWeightChange(key: string, value: number) {
@@ -324,7 +330,12 @@ export function EditorSidebar() {
           <button
             type="button"
             disabled={isGenerateDisabled}
-            onClick={() => void handleGenerateAndSave()}
+            onClick={() => {
+              if (selectedCardId) {
+                setUsageCountMap(prev => ({ ...prev, [selectedCardId]: (prev[selectedCardId] ?? 0) + 1 }));
+              }
+              void handleGenerateAndSave();
+            }}
             className={cn(
               'rounded-lg px-2.5 py-2 text-[0.65rem] font-semibold leading-tight transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/35',
               isGenerateDisabled
@@ -649,6 +660,12 @@ export function EditorSidebar() {
       <WorkflowBuilderModal
         isOpen={builderOpen}
         workflowToEdit={builderWorkflow}
+        initialWeights={
+          builderWorkflow
+            ? (customWorkflowWeights[builderWorkflow.id] ?? DEFAULT_WEIGHTS)
+            : (dimensionWeights ?? DEFAULT_WEIGHTS)
+        }
+        liveWeights={builderOpen && !builderWorkflow ? (dimensionWeights ?? DEFAULT_WEIGHTS) : undefined}
         onClose={() => { setBuilderOpen(false); setBuilderWorkflow(undefined); }}
         onSave={handleModalSave}
         onDelete={onDeleteCustomWorkflow ? handleModalDelete : undefined}

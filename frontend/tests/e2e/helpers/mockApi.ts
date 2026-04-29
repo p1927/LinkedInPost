@@ -774,8 +774,10 @@ export async function setupApiMocks(
       // Admin panel (action '__admin__' with __path routing)
       // -----------------------------------------------------------------------
       case '__admin__': {
-        const path = String(body.__path ?? '');
-        const method = String(body.__method ?? 'GET');
+        // __path and __method are in body.payload (the post() method wraps extras in payload)
+        const payload = (body.payload ?? body) as Record<string, unknown>;
+        const path = String(payload.__path ?? body.__path ?? '');
+        const method = String(payload.__method ?? body.__method ?? 'GET');
 
         if (path === '/api/admin/users' && method === 'GET') {
           const ov = overrides['getAdminUsers'];
