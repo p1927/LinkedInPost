@@ -273,7 +273,7 @@ export function useReviewFlowActions(
     }
   };
 
-  const [styleProgressEvents, setStyleProgressEvents] = useState<import('../../../generation/nodeProgressLabels').EnrichmentNodeEvent[]>([]);
+  const [styleProgressEvents, setStyleProgressEvents] = useState<import('../../generation/nodeProgressLabels').EnrichmentNodeEvent[]>([]);
   const [styleActiveNode, setStyleActiveNode] = useState<string | null>(null);
 
   const handleGenerateFromStyle = async (): Promise<GeneratedStyleCard | null> => {

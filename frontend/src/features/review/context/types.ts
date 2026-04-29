@@ -118,7 +118,7 @@ export interface ReviewFlowEditorContextValue {
   removeGeneratedCard: (id: string) => void;
 
   // ── Styles tab progress ────────────────────────────────────
-  styleProgressEvents: import('../../../generation/nodeProgressLabels').EnrichmentNodeEvent[];
+  styleProgressEvents: import('../../generation/nodeProgressLabels').EnrichmentNodeEvent[];
   styleActiveNode: string | null;
 
   // ── Version history ────────────────────────────────────────
