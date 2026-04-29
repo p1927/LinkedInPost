@@ -20,7 +20,7 @@ test.describe('Journey 12: Feed – Interest Groups & Articles', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Both mock groups should appear — use .first() since "Remote Work" also appears in article titles
-    await expect(page.getByText('AI & Technology')).toBeVisible({ timeout: 12000 });
+    await expect(page.getByText('AI & Technology').first()).toBeVisible({ timeout: 12000 });
     await expect.soft(page.getByText('Remote Work').first()).toBeVisible({ timeout: 5000 });
   });
 
@@ -116,8 +116,8 @@ test.describe('Journey 12: Feed – Interest Groups & Articles', () => {
     });
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText('AI & Technology')).toBeVisible({ timeout: 12000 });
-    await page.getByText('AI & Technology').click();
+    await expect(page.getByText('AI & Technology').first()).toBeVisible({ timeout: 12000 });
+    await page.getByText('AI & Technology').first().click();
 
     // After selecting group, feed articles should eventually appear
     const article = page
@@ -132,7 +132,7 @@ test.describe('Journey 12: Feed – Interest Groups & Articles', () => {
     });
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText('AI & Technology')).toBeVisible({ timeout: 12000 });
+    await expect(page.getByText('AI & Technology').first()).toBeVisible({ timeout: 12000 });
 
     // Hover the group pill to reveal the edit/delete icon buttons
     const groupPill = page.getByRole('button', { name: 'AI & Technology' });
@@ -168,7 +168,7 @@ test.describe('Journey 12: Feed – Interest Groups & Articles', () => {
       }
     });
 
-    await expect(page.getByText('AI & Technology')).toBeVisible({ timeout: 12000 });
+    await expect(page.getByText('AI & Technology').first()).toBeVisible({ timeout: 12000 });
 
     // Accept the window.confirm dialog that appears before deletion
     page.on('dialog', dialog => dialog.accept());
@@ -194,8 +194,8 @@ test.describe('Journey 12: Feed – Interest Groups & Articles', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Select a group to trigger article load
-    await expect(page.getByText('AI & Technology')).toBeVisible({ timeout: 12000 });
-    await page.getByText('AI & Technology').click();
+    await expect(page.getByText('AI & Technology').first()).toBeVisible({ timeout: 12000 });
+    await page.getByText('AI & Technology').first().click();
 
     const articleTitle = page.getByText(/How AI Is Transforming/i);
     await expect.soft(articleTitle.first()).toBeVisible({ timeout: 10000 });
@@ -239,8 +239,8 @@ test.describe('Journey 12: Feed – Interest Groups & Articles', () => {
     });
 
     // Select a group first (needed to have a topic for refresh)
-    await expect(page.getByText('AI & Technology')).toBeVisible({ timeout: 12000 });
-    await page.getByText('AI & Technology').click();
+    await expect(page.getByText('AI & Technology').first()).toBeVisible({ timeout: 12000 });
+    await page.getByText('AI & Technology').first().click();
 
     // The feed refresh button has title="Fetch fresh articles"
     const refreshBtn = page.getByTitle('Fetch fresh articles').first();
@@ -272,8 +272,8 @@ test.describe('Journey 12: Feed – Interest Groups & Articles', () => {
       }
     });
 
-    await expect(page.getByText('AI & Technology')).toBeVisible({ timeout: 12000 });
-    await page.getByText('AI & Technology').click();
+    await expect(page.getByText('AI & Technology').first()).toBeVisible({ timeout: 12000 });
+    await page.getByText('AI & Technology').first().click();
 
     // Wait for articles to load
     await page.waitForTimeout(1500);

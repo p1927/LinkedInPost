@@ -6,17 +6,18 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     await gotoAuthenticated(page, '/enrichment');
     await page.waitForLoadState('domcontentloaded');
 
-    const heading = page
-      .getByRole('heading', { name: /enrichment flow/i })
-      .or(page.getByText(/enrichment flow/i));
-    await expect(heading.first()).toBeVisible({ timeout: 12000 });
+    // The page always renders a "DAG view" / "Trace view" toggle button in the top bar
+    const pageReady = page
+      .getByRole('button', { name: /dag view|trace view/i })
+      .or(page.getByText(/no topics yet/i));
+    await expect(pageReady.first()).toBeVisible({ timeout: 12000 });
   });
 
   test('DAG view shows pipeline nodes', async ({ page }) => {
     await gotoAuthenticated(page, '/enrichment');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     // Core pipeline nodes should be visible in the DAG
     await expect(page.getByText('Topic Created')).toBeVisible({ timeout: 8000 });
@@ -28,7 +29,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     await gotoAuthenticated(page, '/enrichment');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     // "Enrichment Modules" group label should be visible
     const modulesLabel = page
@@ -41,7 +42,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     await gotoAuthenticated(page, '/enrichment');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     // The toggle button says "Trace view" (when DAG is active) or "DAG view" (when trace is active)
     const toggleBtn = page
@@ -61,7 +62,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     await gotoAuthenticated(page, '/enrichment');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     // The toggle reads "DAG view" when trace is active and "Trace view" when DAG is active.
     // Default state is showDag=false — i.e. button label "DAG view" is visible initially.
@@ -83,7 +84,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     });
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     // The run selector is a <select> element — <option> children are not "visible"
     // in Playwright's visibility model even when rendered. Check the select itself.
@@ -121,7 +122,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     });
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     // The topic selector is a <select> — choose by visible option label
     const runSelect = page.locator('select').first();
@@ -138,7 +139,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     });
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     const runSelect = page.locator('select').first();
     await expect(runSelect).toBeVisible({ timeout: 8000 });
@@ -159,7 +160,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     // Should not be redirected to topics or login
     expect(page.url()).toContain('/enrichment');
 
-    const heading = page.getByText(/enrichment flow/i);
+    const heading = page.getByRole('button', { name: /dag view|trace view/i });
     await expect(heading.first()).toBeVisible({ timeout: 12000 });
   });
 
@@ -167,7 +168,7 @@ test.describe('Journey 13: Enrichment Pipeline', () => {
     await gotoAuthenticated(page, '/enrichment');
     await page.waitForLoadState('domcontentloaded');
 
-    await expect(page.getByText(/enrichment flow/i).first()).toBeVisible({ timeout: 12000 });
+    await expect(page.getByRole('button', { name: /dag view|trace view/i }).first()).toBeVisible({ timeout: 12000 });
 
     // Wait for rows to load — trace view renders 'Topic Created' once rows are fetched
     await expect(page.getByText('Topic Created').first()).toBeVisible({ timeout: 10000 });

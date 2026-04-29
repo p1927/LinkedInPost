@@ -133,7 +133,7 @@ test.describe('Journey 15E: Privacy Policy page', () => {
 test.describe('Journey 15F: Marketing routing guards', () => {
   test('marketing pages do not require auth (no Google sign-in gate)', async ({ page }) => {
     // Visit marketing pages without injecting a token.
-    for (const path of ['/about', '/pricing', '/terms', '/privacy-policy']) {
+    for (const path of ['./about', './pricing', './terms', './privacy-policy']) {
       await page.goto(path);
       await page.waitForLoadState('domcontentloaded');
       // Workspace shell sidebar items like "Topics" should NOT render here.

@@ -14,7 +14,8 @@ async function gotoWithError(
 ): Promise<void> {
   await setupApiMocks(page, { [failAction]: errorBody });
   await injectFakeToken(page);
-  await page.goto(path);
+  const relativePath = path === '/' ? '.' : path.startsWith('/') ? `.${path}` : path;
+  await page.goto(relativePath);
   await page.waitForLoadState('domcontentloaded');
 }
 

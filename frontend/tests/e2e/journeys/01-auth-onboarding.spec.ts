@@ -4,7 +4,7 @@ import { setupApiMocks, injectFakeToken, gotoAuthenticated, MOCK_SESSION, MOCK_R
 test.describe('Journey 01: Auth & Onboarding', () => {
   test('unauthenticated user sees Google Sign-In', async ({ page }) => {
     // No token injected — app renders the sign-in landing page
-    await page.goto('http://localhost:5174/');
+    await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(500);
 
