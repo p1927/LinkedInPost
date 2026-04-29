@@ -143,15 +143,71 @@
   .clip-chip .x { color: var(--faint); cursor: pointer; }
   .clip-chip .x:hover { color: var(--primary); }
 
-  /* Right rail (kept identical to feed page) */
-  .right { padding: 24px 24px 32px; }
-  .r-section { margin-bottom: 28px; }
-  .r-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--secondary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-strong); }
-  .r-row { display:grid; grid-template-columns: 18px 1fr; gap: 10px; padding: 7px 0; cursor:pointer; }
-  .r-row:hover .r-row-title { color: var(--primary); }
-  .r-rank { color: var(--faint); font-size: 13px; font-weight: 600; padding-top: 1px; }
-  .r-row-title { color: var(--ink); font-weight: 600; font-size: 13px; line-height: 1.35; }
-  .r-row-meta { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  /* ── Right rail (reader mode) — flat list, quiet labels (Linear/Notion-style) ── */
+  .right { padding: 28px 24px 40px; }
+
+  /* Stats strip at top — 2x2 borderless tile grid, no chrome */
+  .stats-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 24px; margin-bottom: 36px; }
+  .stat-item { display: flex; flex-direction: column; gap: 3px; }
+  .stat-value { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.012em; line-height: 1.2; }
+  .stat-value.up { color: #059669; }
+  .stat-label { font-size: 11px; color: var(--muted); font-weight: 500; line-height: 1.4; }
+
+  /* Section — flat, no wrapper, just whitespace between */
+  .r-section { margin-bottom: 34px; }
+  .r-section:last-child { margin-bottom: 0; }
+
+  /* Quiet sentence-case label — caption-like, not announcement */
+  .r-label { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 14px; display: flex; align-items: baseline; gap: 8px; letter-spacing: -0.005em; }
+  .r-label .count { margin-left: auto; color: var(--faint); font-weight: 500; font-size: 11.5px; font-feature-settings: "tnum"; }
+
+  /* Inline mini-label (within What else I found) — even quieter, semantic-tinted */
+  .r-mini-label { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 10px; margin-top: 18px; display: flex; align-items: center; gap: 6px; }
+  .r-mini-label:first-of-type { margin-top: 0; }
+  .r-mini-label.similar { color: #047857; }
+  .r-mini-label.similar i { color: #059669; }
+  .r-mini-label.contra { color: #be185d; }
+  .r-mini-label.contra i { color: #db2777; }
+  .r-mini-label .count { margin-left: auto; color: var(--faint); font-weight: 500; font-size: 11px; font-feature-settings: "tnum"; }
+
+  /* Other-sources / coverage list */
+  .coverage-row { display: flex; align-items: flex-start; gap: 11px; padding: 12px 0; cursor: pointer; border-bottom: 1px solid rgba(221,214,254,0.45); }
+  .coverage-row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .coverage-row:first-child { padding-top: 0; }
+  .coverage-row:hover .cov-src { color: var(--primary); }
+  .cov-fav { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; margin-top: 4px; }
+  .cov-body { flex: 1; min-width: 0; }
+  .cov-src { font-size: 13.5px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 8px; line-height: 1.3; }
+  .cov-original-tag { font-size: 9.5px; font-weight: 700; color: var(--primary); letter-spacing: 0.08em; text-transform: uppercase; }
+  .cov-angle { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+  .cov-time { font-size: 11px; color: var(--faint); margin-top: 4px; font-feature-settings: "tnum"; font-weight: 500; }
+
+  /* Fact check — pill status above claim */
+  .fact-item { padding: 13px 0; border-bottom: 1px solid rgba(221,214,254,0.45); cursor: pointer; }
+  .fact-item:last-child { border-bottom: 0; padding-bottom: 0; }
+  .fact-item:first-child { padding-top: 0; }
+  .fact-item:hover .fact-claim { color: var(--primary); }
+  .fact-status { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 8px; padding: 3px 8px 3px 7px; border-radius: 4px; }
+  .fact-status.verified { color: #047857; background: rgba(5,150,105,0.10); }
+  .fact-status.unverified { color: #b45309; background: rgba(217,119,6,0.10); }
+  .fact-claim { font-size: 13.5px; color: var(--ink); font-weight: 500; line-height: 1.5; }
+  .fact-source { font-size: 11.5px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+  /* Trending around this — clean text list */
+  .trend-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; border-bottom: 1px solid rgba(221,214,254,0.45); }
+  .trend-item:last-child { border-bottom: 0; padding-bottom: 0; }
+  .trend-item:first-child { padding-top: 0; }
+  .trend-item:hover .trend-name { color: var(--primary); }
+  .trend-name { font-size: 13.5px; font-weight: 600; color: var(--ink); flex: 1; line-height: 1.35; letter-spacing: -0.005em; }
+  .trend-meta { font-size: 12px; color: var(--muted); font-feature-settings: "tnum"; font-weight: 600; flex-shrink: 0; }
+  .trend-meta.up { color: #059669; }
+
+  /* Idea row (similar / counterpoint items) */
+  .idea-row { display: flex; gap: 11px; padding: 9px 0; cursor: pointer; align-items: flex-start; }
+  .idea-row:hover .idea-title { color: var(--primary); }
+  .idea-fav { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; margin-top: 5px; }
+  .idea-title { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.45; letter-spacing: -0.003em; }
+  .idea-source { font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
 
   .design-label { position:fixed; top: 14px; right: 18px; font-size: 11px; font-weight: 700; padding: 5px 11px; border: 1px solid var(--border); background: rgba(255,255,255,0.85); color: var(--primary); border-radius: 9999px; z-index: 50; backdrop-filter: blur(8px); }
 </style>
@@ -308,37 +364,169 @@
     </article>
   </section>
 
-  <!-- Right rail — preserved while reading -->
+  <!-- Right rail — flat list of article context (Linear/Notion-style) -->
   <aside class="glass-rail right pane">
 
-    <div class="r-section">
-      <div class="r-title">Most discussed</div>
-      <div class="r-row"><span class="r-rank">1</span><div><div class="r-row-title">GPT-4o voice rollout</div><div class="r-row-meta">42 stories · ↑280%</div></div></div>
-      <div class="r-row"><span class="r-rank">2</span><div><div class="r-row-title">DeepMind reasoning benchmark</div><div class="r-row-meta">28 stories · ↑140%</div></div></div>
-      <div class="r-row"><span class="r-rank">3</span><div><div class="r-row-title">Anthropic enterprise tier</div><div class="r-row-meta">19 stories · ↑95%</div></div></div>
-      <div class="r-row"><span class="r-rank">4</span><div><div class="r-row-title">Remote productivity</div><div class="r-row-meta">14 stories · ↑32%</div></div></div>
-    </div>
-
-    <div class="r-section">
-      <div class="r-title">Trending words</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;line-height:1.7;">
-        <a style="color:var(--primary);font-weight:600;cursor:pointer;">multimodal</a>
-        <a style="color:var(--primary);font-weight:600;cursor:pointer;">agentic</a>
-        <a style="color:var(--ink);cursor:pointer;">copilot</a>
-        <a style="color:var(--ink);cursor:pointer;">reasoning</a>
-        <a style="color:var(--ink);cursor:pointer;">benchmark</a>
-        <a style="color:var(--ink);cursor:pointer;">async</a>
-        <a style="color:var(--ink);cursor:pointer;">RAG</a>
-        <a style="color:var(--ink);cursor:pointer;">eval</a>
+    <!-- Stats strip — at-a-glance context, no label -->
+    <div class="stats-strip">
+      <div class="stat-item">
+        <div class="stat-value">5 outlets</div>
+        <div class="stat-label">Covering this story</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value up">↑ 280%</div>
+        <div class="stat-label">Momentum in 2h</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">2h ago</div>
+        <div class="stat-label">First by TechCrunch</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">Positive</div>
+        <div class="stat-label">Tone across outlets</div>
       </div>
     </div>
 
+    <!-- Sources -->
     <div class="r-section">
-      <div class="r-title">Top sources · 7d</div>
-      <a class="r-row"><span class="fav" style="background:#0BAB64"></span><div><div class="r-row-title">TechCrunch</div></div><span class="r-row-meta" style="margin-top:0">18</span></a>
-      <a class="r-row"><span class="fav" style="background:#FF7900"></span><div><div class="r-row-title">The Verge</div></div><span class="r-row-meta" style="margin-top:0">12</span></a>
-      <a class="r-row"><span class="fav" style="background:#000"></span><div><div class="r-row-title">Wired</div></div><span class="r-row-meta" style="margin-top:0">9</span></a>
-      <a class="r-row"><span class="fav" style="background:#a8002b"></span><div><div class="r-row-title">HBR</div></div><span class="r-row-meta" style="margin-top:0">7</span></a>
+      <div class="r-label">Sources <span class="count">5</span></div>
+      <a class="coverage-row">
+        <span class="cov-fav" style="background:#0BAB64"></span>
+        <div class="cov-body">
+          <div class="cov-src">TechCrunch <span class="cov-original-tag">Original</span></div>
+          <div class="cov-angle">Rollout details · what's new</div>
+          <div class="cov-time">2h ago</div>
+        </div>
+      </a>
+      <a class="coverage-row">
+        <span class="cov-fav" style="background:#FF7900"></span>
+        <div class="cov-body">
+          <div class="cov-src">The Verge</div>
+          <div class="cov-angle">Hands-on test of new voice mode</div>
+          <div class="cov-time">3h ago</div>
+        </div>
+      </a>
+      <a class="coverage-row">
+        <span class="cov-fav" style="background:#000"></span>
+        <div class="cov-body">
+          <div class="cov-src">Wired</div>
+          <div class="cov-angle">Interface shift framing</div>
+          <div class="cov-time">4h ago</div>
+        </div>
+      </a>
+      <a class="coverage-row">
+        <span class="cov-fav" style="background:#dc2626"></span>
+        <div class="cov-body">
+          <div class="cov-src">Bloomberg</div>
+          <div class="cov-angle">Pricing &amp; market angle</div>
+          <div class="cov-time">5h ago</div>
+        </div>
+      </a>
+      <a class="coverage-row">
+        <span class="cov-fav" style="background:#0BAB64"></span>
+        <div class="cov-body">
+          <div class="cov-src">TechCrunch</div>
+          <div class="cov-angle">Inside the livestream</div>
+          <div class="cov-time">6h ago</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Fact check -->
+    <div class="r-section">
+      <div class="r-label">Fact check <span class="count">4 claims</span></div>
+      <div class="fact-item">
+        <span class="fact-status verified"><i data-lucide="check-circle-2" class="w-3 h-3"></i> Verified</span>
+        <div class="fact-claim">Voice latency drops to ~320 ms</div>
+        <div class="fact-source">Confirmed by independent benchmarks</div>
+      </div>
+      <div class="fact-item">
+        <span class="fact-status verified"><i data-lucide="check-circle-2" class="w-3 h-3"></i> Verified</span>
+        <div class="fact-claim">40% latency drop vs. previous voice mode</div>
+        <div class="fact-source">Confirmed by TechCrunch hands-on test</div>
+      </div>
+      <div class="fact-item">
+        <span class="fact-status unverified"><i data-lucide="alert-circle" class="w-3 h-3"></i> Unverified</span>
+        <div class="fact-claim">Enterprise API ships next week</div>
+        <div class="fact-source">Vendor claim · awaiting confirmation</div>
+      </div>
+      <div class="fact-item">
+        <span class="fact-status unverified"><i data-lucide="alert-circle" class="w-3 h-3"></i> Unverified</span>
+        <div class="fact-claim">480p video limit due to GPU capacity</div>
+        <div class="fact-source">Vendor claim only</div>
+      </div>
+    </div>
+
+    <!-- Trending around this -->
+    <div class="r-section">
+      <div class="r-label">Trending around this</div>
+      <a class="trend-item">
+        <span class="trend-name">Multimodal AI</span>
+        <span class="trend-meta up">↑ 280%</span>
+      </a>
+      <a class="trend-item">
+        <span class="trend-name">Voice latency benchmarks</span>
+        <span class="trend-meta up">↑ 75%</span>
+      </a>
+      <a class="trend-item">
+        <span class="trend-name">Real-time AI UX</span>
+        <span class="trend-meta up">↑ 52%</span>
+      </a>
+      <a class="trend-item">
+        <span class="trend-name">Audio API pricing</span>
+        <span class="trend-meta up">↑ 31%</span>
+      </a>
+    </div>
+
+    <!-- What else I found -->
+    <div class="r-section">
+      <div class="r-label">What else I found</div>
+
+      <div class="r-mini-label similar"><i data-lucide="check" class="w-3 h-3"></i> Similar takes <span class="count">3</span></div>
+      <a class="idea-row">
+        <span class="idea-fav" style="background:#000"></span>
+        <div>
+          <div class="idea-title">AI voice will replace the UI layer</div>
+          <div class="idea-source">Stratechery · Ben Thompson</div>
+        </div>
+      </a>
+      <a class="idea-row">
+        <span class="idea-fav" style="background:#7c3aed"></span>
+        <div>
+          <div class="idea-title">Latency is the new battleground</div>
+          <div class="idea-source">A16z Future · 3 days ago</div>
+        </div>
+      </a>
+      <a class="idea-row">
+        <span class="idea-fav" style="background:#3b82f6"></span>
+        <div>
+          <div class="idea-title">Voice-first SaaS thesis</div>
+          <div class="idea-source">First Round Review</div>
+        </div>
+      </a>
+
+      <div class="r-mini-label contra"><i data-lucide="x" class="w-3 h-3"></i> Counterpoints <span class="count">3</span></div>
+      <a class="idea-row">
+        <span class="idea-fav" style="background:#1d4ed8"></span>
+        <div>
+          <div class="idea-title">Why typing isn't going away</div>
+          <div class="idea-source">Daring Fireball · John Gruber</div>
+        </div>
+      </a>
+      <a class="idea-row">
+        <span class="idea-fav" style="background:#9333ea"></span>
+        <div>
+          <div class="idea-title">Voice fatigue: the unspoken cost</div>
+          <div class="idea-source">UX Collective</div>
+        </div>
+      </a>
+      <a class="idea-row">
+        <span class="idea-fav" style="background:#dc2626"></span>
+        <div>
+          <div class="idea-title">GPT-4o demo cherry-picked, says skeptic</div>
+          <div class="idea-source">TheNextWeb</div>
+        </div>
+      </a>
     </div>
 
   </aside>
