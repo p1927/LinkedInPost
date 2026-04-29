@@ -14,6 +14,8 @@ export const NODE_PROGRESS_LABELS: Record<string, NodeProgressLabel> = {
   'draft-generator':     { pending: 'Generating variants…',           done: 'Variants generated' },
   'tone-calibrator':     { pending: 'Calibrating tone to your voice…', done: 'Tone calibrated' },
   'constraint-validator':{ pending: 'Validating constraints…',        done: 'Constraints validated' },
+  'style-analyzer':      { pending: 'Analysing your writing dimensions…', done: 'Dimensions mapped' },
+  'style-composer':      { pending: 'Composing your post…',              done: 'Post composed' },
 };
 
 export interface EnrichmentNodeEvent {

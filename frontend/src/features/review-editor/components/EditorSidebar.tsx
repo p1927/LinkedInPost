@@ -17,7 +17,10 @@ import type { CreateWorkflowFormValues } from '../../workflows/useCustomWorkflow
 import { BUILT_IN_WORKFLOW_CARDS, FEATURED_WORKFLOW_IDS } from '../../generation/builtInWorkflowCards';
 import { recordsEqual } from '../../../utils/recordsEqual';
 import type { GeneratedStyleCard } from '../../review/context/types';
+import { EnrichmentProgressPanel } from '../../generation/EnrichmentProgressPanel';
 import { cn } from '@/lib/cn';
+
+const STYLE_STAGE_IDS = ['style-analyzer', 'vocabulary-selector', 'tone-calibrator', 'style-composer'] as const;
 
 // ─── Dimension slider data ─────────────────────────────────────────────────────
 
@@ -175,6 +178,8 @@ export function EditorSidebar() {
     lastGeneratedConfig,
     handleGenerateFromStyle,
     removeGeneratedCard,
+    styleProgressEvents,
+    styleActiveNode,
   } = useReviewFlowEditor();
 
   const [builderOpen, setBuilderOpen] = useState(false);
@@ -405,6 +410,17 @@ export function EditorSidebar() {
               })}
             </div>
           </div>
+
+          {/* Progress panel — shown while generating */}
+          {generationLoading === 'quick-change' && (
+            <div className="shrink-0">
+              <EnrichmentProgressPanel
+                expectedNodeIds={[...STYLE_STAGE_IDS]}
+                completedEvents={styleProgressEvents}
+                activeNodeId={styleActiveNode}
+              />
+            </div>
+          )}
 
           {/* Card grid — takes all remaining space, scrolls internally */}
           <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-gray-100">

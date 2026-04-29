@@ -640,6 +640,57 @@ export class BackendApi {
     return this.post<QuickChangePreviewResult>('generateQuickChange', idToken, { ...request });
   }
 
+  async *streamGenerateQuickChange(
+    idToken: string,
+    request: GenerationRequest,
+  ): AsyncGenerator<
+    | { type: 'node_start'; nodeId: string }
+    | { type: 'node_done'; nodeId: string; durationMs: number; insightSummary: string | null }
+    | { type: 'complete'; result: QuickChangePreviewResult }
+    | { type: 'error'; message: string }
+  > {
+    if (!this.endpointUrl) throw new Error('Backend URL not configured');
+    const url = new URL('/api/quickchange/stream', this.endpointUrl + '/');
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(request),
+    });
+    if (!response.ok || !response.body) {
+      const text = await response.text().catch(() => 'Unknown error');
+      throw new Error(`Quick change stream error ${response.status}: ${text.slice(0, 200)}`);
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() ?? '';
+      for (const block of lines) {
+        const dataLine = block.match(/^data: (.+)$/m)?.[1];
+        if (!dataLine) continue;
+        try {
+          const msg = JSON.parse(dataLine) as { type: string; [k: string]: unknown };
+          if (msg.type === 'node:start') {
+            yield { type: 'node_start', nodeId: String(msg.nodeId) };
+          } else if (msg.type === 'enrichment:node_completed') {
+            yield { type: 'node_done', nodeId: String(msg.nodeId), durationMs: Number(msg.durationMs), insightSummary: (msg.insightSummary as string | null) ?? null };
+          } else if (msg.type === 'complete') {
+            yield { type: 'complete', result: msg.result as QuickChangePreviewResult };
+          } else if (msg.type === 'error') {
+            yield { type: 'error', message: String(msg.message) };
+          }
+        } catch { /* ignore malformed */ }
+      }
+    }
+  }
+
   async generateVariantsPreview(idToken: string, request: GenerationRequest): Promise<VariantsPreviewResponse> {
     return this.post<VariantsPreviewResponse>('generateVariantsPreview', idToken, { ...request });
   }

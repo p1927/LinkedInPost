@@ -3,11 +3,21 @@ import { setupApiMocks, injectFakeToken, gotoAuthenticated, MOCK_SESSION, MOCK_R
 
 // ConnectionsPage uses a sidebar — individual providers are buttons. Click to reveal detail panel.
 async function clickTelegramProvider(page: import('@playwright/test').Page) {
-  const btn = page.getByRole('button', { name: /telegram/i }).first();
-  if (await btn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await btn.click();
+  // Wait for page network to settle before interacting
+  await page.waitForLoadState('networkidle').catch(() => {});
+
+  // Use native DOM click so the React synthetic event fires reliably
+  const clicked = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('button')];
+    const btn = buttons.find(b => /^telegram$/i.test(b.textContent?.trim() ?? ''));
+    if (btn) { btn.click(); return true; }
+    return false;
+  });
+
+  if (clicked) {
     // Wait for the Telegram detail panel (Chat ID input) to render
-    await page.getByPlaceholder(/chat id/i).first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    await page.getByPlaceholder(/chat id/i).first()
+      .waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
   }
 }
 

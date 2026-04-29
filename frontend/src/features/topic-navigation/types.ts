@@ -32,7 +32,10 @@ export type TopicReviewPagesBaseProps = {
   onPublishNow: (row: SheetRow, selectedText: string, selectedImageId: string, postTime: string, emailTo?: string, emailCc?: string, emailBcc?: string, emailSubject?: string, selectedImageUrlsJson?: string) => Promise<void>;
   onSaveEmailFields: (row: SheetRow, emailTo: string, emailCc: string, emailBcc: string, emailSubject: string) => Promise<void>;
   globalEmailDefaults: { emailTo: string; emailCc: string; emailBcc: string; emailSubject: string };
-  onGenerateQuickChange: (request: GenerationRequest) => Promise<QuickChangePreviewResult>;
+  onGenerateQuickChange: (
+    request: GenerationRequest,
+    onProgress?: (event: { type: 'node_start'; nodeId: string } | { type: 'node_done'; nodeId: string; durationMs: number; insightSummary: string | null }) => void,
+  ) => Promise<QuickChangePreviewResult>;
   onGenerateVariants: (request: GenerationRequest) => Promise<VariantsPreviewResponse>;
   onSaveVariants: (row: SheetRow, variants: string[], previewSelection?: DraftPreviewSelection) => Promise<SheetRow>;
   onFetchMoreImages: (row: SheetRow, searchQuery?: string) => Promise<string[]>;

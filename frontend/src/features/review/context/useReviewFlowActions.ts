@@ -273,6 +273,9 @@ export function useReviewFlowActions(
     }
   };
 
+  const [styleProgressEvents, setStyleProgressEvents] = useState<import('../../../generation/nodeProgressLabels').EnrichmentNodeEvent[]>([]);
+  const [styleActiveNode, setStyleActiveNode] = useState<string | null>(null);
+
   const handleGenerateFromStyle = async (): Promise<GeneratedStyleCard | null> => {
     if (generationLoading !== null) return null;
 
@@ -308,8 +311,20 @@ export function useReviewFlowActions(
     req.selection = null;
 
     setGenerationLoading('quick-change');
+    setStyleProgressEvents([]);
+    setStyleActiveNode(null);
     try {
-      const result = await onGenerateQuickChange(req);
+      const result = await onGenerateQuickChange(req, (event) => {
+        if (event.type === 'node_start') {
+          setStyleActiveNode(event.nodeId);
+        } else if (event.type === 'node_done') {
+          setStyleProgressEvents(prev => [
+            ...prev,
+            { type: 'enrichment:node_completed', nodeId: event.nodeId, durationMs: event.durationMs, insightSummary: event.insightSummary },
+          ]);
+          setStyleActiveNode(null);
+        }
+      });
       if (!result) return null;
 
       // Apply result directly to editor (no preview step for styles tab)
@@ -1043,6 +1058,8 @@ export function useReviewFlowActions(
     handleGenerateQuickChange,
     handleGenerateVariants,
     handleGenerateFromStyle,
+    styleProgressEvents,
+    styleActiveNode,
     openCompare,
     handleApplyQuickChange,
     handleApplyVariant,

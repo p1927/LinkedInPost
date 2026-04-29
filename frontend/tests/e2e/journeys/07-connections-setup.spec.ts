@@ -17,11 +17,21 @@ const DISCONNECTED_SESSION = {
 // ConnectionsPage uses a sidebar navigation — "Social", "Messaging", "Sources" are section headers (not buttons).
 // Individual providers (LinkedIn, Instagram, Gmail, WhatsApp, Telegram) are sidebar buttons that reveal a detail panel.
 async function clickTelegramProvider(page: import('@playwright/test').Page) {
-  const telegramBtn = page.getByRole('button', { name: /telegram/i }).first();
-  if (await telegramBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-    await telegramBtn.click();
+  // Wait for page network to settle before interacting
+  await page.waitForLoadState('networkidle').catch(() => {});
+
+  // Use native DOM click so the React synthetic event fires reliably
+  const clicked = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('button')];
+    const btn = buttons.find(b => /^telegram$/i.test(b.textContent?.trim() ?? ''));
+    if (btn) { btn.click(); return true; }
+    return false;
+  });
+
+  if (clicked) {
     // Wait for the Telegram detail panel (Chat ID input) to render
-    await page.getByPlaceholder(/chat id/i).first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    await page.getByPlaceholder(/chat id/i).first()
+      .waitFor({ state: 'visible', timeout: 8000 }).catch(() => {});
   }
 }
 
@@ -211,7 +221,7 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
     await chatInput.first().fill('-100123456789', { timeout: 10000 });
 
     const verifyBtn = page
-      .getByRole('button', { name: /^Verify$|^Verifying/ });
+      .getByRole('button', { name: /verify/i });
     await verifyBtn.first().click({ timeout: 10000 });
 
     await page.waitForTimeout(500);
@@ -234,7 +244,7 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
       .or(page.getByRole('textbox', { name: /chat/i }));
     await chatInput.first().fill('-100123456789', { timeout: 10000 });
 
-    const verifyBtn = page.getByRole('button', { name: /^Verify$|^Verifying/ });
+    const verifyBtn = page.getByRole('button', { name: /verify/i });
     await verifyBtn.first().click({ timeout: 10000 });
 
     await expect(page.getByText(/my telegram group/i)).toBeVisible({ timeout: 10000 });
@@ -266,7 +276,7 @@ test.describe('Journey 07: Channel Connection Setup (/connections)', () => {
     await expect(chatInput).toBeVisible({ timeout: 10000 });
     await chatInput.fill('invalid-chat-id');
 
-    const verifyBtn = page.getByRole('button', { name: /^Verify$|^Verifying/ }).first();
+    const verifyBtn = page.getByRole('button', { name: /verify/i }).first();
     await verifyBtn.click({ timeout: 10000 });
 
     // Error renders as a red <p> — match the actual error text

@@ -273,8 +273,23 @@ export function useDashboardQueue({
     }
   };
 
-  const handleGenerateQuickChange = async (request: GenerationRequest): Promise<QuickChangePreviewResult> => {
+  const handleGenerateQuickChange = async (
+    request: GenerationRequest,
+    onProgress?: (event: { type: 'node_start'; nodeId: string } | { type: 'node_done'; nodeId: string; durationMs: number; insightSummary: string | null }) => void,
+  ): Promise<QuickChangePreviewResult> => {
     try {
+      if (onProgress) {
+        for await (const event of api.streamGenerateQuickChange(idToken, request)) {
+          if (event.type === 'node_start' || event.type === 'node_done') {
+            onProgress(event);
+          } else if (event.type === 'complete') {
+            return event.result;
+          } else if (event.type === 'error') {
+            throw new Error(event.message);
+          }
+        }
+        throw new Error('Quick change stream ended without result');
+      }
       return await api.generateQuickChange(idToken, request);
     } catch (error) {
       handleFailure(error, 'Failed to generate the quick-change preview.');

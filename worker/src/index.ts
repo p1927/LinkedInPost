@@ -14,7 +14,21 @@ import {
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
 import { callGenerationWorker, callGenerationWorkerStream, isGenerationWorkerConfigured } from './generation/generationWorkerClient';
 import type { GenWorkerGenerateRequest, GenWorkerGenerateResponse } from './generation/generationWorkerClient';
-import { coerceVariantList } from './generation/normalize';
+import {
+  coerceVariantList,
+  coerceSelectionRange,
+  resolveGenerationTarget,
+  tryParseJson,
+  normalizePlainTextValue,
+  applyReplacement,
+} from './generation/normalize';
+import { resolveEffectiveGenerationRulesWithTemplate } from './generation/rules';
+import { buildQuickChangePrompt } from './generation/prompts';
+import { formatAuthorProfileForPrompt } from './generation/author-profile/format-for-prompt';
+import { trimForPrompt } from './researcher/trim';
+import type { ResearchArticle } from './researcher/types';
+import { resolveFallbackForGeneration, resolveGenerationRef } from './llm/policy';
+import type { GenerationRequestPayload, QuickChangePreviewResult } from './generation/types';
 import { SheetsGateway, coerceBulkCampaignPostsFromPayload } from './persistence/drafts';
 import {
   PipelineStore,
@@ -917,6 +931,145 @@ export default {
       streamHeaders.set('Cache-Control', 'no-cache');
       streamHeaders.set('Connection', 'keep-alive');
       return new Response(transformedReadable, { headers: streamHeaders });
+    }
+
+    // SSE streaming quick-change endpoint
+    if (url.pathname === '/api/quickchange/stream') {
+      const authHeader = request.headers.get('Authorization') || '';
+      const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+
+      let session: Awaited<ReturnType<typeof verifySession>>;
+      try {
+        session = await verifySession(idToken, env);
+      } catch {
+        return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, corsHeaders);
+      }
+
+      const budgetCheck = await checkTokenBudget(env.PIPELINE_DB, session.userId, env.DEPLOYMENT_MODE ?? 'saas');
+      if (!budgetCheck.allowed) {
+        return jsonResponse({ ok: false, error: 'Monthly token budget exceeded' }, 429, corsHeaders);
+      }
+
+      const storedConfig = await loadStoredConfig(env, session.userId, { isAdmin: session.isAdmin });
+      ensureSpreadsheetConfigured(storedConfig);
+      const payload = await request.json() as Record<string, unknown>;
+
+      const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+      const writer = writable.getWriter();
+      const encoder = new TextEncoder();
+
+      void (async () => {
+        const emit = async (obj: Record<string, unknown>) => {
+          await writer.write(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        };
+        try {
+          const request2 = payload as unknown as GenerationRequestPayload;
+          const row = coerceSheetRow(request2.row);
+          const editorText = String(request2.editorText || '');
+          const instruction = String(request2.instruction || '').trim();
+
+          if (!editorText.trim()) throw new Error('Draft text is required before running Quick Change.');
+          if (!instruction) throw new Error('Quick Change needs a per-run instruction.');
+
+          // ── style-analyzer stage ──────────────────────────────
+          const t0 = performance.now();
+          await emit({ type: 'node:start', nodeId: 'style-analyzer' });
+
+          const { scope, selection } = resolveGenerationTarget(editorText, request2.scope, coerceSelectionRange(request2.selection));
+          const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+          const primary = resolveGenerationRef(ws, request2, FEATURE_MULTI_PROVIDER_LLM);
+          const fallback = resolveFallbackForGeneration(ws, primary, FEATURE_MULTI_PROVIDER_LLM);
+
+          // Resolve template rules inline (same logic as resolveTemplateRulesForRow in service.ts)
+          let templateRules: string | undefined;
+          if (!(row.topicGenerationRules || '').trim()) {
+            const tid = String(row.generationTemplateId || '').trim();
+            if (tid) {
+              const { sheets } = buildServices(env, session.userId);
+              const rules = await sheets.getPostTemplateRulesById(storedConfig.spreadsheetId, tid);
+              templateRules = rules === null ? undefined : rules;
+            }
+          }
+          const effectiveRules = resolveEffectiveGenerationRulesWithTemplate(
+            row.topicGenerationRules,
+            templateRules,
+            storedConfig.userRules || storedConfig.generationRules || '',
+          );
+
+          // coerce research articles inline
+          let researchRefs: ReturnType<typeof trimForPrompt> | undefined;
+          if (FEATURE_NEWS_RESEARCH && Array.isArray(request2.researchArticles) && (request2.researchArticles as unknown[]).length > 0) {
+            const articles: ResearchArticle[] = [];
+            for (const entry of request2.researchArticles as unknown[]) {
+              if (!entry || typeof entry !== 'object') continue;
+              const o = entry as Record<string, unknown>;
+              const title = String(o.title || '').trim();
+              const url = String(o.url || '').trim();
+              if (!title || !url) continue;
+              articles.push({
+                title,
+                url,
+                source: String(o.source || '').trim() || 'Unknown',
+                publishedAt: String(o.publishedAt || '').trim() || new Date().toISOString(),
+                snippet: String(o.snippet || '').trim() || '(No description or summary was provided for this source.)',
+                provider: 'rss',
+              });
+            }
+            if (articles.length > 0) researchRefs = trimForPrompt(articles);
+          }
+
+          const authorBlock = formatAuthorProfileForPrompt(storedConfig.userWhoAmI || storedConfig.authorProfile || '');
+          const prompt = buildQuickChangePrompt(row, editorText, scope, selection, instruction, effectiveRules, authorBlock, researchRefs);
+
+          const t1 = performance.now();
+          await emit({ type: 'enrichment:node_completed', nodeId: 'style-analyzer', durationMs: Math.round(t1 - t0), insightSummary: null });
+
+          // ── tone-calibrator stage (LLM call) ──────────────────
+          const t2 = performance.now();
+          await emit({ type: 'node:start', nodeId: 'tone-calibrator' });
+
+          const { text, used } = await generateTextJsonWithFallback(env, primary, fallback, prompt, {
+            db: env.PIPELINE_DB,
+            spreadsheetId: storedConfig.spreadsheetId,
+            userId: session.userId,
+            settingKey: 'generation_worker',
+          });
+
+          const t3 = performance.now();
+          await emit({ type: 'enrichment:node_completed', nodeId: 'tone-calibrator', durationMs: Math.round(t3 - t2), insightSummary: null });
+
+          // ── style-composer stage (post-processing) ────────────
+          const t4 = performance.now();
+          await emit({ type: 'node:start', nodeId: 'style-composer' });
+
+          const replacementText = normalizePlainTextValue(tryParseJson(text));
+          if (!replacementText) throw new Error('Quick Change returned empty preview text.');
+
+          const result: QuickChangePreviewResult = {
+            scope,
+            model: used.model,
+            llmProvider: used.provider,
+            selection,
+            replacementText,
+            fullText: applyReplacement(editorText, scope, selection, replacementText),
+          };
+
+          const t5 = performance.now();
+          await emit({ type: 'enrichment:node_completed', nodeId: 'style-composer', durationMs: Math.round(t5 - t4), insightSummary: null });
+
+          await emit({ type: 'complete', result });
+        } catch (e) {
+          await emit({ type: 'error', message: e instanceof Error ? e.message : String(e) });
+        } finally {
+          await writer.close();
+        }
+      })();
+
+      const streamHeaders = new Headers(corsHeaders);
+      streamHeaders.set('Content-Type', 'text/event-stream');
+      streamHeaders.set('Cache-Control', 'no-cache');
+      streamHeaders.set('Connection', 'keep-alive');
+      return new Response(readable, { headers: streamHeaders });
     }
 
     try {
