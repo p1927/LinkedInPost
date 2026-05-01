@@ -8,6 +8,7 @@
     "noEmit": true,
     "lib": ["ES2022", "dom"],
     "resolveJsonModule": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@repo/llm-core": ["../packages/llm-core/src/index.ts"],
