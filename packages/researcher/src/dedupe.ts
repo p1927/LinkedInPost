@@ -11,11 +11,15 @@ export function canonicalizeUrl(raw: string): string {
     const u = new URL(trimmed);
     u.hash = '';
     const params = new URLSearchParams(u.search);
-    for (const key of Array.from(params.keys())) {
-      const lk = key.toLowerCase();
+    const toDelete: string[] = [];
+    params.forEach((_, k) => {
+      const lk = k.toLowerCase();
       if (TRACKING_PARAMS.has(lk) || lk.startsWith('utm_')) {
-        params.delete(key);
+        toDelete.push(k);
       }
+    });
+    for (const k of toDelete) {
+      params.delete(k);
     }
     const qs = params.toString();
     u.search = qs ? `?${qs}` : '';

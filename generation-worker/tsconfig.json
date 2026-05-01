@@ -6,9 +6,7 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types"],
-    "typeRoots": ["../worker/node_modules/@types", "../worker/node_modules"],
+    "lib": ["ES2022", "dom"],
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
@@ -17,5 +15,6 @@
       "zod": ["../frontend/node_modules/zod/index.d.ts"]
     }
   },
-  "include": ["src/**/*", "../packages/llm-core/src/**/*", "../worker/src/llm/catalog.ts", "../worker/src/llm/structuredJson.ts", "../worker/src/llm/genWorkerDefaults.ts", "../worker/src/llm/types.ts", "../worker/src/llm/providers/**/*.ts"]
+  "include": ["src/**/*", "../packages/llm-core/src/**/*", "../worker/src/llm/catalog.ts", "../worker/src/llm/structuredJson.ts", "../worker/src/llm/genWorkerDefaults.ts", "../worker/src/llm/types.ts", "../worker/src/llm/providers/**/*.ts"],
+  "files": ["../node_modules/@cloudflare/workers-types/index.d.ts"]
 }
