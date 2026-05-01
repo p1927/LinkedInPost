@@ -10,6 +10,7 @@ import {
 } from './types';
 import type { Env } from './types';
 import { getLlmProviderCatalog, resolveGenerationWorkerLlmRef } from './llmFromWorker';
+import { handleQuickChangePreview, handleVariantsPreview } from './preview';
 
 function corsHeaders(): HeadersInit {
   return {
@@ -204,6 +205,16 @@ export default {
       } catch (e) {
         return json({ error: String(e) }, 500);
       }
+    }
+
+    // POST /v1/preview/quick-change
+    if (pathname === '/v1/preview/quick-change' && method === 'POST') {
+      return handleQuickChangePreview(request, env);
+    }
+
+    // POST /v1/preview/variants
+    if (pathname === '/v1/preview/variants' && method === 'POST') {
+      return handleVariantsPreview(request, env);
     }
 
     return json({ error: 'Not found' }, 404);
