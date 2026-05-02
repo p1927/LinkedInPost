@@ -188,10 +188,9 @@ export function FeedPage({
   const platformDropdownRef = useRef<HTMLDivElement>(null);
 
   async function handleDeleteClip(clipId: string) {
-    // Optimistic remove
     setClips(prev => prev.filter(c => c.id !== clipId));
     try {
-      await api.deleteClipFromKv(idToken, idToken, clipId);
+      await api.deleteClip(idToken, clipId);
     } catch { /* silent — already removed from local state */ }
   }
 
@@ -279,35 +278,20 @@ export function FeedPage({
   }
 
   async function handleClip(article: NewsArticle) {
-    // Deduplicate — don't create a second clip for the same article URL
     if (clippedUrls.has(article.url)) return;
-    const localClip: Clip = {
-      id: crypto.randomUUID(),
-      type: 'article',
-      articleTitle: article.title,
-      articleUrl: article.url,
-      source: article.source,
-      publishedAt: article.publishedAt,
-      thumbnailUrl: article.imageUrl ?? '',
-      passageText: '',
-      clippedAt: new Date().toISOString(),
-      versions: [],
-      assignedPostIds: [],
-    };
-    // Optimistic update
-    setClips(prev => [localClip, ...prev]);
-
     try {
-      // Primary: KV endpoint
-      await api.saveClipToKv(idToken, idToken, {
-        url: article.url,
-        title: article.title,
-        snippet: article.description ?? '',
+      const clip = await api.createClipPage(idToken, {
+        type: 'article',
+        articleTitle: article.title,
+        articleUrl: article.url,
         source: article.source,
-        timestamp: article.publishedAt,
+        publishedAt: article.publishedAt,
+        thumbnailUrl: article.imageUrl ?? '',
+        passageText: article.description ?? '',
       });
+      setClips(prev => [clip, ...prev]);
     } catch {
-      // KV failed — clip is still in local state; localStorage persists on change
+      // DB failed — silently skip; article is not clipped
     }
   }
 
@@ -319,30 +303,16 @@ export function FeedPage({
       .finally(() => setGroupsLoading(false));
   }, [idToken, api]);
 
-  // Load existing clips on mount — try KV first, fall back to localStorage
+  // Load existing clips on mount from DB
   useEffect(() => {
-    api.getClipsFromKv(idToken, idToken)
+    api.getClipsPage(idToken)
       .then(result => {
         if (result.clips && result.clips.length > 0) {
-          // Map KV clips to Clip interface
-          const mapped: Clip[] = result.clips.map(kv => ({
-            id: kv.id,
-            type: 'article' as const,
-            articleTitle: kv.clip.title,
-            articleUrl: kv.clip.url,
-            source: kv.clip.source,
-            publishedAt: kv.clip.timestamp,
-            thumbnailUrl: '',
-            passageText: kv.clip.snippet ?? '',
-            clippedAt: kv.clippedAt,
-            versions: [],
-            assignedPostIds: [],
-          }));
-          setClips(mapped);
+          setClips(result.clips);
         }
       })
       .catch(() => {
-        // KV failed — use localStorage (already initialized as state default)
+        // DB failed — use localStorage (already initialized as state default)
       });
   }, [idToken, api]);
 

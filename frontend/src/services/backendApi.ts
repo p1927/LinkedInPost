@@ -803,6 +803,89 @@ export class BackendApi {
     return res.json() as Promise<{ deleted: true }>;
   }
 
+  // ── Feed REST API ─────────────────────────────────────────────────────────────
+
+  async getFeed(
+    idToken: string,
+    opts: { interestGroupId?: string; cursor?: string; limit?: number } = {},
+  ): Promise<{ articles: unknown[]; nextCursor: string | null; hasMore: boolean }> {
+    const params = new URLSearchParams();
+    if (opts.interestGroupId) params.set('interest_group_id', opts.interestGroupId);
+    if (opts.cursor) params.set('cursor', opts.cursor);
+    if (opts.limit) params.set('limit', String(opts.limit));
+    const qs = params.toString();
+    const workerUrl = (globalThis as { VITE_WORKER_URL?: string }).VITE_WORKER_URL || '';
+    const res = await fetch(`${workerUrl}/api/feed${qs ? `?${qs}` : ''}`, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `getFeed failed: ${res.status}`);
+    }
+    const json = await res.json() as { ok: boolean; data: { articles: unknown[]; nextCursor: string | null; hasMore: boolean }; error?: string };
+    if (!json.ok) throw new Error(json.error || 'getFeed failed');
+    return json.data;
+  }
+
+  async createFeedItem(
+    idToken: string,
+    payload: CreateClipPayload,
+  ): Promise<Clip> {
+    const workerUrl = (globalThis as { VITE_WORKER_URL?: string }).VITE_WORKER_URL || '';
+    const res = await fetch(`${workerUrl}/api/feed/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `createFeedItem failed: ${res.status}`);
+    }
+    const json = await res.json() as { ok: boolean; data: Clip; error?: string };
+    if (!json.ok) throw new Error(json.error || 'createFeedItem failed');
+    return json.data;
+  }
+
+  async getClipsPage(
+    idToken: string,
+    opts: { cursor?: string; limit?: number } = {},
+  ): Promise<{ clips: Clip[]; nextCursor: string | null; hasMore: boolean }> {
+    const params = new URLSearchParams();
+    if (opts.cursor) params.set('cursor', opts.cursor);
+    if (opts.limit) params.set('limit', String(opts.limit));
+    const qs = params.toString();
+    const workerUrl = (globalThis as { VITE_WORKER_URL?: string }).VITE_WORKER_URL || '';
+    const res = await fetch(`${workerUrl}/api/clips${qs ? `?${qs}` : ''}`, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `getClipsPage failed: ${res.status}`);
+    }
+    const json = await res.json() as { ok: boolean; data: { clips: Clip[]; nextCursor: string | null; hasMore: boolean }; error?: string };
+    if (!json.ok) throw new Error(json.error || 'getClipsPage failed');
+    return json.data;
+  }
+
+  async createClipPage(
+    idToken: string,
+    payload: CreateClipPayload,
+  ): Promise<Clip> {
+    const workerUrl = (globalThis as { VITE_WORKER_URL?: string }).VITE_WORKER_URL || '';
+    const res = await fetch(`${workerUrl}/api/clips`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `createClipPage failed: ${res.status}`);
+    }
+    const json = await res.json() as { ok: boolean; data: Clip; error?: string };
+    if (!json.ok) throw new Error(json.error || 'createClipPage failed');
+    return json.data;
+  }
+
   async runContentReview(idToken: string, body: RunContentReviewRequest): Promise<ContentReviewReport> {
     return this.post<ContentReviewReport>('runContentReview', idToken, {
       row: body.row,

@@ -751,6 +751,25 @@ export default {
         return handleYouTubeCallback(request, env);
       }
 
+      // ── Feed REST API ─────────────────────────────────────────────────────────
+      // GET /api/feed          — paginated, filterable by interest_group_id
+      // POST /api/feed/items   — create a feed item (article clip / passage clip)
+      // GET /api/clips         — user's saved clips (paginated)
+      // POST /api/clips        — create a clip
+
+      if (url.pathname === '/api/feed' && request.method === 'GET') {
+        return handleFeedGet(request, env);
+      }
+      if (url.pathname === '/api/feed/items' && request.method === 'POST') {
+        return handleFeedItemCreate(request, env);
+      }
+      if (url.pathname === '/api/clips' && request.method === 'GET') {
+        return handleClipsGet(request, env);
+      }
+      if (url.pathname === '/api/clips' && request.method === 'POST') {
+        return handleClipsCreate(request, env);
+      }
+
       return jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
     }
 
@@ -6259,6 +6278,245 @@ function base64ToBytes(value: string): Uint8Array {
     bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
+}
+
+}
+
+// ── Feed REST API handlers ───────────────────────────────────────────────────────
+
+interface FeedPageParams {
+  interest_group_id?: string;
+  cursor?: string;
+  limit?: string;
+}
+
+interface ClipsPageParams {
+  cursor?: string;
+  limit?: string;
+}
+
+interface CreateFeedItemPayload {
+  type: 'article' | 'passage';
+  articleTitle: string;
+  articleUrl: string;
+  source?: string;
+  publishedAt?: string;
+  thumbnailUrl?: string;
+  passageText?: string;
+}
+
+async function handleFeedGet(request: Request, env: Env): Promise<Response> {
+  const authHeader = request.headers.get('Authorization') || '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  let session: Awaited<ReturnType<typeof verifySession>>;
+  try {
+    session = await verifySession(idToken, env);
+  } catch {
+    return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, buildCorsHeaders(request, env));
+  }
+
+  const url = new URL(request.url);
+  const interestGroupId = url.searchParams.get('interest_group_id');
+  const cursor = url.searchParams.get('cursor') ?? undefined;
+  const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '20', 10), 100);
+
+  let topics: string[] = [];
+  if (interestGroupId) {
+    const groupRow = await env.PIPELINE_DB
+      .prepare('SELECT topics_json FROM interest_groups WHERE id = ?1 AND user_id = ?2')
+      .bind(interestGroupId, session.userId)
+      .first<{ topics_json: string }>();
+    if (groupRow) {
+      topics = JSON.parse(groupRow.topics_json) as string[];
+    }
+  }
+
+  // Paginated feed articles from news_snapshots
+  const offset = cursor ? parseInt(cursor, 10) : 0;
+  let articles: unknown[] = [];
+
+  if (topics.length > 0) {
+    const placeholders = topics.map((_, i) => `?${i + 3}`).join(', ');
+    const rows = await env.PIPELINE_DB
+      .prepare(
+        `SELECT articles, fetched_at FROM news_snapshots
+         WHERE spreadsheet_id = ?1
+           AND topic_id IN (${placeholders})
+         ORDER BY fetched_at DESC
+         LIMIT ?${topics.length + 3} OFFSET ?${topics.length + 4}`,
+      )
+      .bind(`feed:${session.userId}`, ...topics, String(limit), String(offset))
+      .all<{ articles: string; fetched_at: string }>();
+
+    for (const row of rows.results ?? []) {
+      const parsed = JSON.parse(row.articles) as unknown[];
+      if (Array.isArray(parsed)) articles.push(...parsed);
+    }
+  }
+
+  const hasMore = articles.length === limit;
+  const nextCursor = hasMore ? String(offset + limit) : null;
+
+  return jsonResponse({
+    ok: true,
+    data: { articles, nextCursor, hasMore },
+  }, 200, buildCorsHeaders(request, env));
+}
+
+async function handleFeedItemCreate(request: Request, env: Env): Promise<Response> {
+  const authHeader = request.headers.get('Authorization') || '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  let session: Awaited<ReturnType<typeof verifySession>>;
+  try {
+    session = await verifySession(idToken, env);
+  } catch {
+    return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, buildCorsHeaders(request, env));
+  }
+
+  const raw = await request.json() as CreateFeedItemPayload;
+  const clipType = String(raw.type || '').trim();
+  if (clipType !== 'article' && clipType !== 'passage') {
+    return jsonResponse({ ok: false, error: 'type must be "article" or "passage"' }, 400, buildCorsHeaders(request, env));
+  }
+  const articleTitle = String(raw.articleTitle || '').trim();
+  const articleUrl = String(raw.articleUrl || '').trim();
+  if (!articleTitle || !articleUrl) {
+    return jsonResponse({ ok: false, error: 'articleTitle and articleUrl are required' }, 400, buildCorsHeaders(request, env));
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await env.PIPELINE_DB
+    .prepare(
+      `INSERT INTO clips
+         (id, user_id, type, article_title, article_url, source, published_at,
+          thumbnail_url, passage_text, clipped_at, versions_json, assigned_post_ids_json)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
+    )
+    .bind(
+      id, session.userId, clipType, articleTitle, articleUrl,
+      String(raw.source || ''), String(raw.publishedAt || ''),
+      String(raw.thumbnailUrl || ''), String(raw.passageText || ''),
+      now, '[]', '[]',
+    )
+    .run();
+
+  const clip = {
+    id,
+    type: clipType,
+    articleTitle,
+    articleUrl,
+    source: String(raw.source || ''),
+    publishedAt: String(raw.publishedAt || ''),
+    thumbnailUrl: String(raw.thumbnailUrl || ''),
+    passageText: String(raw.passageText || ''),
+    clippedAt: now,
+    versions: [],
+    assignedPostIds: [],
+  };
+
+  return jsonResponse({ ok: true, data: clip }, 201, buildCorsHeaders(request, env));
+}
+
+async function handleClipsGet(request: Request, env: Env): Promise<Response> {
+  const authHeader = request.headers.get('Authorization') || '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  let session: Awaited<ReturnType<typeof verifySession>>;
+  try {
+    session = await verifySession(idToken, env);
+  } catch {
+    return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, buildCorsHeaders(request, env));
+  }
+
+  const url = new URL(request.url);
+  const cursor = url.searchParams.get('cursor') ?? undefined;
+  const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '20', 10), 100);
+  const offset = cursor ? parseInt(cursor, 10) : 0;
+
+  const rows = await env.PIPELINE_DB
+    .prepare(
+      `SELECT * FROM clips WHERE user_id = ?1 ORDER BY clipped_at DESC LIMIT ?2 OFFSET ?3`,
+    )
+    .bind(session.userId, String(limit + 1), String(offset))
+    .all();
+
+  const hasMore = (rows.results ?? []).length > limit;
+  const page = (rows.results ?? []).slice(0, limit);
+
+  const clips = page.map((r: Record<string, string>) => ({
+    id: r.id,
+    type: r.type,
+    articleTitle: r.article_title,
+    articleUrl: r.article_url,
+    source: r.source,
+    publishedAt: r.published_at,
+    thumbnailUrl: r.thumbnail_url,
+    passageText: r.passage_text,
+    clippedAt: r.clipped_at,
+    versions: JSON.parse(r.versions_json),
+    assignedPostIds: JSON.parse(r.assigned_post_ids_json),
+  }));
+
+  const nextCursor = hasMore ? String(offset + limit) : null;
+
+  return jsonResponse({ ok: true, data: { clips, nextCursor, hasMore } }, 200, buildCorsHeaders(request, env));
+}
+
+async function handleClipsCreate(request: Request, env: Env): Promise<Response> {
+  const authHeader = request.headers.get('Authorization') || '';
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  let session: Awaited<ReturnType<typeof verifySession>>;
+  try {
+    session = await verifySession(idToken, env);
+  } catch {
+    return jsonResponse({ ok: false, error: 'Unauthorized' }, 401, buildCorsHeaders(request, env));
+  }
+
+  const raw = await request.json() as CreateFeedItemPayload;
+  const clipType = String(raw.type || '').trim();
+  if (clipType !== 'article' && clipType !== 'passage') {
+    return jsonResponse({ ok: false, error: 'type must be "article" or "passage"' }, 400, buildCorsHeaders(request, env));
+  }
+  const articleTitle = String(raw.articleTitle || '').trim();
+  const articleUrl = String(raw.articleUrl || '').trim();
+  if (!articleTitle || !articleUrl) {
+    return jsonResponse({ ok: false, error: 'articleTitle and articleUrl are required' }, 400, buildCorsHeaders(request, env));
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await env.PIPELINE_DB
+    .prepare(
+      `INSERT INTO clips
+         (id, user_id, type, article_title, article_url, source, published_at,
+          thumbnail_url, passage_text, clipped_at, versions_json, assigned_post_ids_json)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
+    )
+    .bind(
+      id, session.userId, clipType, articleTitle, articleUrl,
+      String(raw.source || ''), String(raw.publishedAt || ''),
+      String(raw.thumbnailUrl || ''), String(raw.passageText || ''),
+      now, '[]', '[]',
+    )
+    .run();
+
+  const clip = {
+    id,
+    type: clipType,
+    articleTitle,
+    articleUrl,
+    source: String(raw.source || ''),
+    publishedAt: String(raw.publishedAt || ''),
+    thumbnailUrl: String(raw.thumbnailUrl || ''),
+    passageText: String(raw.passageText || ''),
+    clippedAt: now,
+    versions: [],
+    assignedPostIds: [],
+  };
+
+  return jsonResponse({ ok: true, data: clip }, 201, buildCorsHeaders(request, env));
 }
 
 const textEncoder = new TextEncoder();
