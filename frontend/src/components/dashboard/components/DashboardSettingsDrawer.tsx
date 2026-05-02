@@ -37,6 +37,7 @@ import type {
 import { LLM_SETTING_KEY_LABELS, IMAGE_GEN_PROVIDERS, IMAGE_GEN_MODELS, ENRICHMENT_SKILL_IDS, ENRICHMENT_SKILL_METADATA } from '../../../services/configService';
 import { FEATURE_CONTENT_REVIEW, FEATURE_ENRICHMENT, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from '../../../generated/features';
 import { PostGenerateSettings } from '../../../features/review/components/PostGenerateSettings';
+import { InterestGroupsSettings } from '../../../features/feed/components/InterestGroupsSettings';
 import {
   type SettingsSectionId,
   type DashboardSettingsDrawerHandle,
@@ -2234,6 +2235,13 @@ export const DashboardSettingsDrawer = forwardRef<DashboardSettingsDrawerHandle,
             />
           </SettingsSectionCard>
         ) : null}
+
+        <SettingsSectionCard id="settings-interest-groups" title="Interest Groups">
+          <p className="mb-4 text-xs leading-relaxed text-muted">
+            Organize topics and sources into named groups for faster filtering in the feed. Stored locally in your browser.
+          </p>
+          <InterestGroupsSettings />
+        </SettingsSectionCard>
       </div>
     </div>
   );

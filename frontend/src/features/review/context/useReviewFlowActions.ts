@@ -435,6 +435,23 @@ export function useReviewFlowActions(
       const updatedRow = await onSaveVariants(sheetRow, merged);
       setSheetRow(updatedRow);
       setPreviewVariantSaveByIndex((current) => ({ ...current, [index]: 'saved' }));
+
+      // Fire-and-forget KV backup — never blocks approval flow
+      const sessionId = sheetRow.topicId;
+      const variantsPayload = [{ slot: index, text: variant.fullText }];
+      const idToken = (window as unknown as { __idToken?: string }).__idToken ?? '';
+      if (sessionId && idToken) {
+        fetch(`${import.meta.env.VITE_WORKER_URL}/v1/variants/save`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ sessionId, variants: variantsPayload }),
+        }).catch((err: unknown) =>
+          console.error('[Variants KV save failed]', err),
+        );
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save to Sheets.';
       setPreviewVariantSaveByIndex((current) => ({ ...current, [index]: 'error' }));

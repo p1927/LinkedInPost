@@ -11,6 +11,7 @@ import {
 import type { Env } from './types';
 import { getLlmProviderCatalog, resolveGenerationWorkerLlmRef } from './llmFromWorker';
 import { handleQuickChangePreview, handleVariantsPreview } from './preview';
+import { handleSaveVariants, handleGetSavedVariants } from './players/variants';
 import { DEFAULT_RULES } from './shared-rules';
 
 function corsHeaders(): HeadersInit {
@@ -225,6 +226,17 @@ export default {
     // POST /v1/preview/variants
     if (pathname === '/v1/preview/variants' && method === 'POST') {
       return handleVariantsPreview(request, env);
+    }
+
+    // POST /v1/variants/save
+    if (pathname === '/v1/variants/save' && method === 'POST') {
+      return handleSaveVariants(request, env);
+    }
+
+    // GET /v1/variants/saved/:sessionId
+    if (pathname.startsWith('/v1/variants/saved/') && method === 'GET') {
+      const sessionId = pathname.replace('/v1/variants/saved/', '');
+      return handleGetSavedVariants(sessionId, env);
     }
 
     return json({ error: 'Not found' }, 404);

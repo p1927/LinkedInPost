@@ -3,6 +3,7 @@ import { z } from 'zod';
 // -- Env --------------------------------------------------------------------
 export interface Env {
   GEN_DB: D1Database;
+  VARIANTS_KV: KVNamespace;
   GEMINI_API_KEY?: string;
   XAI_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
@@ -206,3 +207,30 @@ export const SuggestPatternRequestSchema = z.object({
 });
 
 export type SuggestPatternRequest = z.infer<typeof SuggestPatternRequestSchema>;
+
+// -- Variants persistence (KV) -----------------------------------------------
+export const SaveVariantsRequestSchema = z.object({
+  sessionId: z.string().min(1),
+  variants: z.array(
+    z.object({
+      slot: z.number().int().min(0).max(3),
+      text: z.string(),
+    }),
+  ),
+  postId: z.string().optional(),
+});
+
+export type SaveVariantsRequest = z.infer<typeof SaveVariantsRequestSchema>;
+
+export interface SaveVariantsResponse {
+  saved: true;
+  key: string;
+  savedAt: string;
+}
+
+export interface SavedVariantsRecord {
+  sessionId: string;
+  variants: Array<{ slot: number; text: string }>;
+  postId?: string;
+  savedAt: string;
+}

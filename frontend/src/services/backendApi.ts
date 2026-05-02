@@ -695,6 +695,50 @@ export class BackendApi {
     return this.post<VariantsPreviewResponse>('generateVariantsPreview', idToken, { ...request });
   }
 
+  async saveVariantsToCloudflareKv(
+    idToken: string,
+    sessionId: string,
+    variants: Array<{ slot: number; text: string }>,
+    postId?: string,
+  ): Promise<{ saved: true; key: string; savedAt: string }> {
+    const workerUrl = (globalThis as { VITE_WORKER_URL?: string }).VITE_WORKER_URL || '';
+    if (!workerUrl) {
+      throw new Error('Missing VITE_WORKER_URL. Add your deployed Cloudflare Worker URL to the frontend environment.');
+    }
+    const response = await fetch(`${workerUrl}/v1/variants/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ sessionId, variants, postId }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `Request failed with status ${response.status}`);
+    }
+    return response.json() as Promise<{ saved: true; key: string; savedAt: string }>;
+  }
+
+  async getSavedVariantsFromCloudflareKv(
+    idToken: string,
+    sessionId: string,
+  ): Promise<{ sessionId: string; variants: Array<{ slot: number; text: string }>; postId?: string; savedAt: string }> {
+    const workerUrl = (globalThis as { VITE_WORKER_URL?: string }).VITE_WORKER_URL || '';
+    if (!workerUrl) {
+      throw new Error('Missing VITE_WORKER_URL. Add your deployed Cloudflare Worker URL to the frontend environment.');
+    }
+    const response = await fetch(`${workerUrl}/v1/variants/saved/${sessionId}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `Request failed with status ${response.status}`);
+    }
+    return response.json() as Promise<{ sessionId: string; variants: Array<{ slot: number; text: string }>; postId?: string; savedAt: string }>;
+  }
+
   async runContentReview(idToken: string, body: RunContentReviewRequest): Promise<ContentReviewReport> {
     return this.post<ContentReviewReport>('runContentReview', idToken, {
       row: body.row,

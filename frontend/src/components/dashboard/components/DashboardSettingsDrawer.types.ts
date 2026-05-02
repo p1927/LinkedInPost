@@ -15,6 +15,7 @@ const ALL_SETTINGS_SECTIONS = [
   { id: 'settings-youtube', label: 'YouTube' },
   { id: 'settings-news', label: 'News' },
   { id: 'settings-content-review', label: 'Content review' },
+  { id: 'settings-interest-groups', label: 'Interest Groups' },
 ] as const;
 
 export type SettingsSectionId = (typeof ALL_SETTINGS_SECTIONS)[number]['id'];
