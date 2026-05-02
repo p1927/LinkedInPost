@@ -739,6 +739,70 @@ export class BackendApi {
     return response.json() as Promise<{ sessionId: string; variants: Array<{ slot: number; text: string }>; postId?: string; savedAt: string }>;
   }
 
+  // ── Clips KV (Cloudflare Workers) ──────────────────────────────────────
+
+  private async _kvFetch(
+    path: string,
+    idToken: string,
+    options?: RequestInit,
+  ): Promise<Response> {
+    const workerUrl = (globalThis as { VITE_WORKER_URL?: string }).VITE_WORKER_URL || '';
+    if (!workerUrl) {
+      throw new Error('Missing VITE_WORKER_URL');
+    }
+    return fetch(`${workerUrl}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+        ...(options?.headers ?? {}),
+      },
+    });
+  }
+
+  async saveClipToKv(
+    idToken: string,
+    sessionId: string,
+    clip: { url: string; title: string; snippet?: string; source?: string; timestamp?: string },
+  ): Promise<{ saved: true; id: string; clippedAt: string }> {
+    const res = await this._kvFetch('/v1/clips', idToken, {
+      method: 'POST',
+      body: JSON.stringify({ sessionId, clip }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `saveClipToKv failed: ${res.status}`);
+    }
+    return res.json() as Promise<{ saved: true; id: string; clippedAt: string }>;
+  }
+
+  async getClipsFromKv(
+    idToken: string,
+    sessionId: string,
+  ): Promise<{ clips: Array<{ id: string; sessionId: string; clip: { url: string; title: string; snippet: string; source: string; timestamp: string }; clippedAt: string }> }> {
+    const res = await this._kvFetch(`/v1/clips/${sessionId}`, idToken);
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `getClipsFromKv failed: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async deleteClipFromKv(
+    idToken: string,
+    sessionId: string,
+    clipId: string,
+  ): Promise<{ deleted: true }> {
+    const res = await this._kvFetch(`/v1/clips/${sessionId}/${clipId}`, idToken, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(text || `deleteClipFromKv failed: ${res.status}`);
+    }
+    return res.json() as Promise<{ deleted: true }>;
+  }
+
   async runContentReview(idToken: string, body: RunContentReviewRequest): Promise<ContentReviewReport> {
     return this.post<ContentReviewReport>('runContentReview', idToken, {
       row: body.row,

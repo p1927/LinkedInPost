@@ -12,6 +12,7 @@ import type { Env } from './types';
 import { getLlmProviderCatalog, resolveGenerationWorkerLlmRef } from './llmFromWorker';
 import { handleQuickChangePreview, handleVariantsPreview } from './preview';
 import { handleSaveVariants, handleGetSavedVariants } from './players/variants';
+import { handleSaveClip, handleGetClips, handleDeleteClip } from './players/clips';
 import { DEFAULT_RULES } from './shared-rules';
 
 function corsHeaders(): HeadersInit {
@@ -237,6 +238,25 @@ export default {
     if (pathname.startsWith('/v1/variants/saved/') && method === 'GET') {
       const sessionId = pathname.replace('/v1/variants/saved/', '');
       return handleGetSavedVariants(sessionId, env);
+    }
+
+    // POST /v1/clips
+    if (pathname === '/v1/clips' && method === 'POST') {
+      return handleSaveClip(request, env);
+    }
+
+    // GET /v1/clips/:sessionId
+    if (pathname.startsWith('/v1/clips/') && method === 'GET') {
+      const sessionId = pathname.replace('/v1/clips/', '');
+      return handleGetClips(sessionId, env);
+    }
+
+    // DELETE /v1/clips/:sessionId/:clipId
+    if (pathname.match(/^\/v1\/clips\/[^/]+\/[^/]+$/) && method === 'DELETE') {
+      const parts = pathname.split('/');
+      const sessionId = parts[3];
+      const clipId = parts[4];
+      return handleDeleteClip(sessionId, clipId, env);
     }
 
     return json({ error: 'Not found' }, 404);

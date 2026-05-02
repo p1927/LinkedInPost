@@ -4,6 +4,7 @@ import { z } from 'zod';
 export interface Env {
   GEN_DB: D1Database;
   VARIANTS_KV: KVNamespace;
+  CLIPS_KV: KVNamespace;
   GEMINI_API_KEY?: string;
   XAI_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
@@ -233,4 +234,32 @@ export interface SavedVariantsRecord {
   variants: Array<{ slot: number; text: string }>;
   postId?: string;
   savedAt: string;
+}
+
+// -- Clips --------------------------------------------------------------------
+
+export const SaveClipRequestSchema = z.object({
+  sessionId: z.string(),
+  clip: z.object({
+    url: z.string(),
+    title: z.string(),
+    snippet: z.string().optional().default(''),
+    source: z.string().optional().default(''),
+    timestamp: z.string().optional().default(''),
+  }),
+});
+
+export type SaveClipRequest = z.infer<typeof SaveClipRequestSchema>;
+
+export interface SavedClip {
+  id: string;
+  sessionId: string;
+  clip: {
+    url: string;
+    title: string;
+    snippet: string;
+    source: string;
+    timestamp: string;
+  };
+  clippedAt: string;
 }

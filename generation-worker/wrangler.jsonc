@@ -18,6 +18,10 @@
     {
       "binding": "VARIANTS_KV",
       "id": "a08744440c09e2ef49e3e1c3b7f8d76c"
+    },
+    {
+      "binding": "CLIPS_KV",
+      "id": "a08744440c09e2ef49e3e1c3b7f8d76c"
     }
   ],
   "observability": {

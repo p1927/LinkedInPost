@@ -125,10 +125,11 @@ export function FeedPage({
   const platformDropdownRef = useRef<HTMLDivElement>(null);
 
   async function handleDeleteClip(clipId: string) {
+    // Optimistic remove
+    setClips(prev => prev.filter(c => c.id !== clipId));
     try {
-      await api.deleteClip(idToken, clipId);
-      setClips(prev => prev.filter(c => c.id !== clipId));
-    } catch { /* silent */ }
+      await api.deleteClipFromKv(idToken, idToken, clipId);
+    } catch { /* silent — already removed from local state */ }
   }
 
   async function handleUpdateClip(clipId: string, passageText: string) {
@@ -217,18 +218,33 @@ export function FeedPage({
   async function handleClip(article: NewsArticle) {
     // Deduplicate — don't create a second clip for the same article URL
     if (clippedUrls.has(article.url)) return;
+    const localClip: Clip = {
+      id: crypto.randomUUID(),
+      type: 'article',
+      articleTitle: article.title,
+      articleUrl: article.url,
+      source: article.source,
+      publishedAt: article.publishedAt,
+      thumbnailUrl: article.imageUrl ?? '',
+      passageText: '',
+      clippedAt: new Date().toISOString(),
+      versions: [],
+      assignedPostIds: [],
+    };
+    // Optimistic update
+    setClips(prev => [localClip, ...prev]);
+
     try {
-      const clip = await api.createClip(idToken, {
-        type: 'article',
-        articleTitle: article.title,
-        articleUrl: article.url,
+      // Primary: KV endpoint
+      await api.saveClipToKv(idToken, idToken, {
+        url: article.url,
+        title: article.title,
+        snippet: article.description ?? '',
         source: article.source,
-        publishedAt: article.publishedAt,
-        thumbnailUrl: article.imageUrl ?? '',
+        timestamp: article.publishedAt,
       });
-      setClips(prev => [clip, ...prev]);
     } catch {
-      // silently ignore — dock will show existing clips
+      // KV failed — clip is still in local state; localStorage persists on change
     }
   }
 
@@ -240,11 +256,31 @@ export function FeedPage({
       .finally(() => setGroupsLoading(false));
   }, [idToken, api]);
 
-  // Load existing clips on mount
+  // Load existing clips on mount — try KV first, fall back to localStorage
   useEffect(() => {
-    api.listClips(idToken)
-      .then(setClips)
-      .catch(() => {});
+    api.getClipsFromKv(idToken, idToken)
+      .then(result => {
+        if (result.clips && result.clips.length > 0) {
+          // Map KV clips to Clip interface
+          const mapped: Clip[] = result.clips.map(kv => ({
+            id: kv.id,
+            type: 'article' as const,
+            articleTitle: kv.clip.title,
+            articleUrl: kv.clip.url,
+            source: kv.clip.source,
+            publishedAt: kv.clip.timestamp,
+            thumbnailUrl: '',
+            passageText: kv.clip.snippet ?? '',
+            clippedAt: kv.clippedAt,
+            versions: [],
+            assignedPostIds: [],
+          }));
+          setClips(mapped);
+        }
+      })
+      .catch(() => {
+        // KV failed — use localStorage (already initialized as state default)
+      });
   }, [idToken, api]);
 
   // Load article feedback on mount
