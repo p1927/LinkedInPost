@@ -46,6 +46,7 @@ export function FeedLeftPanel({
   highlightedIndex = -1,
   readArticles = new Set(),
   showUnreadOnly = false,
+  onShowUnreadOnlyChange,
 }: FeedLeftPanelProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);

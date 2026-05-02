@@ -143,6 +143,9 @@ export function FeedPage({
     } catch { /* ignore */ }
   }, [readArticles]);
 
+  // Article state (declared before useEffect that references it)
+  const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
+
   // Mark article as read when opened (navigates to new tab)
   useEffect(() => {
     if (openArticle?.url) {
@@ -157,6 +160,9 @@ export function FeedPage({
 
   // Sort control
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+
+  // Article feedback state
+  const [feedbackMap, setFeedbackMap] = useState<ArticleFeedbackMap>({});
 
   // Clips state — localStorage-first, API as backup
   const [clips, setClips] = useState<Clip[]>(() => {
@@ -174,7 +180,6 @@ export function FeedPage({
     } catch { /* ignore */ }
   }, [clips]);
 
-  const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
   const [openDraft, setOpenDraft] = useState<SheetRow | null>(null);
   const [debateMode, setDebateMode] = useState(false);
 
