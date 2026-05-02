@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Tour } from '@/components/Tour';
 import { type ReactNode } from 'react';
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
@@ -13,8 +13,9 @@ import { TrendingGraph } from '../trending/components/TrendingGraph';
 import { useTrending, type TrendingCapabilities } from '../trending/hooks/useTrending';
 import { useTrendingSearch } from '../trending/hooks/useTrendingSearch';
 import { FeedLeftPanel } from './components/FeedLeftPanel';
-import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2, Bookmark, Layers, ChevronDown, Search, Scissors, SlidersHorizontal } from 'lucide-react';
+import { Newspaper, Sparkles, PlugZap, Plus, X, RefreshCw, Settings2, Pencil, Trash2, Bookmark, Layers, ChevronDown, Search, Scissors, SlidersHorizontal, Keyboard } from 'lucide-react';
 import { useFeedStore } from '@/stores/feedStore';
+import { useFeedKeyboard } from './hooks/useFeedKeyboard';
 import type { GraphNode, NewsArticle } from '../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { NewsProviderKeys } from '@/services/configService';
@@ -86,6 +87,10 @@ export function FeedPage({
 
   // Collapsible left panel
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  // Keyboard navigation state
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Zustand feed store — session-aware persistence
   const feedStore = useFeedStore();
@@ -565,6 +570,37 @@ export function FeedPage({
   const motionProps = shouldReduceMotion
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 }, transition: { duration: 0.15 } }
     : { initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 }, transition: { duration: 0.2 } };
+
+  // Keyboard shortcut actions — defined after filteredDisplayArticles is computed
+  const handleNextArticle = useCallback(() => {
+    setHighlightedIndex(i => Math.min(i + 1, filteredDisplayArticles.length - 1));
+  }, [filteredDisplayArticles.length]);
+
+  const handlePrevArticle = useCallback(() => {
+    setHighlightedIndex(i => Math.max(i - 1, 0));
+  }, []);
+
+  const handleOpenHighlighted = useCallback(() => {
+    if (highlightedIndex >= 0 && highlightedIndex < filteredDisplayArticles.length) {
+      setDebateMode(false);
+      setOpenArticle(filteredDisplayArticles[highlightedIndex]);
+    }
+  }, [highlightedIndex, filteredDisplayArticles]);
+
+  const handleClipHighlighted = useCallback(() => {
+    if (highlightedIndex >= 0 && highlightedIndex < filteredDisplayArticles.length) {
+      handleClip(filteredDisplayArticles[highlightedIndex]);
+    }
+  }, [highlightedIndex, filteredDisplayArticles]);
+
+  // Keyboard navigation hook
+  useFeedKeyboard(filteredDisplayArticles, highlightedIndex, {
+    onNext: handleNextArticle,
+    onPrev: handlePrevArticle,
+    onOpenHighlighted: handleOpenHighlighted,
+    onClipHighlighted: handleClipHighlighted,
+    onToggleHelp: () => setShowHelp(v => !v),
+  });
 
   return (
     <>
@@ -1209,6 +1245,7 @@ export function FeedPage({
                         feedbackMap={feedbackMap}
                         onThumbsUp={handleThumbsUp}
                         onThumbsDown={handleThumbsDown}
+                        highlightedIndex={highlightedIndex}
                       />
                     </motion.div>
                   )}
@@ -1356,6 +1393,58 @@ export function FeedPage({
           onOpenDraft={handleOpenDraft}
           onAssignClip={handleAssignClipToPost}
         />
+
+        {/* Keyboard shortcut legend — toggled with '?' */}
+        <AnimatePresence>
+          {showHelp && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+              onClick={() => setShowHelp(false)}
+            >
+              <div
+                className="rounded-2xl border border-border/60 bg-white/95 shadow-2xl p-6 w-72"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 text-ink font-semibold text-sm">
+                    <Keyboard size={15} />
+                    Keyboard shortcuts
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowHelp(false)}
+                    className="text-muted hover:text-ink transition-colors"
+                    aria-label="Close help"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    ['j / ↓', 'Next article'],
+                    ['k / ↑', 'Previous article'],
+                    ['Enter / Space', 'Open in new tab'],
+                    ['c', 'Clip to ClipsDock'],
+                    ['?', 'Toggle this panel'],
+                  ].map(([key, desc]) => (
+                    <div key={key} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <kbd className="inline-flex h-5 min-w-[1.6rem] items-center justify-center rounded-md border border-border/80 bg-muted/10 px-1.5 font-mono text-[11px] font-semibold text-ink shadow-sm">
+                          {key}
+                        </kbd>
+                        <span className="text-muted">{desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </MotionConfig>
     </>

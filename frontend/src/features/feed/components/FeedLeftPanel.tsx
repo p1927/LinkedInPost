@@ -14,6 +14,8 @@ export interface FeedLeftPanelProps {
   feedbackMap?: ArticleFeedbackMap;
   onThumbsUp?: (article: NewsArticle) => void;
   onThumbsDown?: (article: NewsArticle) => void;
+  highlightedIndex?: number;
+  onHighlightedIndexChange?: (index: number) => void;
 }
 
 function SkeletonCard() {
@@ -29,7 +31,17 @@ function SkeletonCard() {
 
 const BATCH_SIZE = 20;
 
-export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, feedbackMap = {}, onThumbsUp, onThumbsDown }: FeedLeftPanelProps) {
+export function FeedLeftPanel({
+  articles,
+  loading,
+  onClip,
+  onOpen,
+  clippedUrls,
+  feedbackMap = {},
+  onThumbsUp,
+  onThumbsDown,
+  highlightedIndex = -1,
+}: FeedLeftPanelProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -91,13 +103,14 @@ export function FeedLeftPanel({ articles, loading, onClip, onOpen, clippedUrls, 
         initial="hidden"
         animate="show"
       >
-        {visibleArticles.map(article => (
+        {visibleArticles.map((article, localIdx) => (
           <motion.div key={article.id} variants={cardItemVariants}>
             <FeedArticleCard
               article={article}
               onClip={onClip}
               onOpen={onOpen}
               isClipped={clippedUrls.has(article.url)}
+              isHighlighted={localIdx === highlightedIndex}
               feedbackVote={feedbackMap[article.url] as FeedVote | undefined}
               onThumbsUp={onThumbsUp}
               onThumbsDown={onThumbsDown}
