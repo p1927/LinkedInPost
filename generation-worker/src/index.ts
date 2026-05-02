@@ -11,6 +11,7 @@ import {
 import type { Env } from './types';
 import { getLlmProviderCatalog, resolveGenerationWorkerLlmRef } from './llmFromWorker';
 import { handleQuickChangePreview, handleVariantsPreview } from './preview';
+import { DEFAULT_RULES } from './shared-rules';
 
 function corsHeaders(): HeadersInit {
   return {
@@ -128,8 +129,12 @@ export default {
         void (async () => {
           try {
             console.log(`[${new Date().toISOString()}] GENERATE SSE: Starting pipeline...`);
+            const requestWithRules = {
+              ...parsed.data,
+              globalRules: [DEFAULT_RULES.join('\n'), parsed.data.globalRules].filter(Boolean).join('\n---\n'),
+            };
             const result = await runPipeline(
-              parsed.data,
+              requestWithRules,
               env,
               env.GEN_DB,
               (step, label) => void emit('progress', { step, label, ts: Date.now() }),
@@ -158,7 +163,12 @@ export default {
 
       try {
         console.log(`[${new Date().toISOString()}] GENERATE: Starting pipeline with ${JSON.stringify(parsed.data).substring(0, 100)}...`);
-        const result = await runPipeline(parsed.data, env, env.GEN_DB);
+        // Inject shared rules as baseline (user rules can add to or override these)
+        const requestWithRules = {
+          ...parsed.data,
+          globalRules: [DEFAULT_RULES.join('\n'), parsed.data.globalRules].filter(Boolean).join('\n---\n'),
+        };
+        const result = await runPipeline(requestWithRules, env, env.GEN_DB);
         console.log(`[${new Date().toISOString()}] GENERATE: Pipeline complete after ${Date.now() - startTime}ms`);
         return json(result);
       } catch (e) {
