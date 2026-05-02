@@ -100,9 +100,21 @@ export function FeedPage({
   // Feedback (thumbs up / down)
   const [feedbackMap, setFeedbackMap] = useState<ArticleFeedbackMap>({});
 
-  // Clips state
-  const [clips, setClips] = useState<Clip[]>([]);
+  // Clips state — localStorage-first, API as backup
+  const [clips, setClips] = useState<Clip[]>(() => {
+    try {
+      const raw = localStorage.getItem('feed-clips-v2');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
   const clippedUrls = useMemo(() => new Set(clips.map(c => c.articleUrl)), [clips]);
+
+  // Persist clips to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem('feed-clips-v2', JSON.stringify(clips));
+    } catch { /* ignore */ }
+  }, [clips]);
 
   const [openArticle, setOpenArticle] = useState<NewsArticle | null>(null);
   const [openDraft, setOpenDraft] = useState<SheetRow | null>(null);

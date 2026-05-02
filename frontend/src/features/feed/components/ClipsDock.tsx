@@ -138,7 +138,7 @@ export function ClipsDock({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-            className="fixed bottom-24 right-6 z-50 w-[320px] max-h-[420px] bg-background border border-border/60 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+            className="fixed bottom-24 right-6 z-50 w-[100px] max-h-[80vh] bg-background border border-border/60 rounded-xl shadow-2xl overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
@@ -176,24 +176,53 @@ export function ClipsDock({
             {/* Clips grid */}
             <div className="flex-1 overflow-y-auto p-3 min-h-0">
               {clips.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="flex flex-col items-center justify-center py-6 text-center px-3">
                   <p className="text-sm font-semibold text-ink mb-1">No clips yet</p>
-                  <p className="text-xs text-muted">Hover over any article and click ✂️ to clip it.</p>
+                  <p className="text-xs text-muted">Click the scissor icon on any article card to clip it here.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2">
+                /* Mac Dock — vertical strip of clips with magnification on hover */
+                <div className="flex flex-col items-center gap-3 py-2 px-1">
                   {clips.map((clip, i) => (
                     <div
                       key={clip.id}
-                      draggable={editingClipId !== clip.id}
-                      onDragStart={() => setDragClipId(clip.id)}
-                      onDragEnd={() => setDragClipId(null)}
-                      className="relative group/expanded"
+                      className="relative"
                       onMouseEnter={() => setHoveredIndex(i)}
                       onMouseLeave={() => setHoveredIndex(null)}
                     >
+                      {/* Magnified tooltip — Mac Dock style */}
+                      <AnimatePresence>
+                        {hoveredIndex === i && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.92 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.92 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 32, mass: 0.5 }}
+                            className="absolute right-full mr-3 top-1/2 -translate-y-1/2 z-50 w-52 rounded-xl bg-white/98 backdrop-blur-md border border-white/60 shadow-2xl pointer-events-none overflow-hidden"
+                          >
+                            {clip.thumbnailUrl ? (
+                              <img src={clip.thumbnailUrl} alt="" className="w-full aspect-video object-cover" />
+                            ) : (
+                              <div className="w-full aspect-video bg-gradient-to-br from-primary/20 to-violet-400/40" />
+                            )}
+                            <div className="p-2.5">
+                              <p className="font-semibold text-xs text-ink leading-snug line-clamp-2">{clip.articleTitle}</p>
+                              <p className="text-[10px] text-muted mt-0.5">{clip.source}{clip.publishedAt ? ` · ${clip.publishedAt}` : ''}</p>
+                              {clip.passageText && (
+                                <p className="text-[10px] text-muted/80 mt-1.5 leading-relaxed line-clamp-3 italic border-t border-border/30 pt-1.5">
+                                  "{clip.passageText}"
+                                </p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Dock chip */}
                       <div
-                        className="w-full aspect-square rounded-lg overflow-hidden border border-white/50 shadow-sm bg-gradient-to-br from-primary/10 to-primary/20 group-hover/expanded:ring-2 group-hover/expanded:ring-primary/30 transition-all duration-150 cursor-grab active:cursor-grabbing"
+                        draggable={editingClipId !== clip.id}
+                        onDragStart={() => setDragClipId(clip.id)}
+                        onDragEnd={() => setDragClipId(null)}
                         onClick={() => {
                           if (editingClipId !== clip.id) {
                             onOpenArticle(clip);
@@ -201,53 +230,82 @@ export function ClipsDock({
                           }
                         }}
                         onContextMenu={(e) => { e.preventDefault(); setConfirmDeleteId(clip.id); }}
+                        className={[
+                          'relative rounded-xl overflow-hidden border border-white/50 shadow-sm bg-gradient-to-br from-primary/10 to-primary/20 cursor-grab active:cursor-grabbing transition-[transform,box-shadow] duration-150',
+                          hoveredIndex === i ? 'scale-150 z-10 shadow-2xl ring-2 ring-primary/40' : 'hover:scale-110',
+                        ].join(' ')}
+                        style={{ width: 60, height: 60 }}
                       >
                         {clip.thumbnailUrl ? (
                           <img src={clip.thumbnailUrl} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-violet-400/40" />
                         )}
+
+                        {/* Delete confirm */}
+                        {confirmDeleteId === clip.id && (
+                          <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteClip(clip.id);
+                                setConfirmDeleteId(null);
+                              }}
+                              className="rounded bg-red-500 text-white text-[10px] px-1.5 py-0.5 hover:bg-red-600"
+                            >
+                              Delete
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                              className="rounded bg-gray-200 text-[10px] px-1.5 py-0.5"
+                              aria-label="Cancel delete"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Edit + delete on hover */}
+                        <AnimatePresence>
+                          {hoveredIndex === i && editingClipId !== clip.id && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="absolute top-0.5 right-0.5 flex flex-col gap-0.5"
+                            >
+                              <button
+                                type="button"
+                                onClick={(e) => handleStartEditClip(clip, e)}
+                                className="flex h-4 w-4 items-center justify-center rounded-full bg-white/90 text-muted shadow hover:text-primary"
+                                aria-label="Edit passage"
+                              >
+                                <Pencil size={8} aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteClip(clip.id);
+                                }}
+                                className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
+                                aria-label="Delete clip"
+                              >
+                                <XIcon size={8} aria-hidden />
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
 
-                      {/* Hover tooltip */}
-                      <AnimatePresence>
-                        {hoveredIndex === i && <HoverDetailCard clip={clip} />}
-                      </AnimatePresence>
-
-                      {/* Delete confirm */}
-                      {confirmDeleteId === clip.id && (
-                        <div className="absolute bottom-full mb-1.5 left-0 flex items-center gap-1 z-50">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteClip(clip.id);
-                              setConfirmDeleteId(null);
-                            }}
-                            className="rounded bg-red-500 text-white text-[10px] px-1.5 py-0.5 hover:bg-red-600 whitespace-nowrap"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                            className="rounded bg-gray-200 text-[10px] px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            aria-label="Cancel delete"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-
-                      <p className="mt-1 text-[10px] text-ink leading-tight line-clamp-1">
-                        {clip.articleTitle}
-                      </p>
-                      {clip.passageText && editingClipId !== clip.id && (
-                        <p className="text-[9px] text-muted italic line-clamp-1">{clip.passageText}</p>
-                      )}
-
+                      {/* Inline passage editor */}
                       {editingClipId === clip.id && (
-                        <div className="mt-1 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+                        <div
+          className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-50 w-44 flex flex-col gap-1 rounded-lg border border-primary/40 bg-white/98 p-2 shadow-xl"
+          onClick={e => e.stopPropagation()}
+                        >
                           <textarea
                             value={editPassageText}
                             onChange={e => setEditPassageText(e.target.value)}
@@ -274,30 +332,6 @@ export function ClipsDock({
                               Cancel
                             </button>
                           </div>
-                        </div>
-                      )}
-
-                      {editingClipId !== clip.id && (
-                        <div className="absolute top-0.5 right-0.5 hidden group-hover/expanded:flex items-center gap-0.5">
-                          <button
-                            type="button"
-                            onClick={(e) => handleStartEditClip(clip, e)}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-muted shadow hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            aria-label="Edit passage"
-                          >
-                            <Pencil size={9} aria-hidden />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteClip(clip.id);
-                            }}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            aria-label="Delete clip"
-                          >
-                            <XIcon size={9} aria-hidden />
-                          </button>
                         </div>
                       )}
                     </div>
