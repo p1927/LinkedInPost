@@ -80,7 +80,17 @@ export function FeedPage({
   const [editGroupColor, setEditGroupColor] = useState(COLOR_PRESETS[0]);
   const [savingEditGroup, setSavingEditGroup] = useState(false);
 
-  // Feed cache state
+  // Marking article as read also when user opens it (keyboard shortcut or click opens side sheet)
+  const handleOpenAndMarkRead = useCallback((a: NewsArticle) => {
+    setDebateMode(false);
+    setOpenArticle(a);
+    setReadArticles(prev => {
+      if (prev.has(a.url)) return prev;
+      const next = new Set(prev);
+      next.add(a.url);
+      return next;
+    });
+  }, []);
   const [feedArticles, setFeedArticles] = useState<NewsArticle[]>([]);
   const [feedLoading, setFeedLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -118,8 +128,35 @@ export function FeedPage({
   // Group filter state
   const [activeFilter, _setActiveFilter] = useState<string>('all');
 
-  // Feedback (thumbs up / down)
-  const [feedbackMap, setFeedbackMap] = useState<ArticleFeedbackMap>({});
+  // Read articles state — localStorage key: read_articles (Set of URLs)
+  const [readArticles, setReadArticles] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('read_articles');
+      return raw ? new Set(JSON.parse(raw)) : new Set<string>();
+    } catch { return new Set<string>(); }
+  });
+
+  // Persist read articles to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem('read_articles', JSON.stringify([...readArticles]));
+    } catch { /* ignore */ }
+  }, [readArticles]);
+
+  // Mark article as read when opened (navigates to new tab)
+  useEffect(() => {
+    if (openArticle?.url) {
+      setReadArticles(prev => {
+        if (prev.has(openArticle.url)) return prev;
+        const next = new Set(prev);
+        next.add(openArticle.url);
+        return next;
+      });
+    }
+  }, [openArticle]);
+
+  // Sort control
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
   // Clips state — localStorage-first, API as backup
   const [clips, setClips] = useState<Clip[]>(() => {
@@ -1240,12 +1277,15 @@ export function FeedPage({
                         articles={filteredDisplayArticles}
                         loading={leftPanelLoading}
                         onClip={handleClip}
-                        onOpen={(a) => { setDebateMode(false); setOpenArticle(a); }}
+                        onOpen={handleOpenAndMarkRead}
                         clippedUrls={clippedUrls}
                         feedbackMap={feedbackMap}
                         onThumbsUp={handleThumbsUp}
                         onThumbsDown={handleThumbsDown}
                         highlightedIndex={highlightedIndex}
+                        readArticles={readArticles}
+                        showUnreadOnly={showUnreadOnly}
+                        onShowUnreadOnlyChange={setShowUnreadOnly}
                       />
                     </motion.div>
                   )}

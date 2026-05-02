@@ -16,6 +16,7 @@ export interface FeedArticleCardProps {
   onClip: (article: NewsArticle) => void;
   onOpen: (article: NewsArticle) => void;
   isClipped?: boolean;
+  isRead?: boolean;
   isHighlighted?: boolean;
   feedbackVote?: FeedVote;
   onThumbsUp?: (article: NewsArticle) => void;
@@ -27,6 +28,7 @@ export function FeedArticleCard({
   onClip,
   onOpen,
   isClipped,
+  isRead,
   isHighlighted,
   feedbackVote,
   onThumbsUp,
@@ -50,6 +52,7 @@ export function FeedArticleCard({
       className={[
         'group py-4 border-b border-border/40 cursor-pointer transition-colors',
         isDownvoted ? 'opacity-40 hover:opacity-60' : '',
+        isRead ? 'opacity-50' : '',
         isHighlighted ? 'bg-primary/5 border-l-2 border-l-primary pl-3 -ml-3' : '',
       ].join(' ')}
       onClick={() => onOpen(article)}
@@ -58,7 +61,7 @@ export function FeedArticleCard({
       <h2
         className={[
           'text-[17px] leading-snug font-medium tracking-[-0.005em] mb-1.5',
-          isDownvoted ? 'text-muted' : 'text-ink',
+          isDownvoted ? 'text-muted' : isRead ? 'text-muted' : 'text-ink',
         ].join(' ')}
       >
         {article.title}

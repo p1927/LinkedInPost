@@ -16,6 +16,9 @@ export interface FeedLeftPanelProps {
   onThumbsDown?: (article: NewsArticle) => void;
   highlightedIndex?: number;
   onHighlightedIndexChange?: (index: number) => void;
+  readArticles?: Set<string>;
+  showUnreadOnly?: boolean;
+  onShowUnreadOnlyChange?: (v: boolean) => void;
 }
 
 function SkeletonCard() {
@@ -41,16 +44,22 @@ export function FeedLeftPanel({
   onThumbsUp,
   onThumbsDown,
   highlightedIndex = -1,
+  readArticles = new Set(),
+  showUnreadOnly = false,
 }: FeedLeftPanelProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Sort thumbs-down articles to the bottom
+  // Sort thumbs-down articles to the bottom; apply showUnreadOnly filter
   const sortedArticles = useMemo(() => {
     const downvoted = articles.filter(a => feedbackMap[a.url] === 'down');
-    const rest = articles.filter(a => feedbackMap[a.url] !== 'down');
+    const rest = articles.filter(a => {
+      if (feedbackMap[a.url] === 'down') return false;
+      if (showUnreadOnly) return !readArticles.has(a.url);
+      return true;
+    });
     return [...rest, ...downvoted];
-  }, [articles, feedbackMap]);
+  }, [articles, feedbackMap, readArticles, showUnreadOnly]);
 
   // Reset visible count when articles change
   useEffect(() => {
@@ -98,6 +107,30 @@ export function FeedLeftPanel({
 
   return (
     <div>
+      {/* Unread filter toggle */}
+      {onShowUnreadOnlyChange && (
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/40">
+          <button
+            type="button"
+            onClick={() => onShowUnreadOnlyChange(!showUnreadOnly)}
+            className={[
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors',
+              showUnreadOnly
+                ? 'bg-primary/10 border-primary/25 text-primary'
+                : 'bg-white/40 border-border/60 text-muted hover:text-ink hover:bg-white/60',
+            ].join(' ')}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+            Show unread only
+          </button>
+          {!showUnreadOnly && readArticles.size > 0 && (
+            <span className="text-[11px] text-muted">
+              {readArticles.size} read
+            </span>
+          )}
+        </div>
+      )}
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -110,6 +143,7 @@ export function FeedLeftPanel({
               onClip={onClip}
               onOpen={onOpen}
               isClipped={clippedUrls.has(article.url)}
+              isRead={readArticles.has(article.url)}
               isHighlighted={localIdx === highlightedIndex}
               feedbackVote={feedbackMap[article.url] as FeedVote | undefined}
               onThumbsUp={onThumbsUp}
