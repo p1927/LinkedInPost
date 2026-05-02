@@ -19,32 +19,6 @@ interface ClipsDockProps {
   onAssignClip: (clipId: string, postId: string) => void;
 }
 
-function HoverDetailCard({ clip }: { clip: Clip }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 6 }}
-      transition={{ duration: 0.12 }}
-      className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-50 w-60 rounded-xl bg-white/98 backdrop-blur-md border border-white/60 shadow-2xl pointer-events-none overflow-hidden"
-    >
-      {clip.thumbnailUrl ? (
-        <img src={clip.thumbnailUrl} alt="" className="w-full aspect-video object-cover" />
-      ) : (
-        <div className="w-full aspect-video bg-gradient-to-br from-primary/20 to-violet-400/40" />
-      )}
-      <div className="p-2.5">
-        <p className="font-semibold text-xs text-ink leading-snug line-clamp-2">{clip.articleTitle}</p>
-        <p className="text-[10px] text-muted mt-0.5">{clip.source}{clip.publishedAt ? ` · ${clip.publishedAt}` : ''}</p>
-        {clip.passageText && (
-          <p className="text-[10px] text-muted/80 mt-1.5 leading-relaxed line-clamp-3 italic border-t border-border/30 pt-1.5">
-            "{clip.passageText}"
-          </p>
-        )}
-      </div>
-    </motion.div>
-  );
-}
 
 export function ClipsDock({
   clips,

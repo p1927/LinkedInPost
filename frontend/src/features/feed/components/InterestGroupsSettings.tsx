@@ -111,8 +111,6 @@ export function InterestGroupsSettings({ className }: InterestGroupsSettingsProp
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
-  const refresh = useCallback(() => setGroups(loadGroups()), []);
-
   const handleSave = useCallback(
     (data: Omit<InterestGroup, 'id' | 'createdAt' | 'updatedAt'>) => {
       const now = new Date().toISOString();

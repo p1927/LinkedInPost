@@ -32,7 +32,6 @@ export function saveStatusLabel(status: VariantSaveStatus): string {
 }
 
 export function VariantSlotSavePanel({
-  index,
   status,
   errorMessage,
   disabled = false,
