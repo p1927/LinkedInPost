@@ -1177,6 +1177,8 @@ export function FeedPage({
                 onOpenArticle={(a) => { setDebateMode(false); setOpenArticle(a); }}
                 onSelectWord={(w) => { setTopic(w); setSearchTopic(w); }}
                 onSelectTopic={(t) => { setTopic(t); setSearchTopic(t); }}
+                activeGroup={activeGroupId ? interestGroups.find(g => g.id === activeGroupId) ?? null : null}
+                interestGroups={interestGroups}
               />
             </div>
           )}
