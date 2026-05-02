@@ -94,7 +94,23 @@ export function FeedPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // 'all' = no group filter applied on top of sorted articles
+
+  // Followed interest groups for feed filtering
+  const [followedGroupIds, setFollowedGroupIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('feed-followed-groups');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+
+  // Persist followed groups to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem('feed-followed-groups', JSON.stringify(followedGroupIds));
+    } catch { /* ignore */ }
+  }, [followedGroupIds]);
+
+  // Group filter state
   const [activeFilter, _setActiveFilter] = useState<string>('all');
 
   // Feedback (thumbs up / down)
@@ -420,8 +436,17 @@ export function FeedPage({
     try {
       await api.deleteInterestGroup(idToken, groupId);
       setInterestGroups(prev => prev.filter(g => g.id !== groupId));
+      setFollowedGroupIds(prev => prev.filter(id => id !== groupId));
       if (activeGroupId === groupId) setActiveGroupId(null);
     } catch { /* silent */ }
+  };
+
+  const handleFollowGroup = (groupId: string) => {
+    setFollowedGroupIds(prev => prev.includes(groupId) ? prev : [...prev, groupId]);
+  };
+
+  const handleUnfollowGroup = (groupId: string) => {
+    setFollowedGroupIds(prev => prev.filter(id => id !== groupId));
   };
 
   const handleNodeClick = (node: GraphNode) => {
@@ -503,17 +528,18 @@ export function FeedPage({
   const filteredDisplayArticles = useMemo(() => {
     let result = sortedDisplayArticles;
 
-    // Group filter (activeFilter): only applies when "All" group is loaded (activeGroupId === null)
-    // When a specific group is active via activeGroupId, the DB already scopes articles — no client filter needed
-    if (activeFilter !== 'all' && activeGroupId === null) {
-      const group = interestGroups.find(g => g.id === activeFilter);
-      if (group) {
-        const topicSet = new Set(group.topics.map(t => t.toLowerCase()));
+    // Interest group filter: apply followed-group filter when no explicit group is active
+    // (activeGroupId set = API-scoped articles; fallback = local filter on displayed articles)
+    if (activeGroupId === null && followedGroupIds.length > 0) {
+      const followedGroups = interestGroups.filter(g => followedGroupIds.includes(g.id));
+      if (followedGroups.length > 0) {
         result = result.filter(a =>
-          topicSet.has(a.source.toLowerCase()) ||
-          group.topics.some(t =>
-            a.title.toLowerCase().includes(t.toLowerCase()) ||
-            (a.description ?? '').toLowerCase().includes(t.toLowerCase()),
+          followedGroups.some(group =>
+            group.topics.some(t =>
+              a.title.toLowerCase().includes(t.toLowerCase()) ||
+              (a.description ?? '').toLowerCase().includes(t.toLowerCase()) ||
+              a.source.toLowerCase().includes(t.toLowerCase()),
+            ) || group.domains.some(d => a.url.toLowerCase().includes(d.toLowerCase())),
           ),
         );
       }
@@ -529,7 +555,7 @@ export function FeedPage({
     }
 
     return result;
-  }, [sortedDisplayArticles, activeFilter, activeGroupId, interestGroups, debouncedSearchQuery]);
+  }, [sortedDisplayArticles, activeFilter, activeGroupId, interestGroups, followedGroupIds, debouncedSearchQuery]);
 
   const leftPanelLoading = searchTopic ? trendingSearch.loading : feedLoading;
   const hasNoGroups = !groupsLoading && interestGroups.length === 0;
@@ -644,9 +670,24 @@ export function FeedPage({
                           style={{ background: group.color }}
                         />
                         <span className="flex-1 truncate text-left">{group.name}</span>
+                        {followedGroupIds.includes(group.id) && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" title="Following" />
+                        )}
                       </button>
-                      {/* Edit/delete appear on group/item hover */}
+                      {/* Follow/unfollow + edit/delete appear on group/item hover */}
                       <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover/item:flex gap-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); followedGroupIds.includes(group.id) ? handleUnfollowGroup(group.id) : handleFollowGroup(group.id); }}
+                          className={['flex h-5 w-5 items-center justify-center rounded-full transition-colors',
+                            followedGroupIds.includes(group.id)
+                              ? 'text-primary hover:bg-primary/10'
+                              : 'text-muted hover:bg-primary/10 hover:text-primary',
+                          ].join(' ')}
+                          title={followedGroupIds.includes(group.id) ? 'Unfollow' : 'Follow'}
+                        >
+                          {followedGroupIds.includes(group.id) ? <X size={10} /> : <Plus size={10} />}
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleStartEditGroup(group); }}
@@ -1121,6 +1162,39 @@ export function FeedPage({
                         </motion.div>
                       ))}
                     </motion.div>
+                  )}
+
+                  {/* Followed-groups filter indicator */}
+                  {followedGroupIds.length > 0 && !activeGroupId && (
+                    <div className="mb-3 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-muted">Filtered by:</span>
+                      {interestGroups.filter(g => followedGroupIds.includes(g.id)).map(group => (
+                        <span
+                          key={group.id}
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white"
+                          style={{ backgroundColor: group.color }}
+                        >
+                          {group.name}
+                          <button
+                            type="button"
+                            onClick={() => handleUnfollowGroup(group.id)}
+                            className="hover:opacity-70 transition-opacity"
+                            aria-label={`Remove ${group.name} filter`}
+                          >
+                            <X size={10} />
+                          </button>
+                        </span>
+                      ))}
+                      {followedGroupIds.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setFollowedGroupIds([])}
+                          className="text-xs text-muted hover:text-ink transition-colors underline"
+                        >
+                          clear all
+                        </button>
+                      )}
+                    </div>
                   )}
 
                   {/* News article feed */}
