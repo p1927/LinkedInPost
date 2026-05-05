@@ -41,7 +41,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./worker
-          environment: ""
+          command: npx wrangler d1 migrations apply PIPELINE_DB --local=false && npx wrangler deploy --env ""
 
   deploy-generation-worker:
     name: Deploy generation-worker
@@ -70,3 +70,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./generation-worker
+          command: npx wrangler d1 migrations apply GEN_DB --local=false && npx wrangler deploy
