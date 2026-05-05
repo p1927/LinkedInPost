@@ -39,6 +39,7 @@ export function trimArticleSnippet(a: ResearchArticle): ResearchArticle {
  * @param articles - The full list of research articles to consider for inclusion.
  * @returns An array of {@link ResearchArticleRef} objects representing the articles that fit
  *          within the total character budget, each with clipped title/snippet and a URL.
+ * @throws {never} This function does not throw.
  */
 export function trimForPrompt(articles: ResearchArticle[]): ResearchArticleRef[] {
   const refs: ResearchArticleRef[] = [];
