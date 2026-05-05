@@ -64,6 +64,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const startTime = Date.now();
     const { method, url } = request;
+    const reqMethod = String(request.method);
     const { pathname } = new URL(url);
 
     console.log(`[${new Date().toISOString()}] REQUEST: ${method} ${pathname}`);
@@ -104,7 +105,7 @@ export default {
       }
     }
 
-    if (method !== 'POST') {
+    if (reqMethod !== 'POST') {
       return json({ error: 'Method not allowed' }, 405);
     }
 

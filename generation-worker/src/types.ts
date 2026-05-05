@@ -106,6 +106,7 @@ export const GenerateRequestSchema = z.object({
   newsResearchConfig: z.any().optional(),
   composableAssets: ComposableAssetsSchema.optional(),
   preferPatternId: z.string().optional(),
+  globalRules: z.string().default(''),
   /** Optional override; otherwise first model from provider catalog (same as dashboard listLlmModels). */
   llm: z
     .object({

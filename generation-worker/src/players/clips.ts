@@ -59,7 +59,7 @@ export async function handleGetClips(
       return json({ clips: [], clippedAt: new Date().toISOString() }, 200);
     }
 
-    const records: SavedClip[] = await Promise.all(
+    const records = await Promise.all(
       list.keys
         .map(k => {
           const raw = k.name;

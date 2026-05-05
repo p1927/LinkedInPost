@@ -644,9 +644,10 @@ function newsSnapshotMaxAgeDaysFromEnv(env: Env): number | undefined {
 }
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const corsHeaders = buildCorsHeaders(request, env);
     const url = new URL(request.url);
+    const reqMethod: string = request.method;
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders });
@@ -678,6 +679,24 @@ export default {
       }
       const adminResp = await handleAutomationsAdminRoute(request, env, url);
       return adminResp ?? jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
+    }
+
+    // ── Feed REST API ─────────────────────────────────────────────────────────
+    // GET  /api/feed          — paginated, filterable by interest_group_id
+    // POST /api/feed/items   — create a feed item (article clip / passage clip)
+    // GET  /api/clips         — user's saved clips (paginated)
+    // POST /api/clips        — create a clip
+    if (url.pathname === '/api/feed' && reqMethod === 'GET') {
+      return handleFeedGet(request, env);
+    }
+    if (url.pathname === '/api/feed/items' && reqMethod === 'POST') {
+      return handleFeedItemCreate(request, env);
+    }
+    if (url.pathname === '/api/clips' && reqMethod === 'GET') {
+      return handleClipsGet(request, env);
+    }
+    if (url.pathname === '/api/clips' && reqMethod === 'POST') {
+      return handleClipsCreate(request, env);
     }
 
     if (request.method === 'GET') {
@@ -757,41 +776,40 @@ export default {
       // GET /api/clips         — user's saved clips (paginated)
       // POST /api/clips        — create a clip
 
-      if (url.pathname === '/api/feed' && request.method === 'GET') {
+      if (url.pathname === '/api/feed' && reqMethod === 'GET') {
         return handleFeedGet(request, env);
       }
-      if (url.pathname === '/api/feed/items' && request.method === 'POST') {
+      if (url.pathname === '/api/feed/items' && reqMethod === 'POST') {
         return handleFeedItemCreate(request, env);
       }
-      if (url.pathname === '/api/clips' && request.method === 'GET') {
+      if (url.pathname === '/api/clips' && reqMethod === 'GET') {
         return handleClipsGet(request, env);
       }
-      if (url.pathname === '/api/clips' && request.method === 'POST') {
+      if (url.pathname === '/api/clips' && reqMethod === 'POST') {
         return handleClipsCreate(request, env);
       }
 
       return jsonResponse({ ok: false, error: 'Not found.' }, 404, corsHeaders);
     }
 
-    if (request.method !== 'POST') {
-      return jsonResponse({ ok: false, error: 'Method not allowed.' }, 405, corsHeaders);
-    }
+    // ── POST-only REST API ─────────────────────────────────────────────────────────
+    if (request.method === 'POST') {
+      // Public endpoint — no auth required
+      if (url.pathname === '/api/waitlist') {
+        return handleWaitlist(request, env.PIPELINE_DB);
+      }
 
-    // Public endpoint — no auth required
-    if (url.pathname === '/api/waitlist') {
-      return handleWaitlist(request, env.PIPELINE_DB);
-    }
+      if (url.pathname === '/internal/schedule-linkedin-publish') {
+        return handleScheduledLinkedInPublishRequest(request, env);
+      }
 
-    if (url.pathname === '/internal/schedule-linkedin-publish') {
-      return handleScheduledLinkedInPublishRequest(request, env);
-    }
+      if (url.pathname === '/internal/merged-rows') {
+        return handleInternalMergedRowsRequest(request, env);
+      }
 
-    if (url.pathname === '/internal/merged-rows') {
-      return handleInternalMergedRowsRequest(request, env);
-    }
-
-    if (url.pathname === '/internal/pipeline-upsert') {
-      return handleInternalPipelineUpsertRequest(request, env);
+      if (url.pathname === '/internal/pipeline-upsert') {
+        return handleInternalPipelineUpsertRequest(request, env);
+      }
     }
 
     // SSE streaming generation endpoint
@@ -6280,20 +6298,8 @@ function base64ToBytes(value: string): Uint8Array {
   return bytes;
 }
 
-}
-
 // ── Feed REST API handlers ───────────────────────────────────────────────────────
 
-interface FeedPageParams {
-  interest_group_id?: string;
-  cursor?: string;
-  limit?: string;
-}
-
-interface ClipsPageParams {
-  cursor?: string;
-  limit?: string;
-}
 
 interface CreateFeedItemPayload {
   type: 'article' | 'passage';
@@ -6444,18 +6450,18 @@ async function handleClipsGet(request: Request, env: Env): Promise<Response> {
   const hasMore = (rows.results ?? []).length > limit;
   const page = (rows.results ?? []).slice(0, limit);
 
-  const clips = page.map((r: Record<string, string>) => ({
-    id: r.id,
-    type: r.type,
-    articleTitle: r.article_title,
-    articleUrl: r.article_url,
-    source: r.source,
-    publishedAt: r.published_at,
-    thumbnailUrl: r.thumbnail_url,
-    passageText: r.passage_text,
-    clippedAt: r.clipped_at,
-    versions: JSON.parse(r.versions_json),
-    assignedPostIds: JSON.parse(r.assigned_post_ids_json),
+  const clips = page.map((r: Record<string, unknown>) => ({
+    id: String(r['id'] ?? ''),
+    type: String(r['type'] ?? ''),
+    articleTitle: String(r['article_title'] ?? ''),
+    articleUrl: String(r['article_url'] ?? ''),
+    source: String(r['source'] ?? ''),
+    publishedAt: String(r['published_at'] ?? ''),
+    thumbnailUrl: String(r['thumbnail_url'] ?? ''),
+    passageText: String(r['passage_text'] ?? ''),
+    clippedAt: String(r['clipped_at'] ?? ''),
+    versions: JSON.parse(String(r['versions_json'] ?? '[]')),
+    assignedPostIds: JSON.parse(String(r['assigned_post_ids_json'] ?? '[]')),
   }));
 
   const nextCursor = hasMore ? String(offset + limit) : null;
