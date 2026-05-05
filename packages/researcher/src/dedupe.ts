@@ -78,3 +78,12 @@ export function dedupeArticles(items: ResearchArticle[]): { articles: ResearchAr
   }
   return { articles: out, removed };
 }
+
+export function dedupeByUrl(articles: ResearchArticle[]): ResearchArticle[] {
+  const seen = new Set<string>();
+  return articles.filter((article) => {
+    if (seen.has(article.url)) return false;
+    seen.add(article.url);
+    return true;
+  });
+}

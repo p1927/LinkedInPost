@@ -15,6 +15,17 @@ export function trimArticleSnippet(a: ResearchArticle): ResearchArticle {
   };
 }
 
+/**
+ * Trims research articles to fit within the prompt token budget and returns a list of references.
+ *
+ * Each article's title and snippet are clipped to max lengths, then articles are added in order
+ * until the accumulated character count would exceed the total research budget. Articles that
+ * would exceed the budget are excluded.
+ *
+ * @param articles - The full list of research articles to consider for inclusion.
+ * @returns An array of {@link ResearchArticleRef} objects representing the articles that fit
+ *          within the total character budget, each with clipped title/snippet and a URL.
+ */
 export function trimForPrompt(articles: ResearchArticle[]): ResearchArticleRef[] {
   const refs: ResearchArticleRef[] = [];
   let used = 0;
