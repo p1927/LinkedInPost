@@ -1,6 +1,14 @@
 import type { ResearchArticle, ResearchArticleRef } from './types';
 import { MAX_SNIPPET_CHARS, MAX_TOTAL_RESEARCH_CHARS } from './types';
 
+/**
+ * Clips a string to a maximum character limit, appending an ellipsis if truncation occurs.
+ *
+ * @param s - The string to clip.
+ * @param max - The maximum allowed character count.
+ * @returns The original string if it fits within the limit, otherwise the string truncated
+ *          to max - 1 characters with an ellipsis appended.
+ */
 function clip(s: string, max: number): string {
   const t = String(s || '').replace(/\s+/g, ' ').trim();
   if (t.length <= max) return t;
