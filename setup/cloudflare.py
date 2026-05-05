@@ -40,6 +40,27 @@ def ensure_cloudflare_auth() -> None:
     )
 
 
+def get_cloudflare_account_id() -> str:
+    """Return CLOUDFLARE_ACCOUNT_ID from env, or try to parse from `wrangler whoami` output."""
+    account_id = os.environ.get('CLOUDFLARE_ACCOUNT_ID', '').strip()
+    if account_id:
+        return account_id
+    try:
+        result = run_command(['npx', 'wrangler', 'whoami', '--json'], cwd=ROOT, capture_output=True)
+        import json as _json
+        data = _json.loads(result.stdout)
+        # wrangler whoami JSON has account.id and account.name
+        account = data.get('account', {})
+        account_id = str(account.get('id', '')).strip()
+        if account_id:
+            ok('Cloudflare account ID', account_id)
+            return account_id
+    except Exception:
+        pass
+    warn('Cloudflare account ID', 'CLOUDFLARE_ACCOUNT_ID not set and could not parse from wrangler whoami')
+    return ''
+
+
 def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
     """Set generation worker auth secrets in Cloudflare for both workers.
 

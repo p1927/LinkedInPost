@@ -109,15 +109,22 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: object |
 
 
 def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: object | None) -> None:
+    from .cloudflare import get_cloudflare_account_id
     from .verification import verify_worker_endpoint
 
     worker_url = worker_bootstrap.worker_url or os.environ.get('VITE_WORKER_URL', '').strip()
     if worker_url:
         verify_worker_endpoint(worker_url, worker_bootstrap.cors_allowed_origins)
 
+    # Auto-detect Cloudflare account ID if not set
+    cloudflare_account_id = os.environ.get('CLOUDFLARE_ACCOUNT_ID', '').strip()
+    if not cloudflare_account_id:
+        cloudflare_account_id = get_cloudflare_account_id()
+
     # Only sync secrets actually consumed by remaining GitHub Actions workflows:
     # - deploy-pages.yml: VITE_GOOGLE_CLIENT_ID, VITE_WORKER_URL
     # - youtube-comment-poll.yml: WORKER_SCHEDULER_SECRET, YOUTUBE_* vars, VITE_WORKER_URL
+    # - deploy-workers.yml: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
     # All other secrets (API keys, OAuth tokens, GCS, etc.) are set directly on the
     # Cloudflare Worker via `wrangler secret put` during --deploy-worker.
     secrets_to_sync: dict[str, str] = {
@@ -127,6 +134,9 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
         'YOUTUBE_API_KEY': os.environ.get('YOUTUBE_API_KEY', '').strip(),
         'YOUTUBE_OAUTH_TOKEN': os.environ.get('YOUTUBE_OAUTH_TOKEN', '').strip(),
         'YOUTUBE_CHANNEL_ID': os.environ.get('YOUTUBE_CHANNEL_ID', '').strip(),
+        # Cloudflare — required by deploy-workers.yml
+        'CLOUDFLARE_API_TOKEN': os.environ.get('CLOUDFLARE_API_TOKEN', '').strip(),
+        'CLOUDFLARE_ACCOUNT_ID': cloudflare_account_id,
     }
 
     for name, value in secrets_to_sync.items():
