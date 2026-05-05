@@ -22,6 +22,7 @@ export interface NewsResearchStored {
 
 export interface ResearchArticle {
   title: string;
+  /** Must be a full absolute URL, e.g. https://example.com/article */
   url: string;
   source: string;
   publishedAt: string;
