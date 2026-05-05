@@ -7,6 +7,12 @@ function clip(s: string, max: number): string {
   return `${t.slice(0, max - 1)}\u2026`;
 }
 
+/**
+ * Clips the title and snippet of a research article to maximum character limits.
+ *
+ * @param a - The research article to trim.
+ * @returns A new {@link ResearchArticle} object with clipped title and snippet.
+ */
 export function trimArticleSnippet(a: ResearchArticle): ResearchArticle {
   return {
     ...a,
