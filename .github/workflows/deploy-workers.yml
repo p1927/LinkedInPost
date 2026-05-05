@@ -1,0 +1,72 @@
+name: Deploy Workers
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "worker/**"
+      - "generation-worker/**"
+      - ".github/workflows/deploy-workers.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: workers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-worker:
+    name: Deploy worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: worker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./worker
+
+      - name: Run typecheck
+        run: npm run typecheck
+        working-directory: ./worker
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./worker
+          environment: ""
+
+  deploy-generation-worker:
+    name: Deploy generation-worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: generation-worker/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./generation-worker
+
+      - name: Run typecheck
+        run: npm run typecheck
+        working-directory: ./generation-worker
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./generation-worker
