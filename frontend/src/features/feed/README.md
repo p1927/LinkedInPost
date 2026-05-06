@@ -150,6 +150,6 @@ No changes to `FeedPage.tsx` are required — `FeedCuratedPanel` receives articl
 
 ## Content Post Types Playbook
 
-The feed is one output surface for content generated from the **Post Types Playbook** — 7 structural templates (informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation). Each type embeds a named arc pattern (e.g. HOOK→CONTEXT→TAKE→CTA) in its `generationInstruction`. The playbook is fully implemented in `worker/src/engine/workflows/definitions/`; see [plan-002 post-quality-engine architecture docs][plan-002-arch] for the full dimension→node mapping.
+The feed is one output surface for content generated from the **Content Post Types Playbook** — 7 structural templates (informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation). Each type embeds a named arc pattern (e.g. HOOK→CONTEXT→TAKE→CTA) in its `generationInstruction`, selectable in the GenerationPanel. The playbook is fully implemented in `worker/src/engine/workflows/definitions/`; see [plan-002 post-quality-engine architecture docs][plan-002-arch] for the full dimension→node mapping.
 
 [plan-002-arch]: ../../docs/plans/plan-002-post-quality-engine/architecture.md
