@@ -1,5 +1,6 @@
 import { runNewsResearch, trimForPrompt } from '@linkedinpost/researcher';
 import type { ResearchArticleRef } from '@linkedinpost/researcher';
+import { extractArticleInsights } from './players/articleInsights';
 import { buildRequirementReport } from './players/requirementReport';
 import { loadBundledRepository } from './players/patternRepository';
 import { findPattern, recordPatternOutcome } from './players/patternFinder';
@@ -69,6 +70,11 @@ export async function runPipeline(
         });
         research = trimForPrompt(result.articles);
         trace.research = { articleCount: research.length, warnings: result.warnings };
+        // Extract insights from research articles for better post drafts
+        if (research.length > 0) {
+          const { insights, hashtags } = extractArticleInsights(research, report.topic);
+          trace.articleInsights = { ...insights, suggestedHashtags: hashtags };
+        }
       } catch (e) {
         trace.researchError = String(e);
       }
