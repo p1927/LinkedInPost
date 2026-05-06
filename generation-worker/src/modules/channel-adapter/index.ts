@@ -143,13 +143,27 @@ export function formatForChannel(
   const { cleaned, hashtags } = extractHashtags(text, maxHashtags);
   text = cleaned;
 
-  // Step 3: Reappend hashtags at the end (if any)
+  // Step 3: Include LLM-suggested hashtags (from generation) as fallback/supplement
+  // Merge with extracted hashtags, deduplicate, cap at channel max
+  const suggested = (variant as { suggestedHashtags?: string[] }).suggestedHashtags ?? [];
+  const seen = new Set<string>();
+  const merged: string[] = [];
+  for (const tag of [...hashtags, ...suggested]) {
+    const key = tag.toLowerCase();
+    if (!seen.has(key) && merged.length < maxHashtags) {
+      seen.add(key);
+      merged.push(tag);
+    }
+  }
+  const finalHashtags = merged;
+
+  // Step 4: Reappend hashtags at the end (if any)
   let formattedText = text;
-  if (hashtags.length > 0) {
-    formattedText = `${text}\n\n${hashtags.join(' ')}`;
+  if (finalHashtags.length > 0) {
+    formattedText = `${text}\n\n${finalHashtags.join(' ')}`;
   }
 
-  // Step 4: Truncate if needed
+  // Step 5: Truncate if needed
   let truncationApplied = false;
   if (formattedText.length > limit) {
     // Truncate at the last word boundary before the limit
@@ -160,11 +174,11 @@ export function formatForChannel(
   }
 
   const characterCount = formattedText.length;
-  const platformNotes = buildPlatformNotes(normalized, truncationApplied, hashtags.length);
+  const platformNotes = buildPlatformNotes(normalized, truncationApplied, finalHashtags.length);
 
   return {
     formattedText,
-    hashtags,
+    hashtags: finalHashtags,
     characterCount,
     truncationApplied,
     platformNotes,

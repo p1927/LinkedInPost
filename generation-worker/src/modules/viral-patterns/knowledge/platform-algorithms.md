@@ -15,6 +15,9 @@ Each platform ranks and distributes content based on a distinct set of signals. 
 4. **Native content preference** — External links in body copy suppress reach. Place URLs in the first comment if needed.
 5. **Connection proximity** — First- and second-degree engagement amplifies distribution. Tagging relevant people (sparingly) accelerates seeding.
 6. **Hashtag relevance** — 3–5 targeted hashtags connect the post to topic feeds. Niche hashtags outperform oversaturated ones.
+   - Suggested hashtag format: `#PascalCase` or `#lowercase`; always with `#` prefix.
+   - Hashtag generation should draw from: (a) topic keywords, (b) industry verticals, (c) content pattern tags (story → #Storytelling, data → #DataDriven, how-to → #HowTo).
+   - LinkedIn best practice: mix 1 broad tag + 2-3 niche tags. Max 5 hashtags. Place at end of post or in first comment.
 7. **Consistency signals** — Regular posting cadence establishes creator status and receives algorithmic favor.
 
 **Content format winners:** Text-only posts, carousels (PDF documents), short-form video. Images underperform text.

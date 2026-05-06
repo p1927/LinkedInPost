@@ -1670,6 +1670,22 @@ async function dispatchAction(
       await pipeline.deleteCustomPersona(session.userId, personaId);
       return { success: true };
     }
+    case 'updateCustomPersona': {
+      const pBody = payload as Record<string, unknown>;
+      const id = String(pBody.id || '').trim();
+      if (!id) throw new Error('id is required.');
+      const updated = await pipeline.updateCustomPersona(session.userId, id, {
+        name: String(pBody.name ?? ''),
+        concerns: Array.isArray(pBody.concerns) ? pBody.concerns : [],
+        ambitions: Array.isArray(pBody.ambitions) ? pBody.ambitions : [],
+        currentFocus: String(pBody.currentFocus ?? ''),
+        habits: Array.isArray(pBody.habits) ? pBody.habits : [],
+        language: String(pBody.language ?? ''),
+        decisionDrivers: Array.isArray(pBody.decisionDrivers) ? pBody.decisionDrivers : [],
+        painPoints: Array.isArray(pBody.painPoints) ? pBody.painPoints : [],
+      });
+      return updated;
+    }
     case 'listCustomWorkflows': {
       return handleListCustomWorkflows(env.PIPELINE_DB, session.userId);
     }
@@ -1925,6 +1941,58 @@ Rules:
           expert: String(parsed.perspectiveFlip?.expert || ''),
           beginner: String(parsed.perspectiveFlip?.beginner || ''),
         },
+      };
+    }
+    case 'extractArticleInsights': {
+      const title = String(payload.title || '').trim();
+      const description = String(payload.description || '').trim();
+      const source = String(payload.source || '').trim();
+      if (!title) throw new Error('title is required.');
+      const ws = workspaceConfigFromStored(storedConfig.googleModel, storedConfig.allowedGoogleModels, storedConfig.llm);
+      const primary = resolveStoredPrimary(ws, true);
+      const fallback = resolveStoredFallback(ws, true);
+      const articleContext = `Title: ${title}\nSource: ${source}\n${description ? `Content: ${description}` : ''}`;
+      const prompt = `You are a content strategist helping a LinkedIn creator extract key insights from an article to generate compelling posts.
+
+Article:
+${articleContext}
+
+Analyze this article and extract the following insights:
+
+Return ONLY valid JSON matching this exact shape:
+{
+  "mainTakeaway": "The single most important point the article makes (1-2 sentences)",
+  "surprisingFact": "An unexpected or counter-intuitive fact from the article (if none, omit)",
+  "expertQuote": "A notable quote or statement from an expert cited in the article (if none, omit)",
+  "dataPoint": "A specific statistic or data point that adds credibility (if none, omit)",
+  "industryContext": "How this fits into broader industry trends or context (1-2 sentences, omit if not inferable)"
+}
+
+Rules:
+- mainTakeaway: required, should capture the core message in plain language
+- surprisingFact: include only if the article contains a genuinely surprising or counter-intuitive finding
+- expertQuote: include only if a credible expert (name, title, or affiliation) is cited
+- dataPoint: include only if a specific number, percentage, or statistic is mentioned
+- industryContext: optional — infer from the article's domain if not explicitly stated
+- All values are plain strings, no markdown
+- No explanation, just the JSON object`;
+      const { text } = await generateTextJsonWithFallback(env, primary, fallback, prompt);
+      const cleaned = text.replace(/```json|```/g, '').trim();
+      let parsed: {
+        mainTakeaway: string;
+        surprisingFact?: string;
+        expertQuote?: string;
+        dataPoint?: string;
+        industryContext?: string;
+      };
+      try { parsed = JSON.parse(cleaned); }
+      catch { throw new Error('AI returned unexpected format. Please try again.'); }
+      return {
+        mainTakeaway: String(parsed.mainTakeaway || ''),
+        surprisingFact: parsed.surprisingFact ? String(parsed.surprisingFact) : undefined,
+        expertQuote: parsed.expertQuote ? String(parsed.expertQuote) : undefined,
+        dataPoint: parsed.dataPoint ? String(parsed.dataPoint) : undefined,
+        industryContext: parsed.industryContext ? String(parsed.industryContext) : undefined,
       };
     }
     case 'clusterDraftClips': {
@@ -2735,7 +2803,8 @@ Rules:
       const sid = String(storedConfig.spreadsheetId || '').trim();
       if (!sid) throw new Error('No spreadsheet configured.');
       const { handleGetNewsletterConfig } = await import('./newsletter/handlers');
-      return handleGetNewsletterConfig(env.PIPELINE_DB, sid);
+      const config = await handleGetNewsletterConfig(env.PIPELINE_DB, sid);
+      return { ok: true, data: config };
     }
     case 'newsletter.saveConfig': {
       const sid = String(storedConfig.spreadsheetId || '').trim();
@@ -2748,7 +2817,8 @@ Rules:
       const sid = String(storedConfig.spreadsheetId || '').trim();
       if (!sid) throw new Error('No spreadsheet configured.');
       const { handleListNewsletterIssues } = await import('./newsletter/handlers');
-      return handleListNewsletterIssues(env.PIPELINE_DB, sid);
+      const issues = await handleListNewsletterIssues(env.PIPELINE_DB, sid);
+      return { ok: true, data: issues };
     }
     case 'newsletter.approveIssue': {
       const issueId = String(payload.issueId || '').trim();
@@ -2768,7 +2838,8 @@ Rules:
       const sid = String(storedConfig.spreadsheetId || '').trim();
       if (!sid) throw new Error('No spreadsheet configured.');
       const { handleCreateNewsletterDraftNow } = await import('./newsletter/handlers');
-      return handleCreateNewsletterDraftNow(env, env.PIPELINE_DB, sid);
+      const result = await handleCreateNewsletterDraftNow(env, env.PIPELINE_DB, sid);
+      return { ok: true, data: result };
     }
     case 'newsletter.sendApproved': {
       const issueId = String(payload.issueId || '').trim();
@@ -2782,7 +2853,8 @@ Rules:
       const sid = String(storedConfig.spreadsheetId || '').trim();
       if (!sid) throw new Error('No spreadsheet configured.');
       const { handleListNewsletters } = await import('./newsletter/handlers');
-      return handleListNewsletters(env.PIPELINE_DB, sid);
+      const newsletters = await handleListNewsletters(env.PIPELINE_DB, sid);
+      return { ok: true, data: newsletters };
     }
     case 'newsletter.create': {
       const sid = String(storedConfig.spreadsheetId || '').trim();
@@ -2790,7 +2862,7 @@ Rules:
       const name = String(payload.name || '').trim();
       if (!name) throw new Error('Newsletter name is required.');
       const { handleCreateNewsletter } = await import('./newsletter/handlers');
-      return handleCreateNewsletter(
+      const newsletter = await handleCreateNewsletter(
         env,
         env.PIPELINE_DB,
         sid,
@@ -2798,6 +2870,7 @@ Rules:
         (payload.config as object) ?? {},
         Boolean(payload.autoApprove),
       );
+      return { ok: true, data: newsletter };
     }
     case 'newsletter.update': {
       const newsletterId = String(payload.newsletterId || '').trim();
@@ -2822,19 +2895,22 @@ Rules:
       const newsletterId = String(payload.newsletterId || '').trim();
       if (!newsletterId) throw new Error('newsletterId is required.');
       const { handleListIssuesByNewsletter } = await import('./newsletter/handlers');
-      return handleListIssuesByNewsletter(env.PIPELINE_DB, newsletterId);
+      const issues = await handleListIssuesByNewsletter(env.PIPELINE_DB, newsletterId);
+      return { ok: true, data: issues };
     }
     case 'newsletter.createDraftByNewsletter': {
       const newsletterId = String(payload.newsletterId || '').trim();
       if (!newsletterId) throw new Error('newsletterId is required.');
       const { handleCreateDraftByNewsletter } = await import('./newsletter/handlers');
-      return handleCreateDraftByNewsletter(env, env.PIPELINE_DB, newsletterId);
+      const result = await handleCreateDraftByNewsletter(env, env.PIPELINE_DB, newsletterId);
+      return { ok: true, data: result };
     }
     case 'newsletter.regenerateIssue': {
       const issueId = String(payload.issueId || '').trim();
       if (!issueId) throw new Error('issueId is required.');
       const { handleRegenerateNewsletterIssue } = await import('./newsletter/handlers');
-      return handleRegenerateNewsletterIssue(env, env.PIPELINE_DB, issueId);
+      const result = await handleRegenerateNewsletterIssue(env, env.PIPELINE_DB, issueId);
+      return { ok: true, data: result };
     }
     case 'newsletter.issue.update': {
       const issueId = String(payload.issueId || '').trim();
@@ -2845,6 +2921,10 @@ Rules:
         rendered_content: payload.rendered_content !== undefined ? String(payload.rendered_content) : undefined,
       });
       return { ok: true };
+    }
+
+    case 'getTimestamp': {
+      return { timestamp: Math.floor(Date.now() / 1000) };
     }
 
     default:
