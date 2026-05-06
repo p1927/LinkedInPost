@@ -145,3 +145,11 @@ To add a new platform panel in `FeedCuratedPanel`:
 3. Pass the filtered article list and API handle as props
 
 No changes to `FeedPage.tsx` are required — `FeedCuratedPanel` receives articles directly from its own props.
+
+---
+
+## Content Post Types Playbook
+
+The feed is one output surface for content generated from the **Post Types Playbook** — 7 structural templates (informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation). Each type embeds a named arc pattern (e.g. HOOK→CONTEXT→TAKE→CTA) in its `generationInstruction`. The playbook is fully implemented in `worker/src/engine/workflows/definitions/`; see [plan-002 post-quality-engine architecture docs][plan-002-arch] for the full dimension→node mapping.
+
+[plan-002-arch]: ../../docs/plans/plan-002-post-quality-engine/architecture.md

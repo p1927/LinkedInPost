@@ -14,6 +14,22 @@ Plus a **Variant Comparison UI** showing metadata badges per variant (post type,
 
 **Completed** — merged to `main` on 2026-04-24 via `feature/post-quality-engine`.
 
+## Post Types Playbook
+
+The engine exposes **7 structural post types** as workflows, each embedding a named arc pattern (e.g. HOOK→CONTEXT→TAKE→CTA) in its `generationInstruction`:
+
+| Post Type | File | Arc Pattern |
+|-----------|------|-------------|
+| `informational-news` | `worker/src/engine/workflows/definitions/informational-news.ts` | News hook → facts → insight → CTA |
+| `personal-story` | `worker/src/engine/workflows/definitions/personal-story.ts` | Story hook → journey → lesson → CTA |
+| `week-in-review` | `worker/src/engine/workflows/definitions/week-in-review.ts` | Week context → highlights → reflection → CTA |
+| `event-insight` | `worker/src/engine/workflows/definitions/event-insight.ts` | Event hook → context → takeaway → CTA |
+| `trend-commentary` | `worker/src/engine/workflows/definitions/trend-commentary.ts` | Trend hook → data → opinion → CTA |
+| `satirical` | `worker/src/engine/workflows/definitions/satirical.ts` | Hook → absurd comparison → ironic CTA |
+| `appreciation` | `worker/src/engine/workflows/definitions/appreciation.ts` | Hook → specific detail → recognition → CTA |
+
+These types are selectable in the frontend `GenerationPanel.tsx` and drive the `effectiveWorkflowId` in the workflow executor.
+
 ## Files
 
 - [architecture.md](architecture.md) — Three-layer model, node→dimension mapping, pipeline diagrams

@@ -582,3 +582,11 @@ git commit -m "fix: topics right rail validate provider/model consistency"
 1. **Spec coverage:** All 4 bugs + feature are covered in tasks. Bug 2+Feature was combined into Task 2.
 2. **Placeholder scan:** No TBD/TODO — each step has actual code.
 3. **Type consistency:** `workspaceLlm.provider` and `workspaceLlm.model` used consistently in Task 4. `useTrending` refetch wired in Task 2.
+
+---
+
+## Related: Content Post Types Playbook
+
+The generation panel feeds into the 7 post types from the [Post Types Playbook][post-types-playbook] — informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation. These types are implemented as workflow definitions in `worker/src/engine/workflows/definitions/` and driven by the dimension weights configured in this plan.
+
+[post-types-playbook]: ../../plans/plan-002-post-quality-engine/README.md
