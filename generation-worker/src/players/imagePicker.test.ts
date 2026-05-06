@@ -217,12 +217,16 @@ describe('buildCandidatesFromRelator', () => {
     });
   });
 
-  it('scored candidates are ranked (highest score first)', async () => {
-    const rel = makeRelator();
-    const result = await buildCandidatesFromRelator(rel, 0, makeEnv());
-
-    for (let i = 1; i < result.length; i++) {
-      expect(result[i - 1].score).toBeGreaterThanOrEqual(result[i].score);
-    }
+  it('rankCandidates sorts descending by score', async () => {
+    const { rankCandidates } = await import('./imagePicker');
+    const candidates = [
+      { id: 'low', score: 0.2, visualBrief: '' },
+      { id: 'high', score: 0.9, visualBrief: '' },
+      { id: 'mid', score: 0.5, visualBrief: '' },
+    ] as ImageCandidate[];
+    const result = rankCandidates(candidates);
+    expect(result[0].id).toBe('high');
+    expect(result[1].id).toBe('mid');
+    expect(result[2].id).toBe('low');
   });
 });

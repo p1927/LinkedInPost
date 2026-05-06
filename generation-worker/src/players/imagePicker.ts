@@ -76,7 +76,7 @@ function buildFallbackCandidates(relator: ImageRelatorOutput, variantIndex: numb
  *   - Diversity (20%): penalize near-duplicates (stub sources score lower)
  *   - Channel fit (10%): LinkedIn display context
  */
-function scoreCandidateQuality(candidate: ImageCandidate, relator: ImageRelatorOutput): ImageCandidate {
+export function scoreCandidateQuality(candidate: ImageCandidate, relator: ImageRelatorOutput): ImageCandidate {
   const briefKeywords = [...relator.searchKeywords, ...relator.styleHints].map((k) => k.toLowerCase());
   const candidateText = `${candidate.searchQuery ?? ''} ${candidate.generationPrompt ?? ''} ${candidate.visualBrief}`.toLowerCase();
 

@@ -113,11 +113,12 @@ describe('imageRelator – no-LLM fallback', () => {
   it('merges pattern.imageHints.searchKeywords into searchKeywords', async () => {
     const { relateImages } = await import('./imageRelator');
     const env = makeMinimalEnv();
+    const report = makeReport({ tone: 'opinionated' });
     const pattern = makePattern({
       mood: 'tech-forward',
       searchKeywords: ['neural network', 'productivity software', 'AI dashboard'],
     });
-    const result = await relateImages(makeVariant(), makePattern(), report, env, {
+    const result = await relateImages(makeVariant(), pattern, report, env, {
       provider: 'gemini',
       model: 'gemini-2.0-flash',
     });
