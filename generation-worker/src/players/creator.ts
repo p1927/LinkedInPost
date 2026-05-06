@@ -2,6 +2,7 @@ import type { LlmRef } from '../llmFromWorker';
 import { generateLlmParsedJson } from '../llmFromWorker';
 import type { ComposableAssets, Env, Pattern, RequirementReport, TextVariant } from '../types';
 import type { ResearchArticleRef } from '@linkedinpost/researcher';
+import { withRetry } from './retryUtils';
 
 interface LlmVariantsResponse {
   variants: Array<{
@@ -109,11 +110,18 @@ Return JSON with this exact shape:
   ]
 }`;
 
-  const result = await generateLlmParsedJson<LlmVariantsResponse>(env, llmRef, prompt, {
-    temperature: 0.8,
-    // Four full posts + JSON overhead; a low cap yields truncated JSON and JSON.parse fails with "non-JSON".
-    maxOutputTokens: 8192,
-  });
+  const result = await withRetry(
+    () => generateLlmParsedJson<LlmVariantsResponse>(env, llmRef, prompt, {
+      temperature: 0.8,
+      maxOutputTokens: 8192,
+    }),
+    {
+      maxAttempts: 3,
+      baseDelayMs: 500,
+      maxDelayMs: 8000,
+      retryIf: (err) => /\bstatus 429\b|\bstatus 5\d\d\b|rate limit|overloaded|timeout|unavailable|empty generation/i.test(String(err)),
+    },
+  );
 
   if (!Array.isArray(result.variants) || result.variants.length === 0) {
     throw new Error('Creator: LLM returned no variants');

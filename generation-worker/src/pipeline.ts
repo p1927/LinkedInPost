@@ -17,6 +17,7 @@ import { FEATURE_ENRICHMENT } from '../../worker/src/generated/features';
 import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates, ImageCandidate, TextVariant, NodeRunRecord } from './types';
 import { resolveGenerationWorkerLlmRef } from './llmFromWorker';
 import { extractHashtagsFromVariants } from './modules/_shared/types';
+import { withRetry } from './players/retryUtils';
 
 const EMPTY_ASSETS: ComposableAssets = {
   brandContext: '',
@@ -47,7 +48,15 @@ export async function runPipeline(
   // 2. PatternRepository + PatternFinder
   onProgress?.('pattern', `Finding best content pattern (${llmRef.provider}/${llmRef.model})...`);
   const repo = loadBundledRepository();
-  const finder = await findPattern(repo, report, env, llmRef, req.preferPatternId);
+  const finder = await withRetry(
+    () => findPattern(repo, report, env, llmRef, req.preferPatternId),
+    {
+      maxAttempts: 2,
+      baseDelayMs: 500,
+      maxDelayMs: 5000,
+      retryIf: (err) => /\bstatus 429\b|\bstatus 5\d\d\b|rate limit|overloaded|timeout|unavailable/i.test(String(err)),
+    },
+  );
   trace.patternFinder = finder;
 
   const pattern = repo.getById(finder.primaryId);
@@ -61,13 +70,21 @@ export async function runPipeline(
       try {
         const windowStart = req.newsWindowStart ?? new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
         const windowEnd = req.newsWindowEnd ?? new Date().toISOString().slice(0, 10);
-        const result = await runNewsResearch(env, req.newsResearchConfig, {
-          topicId: runId,
-          topic: report.topic,
-          date: windowEnd,
-          windowStart,
-          windowEnd,
-        });
+        const result = await withRetry(
+          () => runNewsResearch(env, req.newsResearchConfig, {
+            topicId: runId,
+            topic: report.topic,
+            date: windowEnd,
+            windowStart,
+            windowEnd,
+          }),
+          {
+            maxAttempts: 2,
+            baseDelayMs: 1000,
+            maxDelayMs: 10000,
+            retryIf: (err) => /\bstatus 429\b|\bstatus 5\d\d\b|rate limit|overloaded|timeout|unavailable/i.test(String(err)),
+          },
+        );
         research = trimForPrompt(result.articles);
         trace.research = { articleCount: research.length, warnings: result.warnings };
         // Extract insights from research articles for better post drafts
@@ -111,7 +128,15 @@ export async function runPipeline(
 
     // Selector (rule filter + LLM judge -> top 4)
     onProgress?.('selector', 'Selecting top variants...');
-    const scored = await selectTopVariants(allVariants, enrichmentBundle, report, env, llmRef);
+    const scored = await withRetry(
+      () => selectTopVariants(allVariants, enrichmentBundle, report, env, llmRef),
+      {
+        maxAttempts: 2,
+        baseDelayMs: 500,
+        maxDelayMs: 8000,
+        retryIf: (err) => /\bstatus 429\b|\bstatus 5\d\d\b|rate limit|overloaded|timeout|unavailable/i.test(String(err)),
+      },
+    );
     trace.selectorScores = scored.map((v) => ({ label: v.label, ...v.scores }));
 
     // Channel adapter
@@ -152,7 +177,15 @@ export async function runPipeline(
   if (!req.skipImages) {
     onProgress?.('images', 'Finding relevant images...');
     const relatorResults = await Promise.all(
-      variants.map((v) => relateImages(v, pattern, report, env, llmRef))
+      variants.map((v) => withRetry(
+        () => relateImages(v, pattern, report, env, llmRef),
+        {
+          maxAttempts: 2,
+          baseDelayMs: 500,
+          maxDelayMs: 5000,
+          retryIf: (err) => /\bstatus 429\b|\bstatus 5\d\d\b|rate limit|overloaded|timeout|unavailable/i.test(String(err)),
+        },
+      )),
     );
     perVariantImageCandidates = await Promise.all(
       relatorResults.map(async (rel, i) => ({
@@ -172,31 +205,39 @@ export async function runPipeline(
 
   // 7. Persist run to D1
   onProgress?.('saving', 'Saving run to database...');
-  await db
-    .prepare(
-      `INSERT INTO generation_runs
+  await withRetry(
+    () => db
+      .prepare(
+        `INSERT INTO generation_runs
         (run_id, spreadsheet_id, topic, channel, pattern_id, pattern_runner_up,
          pattern_rationale, requirement_report_json, variants_json,
          image_candidates_json, review_json, trace_json, hashtags_json, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(
-      runId,
-      req.spreadsheetId ?? '',
-      report.topic,
-      report.channel,
-      finder.primaryId,
-      finder.runnerUpId,
-      finder.rationale,
-      JSON.stringify(report),
-      JSON.stringify(variants),
-      JSON.stringify(imageCandidates),
-      JSON.stringify(review),
-      JSON.stringify(trace),
-      JSON.stringify(hashtagResult.topHashtags),
-      'completed',
-    )
-    .run();
+      )
+      .bind(
+        runId,
+        req.spreadsheetId ?? '',
+        report.topic,
+        report.channel,
+        finder.primaryId,
+        finder.runnerUpId,
+        finder.rationale,
+        JSON.stringify(report),
+        JSON.stringify(variants),
+        JSON.stringify(imageCandidates),
+        JSON.stringify(review),
+        JSON.stringify(trace),
+        JSON.stringify(hashtagResult.topHashtags),
+        'completed',
+      )
+      .run(),
+    {
+      maxAttempts: 3,
+      baseDelayMs: 200,
+      maxDelayMs: 3000,
+      retryIf: (err) => /\bD1| Database| write| sqlite|constraint/i.test(String(err)),
+    },
+  );
 
   return {
     runId,
