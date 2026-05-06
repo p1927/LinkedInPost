@@ -203,3 +203,75 @@ export interface VariantScores {
 export interface ScoredVariant extends EnrichedTextVariant {
   scores: VariantScores;
 }
+
+// ---------------------------------------------------------------------------
+// Hashtag Extraction — top 5 hashtags derived from variant content
+// ---------------------------------------------------------------------------
+export interface HashtagExtractionResult {
+  /** All hashtags found across variants with occurrence counts */
+  allHashtags: Array<{ tag: string; count: number }>;
+  /** Top 5 hashtags by frequency (excluding stop words) */
+  topHashtags: string[];
+}
+
+/**
+ * Extract top 5 hashtags from text variants using keyword frequency analysis.
+ * Excludes common English stop words.
+ */
+export function extractHashtagsFromVariants(
+  variants: TextVariant[],
+  topN: number = 5,
+): HashtagExtractionResult {
+  const STOP_WORDS = new Set([
+    'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+    'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought',
+    'used', 'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he',
+    'she', 'we', 'they', 'what', 'which', 'who', 'whom', 'whose', 'where',
+    'when', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more',
+    'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own',
+    'same', 'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here',
+    'there', 'then', 'once', 'if', 'because', 'until', 'while', 'about',
+    'against', 'between', 'into', 'through', 'during', 'before', 'after',
+    'above', 'below', 'up', 'down', 'out', 'off', 'over', 'under', 'again',
+    'further', 'any', 'new', 'get', 'make', 'go', 'know', 'take', 'see',
+    'come', 'think', 'look', 'want', 'give', 'use', 'find', 'tell', 'ask',
+  ]);
+
+  const wordCounts = new Map<string, number>();
+
+  for (const variant of variants) {
+    // Extract words from text, removing punctuation and splitting
+    const words = variant.text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+
+    for (const word of words) {
+      // Capitalize for hashtag format
+      const hashtag = word.charAt(0).toUpperCase() + word.slice(1);
+      wordCounts.set(hashtag, (wordCounts.get(hashtag) ?? 0) + 1);
+    }
+
+    // Also count suggested hashtags from variant if present
+    if (variant.suggestedHashtags) {
+      for (const tag of variant.suggestedHashtags) {
+        const normalized = tag.replace(/^#/, '').trim();
+        if (normalized.length > 0) {
+          wordCounts.set(normalized, (wordCounts.get(normalized) ?? 0) + 1);
+        }
+      }
+    }
+  }
+
+  // Sort by count descending, then alphabetically
+  const sorted = Array.from(wordCounts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  const allHashtags = sorted.map(([tag, count]) => ({ tag, count }));
+  const topHashtags = sorted.slice(0, topN).map(([tag]) => tag);
+
+  return { allHashtags, topHashtags };
+}

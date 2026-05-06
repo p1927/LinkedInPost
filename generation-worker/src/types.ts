@@ -138,6 +138,8 @@ export interface TextVariant {
   index: number;
   label: string;
   text: string;
+  /** Hashtags suggested for this variant, derived from content analysis. */
+  suggestedHashtags?: string[];
 }
 
 export interface ImageCandidate {
@@ -182,6 +184,7 @@ export interface GenerateResponse {
   imageCandidates: ImageCandidate[];
   perVariantImageCandidates: PerVariantImageCandidates[];
   review: ReviewResult;
+  hashtags: string[];
   trace: Record<string, unknown>;
   nodeRuns: NodeRunRecord[];
 }

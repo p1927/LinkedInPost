@@ -15,6 +15,7 @@ import { formatForChannel } from './modules/channel-adapter/index';
 import { FEATURE_ENRICHMENT } from '../../worker/src/generated/features';
 import type { Env, GenerateRequest, GenerateResponse, ComposableAssets, PerVariantImageCandidates, ImageCandidate, TextVariant, NodeRunRecord } from './types';
 import { resolveGenerationWorkerLlmRef } from './llmFromWorker';
+import { extractHashtagsFromVariants } from './modules/_shared/types';
 
 const EMPTY_ASSETS: ComposableAssets = {
   brandContext: '',
@@ -135,6 +136,10 @@ export async function runPipeline(
   const qualityScores = scoreDraftQuality(variants);
   trace.qualityScores = qualityScores.map(q => ({ overall: q.overall, passed: q.passed }));
 
+  // 5c. Hashtag extraction from content
+  const hashtagResult = extractHashtagsFromVariants(variants);
+  trace.hashtags = hashtagResult;
+
   // 6. ImageRelator + ImagePicker (per-variant, parallel)
   let perVariantImageCandidates: PerVariantImageCandidates[] = [];
   let imageCandidates: ImageCandidate[] = [];
@@ -166,8 +171,8 @@ export async function runPipeline(
       `INSERT INTO generation_runs
         (run_id, spreadsheet_id, topic, channel, pattern_id, pattern_runner_up,
          pattern_rationale, requirement_report_json, variants_json,
-         image_candidates_json, review_json, trace_json, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         image_candidates_json, review_json, trace_json, hashtags_json, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       runId,
@@ -182,6 +187,7 @@ export async function runPipeline(
       JSON.stringify(imageCandidates),
       JSON.stringify(review),
       JSON.stringify(trace),
+      JSON.stringify(hashtagResult.topHashtags),
       'completed',
     )
     .run();
@@ -196,6 +202,7 @@ export async function runPipeline(
     imageCandidates,
     perVariantImageCandidates,
     review,
+    hashtags: hashtagResult.topHashtags,
     trace,
     nodeRuns: nodeRunRecords,
   };
