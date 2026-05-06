@@ -1,25 +1,41 @@
-import { readFileSync } from 'node:fs';
 import type { LlmRef } from '../llmFromWorker';
 import { generateLlmParsedJson, hasAnyLlmProvider } from '../llmFromWorker';
 import type { Env, RequirementReport } from '../types';
 import type { PatternRepository } from './patternRepository';
 
-interface PatternStats {
-  [patternId: string]: { pass: number; flag: number; block: number };
-}
-
-const STATS_FILE = 'data/pattern-stats.json';
 const PASS_RATE_BONUS = 0.2;
 
-function loadStats(): PatternStats {
+async function loadStats(env: Env): Promise<Record<string, { pass: number; flag: number; block: number }>> {
   try {
-    return JSON.parse(readFileSync(STATS_FILE, 'utf-8'));
+    const all = await env.GEN_DB.prepare(
+      'SELECT pattern_id, pass_count, flag_count, block_count FROM pattern_stats',
+    ).all<{ pattern_id: string; pass_count: number; flag_count: number; block_count: number }>();
+    const stats: Record<string, { pass: number; flag: number; block: number }> = {};
+    for (const r of all.results) {
+      stats[r.pattern_id] = { pass: r.pass_count, flag: r.flag_count, block: r.block_count };
+    }
+    return stats;
   } catch {
     return {};
   }
 }
 
-function getPassRate(stats: PatternStats, patternId: string): number {
+export async function recordPatternOutcome(
+  env: Env,
+  patternId: string,
+  verdict: 'pass' | 'flag' | 'block',
+): Promise<void> {
+  const col = verdict === 'pass' ? 'pass_count' : verdict === 'flag' ? 'flag_count' : 'block_count';
+  await env.GEN_DB.prepare(
+    `INSERT INTO pattern_stats (pattern_id, ${col}, last_used_at)
+     VALUES (?, 1, datetime('now'))
+     ON CONFLICT(pattern_id) DO UPDATE SET
+       ${col} = pattern_stats.${col} + 1,
+       last_used_at = datetime('now')`,
+  ).bind(patternId).run();
+}
+
+function getPassRate(stats: Record<string, { pass: number; flag: number; block: number }>, patternId: string): number {
   const s = stats[patternId];
   if (!s) return 0.5;
   const total = s.pass + s.flag + s.block;
@@ -74,7 +90,7 @@ export async function findPattern(
   }
 
   // Step 2: LLM ranking over compact summaries (biased by historical pass rate)
-  const stats = loadStats();
+  const stats = await loadStats(env);
   const summaries = candidates.map((p) => ({
     id: p.id,
     name: p.name,

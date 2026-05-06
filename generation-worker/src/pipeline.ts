@@ -2,7 +2,7 @@ import { runNewsResearch, trimForPrompt } from '@linkedinpost/researcher';
 import type { ResearchArticleRef } from '@linkedinpost/researcher';
 import { buildRequirementReport } from './players/requirementReport';
 import { loadBundledRepository } from './players/patternRepository';
-import { findPattern } from './players/patternFinder';
+import { findPattern, recordPatternOutcome } from './players/patternFinder';
 import { createVariants } from './players/creator';
 import { reviewContent } from './players/review';
 import { relateImages } from './players/imageRelator';
@@ -128,6 +128,7 @@ export async function runPipeline(
   onProgress?.('review', 'Reviewing content...');
   const review = reviewContent(variants, report);
   trace.review = review;
+  await recordPatternOutcome(env, finder.primaryId, review.verdict);
 
   // 6. ImageRelator + ImagePicker (per-variant, parallel)
   let perVariantImageCandidates: PerVariantImageCandidates[] = [];
