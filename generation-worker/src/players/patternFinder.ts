@@ -1,7 +1,31 @@
+import { readFileSync } from 'node:fs';
 import type { LlmRef } from '../llmFromWorker';
 import { generateLlmParsedJson, hasAnyLlmProvider } from '../llmFromWorker';
 import type { Env, RequirementReport } from '../types';
 import type { PatternRepository } from './patternRepository';
+
+interface PatternStats {
+  [patternId: string]: { pass: number; flag: number; block: number };
+}
+
+const STATS_FILE = 'data/pattern-stats.json';
+const PASS_RATE_BONUS = 0.2;
+
+function loadStats(): PatternStats {
+  try {
+    return JSON.parse(readFileSync(STATS_FILE, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+function getPassRate(stats: PatternStats, patternId: string): number {
+  const s = stats[patternId];
+  if (!s) return 0.5;
+  const total = s.pass + s.flag + s.block;
+  if (total === 0) return 0.5;
+  return s.pass / total;
+}
 
 interface FinderResult {
   primaryId: string;
@@ -49,12 +73,14 @@ export async function findPattern(
     return { primaryId: candidates[0].id, runnerUpId: candidates[1].id, rationale: 'No LLM provider — defaulted to first match', confidence: 0.5 };
   }
 
-  // Step 2: LLM ranking over compact summaries
+  // Step 2: LLM ranking over compact summaries (biased by historical pass rate)
+  const stats = loadStats();
   const summaries = candidates.map((p) => ({
     id: p.id,
     name: p.name,
     whenToUse: p.whenToUse,
     tags: p.tags,
+    passRateBonus: getPassRate(stats, p.id) * PASS_RATE_BONUS,
   }));
 
   const prompt = `You are a content strategy expert. Given the requirements below, select the BEST matching post pattern from the candidates.
@@ -77,7 +103,9 @@ Return JSON with this exact shape:
   "runnerUpId": "<id of second-best pattern>",
   "rationale": "<1-2 sentence explanation of why primaryId fits best>",
   "confidence": <0.0-1.0>
-}`;
+}
+
+NOTE: Patterns have a historical "pass rate bonus" (0.0-0.2) based on past successful generations. Higher bonus = more likely to produce content that passes review.`;
 
   try {
     const result = await generateLlmParsedJson<LlmRankResponse>(env, llmRef, prompt, {
