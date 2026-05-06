@@ -65,7 +65,7 @@ export const setupService = {
       return;
     }
 
-    const response = await fetch('/api/setup/write-config', {
+    const response = await fetch('http://localhost:3456/api/setup/write-config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectDir, envVars }),
@@ -93,7 +93,7 @@ export const setupService = {
       return { success: true, message: 'DRY RUN: Would reset database' };
     }
 
-    const response = await fetch('/api/setup/reset-database', {
+    const response = await fetch('http://localhost:3456/api/setup/reset-database', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectDir }),
@@ -129,7 +129,7 @@ export const setupService = {
       return { success: true, message: 'DRY RUN: Would regenerate features' };
     }
 
-    const response = await fetch('/api/setup/regenerate-features', {
+    const response = await fetch('http://localhost:3456/api/setup/regenerate-features', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectDir }),

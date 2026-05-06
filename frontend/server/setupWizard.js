@@ -587,6 +587,11 @@ app.post('/api/setup/stt/disable', (req, res) => {
 
 const server = createServer(app);
 
+// Catch-all: return 404 JSON for any unmatched /api/setup/* routes
+app.use('/api/setup', (req, res) => {
+  res.status(404).json({ error: `endpoint not found: ${req.method} ${req.path}` });
+});
+
 server.listen(PORT, () => {
   console.log(`\n🚀 LinkedIn Post Setup Wizard`);
   console.log(`   URL: http://localhost:${PORT}`);

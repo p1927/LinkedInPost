@@ -58,6 +58,19 @@ export type PatternTags = z.infer<typeof PatternTagsSchema>;
 export type Pattern = z.infer<typeof PatternSchema>;
 export type PatternPack = z.infer<typeof PatternPackSchema>;
 
+// -- Article Insights --------------------------------------------------------
+/**
+ * Key insights extracted from an RSS feed article.
+ * These feed into the generation pipeline to produce more relevant post drafts.
+ */
+export interface ArticleInsight {
+  mainTakeaway: string;
+  surprisingFact?: string;
+  expertQuote?: string;
+  dataPoint?: string;
+  industryContext?: string;
+}
+
 // -- RequirementReport ------------------------------------------------------
 export const RequirementReportSchema = z.object({
   channel: z.string().min(1),
@@ -72,6 +85,14 @@ export const RequirementReportSchema = z.object({
   contentSummary: z.string().default(''),
   optionalUrl: z.string().optional(),
   constraints: z.string().default(''),
+  /** Article insights (main takeaway, surprising fact, expert quote, data point) */
+  articleInsights: z.object({
+    mainTakeaway: z.string(),
+    surprisingFact: z.string().optional(),
+    expertQuote: z.string().optional(),
+    dataPoint: z.string().optional(),
+    industryContext: z.string().optional(),
+  }).optional(),
 });
 
 export type RequirementReport = z.infer<typeof RequirementReportSchema>;
@@ -128,6 +149,14 @@ export const GenerateRequestSchema = z.object({
     name: z.string(),
     content: z.string(),
   })).optional(),
+  /** Article insights extracted from RSS feed articles (main takeaway, surprising fact, expert quote, data point) */
+  articleInsights: z.object({
+    mainTakeaway: z.string(),
+    surprisingFact: z.string().optional(),
+    expertQuote: z.string().optional(),
+    dataPoint: z.string().optional(),
+    industryContext: z.string().optional(),
+  }).optional(),
 });
 
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;
@@ -149,6 +178,8 @@ export interface ImageCandidate {
   generationPrompt?: string;
   visualBrief: string;
   score: number;
+  /** Per-candidate quality signal (0–1) scored by imagePicker */
+  imageQualityScore?: number;
   variantIndex?: number;
 }
 

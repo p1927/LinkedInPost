@@ -131,6 +131,8 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     pendingNavigateToVariants: restState.pendingNavigateToVariants,
     setPendingNavigateToVariants: restState.setPendingNavigateToVariants,
     submitting: restState.submitting,
+    draftRecoveryPending: restState.draftRecoveryPending,
+    setDraftRecoveryPending: restState.setDraftRecoveryPending,
     activeWorkspacePanel: restState.activeWorkspacePanel,
     setActiveWorkspacePanel: restState.setActiveWorkspacePanel,
     reviewPhase: restState.reviewPhase,
@@ -203,6 +205,11 @@ export function ReviewFlowProvider(props: ReviewFlowProviderProps) {
     onCreateCustomWorkflow: props.onCreateCustomWorkflow,
     onUpdateCustomWorkflow: props.onUpdateCustomWorkflow,
     onDeleteCustomWorkflow: props.onDeleteCustomWorkflow,
+    // Auto-save
+    autoSaveStatus: restState.autoSaveStatus,
+    autoSaveLastSavedAt: restState.autoSaveLastSavedAt,
+    autoSaveClearDraft: restState.autoSaveClearDraft,
+    autoSaveTrigger: restState.autoSaveTrigger,
   };
 
   return (

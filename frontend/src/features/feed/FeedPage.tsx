@@ -95,8 +95,8 @@ export function FeedPage({
   const [feedLoading, setFeedLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Collapsible left panel
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  // Collapsible left panel — default open so interest groups are immediately visible
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
 
   // Keyboard navigation state
   const [highlightedIndex, setHighlightedIndex] = useState(-1);

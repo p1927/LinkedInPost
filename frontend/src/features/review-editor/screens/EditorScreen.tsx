@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShieldCheck, Eye } from 'lucide-react';
+import { ShieldCheck, Eye, Saved } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
@@ -55,6 +55,8 @@ export function EditorScreen() {
     onRunContentReview,
     onAfterContentReview,
     nodeRuns,
+    autoSaveStatus,
+    autoSaveLastSavedAt,
   } = useReviewFlow();
   const {
     editorText,
@@ -276,6 +278,21 @@ export function EditorScreen() {
             {previewReadyCount > 0 ? (
               <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm">
                 {previewReadyCount} AI preview{previewReadyCount === 1 ? '' : 's'}
+              </Badge>
+            ) : null}
+            {autoSaveStatus === 'saving' ? (
+              <Badge variant="neutral" size="xs" className="normal-case font-bold shadow-sm flex items-center gap-1">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
+                Saving…
+              </Badge>
+            ) : autoSaveStatus === 'saved' ? (
+              <Badge variant="success" size="xs" className="normal-case font-bold shadow-sm flex items-center gap-1">
+                <Saved className="h-3 w-3 shrink-0" aria-hidden />
+                Saved
+              </Badge>
+            ) : autoSaveStatus === 'error' ? (
+              <Badge variant="danger" size="xs" className="normal-case font-bold shadow-sm">
+                Save failed
               </Badge>
             ) : null}
           </div>

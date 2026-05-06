@@ -243,13 +243,6 @@ export function AddTopicPage({
     draft.pros = pros; draft.cons = cons; draft.selectedAudience = selectedAudience;
   }, [editRow, topic, about, meaning, style, notes, pros, cons, selectedAudience]);
 
-  // Debounced topic for sidebar (600 ms)
-  const [debouncedTopic, setDebouncedTopic] = useState('');
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedTopic(topic), 600);
-    return () => clearTimeout(t);
-  }, [topic]);
-
   // Load custom personas on mount
   useEffect(() => {
     api.listCustomPersonas(idToken).then(setCustomPersonas).catch(() => {});
@@ -604,7 +597,7 @@ export function AddTopicPage({
       {/* ── Right: tabbed panel (Trending / Research / Analysis / Clips) ── */}
       <aside className="hidden w-[360px] shrink-0 flex-col border-l border-white/30 bg-white/5 backdrop-blur-sm lg:flex">
         <TopicRightPanel
-          topic={debouncedTopic}
+          topic={topic}
           idToken={idToken}
           api={api}
           capabilities={capabilities}

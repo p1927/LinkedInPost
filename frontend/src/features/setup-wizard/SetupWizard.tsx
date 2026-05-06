@@ -213,13 +213,24 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
           return;
         }
 
+        // Only call state if we have a valid projectDir — avoids 400 errors
+        // on /api/setup/state when projectDir is empty/blank, which would
+        // leave the wizard stuck in the loading spinner forever.
         const stateService = new SetupStateService(projectDir);
-        const state = await stateService.readState();
+        let state;
+        try {
+          state = await stateService.readState();
+        } catch {
+          // State endpoint not available — skip state detection, proceed to wizard
+          setIsDetectingState(false);
+          updateConfig({ projectDir });
+          return;
+        }
         setSetupState(state);
         updateConfig({ projectDir });
 
-        // If setup is partially complete, show status dashboard first
-        if (state.overallProgress > 0) {
+        // If setup is near-complete (high progress), show status dashboard first
+        if (state.overallProgress >= 90) {
           setStep('status');
         }
       } catch (error) {
@@ -234,10 +245,6 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
 
   const updateConfig = useCallback((updates: Partial<SetupConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }));
-  }, []);
-
-  const addLog = useCallback((message: string, status: 'pending' | 'running' | 'done' | 'error' = 'pending') => {
-    setProgressLogs(prev => [...prev, { message, status }]);
   }, []);
 
   const updateLog = useCallback((index: number, status: 'pending' | 'running' | 'done' | 'error', message?: string) => {
@@ -286,7 +293,7 @@ export function SetupWizard({ embedded = false }: { embedded?: boolean }) {
 
     // Move to integrations step
     setStep('integrations');
-  }, [config, addLog, updateLog, setCurrentProgressIndex]);
+  }, [config, setProgressLogs, updateLog, setCurrentProgressIndex]);
 
   const handleIntegrationsComplete = useCallback(async (integrations: SetupConfig['integrations']) => {
     updateConfig({ integrations });

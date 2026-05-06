@@ -18,6 +18,10 @@ export function ReviewDialogs() {
     pendingNavigateToVariants,
     setPendingNavigateToVariants,
     setReviewPhase,
+    autoSaveClearDraft,
+    autoSaveTrigger,
+    draftRecoveryPending,
+    setDraftRecoveryPending,
   } = useReviewFlow();
   const {
     applySheetVariantBase,
@@ -33,6 +37,24 @@ export function ReviewDialogs() {
 
   return (
     <>
+      {draftRecoveryPending ? (
+        <Dialog
+          open={true}
+          title="Restore previous draft?"
+          description="A draft was auto-saved for this topic. Would you like to restore it?"
+          confirmLabel="Restore draft"
+          cancelLabel="Start fresh"
+          onCancel={() => {
+            autoSaveClearDraft();
+            setDraftRecoveryPending(false);
+          }}
+          onConfirm={() => {
+            // Restoring was already done in useReviewFlowState; just clear the prompt
+            autoSaveTrigger();
+            setDraftRecoveryPending(false);
+          }}
+        />
+      ) : null}
       <Dialog
         open={pendingVariantIndex !== null}
         title="Discard current editor changes?"

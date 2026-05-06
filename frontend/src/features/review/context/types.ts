@@ -190,6 +190,10 @@ export interface ReviewFlowContextValue {
   setPreviewCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   pickCarouselIndex: number;
   setPickCarouselIndex: React.Dispatch<React.SetStateAction<number>>;
+  /** True when a stale auto-save draft was found on page load and the user should confirm. */
+  draftRecoveryPending: boolean;
+  /** Clear the draft recovery prompt and discard the stored auto-save. */
+  setDraftRecoveryPending: React.Dispatch<React.SetStateAction<boolean>>;
 
   emailTo: string;
   setEmailTo: React.Dispatch<React.SetStateAction<string>>;
@@ -263,6 +267,16 @@ export interface ReviewFlowContextValue {
   onCreateCustomWorkflow?: (payload: import('../../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<string | null>;
   onUpdateCustomWorkflow?: (id: string, payload: import('../../workflows/useCustomWorkflows').CreateWorkflowFormValues) => Promise<boolean>;
   onDeleteCustomWorkflow?: (id: string) => Promise<boolean>;
+
+  // Auto-save
+  /** 'idle' | 'saving' | 'saved' | 'error' */
+  autoSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  /** Unix timestamp ms of the last auto-save, or null if never saved. */
+  autoSaveLastSavedAt: number | null;
+  /** Dismiss any stale draft recovery prompt and clear the stored draft. */
+  autoSaveClearDraft: () => void;
+  /** Manually trigger an immediate auto-save. */
+  autoSaveTrigger: () => void;
 }
 
 export interface ReviewFlowProviderProps {

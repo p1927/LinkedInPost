@@ -19,6 +19,7 @@ import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../componen
 import { parseRowImageUrls } from '../../../services/selectedImageUrls';
 import { topicNeedsTruncation } from '../../../lib/topicDisplay';
 import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
+import { getRecoverableDraft, clearDraft, saveDraft, DRAFT_STALE_THRESHOLD_MS } from '../../../services/draftService';
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -141,6 +142,8 @@ interface ReviewFlowState {
   topicExpanded: boolean;
   previewCollapsed: boolean;
   pickCarouselIndex: number;
+  /** Prompt the user to restore a stale-draft if one was found on init. */
+  draftRecoveryPending: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -197,8 +200,9 @@ function buildInitialState(
   routed: ReviewRoutedNavigation | undefined,
   editorStartMediaPanel: boolean,
   globalEmailDefaults: ReviewFlowProviderProps['globalEmailDefaults'],
+  topicId: string,
 ): ReviewFlowState {
-  const base: Omit<ReviewFlowState, 'editorText' | 'editorBaselineText' | 'selectedImageUrls' | 'reviewPhase' | 'editorVariantIndex' | 'activeWorkspacePanel'> = {
+  const base: Omit<ReviewFlowState, 'editorText' | 'editorBaselineText' | 'selectedImageUrls' | 'reviewPhase' | 'editorVariantIndex' | 'activeWorkspacePanel' | 'draftRecoveryPending'> = {
     sheetRow: row,
     selection: null,
     scope: 'whole-post',
@@ -251,6 +255,7 @@ function buildInitialState(
       reviewPhase: 'edit',
       editorVariantIndex: slotIdx >= 0 ? slotIdx : null,
       activeWorkspacePanel: editorStartMediaPanel ? 'media' : 'styles',
+      draftRecoveryPending: false,
     };
   }
 
@@ -261,6 +266,20 @@ function buildInitialState(
     const idx = variants.findIndex((v) => v.text?.trim() === row.selectedText!.trim());
     editorVariantIndex = idx >= 0 ? idx : null;
   }
+
+  // Check for a recoverable auto-save draft on the "pick variant" path (where the user
+  // may have closed the tab mid-session). Only prompt if the draft is different from
+  // the current row state to avoid a confusing restore that appears to change nothing.
+  const draftRecoveryPending = Boolean(
+    topicId &&
+    routed?.screen !== 'editor' &&
+    (() => {
+      const draft = getRecoverableDraft(topicId);
+      if (!draft) return false;
+      const currentText = initialText;
+      return draft.editorText !== currentText;
+    })(),
+  );
 
   return {
     ...base,
@@ -275,6 +294,7 @@ function buildInitialState(
           : 'edit',
     editorVariantIndex,
     activeWorkspacePanel: 'styles',
+    draftRecoveryPending,
   };
 }
 
@@ -306,7 +326,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
   const [state, dispatch] = useReducer(
     reviewFlowReducer,
     undefined,
-    () => buildInitialState(row, routed, editorStartMediaPanel ?? false, globalEmailDefaults),
+    () => buildInitialState(row, routed, editorStartMediaPanel ?? false, globalEmailDefaults, row.topicId ?? ''),
   );
 
   // Stable setters — stable identity because dispatch never changes
@@ -343,6 +363,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     setTopicExpanded: makeSetter(dispatch, 'topicExpanded'),
     setPreviewCollapsed: makeSetter(dispatch, 'previewCollapsed'),
     setPickCarouselIndex: makeSetter(dispatch, 'pickCarouselIndex'),
+    setDraftRecoveryPending: makeSetter(dispatch, 'draftRecoveryPending'),
   }), []); // dispatch is stable — setters never need to be recreated
 
   const topicHeadingRef = useRef<HTMLHeadingElement | HTMLParagraphElement | null>(null);
@@ -373,7 +394,7 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     }
     lastInitRef.current = initKey;
     lastRowImageFingerprintRef.current = rowPersistedImageFingerprint;
-    dispatch({ type: 'INIT_ROW', state: buildInitialState(row, routed, editorStartMediaPanel ?? false, globalEmailDefaults) });
+    dispatch({ type: 'INIT_ROW', state: buildInitialState(row, routed, editorStartMediaPanel ?? false, globalEmailDefaults, row.topicId ?? '') });
   // globalEmailDefaults intentionally excluded: changing defaults should not reset a live editor session.
   // routed object identity excluded in favour of stable primitive fields routed?.screen / routed?.editorVariantSlot.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -584,6 +605,90 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     topicHeadingRef.current?.focus();
   }, [row]);
 
+  // ── Auto-save ──────────────────────────────────────────────────────────────────
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const autoSaveLastSavedAtRef = useRef<number | null>(null);
+  const autoSaveLastSnapshotRef = useRef<string | null>(null);
+  const autoSaveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const autoSavePerform = useCallback(() => {
+    if (!row.topicId) return;
+    const snapshot = {
+      editorText: state.editorText,
+      selectedImageUrls: state.selectedImageUrls,
+      postTime: state.postTime,
+      instruction: state.instruction,
+      scope: state.scope,
+    };
+    const key = JSON.stringify(snapshot);
+    if (key === autoSaveLastSnapshotRef.current && autoSaveLastSavedAtRef.current !== null) return;
+    setAutoSaveStatus('saving');
+    try {
+      saveDraft(row.topicId, snapshot);
+      autoSaveLastSnapshotRef.current = key;
+      autoSaveLastSavedAtRef.current = Date.now();
+      setAutoSaveStatus('saved');
+    } catch {
+      setAutoSaveStatus('error');
+    }
+    setTimeout(() => setAutoSaveStatus('idle'), 2_000);
+  }, [row.topicId, state.editorText, state.selectedImageUrls, state.postTime, state.instruction, state.scope]);
+
+  const autoSaveClearDraft = useCallback(() => {
+    if (row.topicId) clearDraft(row.topicId);
+    autoSaveLastSnapshotRef.current = null;
+    autoSaveLastSavedAtRef.current = null;
+    setAutoSaveStatus('idle');
+  }, [row.topicId]);
+
+  const autoSaveTrigger = useCallback(() => {
+    if (autoSaveDebounceRef.current !== null) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = null;
+    autoSavePerform();
+  }, [autoSavePerform]);
+
+  // Start/stop interval when topicId changes
+  useEffect(() => {
+    if (!row.topicId) return;
+    if (autoSaveIntervalRef.current !== null) clearInterval(autoSaveIntervalRef.current);
+    autoSaveIntervalRef.current = setInterval(autoSavePerform, 30_000);
+    return () => {
+      if (autoSaveIntervalRef.current !== null) {
+        clearInterval(autoSaveIntervalRef.current);
+        autoSaveIntervalRef.current = null;
+      }
+    };
+  }, [row.topicId, autoSavePerform]);
+
+  // Debounce: schedule save 2s after the last content change
+  useEffect(() => {
+    if (!row.topicId) return;
+    if (autoSaveDebounceRef.current !== null) clearTimeout(autoSaveDebounceRef.current);
+    autoSaveDebounceRef.current = setTimeout(() => {
+      autoSaveDebounceRef.current = null;
+      autoSavePerform();
+    }, 2_000);
+    return () => {
+      if (autoSaveDebounceRef.current !== null) {
+        clearTimeout(autoSaveDebounceRef.current);
+        autoSaveDebounceRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [row.topicId, state.editorText, state.selectedImageUrls, state.postTime, state.instruction, state.scope]);
+
+  // Draft recovery: when draftRecoveryPending is true, restore saved state
+  useEffect(() => {
+    if (!state.draftRecoveryPending || !row.topicId) return;
+    const draft = getRecoverableDraft(row.topicId);
+    if (!draft) return;
+    setters.setEditorText(draft.editorText);
+    setters.setEditorBaselineText(draft.editorText);
+    if (draft.postTime) setters.setPostTime(draft.postTime);
+    if (draft.selectedImageUrls.length) setters.setSelectedImageUrls(draft.selectedImageUrls);
+  }, [state.draftRecoveryPending, row.topicId]);
+
   useEffect(() => {
     if (state.suppressAutoImageSelection) {
       if (state.selectedImageUrls.length === 0) {
@@ -684,5 +789,10 @@ export function useReviewFlowState(props: ReviewFlowProviderProps) {
     restoreVersion,
     nodeRuns,
     nodeRunsLoading,
+    // Auto-save
+    autoSaveStatus,
+    autoSaveLastSavedAt: autoSaveLastSavedAtRef.current,
+    autoSaveClearDraft,
+    autoSaveTrigger,
   };
 }

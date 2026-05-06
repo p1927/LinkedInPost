@@ -17,6 +17,15 @@ export interface SocialIntegration {
   connectedAt: string;
 }
 
+/** Key insights extracted from an RSS feed article for improved post generation */
+export interface ArticleInsight {
+  mainTakeaway: string;
+  surprisingFact?: string;
+  expertQuote?: string;
+  dataPoint?: string;
+  industryContext?: string;
+}
+
 export interface SpreadsheetStatus {
   accessible: boolean;
   title: string;
@@ -1075,6 +1084,11 @@ export class BackendApi {
 
   analyzeFeedArticle(idToken: string, payload: { title: string; description: string; source: string }): Promise<ArticleAnalysis> {
     return this.post<ArticleAnalysis>('analyzeFeedArticle', idToken, payload);
+  }
+
+  /** Extract key insights from an RSS feed article (main takeaway, surprising fact, expert quote, data point) */
+  extractArticleInsights(idToken: string, payload: { title: string; description: string; source?: string }): Promise<ArticleInsight> {
+    return this.post<ArticleInsight>('extractArticleInsights', idToken, payload);
   }
 
   /** One field per post; optional fields omitted when empty. Sent to `bulkImportCampaign`. */

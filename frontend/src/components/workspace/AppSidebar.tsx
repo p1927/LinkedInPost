@@ -148,11 +148,16 @@ export function AppSidebar({
 
   const link = (page: WorkspaceNavPage, icon: ReactNode, label: string) => {
     const to = PAGE_TO_PATH[page];
+    // `end` prevents parent-prefix matching for sibling routes.
+    // - topics (/) uses `end` so ONLY /topics matches (NOT /topics/new or /topics/:id)
+    // - add-topic (/topics/new) omits `end` so it doesn't activate topics
+    // - all other routes are leaf routes → use `end` to prevent over-matching
+    const useEnd = page === 'topics';
     return (
       <li key={page}>
         <NavLink
           to={to}
-          end
+          end={useEnd}
           onClick={(e) => {
             if (hasUnsavedChanges) {
               if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
@@ -263,7 +268,7 @@ export function AppSidebar({
             {session.isAdmin ? link('settings', <Settings aria-hidden />, 'Settings') : null}
             {session.isAdmin ? link('automations', <Zap aria-hidden />, 'Automations') : null}
             {session.isAdmin ? link('setup', <Wrench aria-hidden />, 'Setup') : null}
-            {session.isAdmin ? link('admin', <Settings aria-hidden />, 'Admin') : null}
+            {session.isAdmin ? link('admin', <BarChart2 aria-hidden />, 'Admin') : null}
           </ul>
         </nav>
 

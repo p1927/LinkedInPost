@@ -114,8 +114,9 @@ export function TopicsRightRail({
     if (!raw) return WORKSPACE_DEFAULT_MODEL;
     if (FEATURE_MULTI_PROVIDER_LLM && raw.startsWith('{')) {
       try {
-        const o = JSON.parse(raw) as { provider?: string; model?: string };
+        const o = raw.startsWith('{') ? JSON.parse(raw) as { provider?: string; model?: string } : { model: raw };
         const m = String(o.model || '').trim();
+        // Validate provider compatibility: only accept if stored provider matches current workspace provider
         if (m && o.provider === workspaceLlm.provider) return m;
       } catch {
         /* fall through */

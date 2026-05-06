@@ -6,6 +6,7 @@ import {
 import { TrendingSidebar } from './TrendingSidebar';
 import type { BackendApi } from '@/services/backendApi';
 import type { TrendingCapabilities } from '../trending/hooks/useTrending';
+import { useTrending } from '../trending/hooks/useTrending';
 import type { Clip } from '../feed/types';
 
 type TabId = 'trending' | 'research' | 'analysis' | 'clips';
@@ -45,6 +46,8 @@ export function TopicRightPanel({
       .finally(() => setLoadingClips(false));
   }, [idToken, api]);
 
+  const { refetch } = useTrending(topic, idToken, api, capabilities);
+
   const TABS: { id: TabId; label: string }[] = [
     { id: 'trending', label: 'Trending' },
     { id: 'research', label: 'Research' },
@@ -81,7 +84,7 @@ export function TopicRightPanel({
             idToken={idToken}
             api={api}
             capabilities={capabilities}
-            onRefresh={() => {}}
+            onRefresh={() => { void refetch(); }}
           />
         )}
         {activeTab === 'research' && (
@@ -90,7 +93,7 @@ export function TopicRightPanel({
             idToken={idToken}
             api={api}
             capabilities={capabilities}
-            onRefresh={() => {}}
+            onRefresh={() => { void refetch(); }}
           />
         )}
         {activeTab === 'analysis' && (

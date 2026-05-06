@@ -320,6 +320,71 @@ export function mergeCommaParts(chips: string[], freeText: string): string {
   return uniq([...chips, ...(freeText.trim() ? [freeText.trim()] : [])]).join(', ');
 }
 
+export const BASE_HASHTAG_SUGGESTIONS: string[] = [
+  '#LinkedInTips',
+  '#ThoughtLeadership',
+  '#CareerAdvice',
+  '#ProfessionalGrowth',
+  '#NetworkingTips',
+  '#ContentStrategy',
+  '#Entrepreneurship',
+  '#Productivity',
+  '#Leadership',
+  '#PersonalBranding',
+];
+
+function channelHashtags(channel: ChannelId): string[] {
+  switch (channel) {
+    case 'linkedin':
+      return [
+        '#LinkedInForBusiness',
+        '#LinkedInMarketing',
+        '#LinkedInGrowth',
+        '#B2BMarketing',
+        '#SocialSelling',
+        '#PersonalBranding',
+        '#CareerDevelopment',
+        '#LeadershipDevelopment',
+      ];
+    case 'instagram':
+      return ['#InstagramTips', '#SocialMedia', '#ContentCreation', '#BrandBuilding', '#VisualContent'];
+    case 'gmail':
+      return ['#EmailMarketing', '#Newsletter', '#B2BEmail'];
+    default:
+      return [];
+  }
+}
+
+function patternHashtags(pattern: ContentPattern | null): string[] {
+  if (!pattern) return [];
+  const tags = (pattern.tags ?? []).map((t) => t.toLowerCase());
+  const name = (pattern.name ?? '').toLowerCase();
+  const out: string[] = [];
+
+  if (tags.includes('story') || name.includes('story')) out.push('#Storytelling');
+  if (tags.includes('data') || name.includes('data')) out.push('#DataDriven', '#Insights');
+  if (tags.includes('how-to') || tags.includes('how to') || name.includes('how')) out.push('#HowTo', '#Tutorial');
+  if (tags.includes('thought') || name.includes('thought')) out.push('#ThoughtLeadership', '#Perspective');
+  if (tags.includes('announcement') || name.includes('launch')) out.push('#NewProduct', '#Announcement', '#Launch');
+  if (tags.includes('career') || name.includes('career')) out.push('#CareerAdvice', '#CareerGrowth');
+  if (tags.includes('leadership') || name.includes('leadership')) out.push('#Leadership', '#Management');
+  if (tags.includes('productivity') || name.includes('productivity')) out.push('#ProductivityTips');
+  if (tags.includes('marketing') || name.includes('marketing')) out.push('#MarketingTips', '#GrowthMarketing');
+  if (tags.includes('ai') || name.includes('ai')) out.push('#AI', '#ArtificialIntelligence', '#AITools');
+  if (tags.includes('startup') || name.includes('startup')) out.push('#StartupLife', '#Entrepreneurship');
+
+  return out;
+}
+
+/**
+ * Returns relevant hashtag suggestions for a draft, combining base, channel,
+ * and pattern-derived hashtags. Up to `max` are returned.
+ */
+export function getHashtagSuggestions(ctx: DraftSuggestionContext, max = 8): string[] {
+  const hints = patternHashtags(ctx.pattern);
+  return uniq([...BASE_HASHTAG_SUGGESTIONS, ...channelHashtags(ctx.channel), ...hints]).slice(0, max);
+}
+
 /** Constraints: chips and free text as separate sentences/lines. */
 export function mergeConstraintParts(chips: string[], freeText: string): string {
   const parts = uniq([...chips.map((c) => c.trim()).filter(Boolean), ...(freeText.trim() ? [freeText.trim()] : [])]);

@@ -14,6 +14,7 @@ export function buildRequirementReport(req: GenerateRequest): RequirementReport 
     contentSummary: '',
     optionalUrl: req.optionalUrl,
     constraints: req.constraints || '',
+    articleInsights: req.articleInsights,
   };
 }
 

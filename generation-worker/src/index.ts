@@ -93,6 +93,15 @@ export default {
       return json({ patterns: repo.getAll() });
     }
 
+    // GET /v1/health — pipeline health check
+    if (pathname === '/v1/health' && method === 'GET') {
+      return json({
+        status: 'ok',
+        service: 'generation-worker',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     // GET /v1/llm/catalog — providers + model lists (same discovery as main Worker listLlmModels)
     if (pathname === '/v1/llm/catalog' && method === 'GET') {
       try {

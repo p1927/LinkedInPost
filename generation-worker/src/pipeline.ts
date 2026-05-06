@@ -34,18 +34,26 @@ export async function runPipeline(
   onProgress?: (step: string, label: string) => void,
 ): Promise<GenerateResponse> {
   const trace: Record<string, unknown> = {};
+  const timings: Record<string, number> = {};
   const runId = crypto.randomUUID();
+  const stageStart = (name: string) => { timings[name] = Date.now(); onProgress?.('stage', name); };
+  const stageEnd = (name: string) => { timings[name] = Date.now() - timings[name]; };
 
   // 0. RequirementReport
+  stageStart('requirementReport');
   const report = buildRequirementReport(req);
   trace.requirementReport = report;
+  stageEnd('requirementReport');
 
   // 1. LLM ref from shared provider catalog
+  stageStart('llm_ref');
   onProgress?.('llm_ref', 'Resolving LLM provider...');
   const llmRef = await resolveGenerationWorkerLlmRef(env, req.llm);
   trace.llmRef = llmRef;
+  stageEnd('llm_ref');
 
   // 2. PatternRepository + PatternFinder
+  stageStart('pattern');
   onProgress?.('pattern', `Finding best content pattern (${llmRef.provider}/${llmRef.model})...`);
   const repo = loadBundledRepository();
   const finder = await withRetry(
@@ -58,6 +66,7 @@ export async function runPipeline(
     },
   );
   trace.patternFinder = finder;
+  stageEnd('pattern');
 
   const pattern = repo.getById(finder.primaryId);
   if (!pattern) throw new Error(`Pattern not found: ${finder.primaryId}`);
@@ -105,6 +114,7 @@ export async function runPipeline(
   if (FEATURE_ENRICHMENT) {
     // --- ENRICHMENT PATH ---
     // Run research and enrichment in parallel
+    stageStart('enrichment');
     onProgress?.('enrichment', 'Running content enrichment...');
     const enabledSkillIds = req.enrichmentSkills && req.enrichmentSkills.length > 0
       ? new Set(req.enrichmentSkills.filter((s) => s.enabled !== false).map((s) => s.id))
@@ -117,16 +127,20 @@ export async function runPipeline(
     const enrichmentBundle = enrichmentResult.bundle;
     nodeRunRecords = enrichmentResult.records;
     trace.enrichmentBundle = enrichmentBundle;
+    stageEnd('enrichment');
 
     // Enhanced Creator (4 parallel groups -> 8-12 variants)
+    stageStart('creator');
     onProgress?.('creator', 'Generating content variants...');
     const allVariants = await createEnrichedVariants(
       pattern, report, research, enrichmentBundle, assets, env, llmRef,
     );
     trace.creatorVariantCount = allVariants.length;
     trace.creatorGroups = [...new Set(allVariants.map((v) => v.emphasisGroup))];
+    stageEnd('creator');
 
     // Selector (rule filter + LLM judge -> top 4)
+    stageStart('selector');
     onProgress?.('selector', 'Selecting top variants...');
     const scored = await withRetry(
       () => selectTopVariants(allVariants, enrichmentBundle, report, env, llmRef),
@@ -138,12 +152,15 @@ export async function runPipeline(
       },
     );
     trace.selectorScores = scored.map((v) => ({ label: v.label, ...v.scores }));
+    stageEnd('selector');
 
     // Channel adapter
+    stageStart('channelAdapter');
     const formatted = scored.map((v) => ({
       ...v,
       text: formatForChannel(v, enrichmentBundle.typography, report.channel).formattedText,
     }));
+    stageEnd('channelAdapter');
 
     if (formatted.length === 0) {
       throw new Error('Content generation produced no usable variants. All generation groups failed — check LLM provider configuration and try again.');
@@ -151,27 +168,38 @@ export async function runPipeline(
     variants = formatted;
   } else {
     // --- LEGACY PATH ---
+    stageStart('research');
     await researchTask();
+    stageEnd('research');
+    stageStart('creator');
     onProgress?.('creator', 'Generating content variants...');
     variants = await createVariants(pattern, report, research, assets, env, llmRef);
     trace.creatorVariantCount = variants.length;
+    stageEnd('creator');
   }
 
   // 5. Review
+  stageStart('review');
   onProgress?.('review', 'Reviewing content...');
   const review = reviewContent(variants, report);
   trace.review = review;
   await recordPatternOutcome(env, finder.primaryId, review.verdict);
+  stageEnd('review');
 
   // 5b. Quality scoring (parallel with review, before image generation)
+  stageStart('qualityScoring');
   const qualityScores = scoreDraftQuality(variants);
   trace.qualityScores = qualityScores.map(q => ({ overall: q.overall, passed: q.passed }));
+  stageEnd('qualityScoring');
 
   // 5c. Hashtag extraction from content
+  stageStart('hashtags');
   const hashtagResult = extractHashtagsFromVariants(variants);
   trace.hashtags = hashtagResult;
+  stageEnd('hashtags');
 
   // 6. ImageRelator + ImagePicker (per-variant, parallel)
+  stageStart('images');
   let perVariantImageCandidates: PerVariantImageCandidates[] = [];
   let imageCandidates: ImageCandidate[] = [];
   if (!req.skipImages) {
@@ -197,13 +225,17 @@ export async function runPipeline(
     trace.imageRelator = relatorResults.map((rel, i) => ({
       variantIndex: i,
       visualBrief: rel.visualBrief,
+      styleHints: rel.styleHints,
       keywordCount: rel.searchKeywords.length,
     }));
+    stageEnd('images');
   } else {
     trace.imageRelator = 'skipped';
+    stageEnd('images');
   }
 
   // 7. Persist run to D1
+  stageStart('persist');
   onProgress?.('saving', 'Saving run to database...');
   await withRetry(
     () => db
@@ -238,6 +270,11 @@ export async function runPipeline(
       retryIf: (err) => /\bD1| Database| write| sqlite|constraint/i.test(String(err)),
     },
   );
+
+  stageEnd('persist');
+  trace.timings = timings;
+  const totalMs = Object.values(timings).reduce((a, b) => a + b, 0);
+  trace.totalPipelineMs = totalMs;
 
   return {
     runId,

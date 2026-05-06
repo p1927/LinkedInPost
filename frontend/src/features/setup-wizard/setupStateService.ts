@@ -8,10 +8,12 @@ export class SetupStateService {
   }
 
   /**
-   * Fetch setup state from the backend API
+   * Fetch setup state from the backend API.
+   * Uses absolute URL to the setup wizard server (port 3456) to avoid port mismatches
+   * when the wizard is served from Vite dev server (port 5174).
    */
   async readState(): Promise<SetupState> {
-    const url = `/api/setup/state?projectDir=${encodeURIComponent(this.projectDir)}`;
+    const url = `http://localhost:3456/api/setup/state?projectDir=${encodeURIComponent(this.projectDir)}`;
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch setup state: ${response.status}`);
