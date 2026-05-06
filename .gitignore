@@ -28,3 +28,11 @@ test-results/
 playwright-report/
 test-results-deployment/
 playwright-report-deployment/
+# Shard runtime state (never commit)
+.shard/
+state/exec/
+data/dead_letters/
+data/generated_prompts/
+frontend/core.*
+test-goal.txt
+.runs/
