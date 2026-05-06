@@ -80,6 +80,7 @@ Auto-detected when `sourceType: "research" | "news"`.
 | `worker/src/engine/workflows/definitions/trend-commentary.ts` | Post type workflow |
 | `worker/src/engine/workflows/definitions/satirical.ts` | Post type workflow |
 | `worker/src/engine/workflows/definitions/appreciation.ts` | Post type workflow |
+| `worker/src/engine/workflows/definitions/newsletter-realtime-preview.ts` | Post type workflow |
 
 ## Key Modified Files
 
@@ -90,7 +91,7 @@ Auto-detected when `sourceType: "research" | "news"`.
 | `worker/src/engine/nodes/definitions/draft-generator.ts` | `variant_rationale` in output schema |
 | `worker/src/generation/prompts.ts` | `buildEnhancementPrompt()` for Author Voice mode |
 | `worker/src/generation/types.ts` | `dimensionWeights`, `postType` on `GenerationRequestPayload` |
-| `worker/src/engine/workflows/registry-setup.ts` | Registers all 7 new workflows |
+| `worker/src/engine/workflows/registry-setup.ts` | Registers all 8 new workflows |
 | `frontend/src/features/generation/GenerationPanel.tsx` | Post Type dropdown + 7 dimension sliders |
 | `frontend/src/features/variant/components/VariantCarousel.tsx` | Metadata badges + `variant_rationale` display |
 | `frontend/src/services/backendApi.ts` | New fields on `GenerationRequest` and `VariantPreviewResult` |

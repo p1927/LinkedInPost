@@ -2912,6 +2912,13 @@ Rules:
       const result = await handleRegenerateNewsletterIssue(env, env.PIPELINE_DB, issueId);
       return { ok: true, data: result };
     }
+    case 'newsletter.preview': {
+      const sid = String(storedConfig.spreadsheetId || '').trim();
+      if (!sid) throw new Error('No spreadsheet configured.');
+      const { handleNewsletterPreview } = await import('./newsletter/handlers');
+      const result = await handleNewsletterPreview(env, env.PIPELINE_DB, sid);
+      return { ok: true, data: result };
+    }
     case 'newsletter.issue.update': {
       const issueId = String(payload.issueId || '').trim();
       if (!issueId) throw new Error('issueId is required.');

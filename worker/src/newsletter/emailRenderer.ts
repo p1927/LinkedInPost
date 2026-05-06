@@ -150,12 +150,106 @@ function injectNewsletterParts(
   return parts.join('\n');
 }
 
-function renderFallbackNewsletter(
+export function renderNewsletterPreview(
   articles: ResearchArticle[],
-  introBlock: string,
-  outroBlock: string,
-  recurringBlocks: string[],
+  options: RenderOptions & { processingTemplate: string },
 ): string {
+  const {
+    processingNote,
+    emotionTarget,
+    colorEmotionTarget,
+    storyFramework,
+    authorPersona,
+    writingStyleExamples,
+    newsletterIntro,
+    newsletterOutro,
+    recurringSections,
+    processingTemplate,
+  } = options;
+
+  const introBlock = newsletterIntro
+    ? `<div style="border-left: 4px solid #6366f1; padding-left: 16px; margin-bottom: 24px; font-style: italic; color: #4a5568;">${newsletterIntro}</div>`
+    : '';
+
+  const outroBlock = newsletterOutro
+    ? `<div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 24px; font-style: italic; color: #4a5568;">${newsletterOutro}</div>`
+    : '';
+
+  const enrichmentNote = [
+    processingNote,
+    emotionTarget ? `Emotional tone: ${emotionTarget}` : null,
+    colorEmotionTarget ? `Visual/mood guidance: ${colorEmotionTarget}` : null,
+    storyFramework ? `Narrative structure: ${storyFramework}` : null,
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
+  const voiceNote = [
+    authorPersona ? `<strong>Voice:</strong> ${authorPersona}` : null,
+    writingStyleExamples ? `<strong>Style:</strong> ${writingStyleExamples}` : null,
+  ]
+    .filter(Boolean)
+    .join('<br/>');
+
+  const templateInstruction = NEWSLETTER_TEMPLATES[processingTemplate] || NEWSLETTER_TEMPLATES['curated-digest'];
+
+  const articleItems = articles
+    .map(
+      (a, i) => `
+    <li style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+      <div style="display: flex; align-items: flex-start; gap: 12px;">
+        <span style="flex-shrink: 0; width: 24px; height: 24px; background: #6366f1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; margin-top: 2px;">${i + 1}</span>
+        <div style="flex: 1;">
+          <a href="${a.url}" style="font-size: 15px; font-weight: 600; color: #1e293b; text-decoration: none; line-height: 1.4;">${a.title}</a>
+          <div style="margin-top: 4px; font-size: 12px; color: #64748b;">
+            <span style="color: #6366f1; font-weight: 500;">${a.source}</span>
+            ${a.publishedAt ? ` &middot; ${new Date(a.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+          </div>
+          ${a.snippet ? `<p style="margin-top: 8px; font-size: 13px; color: #475569; line-height: 1.6;">${a.snippet}</p>` : ''}
+        </div>
+      </div>
+    </li>`,
+    )
+    .join('');
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px; background: #f8fafc; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .header { margin-bottom: 24px; }
+    .template-note { font-size: 12px; color: #64748b; background: #f1f5f9; border-radius: 8px; padding: 12px; margin-bottom: 20px; line-height: 1.6; }
+    .articles { list-style: none; padding: 0; margin: 0; }
+    .articles li:last-child { border-bottom: none !important; padding-bottom: 0 !important; margin-bottom: 0 !important; }
+    .enrichment { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+    .voice { font-size: 12px; color: #475569; background: #f8fafc; border-radius: 8px; padding: 12px; margin-bottom: 16px; line-height: 1.6; }
+    .footer { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      ${enrichmentNote ? `<div class="enrichment">${enrichmentNote}</div>` : ''}
+      ${voiceNote ? `<div class="voice">${voiceNote}</div>` : ''}
+      ${introBlock}
+    </div>
+    <div class="template-note">
+      <strong style="color: #6366f1;">Template:</strong> ${templateInstruction}
+    </div>
+    <ol class="articles">${articleItems}</ol>
+    ${outroBlock}
+  </div>
+  <div class="footer">
+    This is a live preview &mdash; not a saved draft. Articles are fetched fresh from your configured sources.
+  </div>
+</body>
+</html>`;
+}
+
+function renderFallbackNewsletter(
   const items = articles
     .map(
       (a, _i) => `

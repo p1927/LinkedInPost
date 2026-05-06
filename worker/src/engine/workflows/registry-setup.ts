@@ -12,6 +12,7 @@ import { eventInsightWorkflow } from './definitions/event-insight';
 import { trendCommentaryWorkflow } from './definitions/trend-commentary';
 import { satiricalWorkflow } from './definitions/satirical';
 import { appreciationWorkflow } from './definitions/appreciation';
+import { newsletterRealtimePreviewWorkflow } from './definitions/newsletter-realtime-preview';
 
 export function setupBuiltinWorkflows(): void {
   // base must be registered first — child workflows extend it
@@ -29,6 +30,7 @@ export function setupBuiltinWorkflows(): void {
     trendCommentaryWorkflow,
     satiricalWorkflow,
     appreciationWorkflow,
+    newsletterRealtimePreviewWorkflow,
   ];
 
   for (const definition of definitions) {

@@ -773,3 +773,172 @@ describe('Content Post Types Playbook — Cross-Reference Consistency', () => {
     });
   });
 });
+
+// ─── Newsletter Real-Time Preview (Post Type 8) ────────────────────────────────
+
+describe('Content Post Types Playbook — Newsletter Real-Time Preview (Section 8)', () => {
+  let playbookContent: string;
+
+  beforeAll(() => {
+    playbookContent = fs.readFileSync(CONTENT_PLAYBOOK_PATH, 'utf-8');
+  });
+
+  describe('playbook contains newsletter post type section', () => {
+    it('contains "Newsletter Real-Time Preview" section heading', () => {
+      expect(playbookContent).toContain('Newsletter Real-Time Preview');
+    });
+
+    it('has section numbered 8 in table of contents', () => {
+      expect(playbookContent).toContain('## 8.');
+    });
+
+    it('contains newsletter in table of contents listing', () => {
+      // Verify it's listed as section 8 in the ToC
+      const tocIdx = playbookContent.indexOf('Table of Contents');
+      const hookIdx = playbookContent.indexOf('Hook Formula Library');
+      const tocSection = playbookContent.slice(tocIdx, hookIdx);
+      expect(tocSection).toContain('Newsletter Real-Time Preview');
+    });
+  });
+
+  describe('newsletter section contains "What it is" definition', () => {
+    it('contains "What it is" in section 8', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('What it is');
+    });
+
+    it('defines newsletter preview as a live preview of the newsletter edition', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      // Spec says it shows: subject line, issue number, opening hook, article summaries, CTA
+      expect(section.toLowerCase()).toContain('preview');
+      expect(section.toLowerCase()).toContain('newsletter');
+    });
+  });
+
+  describe('newsletter section contains "Why it works" explanation', () => {
+    it('contains "Why it works" in section 8', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('Why it works');
+    });
+
+    it('explains subscription decision happens at preview stage', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      // Spec says: "Newsletter subscription decisions are made at the preview stage."
+      expect(section.toLowerCase()).toMatch(/subscription|preview stage|decisions/);
+    });
+  });
+
+  describe('newsletter section contains the arc pattern', () => {
+    it('contains the 7-arc pattern (SUBJECT LINE, OPENING HOOK, ISSUE CONTEXT, ARTICLE PREVIEWS, VOICE SAMPLE, CLOSE, CTA)', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx).toUpperCase();
+      // Arc keywords from spec § 8 Pattern
+      expect(section).toContain('SUBJECT LINE');
+      expect(section).toContain('OPENING HOOK');
+      expect(section).toContain('ISSUE CONTEXT');
+      expect(section).toContain('ARTICLE PREVIEWS');
+      expect(section).toContain('VOICE SAMPLE');
+      expect(section).toContain('CLOSE');
+      expect(section).toContain('CTA');
+    });
+  });
+
+  describe('newsletter section contains fill-in templates', () => {
+    it('contains Template sections', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('Template');
+    });
+
+    it('contains "Issue #XX" marker for issue number template', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('Issue #');
+    });
+
+    it('contains "Subscribe" CTA template', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section.toLowerCase()).toContain('subscribe');
+    });
+
+    it('contains Template A — Editorial Newsletter Preview', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('Editorial Newsletter Preview');
+    });
+
+    it('contains Template B — Curated Digest Preview', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('Curated Digest Preview');
+    });
+
+    it('contains Template C — Personal / Solo Newsletter Preview', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('Personal / Solo Newsletter Preview');
+    });
+  });
+
+  describe('newsletter section contains "What makes it land" section', () => {
+    it('contains "What makes it land" guidance', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section).toContain('What makes it land');
+    });
+
+    it('mentions subject line should make someone stop mid-scroll', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section.toLowerCase()).toContain('stop mid-scroll') ||
+        expect(section.toLowerCase()).toMatch(/stop.*scroll|mid-scroll/);
+    });
+
+    it('mentions the editorial voice should be demonstrated in the preview itself', () => {
+      const section8Idx = playbookContent.toLowerCase().indexOf('## 8.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const section = playbookContent.slice(section8Idx, hookIdx);
+      expect(section.toLowerCase()).toMatch(/demonstrate|show.*voice|voice.*preview/);
+    });
+  });
+
+  describe('newsletter has hook formulas in Hook Formula Library', () => {
+    it('contains Newsletter Real-Time Preview hook formulas', () => {
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
+      const universalIdx = playbookContent.toLowerCase().indexOf('## universal writing rules');
+      const section = playbookContent.slice(hookIdx, universalIdx);
+      expect(section).toContain('Newsletter Real-Time Preview');
+    });
+  });
+
+  describe('newsletter post type is listed as the 8th post type in cross-reference', () => {
+    it('playbook Table of Contents lists 8 distinct post types', () => {
+      // The ToC uses link format "1. [Title]" (not markdown headings ## 1.)
+      const tocIdx = playbookContent.indexOf('Table of Contents');
+      const tocEndIdx = playbookContent.indexOf('---', tocIdx + 200);
+      const toc = playbookContent.slice(tocIdx, tocEndIdx);
+      // Each post type is listed as "1.", "2.", etc. in the ToC
+      const postTypeLinks = (toc.match(/\d+\.\s+\[/g) ?? []);
+      // 8 post types listed in ToC
+      expect(postTypeLinks.length).toBeGreaterThanOrEqual(8);
+    });
+  });
+});

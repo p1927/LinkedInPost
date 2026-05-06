@@ -196,3 +196,88 @@ export async function handleRegenerateNewsletterIssue(
   const { regenerateIssueContent } = await import('./draftCreator');
   return regenerateIssueContent(env, db, row);
 }
+
+export async function handleNewsletterPreview(
+  env: Env,
+  db: D1Database,
+  spreadsheetId: string,
+): Promise<{
+  articles: import('./types').ResearchArticle[];
+  subject: string;
+  renderedContent: string;
+  sourceBreakdown: Record<string, number>;
+  noApiKeys: boolean;
+}> {
+  const config = await getNewsletterConfig(db, spreadsheetId);
+  if (!config) {
+    throw new Error('No newsletter config found for this workspace.');
+  }
+
+  const windowStart = new Date();
+  windowStart.setDate(windowStart.getDate() - 7);
+  const windowEnd = new Date();
+
+  const { collectArticlesFromSources } = await import('./contentAssembler');
+  const articles = await collectArticlesFromSources(
+    env,
+    config.rss_enabled === 1,
+    config.news_api_enabled === 1,
+    JSON.parse(config.custom_rss_feeds_json || '[]'),
+    JSON.parse(config.enabled_rss_feed_ids_json || '[]'),
+    JSON.parse(config.enabled_news_api_providers_json || '[]'),
+    windowStart.toISOString(),
+    windowEnd.toISOString(),
+    {
+      includeKeywords: JSON.parse(config.topic_include_keywords_json || '[]'),
+      excludeKeywords: JSON.parse(config.topic_exclude_keywords_json || '[]'),
+    },
+  );
+
+  const itemCount = config.item_count || 5;
+  const selectedArticles = articles.slice(0, itemCount);
+
+  // Check if any API keys are configured
+  const hasNewsApi =
+    String(env.NEWSAPI_KEY || '').trim() !== '' ||
+    String(env.GNEWS_API_KEY || '').trim() !== '' ||
+    String(env.NEWSDATA_API_KEY || '').trim() !== '' ||
+    String(env.SERPAPI_API_KEY || '').trim() !== '';
+
+  const noApiKeys = !hasNewsApi;
+
+  // Build source breakdown
+  const sourceBreakdown: Record<string, number> = {};
+  for (const article of articles) {
+    const src = article.provider || 'unknown';
+    sourceBreakdown[src] = (sourceBreakdown[src] || 0) + 1;
+  }
+
+  // Render lightweight preview HTML (no LLM call — fast client-side render)
+  const { renderNewsletterPreview } = await import('./emailRenderer');
+  const subjectTemplate = config.subject_template || 'Weekly Newsletter';
+  const subject = subjectTemplate
+    .replace('{title}', selectedArticles[0]?.title || 'Newsletter')
+    .replace('{date}', new Date().toLocaleDateString());
+
+  const renderedContent = renderNewsletterPreview(selectedArticles, {
+    subject,
+    processingNote: config.processing_note,
+    emotionTarget: config.emotion_target,
+    colorEmotionTarget: config.color_emotion_target,
+    storyFramework: config.story_framework,
+    authorPersona: config.author_persona || '',
+    writingStyleExamples: config.writing_style_examples || '',
+    newsletterIntro: config.newsletter_intro || '',
+    newsletterOutro: config.newsletter_outro || '',
+    recurringSections: JSON.parse(config.recurring_sections_json || '[]'),
+    processingTemplate: config.processing_template || 'curated-digest',
+  });
+
+  return {
+    articles: selectedArticles,
+    subject,
+    renderedContent,
+    sourceBreakdown,
+    noApiKeys,
+  };
+}

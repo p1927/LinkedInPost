@@ -18,11 +18,12 @@ The golden rule across all types: **the hook is everything.** The first line dec
 2. [The Week in Review / Recap Post](#2-the-week-in-review--recap-post)
 3. [The Personal Story Post](#3-the-personal-story-post)
 4. [The Event Insight Post](#4-the-event-insight-post)
-5. [The Industry Trend & Commentary Post](#5-the-industry-trend--commentary-post)
+5. [Industry Trend & Commentary Post](#5-the-industry-trend--commentary-post)
 6. [The Satirical / Sarcastic Post](#6-the-satirical--sarcastic-post)
 7. [The Appreciation & Recognition Post](#7-the-appreciation--recognition-post)
-8. [Hook Formula Library](#hook-formula-library)
-9. [Universal Writing Rules](#universal-writing-rules)
+8. [The Newsletter Real-Time Preview](#8-the-newsletter-real-time-preview)
+9. [Hook Formula Library](#hook-formula-library)
+10. [Universal Writing Rules](#universal-writing-rules)
 
 ---
 
@@ -755,6 +756,90 @@ than you expected?
 
 ---
 
+## 8. The Newsletter Real-Time Preview
+
+### What it is
+A preview of a newsletter edition rendered live — showing the subject line, issue number, opening hook, featured article summaries, and a call-to-action — in the same format the reader will receive it in their inbox. It demonstrates newsletter quality and editorial direction before the full edition is sent.
+
+### Why it works
+Newsletter subscription decisions are made at the preview stage. When a reader can see the structure, voice, and content quality of an upcoming issue in real time, they experience the product rather than imagining it. This creates a direct connection between the newsletter's promise and the reader's inbox — building trust and reducing the friction of committing to a subscription.
+
+### The Pattern
+```
+SUBJECT LINE  → Compelling, specific, curiosity-driven (under 60 chars)
+OPENING HOOK  → 2–3 lines that make the reader feel the issue is for them
+ISSUE CONTEXT → Brief note on what this edition covers and why it matters now
+ARTICLE PREVIEWS → 2–4 article summaries with a one-sentence "why read this" each
+VOICE SAMPLE   → A paragraph demonstrating the newsletter's tone and expertise
+CLOSE         → The implicit promise of what's in it for the subscriber
+CTA           → Invite the reader to subscribe, share, or forward
+```
+
+### Template A — Editorial Newsletter Preview
+```
+Issue #XX — [Month] [Year]
+
+[Subject Line — punchy, specific, curiosity-inducing]
+
+This week: [2–3 sentence overview of the edition's theme]
+
+Featured this issue:
+→ [Article title] — [One sentence on why it matters]
+→ [Article title] — [One sentence on why it matters]
+→ [Article title] — [One sentence on why it matters]
+
+From the editor:
+
+[3–4 sentences in the newsletter's voice — warm, authoritative, 
+or witty depending on brand. Show the reader this edition is worth 
+their time.]
+
+Subscribe to get the full edition in your inbox every [day/week].
+```
+
+### Template B — Curated Digest Preview
+```
+[X] curated links for [audience/industry] — [Month] [Year]
+
+The headline this week: [One-sentence synthesis of the biggest story 
+or theme in the edition]
+
+This week's reads:
+1. [Link title] — [Why it's essential in one sentence]
+2. [Link title] — [Why it's essential in one sentence]
+3. [Link title] — [Why it's essential in one sentence]
+4. [Link title] — [Why it's essential in one sentence]
+5. [Link title] — [Why it's essential in one sentence]
+
+The common thread: [2–3 sentences connecting these items into 
+a coherent editorial perspective]
+
+Not a subscriber yet? [CTA — invite to join]
+```
+
+### Template C — Personal / Solo Newsletter Preview
+```
+Hi. Here's what's worth your time this [day/week]:
+
+[Item 1] — [Why it matters, in one conversational sentence]
+[Item 2] — [Why it matters, in one conversational sentence]
+[Item 3] — [Why it matters, in one conversational sentence]
+
+My take on the week: [2–3 sentences of editorial voice — 
+a personal observation or angle the reader won't find elsewhere]
+
+Thanks for reading. Forward this to someone who might like it too.
+```
+
+### What makes it land
+- The subject line should make someone stop mid-scroll. Treat it as the headline of a news story, not a label.
+- Show the editorial voice in the preview itself — don't just describe what the newsletter is, demonstrate it.
+- Limit article previews to the most compelling 3–5. A long list signals lack of curation.
+- The CTA should feel like an invitation, not a sales pitch. "Join [X] readers" or "Get this in your inbox" outperforms generic "Subscribe now."
+- If the newsletter has a specific cadence, mention it ("Every Tuesday morning" or "Bi-weekly on Thursdays").
+
+---
+
 ## Hook Formula Library
 
 The first line of every post is the most important line. Use these formulas to find your hook before you write anything else.
@@ -816,10 +901,19 @@ We're excited to announce that [satirical pivot]
 ```
 [Person's name] did something I want to say out loud.
 I want to tell you about [Person's name].
-The person who most changed how I think about [topic] 
+The person who most changed how I think about [topic]
 isn't someone most people know.
 [X] years ago, someone gave me [time/help/advice].
 I've never properly thanked them publicly. Until now.
+```
+
+### For Newsletter Real-Time Preview
+```
+This is what [newsletter name] looks like before it hits your inbox.
+Here's what's in this week's edition of [newsletter name].
+Issue #XX is ready. Here's a preview.
+If you only read one newsletter this week, make it this one.
+[X] readers get this. Here's why they subscribed.
 ```
 
 ---
@@ -868,4 +962,4 @@ This playbook is the **structural template layer**. Use it alongside:
 | `docs/plans/plan-002-post-quality-engine/architecture.md` | Post type workflows implemented as code in `worker/src/engine/workflows/definitions/` |
 | `docs/superpowers/plans/2026-04-01-modular-content-enrichment.md` | Enrichment modules that inject psychological, emotional, and persuasion signals into post variants |
 
-The 7 post types are selectable in the frontend `GenerationPanel` and drive the `effectiveWorkflowId` in the workflow executor. See `worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts` for spec-compliance unit tests.
+The 8 post types are selectable in the frontend `GenerationPanel` and drive the `effectiveWorkflowId` in the workflow executor. See `worker/src/engine/workflows/definitions/__tests__/contentPostTypesPlaybook.spec.test.ts` for spec-compliance unit tests.

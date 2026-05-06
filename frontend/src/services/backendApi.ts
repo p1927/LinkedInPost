@@ -1180,6 +1180,16 @@ export class BackendApi {
     return this.post<NewsletterIssueRow>('newsletter.regenerateIssue', idToken, { issueId });
   }
 
+  async newsletterPreview(idToken: string): Promise<{
+    articles: Array<{ title: string; url: string; source: string; publishedAt: string; snippet: string; provider: string }>;
+    subject: string;
+    renderedContent: string;
+    sourceBreakdown: Record<string, number>;
+    noApiKeys: boolean;
+  }> {
+    return this.post('newsletter.preview', idToken);
+  }
+
   async updateRowStatus(
     idToken: string,
     row: SheetRow,
