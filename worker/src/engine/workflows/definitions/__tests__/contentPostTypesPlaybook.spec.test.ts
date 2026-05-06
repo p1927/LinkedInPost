@@ -117,111 +117,108 @@ describe('Content Post Types Playbook — Documentation', () => {
     });
 
     it('informational-news section contains HOOK arc element', () => {
-      // Search in the full content for HOOK (case insensitive)
-      const upperContent = playbookContent.toUpperCase();
-      // The informational news section starts after "Informational / News Post" heading
-      const sectionIndex = upperContent.indexOf('THE PATTERN');
-      // Search after "Informational" and before "Week in Review"
-      const informIdx = playbookContent.toLowerCase().indexOf('informational');
-      const weekIdx = playbookContent.toLowerCase().indexOf('week in review');
+      // Use ## 1. heading to avoid matching TOC entries first
+      const informIdx = playbookContent.toLowerCase().indexOf('## 1.');
+      const weekIdx = playbookContent.toLowerCase().indexOf('## 2.');
       const section = playbookContent.slice(informIdx, weekIdx);
-      
+
       expect(section.toUpperCase()).toContain('HOOK');
     });
 
     it('informational-news section contains CONTEXT arc element', () => {
-      const informIdx = playbookContent.toLowerCase().indexOf('informational');
-      const weekIdx = playbookContent.toLowerCase().indexOf('week in review');
+      const informIdx = playbookContent.toLowerCase().indexOf('## 1.');
+      const weekIdx = playbookContent.toLowerCase().indexOf('## 2.');
       const section = playbookContent.slice(informIdx, weekIdx);
-      
+
       expect(section.toUpperCase()).toContain('CONTEXT');
     });
 
     it('informational-news section contains TAKE arc element', () => {
-      const informIdx = playbookContent.toLowerCase().indexOf('informational');
-      const weekIdx = playbookContent.toLowerCase().indexOf('week in review');
+      const informIdx = playbookContent.toLowerCase().indexOf('## 1.');
+      const weekIdx = playbookContent.toLowerCase().indexOf('## 2.');
       const section = playbookContent.slice(informIdx, weekIdx);
-      
+
       expect(section.toUpperCase()).toMatch(/TAKE|YOUR TAKE/);
     });
 
     it('personal-story section contains HOOK arc element', () => {
-      const storyIdx = playbookContent.toLowerCase().indexOf('personal story');
-      const eventIdx = playbookContent.toLowerCase().indexOf('event insight');
+      const storyIdx = playbookContent.toLowerCase().indexOf('## 3.');
+      const eventIdx = playbookContent.toLowerCase().indexOf('## 4.');
       const section = playbookContent.slice(storyIdx, eventIdx);
-      
+
       expect(section.toUpperCase()).toContain('HOOK');
     });
 
     it('personal-story section contains TURN arc element', () => {
-      const storyIdx = playbookContent.toLowerCase().indexOf('personal story');
-      const eventIdx = playbookContent.toLowerCase().indexOf('event insight');
+      const storyIdx = playbookContent.toLowerCase().indexOf('## 3.');
+      const eventIdx = playbookContent.toLowerCase().indexOf('## 4.');
       const section = playbookContent.slice(storyIdx, eventIdx);
-      
+
       expect(section.toUpperCase()).toContain('TURN');
     });
 
     it('personal-story section contains STRUGGLE arc element', () => {
-      const storyIdx = playbookContent.toLowerCase().indexOf('personal story');
-      const eventIdx = playbookContent.toLowerCase().indexOf('event insight');
+      const storyIdx = playbookContent.toLowerCase().indexOf('## 3.');
+      const eventIdx = playbookContent.toLowerCase().indexOf('## 4.');
       const section = playbookContent.slice(storyIdx, eventIdx);
-      
+
       expect(section.toUpperCase()).toContain('STRUGGLE');
     });
 
     it('personal-story section contains INSIGHT arc element', () => {
-      const storyIdx = playbookContent.toLowerCase().indexOf('personal story');
-      const eventIdx = playbookContent.toLowerCase().indexOf('event insight');
+      const storyIdx = playbookContent.toLowerCase().indexOf('## 3.');
+      const eventIdx = playbookContent.toLowerCase().indexOf('## 4.');
       const section = playbookContent.slice(storyIdx, eventIdx);
-      
+
       expect(section.toUpperCase()).toContain('INSIGHT');
     });
 
     it('satirical section contains SETUP arc element', () => {
-      const satIdx = playbookContent.toLowerCase().indexOf('satirical');
-      const apprecIdx = playbookContent.toLowerCase().indexOf('appreciation');
+      const satIdx = playbookContent.toLowerCase().indexOf('## 6.');
+      const apprecIdx = playbookContent.toLowerCase().indexOf('## 7.');
       const section = playbookContent.slice(satIdx, apprecIdx);
-      
+
       expect(section.toUpperCase()).toContain('SETUP');
     });
 
     it('satirical section contains BUILD arc element', () => {
-      const satIdx = playbookContent.toLowerCase().indexOf('satirical');
-      const apprecIdx = playbookContent.toLowerCase().indexOf('appreciation');
+      const satIdx = playbookContent.toLowerCase().indexOf('## 6.');
+      const apprecIdx = playbookContent.toLowerCase().indexOf('## 7.');
       const section = playbookContent.slice(satIdx, apprecIdx);
-      
+
       expect(section.toUpperCase()).toContain('BUILD');
     });
 
     it('satirical section contains PUNCHLINE arc element', () => {
-      const satIdx = playbookContent.toLowerCase().indexOf('satirical');
-      const apprecIdx = playbookContent.toLowerCase().indexOf('appreciation');
+      const satIdx = playbookContent.toLowerCase().indexOf('## 6.');
+      const apprecIdx = playbookContent.toLowerCase().indexOf('## 7.');
       const section = playbookContent.slice(satIdx, apprecIdx);
-      
+
       expect(section.toUpperCase()).toContain('PUNCHLINE');
     });
 
     it('appreciation section contains HOOK arc element', () => {
-      const apprecIdx = playbookContent.toLowerCase().indexOf('appreciation');
-      const hookIdx = playbookContent.toLowerCase().indexOf('hook formula library');
+      // Use ## 7. heading to avoid matching TOC entries first
+      const apprecIdx = playbookContent.toLowerCase().indexOf('## 7.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
       const section = playbookContent.slice(apprecIdx, hookIdx);
-      
+
       expect(section.toUpperCase()).toContain('HOOK');
     });
 
     it('appreciation section contains MOMENT arc element', () => {
-      const apprecIdx = playbookContent.toLowerCase().indexOf('appreciation');
-      const hookIdx = playbookContent.toLowerCase().indexOf('hook formula library');
+      const apprecIdx = playbookContent.toLowerCase().indexOf('## 7.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
       const section = playbookContent.slice(apprecIdx, hookIdx);
-      
+
       expect(section.toUpperCase()).toContain('MOMENT');
     });
 
     it('appreciation section contains MATTERS arc element', () => {
-      const apprecIdx = playbookContent.toLowerCase().indexOf('appreciation');
-      const hookIdx = playbookContent.toLowerCase().indexOf('hook formula library');
+      const apprecIdx = playbookContent.toLowerCase().indexOf('## 7.');
+      const hookIdx = playbookContent.toLowerCase().indexOf('## hook formula library');
       const section = playbookContent.slice(apprecIdx, hookIdx);
-      
+
       expect(section.toUpperCase()).toMatch(/MATTER/);
     });
   });
