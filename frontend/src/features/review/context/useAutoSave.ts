@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { saveDraft, clearDraft, type DraftSnapshot } from '../../../services/draftService';
+import { saveDraft, clearDraft } from '../../../services/draftService';
 
 export type AutoSaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 

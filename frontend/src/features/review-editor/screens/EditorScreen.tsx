@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShieldCheck, Eye, Saved } from 'lucide-react';
+import { ShieldCheck, Eye, Bookmark } from 'lucide-react';
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { DraftEditor } from '../../editor/DraftEditor';
 import { useReviewFlow } from '../../review/context/useReviewFlow';
@@ -56,7 +56,6 @@ export function EditorScreen() {
     onAfterContentReview,
     nodeRuns,
     autoSaveStatus,
-    autoSaveLastSavedAt,
   } = useReviewFlow();
   const {
     editorText,
@@ -287,7 +286,7 @@ export function EditorScreen() {
               </Badge>
             ) : autoSaveStatus === 'saved' ? (
               <Badge variant="success" size="xs" className="normal-case font-bold shadow-sm flex items-center gap-1">
-                <Saved className="h-3 w-3 shrink-0" aria-hidden />
+                <Bookmark className="h-3 w-3 shrink-0" aria-hidden />
                 Saved
               </Badge>
             ) : autoSaveStatus === 'error' ? (

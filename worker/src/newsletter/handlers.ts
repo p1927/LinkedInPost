@@ -260,7 +260,6 @@ export async function handleNewsletterPreview(
     .replace('{date}', new Date().toLocaleDateString());
 
   const renderedContent = renderNewsletterPreview(selectedArticles, {
-    subject,
     processingNote: config.processing_note,
     emotionTarget: config.emotion_target,
     colorEmotionTarget: config.color_emotion_target,

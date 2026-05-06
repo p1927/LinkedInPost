@@ -163,7 +163,6 @@ export function renderNewsletterPreview(
     writingStyleExamples,
     newsletterIntro,
     newsletterOutro,
-    recurringSections,
     processingTemplate,
   } = options;
 
@@ -250,6 +249,11 @@ export function renderNewsletterPreview(
 }
 
 function renderFallbackNewsletter(
+  articles: ResearchArticle[],
+  introBlock: string,
+  outroBlock: string,
+  recurringBlocks: string[],
+): string {
   const items = articles
     .map(
       (a, _i) => `

@@ -19,7 +19,7 @@ import { useWorkspaceChrome, useRegisterUnsavedChanges } from '../../../componen
 import { parseRowImageUrls } from '../../../services/selectedImageUrls';
 import { topicNeedsTruncation } from '../../../lib/topicDisplay';
 import { type ReviewRoutedNavigation } from '../ReviewWorkspace';
-import { getRecoverableDraft, clearDraft, saveDraft, DRAFT_STALE_THRESHOLD_MS } from '../../../services/draftService';
+import { getRecoverableDraft, clearDraft, saveDraft } from '../../../services/draftService';
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -272,7 +272,7 @@ function buildInitialState(
   // the current row state to avoid a confusing restore that appears to change nothing.
   const draftRecoveryPending = Boolean(
     topicId &&
-    routed?.screen !== 'editor' &&
+    routed?.screen === 'variants' &&
     (() => {
       const draft = getRecoverableDraft(topicId);
       if (!draft) return false;
