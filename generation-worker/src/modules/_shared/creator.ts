@@ -9,6 +9,8 @@ interface LlmGroupResponse {
     label: string;
     text: string;
     hookType: string;
+    /** Optional hashtags returned by the LLM alongside each variant. */
+    hashtags?: string[];
   }>;
 }
 
@@ -160,11 +162,12 @@ Write exactly ${group.variantCount} variants. Each MUST:
 2. Follow the ${group.emphasis.split('.')[0].toLowerCase()} emphasis
 3. Be complete and publication-ready
 4. Use the designated hook type and emotional arc
+5. Suggest 3-5 relevant hashtags based on the post topic, industry keywords, and trending patterns.
 
 Return JSON:
 {
   "variants": [
-    { "label": "Variant — <angle>", "text": "<full post>", "hookType": "<hook used>" }
+    { "label": "Variant — <angle>", "text": "<full post>", "hookType": "<hook used>", "hashtags": ["#tag1", "#tag2", "#tag3"] }
   ]
 }`;
 }
@@ -200,6 +203,7 @@ export async function createEnrichedVariants(
           hookType: v.hookType ?? bundle.copy.hookType,
           persuasionFramework: bundle.persuasion.framework,
           emotionalArc: bundle.emotion.arc,
+          suggestedHashtags: Array.isArray(v.hashtags) ? v.hashtags.slice(0, 5) : [],
         }));
       } catch {
         return [];

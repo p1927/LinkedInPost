@@ -5,6 +5,7 @@ import { loadBundledRepository } from './players/patternRepository';
 import { findPattern, recordPatternOutcome } from './players/patternFinder';
 import { createVariants } from './players/creator';
 import { reviewContent } from './players/review';
+import { scoreDraftQuality } from './players/qualityScorer';
 import { relateImages } from './players/imageRelator';
 import { buildCandidatesFromRelator } from './players/imagePicker';
 import { runEnrichment } from './modules/_shared/orchestrator';
@@ -129,6 +130,10 @@ export async function runPipeline(
   const review = reviewContent(variants, report);
   trace.review = review;
   await recordPatternOutcome(env, finder.primaryId, review.verdict);
+
+  // 5b. Quality scoring (parallel with review, before image generation)
+  const qualityScores = scoreDraftQuality(variants);
+  trace.qualityScores = qualityScores.map(q => ({ overall: q.overall, passed: q.passed }));
 
   // 6. ImageRelator + ImagePicker (per-variant, parallel)
   let perVariantImageCandidates: PerVariantImageCandidates[] = [];
