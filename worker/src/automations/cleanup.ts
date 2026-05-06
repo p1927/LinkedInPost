@@ -22,8 +22,8 @@ export async function runAutomationCleanup(kv: KVNamespace): Promise<{ removed: 
       continue;
     }
 
-    if (!rule.enabled) {
-      const age = now - (rule.updatedAt ? new Date(rule.updatedAt).getTime() : 0);
+    if (!rule.enabled && rule.updatedAt) {
+      const age = now - new Date(rule.updatedAt).getTime();
       if (age > SEVEN_DAYS_MS) {
         await kv.delete(name);
         removed++;

@@ -587,6 +587,6 @@ git commit -m "fix: topics right rail validate provider/model consistency"
 
 ## Related: Content Post Types Playbook
 
-The generation panel feeds into the 7 post types from the [Post Types Playbook][post-types-playbook] — informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation. These types are implemented as workflow definitions in `worker/src/engine/workflows/definitions/` and driven by the dimension weights configured in this plan.
+The generation panel feeds into the 7 post types from the **Content Post Types Playbook** — informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation. These types are implemented as workflow definitions in `worker/src/engine/workflows/definitions/` and driven by the dimension weights configured in [plan-002][post-types-playbook].
 
 [post-types-playbook]: ../../plans/plan-002-post-quality-engine/README.md

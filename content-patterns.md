@@ -674,6 +674,23 @@ _🔗 Read more: \[link\] | OR 📌 Save this for later_
 
 Post 3-5 times per week • Use a consistent format subscribers recognise • Mix text, images, and short voice notes • Repurpose your best LinkedIn and email content here • Promote your Channel in your other content to grow subscribers
 
+---
+
+## Cross-Reference: Content Post Types Playbook
+
+The patterns in this document are the platform-algorithm layer. The **Content Post Types Playbook** (`content_post_types_playbook.md`) is the structural template layer — 7 named post types (Informational/News, Week in Review, Personal Story, Event Insight, Industry Trend, Satirical, Appreciation) each with a specific arc pattern (HOOK → body → CTA) and fill-in templates.
+
+Use both documents together:
+
+| Need | Doc |
+|------|-----|
+| Platform algorithm signals, reach optimization, post scheduling | `content-patterns.md` |
+| Which post type to pick, arc structure, template to fill in | `content_post_types_playbook.md` |
+
+The 7 post type workflows are implemented in `worker/src/engine/workflows/definitions/` — see `docs/plans/plan-002-post-quality-engine/architecture.md`.
+
+---
+
 # **Quick Reference: Pattern Matrix**
 
 Use this table to quickly select the right pattern for your goal across platforms.

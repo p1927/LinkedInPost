@@ -10,6 +10,22 @@
 
 ---
 
+## Cross-Reference: Content Post Types Playbook
+
+The 7 post type structural templates are documented in **`content_post_types_playbook.md`** (root project directory) and implemented as workflow definitions in `worker/src/engine/workflows/definitions/`. See `docs/plans/plan-002-post-quality-engine/architecture.md` for the full post types table.
+
+The enrichment layer and the playbook serve complementary roles:
+
+| Doc | Role |
+|-----|------|
+| `content_post_types_playbook.md` | Structural skeleton (HOOK → body → CTA arc) per post type |
+| `content-patterns.md` | Platform algorithm signals and reach optimization |
+| Enrichment modules (this plan) | Psychological, emotional, persuasion signals injected into variants |
+
+Enrichment modules should reference `content_post_types_playbook.md` for post type arc structures, and `content-patterns.md` for platform-specific optimization rules (character limits, best post times, engagement signals).
+
+---
+
 ## File Map
 
 ### New files to create

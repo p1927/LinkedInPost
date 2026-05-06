@@ -19,6 +19,7 @@ test.describe('Error recovery', () => {
     const mocks = await setupSetupApiMocks(page, {
       writeConfig: { ok: false, status: 500, error: 'Permission denied' },
     });
+    await page.waitForLoadState('domcontentloaded');
     await page.goto(WIZARD);
 
     // Just verify wizard mounts and doesn't crash even with a failing endpoint.
@@ -29,6 +30,7 @@ test.describe('Error recovery', () => {
     await setupSetupApiMocks(page, {
       cloudflare: { ok: false, error: 'invalid api token' },
     });
+    await page.waitForLoadState('domcontentloaded');
     await page.goto(WIZARD);
 
     // Wizard mounts despite cloudflare endpoint being primed for failure.
@@ -39,6 +41,7 @@ test.describe('Error recovery', () => {
     const mocks = await setupSetupApiMocks(page, {
       setupPy: { ok: false, status: 500, error: 'setup.py failed: missing GEMINI_API_KEY' },
     });
+    await page.waitForLoadState('domcontentloaded');
     await page.goto(WIZARD);
 
     // Click through to where setup-py would be invoked. For dry-run mode this
@@ -51,6 +54,7 @@ test.describe('Error recovery', () => {
     const mocks = await setupSetupApiMocks(page, {
       cloudflare: { ok: false, error: 'try again' },
     });
+    await page.waitForLoadState('domcontentloaded');
     await page.goto(WIZARD);
 
     await expect(page.locator('input[type="radio"][value="saas"]')).toBeVisible({ timeout: 10000 });

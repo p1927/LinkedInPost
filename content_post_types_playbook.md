@@ -855,3 +855,17 @@ Deliver genuine value — an insight, a laugh, an observation, a story — befor
 ---
 
 *This document is format-agnostic. Every pattern here works on LinkedIn, Instagram captions, email newsletters, WhatsApp broadcasts, and anywhere else you publish. The platform changes the format constraints. The psychology does not.*
+
+---
+
+## Cross-Reference: Related Documents
+
+This playbook is the **structural template layer**. Use it alongside:
+
+| Doc | Role |
+|-----|------|
+| `content-patterns.md` | Platform algorithm signals, engagement optimization, post scheduling, programmatic production system |
+| `docs/plans/plan-002-post-quality-engine/architecture.md` | Post type workflows implemented as code in `worker/src/engine/workflows/definitions/` |
+| `docs/superpowers/plans/2026-04-01-modular-content-enrichment.md` | Enrichment modules that inject psychological, emotional, and persuasion signals into post variants |
+
+The 7 post types are selectable in the frontend `GenerationPanel` and drive the `effectiveWorkflowId` in the workflow executor. See `worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts` for spec-compliance unit tests.

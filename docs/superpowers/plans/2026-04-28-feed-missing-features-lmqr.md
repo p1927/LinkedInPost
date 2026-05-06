@@ -21,7 +21,7 @@
 
 ## Related: Content Post Types Playbook
 
-The post types (informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation) are generated from the [Post Types Playbook][post-types-playbook] workflows. The feed features L/M/Q/R surface AI-generated content that helps creators select and refine which post type to use for a given article or draft.
+The 7 post types (informational-news, personal-story, week-in-review, event-insight, trend-commentary, satirical, appreciation) are generated from the **Content Post Types Playbook** workflows implemented in `worker/src/engine/workflows/definitions/`. The feed features L/M/Q/R surface AI-generated content that helps creators select and refine which post type to use for a given article or draft. See [post-types-playbook] for the full playbook reference.
 
 [post-types-playbook]: ../../plans/plan-002-post-quality-engine/README.md
 
