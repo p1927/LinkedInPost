@@ -833,4 +833,40 @@ export class PipelineStore {
       .bind(userId, personaId)
       .run();
   }
+
+  async updateCustomPersona(
+    userId: string,
+    personaId: string,
+    p: {
+      name: string;
+      concerns: string[];
+      ambitions: string[];
+      currentFocus: string;
+      habits: string[];
+      language: string;
+      decisionDrivers: string[];
+      painPoints: string[];
+    },
+  ) {
+    await this.db
+      .prepare(
+        `UPDATE custom_personas SET
+           name = ?1, concerns = ?2, ambitions = ?3, current_focus = ?4,
+           habits = ?5, language = ?6, decision_drivers = ?7, pain_points = ?8
+         WHERE user_id = ?9 AND id = ?10`,
+      )
+      .bind(
+        p.name,
+        JSON.stringify(p.concerns),
+        JSON.stringify(p.ambitions),
+        p.currentFocus,
+        JSON.stringify(p.habits),
+        p.language,
+        JSON.stringify(p.decisionDrivers),
+        JSON.stringify(p.painPoints),
+        userId,
+        personaId,
+      )
+      .run();
+  }
 }

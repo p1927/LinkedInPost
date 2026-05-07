@@ -9,7 +9,7 @@ export async function runAutomationCleanup(kv: KVNamespace): Promise<{ removed: 
   let cursor: string | undefined;
 
   do {
-    const listed: KVNamespaceListResult<unknown, string> = cursor
+    const listed = cursor
       ? await kv.list({ prefix: RULE_KEY_PREFIX, cursor })
       : await kv.list({ prefix: RULE_KEY_PREFIX });
 

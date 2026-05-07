@@ -4,20 +4,18 @@ export async function stabilityRequest(
   aspectRatio: string,
   apiKey: string,
 ): Promise<{ url: string }> {
+  const fd = new FormData();
+  fd.append('prompt', prompt);
+  fd.append('model', model);
+  fd.append('aspect_ratio', aspectRatio);
+  fd.append('output_format', 'jpeg');
   const resp = await fetch(`https://api.stability.ai/v2beta/stable-image/generate/sd3`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Accept': 'application/json',
     },
-    body: (() => {
-      const fd = new FormData();
-      fd.append('prompt', prompt);
-      fd.append('model', model);
-      fd.append('aspect_ratio', aspectRatio);
-      fd.append('output_format', 'jpeg');
-      return fd;
-    })(),
+    body: fd as any,
   });
   if (!resp.ok) {
     const err = await resp.text().catch(() => resp.statusText);

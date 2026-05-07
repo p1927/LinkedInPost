@@ -58,7 +58,7 @@ export async function handleGetSavedVariants(
     }
 
     // Return the most recent entry
-    const latest = list.keys.sort((a, b) => (b.name > a.name ? 1 : -1))[0];
+    const latest = list.keys.sort((a: any, b: any) => (b.name > a.name ? 1 : -1))[0];
     const raw = await env.VARIANTS_KV.get(latest.name, 'text');
     if (!raw) {
       return json({ error: 'Not found' }, 404);

@@ -78,7 +78,7 @@ export async function listAllRules(
   const results: Array<{ key: string; rule: AutomationRule }> = [];
   let cursor: string | undefined;
   do {
-    const listed: KVNamespaceListResult<unknown, string> = cursor
+    const listed = cursor
       ? await kv.list({ prefix: RULE_KEY_PREFIX, cursor })
       : await kv.list({ prefix: RULE_KEY_PREFIX });
     for (const { name } of listed.keys) {

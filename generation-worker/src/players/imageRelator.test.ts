@@ -130,7 +130,7 @@ describe('imageRelator – no-LLM fallback', () => {
   it('includes pattern mood in styleHints when present', async () => {
     const { relateImages } = await import('./imageRelator');
     const env = makeMinimalEnv();
-    const pattern = makePattern({ mood: 'dark mode' });
+    const pattern = makePattern({ mood: 'dark mode', searchKeywords: [] });
     const result = await relateImages(makeVariant(), pattern, makeReport(), env, {
       provider: 'gemini',
       model: 'gemini-2.0-flash',
@@ -144,7 +144,7 @@ describe('imageRelator – no-LLM fallback', () => {
     const env = makeMinimalEnv();
     // 'opinionated' tone maps to 'bold composition', etc.
     // Adding 'bold composition' via pattern mood should not duplicate
-    const pattern = makePattern({ mood: 'bold composition' });
+    const pattern = makePattern({ mood: 'bold composition', searchKeywords: [] });
     const report = makeReport({ tone: 'opinionated' });
     const result = await relateImages(makeVariant(), pattern, report, env, {
       provider: 'gemini',
@@ -158,7 +158,7 @@ describe('imageRelator – no-LLM fallback', () => {
   it('uses topic as search keyword when pattern has no searchKeywords', async () => {
     const { relateImages } = await import('./imageRelator');
     const env = makeMinimalEnv();
-    const pattern = makePattern({ searchKeywords: [] });
+    const pattern = makePattern({ mood: '', searchKeywords: [] as string[] });
     const report = makeReport({ topic: 'distributed teams' });
     const result = await relateImages(makeVariant(), pattern, report, env, {
       provider: 'gemini',

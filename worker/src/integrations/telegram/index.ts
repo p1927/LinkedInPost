@@ -107,7 +107,7 @@ async function postTelegramForm(
 ): Promise<TelegramApiResponse | null> {
   const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
     method: 'POST',
-    body: form,
+    body: form as any,
   });
   const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
   if (!response.ok || !payload?.ok) {

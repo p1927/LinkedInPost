@@ -61,12 +61,12 @@ export async function handleGetClips(
 
     const records = await Promise.all(
       list.keys
-        .map(k => {
+        .map((k: { name: string }) => {
           const raw = k.name;
           const clipId = raw.split(':').pop() ?? '';
           return env.CLIPS_KV.get(raw, 'text');
         })
-        .map(async (p, i) => {
+        .map(async (p: Promise<string | null>, i: number) => {
           const raw = await p;
           if (!raw) return null;
           try {
