@@ -60,8 +60,8 @@ export function NewsletterTab({ idToken, session, api, subView: externalSubView,
         api.listNewsletters(idToken),
         api.getRows(idToken),
       ]);
-      setNewsletters(newsletterList);
-      setTopicRows(rows);
+      setNewsletters(Array.isArray(newsletterList) ? newsletterList : []);
+      setTopicRows(Array.isArray(rows) ? rows : []);
       void loadAllIssues(newsletterList);
     } catch (err) {
       console.error('Failed to load newsletter data:', err);

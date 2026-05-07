@@ -14,7 +14,7 @@ import tailwindcss from '@tailwindcss/vite'
  */
 function spaGithubPages404(): Plugin {
   let outDir = 'dist'
-  const workspaceSpaDirs = ['topics', 'settings', 'rules', 'campaign'] as const
+  const workspaceSpaDirs = ['topics', 'topics/new', 'settings', 'rules', 'campaign', 'usage', 'connections', 'enrichment', 'trending', 'feed', 'automations', 'setup', 'admin'] as const
   return {
     name: 'spa-github-pages-404',
     apply: 'build',
