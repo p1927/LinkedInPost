@@ -491,6 +491,8 @@ export function AddTopicPage({
                           await api.deleteCustomPersona(idToken, p.id);
                           setCustomPersonas((prev) => prev.filter((cp) => cp.id !== p.id));
                           setSelectedAudience((prev) => (prev === p.id ? '' : prev));
+                        } catch {
+                          // Deletion failed; keep deletingPersonaId set so button stays disabled and user sees the error
                         } finally {
                           setDeletingPersonaId(null);
                         }

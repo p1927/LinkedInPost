@@ -13,19 +13,29 @@ export function YouTubeScheduler({ idToken, channelId }: Props) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    getYouTubeSchedule(idToken, channelId).then((s) => {
-      if (s) {
-        setCron(s.cronExpression);
-        setLastPolled(s.lastPolledAt ?? null);
-      }
-      setLoaded(true);
-    });
+    let loaded = false;
+    getYouTubeSchedule(idToken, channelId)
+      .then((s) => {
+        if (!loaded) {
+          if (s) {
+            setCron(s.cronExpression);
+            setLastPolled(s.lastPolledAt ?? null);
+          }
+          setLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!loaded) setLoaded(true);
+      });
+    return () => { loaded = true; };
   }, [idToken, channelId]);
 
   async function handleSave() {
     setSaving(true);
     try {
       await saveYouTubeSchedule(idToken, channelId, cron);
+    } catch {
+      // silently ignored — no user-facing error feedback
     } finally {
       setSaving(false);
     }

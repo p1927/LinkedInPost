@@ -1033,7 +1033,7 @@ export class BackendApi {
     cons?: string[];
     notes?: string;
     audience?: string;
-  }): Promise<SheetRow | void> {
+  }): Promise<SheetRow> {
     return this.post<SheetRow>('addTopic', idToken, { topic, topicMeta });
   }
 

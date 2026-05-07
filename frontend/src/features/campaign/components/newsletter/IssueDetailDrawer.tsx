@@ -15,7 +15,7 @@ interface Props {
   api: BackendApi;
 }
 
-export function IssueDetailDrawer({ issue, open, onClose, onSave, onApprove, onSend, idToken: _idToken, api: _api }: Props) {
+export function IssueDetailDrawer({ issue, open, onClose, onSave, onApprove, onSend, idToken, api }: Props) {
   const [showRawHtml, setShowRawHtml] = useState(false);
   const [htmlContent, setHtmlContent] = useState('');
   const [subject, setSubject] = useState('');
@@ -44,9 +44,13 @@ export function IssueDetailDrawer({ issue, open, onClose, onSave, onApprove, onS
   if (!open || !issue) return null;
 
   const handleSave = async () => {
+    if (!issue) return;
     setSaving(true);
     try {
-      void onSave();
+      await api.updateNewsletterIssue(idToken, issue.id, { subject, rendered_content: htmlContent });
+      onSave();
+    } catch {
+      // error handled by parent via onSave failure
     } finally {
       setSaving(false);
     }

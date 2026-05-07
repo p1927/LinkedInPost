@@ -47,11 +47,13 @@ export function NewsCard({ title, source, publishedAt, url, imageUrl, provider, 
             className="w-full h-full object-cover"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = 'none';
-              (e.currentTarget.parentElement as HTMLElement).classList.add(
-                sourceColor(source), 'flex', 'items-center', 'justify-center',
-              );
-              (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                `<span class="text-white text-lg font-bold">${source[0]?.toUpperCase() ?? '?'}</span>`;
+              const parent = e.currentTarget.parentElement as HTMLElement;
+              parent.classList.add(sourceColor(source), 'flex', 'items-center', 'justify-center');
+              parent.innerHTML = '';
+              const span = document.createElement('span');
+              span.className = 'text-white text-lg font-bold';
+              span.textContent = `${source[0]?.toUpperCase() ?? '?'}`;
+              parent.appendChild(span);
             }}
           />
         ) : (

@@ -55,7 +55,7 @@ export function useFeedKeyboard(
           break;
       }
     },
-    [articles.length, highlightedIndex, onNext, onPrev, onOpenHighlighted, onClipHighlighted, onToggleHelp],
+    [articles, highlightedIndex, onNext, onPrev, onOpenHighlighted, onClipHighlighted, onToggleHelp],
   );
 
   useEffect(() => {

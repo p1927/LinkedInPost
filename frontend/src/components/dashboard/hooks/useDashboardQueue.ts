@@ -140,7 +140,6 @@ export function useDashboardQueue({
     } catch (error) {
       handleFailure(error, 'Failed to add topic.');
     } finally {
-      setLoading(false);
       setAddingTopic(false);
     }
   };
@@ -802,7 +801,7 @@ export function useDashboardQueue({
       if (viewingTopicRouteId && encodeTopicRouteId(row) === viewingId) {
         onLeaveTopicRoute?.();
       }
-      void loadData(true);
+      void loadData(false);
     } catch (error) {
       handleFailure(error, 'Failed to delete topic entry. Please try again.');
     } finally {

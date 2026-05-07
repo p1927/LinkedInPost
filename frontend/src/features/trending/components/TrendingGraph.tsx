@@ -46,6 +46,16 @@ const PLATFORM_CONFIG = {
     label: 'News',
     order: 2,
   },
+  linkedin: {
+    color: '#0A66C2',
+    bg: 'bg-blue-50',
+    border: 'border-blue-100',
+    text: 'text-blue-700',
+    bar: '#0A66C2',
+    icon: <Newspaper size={12} />,
+    label: 'LinkedIn',
+    order: 3,
+  },
 } as const;
 
 function parseEngagement(value: string | number | undefined): number {

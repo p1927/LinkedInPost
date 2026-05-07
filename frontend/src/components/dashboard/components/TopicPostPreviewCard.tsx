@@ -55,7 +55,7 @@ export function TopicPostPreviewCard({
   const statusLabel = isPublished ? 'Published' : isApproved ? 'Approved' : row.status || 'Pending';
 
   const handleSendToGeneration = async () => {
-    if (!idToken || !api || !row.topicId) return;
+    if (!idToken || !api || !row.topicId || !String(row.topicId).trim()) return;
     setSendingToGeneration(true);
     setGenerationError('');
     try {

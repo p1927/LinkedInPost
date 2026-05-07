@@ -42,7 +42,7 @@ export function TopicRightPanel({
     setLoadingClips(true);
     api.listClips(idToken)
       .then(setClips)
-      .catch(() => {})
+      .catch((err) => console.error('Failed to load clips:', err))
       .finally(() => setLoadingClips(false));
   }, [idToken, api]);
 
