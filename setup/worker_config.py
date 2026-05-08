@@ -205,6 +205,11 @@ def generation_worker_url_for_dev(worker_bootstrap: WorkerBootstrap, dev_vars_pa
 
 
 def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json: str) -> dict[str, str]:
+    dev_bypass_secret = (
+        os.environ.get('DEV_GOOGLE_AUTH_BYPASS_SECRET', '').strip()
+        or read_worker_dev_var(WORKER_DEV_VARS, 'DEV_GOOGLE_AUTH_BYPASS_SECRET')
+        or ''
+    )
     return {
         'ALLOWED_EMAILS': worker_bootstrap.allowed_emails,
         'ADMIN_EMAILS': worker_bootstrap.admin_emails,
@@ -247,6 +252,8 @@ def build_worker_dev_values(worker_bootstrap: WorkerBootstrap, credentials_json:
         'STABILITY_API_KEY': os.environ.get('STABILITY_API_KEY', '').strip(),
         'GENERATION_WORKER_URL': generation_worker_url_for_dev(worker_bootstrap, WORKER_DEV_VARS),
         'GENERATION_WORKER_SECRET': worker_bootstrap.generation_worker_secret,
+        # Auth bypass for E2E testing — same value must be set as VITE_E2E_BYPASS_SECRET in frontend builds
+        'DEV_GOOGLE_AUTH_BYPASS_SECRET': dev_bypass_secret,
     }
 
 
@@ -256,6 +263,8 @@ def build_worker_secret_values(worker_bootstrap: WorkerBootstrap, credentials_js
         'SECRET_ENCRYPTION_KEY': worker_bootstrap.encryption_key,
         'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
         'GENERATION_WORKER_SECRET': worker_bootstrap.generation_worker_secret,
+        # Auth bypass for E2E testing — same value must be set as VITE_E2E_BYPASS_SECRET in frontend builds
+        'DEV_GOOGLE_AUTH_BYPASS_SECRET': os.environ.get('DEV_GOOGLE_AUTH_BYPASS_SECRET', '').strip(),
     }
     serpapi_api_key = os.environ.get('SERPAPI_API_KEY', '').strip()
     if serpapi_api_key:

@@ -108,6 +108,39 @@ def bootstrap_worker_config(args: argparse.Namespace, google_resources: object |
     )
 
 
+def _generate_secret() -> str:
+    """Generate a random secret suitable for E2E auth bypass."""
+    import secrets
+    return secrets.token_urlsafe(32)
+
+
+def _read_worker_dev_var(name: str) -> str:
+    if not WORKER_DEV_VARS.exists():
+        return ''
+    prefix = f'{name}='
+    for raw_line in WORKER_DEV_VARS.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or not line.startswith(prefix):
+            continue
+        return line[len(prefix):].strip()
+    return ''
+
+
+def _write_dev_var(name: str, value: str) -> None:
+    lines = WORKER_DEV_VARS.read_text().splitlines() if WORKER_DEV_VARS.exists() else []
+    new_lines = []
+    found = False
+    for line in lines:
+        if line.strip().startswith(f'{name}='):
+            new_lines.append(f'{name}={value}')
+            found = True
+        else:
+            new_lines.append(line)
+    if not found:
+        new_lines.append(f'{name}={value}')
+    WORKER_DEV_VARS.write_text('\n'.join(new_lines) + '\n')
+
+
 def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: object | None) -> None:
     from .cloudflare import get_cloudflare_account_id
     from .verification import verify_worker_endpoint
@@ -121,8 +154,29 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
     if not cloudflare_account_id:
         cloudflare_account_id = get_cloudflare_account_id()
 
+    # DEV_GOOGLE_AUTH_BYPASS_SECRET — Worker secret that activates the auth bypass.
+    # The Worker accepts this raw string as an idToken and returns a synthetic admin session,
+    # skipping Google OAuth. Set via wrangler secret put or in worker/.dev.vars for local dev.
+    # The same value must be available to the frontend as VITE_E2E_BYPASS_SECRET.
+    dev_bypass_secret = (
+        os.environ.get('DEV_GOOGLE_AUTH_BYPASS_SECRET', '').strip()
+        or _read_worker_dev_var('DEV_GOOGLE_AUTH_BYPASS_SECRET')
+        or ''
+    )
+    # E2E_BYPASS_SECRET — GitHub Actions secret for the frontend build (VITE_E2E_BYPASS_SECRET).
+    # Generated once and reused so the same secret works across Worker and frontend.
+    e2e_bypass_secret = (
+        os.environ.get('E2E_BYPASS_SECRET', '').strip()
+        or _read_worker_dev_var('E2E_BYPASS_SECRET')
+        or ''
+    )
+    if not e2e_bypass_secret:
+        e2e_bypass_secret = _generate_secret()
+        _write_dev_var('E2E_BYPASS_SECRET', e2e_bypass_secret)
+        ok('E2E_BYPASS_SECRET generated', '(stored in worker/.dev.vars and synced to GitHub)')
+
     # Only sync secrets actually consumed by remaining GitHub Actions workflows:
-    # - deploy-pages.yml: VITE_GOOGLE_CLIENT_ID, VITE_WORKER_URL
+    # - deploy-pages.yml: VITE_GOOGLE_CLIENT_ID, VITE_WORKER_URL, VITE_E2E_BYPASS_SECRET
     # - youtube-comment-poll.yml: WORKER_SCHEDULER_SECRET, YOUTUBE_* vars, VITE_WORKER_URL
     # - deploy-workers.yml: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
     # All other secrets (API keys, OAuth tokens, GCS, etc.) are set directly on the
@@ -131,6 +185,7 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
         'VITE_GOOGLE_CLIENT_ID': worker_bootstrap.google_client_id,
         'VITE_WORKER_URL': worker_url,
         'WORKER_SCHEDULER_SECRET': worker_bootstrap.scheduler_secret,
+        'E2E_BYPASS_SECRET': e2e_bypass_secret,
         'YOUTUBE_API_KEY': os.environ.get('YOUTUBE_API_KEY', '').strip(),
         'YOUTUBE_OAUTH_TOKEN': os.environ.get('YOUTUBE_OAUTH_TOKEN', '').strip(),
         'YOUTUBE_CHANNEL_ID': os.environ.get('YOUTUBE_CHANNEL_ID', '').strip(),

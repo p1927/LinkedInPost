@@ -61,6 +61,18 @@ def get_cloudflare_account_id() -> str:
     return ''
 
 
+def _read_worker_var(name: str) -> str:
+    if not WORKER_DEV_VARS.exists():
+        return ''
+    prefix = f'{name}='
+    for raw_line in WORKER_DEV_VARS.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or not line.startswith(prefix):
+            continue
+        return line[len(prefix):].strip()
+    return ''
+
+
 def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
     """Set generation worker auth secrets in Cloudflare for both workers.
 
@@ -91,6 +103,27 @@ def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
             warn('Main Worker secret', f'Set command output: {result.stdout[:200]}')
     except RuntimeError as e:
         warn('Main Worker secret', f'Failed to set: {str(e)[:200]}')
+
+    # Set DEV_GOOGLE_AUTH_BYPASS_SECRET for E2E cloud auth bypass tests
+    dev_bypass = (
+        os.environ.get('DEV_GOOGLE_AUTH_BYPASS_SECRET', '').strip()
+        or _read_worker_var('DEV_GOOGLE_AUTH_BYPASS_SECRET')
+        or ''
+    )
+    if dev_bypass:
+        try:
+            result = run_command(
+                ['npx', 'wrangler', 'secret', 'put', 'DEV_GOOGLE_AUTH_BYPASS_SECRET', '--env', ''],
+                cwd=WORKER_DIR,
+                capture_output=True,
+                input_text=dev_bypass,
+            )
+            if 'Success' in result.stdout or 'Uploaded' in result.stdout:
+                ok('Main Worker secret', 'DEV_GOOGLE_AUTH_BYPASS_SECRET set (E2E cloud bypass active)')
+            else:
+                warn('Main Worker secret', f'DEV_GOOGLE_AUTH_BYPASS_SECRET output: {result.stdout[:200]}')
+        except RuntimeError as e:
+            warn('Main Worker secret', f'Failed to set DEV_GOOGLE_AUTH_BYPASS_SECRET: {str(e)[:200]}')
 
     # Set WORKER_SHARED_SECRET on generation worker
     if not GEN_WORKER_DIR.is_dir():
