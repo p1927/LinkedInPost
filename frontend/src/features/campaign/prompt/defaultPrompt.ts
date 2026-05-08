@@ -6,7 +6,7 @@ export function buildCampaignClaudePrompt(userTopicsBlock: string): string {
   return DEFAULT_CAMPAIGN_PROMPT_TEMPLATE.replace(CAMPAIGN_PROMPT_TOPICS_PLACEHOLDER, block);
 }
 
-const DEFAULT_CAMPAIGN_PROMPT_TEMPLATE = `You are helping import a content campaign into Channel Bot. Output a single JSON document (no markdown fences) that matches this shape exactly.
+const DEFAULT_CAMPAIGN_PROMPT_TEMPLATE = `You are helping import a content campaign into Linked. Output a single JSON document (no markdown fences) that matches this shape exactly.
 
 User topic ideas / themes to cover (expand into separate posts as appropriate):
 ${CAMPAIGN_PROMPT_TOPICS_PLACEHOLDER}

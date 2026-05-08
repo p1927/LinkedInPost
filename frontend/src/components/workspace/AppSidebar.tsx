@@ -12,7 +12,7 @@ import { FEATURE_CAMPAIGN } from '@/generated/features';
 
 export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'feed' | 'automations' | 'setup' | 'admin';
 
-const SIDEBAR_COLLAPSED_KEY = 'channelbot_sidebar_collapsed';
+const SIDEBAR_COLLAPSED_KEY = 'linked_sidebar_collapsed';
 
 /** One module for square rail controls (collapsed + expanded icon cells). */
 const RAIL_TILE = 'h-10 w-10 min-h-10 min-w-10 shrink-0';
