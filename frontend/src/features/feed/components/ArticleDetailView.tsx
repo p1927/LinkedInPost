@@ -441,7 +441,6 @@ export function ArticleDetailView({
               )}
             </RSection>
             <RDivider />
-            <div className="pt-5">
           </>
         )}
 
