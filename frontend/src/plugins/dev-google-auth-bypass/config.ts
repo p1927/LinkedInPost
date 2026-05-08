@@ -14,3 +14,8 @@ function readTruthyFlag(raw: string | undefined): boolean {
 export function isDevGoogleAuthBypassEnabled(): boolean {
   return readTruthyFlag(import.meta.env.VITE_DEV_GOOGLE_AUTH_BYPASS);
 }
+
+/** True when VITE_E2E_BYPASS_SECRET is set — enables the bypass for E2E tests against the deployed cloud app. */
+export function isE2ECloudBypassEnabled(): boolean {
+  return readTruthyFlag(import.meta.env.VITE_E2E_BYPASS_SECRET);
+}

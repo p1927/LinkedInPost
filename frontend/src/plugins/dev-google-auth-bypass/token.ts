@@ -1,11 +1,14 @@
-import { isDevGoogleAuthBypassEnabled } from './config';
+import { isDevGoogleAuthBypassEnabled, isE2ECloudBypassEnabled } from './config';
 
 export function getDevGoogleAuthBypassToken(): string | null {
-  if (!isDevGoogleAuthBypassEnabled()) {
-    return null;
+  // E2E cloud bypass: VITE_E2E_BYPASS_SECRET set in CI builds
+  if (isE2ECloudBypassEnabled()) {
+    return String(import.meta.env.VITE_E2E_BYPASS_SECRET || '').trim() || null;
   }
-  const secret = String(import.meta.env.VITE_DEV_GOOGLE_AUTH_BYPASS_SECRET || '').trim();
-  return secret || null;
+  if (isDevGoogleAuthBypassEnabled()) {
+    return String(import.meta.env.VITE_DEV_GOOGLE_AUTH_BYPASS_SECRET || '').trim() || null;
+  }
+  return null;
 }
 
 export function isActiveDevGoogleAuthBypassToken(idToken: string | null | undefined): boolean {

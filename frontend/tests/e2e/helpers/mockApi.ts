@@ -872,3 +872,39 @@ export async function gotoAuthenticated(
   await page.goto(relativePath);
   await page.waitForLoadState('domcontentloaded');
 }
+
+/**
+ * E2E cloud-mode authenticated navigation helper.
+ *
+ * Uses the E2E bypass secret (VITE_E2E_BYPASS_SECRET) to authenticate against
+ * the real deployed Cloudflare Worker — NO API mocks are applied.
+ *
+ * Requirements:
+ * - TEST_CLOUD_MODE=true environment variable
+ * - VITE_E2E_BYPASS_SECRET must be set (passed via .env or CI secret)
+ * - The Cloudflare Worker must have DEV_GOOGLE_AUTH_BYPASS_SECRET set to the
+ *   same value so the worker accepts the bypass token
+ *
+ * Usage:
+ *   TEST_CLOUD_MODE=true BASE_URL=https://p1927.github.io/LinkedInPost \
+ *     npx playwright test cloud.spec.ts
+ */
+export async function gotoCloudAuthenticated(page: Page, path: string): Promise<void> {
+  const secret = String(process.env.VITE_E2E_BYPASS_SECRET || '').trim();
+  if (!secret) {
+    throw new Error(
+      'VITE_E2E_BYPASS_SECRET is not set — cannot perform cloud auth bypass. ' +
+      'Set TEST_CLOUD_MODE=true and VITE_E2E_BYPASS_SECRET in your environment.',
+    );
+  }
+
+  // Inject the secret as the google_id_token — the frontend reads it via
+  // getDevGoogleAuthBypassToken() and the worker accepts it as a valid bypass
+  await page.addInitScript((s: string) => {
+    localStorage.setItem('google_id_token', s);
+  }, secret);
+
+  const relativePath = path === '/' ? '.' : path.startsWith('/') ? `.${path}` : path;
+  await page.goto(relativePath);
+  await page.waitForLoadState('networkidle');
+}

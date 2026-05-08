@@ -48,7 +48,8 @@ jobs:
           VITE_WORKER_URL: ${{ secrets.VITE_WORKER_URL }}
           # Sidebar build footer (vite.config reads GITHUB_* / optional VITE_* overrides)
           VITE_GIT_COMMIT_SHA: ${{ github.sha }}
-          VITE_CI_RUN_NUMBER: ${{ github.run_number }}
+          # E2E cloud bypass secret — enables auth bypass for cloud E2E tests
+          VITE_E2E_BYPASS_SECRET: ${{ secrets.E2E_BYPASS_SECRET }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
