@@ -620,7 +620,6 @@ export function ArticleDetailView({
 
         </div>
         </div>
-        </div>
       </div>
     </aside>
   );
