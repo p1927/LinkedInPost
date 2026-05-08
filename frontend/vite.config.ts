@@ -33,6 +33,11 @@ function spaGithubPages404(): Plugin {
         fs.mkdirSync(dirPath, { recursive: true })
         fs.copyFileSync(indexHtml, path.join(dirPath, 'index.html'))
       }
+      // Also copy to dir.html (no trailing slash) to catch GitHub Pages 301-redirects
+      // from /dir → /dir/ before the SPA fallback fires.
+      for (const dir of workspaceSpaDirs) {
+        fs.copyFileSync(indexHtml, path.resolve(process.cwd(), outDir, `${dir}.html`))
+      }
     },
   }
 }
