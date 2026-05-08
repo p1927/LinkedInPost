@@ -16,6 +16,7 @@ Python CLI setup wizard for first-run configuration. Guides users through connec
 | `features.py` | Feature flag detection and configuration |
 | `github.py` | GitHub integration helpers |
 | `google_resources.py` | Google Sheets and OAuth setup helpers |
+| `python_requirements.py` | Installs root `requirements.txt` into the current interpreter when Google client imports fail |
 | `utils.py` | Shared utility functions |
 | `verification.py` | Post-setup verification checks |
 | `worker_config.py` | Worker secrets and environment variable injection |

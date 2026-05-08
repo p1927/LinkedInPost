@@ -51,6 +51,8 @@ Install the Python dependencies locally:
 pip install -r requirements.txt
 ```
 
+If you skip that step, `setup.py` still tries to help: when Google resource creation runs (not `--skip-google`), it runs `python -m pip install -r requirements.txt` using **the same interpreter** that invoked `setup.py`, then verifies `google.cloud.storage` imports. Prefer installing into a project virtualenv first so you are not writing into a system Python.
+
 ## Feature toggles
 
 Optional product modules are controlled by [`features.yaml`](features.yaml) at the repo root (for example `newsResearch: false` to remove news settings, search, and related generation context). Editing that file and running `python3 scripts/generate_features.py` (or any `python setup.py` run) regenerates `frontend/src/generated/features.ts` and `worker/src/generated/features.ts` before you build the dashboard or Worker.

@@ -12,6 +12,7 @@ Modules live in setup/ — each file is under 500 lines:
   setup/cli.py             — argument parser
   setup/features.py        — feature-flag loading and generation
   setup/google_resources.py — Google Drive/Sheets/GCS provisioning
+  setup/python_requirements.py — pip install root requirements.txt when Google libs are missing
   setup/worker_config.py   — WorkerBootstrap dataclass, wrangler config, secrets
   setup/cloudflare.py      — KV/D1 provisioning, Worker deploy
   setup/verification.py    — Worker endpoint and CORS verification
@@ -102,6 +103,11 @@ def main() -> None:
         install_worker_dependencies()
         run_typescript_dry_run()
 
+    if not args.skip_google:
+        from setup.python_requirements import ensure_google_setup_python_deps
+
+        ensure_google_setup_python_deps()
+
     google_resources = None if args.skip_google else _create_google_resources(args.share_email)
     if args.skip_google:
         warn('Google resource creation', 'skipped by flag')
@@ -136,7 +142,18 @@ def main() -> None:
 
 
 def _create_google_resources(shared_email: str) -> object:
-    from setup.google_resources import create_google_resources
+    try:
+        from setup.google_resources import create_google_resources
+    except ImportError as exc:
+        fail(
+            'Google setup dependencies',
+            'could not import Google client libraries. This is not a Google Cloud '
+            'authentication or credentials problem — those checks run only after '
+            'imports succeed. Install deps for the Python you are using, for example: '
+            '`python3 -m pip install -r requirements.txt` (prefer a project venv). '
+            f'Original error: {exc}',
+        )
+        sys.exit(1)
     return create_google_resources(shared_email)
 
 

@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Scissors, ExternalLink, Copy, Check, Scale, ChevronDown, Sparkles, Info, Link2, BookOpen } from 'lucide-react';
+import {
+  ArrowLeft, Scissors, ExternalLink, Copy, Check, Scale, ChevronDown,
+  Link2, ThumbsUp, ThumbsDown, Bookmark, Share2, Layers, PenLine, Sparkles,
+} from 'lucide-react';
 import type { NewsArticle } from '../../trending/types';
 import type { BackendApi } from '@/services/backendApi';
 import type { ArticleAnalysis } from '../types';
@@ -23,30 +26,88 @@ interface ArticleDetailViewProps {
 
 type TabKey = 'opinion' | 'perspectives' | 'connection' | 'debate';
 
+const SOURCE_COLORS = [
+  '#0BAB64','#FF7900','#7C3AED','#dc2626','#0EA5E9',
+  '#F59E0B','#10B981','#3B82F6','#EC4899','#6366F1',
+];
+
+function sourceHex(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return SOURCE_COLORS[hash % SOURCE_COLORS.length];
+}
+
+function readMinutes(text?: string): number {
+  if (!text) return 1;
+  return Math.max(1, Math.ceil(text.split(/\s+/).length / 200));
+}
+
+function formatRelTime(iso?: string): string {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  if (h < 1) return `${Math.floor(diff / 60_000)}m ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 function SkeletonLine({ width = 'w-full' }: { width?: string }) {
-  return (
-    <div className={`h-3 rounded bg-violet-100 animate-pulse ${width}`} />
-  );
+  return <div className={`h-3 rounded bg-violet-100 animate-pulse ${width}`} />;
 }
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
   return (
     <button
       type="button"
-      onClick={handleCopy}
-      className="ml-2 shrink-0 text-muted hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
+      onClick={() => {
+        navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+      className="shrink-0 text-muted hover:text-primary transition-colors focus-visible:outline-none rounded"
       aria-label="Copy"
     >
-      {copied ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
+      {copied ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
     </button>
   );
+}
+
+function ToolbarBtn({
+  icon, title, active = false, onClick,
+}: { icon: React.ReactNode; title: string; active?: boolean; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onClick}
+      className={[
+        'h-8 w-8 inline-flex items-center justify-center rounded-[7px] transition-colors duration-100 border-0 bg-transparent p-0',
+        active ? 'text-primary' : 'text-muted hover:text-primary',
+      ].join(' ')}
+    >
+      {icon}
+    </button>
+  );
+}
+
+/* ─── Right rail sections ─── */
+
+function RLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-2 text-[13px] font-semibold text-ink tracking-tight mb-2.5">
+      {children}
+    </div>
+  );
+}
+
+function RSection({ children }: { children: React.ReactNode }) {
+  return <div className="mb-6 last:mb-0">{children}</div>;
+}
+
+function RDivider() {
+  return <div className="h-px bg-violet-200/45 my-0" />;
 }
 
 export function ArticleDetailView({
@@ -62,13 +123,10 @@ export function ArticleDetailView({
   onDebate,
   asSheet = false,
 }: ArticleDetailViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const articleContentRef = useRef<HTMLDivElement>(null);
-
-  const { tooltip: selectionTooltip, handleClip: handleSelectionClip } = useSelectionClipper({
-    containerRef: articleContentRef,
-    onClip: (text) => onClipPassage?.(text),
-    enabled: Boolean(onClipPassage),
-  });
+  const [readPct, setReadPct] = useState(0);
+  const [localClips, setLocalClips] = useState<string[]>([]);
 
   const [analysis, setAnalysis] = useState<ArticleAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -78,6 +136,15 @@ export function ArticleDetailView({
   const [connections, setConnections] = useState<DraftConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [connectionsError, setConnectionsError] = useState<string | null>(null);
+
+  const { tooltip: selectionTooltip, handleClip: handleSelectionClip } = useSelectionClipper({
+    containerRef: articleContentRef,
+    onClip: (text) => {
+      onClipPassage?.(text);
+      setLocalClips((prev) => [...prev, text]);
+    },
+    enabled: Boolean(onClipPassage),
+  });
 
   const fetchAnalysis = () => {
     setAnalysisLoading(true);
@@ -91,15 +158,15 @@ export function ArticleDetailView({
       })
       .then(setAnalysis)
       .catch((e: unknown) =>
-        setAnalysisError(
-          (e instanceof Error ? e.message : null) || 'Could not analyze article.',
-        ),
+        setAnalysisError((e instanceof Error ? e.message : null) || 'Could not analyze article.'),
       )
       .finally(() => setAnalysisLoading(false));
   };
 
   useEffect(() => {
     fetchAnalysis();
+    setLocalClips([]);
+    setReadPct(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article.url, idToken]);
 
@@ -111,9 +178,11 @@ export function ArticleDetailView({
       .findDraftConnections(idToken, {
         title: article.title,
         description: article.description ?? '',
-        drafts: rows.map(r => ({ topicId: r.topicId ?? '', topic: r.topic ?? '' })).filter(d => d.topicId && d.topic),
+        drafts: rows
+          .map((r) => ({ topicId: r.topicId ?? '', topic: r.topic ?? '' }))
+          .filter((d) => d.topicId && d.topic),
       })
-      .then(result => setConnections(result.connections))
+      .then((result) => setConnections(result.connections))
       .catch((e: unknown) => {
         setConnections([]);
         setConnectionsError((e instanceof Error ? e.message : null) || 'Could not load connections.');
@@ -121,24 +190,27 @@ export function ArticleDetailView({
       .finally(() => setConnectionsLoading(false));
   }, [activeTab, article.url, idToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const formattedDate = article.publishedAt
-    ? new Date(article.publishedAt).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const max = el.scrollHeight - el.clientHeight;
+    setReadPct(max <= 0 ? 100 : Math.round((el.scrollTop / max) * 100));
+  };
+
+  const dotColor = article.source ? sourceHex(article.source) : '#7C3AED';
+  const mins = readMinutes(article.description);
+  const relTime = formatRelTime(article.publishedAt);
 
   const handleClipOpinionResponse = () => {
     if (!opinionResponse.trim()) return;
-    onClip({
-      ...article,
-      description: opinionResponse,
-    });
+    onClip({ ...article, description: opinionResponse });
   };
 
-  return (
-    <div className={asSheet ? 'flex flex-col gap-4 h-full overflow-y-auto' : 'flex gap-6 flex-1 min-h-0 overflow-hidden'}>
+  /* ─── Article body (shared between sheet and full reader) ─── */
+  const ArticleBody = (
+    <article
+      className="max-w-[720px] mx-auto px-8 py-9 pb-28"
+      ref={asSheet ? articleContentRef : undefined}
+    >
       {selectionTooltip && (
         <SelectionClipTooltip
           x={selectionTooltip.x}
@@ -147,112 +219,139 @@ export function ArticleDetailView({
         />
       )}
 
-      {/* ── LEFT: Article Content ─────────────────────────────── */}
-      <div ref={articleContentRef} className={asSheet ? 'rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 flex flex-col gap-4' : 'flex-1 overflow-y-auto rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-6 flex flex-col gap-4'}>
-        {/* Back button */}
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-sm text-muted hover:text-primary transition-colors w-fit"
+      {/* Cluster badge */}
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/[0.08] border border-primary/[0.18] text-[10px] font-bold uppercase tracking-[0.04em] text-primary mb-3.5">
+        <Layers size={11} aria-hidden />
+        1 outlet covering
+      </span>
+
+      {/* Title */}
+      <h1 className="text-[30px] leading-[1.15] font-semibold tracking-[-0.018em] text-ink mb-3.5">
+        {article.title}
+      </h1>
+
+      {/* Meta row */}
+      <div className="flex items-center gap-2 flex-wrap text-[12.5px] text-muted pb-[18px] border-b border-violet-200/55 mb-6">
+        <span className="w-3 h-3 rounded-[3px] shrink-0" style={{ background: dotColor }} />
+        <span className="font-semibold text-ink">{article.source}</span>
+        {relTime && (
+          <>
+            <span className="w-[3px] h-[3px] rounded-full bg-violet-300 shrink-0" />
+            <span>{relTime}</span>
+          </>
+        )}
+        <span className="w-[3px] h-[3px] rounded-full bg-violet-300 shrink-0" />
+        <span>{mins} min read</span>
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11.5px] font-semibold text-primary border border-violet-200/70 bg-white/70 hover:border-primary hover:bg-white transition-all duration-100"
         >
-          <ArrowLeft size={15} />
-          Back to Feed
-        </button>
+          <ExternalLink size={11} aria-hidden />
+          Read original
+        </a>
+      </div>
 
-        {/* Hero image */}
-        {article.imageUrl && (
-          <div className="relative w-full overflow-hidden rounded-xl">
-            <img
-              src={article.imageUrl}
-              alt={article.title}
-              className="w-full max-h-48 object-cover"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-canvas/30 via-transparent to-transparent pointer-events-none" />
-          </div>
-        )}
+      {/* Lede */}
+      {article.description && (
+        <p className="text-[17px] leading-[1.6] font-medium text-ink tracking-[-0.005em] mb-[22px]">
+          {article.description}
+        </p>
+      )}
 
-        {/* Title */}
-        <h1 className="text-2xl font-bold text-ink leading-tight tracking-tight">{article.title}</h1>
-
-        {/* Meta: source + date */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {article.source && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-primary">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-              {article.source}
+      {/* Clipped passages rail */}
+      {localClips.length > 0 && (
+        <div className="mt-6 px-3.5 py-3 rounded-[10px] bg-white/60 border border-dashed border-primary/30 flex items-center gap-2.5 flex-wrap">
+          <span className="text-[10.5px] font-bold uppercase tracking-[0.1em] text-violet-500 flex items-center gap-1">
+            <Scissors size={12} aria-hidden />
+            {localClips.length} clip{localClips.length !== 1 ? 's' : ''} from this article
+          </span>
+          {localClips.map((clip, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1.5 px-2.5 py-[5px] bg-primary/[0.07] border border-primary/[0.18] rounded-[7px] text-[11.5px] text-ink max-w-xs"
+            >
+              <span className="italic truncate max-w-[240px]">"{clip}"</span>
+              <button
+                type="button"
+                className="text-muted/60 hover:text-primary transition-colors"
+                onClick={() => setLocalClips((prev) => prev.filter((_, j) => j !== i))}
+                aria-label="Remove clip"
+              >
+                ×
+              </button>
             </span>
-          )}
-          {formattedDate && (
-            <span className="text-xs text-muted">{formattedDate}</span>
-          )}
+          ))}
         </div>
+      )}
 
-        {/* Description */}
-        {article.description && (
-          <p className="text-sm text-ink/80 leading-relaxed border-l-2 border-primary/20 pl-3">
-            {article.description}
-          </p>
-        )}
-
-        {/* Action row */}
-        <div className="flex items-center gap-3 pt-1 flex-wrap">
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 hover:shadow-[0_0_0_4px_rgba(124,58,237,0.12)] transition-all duration-200"
-          >
-            Read Full Article
-            <ExternalLink size={14} />
-          </a>
-
+      {/* Compose CTA */}
+      <div className="mt-10 px-6 py-7 rounded-2xl border border-primary/[0.18] bg-gradient-to-br from-primary/[0.08] to-violet-400/[0.04] text-center">
+        <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-violet-500 mb-2">
+          Done reading?
+        </div>
+        <div className="text-[22px] font-semibold text-ink tracking-tight mb-1.5">
+          Turn this into a LinkedIn post
+        </div>
+        <p className="text-[13.5px] text-muted mb-5 max-w-[480px] mx-auto leading-[1.55]">
+          We'll seed your draft with this article's key points
+          {localClips.length > 0 ? ` and your ${localClips.length} clipped passage${localClips.length !== 1 ? 's' : ''}` : ''}.
+          You stay in the driver's seat — edit, set the channel and schedule, then publish.
+        </p>
+        <div className="flex items-center justify-center gap-2.5 flex-wrap">
           <button
             type="button"
             onClick={() => onClip(article)}
-            className={[
-              'inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-all duration-200',
-              isClipped
-                ? 'border-primary bg-primary/10 text-primary shadow-sm'
-                : 'border-border/60 text-muted hover:border-primary/50 hover:text-primary',
-            ].join(' ')}
-            title={isClipped ? 'Clipped' : 'Clip article'}
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[10px] bg-primary text-white text-[13px] font-semibold shadow-[0_8px_22px_-6px_rgba(124,58,237,0.5)] hover:bg-primary/90 transition-colors"
           >
-            <Scissors size={14} className={isClipped ? 'fill-primary' : ''} />
-            {isClipped ? 'Clipped' : 'Clip'}
+            <PenLine size={15} aria-hidden />
+            Compose post from this article
           </button>
-
-          {onDebate && (
-            <button
-              type="button"
-              onClick={onDebate}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-2 text-sm font-semibold text-muted hover:border-amber-400/60 hover:text-amber-700 active:scale-[0.97] transition-all duration-150"
-              title="Find an opposing article"
-            >
-              <Scale size={14} />
-              Debate
-            </button>
-          )}
-        </div>
-
-        {/* Note */}
-        <div className="flex items-center gap-1.5 border-t border-border/40 pt-3">
-          <Info size={12} className="text-muted/60 shrink-0" />
-          <p className="text-xs text-muted italic">
-            Article content is displayed as a preview. Click "Read Full Article" to view the complete article.
-          </p>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[10px] border border-violet-200/70 bg-white/70 text-ink text-[13px] font-semibold hover:border-primary hover:text-primary transition-all duration-100"
+          >
+            <Bookmark size={15} aria-hidden />
+            Save for later
+          </button>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[10px] border border-violet-200/70 bg-white/70 text-ink text-[13px] font-semibold hover:border-primary hover:text-primary transition-all duration-100"
+          >
+            <ArrowLeft size={15} aria-hidden />
+            Back to feed
+          </button>
         </div>
       </div>
+    </article>
+  );
 
-      {/* ── RIGHT: AI Insight Panel ───────────────────────────── */}
-      <div className={asSheet ? 'flex flex-col gap-4' : 'w-80 xl:w-96 shrink-0 overflow-y-auto flex flex-col gap-4'}>
-
-        {/* [G] Article Intelligence */}
-        <div className="rounded-2xl border border-blue-200/70 bg-gradient-to-br from-blue-50/90 to-sky-50/50 backdrop-blur-sm p-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <Sparkles size={14} className="text-blue-500 shrink-0" />
-            <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Summary</h3>
+  /* ─── Right rail (AI analysis) ─── */
+  const RightRail = (
+    <aside className="w-[300px] shrink-0 border-l border-violet-200/45 bg-white/62 backdrop-blur-[18px] overflow-y-auto px-[22px] py-6">
+      {/* Stats strip */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        {[
+          { value: '1 outlet', label: 'Covering this story' },
+          { value: analysis ? (analysis.summary.toLowerCase().includes('positive') ? 'Positive' : 'Neutral') : '—', label: 'Tone across outlets' },
+          { value: relTime || '—', label: 'Published' },
+          { value: `${mins} min`, label: 'Est. read time' },
+        ].map((s) => (
+          <div key={s.label} className="flex flex-col gap-0.5">
+            <div className="text-[15.5px] font-bold text-ink leading-[1.2] tracking-tight">{s.value}</div>
+            <div className="text-[11px] text-muted font-medium leading-[1.4]">{s.label}</div>
           </div>
+        ))}
+      </div>
 
+      <RDivider />
+      <div className="pt-5">
+
+        {/* Summary */}
+        <RSection>
+          <RLabel>Summary</RLabel>
           {analysisLoading && (
             <div className="space-y-2">
               <SkeletonLine />
@@ -260,111 +359,102 @@ export function ArticleDetailView({
               <SkeletonLine width="w-3/4" />
             </div>
           )}
-
           {analysisError && (
-            <div className="space-y-2">
-              <p className="text-xs text-red-600">{analysisError}</p>
-              <button
-                type="button"
-                onClick={fetchAnalysis}
-                className="text-xs font-semibold text-primary hover:underline"
-              >
+            <div className="space-y-1.5">
+              <p className="text-xs text-red-500">{analysisError}</p>
+              <button type="button" onClick={fetchAnalysis} className="text-xs font-semibold text-primary hover:underline">
                 Try again
               </button>
             </div>
           )}
-
           {analysis && (
-            <div className="space-y-2">
-              <details className="group rounded-lg border border-blue-200/50 bg-white/60 overflow-hidden">
-                <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-xs font-semibold text-blue-900/80 hover:bg-blue-50/60 list-none">
+            <div className="space-y-3">
+              <details className="group" open>
+                <summary className="flex cursor-pointer items-center justify-between text-[12.5px] font-semibold text-muted list-none pb-1.5 border-b border-violet-200/45">
                   What is this about?
-                  <ChevronDown size={13} className="text-blue-400 transition-transform group-open:rotate-180" />
+                  <ChevronDown size={12} className="text-muted/50 transition-transform group-open:rotate-180 shrink-0" />
                 </summary>
-                <p className="px-3 pb-3 pt-1 text-[13px] text-blue-900/70 leading-relaxed">{analysis.summary}</p>
+                <p className="pt-2 text-[12.5px] text-ink/75 leading-relaxed">{analysis.summary}</p>
               </details>
-
-              <details className="group rounded-lg border border-blue-200/50 bg-white/60 overflow-hidden">
-                <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-xs font-semibold text-blue-900/80 hover:bg-blue-50/60 list-none">
+              <details className="group">
+                <summary className="flex cursor-pointer items-center justify-between text-[12.5px] font-semibold text-muted list-none pb-1.5 border-b border-violet-200/45">
                   Why does it matter?
-                  <ChevronDown size={13} className="text-blue-400 transition-transform group-open:rotate-180" />
+                  <ChevronDown size={12} className="text-muted/50 transition-transform group-open:rotate-180 shrink-0" />
                 </summary>
-                <p className="px-3 pb-3 pt-1 text-[13px] text-blue-900/70 leading-relaxed">{analysis.whyItMatters}</p>
+                <p className="pt-2 text-[12.5px] text-ink/75 leading-relaxed">{analysis.whyItMatters}</p>
               </details>
-
             </div>
           )}
-        </div>
+        </RSection>
 
-        {/* [H] Opposing View */}
-        <div className="relative rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/90 to-orange-50/40 backdrop-blur-sm p-4 overflow-hidden">
-          <span aria-hidden className="absolute top-2 right-3 text-3xl font-serif text-amber-200/80 select-none leading-none pointer-events-none">"</span>
-          <div className="flex items-center gap-1.5 mb-3">
-            <Scale size={14} className="text-amber-500 shrink-0" />
-            <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Opposing View</h3>
-          </div>
+        <RDivider />
+        <div className="pt-5">
 
+        {/* Post angles */}
+        <RSection>
+          <RLabel>
+            <Sparkles size={13} className="text-primary shrink-0" aria-hidden />
+            Post angles
+          </RLabel>
           {analysisLoading && (
             <div className="space-y-2">
-              <SkeletonLine />
-              <SkeletonLine width="w-4/5" />
+              <SkeletonLine /><SkeletonLine width="w-4/5" /><SkeletonLine width="w-3/4" />
             </div>
           )}
-
           {analysis && (
-            <p className="text-[13px] text-amber-900/75 leading-relaxed">{analysis.opposingView}</p>
-          )}
-
-          {!analysisLoading && !analysis && analysisError && (
-            <p className="text-xs text-muted italic">Unavailable</p>
-          )}
-        </div>
-
-        {/* [I] 3 Post Angles */}
-        <div className="rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50/90 to-purple-50/40 backdrop-blur-sm p-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <Sparkles size={14} className="text-violet-500 shrink-0" />
-            <h3 className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Post Angles</h3>
-          </div>
-
-          {analysisLoading && (
-            <div className="space-y-2">
-              <SkeletonLine />
-              <SkeletonLine width="w-4/5" />
-              <SkeletonLine width="w-3/4" />
-            </div>
-          )}
-
-          {analysis && (
-            <ol className="space-y-2">
+            <ol className="space-y-1.5">
               {analysis.postAngles.map((angle, i) => (
                 <li
                   key={i}
-                  className="group flex items-start gap-2 rounded-lg border border-border/40 bg-white/50 px-3 py-2 text-xs text-ink/80 hover:bg-white/60 hover:border-primary/20 transition-colors duration-150"
+                  className="flex items-start gap-2 py-2 border-b border-violet-200/45 last:border-b-0 cursor-default"
                 >
-                  <span className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold mt-0.5">{i + 1}</span>
-                  <span className="flex-1 leading-relaxed">{angle}</span>
+                  <span className="shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 text-[12.5px] text-ink/80 leading-relaxed">{angle}</span>
                   <CopyButton text={angle} />
                 </li>
               ))}
             </ol>
           )}
-
           {!analysisLoading && !analysis && analysisError && (
             <p className="text-xs text-muted italic">Unavailable</p>
           )}
-        </div>
+        </RSection>
 
-        {/* Tabs J/K/L */}
-        <div className="rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-4 flex flex-col gap-3">
-          {/* Segmented control tab strip */}
-          <div className="flex gap-0.5 bg-surface-muted/60 rounded-full p-0.5">
+        <RDivider />
+        <div className="pt-5">
+
+        {/* Opposing view */}
+        {(analysis || analysisLoading) && (
+          <>
+            <RSection>
+              <RLabel>
+                <Scale size={13} className="text-amber-500 shrink-0" aria-hidden />
+                Opposing view
+              </RLabel>
+              {analysisLoading && (
+                <div className="space-y-2"><SkeletonLine /><SkeletonLine width="w-4/5" /></div>
+              )}
+              {analysis && (
+                <p className="text-[12.5px] text-ink/75 leading-relaxed">{analysis.opposingView}</p>
+              )}
+            </RSection>
+            <RDivider />
+            <div className="pt-5">
+          </>
+        )}
+
+        {/* Tabs: Opinion / Perspectives / Connection / Debate */}
+        <RSection>
+          {/* Tab strip */}
+          <div className="flex gap-0.5 bg-violet-50/80 rounded-full p-0.5 mb-3">
             {(
               [
                 { key: 'opinion', label: 'Opinion' },
-                { key: 'perspectives', label: 'Perspectives' },
-                { key: 'connection', label: 'Connection' },
-                { key: 'debate' as TabKey, label: 'Debate' },
+                { key: 'perspectives', label: 'Views' },
+                { key: 'connection', label: 'Connect' },
+                { key: 'debate', label: 'Debate' },
               ] as { key: TabKey; label: string }[]
             ).map(({ key, label }) => (
               <button
@@ -372,10 +462,8 @@ export function ArticleDetailView({
                 type="button"
                 onClick={() => setActiveTab(key)}
                 className={[
-                  'flex-1 rounded-full px-2 py-1.5 text-xs font-semibold transition-all duration-150',
-                  activeTab === key
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-muted hover:text-ink bg-transparent',
+                  'flex-1 rounded-full px-1.5 py-1.5 text-[11px] font-semibold transition-all duration-150',
+                  activeTab === key ? 'bg-white text-primary shadow-sm' : 'text-muted hover:text-ink bg-transparent',
                 ].join(' ')}
               >
                 {label}
@@ -383,19 +471,21 @@ export function ArticleDetailView({
             ))}
           </div>
 
-          {/* Tab J — Opinion */}
+          {/* Tab: Opinion */}
           {activeTab === 'opinion' && (
             <div className="space-y-3">
               {analysisLoading && <SkeletonLine />}
               {analysis && (
                 <>
-                  <p className="text-xs text-ink/75 italic leading-relaxed border-l-2 border-primary/25 pl-2.5 py-0.5">{analysis.opinionPrompt}</p>
+                  <p className="text-[12px] text-ink/70 italic leading-relaxed border-l-2 border-primary/25 pl-2.5 py-0.5">
+                    {analysis.opinionPrompt}
+                  </p>
                   <textarea
                     value={opinionResponse}
                     onChange={(e) => setOpinionResponse(e.target.value)}
                     placeholder="Your take..."
                     rows={3}
-                    className="w-full min-h-[80px] rounded-lg border border-border/60 bg-white/80 px-3 py-2 text-xs text-ink placeholder:text-muted/60 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
+                    className="w-full min-h-[80px] rounded-lg border border-violet-200/60 bg-white/80 px-3 py-2 text-xs text-ink placeholder:text-muted/60 focus:outline-none focus:ring-1 focus:ring-primary/40 resize-none"
                   />
                   <button
                     type="button"
@@ -414,49 +504,36 @@ export function ArticleDetailView({
             </div>
           )}
 
-          {/* Tab K — Perspectives */}
+          {/* Tab: Perspectives */}
           {activeTab === 'perspectives' && (
             <div className="space-y-2">
               {analysisLoading && (
                 <div className="space-y-2">
-                  <SkeletonLine />
-                  <SkeletonLine width="w-4/5" />
-                  <SkeletonLine width="w-3/4" />
+                  <SkeletonLine /><SkeletonLine width="w-4/5" /><SkeletonLine width="w-3/4" />
                 </div>
               )}
-              {analysis && (
-                <>
-                  {(
-                    [
-                      { role: 'Founder', text: analysis.perspectiveFlip.founder },
-                      { role: 'Expert', text: analysis.perspectiveFlip.expert },
-                      { role: 'Beginner', text: analysis.perspectiveFlip.beginner },
-                    ]
-                  ).map(({ role, text }) => (
-                    <div key={role} className="rounded-lg border border-border/40 bg-white/50 px-3 py-2">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">{role[0]}</span>
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-wide">{role}</p>
-                      </div>
-                      <p className="text-[12px] text-ink/80 leading-relaxed">{text}</p>
-                    </div>
-                  ))}
-                </>
-              )}
+              {analysis &&
+                [
+                  { role: 'Founder', text: analysis.perspectiveFlip.founder },
+                  { role: 'Expert', text: analysis.perspectiveFlip.expert },
+                  { role: 'Beginner', text: analysis.perspectiveFlip.beginner },
+                ].map(({ role, text }) => (
+                  <div key={role} className="py-2 border-b border-violet-200/45 last:border-b-0">
+                    <p className="text-[10.5px] font-bold text-primary uppercase tracking-wide mb-1">{role}</p>
+                    <p className="text-[12px] text-ink/80 leading-relaxed">{text}</p>
+                  </div>
+                ))}
               {!analysisLoading && !analysis && analysisError && (
                 <p className="text-xs text-muted italic">Unavailable until analysis loads.</p>
               )}
             </div>
           )}
 
-          {/* Tab L — Connection */}
+          {/* Tab: Connection */}
           {activeTab === 'connection' && (
             <div className="space-y-2">
               {connectionsLoading && (
-                <div className="space-y-2">
-                  <SkeletonLine />
-                  <SkeletonLine width="w-4/5" />
-                </div>
+                <div className="space-y-2"><SkeletonLine /><SkeletonLine width="w-4/5" /></div>
               )}
               {connectionsError && !connectionsLoading && (
                 <div className="space-y-1.5">
@@ -470,9 +547,11 @@ export function ArticleDetailView({
                         .findDraftConnections(idToken, {
                           title: article.title,
                           description: article.description ?? '',
-                          drafts: rows.map(r => ({ topicId: r.topicId ?? '', topic: r.topic ?? '' })).filter(d => d.topicId && d.topic),
+                          drafts: rows
+                            .map((r) => ({ topicId: r.topicId ?? '', topic: r.topic ?? '' }))
+                            .filter((d) => d.topicId && d.topic),
                         })
-                        .then(result => setConnections(result.connections))
+                        .then((result) => setConnections(result.connections))
                         .catch((e: unknown) => {
                           setConnections([]);
                           setConnectionsError((e instanceof Error ? e.message : null) || 'Could not load connections.');
@@ -495,31 +574,32 @@ export function ArticleDetailView({
                   </p>
                 </div>
               )}
-              {!connectionsLoading && connections.map(conn => (
-                <div
-                  key={conn.topicId}
-                  className="rounded-lg border border-border/40 bg-white/50 px-3 py-2.5 space-y-1"
-                >
-                  <p className="text-xs font-semibold text-ink line-clamp-1">{conn.topic}</p>
-                  <p className="text-[11px] text-muted leading-relaxed">{conn.reason}</p>
-                  {onOpenDraft && rows.some(r => r.topicId === conn.topicId) && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const row = rows.find(r => r.topicId === conn.topicId);
-                        if (row) onOpenDraft(row);
-                      }}
-                      className="text-[11px] font-semibold text-primary hover:underline"
-                    >
-                      Open Draft →
-                    </button>
-                  )}
-                </div>
-              ))}
+              {!connectionsLoading &&
+                connections.map((conn) => (
+                  <div
+                    key={conn.topicId}
+                    className="py-2 border-b border-violet-200/45 last:border-b-0 space-y-1"
+                  >
+                    <p className="text-[12.5px] font-semibold text-ink line-clamp-1">{conn.topic}</p>
+                    <p className="text-[11.5px] text-muted leading-relaxed">{conn.reason}</p>
+                    {onOpenDraft && rows.some((r) => r.topicId === conn.topicId) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const row = rows.find((r) => r.topicId === conn.topicId);
+                          if (row) onOpenDraft(row);
+                        }}
+                        className="text-[11px] font-semibold text-primary hover:underline"
+                      >
+                        Open Draft →
+                      </button>
+                    )}
+                  </div>
+                ))}
             </div>
           )}
 
-          {/* Tab M — Debate */}
+          {/* Tab: Debate */}
           {activeTab === 'debate' && (
             <div className="space-y-3">
               <p className="text-xs text-ink/70 leading-relaxed">
@@ -537,19 +617,141 @@ export function ArticleDetailView({
               )}
             </div>
           )}
+        </RSection>
+
+        </div>
+        </div>
+        </div>
+      </div>
+    </aside>
+  );
+
+  /* ─── asSheet layout ─── */
+  if (asSheet) {
+    return (
+      <div className="flex flex-col h-full overflow-y-auto" onScroll={handleScroll}>
+        {/* Progress bar */}
+        <div className="sticky top-0 h-0.5 bg-primary/10 z-10 shrink-0">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-violet-400 transition-[width] duration-100"
+            style={{ width: `${readPct}%` }}
+          />
         </div>
 
-        {/* Related Reading note */}
-        <div className="rounded-2xl border border-border/50 bg-white/70 backdrop-blur-sm p-4">
-          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Related Reading</h3>
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-            {/* Empty state placeholder card */}
-            <div className="shrink-0 w-36 h-24 rounded-xl border border-dashed border-border bg-white/50 flex flex-col items-center justify-center gap-1.5">
-              <BookOpen size={16} className="text-muted/40" />
-              <p className="text-[10px] text-muted text-center px-2 leading-relaxed">Search a topic to see related articles</p>
-            </div>
-          </div>
+        {/* Back button */}
+        <div className="px-6 pt-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold text-muted hover:bg-white/60 hover:text-ink transition-all duration-100"
+          >
+            <ArrowLeft size={15} aria-hidden />
+            Feed
+          </button>
         </div>
+
+        <div ref={articleContentRef}>{ArticleBody}</div>
+
+        {/* AI sections below article in sheet mode */}
+        <div className="px-8 pb-10 space-y-4">
+          {/* Summary */}
+          <div className="rounded-2xl border border-blue-200/70 bg-gradient-to-br from-blue-50/90 to-sky-50/50 backdrop-blur-sm p-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Summary</span>
+            </div>
+            {analysisLoading && (
+              <div className="space-y-2"><SkeletonLine /><SkeletonLine width="w-4/5" /></div>
+            )}
+            {analysis && (
+              <p className="text-[13px] text-blue-900/70 leading-relaxed">{analysis.summary}</p>
+            )}
+          </div>
+
+          {/* Post Angles */}
+          {analysis && (
+            <div className="rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50/90 to-purple-50/40 backdrop-blur-sm p-4">
+              <div className="flex items-center gap-1.5 mb-3">
+                <span className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Post Angles</span>
+              </div>
+              <ol className="space-y-2">
+                {analysis.postAngles.map((angle, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-ink/80 leading-relaxed">
+                    <span className="shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1">{angle}</span>
+                    <CopyButton text={angle} />
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── Full reader layout ─── */
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Reading progress bar */}
+      <div className="h-0.5 bg-primary/[0.10] shrink-0 z-20">
+        <div
+          className="h-full bg-gradient-to-r from-primary to-violet-400 transition-[width] duration-100"
+          style={{ width: `${readPct}%` }}
+        />
+      </div>
+
+      {/* Sticky reader header */}
+      <div className="shrink-0 bg-white/[0.78] backdrop-blur-[18px] border-b border-violet-200/55 px-8 py-2.5 flex items-center gap-3.5 z-10">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-semibold text-muted hover:bg-white/60 hover:text-ink transition-all duration-100 shrink-0"
+        >
+          <ArrowLeft size={15} aria-hidden />
+          Feed
+        </button>
+        <span className="text-violet-300 select-none">/</span>
+        <span className="text-[12px] text-muted/80 font-semibold truncate min-w-0 flex-1">
+          {article.title}
+        </span>
+        <div className="ml-auto flex items-center gap-0.5 shrink-0">
+          <ToolbarBtn icon={<ThumbsUp size={16} aria-hidden />} title="Like" />
+          <ToolbarBtn icon={<ThumbsDown size={16} aria-hidden />} title="Hide" />
+          <ToolbarBtn
+            icon={<Scissors size={16} aria-hidden />}
+            title={isClipped ? 'Clipped' : 'Clip article'}
+            active={isClipped}
+            onClick={() => onClip(article)}
+          />
+          <ToolbarBtn icon={<Bookmark size={16} aria-hidden />} title="Save" />
+          <ToolbarBtn icon={<Share2 size={16} aria-hidden />} title="Share" />
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="h-8 w-8 inline-flex items-center justify-center rounded-[7px] text-muted hover:text-primary transition-colors"
+            title="Open original"
+          >
+            <ExternalLink size={16} aria-hidden />
+          </a>
+        </div>
+      </div>
+
+      {/* Content row */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Center scrollable article */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto"
+          onScroll={handleScroll}
+        >
+          <div ref={articleContentRef}>{ArticleBody}</div>
+        </div>
+
+        {/* Right rail */}
+        {RightRail}
       </div>
     </div>
   );
