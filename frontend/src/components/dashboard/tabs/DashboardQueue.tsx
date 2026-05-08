@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Tour } from '@/components/Tour';
 import { RefreshCw, RotateCw, Send, Trash2, Bot, FileEdit, LayoutList, CalendarDays, Loader2, CheckCircle2, Circle, Search, PlusCircle } from 'lucide-react';
 import { cn } from '../../../lib/cn';
@@ -448,13 +449,13 @@ export function DashboardQueue({
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <a
-            href={WORKSPACE_PATHS.addTopic}
+          <Link
+            to={WORKSPACE_PATHS.addTopic}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-fg shadow-sm transition-colors hover:bg-primary/90 cursor-pointer"
           >
             <PlusCircle className="h-3.5 w-3.5" aria-hidden />
             New Post
-          </a>
+          </Link>
           <div
             role="tablist"
             aria-label="Posts layout"
@@ -574,13 +575,13 @@ export function DashboardQueue({
               </div>
               <p className="text-base font-semibold text-ink mb-1">No posts yet</p>
               <p className="text-sm text-muted mb-5">Create your first post and let AI draft your next LinkedIn post.</p>
-              <a
-                href={WORKSPACE_PATHS.addTopic}
+              <Link
+                to={WORKSPACE_PATHS.addTopic}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-fg shadow-sm hover:bg-primary/90 transition-colors"
               >
                 <Bot className="h-4 w-4" aria-hidden />
                 New Post
-              </a>
+              </Link>
               {/* Starter templates */}
               <div className="mt-8 text-left">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted mb-3">
