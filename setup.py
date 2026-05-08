@@ -123,10 +123,14 @@ def main() -> None:
         update_worker_wrangler_config(worker_bootstrap)
         write_worker_dev_vars(worker_bootstrap, google_resources)
         write_generation_worker_dev_vars(worker_bootstrap)
-        push_llm_secrets()
 
     if args.deploy_worker:
         ensure_worker_deploy(worker_bootstrap, google_resources)
+        # LLM secrets are baked into the deploy via --secrets-file. Re-pushing
+        # individual secrets afterwards is only needed when callers want to
+        # rotate keys without redeploying; keep it post-deploy so the workers
+        # exist when `wrangler secret put` runs.
+        push_llm_secrets()
 
     if args.sync_github_secrets:
         sync_github_secrets(worker_bootstrap, google_resources)

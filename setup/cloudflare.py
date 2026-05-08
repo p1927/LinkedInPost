@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -30,13 +31,64 @@ from .worker_config import (
 
 
 def ensure_cloudflare_auth() -> None:
+    """Validate Cloudflare auth by calling `wrangler whoami`.
+
+    Accepts either:
+      - CLOUDFLARE_API_TOKEN env var (preferred for non-interactive / CI runs), or
+      - an OAuth login created by `npx wrangler login` (no env var needed).
+    """
     api_token = os.environ.get('CLOUDFLARE_API_TOKEN', '').strip()
-    if api_token:
+
+    try:
+        result = subprocess.run(
+            ['npx', 'wrangler', 'whoami'],
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            'npx is not on PATH. Install Node.js so setup.py can call Wrangler.'
+        ) from exc
+
+    combined = (result.stdout or '') + (result.stderr or '')
+    failed = (
+        result.returncode != 0
+        or 'Invalid access token' in combined
+        or 'You are not authenticated' in combined
+        or 'code: 9109' in combined
+        or 'code: 10000' in combined
+    )
+    if not failed:
         return
+
+    if api_token:
+        token_tail = api_token[-6:] if len(api_token) >= 6 else api_token
+        header = (
+            'CLOUDFLARE_API_TOKEN failed validation via `wrangler whoami` '
+            f'(token ends …{token_tail}).'
+        )
+    else:
+        header = (
+            'No Cloudflare authentication detected. CLOUDFLARE_API_TOKEN is unset and '
+            '`wrangler whoami` reports no OAuth session.'
+        )
+
     raise RuntimeError(
-        'CLOUDFLARE_API_TOKEN is required for Cloudflare setup in non-interactive runs. '
-        'Create a Cloudflare API token with Workers and KV permissions, export it as '
-        'CLOUDFLARE_API_TOKEN, then rerun setup.py.'
+        f'{header}\n\n'
+        'Fix this by either:\n'
+        '  1) Create a new Cloudflare API token at '
+        'https://dash.cloudflare.com/profile/api-tokens with these permissions:\n'
+        '       Account → Workers Scripts: Edit\n'
+        '       Account → Workers KV Storage: Edit\n'
+        '       Account → D1: Edit\n'
+        '       Account → Account Settings: Read\n'
+        '       Account → Cloudflare Pages: Edit (if using Pages)\n'
+        '     Then update CLOUDFLARE_API_TOKEN in `.env` and rerun.\n'
+        '  2) OR run `npx wrangler login` once to authenticate via OAuth, '
+        'then unset (or comment out) CLOUDFLARE_API_TOKEN in `.env` before rerunning setup.\n\n'
+        f'Raw wrangler output:\n{combined.strip()[:1500]}'
     )
 
 
@@ -77,13 +129,9 @@ def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
     """Set generation worker auth secrets in Cloudflare for both workers.
 
     This ensures the main worker can authenticate with the generation worker.
-    Requires CLOUDFLARE_API_TOKEN to be set in environment.
+    Uses whichever Cloudflare credential `wrangler whoami` accepts (env-var
+    token or OAuth login); auth is already validated by ensure_cloudflare_auth.
     """
-    api_token = os.environ.get('CLOUDFLARE_API_TOKEN', '').strip()
-    if not api_token:
-        warn('Worker secrets', 'CLOUDFLARE_API_TOKEN not set — skipping secret configuration. Set manually via Cloudflare Dashboard if needed.')
-        return
-
     secret_value = worker_bootstrap.generation_worker_secret
     if not secret_value or not secret_value.strip():
         warn('Worker secrets', 'generation_worker_secret is empty — cannot set secrets')
@@ -100,9 +148,9 @@ def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
         if 'Success' in result.stdout or 'Uploaded' in result.stdout:
             ok('Main Worker secret', 'GENERATION_WORKER_SECRET set')
         else:
-            warn('Main Worker secret', f'Set command output: {result.stdout[:200]}')
+            warn('Main Worker secret', f'Set command output: {result.stdout}')
     except RuntimeError as e:
-        warn('Main Worker secret', f'Failed to set: {str(e)[:200]}')
+        warn('Main Worker secret', f'Failed to set: {e}')
 
     # Set DEV_GOOGLE_AUTH_BYPASS_SECRET for E2E cloud auth bypass tests
     dev_bypass = (
@@ -121,9 +169,9 @@ def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
             if 'Success' in result.stdout or 'Uploaded' in result.stdout:
                 ok('Main Worker secret', 'DEV_GOOGLE_AUTH_BYPASS_SECRET set (E2E cloud bypass active)')
             else:
-                warn('Main Worker secret', f'DEV_GOOGLE_AUTH_BYPASS_SECRET output: {result.stdout[:200]}')
+                warn('Main Worker secret', f'DEV_GOOGLE_AUTH_BYPASS_SECRET output: {result.stdout}')
         except RuntimeError as e:
-            warn('Main Worker secret', f'Failed to set DEV_GOOGLE_AUTH_BYPASS_SECRET: {str(e)[:200]}')
+            warn('Main Worker secret', f'Failed to set DEV_GOOGLE_AUTH_BYPASS_SECRET: {e}')
 
     # Set WORKER_SHARED_SECRET on generation worker
     if not GEN_WORKER_DIR.is_dir():
@@ -139,9 +187,9 @@ def set_worker_secrets(worker_bootstrap: WorkerBootstrap) -> None:
         if 'Success' in result.stdout or 'Uploaded' in result.stdout:
             ok('Generation Worker secret', 'WORKER_SHARED_SECRET set')
         else:
-            warn('Generation Worker secret', f'Set command output: {result.stdout[:200]}')
+            warn('Generation Worker secret', f'Set command output: {result.stdout}')
     except RuntimeError as e:
-        warn('Generation Worker secret', f'Failed to set: {str(e)[:200]}')
+        warn('Generation Worker secret', f'Failed to set: {e}')
 
 
 def install_worker_dependencies() -> None:
@@ -250,7 +298,7 @@ def _apply_d1_migrations(remote: bool = False) -> None:
         )
         ok('D1 migrations', f'applied {flag}')
     except RuntimeError as error:
-        warn('D1 migrations', str(error)[:300])
+        warn('D1 migrations', str(error))
 
 
 def provision_d1_database() -> None:
@@ -290,7 +338,7 @@ def provision_d1_database() -> None:
     database_id = _extract_d1_database_id(stdout)
     if not database_id:
         warn('D1 database', 'Could not parse database_id from wrangler output. Patch wrangler.jsonc manually.')
-        warn('D1 database output', stdout[:400])
+        warn('D1 database output', stdout)
         return
 
     _patch_d1_database_id(database_id)
@@ -323,7 +371,7 @@ def _apply_generation_worker_d1_migrations(remote: bool = False) -> None:
         )
         ok('Generation Worker D1 migrations', f'applied {flag}')
     except RuntimeError as error:
-        warn('Generation Worker D1 migrations', str(error)[:300])
+        warn('Generation Worker D1 migrations', str(error))
 
 
 def provision_generation_worker_d1() -> None:
@@ -368,7 +416,7 @@ def provision_generation_worker_d1() -> None:
     database_id = _extract_d1_database_id(stdout)
     if not database_id:
         warn('Generation Worker D1', 'Could not parse database_id from wrangler output.')
-        warn('Generation Worker D1 output', stdout[:400])
+        warn('Generation Worker D1 output', stdout)
         return
 
     entry['database_id'] = database_id
@@ -487,12 +535,12 @@ def write_generation_worker_dev_vars(worker_bootstrap: WorkerBootstrap) -> None:
 
 
 def push_llm_secrets() -> None:
-    """Push LLM API key secrets to main worker and generation worker via wrangler secret put."""
-    api_token = os.environ.get('CLOUDFLARE_API_TOKEN', '').strip()
-    if not api_token:
-        warn('LLM secrets', 'CLOUDFLARE_API_TOKEN not set — skipping secret push')
-        return
+    """Push LLM API key secrets to main worker and generation worker via wrangler secret put.
 
+    Uses whichever Cloudflare credential wrangler accepts (env-var token or
+    OAuth login). These secrets are already baked into deploys via
+    --secrets-file; this function exists for rotating keys without redeploy.
+    """
     for key in GENERATION_WORKER_LLM_SECRET_KEYS:
         val = os.environ.get(key, '').strip()
         if not val:
@@ -509,9 +557,9 @@ def push_llm_secrets() -> None:
                 if 'Success' in combined or 'Uploaded' in combined or 'Created' in combined:
                     ok(f'{label} secret', f'{key} set')
                 else:
-                    warn(f'{label} secret {key}', combined[:200])
+                    warn(f'{label} secret {key}', combined)
             except RuntimeError as e:
-                warn(f'{label} secret {key}', str(e)[:200])
+                warn(f'{label} secret {key}', str(e))
 
 
 def run_typescript_dry_run() -> None:

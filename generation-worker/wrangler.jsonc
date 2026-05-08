@@ -2,7 +2,6 @@
   "name": "linkedin-generation-worker",
   "main": "src/index.ts",
   "compatibility_date": "2024-09-23",
-  "usage_model": "unbound",
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -17,11 +16,11 @@
   "kv_namespaces": [
     {
       "binding": "VARIANTS_KV",
-      "id": "a08744440c09e2ef49e3e1c3b7f8d76c"
+      "id": "e66a947d12934dc799c8dbe34ee3c683"
     },
     {
       "binding": "CLIPS_KV",
-      "id": "a08744440c09e2ef49e3e1c3b7f8d76c"
+      "id": "0e6ed1b702964813a33e13e87edea5d7"
     }
   ],
   "observability": {
