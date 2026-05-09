@@ -136,6 +136,15 @@ export function ArticleDetailView({
   const [connections, setConnections] = useState<DraftConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [connectionsError, setConnectionsError] = useState<string | null>(null);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
+  const LONG_CONTENT_THRESHOLD = 1000;
+  const PREVIEW_CHAR_LIMIT = 800;
+  const needsTruncation = (article.description?.length ?? 0) > LONG_CONTENT_THRESHOLD;
+  const displayedDescription = !needsTruncation || showFullDescription
+    ? article.description
+    : article.description?.slice(0, PREVIEW_CHAR_LIMIT);
+  const hasMoreContent = needsTruncation && !showFullDescription;
 
   const { tooltip: selectionTooltip, handleClip: handleSelectionClip } = useSelectionClipper({
     containerRef: articleContentRef,
@@ -167,6 +176,7 @@ export function ArticleDetailView({
     fetchAnalysis();
     setLocalClips([]);
     setReadPct(0);
+    setShowFullDescription(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article.url, idToken]);
 
@@ -254,10 +264,24 @@ export function ArticleDetailView({
       </div>
 
       {/* Lede */}
-      {article.description && (
-        <p className="text-[17px] leading-[1.6] font-medium text-ink tracking-[-0.005em] mb-[22px]">
-          {article.description}
-        </p>
+      {displayedDescription && (
+        <div className="relative">
+          <p className="text-[17px] leading-[1.6] font-medium text-ink tracking-[-0.005em] mb-[22px]">
+            {displayedDescription}
+          </p>
+          {hasMoreContent && (
+            <>
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+              <button
+                type="button"
+                onClick={() => setShowFullDescription(true)}
+                className="mt-1 text-[13px] font-semibold text-primary hover:underline"
+              >
+                Show full article
+              </button>
+            </>
+          )}
+        </div>
       )}
 
       {/* Clipped passages rail */}
