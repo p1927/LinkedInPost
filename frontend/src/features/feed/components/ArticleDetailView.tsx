@@ -137,6 +137,7 @@ export function ArticleDetailView({
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [connectionsError, setConnectionsError] = useState<string | null>(null);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const LONG_CONTENT_THRESHOLD = 1000;
   const PREVIEW_CHAR_LIMIT = 800;
@@ -749,6 +750,20 @@ export function ArticleDetailView({
           />
           <ToolbarBtn icon={<Bookmark size={16} aria-hidden />} title="Save" />
           <ToolbarBtn icon={<Share2 size={16} aria-hidden />} title="Share" />
+          <button
+            type="button"
+            title="Copy link"
+            aria-label={linkCopied ? 'Copied!' : 'Copy link'}
+            onClick={() => {
+              navigator.clipboard.writeText(article.url).then(() => {
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              });
+            }}
+            className="h-8 px-2.5 inline-flex items-center justify-center rounded-[7px] transition-colors text-[12px] font-semibold text-muted hover:text-primary"
+          >
+            {linkCopied ? 'Copied!' : 'Copy link'}
+          </button>
           <a
             href={article.url}
             target="_blank"
