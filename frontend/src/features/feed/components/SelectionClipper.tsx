@@ -1,6 +1,6 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Scissors } from 'lucide-react';
+import { Scissors, Check } from 'lucide-react';
 
 interface TooltipState {
   x: number;
@@ -16,8 +16,14 @@ interface UseSelectionClipperOptions {
 
 export function useSelectionClipper({ containerRef, onClip, enabled = true }: UseSelectionClipperOptions) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [clippedToast, setClippedToast] = useState(false);
 
   const dismiss = useCallback(() => setTooltip(null), []);
+
+  const showClippedToast = useCallback(() => {
+    setClippedToast(true);
+    setTimeout(() => setClippedToast(false), 1500);
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -75,9 +81,33 @@ export function useSelectionClipper({ containerRef, onClip, enabled = true }: Us
     onClip(tooltip.text);
     window.getSelection()?.removeAllRanges();
     dismiss();
-  }, [tooltip, onClip, dismiss]);
+    showClippedToast();
+  }, [tooltip, onClip, dismiss, showClippedToast]);
 
-  return { tooltip, handleClip, dismiss };
+  return { tooltip, handleClip, dismiss, clippedToast, ClippedToastComponent };
+}
+
+function ClippedToastComponent({ visible }: { visible: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  if (!visible) return null;
+  return createPortal(
+    <div
+      ref={ref}
+      style={{
+        position: 'fixed',
+        bottom: 24,
+        right: 24,
+        zIndex: 9999,
+        pointerEvents: 'none',
+        animation: 'clipped-toast-in 0.2s ease-out',
+      }}
+      className="flex items-center gap-1.5 rounded-full bg-ink px-3 py-2 shadow-lg text-white text-xs font-semibold"
+    >
+      <Check size={12} className="text-green-400" />
+      Clipped!
+    </div>,
+    document.body,
+  );
 }
 
 interface SelectionClipTooltipProps {

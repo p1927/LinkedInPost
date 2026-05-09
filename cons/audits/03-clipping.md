@@ -20,7 +20,7 @@ Clipping is the bridge between feed → topic → post. Today the dock is always
 
 1. **[HIGH]** Drag-drop clip → draft has no affordance in `ClipsDock.tsx` — add a drop-zone hint on hover, cursor change, and success toast.
 2. **[HIGH]** Always-on right strip eats desktop width — collapse to a floating bottom-right pill that expands on click; show count badge on collapsed state.
-3. **[HIGH]** Passage clipping only inside `ArticleDetailView` — wire `SelectionClipper` into `FeedArticleCard.tsx` so users can clip passages from the stream.
+3. **[HIGH]** Passage clipping only inside `ArticleDetailView` — wire `SelectionClipper` into `FeedArticleCard.tsx` so users can clip passages from the stream. **`SelectionClipper.tsx`** now includes a `ClippedToastComponent` + `clippedToast` state; calling `handleClip()` triggers a 1.5s "Clipped!" toast (bottom-right, green checkmark, portal-rendered).
 4. **[HIGH]** No explicit "Add clip to topic" menu — required for touch users; add a context menu or 3-dot affordance per clip.
 5. **[MED]** No clip categories / tags — add at minimum a topic-group label per clip (use existing topic IDs).
 6. **[MED]** No "Compose post from N clips" CTA — when ≥1 clip selected, surface a primary button.

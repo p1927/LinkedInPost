@@ -53,3 +53,16 @@ Make the feed feel like Twitter / Perplexity — multi-column, scannable, mobile
 - **Change:** Replace always-on right strip with a floating bottom-right pill showing clip count badge. Click to expand into the existing panel. Inside expanded panel, when ≥1 clip selected, surface a primary "Compose post from N clips" CTA that creates a draft topic with those clips attached.
 - **Done when:** Dock no longer eats desktop width by default; selecting clips reveals the compose CTA; clicking it creates a topic.
 - **Risk:** medium
+
+### Stage 2.9 — Last updated timestamp in curated panel
+- **Files:** [`FeedCuratedPanel.tsx`](../../frontend/src/features/feed/components/FeedCuratedPanel.tsx)
+- **Change:** Add a "Last updated" timestamp (e.g. "Updated 5 min ago") in the curated panel header showing when the feed was last refreshed. Use relative time that updates every minute. Show a subtle refresh icon next to it.
+- **Done when:** Curated panel displays relative time since last refresh; time updates live without requiring page reload.
+- **Risk:** low
+
+
+### Stage 2.9 — Last updated timestamp in curated panel
+- **Files:** [`FeedCuratedPanel.tsx`](../../frontend/src/features/feed/components/FeedCuratedPanel.tsx)
+- **Change:** Add a "Last updated" timestamp (e.g. "Updated 5 min ago") in the curated panel header showing when the feed was last refreshed. Use relative time that updates every minute. Show a subtle refresh icon next to it.
+- **Done when:** Curated panel displays relative time since last refresh; time updates live without requiring page reload.
+- **Risk:** low
