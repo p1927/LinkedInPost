@@ -1168,11 +1168,33 @@ export function FeedPage({
                     </motion.div>
                   )}
 
-                  {/* No results */}
+                  {/* No results — search mode */}
                   {!data && !isLoading && !hasError && searchTopic && (
                     <p className="py-16 text-center text-sm text-muted">
                       No trending data found for &quot;<strong>{searchTopic}</strong>&quot;. Try a different topic.
                     </p>
+                  )}
+
+                  {/* No results — RSS feed returned zero articles for selected group */}
+                  {activeGroupId && !leftPanelLoading && !hasError && !searchTopic && filteredDisplayArticles.length === 0 && (
+                    <motion.div
+                      className="flex flex-col items-center justify-center py-24 text-center"
+                      variants={containerVariants} initial="hidden" animate="show"
+                    >
+                      <motion.div
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-200/60 shadow-glass"
+                      >
+                        <Sparkles className="text-primary" size={36} />
+                      </motion.div>
+                      <motion.h3 variants={fadeUpVariants} className="text-xl font-semibold text-ink mb-2">
+                        No news found — try adjusting your topics
+                      </motion.h3>
+                      <motion.p variants={fadeUpVariants} className="text-sm text-muted max-w-xs leading-relaxed">
+                        This group returned no articles. Edit the topics in the sidebar or select a different group.
+                      </motion.p>
+                    </motion.div>
                   )}
 
                   {/* Error */}
