@@ -78,6 +78,14 @@ export function FeedArticleCard({
 
       {/* Meta row */}
       <div className="flex items-center gap-1.5 text-[11px] text-muted font-medium">
+        <img
+          src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(article.source)}&sz=16`}
+          alt=""
+          className="w-3.5 h-3.5 rounded-[3px] shrink-0 flex-shrink-0 object-contain"
+          onError={(e) => {
+            e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="3" fill="%23999999"/><path d="M3 5h10M3 8h10M3 11h6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>';
+          }}
+        />
         <span
           className="inline-block w-2.5 h-2.5 rounded-[3px] shrink-0 flex-shrink-0"
           style={{ background: sourceHex(article.source) }}
