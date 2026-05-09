@@ -19,6 +19,10 @@ export interface FeedLeftPanelProps {
   readArticles?: Set<string>;
   showUnreadOnly?: boolean;
   onShowUnreadOnlyChange?: (v: boolean) => void;
+  /** Topics of the active interest group — shown as filter pills with article counts */
+  groupTopics?: string[];
+  /** Article count per topic, keyed by topic string */
+  topicCounts?: Record<string, number>;
 }
 
 function SkeletonCard() {
@@ -47,9 +51,29 @@ export function FeedLeftPanel({
   readArticles = new Set(),
   showUnreadOnly = false,
   onShowUnreadOnlyChange,
+  groupTopics = [],
+  topicCounts = {},
 }: FeedLeftPanelProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Topic counts — default to computing from articles when not explicitly provided
+  const computedTopicCounts = useMemo(() => {
+    if (Object.keys(topicCounts).length > 0) return topicCounts;
+    if (!groupTopics.length) return {};
+    const counts: Record<string, number> = {};
+    for (const t of groupTopics) counts[t] = 0;
+    for (const a of articles) {
+      const title = a.title.toLowerCase();
+      const desc = (a.description ?? '').toLowerCase();
+      for (const t of groupTopics) {
+        if (title.includes(t.toLowerCase()) || desc.includes(t.toLowerCase())) {
+          counts[t] = (counts[t] ?? 0) + 1;
+        }
+      }
+    }
+    return counts;
+  }, [articles, groupTopics, topicCounts]);
 
   // Sort thumbs-down articles to the bottom; apply showUnreadOnly filter
   const sortedArticles = useMemo(() => {
@@ -129,6 +153,24 @@ export function FeedLeftPanel({
               {readArticles.size} read
             </span>
           )}
+        </div>
+      )}
+
+      {/* Topic filter pills with article counts */}
+      {groupTopics.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {groupTopics.map(topic => {
+            const count = computedTopicCounts[topic] ?? 0;
+            return (
+              <span
+                key={topic}
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-primary/8 text-primary border border-primary/20"
+              >
+                {topic}
+                <span className="text-[10px] opacity-70">({count})</span>
+              </span>
+            );
+          })}
         </div>
       )}
 

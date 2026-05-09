@@ -1261,6 +1261,7 @@ export function FeedPage({
                         readArticles={readArticles}
                         showUnreadOnly={showUnreadOnly}
                         onShowUnreadOnlyChange={setShowUnreadOnly}
+                        groupTopics={(activeGroupId ? interestGroups.find(g => g.id === activeGroupId)?.topics : null) ?? []}
                       />
                     </motion.div>
                   )}
