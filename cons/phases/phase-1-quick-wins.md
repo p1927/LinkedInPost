@@ -1,26 +1,7 @@
-# Phase 1 — Quick Wins
-
-## Goal
-
-Make the app feel intuitive on first contact, without changing information architecture. Low risk, high visible impact in 1–2 days.
-
-## Stages
-
-### Stage 1.1 — Always-visible row CTAs in the topics queue
-- **Files:** [`frontend/src/components/dashboard/tabs/DashboardQueue.tsx`](../../frontend/src/components/dashboard/tabs/DashboardQueue.tsx)
-- **Change:** Show one primary CTA per row (Draft / AI-Draft / Edit / Publish / Republish based on status) at full opacity. Move secondary actions into a 3-dot overflow menu. Remove `opacity-0 group-hover:opacity-100` patterns on the row action cell.
-- **Done when:** Every queue row visibly shows a primary CTA without hover, on both list and calendar event tooltip.
-- **Risk:** low
-
-### Stage 1.2 — Channel pill column (read-only)
-- **Files:** [`frontend/src/components/dashboard/tabs/DashboardQueue.tsx`](../../frontend/src/components/dashboard/tabs/DashboardQueue.tsx)
-- **Change:** Add a column between status and date that renders a small pill ("LinkedIn", "Newsletter", "Telegram", …) with the channel's brand color. Source the value from the topic record. Read-only in this stage; clickable in Stage 3.4.
-- **Done when:** Every row shows the destination channel without opening any drawer.
-- **Risk:** low
 
 ### Stage 1.3 — Feed card summary + always-visible toolbar
 - **Files:** [`frontend/src/features/feed/components/FeedArticleCard.tsx`](../../frontend/src/features/feed/components/FeedArticleCard.tsx)
-- **Change:** Show the article description as a 2-line clamp on every card (not 1-line, not hover-gated). Add an always-visible footer toolbar with Clip / 👍 / 👎 icons (remove `opacity-0 group-hover:opacity-100`). Keep keyboard activation working.
+- **Change:** ~~Show the article description as a 2-line clamp on every card (not 1-line, not hover-gated). Add an always-visible footer toolbar with Clip / 👍 / 👎 icons (remove `opacity-0 group-hover:opacity-100`). Keep keyboard activation working.~~ **IMPLEMENTED** — 2-line clamp via `line-clamp-2`; fallback to first 150 chars of `article.content` when `article.description` is empty; `preview` CSS class applied to truncated deck.
 - **Done when:** Cards show summary by default; clip/vote work on touch without hover.
 - **Risk:** low
 
