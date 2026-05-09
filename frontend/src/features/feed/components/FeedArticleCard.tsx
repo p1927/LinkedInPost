@@ -36,7 +36,9 @@ export function FeedArticleCard({
 }: FeedArticleCardProps) {
   const [clipping, setClipping] = useState(false);
   const isDownvoted = feedbackVote === 'down';
-  const deck = article.description?.trim() ?? '';
+  const rawDescription = article.description?.trim() ?? '';
+  const useFallback = !rawDescription;
+  const deck = rawDescription || (article.content?.substring(0, 150) ?? '');
 
   function handleClip(e: React.MouseEvent) {
     e.preventDefault();
@@ -69,7 +71,7 @@ export function FeedArticleCard({
 
       {/* Deck */}
       {deck && (
-        <p className="text-[13px] leading-relaxed text-muted line-clamp-2 mb-2 max-w-[620px]">
+        <p className={['text-[13px] leading-relaxed text-muted line-clamp-2 mb-2 max-w-[620px]', useFallback ? 'preview' : ''].join(' ')}>
           {deck}
         </p>
       )}
