@@ -57,6 +57,8 @@ interface FeedCuratedPanelProps {
   activeGroup: InterestGroup | null;
   /** All interest groups — for group-topic lookups */
   interestGroups: InterestGroup[];
+  /** Timestamp (ISO string) of when the feed was last refreshed */
+  lastUpdated?: string;
 }
 
 function ArticleSkeleton({ count = 4 }: { count?: number }) {
@@ -189,6 +191,7 @@ export function FeedCuratedPanel({
   onSelectWord,
   onSelectTopic,
   activeGroup,
+  lastUpdated,
 }: FeedCuratedPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('top10');
 
@@ -209,12 +212,21 @@ export function FeedCuratedPanel({
     weekday: 'short', month: 'short', day: 'numeric',
   });
 
+  const lastUpdatedLabel = lastUpdated
+    ? formatRelativeTime(lastUpdated)
+    : null;
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
 
       {/* Panel header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border/40">
-        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-secondary">{todayLabel}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-secondary">{todayLabel}</span>
+          {lastUpdatedLabel && (
+            <span className="text-[10px] text-muted/50">· Last updated {lastUpdatedLabel}</span>
+          )}
+        </div>
         <RefreshCw size={12} className="text-muted/60" />
       </div>
 
