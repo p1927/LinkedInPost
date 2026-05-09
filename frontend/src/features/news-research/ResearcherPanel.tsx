@@ -267,6 +267,8 @@ export function ResearcherPanel({
             </li>
           ))}
         </ul>
+      ) : !loading && results.length === 0 && (customQuery.trim() || row.topic) ? (
+        <p className="text-[0.65rem] text-muted">No articles found for {customQuery.trim() || row.topic} — try broader terms</p>
       ) : null}
       {selectedRefs.length > 0 ? (
         <p className="text-[0.65rem] font-semibold text-ink">{selectedRefs.length} source(s) will be sent to the model with the next generation.</p>
