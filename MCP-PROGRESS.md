@@ -45954,175 +45954,175 @@
 - [ ] worker/.wrangler/tmp/bundle-Rr1TCy/middleware-insertion-facade.js
 - [ ] worker/.wrangler/tmp/bundle-Rr1TCy/middleware-loader.entry.ts
 - [ ] worker/.wrangler/tmp/dev-0TmpaC/index.js
-- [ ] worker/src/auth.test.ts
-- [ ] worker/src/auth.ts
-- [ ] worker/src/automations/cleanup.test.ts
-- [ ] worker/src/automations/cleanup.ts
-- [ ] worker/src/automations/engine.ts
-- [ ] worker/src/automations/index.ts
-- [ ] worker/src/automations/kv.ts
-- [ ] worker/src/automations/platforms/gmail.ts
-- [ ] worker/src/automations/platforms/instagram.ts
-- [ ] worker/src/automations/platforms/linkedin.ts
-- [ ] worker/src/automations/platforms/telegram.ts
-- [ ] worker/src/automations/platforms/youtube.ts
-- [ ] worker/src/automations/routes.ts
-- [ ] worker/src/automations/types.ts
-- [ ] worker/src/automations/webhook-verify.ts
-- [ ] worker/src/cloudflare-types.d.ts
-- [ ] worker/src/db/clips.ts
-- [ ] worker/src/db/feedArticles.ts
-- [ ] worker/src/db/interestGroups.ts
-- [ ] worker/src/db/llm-usage.ts
-- [ ] worker/src/db/socialIntegrations.ts
-- [ ] worker/src/db/users.ts
-- [ ] worker/src/engine/brief/GenerationBriefBuilder.ts
-- [ ] worker/src/engine/context/ContextAccumulator.ts
-- [ ] worker/src/engine/events/LifecycleEventBus.ts
-- [ ] worker/src/engine/executor/DagResolver.ts
-- [ ] worker/src/engine/executor/WorkflowRunner.ts
-- [ ] worker/src/engine/gap-scorer.ts
-- [ ] worker/src/engine/importance/ImportanceResolver.ts
-- [ ] worker/src/engine/index.ts
-- [ ] worker/src/engine/nodes/definitions/constraint-validator.ts
-- [ ] worker/src/engine/nodes/definitions/draft-generator.ts
-- [ ] worker/src/engine/nodes/definitions/hook-designer.ts
-- [ ] worker/src/engine/nodes/definitions/narrative-arc.ts
-- [ ] worker/src/engine/nodes/definitions/psychology-analyzer.ts
-- [ ] worker/src/engine/nodes/definitions/research-context.ts
-- [ ] worker/src/engine/nodes/definitions/tone-calibrator.ts
-- [ ] worker/src/engine/nodes/definitions/vocabulary-selector.ts
-- [ ] worker/src/engine/nodes/prompt-utils.ts
-- [ ] worker/src/engine/nodes/registry-setup.ts
-- [ ] worker/src/engine/registry/NodeRegistry.ts
-- [ ] worker/src/engine/registry/WorkflowRegistry.ts
-- [ ] worker/src/engine/types.ts
-- [ ] worker/src/engine/workflows/definitions/__tests__/contentPostTypesPlaybook.spec.test.ts
-- [ ] worker/src/engine/workflows/definitions/__tests__/newsletterRealtimePreview.test.ts
-- [ ] worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts
-- [ ] worker/src/engine/workflows/definitions/appreciation.ts
-- [ ] worker/src/engine/workflows/definitions/base.ts
-- [ ] worker/src/engine/workflows/definitions/educational.ts
-- [ ] worker/src/engine/workflows/definitions/engagement-trap.ts
-- [ ] worker/src/engine/workflows/definitions/event-insight.ts
-- [ ] worker/src/engine/workflows/definitions/informational-news.ts
-- [ ] worker/src/engine/workflows/definitions/newsletter-realtime-preview.ts
-- [ ] worker/src/engine/workflows/definitions/personal-brand.ts
-- [ ] worker/src/engine/workflows/definitions/personal-story.ts
-- [ ] worker/src/engine/workflows/definitions/satirical.ts
-- [ ] worker/src/engine/workflows/definitions/thought-leadership.ts
-- [ ] worker/src/engine/workflows/definitions/trend-commentary.ts
-- [ ] worker/src/engine/workflows/definitions/viral-story.ts
-- [ ] worker/src/engine/workflows/definitions/week-in-review.ts
-- [ ] worker/src/engine/workflows/registry-setup.ts
-- [ ] worker/src/features/content-review/imageReviewRunner.ts
-- [ ] worker/src/features/content-review/index.ts
-- [ ] worker/src/features/content-review/newsContextBuilder.ts
-- [ ] worker/src/features/content-review/orchestrator.ts
-- [ ] worker/src/features/content-review/prompts/imageMultimodal.ts
-- [ ] worker/src/features/content-review/prompts/relevanceWithContext.ts
-- [ ] worker/src/features/content-review/prompts/textGuardrails.ts
-- [ ] worker/src/features/content-review/storedNormalize.ts
-- [ ] worker/src/features/content-review/textReviewRunner.ts
-- [ ] worker/src/features/content-review/types.ts
-- [ ] worker/src/features/custom-workflows/__tests__/customWorkflowToDefinition.test.ts
-- [ ] worker/src/features/custom-workflows/customWorkflowActions.ts
-- [ ] worker/src/features/custom-workflows/customWorkflowD1.ts
-- [ ] worker/src/features/custom-workflows/customWorkflowToDefinition.ts
-- [ ] worker/src/features/custom-workflows/types.ts
-- [ ] worker/src/generated/features.ts
-- [ ] worker/src/generation/__tests__/nodeInsightSummary.test.ts
-- [ ] worker/src/generation/author-profile/default-template.ts
-- [ ] worker/src/generation/author-profile/format-for-prompt.ts
-- [ ] worker/src/generation/generationWorkerClient.ts
-- [ ] worker/src/generation/nodeInsightSummary.ts
-- [ ] worker/src/generation/normalize.ts
-- [ ] worker/src/generation/prompts.ts
-- [ ] worker/src/generation/rules.ts
-- [ ] worker/src/generation/service.ts
-- [ ] worker/src/generation/types.ts
-- [ ] worker/src/google-model-policy.ts
-- [ ] worker/src/google/drivePermissions.ts
-- [ ] worker/src/image-gen/connectors/falai.ts
-- [ ] worker/src/image-gen/connectors/openai-images.ts
-- [ ] worker/src/image-gen/connectors/runway.ts
-- [ ] worker/src/image-gen/connectors/stability.ts
-- [ ] worker/src/image-gen/index.ts
-- [ ] worker/src/image-gen/model-catalog.ts
-- [ ] worker/src/image-gen/providers/dall-e.ts
-- [ ] worker/src/image-gen/providers/flux-kontext.ts
-- [ ] worker/src/image-gen/providers/ideogram.ts
-- [ ] worker/src/image-gen/providers/kling.ts
-- [ ] worker/src/image-gen/providers/runway.ts
-- [ ] worker/src/image-gen/providers/seedance.ts
-- [ ] worker/src/image-gen/providers/stability.ts
-- [ ] worker/src/image-gen/providers/veo.ts
-- [ ] worker/src/image-gen/registry.ts
-- [ ] worker/src/image-gen/types.ts
-- [ ] worker/src/index.ts
-- [ ] worker/src/integrations/_shared/fetchWithRetry.ts
-- [ ] worker/src/integrations/gmail/index.ts
-- [ ] worker/src/integrations/instagram/index.ts
-- [ ] worker/src/integrations/linkedin/index.ts
-- [ ] worker/src/integrations/media.ts
-- [ ] worker/src/integrations/telegram/index.ts
-- [ ] worker/src/integrations/whatsapp/index.ts
-- [ ] worker/src/llm/catalog.ts
-- [ ] worker/src/llm/d1Settings.ts
-- [ ] worker/src/llm/gateway.ts
-- [ ] worker/src/llm/genWorkerDefaults.ts
-- [ ] worker/src/llm/index.ts
-- [ ] worker/src/llm/policy.ts
-- [ ] worker/src/llm/pricing.ts
-- [ ] worker/src/llm/providers/gemini.ts
-- [ ] worker/src/llm/providers/grok.ts
-- [ ] worker/src/llm/providers/minimax.ts
-- [ ] worker/src/llm/providers/openrouter.ts
-- [ ] worker/src/llm/structuredJson.ts
-- [ ] worker/src/llm/types.ts
-- [ ] worker/src/media/selectedImageUrls.ts
-- [ ] worker/src/modes/saas/__tests__/waitlist.test.ts
-- [ ] worker/src/modes/saas/admin.ts
-- [ ] worker/src/modes/saas/waitlist.ts
-- [ ] worker/src/newsletter/__tests__/emailRenderer.test.ts
-- [ ] worker/src/newsletter/contentAssembler.ts
-- [ ] worker/src/newsletter/draftCreator.ts
-- [ ] worker/src/newsletter/emailRenderer.ts
-- [ ] worker/src/newsletter/handlers.ts
-- [ ] worker/src/newsletter/persistence.ts
-- [ ] worker/src/newsletter/scheduler.ts
-- [ ] worker/src/newsletter/types.ts
-- [ ] worker/src/persistence/drafts.ts
-- [ ] worker/src/persistence/pipeline-db/index.ts
-- [ ] worker/src/persistence/pipeline-db/mappers.ts
-- [ ] worker/src/persistence/pipeline-db/news.ts
-- [ ] worker/src/persistence/pipeline-db/pipeline.ts
-- [ ] worker/src/persistence/pipeline-db/types.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/env.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/index.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/resolve-session.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/timing-safe-equal.ts
-- [ ] worker/src/researcher/config.ts
-- [ ] worker/src/researcher/dedupe.ts
-- [ ] worker/src/researcher/keywords.ts
-- [ ] worker/src/researcher/providers/googleTrends.ts
-- [ ] worker/src/researcher/providers/hackerNews.ts
-- [ ] worker/src/researcher/providers/newsApis.ts
-- [ ] worker/src/researcher/providers/reddit.ts
-- [ ] worker/src/researcher/providers/rss.ts
-- [ ] worker/src/researcher/search.ts
-- [ ] worker/src/researcher/trendingSearch.ts
-- [ ] worker/src/researcher/trim.ts
-- [ ] worker/src/researcher/types.ts
-- [ ] worker/src/researcher/utils.ts
-- [ ] worker/src/routes/patterns.ts
-- [ ] worker/src/scheduled-publish/ScheduledPublishAlarm.ts
-- [ ] worker/src/scheduled-publish/durablePublishScheduler.ts
-- [ ] worker/src/scheduled-publish/handleCancelDispatch.ts
-- [ ] worker/src/scheduled-publish/index.ts
-- [ ] worker/src/scheduled-publish/time.ts
-- [ ] worker/src/scheduled-publish/types.ts
-- [ ] worker/src/services.ts
+- [x] worker/src/auth.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/auth.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/cleanup.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/cleanup.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/engine.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/kv.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/platforms/gmail.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/platforms/instagram.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/platforms/linkedin.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/platforms/telegram.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/platforms/youtube.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/routes.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/automations/webhook-verify.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/cloudflare-types.d.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/db/clips.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/db/feedArticles.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/db/interestGroups.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/db/llm-usage.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/db/socialIntegrations.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/db/users.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/brief/GenerationBriefBuilder.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/context/ContextAccumulator.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/events/LifecycleEventBus.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/executor/DagResolver.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/executor/WorkflowRunner.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/gap-scorer.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/importance/ImportanceResolver.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/constraint-validator.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/draft-generator.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/hook-designer.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/narrative-arc.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/psychology-analyzer.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/research-context.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/tone-calibrator.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/definitions/vocabulary-selector.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/prompt-utils.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/nodes/registry-setup.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/registry/NodeRegistry.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/registry/WorkflowRegistry.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/__tests__/contentPostTypesPlaybook.spec.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/__tests__/newsletterRealtimePreview.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/appreciation.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/base.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/educational.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/engagement-trap.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/event-insight.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/informational-news.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/newsletter-realtime-preview.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/personal-brand.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/personal-story.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/satirical.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/thought-leadership.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/trend-commentary.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/viral-story.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/definitions/week-in-review.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/engine/workflows/registry-setup.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/imageReviewRunner.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/newsContextBuilder.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/orchestrator.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/prompts/imageMultimodal.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/prompts/relevanceWithContext.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/prompts/textGuardrails.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/storedNormalize.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/textReviewRunner.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/content-review/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/custom-workflows/__tests__/customWorkflowToDefinition.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/custom-workflows/customWorkflowActions.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/custom-workflows/customWorkflowD1.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/custom-workflows/customWorkflowToDefinition.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/features/custom-workflows/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generated/features.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/__tests__/nodeInsightSummary.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/author-profile/default-template.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/author-profile/format-for-prompt.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/generationWorkerClient.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/nodeInsightSummary.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/normalize.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/prompts.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/rules.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/service.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/generation/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/google-model-policy.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/google/drivePermissions.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/connectors/falai.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/connectors/openai-images.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/connectors/runway.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/connectors/stability.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/model-catalog.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/dall-e.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/flux-kontext.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/ideogram.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/kling.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/runway.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/seedance.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/stability.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/providers/veo.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/registry.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/image-gen/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/integrations/_shared/fetchWithRetry.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/integrations/gmail/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/integrations/instagram/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/integrations/linkedin/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/integrations/media.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/integrations/telegram/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/integrations/whatsapp/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/catalog.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/d1Settings.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/gateway.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/genWorkerDefaults.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/policy.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/pricing.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/providers/gemini.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/providers/grok.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/providers/minimax.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/providers/openrouter.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/structuredJson.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/llm/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/media/selectedImageUrls.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/modes/saas/__tests__/waitlist.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/modes/saas/admin.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/modes/saas/waitlist.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/__tests__/emailRenderer.test.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/contentAssembler.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/draftCreator.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/emailRenderer.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/handlers.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/persistence.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/scheduler.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/newsletter/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/persistence/drafts.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/persistence/pipeline-db/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/persistence/pipeline-db/mappers.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/persistence/pipeline-db/news.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/persistence/pipeline-db/pipeline.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/persistence/pipeline-db/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/plugins/dev-google-auth-bypass/env.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/plugins/dev-google-auth-bypass/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/plugins/dev-google-auth-bypass/resolve-session.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/plugins/dev-google-auth-bypass/timing-safe-equal.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/config.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/dedupe.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/keywords.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/providers/googleTrends.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/providers/hackerNews.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/providers/newsApis.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/providers/reddit.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/providers/rss.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/search.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/trendingSearch.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/trim.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/researcher/utils.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/routes/patterns.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/scheduled-publish/ScheduledPublishAlarm.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/scheduled-publish/durablePublishScheduler.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/scheduled-publish/handleCancelDispatch.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/scheduled-publish/index.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/scheduled-publish/time.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/scheduled-publish/types.ts :: shard-run-blocked (worker source file) :: manual
+- [x] worker/src/services.ts :: shard-run-blocked (worker source file) :: manual
 - [ ] worker/vitest.config.ts
 
 Generated: 2026-05-10T01:19:35Z
