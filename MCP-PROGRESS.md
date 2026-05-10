@@ -45809,7 +45809,7 @@
 - [ ] scripts/test-connectivity.js
 - [x] setup.py  <!-- done shard-run-blocked 2026-05-10 -->
 - [ ] setup/__init__.py
-- [ ] setup/cli.py
+- [>] setup/cli.py
 - [ ] setup/cloudflare.py
 - [ ] setup/constants.py
 - [ ] setup/features.py

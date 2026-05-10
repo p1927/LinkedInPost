@@ -122,9 +122,9 @@ def main() -> None:
         provision_generation_worker_d1()
         update_worker_wrangler_config(worker_bootstrap)
         write_worker_dev_vars(worker_bootstrap, google_resources)
-        write_generation_worker_dev_vars(worker_bootstrap)
 
     if args.deploy_worker:
+        write_generation_worker_dev_vars(worker_bootstrap)
         ensure_worker_deploy(worker_bootstrap, google_resources)
         # LLM secrets are baked into the deploy via --secrets-file. Re-pushing
         # individual secrets afterwards is only needed when callers want to
@@ -145,7 +145,7 @@ def main() -> None:
         )
 
 
-def _create_google_resources(shared_email: str) -> object:
+def _create_google_resources(shared_email: str) -> object | None:
     try:
         from setup.google_resources import create_google_resources
     except ImportError as exc:
@@ -157,7 +157,7 @@ def _create_google_resources(shared_email: str) -> object:
             '`python3 -m pip install -r requirements.txt` (prefer a project venv). '
             f'Original error: {exc}',
         )
-        sys.exit(1)
+        return None
     return create_google_resources(shared_email)
 
 

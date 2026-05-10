@@ -169,8 +169,10 @@ clippedUrls: Set<string>
 - Infinite scroll with IntersectionObserver (BATCH_SIZE = 10)
 - Renders 10 articles, shows skeleton for next batch on intersection
 - Uses motion animations (containerVariants, cardItemVariants)
+- **Topic List with Article Count Badges:** Displays topic list at top with article count badges (e.g., "AI (12)", "Climate (8)") to show which topics have the most content
 
 **Renders:** FeedArticleCard components in motion.div
+
 
 ---
 
