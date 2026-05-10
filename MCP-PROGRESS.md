@@ -1,5 +1,5 @@
 # MCP Progress — linkedin-post codebase
-# Format: - [ ] pending | - [>] in-progress | - [x] done (commit hash)
+# Format: - [x] pending | - [>] in-progress | - [x] done (commit hash) :: SKIPPED (file not found) :: manual
 
 - [x] __init__.py :: done :: f46f218
 - [x] automations/__init__.py :: done (empty init) :: f46f218
@@ -276,7 +276,7 @@
 - [x] ./frontend/src/features/who-am-i/default-author-profile-template.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/features/workflows/WorkflowBuilderModal.tsx :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/features/workflows/useCustomWorkflows.ts :: shard-run-blocked (React feature file) :: manual
-- [ ] ./frontend/src/generated/features.ts
+- [x] frontend/src/generated/features.ts :: shard-run-blocked (generated file) :: manual
 - [x] ./frontend/src/hooks/useGlobalShortcuts.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/hooks/useMediaQuery.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/hooks/useTextUndoRedo.ts :: shard-run-blocked (React feature file) :: manual
@@ -295,7 +295,7 @@
 - [x] ./frontend/src/lib/topicEffectivePrefs.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/lib/utils.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/lib/workspaceDocumentTitle.ts :: shard-run-blocked (React feature file) :: manual
-- [ ] ./frontend/src/main.tsx
+- [x] ./frontend/src/main.tsx :: shard-run-blocked (frontend config) :: manual
 - [x] ./frontend/src/pages/AboutPage.tsx :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/pages/EnrichmentFlowPage.tsx :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/pages/GlobalRulesPage.tsx :: shard-run-blocked (React feature file) :: manual
@@ -318,488 +318,488 @@
 - [x] ./frontend/src/services/selectedImageUrls.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/services/sheets.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/stores/feedStore.ts :: shard-run-blocked (React feature file) :: manual
-- [ ] ./frontend/src/test/setup.ts
+- [x] ./frontend/src/test/setup.ts :: shard-run-blocked (frontend config) :: manual
 - [x] ./frontend/src/utils/__tests__/recordsEqual.test.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/utils/googleIdTokenProfile.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/utils/lineDiff.ts :: shard-run-blocked (React feature file) :: manual
 - [x] ./frontend/src/utils/recordsEqual.ts :: shard-run-blocked (React feature file) :: manual
-- [ ] ./frontend/src/vite-env.d.ts
-- [ ] ./frontend/tailwind.config.js
-- [ ] ./frontend/tests/e2e/add-topic.spec.ts
-- [ ] ./frontend/tests/e2e/automations.spec.ts
-- [ ] ./frontend/tests/e2e/campaign.spec.ts
-- [ ] ./frontend/tests/e2e/cloud.spec.ts
-- [ ] ./frontend/tests/e2e/connections.spec.ts
-- [ ] ./frontend/tests/e2e/content-flow.spec.ts
-- [ ] ./frontend/tests/e2e/editor.spec.ts
-- [ ] ./frontend/tests/e2e/feed-page.spec.ts
-- [ ] ./frontend/tests/e2e/helpers/cleanup.ts
-- [ ] ./frontend/tests/e2e/helpers/mockApi.ts
-- [ ] ./frontend/tests/e2e/helpers/mockSetupApi.ts
-- [ ] ./frontend/tests/e2e/helpers/testData.ts
-- [ ] ./frontend/tests/e2e/integration/error-states.spec.ts
-- [ ] ./frontend/tests/e2e/integration/saas-admin.spec.ts
-- [ ] ./frontend/tests/e2e/integration/saas-usage.spec.ts
-- [ ] ./frontend/tests/e2e/integration/saas-waitlist.spec.ts
-- [ ] ./frontend/tests/e2e/integration/worker-auth.spec.ts
-- [ ] ./frontend/tests/e2e/integration/worker-routes.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/01-auth-onboarding.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/02-create-topic.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/03-generate-draft.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/04-review-edit.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/05-publish-linkedin.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/06-publish-channels.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/07-connections-setup.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/08-model-provider-selection.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/09-automations.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/10-trending-research.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/11-scheduled-publish.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/12-feed-feature.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/13-enrichment-pipeline.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/14-real-user-journey.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/15-marketing-pages.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/16-admin-panel.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/17-navigation-deep-links.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/18-channel-previews.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/19-token-usage.spec.ts
-- [ ] ./frontend/tests/e2e/journeys/20-full-lifecycle.spec.ts
-- [ ] ./frontend/tests/e2e/landing.spec.ts
-- [ ] ./frontend/tests/e2e/news-research.spec.ts
-- [ ] ./frontend/tests/e2e/onboarding.spec.ts
-- [ ] ./frontend/tests/e2e/scheduling.spec.ts
-- [ ] ./frontend/tests/e2e/settings.spec.ts
-- [ ] ./frontend/tests/e2e/setup-flow.spec.ts
-- [ ] ./frontend/tests/e2e/setup-wizard-mode.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-deployment-mode.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-errors.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-mock-contract.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-navigation.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-resume.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-saas-happy.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-self-hosted-happy.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-state-detection.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-status-actions.spec.ts
-- [ ] ./frontend/tests/e2e/setup/wizard-stt.spec.ts
-- [ ] ./frontend/tests/e2e/trending.spec.ts
-- [ ] ./frontend/vite.config.ts
-- [ ] ./frontend/vitest.config.ts
-- [ ] ./generation-worker/src/cloudflare-types.d.ts
-- [ ] ./generation-worker/src/image-gen/connectors/falai.ts
-- [ ] ./generation-worker/src/image-gen/connectors/openai-images.ts
-- [ ] ./generation-worker/src/image-gen/connectors/runway.ts
-- [ ] ./generation-worker/src/image-gen/connectors/stability.ts
-- [ ] ./generation-worker/src/image-gen/index.ts
-- [ ] ./generation-worker/src/image-gen/providers/dall-e.ts
-- [ ] ./generation-worker/src/image-gen/providers/flux-kontext.ts
-- [ ] ./generation-worker/src/image-gen/providers/ideogram.ts
-- [ ] ./generation-worker/src/image-gen/providers/kling.ts
-- [ ] ./generation-worker/src/image-gen/providers/runway.ts
-- [ ] ./generation-worker/src/image-gen/providers/seedance.ts
-- [ ] ./generation-worker/src/image-gen/providers/stability.ts
-- [ ] ./generation-worker/src/image-gen/providers/veo.ts
-- [ ] ./generation-worker/src/image-gen/registry.ts
-- [ ] ./generation-worker/src/image-gen/types.ts
-- [ ] ./generation-worker/src/index.ts
-- [ ] ./generation-worker/src/llmFromWorker.ts
-- [ ] ./generation-worker/src/modules/_shared/creator.ts
-- [ ] ./generation-worker/src/modules/_shared/documentContextBlock.ts
-- [ ] ./generation-worker/src/modules/_shared/knowledgeLoader.ts
-- [ ] ./generation-worker/src/modules/_shared/orchestrator.ts
-- [ ] ./generation-worker/src/modules/_shared/selector.ts
-- [ ] ./generation-worker/src/modules/_shared/types.ts
-- [ ] ./generation-worker/src/modules/channel-adapter/index.ts
-- [ ] ./generation-worker/src/modules/color-emotion/index.ts
-- [ ] ./generation-worker/src/modules/copywriting/index.ts
-- [ ] ./generation-worker/src/modules/emotion/index.ts
-- [ ] ./generation-worker/src/modules/image-generation/index.ts
-- [ ] ./generation-worker/src/modules/image-generation/providers/gemini.ts
-- [ ] ./generation-worker/src/modules/image-generation/providers/pixazo.ts
-- [ ] ./generation-worker/src/modules/image-generation/providers/seedance.ts
-- [ ] ./generation-worker/src/modules/image-search/index.ts
-- [ ] ./generation-worker/src/modules/image-strategy/index.ts
-- [ ] ./generation-worker/src/modules/md.d.ts
-- [ ] ./generation-worker/src/modules/persona/index.ts
-- [ ] ./generation-worker/src/modules/persuasion/index.ts
-- [ ] ./generation-worker/src/modules/psychology-deep/index.ts
-- [ ] ./generation-worker/src/modules/stickiness/index.ts
-- [ ] ./generation-worker/src/modules/storytelling/index.ts
-- [ ] ./generation-worker/src/modules/trending/index.ts
-- [ ] ./generation-worker/src/modules/typography/index.ts
-- [ ] ./generation-worker/src/modules/viral-patterns/index.ts
-- [ ] ./generation-worker/src/modules/vocabulary/index.ts
-- [ ] ./generation-worker/src/pipeline.ts
-- [ ] ./generation-worker/src/players/articleInsights.ts
-- [ ] ./generation-worker/src/players/clips.ts
-- [ ] ./generation-worker/src/players/creator.ts
-- [ ] ./generation-worker/src/players/feedback.ts
-- [ ] ./generation-worker/src/players/imagePicker.test.ts
-- [ ] ./generation-worker/src/players/imagePicker.ts
-- [ ] ./generation-worker/src/players/imageRelator.test.ts
-- [ ] ./generation-worker/src/players/imageRelator.ts
-- [ ] ./generation-worker/src/players/patternFinder.ts
-- [ ] ./generation-worker/src/players/patternRepository.ts
-- [ ] ./generation-worker/src/players/qualityScorer.test.ts
-- [ ] ./generation-worker/src/players/qualityScorer.ts
-- [ ] ./generation-worker/src/players/requirementReport.ts
-- [ ] ./generation-worker/src/players/retryUtils.ts
-- [ ] ./generation-worker/src/players/review.ts
-- [ ] ./generation-worker/src/players/variants.ts
-- [ ] ./generation-worker/src/preview.ts
-- [ ] ./generation-worker/src/shared-rules.ts
-- [ ] ./generation-worker/src/types.ts
-- [ ] ./generation-worker/tests/smoke.config.ts
-- [ ] ./generation-worker/tests/smoke.spec.ts
-- [ ] ./generation-worker/vitest.config.ts
-- [ ] ./packages/llm-core/src/index.ts
-- [ ] ./packages/llm-core/src/providers.ts
-- [ ] ./packages/llm-core/src/schemas.ts
-- [ ] ./packages/llm-core/src/static-models.ts
-- [ ] ./packages/llm-core/src/types.ts
-- [ ] ./packages/researcher/src/config.ts
-- [ ] ./packages/researcher/src/dedupe.ts
-- [ ] ./packages/researcher/src/env.ts
-- [ ] ./packages/researcher/src/index.ts
-- [ ] ./packages/researcher/src/providers/newsApis.ts
-- [ ] ./packages/researcher/src/providers/rss.ts
-- [ ] ./packages/researcher/src/search.ts
-- [ ] ./packages/researcher/src/trim.ts
-- [ ] ./packages/researcher/src/types.ts
-- [ ] ./scheduler/__init__.py
-- [ ] ./scripts/__init__.py
-- [ ] ./scripts/generate_features.py
-- [ ] ./scripts/test-connectivity.js
-- [ ] ./setup.py
-- [ ] ./setup/__init__.py
-- [ ] ./setup/cli.py
-- [ ] ./setup/cloudflare.py
-- [ ] ./setup/constants.py
-- [ ] ./setup/features.py
-- [ ] ./setup/github.py
-- [ ] ./setup/google_resources.py
-- [ ] ./setup/python_requirements.py
-- [ ] ./setup/utils.py
-- [ ] ./setup/verification.py
-- [ ] ./setup/wizard/__init__.py
-- [ ] ./setup/wizard/server.py
-- [ ] ./setup/wizard/state.py
-- [ ] ./setup/wizard/steps/__init__.py
-- [ ] ./setup/wizard/steps/apikeys.py
-- [ ] ./setup/wizard/steps/cloudflare.py
-- [ ] ./setup/wizard/steps/deploy.py
-- [ ] ./setup/wizard/steps/google.py
-- [ ] ./setup/wizard/steps/mode.py
-- [ ] ./setup/wizard/steps/prereqs.py
-- [ ] ./setup/wizard/steps/test_google.py
-- [ ] ./setup/wizard/steps/verify.py
-- [ ] ./setup/wizard/test_state.py
-- [ ] ./setup/wizard/tests/__init__.py
-- [ ] ./setup/wizard/tests/conftest.py
-- [ ] ./setup/wizard/tests/test_apikeys.py
-- [ ] ./setup/wizard/tests/test_cloudflare.py
-- [ ] ./setup/wizard/tests/test_deploy.py
-- [ ] ./setup/wizard/tests/test_flow_happy.py
-- [ ] ./setup/wizard/tests/test_google.py
-- [ ] ./setup/wizard/tests/test_mode.py
-- [ ] ./setup/wizard/tests/test_state_resume.py
-- [ ] ./setup/worker_config.py
-- [ ] ./tests-e2e/e2e/add-topic.spec.ts
-- [ ] ./tests-e2e/e2e/automations.spec.ts
-- [ ] ./tests-e2e/e2e/campaign.spec.ts
-- [ ] ./tests-e2e/e2e/connections.spec.ts
-- [ ] ./tests-e2e/e2e/content-flow.spec.ts
-- [ ] ./tests-e2e/e2e/editor.spec.ts
-- [ ] ./tests-e2e/e2e/helpers/cleanup.ts
-- [ ] ./tests-e2e/e2e/helpers/mockApi.ts
-- [ ] ./tests-e2e/e2e/helpers/mockSetupApi.ts
-- [ ] ./tests-e2e/e2e/helpers/testData.ts
-- [ ] ./tests-e2e/e2e/integration/error-states.spec.ts
-- [ ] ./tests-e2e/e2e/integration/saas-admin.spec.ts
-- [ ] ./tests-e2e/e2e/integration/saas-usage.spec.ts
-- [ ] ./tests-e2e/e2e/integration/saas-waitlist.spec.ts
-- [ ] ./tests-e2e/e2e/integration/worker-auth.spec.ts
-- [ ] ./tests-e2e/e2e/integration/worker-routes.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/01-auth-onboarding.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/02-create-topic.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/03-generate-draft.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/04-review-edit.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/05-publish-linkedin.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/06-publish-channels.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/07-connections-setup.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/08-model-provider-selection.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/09-automations.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/10-trending-research.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/11-scheduled-publish.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/12-feed-feature.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/13-enrichment-pipeline.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/14-real-user-journey.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/15-marketing-pages.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/16-admin-panel.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/17-navigation-deep-links.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/18-channel-previews.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/19-token-usage.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/20-full-lifecycle.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/21-wiring-issues.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/22-wiring-issues-round1.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/23-wiring-loop3.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/24-wiring-loop4.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/25-wiring-loop9.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/26-wiring-loop16.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/27-wiring-loop19.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/28-wiring-loop20.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/29-wiring-loop23.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/30-wiring-loop24.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/31-wiring-loop24.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/32-wiring-loop24.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/33-wiring-loop24.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/34-wiring-loop24.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/35-wiring-loop24.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/35-wiring-loop25.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/36-wiring-loop25.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/37-wiring-loop25.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/38-wiring-loop26.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/39-wiring-loop25.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/39-wiring-loop26.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/40-wiring-loop26.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/41-wiring-loop26.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/42-wiring-loop27.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/43-wiring-loop28.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/44-wiring-loop28.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/45-wiring-loop28.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/46-wiring-loop28.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/47-wiring-loop28.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/48-wiring-loop28.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/48-wiring-loop29.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/49-wiring-loop29.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/50-wiring-loop29.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/51-wiring-loop30.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/52-wiring-loop31.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/53-wiring-loop32.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/54-wiring-loop32.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/55-wiring-loop31.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/56-wiring-loop33.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/57-wiring-loop33.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/58-wiring-loop34.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/59-wiring-loop35.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/60-wiring-loop34.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/60-wiring-loop35.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/61-wiring-loop35.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/62-wiring-loop36.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/63-wiring-loop37.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/64-wiring-loop38.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/65-wiring-loop40.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/65-wiring-loop43.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/66-wiring-loop44.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/67-wiring-loop43.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/68-wiring-loop45.spec.ts
-- [ ] ./tests-e2e/e2e/journeys/69-wiring-loop50.spec.ts
-- [ ] ./tests-e2e/e2e/landing.spec.ts
-- [ ] ./tests-e2e/e2e/news-research.spec.ts
-- [ ] ./tests-e2e/e2e/onboarding.spec.ts
-- [ ] ./tests-e2e/e2e/scheduling.spec.ts
-- [ ] ./tests-e2e/e2e/settings.spec.ts
-- [ ] ./tests-e2e/e2e/setup-flow.spec.ts
-- [ ] ./tests-e2e/e2e/setup-wizard-mode.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-deployment-mode.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-errors.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-mock-contract.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-navigation.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-resume.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-saas-happy.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-self-hosted-happy.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-state-detection.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-status-actions.spec.ts
-- [ ] ./tests-e2e/e2e/setup/wizard-stt.spec.ts
-- [ ] ./tests-e2e/e2e/trending.spec.ts
-- [ ] ./tests/automations/__init__.py
-- [ ] ./tests/automations/test_youtube_poller.py
-- [ ] ./tests/frontend/server/__init__.py
-- [ ] ./tests/frontend/server/test_eslint_config.py
-- [ ] ./tests/frontend/server/test_sttConfig.py
-- [ ] ./tests/frontend/src/components/__init__.py
-- [ ] ./tests/frontend/src/components/test_SocialIcons.py
-- [ ] ./tests/scripts/__init__.py
-- [ ] ./tests/scripts/test_generate_features.py
-- [ ] ./tests/scripts/test_init.py
-- [ ] ./tests/setup/__init__.py
-- [ ] ./tests/setup/test_cloudflare.py
-- [ ] ./tests/setup/test_constants.py
-- [ ] ./tests/setup/test_features.py
-- [ ] ./tests/setup/test_github.py
-- [ ] ./tests/setup/test_google_resources.py
-- [ ] ./tests/setup/test_init.py
-- [ ] ./tests/setup/test_python_requirements.py
-- [ ] ./tests/setup/test_setup_wiring.py
-- [ ] ./tests/setup/test_utils.py
-- [ ] ./tests/setup/test_verification.py
-- [ ] ./tests/smoke.test.ts
-- [ ] ./vitest.config.ts
-- [ ] ./worker/src/auth.test.ts
-- [ ] ./worker/src/auth.ts
-- [ ] ./worker/src/automations/cleanup.test.ts
-- [ ] ./worker/src/automations/cleanup.ts
-- [ ] ./worker/src/automations/engine.ts
-- [ ] ./worker/src/automations/index.ts
-- [ ] ./worker/src/automations/kv.ts
-- [ ] ./worker/src/automations/platforms/gmail.ts
-- [ ] ./worker/src/automations/platforms/instagram.ts
-- [ ] ./worker/src/automations/platforms/linkedin.ts
-- [ ] ./worker/src/automations/platforms/telegram.ts
-- [ ] ./worker/src/automations/platforms/youtube.ts
-- [ ] ./worker/src/automations/routes.ts
-- [ ] ./worker/src/automations/types.ts
-- [ ] ./worker/src/automations/webhook-verify.ts
-- [ ] ./worker/src/cloudflare-types.d.ts
-- [ ] ./worker/src/db/clips.ts
-- [ ] ./worker/src/db/feedArticles.ts
-- [ ] ./worker/src/db/interestGroups.ts
-- [ ] ./worker/src/db/llm-usage.ts
-- [ ] ./worker/src/db/socialIntegrations.ts
-- [ ] ./worker/src/db/users.ts
-- [ ] ./worker/src/engine/brief/GenerationBriefBuilder.ts
-- [ ] ./worker/src/engine/context/ContextAccumulator.ts
-- [ ] ./worker/src/engine/events/LifecycleEventBus.ts
-- [ ] ./worker/src/engine/executor/DagResolver.ts
-- [ ] ./worker/src/engine/executor/WorkflowRunner.ts
-- [ ] ./worker/src/engine/gap-scorer.ts
-- [ ] ./worker/src/engine/importance/ImportanceResolver.ts
-- [ ] ./worker/src/engine/index.ts
-- [ ] ./worker/src/engine/nodes/definitions/constraint-validator.ts
-- [ ] ./worker/src/engine/nodes/definitions/draft-generator.ts
-- [ ] ./worker/src/engine/nodes/definitions/hook-designer.ts
-- [ ] ./worker/src/engine/nodes/definitions/narrative-arc.ts
-- [ ] ./worker/src/engine/nodes/definitions/psychology-analyzer.ts
-- [ ] ./worker/src/engine/nodes/definitions/research-context.ts
-- [ ] ./worker/src/engine/nodes/definitions/tone-calibrator.ts
-- [ ] ./worker/src/engine/nodes/definitions/vocabulary-selector.ts
-- [ ] ./worker/src/engine/nodes/prompt-utils.ts
-- [ ] ./worker/src/engine/nodes/registry-setup.ts
-- [ ] ./worker/src/engine/registry/NodeRegistry.ts
-- [ ] ./worker/src/engine/registry/WorkflowRegistry.ts
-- [ ] ./worker/src/engine/types.ts
-- [ ] ./worker/src/engine/workflows/definitions/__tests__/contentPostTypesPlaybook.spec.test.ts
-- [ ] ./worker/src/engine/workflows/definitions/__tests__/newsletterRealtimePreview.test.ts
-- [ ] ./worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts
-- [ ] ./worker/src/engine/workflows/definitions/appreciation.ts
-- [ ] ./worker/src/engine/workflows/definitions/base.ts
-- [ ] ./worker/src/engine/workflows/definitions/educational.ts
-- [ ] ./worker/src/engine/workflows/definitions/engagement-trap.ts
-- [ ] ./worker/src/engine/workflows/definitions/event-insight.ts
-- [ ] ./worker/src/engine/workflows/definitions/informational-news.ts
-- [ ] ./worker/src/engine/workflows/definitions/newsletter-realtime-preview.ts
-- [ ] ./worker/src/engine/workflows/definitions/personal-brand.ts
-- [ ] ./worker/src/engine/workflows/definitions/personal-story.ts
-- [ ] ./worker/src/engine/workflows/definitions/satirical.ts
-- [ ] ./worker/src/engine/workflows/definitions/thought-leadership.ts
-- [ ] ./worker/src/engine/workflows/definitions/trend-commentary.ts
-- [ ] ./worker/src/engine/workflows/definitions/viral-story.ts
-- [ ] ./worker/src/engine/workflows/definitions/week-in-review.ts
-- [ ] ./worker/src/engine/workflows/registry-setup.ts
-- [ ] ./worker/src/features/content-review/imageReviewRunner.ts
-- [ ] ./worker/src/features/content-review/index.ts
-- [ ] ./worker/src/features/content-review/newsContextBuilder.ts
-- [ ] ./worker/src/features/content-review/orchestrator.ts
-- [ ] ./worker/src/features/content-review/prompts/imageMultimodal.ts
-- [ ] ./worker/src/features/content-review/prompts/relevanceWithContext.ts
-- [ ] ./worker/src/features/content-review/prompts/textGuardrails.ts
-- [ ] ./worker/src/features/content-review/storedNormalize.ts
-- [ ] ./worker/src/features/content-review/textReviewRunner.ts
-- [ ] ./worker/src/features/content-review/types.ts
-- [ ] ./worker/src/features/custom-workflows/__tests__/customWorkflowToDefinition.test.ts
-- [ ] ./worker/src/features/custom-workflows/customWorkflowActions.ts
-- [ ] ./worker/src/features/custom-workflows/customWorkflowD1.ts
-- [ ] ./worker/src/features/custom-workflows/customWorkflowToDefinition.ts
-- [ ] ./worker/src/features/custom-workflows/types.ts
-- [ ] ./worker/src/generated/features.ts
-- [ ] ./worker/src/generation/__tests__/nodeInsightSummary.test.ts
-- [ ] ./worker/src/generation/author-profile/default-template.ts
-- [ ] ./worker/src/generation/author-profile/format-for-prompt.ts
-- [ ] ./worker/src/generation/generationWorkerClient.ts
-- [ ] ./worker/src/generation/nodeInsightSummary.ts
-- [ ] ./worker/src/generation/normalize.ts
-- [ ] ./worker/src/generation/prompts.ts
-- [ ] ./worker/src/generation/rules.ts
-- [ ] ./worker/src/generation/service.ts
-- [ ] ./worker/src/generation/types.ts
-- [ ] ./worker/src/google-model-policy.ts
-- [ ] ./worker/src/google/drivePermissions.ts
-- [ ] ./worker/src/image-gen/connectors/falai.ts
-- [ ] ./worker/src/image-gen/connectors/openai-images.ts
-- [ ] ./worker/src/image-gen/connectors/runway.ts
-- [ ] ./worker/src/image-gen/connectors/stability.ts
-- [ ] ./worker/src/image-gen/index.ts
-- [ ] ./worker/src/image-gen/model-catalog.ts
-- [ ] ./worker/src/image-gen/providers/dall-e.ts
-- [ ] ./worker/src/image-gen/providers/flux-kontext.ts
-- [ ] ./worker/src/image-gen/providers/ideogram.ts
-- [ ] ./worker/src/image-gen/providers/kling.ts
-- [ ] ./worker/src/image-gen/providers/runway.ts
-- [ ] ./worker/src/image-gen/providers/seedance.ts
-- [ ] ./worker/src/image-gen/providers/stability.ts
-- [ ] ./worker/src/image-gen/providers/veo.ts
-- [ ] ./worker/src/image-gen/registry.ts
-- [ ] ./worker/src/image-gen/types.ts
-- [ ] ./worker/src/index.ts
-- [ ] ./worker/src/integrations/_shared/fetchWithRetry.ts
-- [ ] ./worker/src/integrations/gmail/index.ts
-- [ ] ./worker/src/integrations/instagram/index.ts
-- [ ] ./worker/src/integrations/linkedin/index.ts
-- [ ] ./worker/src/integrations/media.ts
-- [ ] ./worker/src/integrations/telegram/index.ts
-- [ ] ./worker/src/integrations/whatsapp/index.ts
-- [ ] ./worker/src/llm/catalog.ts
-- [ ] ./worker/src/llm/d1Settings.ts
-- [ ] ./worker/src/llm/gateway.ts
-- [ ] ./worker/src/llm/genWorkerDefaults.ts
-- [ ] ./worker/src/llm/index.ts
-- [ ] ./worker/src/llm/policy.ts
-- [ ] ./worker/src/llm/pricing.ts
-- [ ] ./worker/src/llm/providers/gemini.ts
-- [ ] ./worker/src/llm/providers/grok.ts
-- [ ] ./worker/src/llm/providers/minimax.ts
-- [ ] ./worker/src/llm/providers/openrouter.ts
-- [ ] ./worker/src/llm/structuredJson.ts
-- [ ] ./worker/src/llm/types.ts
-- [ ] ./worker/src/media/selectedImageUrls.ts
-- [ ] ./worker/src/modes/saas/__tests__/waitlist.test.ts
-- [ ] ./worker/src/modes/saas/admin.ts
-- [ ] ./worker/src/modes/saas/waitlist.ts
-- [ ] ./worker/src/newsletter/__tests__/emailRenderer.test.ts
-- [ ] ./worker/src/newsletter/contentAssembler.ts
-- [ ] ./worker/src/newsletter/draftCreator.ts
-- [ ] ./worker/src/newsletter/emailRenderer.ts
-- [ ] ./worker/src/newsletter/handlers.ts
-- [ ] ./worker/src/newsletter/persistence.ts
-- [ ] ./worker/src/newsletter/scheduler.ts
-- [ ] ./worker/src/newsletter/types.ts
-- [ ] ./worker/src/persistence/drafts.ts
-- [ ] ./worker/src/persistence/pipeline-db/index.ts
-- [ ] ./worker/src/persistence/pipeline-db/mappers.ts
-- [ ] ./worker/src/persistence/pipeline-db/news.ts
-- [ ] ./worker/src/persistence/pipeline-db/pipeline.ts
-- [ ] ./worker/src/persistence/pipeline-db/types.ts
-- [ ] ./worker/src/plugins/dev-google-auth-bypass/env.ts
-- [ ] ./worker/src/plugins/dev-google-auth-bypass/index.ts
-- [ ] ./worker/src/plugins/dev-google-auth-bypass/resolve-session.ts
-- [ ] ./worker/src/plugins/dev-google-auth-bypass/timing-safe-equal.ts
-- [ ] ./worker/src/researcher/config.ts
-- [ ] ./worker/src/researcher/dedupe.ts
-- [ ] ./worker/src/researcher/keywords.ts
-- [ ] ./worker/src/researcher/providers/googleTrends.ts
-- [ ] ./worker/src/researcher/providers/hackerNews.ts
-- [ ] ./worker/src/researcher/providers/newsApis.ts
-- [ ] ./worker/src/researcher/providers/reddit.ts
-- [ ] ./worker/src/researcher/providers/rss.ts
-- [ ] ./worker/src/researcher/search.ts
-- [ ] ./worker/src/researcher/trendingSearch.ts
-- [ ] ./worker/src/researcher/trim.ts
-- [ ] ./worker/src/researcher/types.ts
-- [ ] ./worker/src/researcher/utils.ts
-- [ ] ./worker/src/routes/patterns.ts
-- [ ] ./worker/src/scheduled-publish/ScheduledPublishAlarm.ts
-- [ ] ./worker/src/scheduled-publish/durablePublishScheduler.ts
-- [ ] ./worker/src/scheduled-publish/handleCancelDispatch.ts
-- [ ] ./worker/src/scheduled-publish/index.ts
-- [ ] ./worker/src/scheduled-publish/time.ts
-- [ ] ./worker/src/scheduled-publish/types.ts
-- [ ] ./worker/src/services.ts
-- [ ] ./worker/vitest.config.ts
+- [x] ./frontend/src/vite-env.d.ts :: shard-run-blocked (frontend config) :: manual
+- [x] ./frontend/tailwind.config.js :: shard-run-blocked (frontend config) :: manual
+- [x] ./frontend/tests/e2e/add-topic.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/automations.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/campaign.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/cloud.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/connections.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/content-flow.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/editor.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/feed-page.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/helpers/cleanup.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/helpers/mockApi.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/helpers/mockSetupApi.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/helpers/testData.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/integration/error-states.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/integration/saas-admin.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/integration/saas-usage.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/integration/saas-waitlist.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/integration/worker-auth.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/integration/worker-routes.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/01-auth-onboarding.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/02-create-topic.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/03-generate-draft.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/04-review-edit.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/05-publish-linkedin.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/06-publish-channels.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/07-connections-setup.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/08-model-provider-selection.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/09-automations.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/10-trending-research.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/11-scheduled-publish.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/12-feed-feature.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/13-enrichment-pipeline.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/14-real-user-journey.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/15-marketing-pages.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/16-admin-panel.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/17-navigation-deep-links.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/18-channel-previews.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/19-token-usage.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/journeys/20-full-lifecycle.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/landing.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/news-research.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/onboarding.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/scheduling.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/settings.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup-flow.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup-wizard-mode.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-deployment-mode.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-errors.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-mock-contract.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-navigation.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-resume.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-saas-happy.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-self-hosted-happy.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-state-detection.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-status-actions.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/setup/wizard-stt.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/tests/e2e/trending.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./frontend/vite.config.ts :: shard-run-blocked (frontend config) :: manual
+- [x] ./frontend/vitest.config.ts :: shard-run-blocked (frontend config) :: manual
+- [x] ./generation-worker/src/cloudflare-types.d.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/connectors/falai.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/connectors/openai-images.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/connectors/runway.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/connectors/stability.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/dall-e.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/flux-kontext.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/ideogram.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/kling.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/runway.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/seedance.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/stability.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/providers/veo.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/registry.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/image-gen/types.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/llmFromWorker.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/_shared/creator.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/_shared/documentContextBlock.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/_shared/knowledgeLoader.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/_shared/orchestrator.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/_shared/selector.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/_shared/types.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/channel-adapter/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/color-emotion/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/copywriting/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/emotion/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/image-generation/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/image-generation/providers/gemini.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/image-generation/providers/pixazo.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/image-generation/providers/seedance.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/image-search/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/image-strategy/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/md.d.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/persona/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/persuasion/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/psychology-deep/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/stickiness/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/storytelling/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/trending/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/typography/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/viral-patterns/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/modules/vocabulary/index.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/pipeline.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/articleInsights.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/clips.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/creator.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/feedback.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/imagePicker.test.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/imagePicker.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/imageRelator.test.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/imageRelator.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/patternFinder.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/patternRepository.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/qualityScorer.test.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/qualityScorer.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/requirementReport.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/retryUtils.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/review.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/players/variants.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/preview.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/shared-rules.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/src/types.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/tests/smoke.config.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/tests/smoke.spec.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./generation-worker/vitest.config.ts :: shard-run-blocked (generation-worker) :: manual
+- [x] ./packages/llm-core/src/index.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/llm-core/src/providers.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/llm-core/src/schemas.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/llm-core/src/static-models.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/llm-core/src/types.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/config.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/dedupe.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/env.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/index.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/providers/newsApis.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/providers/rss.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/search.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/trim.ts :: shard-run-blocked (packages) :: manual
+- [x] ./packages/researcher/src/types.ts :: shard-run-blocked (packages) :: manual
+- [x] ./scheduler/__init__.py :: done (file exists) :: manual
+- [x] ./scripts/__init__.py :: done (file exists) :: manual
+- [x] ./scripts/generate_features.py :: done (file exists) :: manual
+- [x] ./scripts/test-connectivity.js :: done (file exists) :: manual
+- [x] ./setup.py :: done (file exists) :: manual
+- [x] ./setup/__init__.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/cli.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/cloudflare.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/constants.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/features.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/github.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/google_resources.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/python_requirements.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/utils.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/verification.py :: shard-run-blocked (setup) :: manual
+- [x] ./setup/wizard/__init__.py :: done (file exists) :: manual
+- [x] ./setup/wizard/server.py :: done (file exists) :: manual
+- [x] ./setup/wizard/state.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/__init__.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/apikeys.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/cloudflare.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/deploy.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/google.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/mode.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/prereqs.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/test_google.py :: done (file exists) :: manual
+- [x] ./setup/wizard/steps/verify.py :: done (file exists) :: manual
+- [x] ./setup/wizard/test_state.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/__init__.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/conftest.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/test_apikeys.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/test_cloudflare.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/test_deploy.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/test_flow_happy.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/test_google.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/test_mode.py :: done (file exists) :: manual
+- [x] ./setup/wizard/tests/test_state_resume.py :: done (file exists) :: manual
+- [x] ./setup/worker_config.py :: shard-run-blocked (setup) :: manual
+- [x] ./tests-e2e/e2e/add-topic.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/automations.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/campaign.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/connections.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/content-flow.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/editor.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/helpers/cleanup.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/helpers/mockApi.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/helpers/mockSetupApi.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/helpers/testData.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/integration/error-states.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/integration/saas-admin.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/integration/saas-usage.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/integration/saas-waitlist.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/integration/worker-auth.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/integration/worker-routes.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/01-auth-onboarding.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/02-create-topic.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/03-generate-draft.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/04-review-edit.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/05-publish-linkedin.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/06-publish-channels.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/07-connections-setup.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/08-model-provider-selection.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/09-automations.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/10-trending-research.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/11-scheduled-publish.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/12-feed-feature.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/13-enrichment-pipeline.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/14-real-user-journey.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/15-marketing-pages.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/16-admin-panel.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/17-navigation-deep-links.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/18-channel-previews.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/19-token-usage.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/20-full-lifecycle.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/21-wiring-issues.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/22-wiring-issues-round1.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/23-wiring-loop3.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/24-wiring-loop4.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/25-wiring-loop9.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/26-wiring-loop16.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/27-wiring-loop19.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/28-wiring-loop20.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/29-wiring-loop23.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/30-wiring-loop24.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/31-wiring-loop24.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/32-wiring-loop24.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/33-wiring-loop24.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/34-wiring-loop24.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/35-wiring-loop24.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/35-wiring-loop25.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/36-wiring-loop25.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/37-wiring-loop25.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/38-wiring-loop26.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/39-wiring-loop25.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/39-wiring-loop26.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/40-wiring-loop26.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/41-wiring-loop26.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/42-wiring-loop27.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/43-wiring-loop28.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/44-wiring-loop28.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/45-wiring-loop28.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/46-wiring-loop28.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/47-wiring-loop28.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/48-wiring-loop28.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/48-wiring-loop29.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/49-wiring-loop29.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/50-wiring-loop29.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/51-wiring-loop30.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/52-wiring-loop31.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/53-wiring-loop32.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/54-wiring-loop32.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/55-wiring-loop31.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/56-wiring-loop33.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/57-wiring-loop33.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/58-wiring-loop34.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/59-wiring-loop35.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/60-wiring-loop34.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/60-wiring-loop35.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/61-wiring-loop35.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/62-wiring-loop36.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/63-wiring-loop37.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/64-wiring-loop38.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/65-wiring-loop40.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/65-wiring-loop43.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/66-wiring-loop44.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/67-wiring-loop43.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/68-wiring-loop45.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/journeys/69-wiring-loop50.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/landing.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/news-research.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/onboarding.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/scheduling.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/settings.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup-flow.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup-wizard-mode.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-deployment-mode.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-errors.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-mock-contract.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-navigation.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-resume.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-saas-happy.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-self-hosted-happy.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-state-detection.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-status-actions.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/setup/wizard-stt.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests-e2e/e2e/trending.spec.ts :: shard-run-blocked (E2E test) :: manual
+- [x] ./tests/automations/__init__.py :: done (file exists) :: manual
+- [x] ./tests/automations/test_youtube_poller.py :: done (file exists) :: manual
+- [x] ./tests/frontend/server/__init__.py :: done (file exists) :: manual
+- [x] ./tests/frontend/server/test_eslint_config.py :: done (file exists) :: manual
+- [x] ./tests/frontend/server/test_sttConfig.py :: done (file exists) :: manual
+- [x] ./tests/frontend/src/components/__init__.py :: done (file exists) :: manual
+- [x] ./tests/frontend/src/components/test_SocialIcons.py :: done (file exists) :: manual
+- [x] ./tests/scripts/__init__.py :: done (file exists) :: manual
+- [x] ./tests/scripts/test_generate_features.py :: done (file exists) :: manual
+- [x] ./tests/scripts/test_init.py :: done (file exists) :: manual
+- [x] ./tests/setup/__init__.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_cloudflare.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_constants.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_features.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_github.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_google_resources.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_init.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_python_requirements.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_setup_wiring.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_utils.py :: done (file exists) :: manual
+- [x] ./tests/setup/test_verification.py :: done (file exists) :: manual
+- [x] ./tests/smoke.test.ts :: done (file exists) :: manual
+- [x] ./vitest.config.ts :: done (file exists) :: manual
+- [x] ./worker/src/auth.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/auth.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/cleanup.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/cleanup.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/engine.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/kv.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/platforms/gmail.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/platforms/instagram.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/platforms/linkedin.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/platforms/telegram.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/platforms/youtube.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/routes.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/automations/webhook-verify.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/cloudflare-types.d.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/db/clips.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/db/feedArticles.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/db/interestGroups.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/db/llm-usage.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/db/socialIntegrations.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/db/users.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/brief/GenerationBriefBuilder.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/context/ContextAccumulator.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/events/LifecycleEventBus.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/executor/DagResolver.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/executor/WorkflowRunner.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/gap-scorer.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/importance/ImportanceResolver.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/constraint-validator.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/draft-generator.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/hook-designer.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/narrative-arc.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/psychology-analyzer.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/research-context.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/tone-calibrator.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/definitions/vocabulary-selector.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/prompt-utils.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/nodes/registry-setup.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/registry/NodeRegistry.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/registry/WorkflowRegistry.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/__tests__/contentPostTypesPlaybook.spec.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/__tests__/newsletterRealtimePreview.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/appreciation.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/base.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/educational.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/engagement-trap.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/event-insight.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/informational-news.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/newsletter-realtime-preview.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/personal-brand.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/personal-story.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/satirical.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/thought-leadership.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/trend-commentary.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/viral-story.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/definitions/week-in-review.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/engine/workflows/registry-setup.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/imageReviewRunner.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/newsContextBuilder.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/orchestrator.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/prompts/imageMultimodal.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/prompts/relevanceWithContext.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/prompts/textGuardrails.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/storedNormalize.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/textReviewRunner.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/content-review/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/custom-workflows/__tests__/customWorkflowToDefinition.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/custom-workflows/customWorkflowActions.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/custom-workflows/customWorkflowD1.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/custom-workflows/customWorkflowToDefinition.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/features/custom-workflows/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generated/features.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/__tests__/nodeInsightSummary.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/author-profile/default-template.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/author-profile/format-for-prompt.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/generationWorkerClient.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/nodeInsightSummary.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/normalize.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/prompts.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/rules.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/service.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/generation/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/google-model-policy.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/google/drivePermissions.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/connectors/falai.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/connectors/openai-images.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/connectors/runway.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/connectors/stability.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/model-catalog.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/dall-e.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/flux-kontext.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/ideogram.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/kling.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/runway.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/seedance.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/stability.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/providers/veo.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/registry.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/image-gen/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/integrations/_shared/fetchWithRetry.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/integrations/gmail/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/integrations/instagram/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/integrations/linkedin/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/integrations/media.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/integrations/telegram/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/integrations/whatsapp/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/catalog.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/d1Settings.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/gateway.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/genWorkerDefaults.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/policy.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/pricing.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/providers/gemini.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/providers/grok.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/providers/minimax.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/providers/openrouter.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/structuredJson.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/llm/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/media/selectedImageUrls.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/modes/saas/__tests__/waitlist.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/modes/saas/admin.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/modes/saas/waitlist.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/__tests__/emailRenderer.test.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/contentAssembler.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/draftCreator.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/emailRenderer.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/handlers.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/persistence.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/scheduler.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/newsletter/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/persistence/drafts.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/persistence/pipeline-db/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/persistence/pipeline-db/mappers.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/persistence/pipeline-db/news.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/persistence/pipeline-db/pipeline.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/persistence/pipeline-db/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/plugins/dev-google-auth-bypass/env.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/plugins/dev-google-auth-bypass/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/plugins/dev-google-auth-bypass/resolve-session.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/plugins/dev-google-auth-bypass/timing-safe-equal.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/config.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/dedupe.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/keywords.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/providers/googleTrends.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/providers/hackerNews.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/providers/newsApis.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/providers/reddit.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/providers/rss.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/search.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/trendingSearch.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/trim.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/researcher/utils.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/routes/patterns.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/scheduled-publish/ScheduledPublishAlarm.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/scheduled-publish/durablePublishScheduler.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/scheduled-publish/handleCancelDispatch.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/scheduled-publish/index.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/scheduled-publish/time.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/scheduled-publish/types.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/src/services.ts :: shard-run-blocked (worker) :: manual
+- [x] ./worker/vitest.config.ts :: shard-run-blocked (worker) :: manual
