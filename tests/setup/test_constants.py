@@ -1,27 +1,32 @@
 """Tests for setup.constants module."""
 
+import importlib.util
 import sys
 from pathlib import Path
 
-import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+def load_module(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 class TestConstants:
     def test_root_is_absolute_path(self):
-        from setup.constants import ROOT
-        assert ROOT.is_absolute()
+        module = load_module('setup_constants', Path('/home/openclaw/workspaces/linkedin-post/setup/constants.py'))
+        assert module.ROOT.is_absolute()
 
     def test_worker_dir_resolved(self):
-        from setup.constants import WORKER_DIR, ROOT
-        assert WORKER_DIR == ROOT / 'worker'
+        module = load_module('setup_constants2', Path('/home/openclaw/workspaces/linkedin-post/setup/constants.py'))
+        assert module.WORKER_DIR == module.ROOT / 'worker'
 
     def test_pipeline_tab_headers_length(self):
-        from setup.constants import PIPELINE_TAB_HEADERS
-        assert len(PIPELINE_TAB_HEADERS) > 10
+        module = load_module('setup_constants3', Path('/home/openclaw/workspaces/linkedin-post/setup/constants.py'))
+        assert len(module.PIPELINE_TAB_HEADERS) > 10
 
     def test_scopes_is_list_of_urls(self):
-        from setup.constants import SCOPES
-        assert isinstance(SCOPES, list)
-        assert all('googleapis.com' in s for s in SCOPES)
+        module = load_module('setup_constants4', Path('/home/openclaw/workspaces/linkedin-post/setup/constants.py'))
+        assert isinstance(module.SCOPES, list)
+        assert all('googleapis.com' in s for s in module.SCOPES)
