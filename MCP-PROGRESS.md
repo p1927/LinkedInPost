@@ -6,10 +6,10 @@
 - [x] automations/youtube_poller.py :: done :: f46f218
 - [x] frontend/eslint.config.js :: done :: 014f363
 - [x] frontend/playwright.config.ts :: done :: 3015ebf
-- [x] frontend/playwright.deployment.config.ts :: shard-run-blocked :: 16e35d7
-- [x] frontend/server/setupWizard.js :: shard-run-blocked :: 16e35d7
-- [x] frontend/server/sttConfig.js :: shard-run-blocked :: 16e35d7
-- [x] frontend/server/sttServer.js :: shard-run-blocked :: 16e35d7
+- [x] frontend/playwright.deployment.config.ts
+- [x] frontend/server/setupWizard.js
+- [x] frontend/server/sttConfig.js
+- [x] frontend/server/sttServer.js
 - [x] frontend/src/App.tsx
 - [x] frontend/src/components/AlertProvider.tsx
 - [x] frontend/src/components/Dialog.tsx
@@ -611,13 +611,13 @@
 - [x] tests-e2e/e2e/setup/wizard-stt.spec.ts
 - [x] tests-e2e/e2e/trending.spec.ts
 - [x] tests/automations/__init__.py
-- [x] tests/automations/test_youtube_poller.py
+- [x] tests/automations/test_youtube_poller.py :: done :: f46f218
 - [x] tests/frontend/server/__init__.py
-- [x] tests/frontend/server/test_eslint_config.py
-- [x] tests/frontend/server/test_playwright_config.py
-- [x] tests/frontend/server/test_sttConfig.py
+- [x] tests/frontend/server/test_eslint_config.py :: done :: 014f363
+- [x] tests/frontend/server/test_playwright_config.py :: done :: 3015ebf
+- [x] tests/frontend/server/test_sttConfig.py :: done :: d8324eb
 - [x] tests/frontend/src/components/__init__.py
-- [x] tests/frontend/src/components/test_SocialIcons.py
+- [x] tests/frontend/src/components/test_SocialIcons.py :: done :: 4675da2
 - [x] tests/scripts/__init__.py
 - [x] tests/scripts/test_generate_features.py
 - [x] tests/scripts/test_init.py
@@ -630,7 +630,7 @@
 - [x] tests/setup/test_init.py
 - [x] tests/setup/test_python_requirements.py
 - [x] tests/setup/test_setup_wiring.py
-- [x] tests/setup/test_utils.py
+- [x] tests/setup/test_utils.py :: done :: 311b638
 - [x] tests/setup/test_verification.py
 - [x] tests/smoke.test.ts
 - [x] vitest.config.ts :: shard-run-blocked (config file) :: manual
