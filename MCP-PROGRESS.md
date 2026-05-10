@@ -45808,7 +45808,7 @@
 - [x] scripts/generate_features.py  <!-- done 44de350 2026-05-10 -->
 - [ ] scripts/test-connectivity.js
 - [x] setup.py  <!-- done 2c900fc 2026-05-10 -->
-- [ ] setup/__init__.py
+- [x] setup/__init__.py  <!-- done d048e87 2026-05-10 -->
 - [x] setup/cli.py  <!-- done shard-run-blocked 2026-05-10 -->
 - [ ] setup/cloudflare.py
 - [ ] setup/constants.py
