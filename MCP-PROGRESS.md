@@ -45817,7 +45817,7 @@
 - [ ] setup/google_resources.py
 - [ ] setup/python_requirements.py
 - [ ] setup/utils.py
-- [ ] setup/verification.py
+- [x] setup/verification.py  <!-- done 7f638cb 2026-05-10 -->
 - [ ] setup/wizard/__init__.py
 - [ ] setup/wizard/server.py
 - [ ] setup/wizard/state.py
