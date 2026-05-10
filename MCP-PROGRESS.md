@@ -45810,7 +45810,7 @@
 - [x] setup.py  <!-- done 2c900fc 2026-05-10 -->
 - [x] setup/__init__.py  <!-- done d048e87 2026-05-10 -->
 - [x] setup/cli.py  <!-- done shard-run-blocked 2026-05-10 -->
-- [ ] setup/cloudflare.py
+- [x] setup/cloudflare.py  <!-- done f8b493f 2026-05-10 -->
 - [ ] setup/constants.py
 - [ ] setup/features.py
 - [ ] setup/github.py
