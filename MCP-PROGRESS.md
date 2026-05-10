@@ -10,319 +10,319 @@
 - [x] ./frontend/server/setupWizard.js :: shard-run-blocked (Node.js server) :: manual
 - [x] ./frontend/server/sttConfig.js :: shard-run-blocked (Node.js server) :: manual
 - [x] ./frontend/server/sttServer.js :: shard-run-blocked (Node.js server) :: manual
-- [ ] ./frontend/src/App.tsx
-- [ ] ./frontend/src/components/AlertProvider.tsx
-- [ ] ./frontend/src/components/Dialog.tsx
-- [ ] ./frontend/src/components/ErrorBoundary.tsx
-- [ ] ./frontend/src/components/GoogleLoginButton.tsx
-- [ ] ./frontend/src/components/HelpOverlay.tsx
-- [ ] ./frontend/src/components/ImageAssetManager.tsx
-- [ ] ./frontend/src/components/ImageGenReferencePanel.tsx
-- [ ] ./frontend/src/components/ImageGenTextPanel.tsx
-- [ ] ./frontend/src/components/LegalFooterLinks.tsx
-- [ ] ./frontend/src/components/LegalPageChrome.tsx
-- [ ] ./frontend/src/components/PrivacyPolicy.tsx
-- [ ] ./frontend/src/components/SocialIcons.tsx
-- [ ] ./frontend/src/components/Tour.tsx
-- [ ] ./frontend/src/components/channel-previews/ChannelPostPreview.tsx
-- [ ] ./frontend/src/components/channel-previews/GmailChannelPreview.tsx
-- [ ] ./frontend/src/components/channel-previews/InstagramChannelPreview.tsx
-- [ ] ./frontend/src/components/channel-previews/LinkedInChannelPreview.tsx
-- [ ] ./frontend/src/components/channel-previews/TelegramChannelPreview.tsx
-- [ ] ./frontend/src/components/channel-previews/WhatsAppChannelPreview.tsx
-- [ ] ./frontend/src/components/channel-previews/platformTokens.ts
-- [ ] ./frontend/src/components/channel-previews/shared.tsx
-- [ ] ./frontend/src/components/channel-previews/types.ts
-- [ ] ./frontend/src/components/channels/ChannelPicker.tsx
-- [ ] ./frontend/src/components/channels/index.ts
-- [ ] ./frontend/src/components/dashboard/components/DashboardSettingsDrawer.tsx
-- [ ] ./frontend/src/components/dashboard/components/DashboardSettingsDrawer.types.ts
-- [ ] ./frontend/src/components/dashboard/components/DashboardToolbar.tsx
-- [ ] ./frontend/src/components/dashboard/components/SettingsConnectionsCard.tsx
-- [ ] ./frontend/src/components/dashboard/components/TopicDetailPanel.tsx
-- [ ] ./frontend/src/components/dashboard/components/TopicPostPreviewCard.tsx
-- [ ] ./frontend/src/components/dashboard/components/TopicsRightRail.tsx
-- [ ] ./frontend/src/components/dashboard/constants.ts
-- [ ] ./frontend/src/components/dashboard/hooks/useDashboardChannels.ts
-- [ ] ./frontend/src/components/dashboard/hooks/useDashboardQueue.ts
-- [ ] ./frontend/src/components/dashboard/hooks/useDashboardSettings.ts
-- [ ] ./frontend/src/components/dashboard/index.tsx
-- [ ] ./frontend/src/components/dashboard/tabs/DashboardDelivery.tsx
-- [ ] ./frontend/src/components/dashboard/tabs/DashboardQueue.tsx
-- [ ] ./frontend/src/components/dashboard/types.ts
-- [ ] ./frontend/src/components/dashboard/utils.ts
-- [ ] ./frontend/src/components/llm/LlmModelCombobox.tsx
-- [ ] ./frontend/src/components/llm/LlmProviderSelect.tsx
-- [ ] ./frontend/src/components/llm/index.ts
-- [ ] ./frontend/src/components/marketing/MarketingFooter.tsx
-- [ ] ./frontend/src/components/marketing/MarketingNav.tsx
-- [ ] ./frontend/src/components/schedule/ScheduleEditor.tsx
-- [ ] ./frontend/src/components/schedule/index.ts
-- [ ] ./frontend/src/components/ui/CalendarDateChip.tsx
-- [ ] ./frontend/src/components/ui/ChipToggle.tsx
-- [ ] ./frontend/src/components/ui/EmptyState.tsx
-- [ ] ./frontend/src/components/ui/ErrorBanner.tsx
-- [ ] ./frontend/src/components/ui/LoadingSkeleton.tsx
-- [ ] ./frontend/src/components/ui/StatusPill.tsx
-- [ ] ./frontend/src/components/ui/badge.tsx
-- [ ] ./frontend/src/components/ui/button.tsx
-- [ ] ./frontend/src/components/ui/carousel.tsx
-- [ ] ./frontend/src/components/ui/collapsible.tsx
-- [ ] ./frontend/src/components/ui/dialog.tsx
-- [ ] ./frontend/src/components/ui/dropdown-menu.tsx
-- [ ] ./frontend/src/components/ui/input.tsx
-- [ ] ./frontend/src/components/ui/popover.tsx
-- [ ] ./frontend/src/components/ui/select.tsx
-- [ ] ./frontend/src/components/ui/textarea.tsx
-- [ ] ./frontend/src/components/useAlert.ts
-- [ ] ./frontend/src/components/workspace/AppSidebar.tsx
-- [ ] ./frontend/src/components/workspace/WorkspaceChromeContext.tsx
-- [ ] ./frontend/src/components/workspace/WorkspaceHeader.tsx
-- [ ] ./frontend/src/components/workspace/WorkspaceShell.tsx
-- [ ] ./frontend/src/features/add-topic/AddTopicPage.tsx
-- [ ] ./frontend/src/features/add-topic/MicButton.tsx
-- [ ] ./frontend/src/features/add-topic/TopicDetailView.tsx
-- [ ] ./frontend/src/features/add-topic/TopicRightPanel.tsx
-- [ ] ./frontend/src/features/add-topic/TrendingSidebar.tsx
-- [ ] ./frontend/src/features/add-topic/useSpeechToText.ts
-- [ ] ./frontend/src/features/add-topic/whisperWorker.ts
-- [ ] ./frontend/src/features/ai-draft/GenWorkerDraftField.tsx
-- [ ] ./frontend/src/features/ai-draft/genWorkerDraftSuggestions.ts
-- [ ] ./frontend/src/features/automations/AutomationsTab.tsx
-- [ ] ./frontend/src/features/automations/InstagramSetupGuide.tsx
-- [ ] ./frontend/src/features/automations/LinkedInSetupGuide.tsx
-- [ ] ./frontend/src/features/automations/RuleEditor.tsx
-- [ ] ./frontend/src/features/automations/YouTubeScheduler.tsx
-- [ ] ./frontend/src/features/automations/api.ts
-- [ ] ./frontend/src/features/automations/index.ts
-- [ ] ./frontend/src/features/automations/types.ts
-- [ ] ./frontend/src/features/campaign/CampaignPage.tsx
-- [ ] ./frontend/src/features/campaign/components/CampaignCarousel.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/IssueDetailDrawer.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterCalendarView.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterCard.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterConfigDrawer.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterDashboard.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterIssuePanel.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterListView.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterSectionCard.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterTab.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/NewsletterWizard.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/TagInput.tsx
-- [ ] ./frontend/src/features/campaign/components/newsletter/constants.ts
-- [ ] ./frontend/src/features/campaign/index.ts
-- [ ] ./frontend/src/features/campaign/prompt/defaultPrompt.ts
-- [ ] ./frontend/src/features/campaign/schema/newsletterTypes.ts
-- [ ] ./frontend/src/features/campaign/schema/types.ts
-- [ ] ./frontend/src/features/campaign/validate/parseCampaignDoc.ts
-- [ ] ./frontend/src/features/campaign/views/CampaignCalendar.tsx
-- [ ] ./frontend/src/features/campaign/views/CampaignPostList.tsx
-- [ ] ./frontend/src/features/campaign/views/CampaignPreviewToolbar.tsx
-- [ ] ./frontend/src/features/compare/CompareDialog.tsx
-- [ ] ./frontend/src/features/content-flow/SelectedPatternCard.tsx
-- [ ] ./frontend/src/features/content-flow/TemplateSelector.tsx
-- [ ] ./frontend/src/features/content-flow/filterPatterns.ts
-- [ ] ./frontend/src/features/content-flow/index.ts
-- [ ] ./frontend/src/features/content-flow/types.ts
-- [ ] ./frontend/src/features/content-flow/useTemplateSelection.ts
-- [ ] ./frontend/src/features/content-review/ContentReviewIndicator.tsx
-- [ ] ./frontend/src/features/content-review/ContentReviewReport.tsx
-- [ ] ./frontend/src/features/content-review/ContentReviewSettings.tsx
-- [ ] ./frontend/src/features/content-review/index.ts
-- [ ] ./frontend/src/features/content-review/types.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/ContentScheduleCalendar.tsx
-- [ ] ./frontend/src/features/content-schedule-calendar/DayView.tsx
-- [ ] ./frontend/src/features/content-schedule-calendar/EventDetailAndEdit.tsx
-- [ ] ./frontend/src/features/content-schedule-calendar/MonthView.tsx
-- [ ] ./frontend/src/features/content-schedule-calendar/WeekView.tsx
-- [ ] ./frontend/src/features/content-schedule-calendar/adapters/campaignPostAdapter.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/adapters/sheetRowAdapter.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/calendarTemporal.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/channelStyles.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/index.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/scheduleValidation.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/statusStyles.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/tokens.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/types.ts
-- [ ] ./frontend/src/features/content-schedule-calendar/useTimeGridDrag.ts
-- [ ] ./frontend/src/features/draft-selection-target/components/DraftTextareaWithHighlight.tsx
-- [ ] ./frontend/src/features/draft-selection-target/components/ScopeModeToolbar.tsx
-- [ ] ./frontend/src/features/draft-selection-target/index.ts
-- [ ] ./frontend/src/features/draft-selection-target/model.ts
-- [ ] ./frontend/src/features/editor/DraftEditor.tsx
-- [ ] ./frontend/src/features/feed/FeedPage.tsx
-- [ ] ./frontend/src/features/feed/components/ArticleDetailView.tsx
-- [ ] ./frontend/src/features/feed/components/ClipsDock.tsx
-- [ ] ./frontend/src/features/feed/components/DebateModeView.tsx
-- [ ] ./frontend/src/features/feed/components/DraftContextView.tsx
-- [ ] ./frontend/src/features/feed/components/FeedArticleCard.tsx
-- [ ] ./frontend/src/features/feed/components/FeedCuratedPanel.tsx
-- [ ] ./frontend/src/features/feed/components/FeedLeftPanel.tsx
-- [ ] ./frontend/src/features/feed/components/InterestGroupsSettings.tsx
-- [ ] ./frontend/src/features/feed/components/SelectionClipper.tsx
-- [ ] ./frontend/src/features/feed/hooks/useFeedKeyboard.ts
-- [ ] ./frontend/src/features/feed/types.ts
-- [ ] ./frontend/src/features/generation/EnrichmentProgressPanel.tsx
-- [ ] ./frontend/src/features/generation/GenerationPanel.tsx
-- [ ] ./frontend/src/features/generation/WorkflowCardPicker.tsx
-- [ ] ./frontend/src/features/generation/__tests__/EnrichmentProgressPanel.test.tsx
-- [ ] ./frontend/src/features/generation/__tests__/WorkflowCardPicker.test.tsx
-- [ ] ./frontend/src/features/generation/__tests__/builtInWorkflowCards.test.ts
-- [ ] ./frontend/src/features/generation/builtInWorkflowCards.ts
-- [ ] ./frontend/src/features/generation/nodeProgressLabels.ts
-- [ ] ./frontend/src/features/news-research/NewsResearchSettingsSection.tsx
-- [ ] ./frontend/src/features/news-research/ResearcherPanel.tsx
-- [ ] ./frontend/src/features/news-research/index.ts
-- [ ] ./frontend/src/features/onboarding/ConnectAccountsGrid.tsx
-- [ ] ./frontend/src/features/onboarding/OnboardingModal.tsx
-- [ ] ./frontend/src/features/persistence/index.ts
-- [ ] ./frontend/src/features/persistence/src/VariantSlotSavePanel.tsx
-- [ ] ./frontend/src/features/review-editor/components/EditorSidebar.tsx
-- [ ] ./frontend/src/features/review-editor/components/LivePreviewSidebar.tsx
-- [ ] ./frontend/src/features/review-editor/components/VersionHistoryStrip.tsx
-- [ ] ./frontend/src/features/review-editor/components/__tests__/VersionHistoryStrip.test.tsx
-- [ ] ./frontend/src/features/review-editor/screens/EditorScreen.tsx
-- [ ] ./frontend/src/features/review-editor/screens/__tests__/EditorScreen.build.test.tsx
-- [ ] ./frontend/src/features/review/GenerationJustificationPanel.tsx
-- [ ] ./frontend/src/features/review/ReviewWorkspace.tsx
-- [ ] ./frontend/src/features/review/__tests__/GenerationJustificationPanel.test.tsx
-- [ ] ./frontend/src/features/review/components/ChannelImageRequirements.tsx
-- [ ] ./frontend/src/features/review/components/ChannelPostPreview.tsx
-- [ ] ./frontend/src/features/review/components/ContextDocumentsPanel.tsx
-- [ ] ./frontend/src/features/review/components/PostGenerateSettings.tsx
-- [ ] ./frontend/src/features/review/components/ReviewDialogs.tsx
-- [ ] ./frontend/src/features/review/components/ReviewHeader.tsx
-- [ ] ./frontend/src/features/review/context/ReviewFlowContext.tsx
-- [ ] ./frontend/src/features/review/context/ReviewFlowEditorContext.tsx
-- [ ] ./frontend/src/features/review/context/__tests__/useAutoSave.build.test.ts
-- [ ] ./frontend/src/features/review/context/__tests__/useReviewFlowState.build.test.ts
-- [ ] ./frontend/src/features/review/context/types.ts
-- [ ] ./frontend/src/features/review/context/useAutoSave.ts
-- [ ] ./frontend/src/features/review/context/useReviewFlow.ts
-- [ ] ./frontend/src/features/review/context/useReviewFlowActions.ts
-- [ ] ./frontend/src/features/review/context/useReviewFlowState.ts
-- [ ] ./frontend/src/features/review/context/utils.ts
-- [ ] ./frontend/src/features/rules/PreSaveTextDiff.tsx
-- [ ] ./frontend/src/features/rules/RulesPanel.tsx
-- [ ] ./frontend/src/features/saas/AdminPanel.tsx
-- [ ] ./frontend/src/features/saas/Landing.tsx
-- [ ] ./frontend/src/features/saas/UsageMeter.tsx
-- [ ] ./frontend/src/features/saas/__tests__/Landing.test.tsx
-- [ ] ./frontend/src/features/saas/__tests__/UsageMeter.test.tsx
-- [ ] ./frontend/src/features/scheduled-publish/ScheduledPublishBanner.tsx
-- [ ] ./frontend/src/features/scheduled-publish/index.ts
-- [ ] ./frontend/src/features/scheduled-publish/matchPending.ts
-- [ ] ./frontend/src/features/scheduled-publish/types.ts
-- [ ] ./frontend/src/features/scheduled-publish/usePendingScheduledPublish.ts
-- [ ] ./frontend/src/features/setup-wizard/DirectorySelector.tsx
-- [ ] ./frontend/src/features/setup-wizard/EnvVarsStep.tsx
-- [ ] ./frontend/src/features/setup-wizard/FinalStep.tsx
-- [ ] ./frontend/src/features/setup-wizard/ImageGenStep.tsx
-- [ ] ./frontend/src/features/setup-wizard/IntegrationStep.tsx
-- [ ] ./frontend/src/features/setup-wizard/SetupProgress.tsx
-- [ ] ./frontend/src/features/setup-wizard/SetupWizard.tsx
-- [ ] ./frontend/src/features/setup-wizard/SpeechToTextStep.tsx
-- [ ] ./frontend/src/features/setup-wizard/StatusDashboard.tsx
-- [ ] ./frontend/src/features/setup-wizard/TrendingApiStep.tsx
-- [ ] ./frontend/src/features/setup-wizard/index.ts
-- [ ] ./frontend/src/features/setup-wizard/main.tsx
-- [ ] ./frontend/src/features/setup-wizard/setupService.ts
-- [ ] ./frontend/src/features/setup-wizard/setupStateService.ts
-- [ ] ./frontend/src/features/setup-wizard/types.ts
-- [ ] ./frontend/src/features/topic-navigation/hooks/useTopicNavigation.ts
-- [ ] ./frontend/src/features/topic-navigation/screens/TopicEditorPage.tsx
-- [ ] ./frontend/src/features/topic-navigation/screens/TopicVariantsPage.tsx
-- [ ] ./frontend/src/features/topic-navigation/types.ts
-- [ ] ./frontend/src/features/topic-navigation/utils/topicRoute.ts
-- [ ] ./frontend/src/features/topic-navigation/utils/workspaceRoutes.ts
-- [ ] ./frontend/src/features/trending/TrendingDashboard.tsx
-- [ ] ./frontend/src/features/trending/api/adapters/ApifyAdapter.ts
-- [ ] ./frontend/src/features/trending/api/adapters/BaseAdapter.ts
-- [ ] ./frontend/src/features/trending/api/adapters/InstagramAdapter.ts
-- [ ] ./frontend/src/features/trending/api/adapters/LinkedInAdapter.ts
-- [ ] ./frontend/src/features/trending/api/adapters/PhantomBusterAdapter.ts
-- [ ] ./frontend/src/features/trending/api/adapters/SociaVaultAdapter.ts
-- [ ] ./frontend/src/features/trending/api/adapters/YouTubeAdapter.ts
-- [ ] ./frontend/src/features/trending/api/config.ts
-- [ ] ./frontend/src/features/trending/api/index.ts
-- [ ] ./frontend/src/features/trending/api/types.ts
-- [ ] ./frontend/src/features/trending/components/FeedSection.tsx
-- [ ] ./frontend/src/features/trending/components/InstagramPanel.tsx
-- [ ] ./frontend/src/features/trending/components/LinkedInPanel.tsx
-- [ ] ./frontend/src/features/trending/components/NewsCard.tsx
-- [ ] ./frontend/src/features/trending/components/NewsPanel.tsx
-- [ ] ./frontend/src/features/trending/components/PanelToggle.tsx
-- [ ] ./frontend/src/features/trending/components/PlatformPanel.tsx
-- [ ] ./frontend/src/features/trending/components/RecommendationsPanel.tsx
-- [ ] ./frontend/src/features/trending/components/TrendingFilters.tsx
-- [ ] ./frontend/src/features/trending/components/TrendingGraph.tsx
-- [ ] ./frontend/src/features/trending/components/TrendingSearchBar.tsx
-- [ ] ./frontend/src/features/trending/components/TrendingSidebar.tsx
-- [ ] ./frontend/src/features/trending/components/TrendingWordsWidget.tsx
-- [ ] ./frontend/src/features/trending/components/YouTubePanel.tsx
-- [ ] ./frontend/src/features/trending/hooks/index.ts
-- [ ] ./frontend/src/features/trending/hooks/useInstagramTrending.ts
-- [ ] ./frontend/src/features/trending/hooks/useLinkedInTrending.ts
-- [ ] ./frontend/src/features/trending/hooks/useNewsTrending.ts
-- [ ] ./frontend/src/features/trending/hooks/useTrending.ts
-- [ ] ./frontend/src/features/trending/hooks/useTrendingSearch.ts
-- [ ] ./frontend/src/features/trending/hooks/useYouTubeTrending.ts
-- [ ] ./frontend/src/features/trending/index.ts
-- [ ] ./frontend/src/features/trending/types.ts
-- [ ] ./frontend/src/features/variant/components/EditorVariantBar.tsx
-- [ ] ./frontend/src/features/variant/components/VariantCarousel.tsx
-- [ ] ./frontend/src/features/variant/screens/VariantSelectionScreen.tsx
-- [ ] ./frontend/src/features/who-am-i/WhoAmISection.tsx
-- [ ] ./frontend/src/features/who-am-i/default-author-profile-template.ts
-- [ ] ./frontend/src/features/workflows/WorkflowBuilderModal.tsx
-- [ ] ./frontend/src/features/workflows/useCustomWorkflows.ts
+- [x] frontend/src/App.tsx :: shard-run-blocked (React component) :: manual
+- [x] ./frontend/src/components/AlertProvider.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/Dialog.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ErrorBoundary.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/GoogleLoginButton.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/HelpOverlay.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ImageAssetManager.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ImageGenReferencePanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ImageGenTextPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/LegalFooterLinks.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/LegalPageChrome.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/PrivacyPolicy.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/SocialIcons.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/Tour.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/ChannelPostPreview.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/GmailChannelPreview.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/InstagramChannelPreview.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/LinkedInChannelPreview.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/TelegramChannelPreview.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/WhatsAppChannelPreview.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/platformTokens.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/shared.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channel-previews/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channels/ChannelPicker.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/channels/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/components/DashboardSettingsDrawer.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/components/DashboardSettingsDrawer.types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/components/DashboardToolbar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/components/SettingsConnectionsCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/components/TopicDetailPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/components/TopicPostPreviewCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/components/TopicsRightRail.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/constants.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/hooks/useDashboardChannels.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/hooks/useDashboardQueue.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/hooks/useDashboardSettings.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/index.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/tabs/DashboardDelivery.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/tabs/DashboardQueue.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/dashboard/utils.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/llm/LlmModelCombobox.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/llm/LlmProviderSelect.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/llm/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/marketing/MarketingFooter.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/marketing/MarketingNav.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/schedule/ScheduleEditor.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/schedule/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/CalendarDateChip.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/ChipToggle.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/EmptyState.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/ErrorBanner.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/LoadingSkeleton.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/StatusPill.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/badge.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/button.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/carousel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/collapsible.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/dialog.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/dropdown-menu.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/input.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/popover.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/select.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/ui/textarea.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/useAlert.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/workspace/AppSidebar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/workspace/WorkspaceChromeContext.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/workspace/WorkspaceHeader.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/components/workspace/WorkspaceShell.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/add-topic/AddTopicPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/add-topic/MicButton.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/add-topic/TopicDetailView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/add-topic/TopicRightPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/add-topic/TrendingSidebar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/add-topic/useSpeechToText.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/add-topic/whisperWorker.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/ai-draft/GenWorkerDraftField.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/ai-draft/genWorkerDraftSuggestions.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/AutomationsTab.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/InstagramSetupGuide.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/LinkedInSetupGuide.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/RuleEditor.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/YouTubeScheduler.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/api.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/automations/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/CampaignPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/CampaignCarousel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/IssueDetailDrawer.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterCalendarView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterConfigDrawer.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterDashboard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterIssuePanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterListView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterSectionCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterTab.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/NewsletterWizard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/TagInput.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/components/newsletter/constants.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/prompt/defaultPrompt.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/schema/newsletterTypes.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/schema/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/validate/parseCampaignDoc.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/views/CampaignCalendar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/views/CampaignPostList.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/campaign/views/CampaignPreviewToolbar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/compare/CompareDialog.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-flow/SelectedPatternCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-flow/TemplateSelector.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-flow/filterPatterns.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-flow/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-flow/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-flow/useTemplateSelection.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-review/ContentReviewIndicator.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-review/ContentReviewReport.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-review/ContentReviewSettings.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-review/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-review/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/ContentScheduleCalendar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/DayView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/EventDetailAndEdit.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/MonthView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/WeekView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/adapters/campaignPostAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/adapters/sheetRowAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/calendarTemporal.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/channelStyles.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/scheduleValidation.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/statusStyles.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/tokens.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/content-schedule-calendar/useTimeGridDrag.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/draft-selection-target/components/DraftTextareaWithHighlight.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/draft-selection-target/components/ScopeModeToolbar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/draft-selection-target/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/draft-selection-target/model.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/editor/DraftEditor.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/FeedPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/ArticleDetailView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/ClipsDock.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/DebateModeView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/DraftContextView.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/FeedArticleCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/FeedCuratedPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/FeedLeftPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/InterestGroupsSettings.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/components/SelectionClipper.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/hooks/useFeedKeyboard.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/feed/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/EnrichmentProgressPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/GenerationPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/WorkflowCardPicker.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/__tests__/EnrichmentProgressPanel.test.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/__tests__/WorkflowCardPicker.test.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/__tests__/builtInWorkflowCards.test.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/builtInWorkflowCards.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/generation/nodeProgressLabels.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/news-research/NewsResearchSettingsSection.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/news-research/ResearcherPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/news-research/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/onboarding/ConnectAccountsGrid.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/onboarding/OnboardingModal.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/persistence/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/persistence/src/VariantSlotSavePanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review-editor/components/EditorSidebar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review-editor/components/LivePreviewSidebar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review-editor/components/VersionHistoryStrip.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review-editor/components/__tests__/VersionHistoryStrip.test.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review-editor/screens/EditorScreen.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review-editor/screens/__tests__/EditorScreen.build.test.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/GenerationJustificationPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/ReviewWorkspace.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/__tests__/GenerationJustificationPanel.test.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/components/ChannelImageRequirements.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/components/ChannelPostPreview.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/components/ContextDocumentsPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/components/PostGenerateSettings.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/components/ReviewDialogs.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/components/ReviewHeader.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/ReviewFlowContext.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/ReviewFlowEditorContext.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/__tests__/useAutoSave.build.test.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/__tests__/useReviewFlowState.build.test.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/useAutoSave.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/useReviewFlow.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/useReviewFlowActions.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/useReviewFlowState.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/review/context/utils.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/rules/PreSaveTextDiff.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/rules/RulesPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/saas/AdminPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/saas/Landing.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/saas/UsageMeter.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/saas/__tests__/Landing.test.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/saas/__tests__/UsageMeter.test.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/scheduled-publish/ScheduledPublishBanner.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/scheduled-publish/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/scheduled-publish/matchPending.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/scheduled-publish/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/scheduled-publish/usePendingScheduledPublish.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/DirectorySelector.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/EnvVarsStep.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/FinalStep.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/ImageGenStep.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/IntegrationStep.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/SetupProgress.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/SetupWizard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/SpeechToTextStep.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/StatusDashboard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/TrendingApiStep.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/main.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/setupService.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/setupStateService.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/setup-wizard/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/topic-navigation/hooks/useTopicNavigation.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/topic-navigation/screens/TopicEditorPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/topic-navigation/screens/TopicVariantsPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/topic-navigation/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/topic-navigation/utils/topicRoute.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/topic-navigation/utils/workspaceRoutes.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/TrendingDashboard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/adapters/ApifyAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/adapters/BaseAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/adapters/InstagramAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/adapters/LinkedInAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/adapters/PhantomBusterAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/adapters/SociaVaultAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/adapters/YouTubeAdapter.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/config.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/api/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/FeedSection.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/InstagramPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/LinkedInPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/NewsCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/NewsPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/PanelToggle.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/PlatformPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/RecommendationsPanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/TrendingFilters.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/TrendingGraph.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/TrendingSearchBar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/TrendingSidebar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/TrendingWordsWidget.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/components/YouTubePanel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/hooks/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/hooks/useInstagramTrending.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/hooks/useLinkedInTrending.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/hooks/useNewsTrending.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/hooks/useTrending.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/hooks/useTrendingSearch.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/hooks/useYouTubeTrending.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/trending/types.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/variant/components/EditorVariantBar.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/variant/components/VariantCarousel.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/variant/screens/VariantSelectionScreen.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/who-am-i/WhoAmISection.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/who-am-i/default-author-profile-template.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/workflows/WorkflowBuilderModal.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/features/workflows/useCustomWorkflows.ts :: shard-run-blocked (React feature file) :: manual
 - [ ] ./frontend/src/generated/features.ts
-- [ ] ./frontend/src/hooks/useGlobalShortcuts.ts
-- [ ] ./frontend/src/hooks/useMediaQuery.ts
-- [ ] ./frontend/src/hooks/useTextUndoRedo.ts
-- [ ] ./frontend/src/integrations/channels.ts
-- [ ] ./frontend/src/integrations/gmail/index.ts
-- [ ] ./frontend/src/integrations/instagram/index.ts
-- [ ] ./frontend/src/integrations/linkedin/index.ts
-- [ ] ./frontend/src/integrations/telegram/index.ts
-- [ ] ./frontend/src/integrations/whatsapp/index.ts
-- [ ] ./frontend/src/lib/appBuildLabel.ts
-- [ ] ./frontend/src/lib/cn.ts
-- [ ] ./frontend/src/lib/motion.ts
-- [ ] ./frontend/src/lib/postLoginRedirect.ts
-- [ ] ./frontend/src/lib/relativeTime.ts
-- [ ] ./frontend/src/lib/topicDisplay.ts
-- [ ] ./frontend/src/lib/topicEffectivePrefs.ts
-- [ ] ./frontend/src/lib/utils.ts
-- [ ] ./frontend/src/lib/workspaceDocumentTitle.ts
+- [x] ./frontend/src/hooks/useGlobalShortcuts.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/hooks/useMediaQuery.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/hooks/useTextUndoRedo.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/integrations/channels.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/integrations/gmail/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/integrations/instagram/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/integrations/linkedin/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/integrations/telegram/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/integrations/whatsapp/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/appBuildLabel.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/cn.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/motion.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/postLoginRedirect.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/relativeTime.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/topicDisplay.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/topicEffectivePrefs.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/utils.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/lib/workspaceDocumentTitle.ts :: shard-run-blocked (React feature file) :: manual
 - [ ] ./frontend/src/main.tsx
-- [ ] ./frontend/src/pages/AboutPage.tsx
-- [ ] ./frontend/src/pages/EnrichmentFlowPage.tsx
-- [ ] ./frontend/src/pages/GlobalRulesPage.tsx
-- [ ] ./frontend/src/pages/PricingPage.tsx
-- [ ] ./frontend/src/pages/TermsOfServicePage.tsx
-- [ ] ./frontend/src/pages/UsagePage.tsx
-- [ ] ./frontend/src/pages/connections/ConnectionsPage.tsx
-- [ ] ./frontend/src/pages/connections/SheetConnectionCard.tsx
-- [ ] ./frontend/src/pages/connections/SocialAccountCard.tsx
-- [ ] ./frontend/src/pages/connections/providerLogos.tsx
-- [ ] ./frontend/src/plugins/dev-google-auth-bypass/config.ts
-- [ ] ./frontend/src/plugins/dev-google-auth-bypass/index.ts
-- [ ] ./frontend/src/plugins/dev-google-auth-bypass/profile.ts
-- [ ] ./frontend/src/plugins/dev-google-auth-bypass/token.ts
-- [ ] ./frontend/src/services/backendApi.ts
-- [ ] ./frontend/src/services/configService.ts
-- [ ] ./frontend/src/services/deliveryImageUrl.ts
-- [ ] ./frontend/src/services/draftService.ts
-- [ ] ./frontend/src/services/imageUrls.ts
-- [ ] ./frontend/src/services/selectedImageUrls.ts
-- [ ] ./frontend/src/services/sheets.ts
-- [ ] ./frontend/src/stores/feedStore.ts
+- [x] ./frontend/src/pages/AboutPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/EnrichmentFlowPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/GlobalRulesPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/PricingPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/TermsOfServicePage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/UsagePage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/connections/ConnectionsPage.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/connections/SheetConnectionCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/connections/SocialAccountCard.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/pages/connections/providerLogos.tsx :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/plugins/dev-google-auth-bypass/config.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/plugins/dev-google-auth-bypass/index.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/plugins/dev-google-auth-bypass/profile.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/plugins/dev-google-auth-bypass/token.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/services/backendApi.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/services/configService.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/services/deliveryImageUrl.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/services/draftService.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/services/imageUrls.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/services/selectedImageUrls.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/services/sheets.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/stores/feedStore.ts :: shard-run-blocked (React feature file) :: manual
 - [ ] ./frontend/src/test/setup.ts
-- [ ] ./frontend/src/utils/__tests__/recordsEqual.test.ts
-- [ ] ./frontend/src/utils/googleIdTokenProfile.ts
-- [ ] ./frontend/src/utils/lineDiff.ts
-- [ ] ./frontend/src/utils/recordsEqual.ts
+- [x] ./frontend/src/utils/__tests__/recordsEqual.test.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/utils/googleIdTokenProfile.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/utils/lineDiff.ts :: shard-run-blocked (React feature file) :: manual
+- [x] ./frontend/src/utils/recordsEqual.ts :: shard-run-blocked (React feature file) :: manual
 - [ ] ./frontend/src/vite-env.d.ts
 - [ ] ./frontend/tailwind.config.js
 - [ ] ./frontend/tests/e2e/add-topic.spec.ts
