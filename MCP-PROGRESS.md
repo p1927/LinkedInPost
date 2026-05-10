@@ -10,797 +10,797 @@
 - [x] frontend/server/setupWizard.js :: shard-run-blocked :: 16e35d7
 - [x] frontend/server/sttConfig.js :: shard-run-blocked :: 16e35d7
 - [x] frontend/server/sttServer.js :: shard-run-blocked :: 16e35d7
-- [ ] frontend/src/App.tsx
-- [ ] frontend/src/components/AlertProvider.tsx
-- [ ] frontend/src/components/Dialog.tsx
-- [ ] frontend/src/components/ErrorBoundary.tsx
-- [ ] frontend/src/components/GoogleLoginButton.tsx
-- [ ] frontend/src/components/HelpOverlay.tsx
-- [ ] frontend/src/components/ImageAssetManager.tsx
-- [ ] frontend/src/components/ImageGenReferencePanel.tsx
-- [ ] frontend/src/components/ImageGenTextPanel.tsx
-- [ ] frontend/src/components/LegalFooterLinks.tsx
-- [ ] frontend/src/components/LegalPageChrome.tsx
-- [ ] frontend/src/components/PrivacyPolicy.tsx
-- [ ] frontend/src/components/SocialIcons.tsx
-- [ ] frontend/src/components/Tour.tsx
-- [ ] frontend/src/components/channel-previews/ChannelPostPreview.tsx
-- [ ] frontend/src/components/channel-previews/GmailChannelPreview.tsx
-- [ ] frontend/src/components/channel-previews/InstagramChannelPreview.tsx
-- [ ] frontend/src/components/channel-previews/LinkedInChannelPreview.tsx
-- [ ] frontend/src/components/channel-previews/TelegramChannelPreview.tsx
-- [ ] frontend/src/components/channel-previews/WhatsAppChannelPreview.tsx
-- [ ] frontend/src/components/channel-previews/platformTokens.ts
-- [ ] frontend/src/components/channel-previews/shared.tsx
-- [ ] frontend/src/components/channel-previews/types.ts
-- [ ] frontend/src/components/channels/ChannelPicker.tsx
-- [ ] frontend/src/components/channels/index.ts
-- [ ] frontend/src/components/dashboard/components/DashboardSettingsDrawer.tsx
-- [ ] frontend/src/components/dashboard/components/DashboardSettingsDrawer.types.ts
-- [ ] frontend/src/components/dashboard/components/DashboardToolbar.tsx
-- [ ] frontend/src/components/dashboard/components/SettingsConnectionsCard.tsx
-- [ ] frontend/src/components/dashboard/components/TopicDetailPanel.tsx
-- [ ] frontend/src/components/dashboard/components/TopicPostPreviewCard.tsx
-- [ ] frontend/src/components/dashboard/components/TopicsRightRail.tsx
-- [ ] frontend/src/components/dashboard/constants.ts
-- [ ] frontend/src/components/dashboard/hooks/useDashboardChannels.ts
-- [ ] frontend/src/components/dashboard/hooks/useDashboardQueue.ts
-- [ ] frontend/src/components/dashboard/hooks/useDashboardSettings.ts
-- [ ] frontend/src/components/dashboard/index.tsx
-- [ ] frontend/src/components/dashboard/tabs/DashboardDelivery.tsx
-- [ ] frontend/src/components/dashboard/tabs/DashboardQueue.tsx
-- [ ] frontend/src/components/dashboard/types.ts
-- [ ] frontend/src/components/dashboard/utils.ts
-- [ ] frontend/src/components/llm/LlmModelCombobox.tsx
-- [ ] frontend/src/components/llm/LlmProviderSelect.tsx
-- [ ] frontend/src/components/llm/index.ts
-- [ ] frontend/src/components/marketing/MarketingFooter.tsx
-- [ ] frontend/src/components/marketing/MarketingNav.tsx
-- [ ] frontend/src/components/schedule/ScheduleEditor.tsx
-- [ ] frontend/src/components/schedule/index.ts
-- [ ] frontend/src/components/ui/CalendarDateChip.tsx
-- [ ] frontend/src/components/ui/ChipToggle.tsx
-- [ ] frontend/src/components/ui/EmptyState.tsx
-- [ ] frontend/src/components/ui/ErrorBanner.tsx
-- [ ] frontend/src/components/ui/LoadingSkeleton.tsx
-- [ ] frontend/src/components/ui/StatusPill.tsx
-- [ ] frontend/src/components/ui/badge.tsx
-- [ ] frontend/src/components/ui/button.tsx
-- [ ] frontend/src/components/ui/carousel.tsx
-- [ ] frontend/src/components/ui/collapsible.tsx
-- [ ] frontend/src/components/ui/dialog.tsx
-- [ ] frontend/src/components/ui/dropdown-menu.tsx
-- [ ] frontend/src/components/ui/input.tsx
-- [ ] frontend/src/components/ui/popover.tsx
-- [ ] frontend/src/components/ui/select.tsx
-- [ ] frontend/src/components/ui/textarea.tsx
-- [ ] frontend/src/components/useAlert.ts
-- [ ] frontend/src/components/workspace/AppSidebar.tsx
-- [ ] frontend/src/components/workspace/WorkspaceChromeContext.tsx
-- [ ] frontend/src/components/workspace/WorkspaceHeader.tsx
-- [ ] frontend/src/components/workspace/WorkspaceShell.tsx
-- [ ] frontend/src/features/add-topic/AddTopicPage.tsx
-- [ ] frontend/src/features/add-topic/MicButton.tsx
-- [ ] frontend/src/features/add-topic/TopicDetailView.tsx
-- [ ] frontend/src/features/add-topic/TopicRightPanel.tsx
-- [ ] frontend/src/features/add-topic/TrendingSidebar.tsx
-- [ ] frontend/src/features/add-topic/useSpeechToText.ts
-- [ ] frontend/src/features/add-topic/whisperWorker.ts
-- [ ] frontend/src/features/ai-draft/GenWorkerDraftField.tsx
-- [ ] frontend/src/features/ai-draft/genWorkerDraftSuggestions.ts
-- [ ] frontend/src/features/automations/AutomationsTab.tsx
-- [ ] frontend/src/features/automations/InstagramSetupGuide.tsx
-- [ ] frontend/src/features/automations/LinkedInSetupGuide.tsx
-- [ ] frontend/src/features/automations/RuleEditor.tsx
-- [ ] frontend/src/features/automations/YouTubeScheduler.tsx
-- [ ] frontend/src/features/automations/api.ts
-- [ ] frontend/src/features/automations/index.ts
-- [ ] frontend/src/features/automations/types.ts
-- [ ] frontend/src/features/campaign/CampaignPage.tsx
-- [ ] frontend/src/features/campaign/components/CampaignCarousel.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/IssueDetailDrawer.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterCalendarView.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterCard.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterConfigDrawer.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterDashboard.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterIssuePanel.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterListView.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterSectionCard.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterTab.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/NewsletterWizard.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/TagInput.tsx
-- [ ] frontend/src/features/campaign/components/newsletter/constants.ts
-- [ ] frontend/src/features/campaign/index.ts
-- [ ] frontend/src/features/campaign/prompt/defaultPrompt.ts
-- [ ] frontend/src/features/campaign/schema/newsletterTypes.ts
-- [ ] frontend/src/features/campaign/schema/types.ts
-- [ ] frontend/src/features/campaign/validate/parseCampaignDoc.ts
-- [ ] frontend/src/features/campaign/views/CampaignCalendar.tsx
-- [ ] frontend/src/features/campaign/views/CampaignPostList.tsx
-- [ ] frontend/src/features/campaign/views/CampaignPreviewToolbar.tsx
-- [ ] frontend/src/features/compare/CompareDialog.tsx
-- [ ] frontend/src/features/content-flow/SelectedPatternCard.tsx
-- [ ] frontend/src/features/content-flow/TemplateSelector.tsx
-- [ ] frontend/src/features/content-flow/filterPatterns.ts
-- [ ] frontend/src/features/content-flow/index.ts
-- [ ] frontend/src/features/content-flow/types.ts
-- [ ] frontend/src/features/content-flow/useTemplateSelection.ts
-- [ ] frontend/src/features/content-review/ContentReviewIndicator.tsx
-- [ ] frontend/src/features/content-review/ContentReviewReport.tsx
-- [ ] frontend/src/features/content-review/ContentReviewSettings.tsx
-- [ ] frontend/src/features/content-review/index.ts
-- [ ] frontend/src/features/content-review/types.ts
-- [ ] frontend/src/features/content-schedule-calendar/ContentScheduleCalendar.tsx
-- [ ] frontend/src/features/content-schedule-calendar/DayView.tsx
-- [ ] frontend/src/features/content-schedule-calendar/EventDetailAndEdit.tsx
-- [ ] frontend/src/features/content-schedule-calendar/MonthView.tsx
-- [ ] frontend/src/features/content-schedule-calendar/WeekView.tsx
-- [ ] frontend/src/features/content-schedule-calendar/adapters/campaignPostAdapter.ts
-- [ ] frontend/src/features/content-schedule-calendar/adapters/sheetRowAdapter.ts
-- [ ] frontend/src/features/content-schedule-calendar/calendarTemporal.ts
-- [ ] frontend/src/features/content-schedule-calendar/channelStyles.ts
-- [ ] frontend/src/features/content-schedule-calendar/index.ts
-- [ ] frontend/src/features/content-schedule-calendar/scheduleValidation.ts
-- [ ] frontend/src/features/content-schedule-calendar/statusStyles.ts
-- [ ] frontend/src/features/content-schedule-calendar/tokens.ts
-- [ ] frontend/src/features/content-schedule-calendar/types.ts
-- [ ] frontend/src/features/content-schedule-calendar/useTimeGridDrag.ts
-- [ ] frontend/src/features/draft-selection-target/components/DraftTextareaWithHighlight.tsx
-- [ ] frontend/src/features/draft-selection-target/components/ScopeModeToolbar.tsx
-- [ ] frontend/src/features/draft-selection-target/index.ts
-- [ ] frontend/src/features/draft-selection-target/model.ts
-- [ ] frontend/src/features/editor/DraftEditor.tsx
-- [ ] frontend/src/features/feed/FeedPage.tsx
-- [ ] frontend/src/features/feed/components/ArticleDetailView.tsx
-- [ ] frontend/src/features/feed/components/ClipsDock.tsx
-- [ ] frontend/src/features/feed/components/DebateModeView.tsx
-- [ ] frontend/src/features/feed/components/DraftContextView.tsx
-- [ ] frontend/src/features/feed/components/FeedArticleCard.tsx
-- [ ] frontend/src/features/feed/components/FeedCuratedPanel.tsx
-- [ ] frontend/src/features/feed/components/FeedLeftPanel.tsx
-- [ ] frontend/src/features/feed/components/InterestGroupsSettings.tsx
-- [ ] frontend/src/features/feed/components/SelectionClipper.tsx
-- [ ] frontend/src/features/feed/hooks/useFeedKeyboard.ts
-- [ ] frontend/src/features/feed/types.ts
-- [ ] frontend/src/features/generation/EnrichmentProgressPanel.tsx
-- [ ] frontend/src/features/generation/GenerationPanel.tsx
-- [ ] frontend/src/features/generation/WorkflowCardPicker.tsx
-- [ ] frontend/src/features/generation/__tests__/EnrichmentProgressPanel.test.tsx
-- [ ] frontend/src/features/generation/__tests__/WorkflowCardPicker.test.tsx
-- [ ] frontend/src/features/generation/__tests__/builtInWorkflowCards.test.ts
-- [ ] frontend/src/features/generation/builtInWorkflowCards.ts
-- [ ] frontend/src/features/generation/nodeProgressLabels.ts
-- [ ] frontend/src/features/news-research/NewsResearchSettingsSection.tsx
-- [ ] frontend/src/features/news-research/ResearcherPanel.tsx
-- [ ] frontend/src/features/news-research/index.ts
-- [ ] frontend/src/features/onboarding/ConnectAccountsGrid.tsx
-- [ ] frontend/src/features/onboarding/OnboardingModal.tsx
-- [ ] frontend/src/features/persistence/index.ts
-- [ ] frontend/src/features/persistence/src/VariantSlotSavePanel.tsx
-- [ ] frontend/src/features/review-editor/components/EditorSidebar.tsx
-- [ ] frontend/src/features/review-editor/components/LivePreviewSidebar.tsx
-- [ ] frontend/src/features/review-editor/components/VersionHistoryStrip.tsx
-- [ ] frontend/src/features/review-editor/components/__tests__/VersionHistoryStrip.test.tsx
-- [ ] frontend/src/features/review-editor/screens/EditorScreen.tsx
-- [ ] frontend/src/features/review-editor/screens/__tests__/EditorScreen.build.test.tsx
-- [ ] frontend/src/features/review/GenerationJustificationPanel.tsx
-- [ ] frontend/src/features/review/ReviewWorkspace.tsx
-- [ ] frontend/src/features/review/__tests__/GenerationJustificationPanel.test.tsx
-- [ ] frontend/src/features/review/components/ChannelImageRequirements.tsx
-- [ ] frontend/src/features/review/components/ChannelPostPreview.tsx
-- [ ] frontend/src/features/review/components/ContextDocumentsPanel.tsx
-- [ ] frontend/src/features/review/components/PostGenerateSettings.tsx
-- [ ] frontend/src/features/review/components/ReviewDialogs.tsx
-- [ ] frontend/src/features/review/components/ReviewHeader.tsx
-- [ ] frontend/src/features/review/context/ReviewFlowContext.tsx
-- [ ] frontend/src/features/review/context/ReviewFlowEditorContext.tsx
-- [ ] frontend/src/features/review/context/__tests__/useAutoSave.build.test.ts
-- [ ] frontend/src/features/review/context/__tests__/useReviewFlowState.build.test.ts
-- [ ] frontend/src/features/review/context/types.ts
-- [ ] frontend/src/features/review/context/useAutoSave.ts
-- [ ] frontend/src/features/review/context/useReviewFlow.ts
-- [ ] frontend/src/features/review/context/useReviewFlowActions.ts
-- [ ] frontend/src/features/review/context/useReviewFlowState.ts
-- [ ] frontend/src/features/review/context/utils.ts
-- [ ] frontend/src/features/rules/PreSaveTextDiff.tsx
-- [ ] frontend/src/features/rules/RulesPanel.tsx
-- [ ] frontend/src/features/saas/AdminPanel.tsx
-- [ ] frontend/src/features/saas/Landing.tsx
-- [ ] frontend/src/features/saas/UsageMeter.tsx
-- [ ] frontend/src/features/saas/__tests__/Landing.test.tsx
-- [ ] frontend/src/features/saas/__tests__/UsageMeter.test.tsx
-- [ ] frontend/src/features/scheduled-publish/ScheduledPublishBanner.tsx
-- [ ] frontend/src/features/scheduled-publish/index.ts
-- [ ] frontend/src/features/scheduled-publish/matchPending.ts
-- [ ] frontend/src/features/scheduled-publish/types.ts
-- [ ] frontend/src/features/scheduled-publish/usePendingScheduledPublish.ts
-- [ ] frontend/src/features/setup-wizard/DirectorySelector.tsx
-- [ ] frontend/src/features/setup-wizard/EnvVarsStep.tsx
-- [ ] frontend/src/features/setup-wizard/FinalStep.tsx
-- [ ] frontend/src/features/setup-wizard/ImageGenStep.tsx
-- [ ] frontend/src/features/setup-wizard/IntegrationStep.tsx
-- [ ] frontend/src/features/setup-wizard/SetupProgress.tsx
-- [ ] frontend/src/features/setup-wizard/SetupWizard.tsx
-- [ ] frontend/src/features/setup-wizard/SpeechToTextStep.tsx
-- [ ] frontend/src/features/setup-wizard/StatusDashboard.tsx
-- [ ] frontend/src/features/setup-wizard/TrendingApiStep.tsx
-- [ ] frontend/src/features/setup-wizard/index.ts
-- [ ] frontend/src/features/setup-wizard/main.tsx
-- [ ] frontend/src/features/setup-wizard/setupService.ts
-- [ ] frontend/src/features/setup-wizard/setupStateService.ts
-- [ ] frontend/src/features/setup-wizard/types.ts
-- [ ] frontend/src/features/topic-navigation/hooks/useTopicNavigation.ts
-- [ ] frontend/src/features/topic-navigation/screens/TopicEditorPage.tsx
-- [ ] frontend/src/features/topic-navigation/screens/TopicVariantsPage.tsx
-- [ ] frontend/src/features/topic-navigation/types.ts
-- [ ] frontend/src/features/topic-navigation/utils/topicRoute.ts
-- [ ] frontend/src/features/topic-navigation/utils/workspaceRoutes.ts
-- [ ] frontend/src/features/trending/TrendingDashboard.tsx
-- [ ] frontend/src/features/trending/api/adapters/ApifyAdapter.ts
-- [ ] frontend/src/features/trending/api/adapters/BaseAdapter.ts
-- [ ] frontend/src/features/trending/api/adapters/InstagramAdapter.ts
-- [ ] frontend/src/features/trending/api/adapters/LinkedInAdapter.ts
-- [ ] frontend/src/features/trending/api/adapters/PhantomBusterAdapter.ts
-- [ ] frontend/src/features/trending/api/adapters/SociaVaultAdapter.ts
-- [ ] frontend/src/features/trending/api/adapters/YouTubeAdapter.ts
-- [ ] frontend/src/features/trending/api/config.ts
-- [ ] frontend/src/features/trending/api/index.ts
-- [ ] frontend/src/features/trending/api/types.ts
-- [ ] frontend/src/features/trending/components/FeedSection.tsx
-- [ ] frontend/src/features/trending/components/InstagramPanel.tsx
-- [ ] frontend/src/features/trending/components/LinkedInPanel.tsx
-- [ ] frontend/src/features/trending/components/NewsCard.tsx
-- [ ] frontend/src/features/trending/components/NewsPanel.tsx
-- [ ] frontend/src/features/trending/components/PanelToggle.tsx
-- [ ] frontend/src/features/trending/components/PlatformPanel.tsx
-- [ ] frontend/src/features/trending/components/RecommendationsPanel.tsx
-- [ ] frontend/src/features/trending/components/TrendingFilters.tsx
-- [ ] frontend/src/features/trending/components/TrendingGraph.tsx
-- [ ] frontend/src/features/trending/components/TrendingSearchBar.tsx
-- [ ] frontend/src/features/trending/components/TrendingSidebar.tsx
-- [ ] frontend/src/features/trending/components/TrendingWordsWidget.tsx
-- [ ] frontend/src/features/trending/components/YouTubePanel.tsx
-- [ ] frontend/src/features/trending/hooks/index.ts
-- [ ] frontend/src/features/trending/hooks/useInstagramTrending.ts
-- [ ] frontend/src/features/trending/hooks/useLinkedInTrending.ts
-- [ ] frontend/src/features/trending/hooks/useNewsTrending.ts
-- [ ] frontend/src/features/trending/hooks/useTrending.ts
-- [ ] frontend/src/features/trending/hooks/useTrendingSearch.ts
-- [ ] frontend/src/features/trending/hooks/useYouTubeTrending.ts
-- [ ] frontend/src/features/trending/index.ts
-- [ ] frontend/src/features/trending/types.ts
-- [ ] frontend/src/features/variant/components/EditorVariantBar.tsx
-- [ ] frontend/src/features/variant/components/VariantCarousel.tsx
-- [ ] frontend/src/features/variant/screens/VariantSelectionScreen.tsx
-- [ ] frontend/src/features/who-am-i/WhoAmISection.tsx
-- [ ] frontend/src/features/who-am-i/default-author-profile-template.ts
-- [ ] frontend/src/features/workflows/WorkflowBuilderModal.tsx
-- [ ] frontend/src/features/workflows/useCustomWorkflows.ts
-- [ ] frontend/src/generated/features.ts
-- [ ] frontend/src/hooks/useGlobalShortcuts.ts
-- [ ] frontend/src/hooks/useMediaQuery.ts
-- [ ] frontend/src/hooks/useTextUndoRedo.ts
-- [ ] frontend/src/integrations/channels.ts
-- [ ] frontend/src/integrations/gmail/index.ts
-- [ ] frontend/src/integrations/instagram/index.ts
-- [ ] frontend/src/integrations/linkedin/index.ts
-- [ ] frontend/src/integrations/telegram/index.ts
-- [ ] frontend/src/integrations/whatsapp/index.ts
-- [ ] frontend/src/lib/appBuildLabel.ts
-- [ ] frontend/src/lib/cn.ts
-- [ ] frontend/src/lib/motion.ts
-- [ ] frontend/src/lib/postLoginRedirect.ts
-- [ ] frontend/src/lib/relativeTime.ts
-- [ ] frontend/src/lib/topicDisplay.ts
-- [ ] frontend/src/lib/topicEffectivePrefs.ts
-- [ ] frontend/src/lib/utils.ts
-- [ ] frontend/src/lib/workspaceDocumentTitle.ts
-- [ ] frontend/src/main.tsx
-- [ ] frontend/src/pages/AboutPage.tsx
-- [ ] frontend/src/pages/EnrichmentFlowPage.tsx
-- [ ] frontend/src/pages/GlobalRulesPage.tsx
-- [ ] frontend/src/pages/PricingPage.tsx
-- [ ] frontend/src/pages/TermsOfServicePage.tsx
-- [ ] frontend/src/pages/UsagePage.tsx
-- [ ] frontend/src/pages/connections/ConnectionsPage.tsx
-- [ ] frontend/src/pages/connections/SheetConnectionCard.tsx
-- [ ] frontend/src/pages/connections/SocialAccountCard.tsx
-- [ ] frontend/src/pages/connections/providerLogos.tsx
-- [ ] frontend/src/plugins/dev-google-auth-bypass/config.ts
-- [ ] frontend/src/plugins/dev-google-auth-bypass/index.ts
-- [ ] frontend/src/plugins/dev-google-auth-bypass/profile.ts
-- [ ] frontend/src/plugins/dev-google-auth-bypass/token.ts
-- [ ] frontend/src/services/backendApi.ts
-- [ ] frontend/src/services/configService.ts
-- [ ] frontend/src/services/deliveryImageUrl.ts
-- [ ] frontend/src/services/draftService.ts
-- [ ] frontend/src/services/imageUrls.ts
-- [ ] frontend/src/services/selectedImageUrls.ts
-- [ ] frontend/src/services/sheets.ts
-- [ ] frontend/src/stores/feedStore.ts
-- [ ] frontend/src/test/setup.ts
-- [ ] frontend/src/utils/__tests__/recordsEqual.test.ts
-- [ ] frontend/src/utils/googleIdTokenProfile.ts
-- [ ] frontend/src/utils/lineDiff.ts
-- [ ] frontend/src/utils/recordsEqual.ts
-- [ ] frontend/src/vite-env.d.ts
-- [ ] frontend/tailwind.config.js
-- [ ] frontend/tests/e2e/add-topic.spec.ts
-- [ ] frontend/tests/e2e/automations.spec.ts
-- [ ] frontend/tests/e2e/campaign.spec.ts
-- [ ] frontend/tests/e2e/cloud.spec.ts
-- [ ] frontend/tests/e2e/connections.spec.ts
-- [ ] frontend/tests/e2e/content-flow.spec.ts
-- [ ] frontend/tests/e2e/editor.spec.ts
-- [ ] frontend/tests/e2e/feed-page.spec.ts
-- [ ] frontend/tests/e2e/helpers/cleanup.ts
-- [ ] frontend/tests/e2e/helpers/mockApi.ts
-- [ ] frontend/tests/e2e/helpers/mockSetupApi.ts
-- [ ] frontend/tests/e2e/helpers/testData.ts
-- [ ] frontend/tests/e2e/integration/error-states.spec.ts
-- [ ] frontend/tests/e2e/integration/saas-admin.spec.ts
-- [ ] frontend/tests/e2e/integration/saas-usage.spec.ts
-- [ ] frontend/tests/e2e/integration/saas-waitlist.spec.ts
-- [ ] frontend/tests/e2e/integration/worker-auth.spec.ts
-- [ ] frontend/tests/e2e/integration/worker-routes.spec.ts
-- [ ] frontend/tests/e2e/journeys/01-auth-onboarding.spec.ts
-- [ ] frontend/tests/e2e/journeys/02-create-topic.spec.ts
-- [ ] frontend/tests/e2e/journeys/03-generate-draft.spec.ts
-- [ ] frontend/tests/e2e/journeys/04-review-edit.spec.ts
-- [ ] frontend/tests/e2e/journeys/05-publish-linkedin.spec.ts
-- [ ] frontend/tests/e2e/journeys/06-publish-channels.spec.ts
-- [ ] frontend/tests/e2e/journeys/07-connections-setup.spec.ts
-- [ ] frontend/tests/e2e/journeys/08-model-provider-selection.spec.ts
-- [ ] frontend/tests/e2e/journeys/09-automations.spec.ts
-- [ ] frontend/tests/e2e/journeys/10-trending-research.spec.ts
-- [ ] frontend/tests/e2e/journeys/11-scheduled-publish.spec.ts
-- [ ] frontend/tests/e2e/journeys/12-feed-feature.spec.ts
-- [ ] frontend/tests/e2e/journeys/13-enrichment-pipeline.spec.ts
-- [ ] frontend/tests/e2e/journeys/14-real-user-journey.spec.ts
-- [ ] frontend/tests/e2e/journeys/15-marketing-pages.spec.ts
-- [ ] frontend/tests/e2e/journeys/16-admin-panel.spec.ts
-- [ ] frontend/tests/e2e/journeys/17-navigation-deep-links.spec.ts
-- [ ] frontend/tests/e2e/journeys/18-channel-previews.spec.ts
-- [ ] frontend/tests/e2e/journeys/19-token-usage.spec.ts
-- [ ] frontend/tests/e2e/journeys/20-full-lifecycle.spec.ts
-- [ ] frontend/tests/e2e/landing.spec.ts
-- [ ] frontend/tests/e2e/news-research.spec.ts
-- [ ] frontend/tests/e2e/onboarding.spec.ts
-- [ ] frontend/tests/e2e/scheduling.spec.ts
-- [ ] frontend/tests/e2e/settings.spec.ts
-- [ ] frontend/tests/e2e/setup-flow.spec.ts
-- [ ] frontend/tests/e2e/setup-wizard-mode.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-deployment-mode.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-errors.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-mock-contract.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-navigation.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-resume.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-saas-happy.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-self-hosted-happy.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-state-detection.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-status-actions.spec.ts
-- [ ] frontend/tests/e2e/setup/wizard-stt.spec.ts
-- [ ] frontend/tests/e2e/trending.spec.ts
-- [ ] frontend/vite.config.ts
-- [ ] frontend/vitest.config.ts
-- [ ] generation-worker/src/cloudflare-types.d.ts
-- [ ] generation-worker/src/image-gen/connectors/falai.ts
-- [ ] generation-worker/src/image-gen/connectors/openai-images.ts
-- [ ] generation-worker/src/image-gen/connectors/runway.ts
-- [ ] generation-worker/src/image-gen/connectors/stability.ts
-- [ ] generation-worker/src/image-gen/index.ts
-- [ ] generation-worker/src/image-gen/providers/dall-e.ts
-- [ ] generation-worker/src/image-gen/providers/flux-kontext.ts
-- [ ] generation-worker/src/image-gen/providers/ideogram.ts
-- [ ] generation-worker/src/image-gen/providers/kling.ts
-- [ ] generation-worker/src/image-gen/providers/runway.ts
-- [ ] generation-worker/src/image-gen/providers/seedance.ts
-- [ ] generation-worker/src/image-gen/providers/stability.ts
-- [ ] generation-worker/src/image-gen/providers/veo.ts
-- [ ] generation-worker/src/image-gen/registry.ts
-- [ ] generation-worker/src/image-gen/types.ts
-- [ ] generation-worker/src/index.ts
-- [ ] generation-worker/src/llmFromWorker.ts
-- [ ] generation-worker/src/modules/_shared/creator.ts
-- [ ] generation-worker/src/modules/_shared/documentContextBlock.ts
-- [ ] generation-worker/src/modules/_shared/knowledgeLoader.ts
-- [ ] generation-worker/src/modules/_shared/orchestrator.ts
-- [ ] generation-worker/src/modules/_shared/selector.ts
-- [ ] generation-worker/src/modules/_shared/types.ts
-- [ ] generation-worker/src/modules/channel-adapter/index.ts
-- [ ] generation-worker/src/modules/color-emotion/index.ts
-- [ ] generation-worker/src/modules/copywriting/index.ts
-- [ ] generation-worker/src/modules/emotion/index.ts
-- [ ] generation-worker/src/modules/image-generation/index.ts
-- [ ] generation-worker/src/modules/image-generation/providers/gemini.ts
-- [ ] generation-worker/src/modules/image-generation/providers/pixazo.ts
-- [ ] generation-worker/src/modules/image-generation/providers/seedance.ts
-- [ ] generation-worker/src/modules/image-search/index.ts
-- [ ] generation-worker/src/modules/image-strategy/index.ts
-- [ ] generation-worker/src/modules/md.d.ts
-- [ ] generation-worker/src/modules/persona/index.ts
-- [ ] generation-worker/src/modules/persuasion/index.ts
-- [ ] generation-worker/src/modules/psychology-deep/index.ts
-- [ ] generation-worker/src/modules/stickiness/index.ts
-- [ ] generation-worker/src/modules/storytelling/index.ts
-- [ ] generation-worker/src/modules/trending/index.ts
-- [ ] generation-worker/src/modules/typography/index.ts
-- [ ] generation-worker/src/modules/viral-patterns/index.ts
-- [ ] generation-worker/src/modules/vocabulary/index.ts
-- [ ] generation-worker/src/pipeline.ts
-- [ ] generation-worker/src/players/articleInsights.ts
-- [ ] generation-worker/src/players/clips.ts
-- [ ] generation-worker/src/players/creator.ts
-- [ ] generation-worker/src/players/feedback.ts
-- [ ] generation-worker/src/players/imagePicker.test.ts
-- [ ] generation-worker/src/players/imagePicker.ts
-- [ ] generation-worker/src/players/imageRelator.test.ts
-- [ ] generation-worker/src/players/imageRelator.ts
-- [ ] generation-worker/src/players/patternFinder.ts
-- [ ] generation-worker/src/players/patternRepository.ts
-- [ ] generation-worker/src/players/qualityScorer.test.ts
-- [ ] generation-worker/src/players/qualityScorer.ts
-- [ ] generation-worker/src/players/requirementReport.ts
-- [ ] generation-worker/src/players/retryUtils.ts
-- [ ] generation-worker/src/players/review.ts
-- [ ] generation-worker/src/players/variants.ts
-- [ ] generation-worker/src/preview.ts
-- [ ] generation-worker/src/shared-rules.ts
-- [ ] generation-worker/src/types.ts
-- [ ] generation-worker/tests/smoke.config.ts
-- [ ] generation-worker/tests/smoke.spec.ts
-- [ ] generation-worker/vitest.config.ts
-- [ ] packages/llm-core/src/index.ts
-- [ ] packages/llm-core/src/providers.ts
-- [ ] packages/llm-core/src/schemas.ts
-- [ ] packages/llm-core/src/static-models.ts
-- [ ] packages/llm-core/src/types.ts
-- [ ] packages/researcher/src/config.ts
-- [ ] packages/researcher/src/dedupe.ts
-- [ ] packages/researcher/src/env.ts
-- [ ] packages/researcher/src/index.ts
-- [ ] packages/researcher/src/providers/newsApis.ts
-- [ ] packages/researcher/src/providers/rss.ts
-- [ ] packages/researcher/src/search.ts
-- [ ] packages/researcher/src/trim.ts
-- [ ] packages/researcher/src/types.ts
-- [ ] scheduler/__init__.py
-- [ ] scripts/__init__.py
-- [ ] scripts/generate_features.py
-- [ ] scripts/test-connectivity.js
-- [ ] setup.py
-- [ ] setup/__init__.py
-- [ ] setup/cli.py
-- [ ] setup/cloudflare.py
-- [ ] setup/constants.py
-- [ ] setup/features.py
-- [ ] setup/github.py
-- [ ] setup/google_resources.py
-- [ ] setup/python_requirements.py
-- [ ] setup/utils.py
-- [ ] setup/verification.py
-- [ ] setup/wizard/__init__.py
-- [ ] setup/wizard/server.py
-- [ ] setup/wizard/state.py
-- [ ] setup/wizard/steps/__init__.py
-- [ ] setup/wizard/steps/apikeys.py
-- [ ] setup/wizard/steps/cloudflare.py
-- [ ] setup/wizard/steps/deploy.py
-- [ ] setup/wizard/steps/google.py
-- [ ] setup/wizard/steps/mode.py
-- [ ] setup/wizard/steps/prereqs.py
-- [ ] setup/wizard/steps/test_google.py
-- [ ] setup/wizard/steps/verify.py
-- [ ] setup/wizard/test_state.py
-- [ ] setup/wizard/tests/__init__.py
-- [ ] setup/wizard/tests/conftest.py
-- [ ] setup/wizard/tests/test_apikeys.py
-- [ ] setup/wizard/tests/test_cloudflare.py
-- [ ] setup/wizard/tests/test_deploy.py
-- [ ] setup/wizard/tests/test_flow_happy.py
-- [ ] setup/wizard/tests/test_google.py
-- [ ] setup/wizard/tests/test_mode.py
-- [ ] setup/wizard/tests/test_state_resume.py
-- [ ] setup/worker_config.py
-- [ ] tests-e2e/e2e/add-topic.spec.ts
-- [ ] tests-e2e/e2e/automations.spec.ts
-- [ ] tests-e2e/e2e/campaign.spec.ts
-- [ ] tests-e2e/e2e/connections.spec.ts
-- [ ] tests-e2e/e2e/content-flow.spec.ts
-- [ ] tests-e2e/e2e/editor.spec.ts
-- [ ] tests-e2e/e2e/helpers/cleanup.ts
-- [ ] tests-e2e/e2e/helpers/mockApi.ts
-- [ ] tests-e2e/e2e/helpers/mockSetupApi.ts
-- [ ] tests-e2e/e2e/helpers/testData.ts
-- [ ] tests-e2e/e2e/integration/error-states.spec.ts
-- [ ] tests-e2e/e2e/integration/saas-admin.spec.ts
-- [ ] tests-e2e/e2e/integration/saas-usage.spec.ts
-- [ ] tests-e2e/e2e/integration/saas-waitlist.spec.ts
-- [ ] tests-e2e/e2e/integration/worker-auth.spec.ts
-- [ ] tests-e2e/e2e/integration/worker-routes.spec.ts
-- [ ] tests-e2e/e2e/journeys/01-auth-onboarding.spec.ts
-- [ ] tests-e2e/e2e/journeys/02-create-topic.spec.ts
-- [ ] tests-e2e/e2e/journeys/03-generate-draft.spec.ts
-- [ ] tests-e2e/e2e/journeys/04-review-edit.spec.ts
-- [ ] tests-e2e/e2e/journeys/05-publish-linkedin.spec.ts
-- [ ] tests-e2e/e2e/journeys/06-publish-channels.spec.ts
-- [ ] tests-e2e/e2e/journeys/07-connections-setup.spec.ts
-- [ ] tests-e2e/e2e/journeys/08-model-provider-selection.spec.ts
-- [ ] tests-e2e/e2e/journeys/09-automations.spec.ts
-- [ ] tests-e2e/e2e/journeys/10-trending-research.spec.ts
-- [ ] tests-e2e/e2e/journeys/11-scheduled-publish.spec.ts
-- [ ] tests-e2e/e2e/journeys/12-feed-feature.spec.ts
-- [ ] tests-e2e/e2e/journeys/13-enrichment-pipeline.spec.ts
-- [ ] tests-e2e/e2e/journeys/14-real-user-journey.spec.ts
-- [ ] tests-e2e/e2e/journeys/15-marketing-pages.spec.ts
-- [ ] tests-e2e/e2e/journeys/16-admin-panel.spec.ts
-- [ ] tests-e2e/e2e/journeys/17-navigation-deep-links.spec.ts
-- [ ] tests-e2e/e2e/journeys/18-channel-previews.spec.ts
-- [ ] tests-e2e/e2e/journeys/19-token-usage.spec.ts
-- [ ] tests-e2e/e2e/journeys/20-full-lifecycle.spec.ts
-- [ ] tests-e2e/e2e/journeys/21-wiring-issues.spec.ts
-- [ ] tests-e2e/e2e/journeys/22-wiring-issues-round1.spec.ts
-- [ ] tests-e2e/e2e/journeys/23-wiring-loop3.spec.ts
-- [ ] tests-e2e/e2e/journeys/24-wiring-loop4.spec.ts
-- [ ] tests-e2e/e2e/journeys/25-wiring-loop9.spec.ts
-- [ ] tests-e2e/e2e/journeys/26-wiring-loop16.spec.ts
-- [ ] tests-e2e/e2e/journeys/27-wiring-loop19.spec.ts
-- [ ] tests-e2e/e2e/journeys/28-wiring-loop20.spec.ts
-- [ ] tests-e2e/e2e/journeys/29-wiring-loop23.spec.ts
-- [ ] tests-e2e/e2e/journeys/30-wiring-loop24.spec.ts
-- [ ] tests-e2e/e2e/journeys/31-wiring-loop24.spec.ts
-- [ ] tests-e2e/e2e/journeys/32-wiring-loop24.spec.ts
-- [ ] tests-e2e/e2e/journeys/33-wiring-loop24.spec.ts
-- [ ] tests-e2e/e2e/journeys/34-wiring-loop24.spec.ts
-- [ ] tests-e2e/e2e/journeys/35-wiring-loop24.spec.ts
-- [ ] tests-e2e/e2e/journeys/35-wiring-loop25.spec.ts
-- [ ] tests-e2e/e2e/journeys/36-wiring-loop25.spec.ts
-- [ ] tests-e2e/e2e/journeys/37-wiring-loop25.spec.ts
-- [ ] tests-e2e/e2e/journeys/38-wiring-loop26.spec.ts
-- [ ] tests-e2e/e2e/journeys/39-wiring-loop25.spec.ts
-- [ ] tests-e2e/e2e/journeys/39-wiring-loop26.spec.ts
-- [ ] tests-e2e/e2e/journeys/40-wiring-loop26.spec.ts
-- [ ] tests-e2e/e2e/journeys/41-wiring-loop26.spec.ts
-- [ ] tests-e2e/e2e/journeys/42-wiring-loop27.spec.ts
-- [ ] tests-e2e/e2e/journeys/43-wiring-loop28.spec.ts
-- [ ] tests-e2e/e2e/journeys/44-wiring-loop28.spec.ts
-- [ ] tests-e2e/e2e/journeys/45-wiring-loop28.spec.ts
-- [ ] tests-e2e/e2e/journeys/46-wiring-loop28.spec.ts
-- [ ] tests-e2e/e2e/journeys/47-wiring-loop28.spec.ts
-- [ ] tests-e2e/e2e/journeys/48-wiring-loop28.spec.ts
-- [ ] tests-e2e/e2e/journeys/48-wiring-loop29.spec.ts
-- [ ] tests-e2e/e2e/journeys/49-wiring-loop29.spec.ts
-- [ ] tests-e2e/e2e/journeys/50-wiring-loop29.spec.ts
-- [ ] tests-e2e/e2e/journeys/51-wiring-loop30.spec.ts
-- [ ] tests-e2e/e2e/journeys/52-wiring-loop31.spec.ts
-- [ ] tests-e2e/e2e/journeys/53-wiring-loop32.spec.ts
-- [ ] tests-e2e/e2e/journeys/54-wiring-loop32.spec.ts
-- [ ] tests-e2e/e2e/journeys/55-wiring-loop31.spec.ts
-- [ ] tests-e2e/e2e/journeys/56-wiring-loop33.spec.ts
-- [ ] tests-e2e/e2e/journeys/57-wiring-loop33.spec.ts
-- [ ] tests-e2e/e2e/journeys/58-wiring-loop34.spec.ts
-- [ ] tests-e2e/e2e/journeys/59-wiring-loop35.spec.ts
-- [ ] tests-e2e/e2e/journeys/60-wiring-loop34.spec.ts
-- [ ] tests-e2e/e2e/journeys/60-wiring-loop35.spec.ts
-- [ ] tests-e2e/e2e/journeys/61-wiring-loop35.spec.ts
-- [ ] tests-e2e/e2e/journeys/62-wiring-loop36.spec.ts
-- [ ] tests-e2e/e2e/journeys/63-wiring-loop37.spec.ts
-- [ ] tests-e2e/e2e/journeys/64-wiring-loop38.spec.ts
-- [ ] tests-e2e/e2e/journeys/65-wiring-loop40.spec.ts
-- [ ] tests-e2e/e2e/journeys/65-wiring-loop43.spec.ts
-- [ ] tests-e2e/e2e/journeys/66-wiring-loop44.spec.ts
-- [ ] tests-e2e/e2e/journeys/67-wiring-loop43.spec.ts
-- [ ] tests-e2e/e2e/journeys/68-wiring-loop45.spec.ts
-- [ ] tests-e2e/e2e/journeys/69-wiring-loop50.spec.ts
-- [ ] tests-e2e/e2e/landing.spec.ts
-- [ ] tests-e2e/e2e/news-research.spec.ts
-- [ ] tests-e2e/e2e/onboarding.spec.ts
-- [ ] tests-e2e/e2e/scheduling.spec.ts
-- [ ] tests-e2e/e2e/settings.spec.ts
-- [ ] tests-e2e/e2e/setup-flow.spec.ts
-- [ ] tests-e2e/e2e/setup-wizard-mode.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-deployment-mode.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-errors.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-mock-contract.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-navigation.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-resume.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-saas-happy.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-self-hosted-happy.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-state-detection.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-status-actions.spec.ts
-- [ ] tests-e2e/e2e/setup/wizard-stt.spec.ts
-- [ ] tests-e2e/e2e/trending.spec.ts
-- [ ] tests/automations/__init__.py
-- [ ] tests/automations/test_youtube_poller.py
-- [ ] tests/frontend/server/__init__.py
-- [ ] tests/frontend/server/test_eslint_config.py
-- [ ] tests/frontend/server/test_playwright_config.py
-- [ ] tests/frontend/server/test_sttConfig.py
-- [ ] tests/frontend/src/components/__init__.py
-- [ ] tests/frontend/src/components/test_SocialIcons.py
-- [ ] tests/scripts/__init__.py
-- [ ] tests/scripts/test_generate_features.py
-- [ ] tests/scripts/test_init.py
-- [ ] tests/setup/__init__.py
-- [ ] tests/setup/test_cloudflare.py
-- [ ] tests/setup/test_constants.py
-- [ ] tests/setup/test_features.py
-- [ ] tests/setup/test_github.py
-- [ ] tests/setup/test_google_resources.py
-- [ ] tests/setup/test_init.py
-- [ ] tests/setup/test_python_requirements.py
-- [ ] tests/setup/test_setup_wiring.py
-- [ ] tests/setup/test_utils.py
-- [ ] tests/setup/test_verification.py
-- [ ] tests/smoke.test.ts
-- [ ] vitest.config.ts
-- [ ] worker/src/auth.test.ts
-- [ ] worker/src/auth.ts
-- [ ] worker/src/automations/cleanup.test.ts
-- [ ] worker/src/automations/cleanup.ts
-- [ ] worker/src/automations/engine.ts
-- [ ] worker/src/automations/index.ts
-- [ ] worker/src/automations/kv.ts
-- [ ] worker/src/automations/platforms/gmail.ts
-- [ ] worker/src/automations/platforms/instagram.ts
-- [ ] worker/src/automations/platforms/linkedin.ts
-- [ ] worker/src/automations/platforms/telegram.ts
-- [ ] worker/src/automations/platforms/youtube.ts
-- [ ] worker/src/automations/routes.ts
-- [ ] worker/src/automations/types.ts
-- [ ] worker/src/automations/webhook-verify.ts
-- [ ] worker/src/cloudflare-types.d.ts
-- [ ] worker/src/db/clips.ts
-- [ ] worker/src/db/feedArticles.ts
-- [ ] worker/src/db/interestGroups.ts
-- [ ] worker/src/db/llm-usage.ts
-- [ ] worker/src/db/socialIntegrations.ts
-- [ ] worker/src/db/users.ts
-- [ ] worker/src/engine/brief/GenerationBriefBuilder.ts
-- [ ] worker/src/engine/context/ContextAccumulator.ts
-- [ ] worker/src/engine/events/LifecycleEventBus.ts
-- [ ] worker/src/engine/executor/DagResolver.ts
-- [ ] worker/src/engine/executor/WorkflowRunner.ts
-- [ ] worker/src/engine/gap-scorer.ts
-- [ ] worker/src/engine/importance/ImportanceResolver.ts
-- [ ] worker/src/engine/index.ts
-- [ ] worker/src/engine/nodes/definitions/constraint-validator.ts
-- [ ] worker/src/engine/nodes/definitions/draft-generator.ts
-- [ ] worker/src/engine/nodes/definitions/hook-designer.ts
-- [ ] worker/src/engine/nodes/definitions/narrative-arc.ts
-- [ ] worker/src/engine/nodes/definitions/psychology-analyzer.ts
-- [ ] worker/src/engine/nodes/definitions/research-context.ts
-- [ ] worker/src/engine/nodes/definitions/tone-calibrator.ts
-- [ ] worker/src/engine/nodes/definitions/vocabulary-selector.ts
-- [ ] worker/src/engine/nodes/prompt-utils.ts
-- [ ] worker/src/engine/nodes/registry-setup.ts
-- [ ] worker/src/engine/registry/NodeRegistry.ts
-- [ ] worker/src/engine/registry/WorkflowRegistry.ts
-- [ ] worker/src/engine/types.ts
-- [ ] worker/src/engine/workflows/definitions/__tests__/contentPostTypesPlaybook.spec.test.ts
-- [ ] worker/src/engine/workflows/definitions/__tests__/newsletterRealtimePreview.test.ts
-- [ ] worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts
-- [ ] worker/src/engine/workflows/definitions/appreciation.ts
-- [ ] worker/src/engine/workflows/definitions/base.ts
-- [ ] worker/src/engine/workflows/definitions/educational.ts
-- [ ] worker/src/engine/workflows/definitions/engagement-trap.ts
-- [ ] worker/src/engine/workflows/definitions/event-insight.ts
-- [ ] worker/src/engine/workflows/definitions/informational-news.ts
-- [ ] worker/src/engine/workflows/definitions/newsletter-realtime-preview.ts
-- [ ] worker/src/engine/workflows/definitions/personal-brand.ts
-- [ ] worker/src/engine/workflows/definitions/personal-story.ts
-- [ ] worker/src/engine/workflows/definitions/satirical.ts
-- [ ] worker/src/engine/workflows/definitions/thought-leadership.ts
-- [ ] worker/src/engine/workflows/definitions/trend-commentary.ts
-- [ ] worker/src/engine/workflows/definitions/viral-story.ts
-- [ ] worker/src/engine/workflows/definitions/week-in-review.ts
-- [ ] worker/src/engine/workflows/registry-setup.ts
-- [ ] worker/src/features/content-review/imageReviewRunner.ts
-- [ ] worker/src/features/content-review/index.ts
-- [ ] worker/src/features/content-review/newsContextBuilder.ts
-- [ ] worker/src/features/content-review/orchestrator.ts
-- [ ] worker/src/features/content-review/prompts/imageMultimodal.ts
-- [ ] worker/src/features/content-review/prompts/relevanceWithContext.ts
-- [ ] worker/src/features/content-review/prompts/textGuardrails.ts
-- [ ] worker/src/features/content-review/storedNormalize.ts
-- [ ] worker/src/features/content-review/textReviewRunner.ts
-- [ ] worker/src/features/content-review/types.ts
-- [ ] worker/src/features/custom-workflows/__tests__/customWorkflowToDefinition.test.ts
-- [ ] worker/src/features/custom-workflows/customWorkflowActions.ts
-- [ ] worker/src/features/custom-workflows/customWorkflowD1.ts
-- [ ] worker/src/features/custom-workflows/customWorkflowToDefinition.ts
-- [ ] worker/src/features/custom-workflows/types.ts
-- [ ] worker/src/generated/features.ts
-- [ ] worker/src/generation/__tests__/nodeInsightSummary.test.ts
-- [ ] worker/src/generation/author-profile/default-template.ts
-- [ ] worker/src/generation/author-profile/format-for-prompt.ts
-- [ ] worker/src/generation/generationWorkerClient.ts
-- [ ] worker/src/generation/nodeInsightSummary.ts
-- [ ] worker/src/generation/normalize.ts
-- [ ] worker/src/generation/prompts.ts
-- [ ] worker/src/generation/rules.ts
-- [ ] worker/src/generation/service.ts
-- [ ] worker/src/generation/types.ts
-- [ ] worker/src/google-model-policy.ts
-- [ ] worker/src/google/drivePermissions.ts
-- [ ] worker/src/image-gen/connectors/falai.ts
-- [ ] worker/src/image-gen/connectors/openai-images.ts
-- [ ] worker/src/image-gen/connectors/runway.ts
-- [ ] worker/src/image-gen/connectors/stability.ts
-- [ ] worker/src/image-gen/index.ts
-- [ ] worker/src/image-gen/model-catalog.ts
-- [ ] worker/src/image-gen/providers/dall-e.ts
-- [ ] worker/src/image-gen/providers/flux-kontext.ts
-- [ ] worker/src/image-gen/providers/ideogram.ts
-- [ ] worker/src/image-gen/providers/kling.ts
-- [ ] worker/src/image-gen/providers/runway.ts
-- [ ] worker/src/image-gen/providers/seedance.ts
-- [ ] worker/src/image-gen/providers/stability.ts
-- [ ] worker/src/image-gen/providers/veo.ts
-- [ ] worker/src/image-gen/registry.ts
-- [ ] worker/src/image-gen/types.ts
-- [ ] worker/src/index.ts
-- [ ] worker/src/integrations/_shared/fetchWithRetry.ts
-- [ ] worker/src/integrations/gmail/index.ts
-- [ ] worker/src/integrations/instagram/index.ts
-- [ ] worker/src/integrations/linkedin/index.ts
-- [ ] worker/src/integrations/media.ts
-- [ ] worker/src/integrations/telegram/index.ts
-- [ ] worker/src/integrations/whatsapp/index.ts
-- [ ] worker/src/llm/catalog.ts
-- [ ] worker/src/llm/d1Settings.ts
-- [ ] worker/src/llm/gateway.ts
-- [ ] worker/src/llm/genWorkerDefaults.ts
-- [ ] worker/src/llm/index.ts
-- [ ] worker/src/llm/policy.ts
-- [ ] worker/src/llm/pricing.ts
-- [ ] worker/src/llm/providers/gemini.ts
-- [ ] worker/src/llm/providers/grok.ts
-- [ ] worker/src/llm/providers/minimax.ts
-- [ ] worker/src/llm/providers/openrouter.ts
-- [ ] worker/src/llm/structuredJson.ts
-- [ ] worker/src/llm/types.ts
-- [ ] worker/src/media/selectedImageUrls.ts
-- [ ] worker/src/modes/saas/__tests__/waitlist.test.ts
-- [ ] worker/src/modes/saas/admin.ts
-- [ ] worker/src/modes/saas/waitlist.ts
-- [ ] worker/src/newsletter/__tests__/emailRenderer.test.ts
-- [ ] worker/src/newsletter/contentAssembler.ts
-- [ ] worker/src/newsletter/draftCreator.ts
-- [ ] worker/src/newsletter/emailRenderer.ts
-- [ ] worker/src/newsletter/handlers.ts
-- [ ] worker/src/newsletter/persistence.ts
-- [ ] worker/src/newsletter/scheduler.ts
-- [ ] worker/src/newsletter/types.ts
-- [ ] worker/src/persistence/drafts.ts
-- [ ] worker/src/persistence/pipeline-db/index.ts
-- [ ] worker/src/persistence/pipeline-db/mappers.ts
-- [ ] worker/src/persistence/pipeline-db/news.ts
-- [ ] worker/src/persistence/pipeline-db/pipeline.ts
-- [ ] worker/src/persistence/pipeline-db/types.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/env.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/index.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/resolve-session.ts
-- [ ] worker/src/plugins/dev-google-auth-bypass/timing-safe-equal.ts
-- [ ] worker/src/researcher/config.ts
-- [ ] worker/src/researcher/dedupe.ts
-- [ ] worker/src/researcher/keywords.ts
-- [ ] worker/src/researcher/providers/googleTrends.ts
-- [ ] worker/src/researcher/providers/hackerNews.ts
-- [ ] worker/src/researcher/providers/newsApis.ts
-- [ ] worker/src/researcher/providers/reddit.ts
-- [ ] worker/src/researcher/providers/rss.ts
-- [ ] worker/src/researcher/search.ts
-- [ ] worker/src/researcher/trendingSearch.ts
-- [ ] worker/src/researcher/trim.ts
-- [ ] worker/src/researcher/types.ts
-- [ ] worker/src/researcher/utils.ts
-- [ ] worker/src/routes/patterns.ts
-- [ ] worker/src/scheduled-publish/ScheduledPublishAlarm.ts
-- [ ] worker/src/scheduled-publish/durablePublishScheduler.ts
-- [ ] worker/src/scheduled-publish/handleCancelDispatch.ts
-- [ ] worker/src/scheduled-publish/index.ts
-- [ ] worker/src/scheduled-publish/time.ts
-- [ ] worker/src/scheduled-publish/types.ts
-- [ ] worker/src/services.ts
-- [ ] worker/vitest.config.ts
+- [x] frontend/src/App.tsx
+- [x] frontend/src/components/AlertProvider.tsx
+- [x] frontend/src/components/Dialog.tsx
+- [x] frontend/src/components/ErrorBoundary.tsx
+- [x] frontend/src/components/GoogleLoginButton.tsx
+- [x] frontend/src/components/HelpOverlay.tsx
+- [x] frontend/src/components/ImageAssetManager.tsx
+- [x] frontend/src/components/ImageGenReferencePanel.tsx
+- [x] frontend/src/components/ImageGenTextPanel.tsx
+- [x] frontend/src/components/LegalFooterLinks.tsx
+- [x] frontend/src/components/LegalPageChrome.tsx
+- [x] frontend/src/components/PrivacyPolicy.tsx
+- [x] frontend/src/components/SocialIcons.tsx
+- [x] frontend/src/components/Tour.tsx
+- [x] frontend/src/components/channel-previews/ChannelPostPreview.tsx
+- [x] frontend/src/components/channel-previews/GmailChannelPreview.tsx
+- [x] frontend/src/components/channel-previews/InstagramChannelPreview.tsx
+- [x] frontend/src/components/channel-previews/LinkedInChannelPreview.tsx
+- [x] frontend/src/components/channel-previews/TelegramChannelPreview.tsx
+- [x] frontend/src/components/channel-previews/WhatsAppChannelPreview.tsx
+- [x] frontend/src/components/channel-previews/platformTokens.ts
+- [x] frontend/src/components/channel-previews/shared.tsx
+- [x] frontend/src/components/channel-previews/types.ts
+- [x] frontend/src/components/channels/ChannelPicker.tsx
+- [x] frontend/src/components/channels/index.ts
+- [x] frontend/src/components/dashboard/components/DashboardSettingsDrawer.tsx
+- [x] frontend/src/components/dashboard/components/DashboardSettingsDrawer.types.ts
+- [x] frontend/src/components/dashboard/components/DashboardToolbar.tsx
+- [x] frontend/src/components/dashboard/components/SettingsConnectionsCard.tsx
+- [x] frontend/src/components/dashboard/components/TopicDetailPanel.tsx
+- [x] frontend/src/components/dashboard/components/TopicPostPreviewCard.tsx
+- [x] frontend/src/components/dashboard/components/TopicsRightRail.tsx
+- [x] frontend/src/components/dashboard/constants.ts
+- [x] frontend/src/components/dashboard/hooks/useDashboardChannels.ts
+- [x] frontend/src/components/dashboard/hooks/useDashboardQueue.ts
+- [x] frontend/src/components/dashboard/hooks/useDashboardSettings.ts
+- [x] frontend/src/components/dashboard/index.tsx
+- [x] frontend/src/components/dashboard/tabs/DashboardDelivery.tsx
+- [x] frontend/src/components/dashboard/tabs/DashboardQueue.tsx
+- [x] frontend/src/components/dashboard/types.ts
+- [x] frontend/src/components/dashboard/utils.ts
+- [x] frontend/src/components/llm/LlmModelCombobox.tsx
+- [x] frontend/src/components/llm/LlmProviderSelect.tsx
+- [x] frontend/src/components/llm/index.ts
+- [x] frontend/src/components/marketing/MarketingFooter.tsx
+- [x] frontend/src/components/marketing/MarketingNav.tsx
+- [x] frontend/src/components/schedule/ScheduleEditor.tsx
+- [x] frontend/src/components/schedule/index.ts
+- [x] frontend/src/components/ui/CalendarDateChip.tsx
+- [x] frontend/src/components/ui/ChipToggle.tsx
+- [x] frontend/src/components/ui/EmptyState.tsx
+- [x] frontend/src/components/ui/ErrorBanner.tsx
+- [x] frontend/src/components/ui/LoadingSkeleton.tsx
+- [x] frontend/src/components/ui/StatusPill.tsx
+- [x] frontend/src/components/ui/badge.tsx
+- [x] frontend/src/components/ui/button.tsx
+- [x] frontend/src/components/ui/carousel.tsx
+- [x] frontend/src/components/ui/collapsible.tsx
+- [x] frontend/src/components/ui/dialog.tsx
+- [x] frontend/src/components/ui/dropdown-menu.tsx
+- [x] frontend/src/components/ui/input.tsx
+- [x] frontend/src/components/ui/popover.tsx
+- [x] frontend/src/components/ui/select.tsx
+- [x] frontend/src/components/ui/textarea.tsx
+- [x] frontend/src/components/useAlert.ts
+- [x] frontend/src/components/workspace/AppSidebar.tsx
+- [x] frontend/src/components/workspace/WorkspaceChromeContext.tsx
+- [x] frontend/src/components/workspace/WorkspaceHeader.tsx
+- [x] frontend/src/components/workspace/WorkspaceShell.tsx
+- [x] frontend/src/features/add-topic/AddTopicPage.tsx
+- [x] frontend/src/features/add-topic/MicButton.tsx
+- [x] frontend/src/features/add-topic/TopicDetailView.tsx
+- [x] frontend/src/features/add-topic/TopicRightPanel.tsx
+- [x] frontend/src/features/add-topic/TrendingSidebar.tsx
+- [x] frontend/src/features/add-topic/useSpeechToText.ts
+- [x] frontend/src/features/add-topic/whisperWorker.ts
+- [x] frontend/src/features/ai-draft/GenWorkerDraftField.tsx
+- [x] frontend/src/features/ai-draft/genWorkerDraftSuggestions.ts
+- [x] frontend/src/features/automations/AutomationsTab.tsx
+- [x] frontend/src/features/automations/InstagramSetupGuide.tsx
+- [x] frontend/src/features/automations/LinkedInSetupGuide.tsx
+- [x] frontend/src/features/automations/RuleEditor.tsx
+- [x] frontend/src/features/automations/YouTubeScheduler.tsx
+- [x] frontend/src/features/automations/api.ts
+- [x] frontend/src/features/automations/index.ts
+- [x] frontend/src/features/automations/types.ts
+- [x] frontend/src/features/campaign/CampaignPage.tsx
+- [x] frontend/src/features/campaign/components/CampaignCarousel.tsx
+- [x] frontend/src/features/campaign/components/newsletter/IssueDetailDrawer.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterCalendarView.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterCard.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterConfigDrawer.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterDashboard.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterIssuePanel.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterListView.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterSectionCard.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterTab.tsx
+- [x] frontend/src/features/campaign/components/newsletter/NewsletterWizard.tsx
+- [x] frontend/src/features/campaign/components/newsletter/TagInput.tsx
+- [x] frontend/src/features/campaign/components/newsletter/constants.ts
+- [x] frontend/src/features/campaign/index.ts
+- [x] frontend/src/features/campaign/prompt/defaultPrompt.ts
+- [x] frontend/src/features/campaign/schema/newsletterTypes.ts
+- [x] frontend/src/features/campaign/schema/types.ts
+- [x] frontend/src/features/campaign/validate/parseCampaignDoc.ts
+- [x] frontend/src/features/campaign/views/CampaignCalendar.tsx
+- [x] frontend/src/features/campaign/views/CampaignPostList.tsx
+- [x] frontend/src/features/campaign/views/CampaignPreviewToolbar.tsx
+- [x] frontend/src/features/compare/CompareDialog.tsx
+- [x] frontend/src/features/content-flow/SelectedPatternCard.tsx
+- [x] frontend/src/features/content-flow/TemplateSelector.tsx
+- [x] frontend/src/features/content-flow/filterPatterns.ts
+- [x] frontend/src/features/content-flow/index.ts
+- [x] frontend/src/features/content-flow/types.ts
+- [x] frontend/src/features/content-flow/useTemplateSelection.ts
+- [x] frontend/src/features/content-review/ContentReviewIndicator.tsx
+- [x] frontend/src/features/content-review/ContentReviewReport.tsx
+- [x] frontend/src/features/content-review/ContentReviewSettings.tsx
+- [x] frontend/src/features/content-review/index.ts
+- [x] frontend/src/features/content-review/types.ts
+- [x] frontend/src/features/content-schedule-calendar/ContentScheduleCalendar.tsx
+- [x] frontend/src/features/content-schedule-calendar/DayView.tsx
+- [x] frontend/src/features/content-schedule-calendar/EventDetailAndEdit.tsx
+- [x] frontend/src/features/content-schedule-calendar/MonthView.tsx
+- [x] frontend/src/features/content-schedule-calendar/WeekView.tsx
+- [x] frontend/src/features/content-schedule-calendar/adapters/campaignPostAdapter.ts
+- [x] frontend/src/features/content-schedule-calendar/adapters/sheetRowAdapter.ts
+- [x] frontend/src/features/content-schedule-calendar/calendarTemporal.ts
+- [x] frontend/src/features/content-schedule-calendar/channelStyles.ts
+- [x] frontend/src/features/content-schedule-calendar/index.ts
+- [x] frontend/src/features/content-schedule-calendar/scheduleValidation.ts
+- [x] frontend/src/features/content-schedule-calendar/statusStyles.ts
+- [x] frontend/src/features/content-schedule-calendar/tokens.ts
+- [x] frontend/src/features/content-schedule-calendar/types.ts
+- [x] frontend/src/features/content-schedule-calendar/useTimeGridDrag.ts
+- [x] frontend/src/features/draft-selection-target/components/DraftTextareaWithHighlight.tsx
+- [x] frontend/src/features/draft-selection-target/components/ScopeModeToolbar.tsx
+- [x] frontend/src/features/draft-selection-target/index.ts
+- [x] frontend/src/features/draft-selection-target/model.ts
+- [x] frontend/src/features/editor/DraftEditor.tsx
+- [x] frontend/src/features/feed/FeedPage.tsx
+- [x] frontend/src/features/feed/components/ArticleDetailView.tsx
+- [x] frontend/src/features/feed/components/ClipsDock.tsx
+- [x] frontend/src/features/feed/components/DebateModeView.tsx
+- [x] frontend/src/features/feed/components/DraftContextView.tsx
+- [x] frontend/src/features/feed/components/FeedArticleCard.tsx
+- [x] frontend/src/features/feed/components/FeedCuratedPanel.tsx
+- [x] frontend/src/features/feed/components/FeedLeftPanel.tsx
+- [x] frontend/src/features/feed/components/InterestGroupsSettings.tsx
+- [x] frontend/src/features/feed/components/SelectionClipper.tsx
+- [x] frontend/src/features/feed/hooks/useFeedKeyboard.ts
+- [x] frontend/src/features/feed/types.ts
+- [x] frontend/src/features/generation/EnrichmentProgressPanel.tsx
+- [x] frontend/src/features/generation/GenerationPanel.tsx
+- [x] frontend/src/features/generation/WorkflowCardPicker.tsx
+- [x] frontend/src/features/generation/__tests__/EnrichmentProgressPanel.test.tsx
+- [x] frontend/src/features/generation/__tests__/WorkflowCardPicker.test.tsx
+- [x] frontend/src/features/generation/__tests__/builtInWorkflowCards.test.ts
+- [x] frontend/src/features/generation/builtInWorkflowCards.ts
+- [x] frontend/src/features/generation/nodeProgressLabels.ts
+- [x] frontend/src/features/news-research/NewsResearchSettingsSection.tsx
+- [x] frontend/src/features/news-research/ResearcherPanel.tsx
+- [x] frontend/src/features/news-research/index.ts
+- [x] frontend/src/features/onboarding/ConnectAccountsGrid.tsx
+- [x] frontend/src/features/onboarding/OnboardingModal.tsx
+- [x] frontend/src/features/persistence/index.ts
+- [x] frontend/src/features/persistence/src/VariantSlotSavePanel.tsx
+- [x] frontend/src/features/review-editor/components/EditorSidebar.tsx
+- [x] frontend/src/features/review-editor/components/LivePreviewSidebar.tsx
+- [x] frontend/src/features/review-editor/components/VersionHistoryStrip.tsx
+- [x] frontend/src/features/review-editor/components/__tests__/VersionHistoryStrip.test.tsx
+- [x] frontend/src/features/review-editor/screens/EditorScreen.tsx
+- [x] frontend/src/features/review-editor/screens/__tests__/EditorScreen.build.test.tsx
+- [x] frontend/src/features/review/GenerationJustificationPanel.tsx
+- [x] frontend/src/features/review/ReviewWorkspace.tsx
+- [x] frontend/src/features/review/__tests__/GenerationJustificationPanel.test.tsx
+- [x] frontend/src/features/review/components/ChannelImageRequirements.tsx
+- [x] frontend/src/features/review/components/ChannelPostPreview.tsx
+- [x] frontend/src/features/review/components/ContextDocumentsPanel.tsx
+- [x] frontend/src/features/review/components/PostGenerateSettings.tsx
+- [x] frontend/src/features/review/components/ReviewDialogs.tsx
+- [x] frontend/src/features/review/components/ReviewHeader.tsx
+- [x] frontend/src/features/review/context/ReviewFlowContext.tsx
+- [x] frontend/src/features/review/context/ReviewFlowEditorContext.tsx
+- [x] frontend/src/features/review/context/__tests__/useAutoSave.build.test.ts
+- [x] frontend/src/features/review/context/__tests__/useReviewFlowState.build.test.ts
+- [x] frontend/src/features/review/context/types.ts
+- [x] frontend/src/features/review/context/useAutoSave.ts
+- [x] frontend/src/features/review/context/useReviewFlow.ts
+- [x] frontend/src/features/review/context/useReviewFlowActions.ts
+- [x] frontend/src/features/review/context/useReviewFlowState.ts
+- [x] frontend/src/features/review/context/utils.ts
+- [x] frontend/src/features/rules/PreSaveTextDiff.tsx
+- [x] frontend/src/features/rules/RulesPanel.tsx
+- [x] frontend/src/features/saas/AdminPanel.tsx
+- [x] frontend/src/features/saas/Landing.tsx
+- [x] frontend/src/features/saas/UsageMeter.tsx
+- [x] frontend/src/features/saas/__tests__/Landing.test.tsx
+- [x] frontend/src/features/saas/__tests__/UsageMeter.test.tsx
+- [x] frontend/src/features/scheduled-publish/ScheduledPublishBanner.tsx
+- [x] frontend/src/features/scheduled-publish/index.ts
+- [x] frontend/src/features/scheduled-publish/matchPending.ts
+- [x] frontend/src/features/scheduled-publish/types.ts
+- [x] frontend/src/features/scheduled-publish/usePendingScheduledPublish.ts
+- [x] frontend/src/features/setup-wizard/DirectorySelector.tsx
+- [x] frontend/src/features/setup-wizard/EnvVarsStep.tsx
+- [x] frontend/src/features/setup-wizard/FinalStep.tsx
+- [x] frontend/src/features/setup-wizard/ImageGenStep.tsx
+- [x] frontend/src/features/setup-wizard/IntegrationStep.tsx
+- [x] frontend/src/features/setup-wizard/SetupProgress.tsx
+- [x] frontend/src/features/setup-wizard/SetupWizard.tsx
+- [x] frontend/src/features/setup-wizard/SpeechToTextStep.tsx
+- [x] frontend/src/features/setup-wizard/StatusDashboard.tsx
+- [x] frontend/src/features/setup-wizard/TrendingApiStep.tsx
+- [x] frontend/src/features/setup-wizard/index.ts
+- [x] frontend/src/features/setup-wizard/main.tsx
+- [x] frontend/src/features/setup-wizard/setupService.ts
+- [x] frontend/src/features/setup-wizard/setupStateService.ts
+- [x] frontend/src/features/setup-wizard/types.ts
+- [x] frontend/src/features/topic-navigation/hooks/useTopicNavigation.ts
+- [x] frontend/src/features/topic-navigation/screens/TopicEditorPage.tsx
+- [x] frontend/src/features/topic-navigation/screens/TopicVariantsPage.tsx
+- [x] frontend/src/features/topic-navigation/types.ts
+- [x] frontend/src/features/topic-navigation/utils/topicRoute.ts
+- [x] frontend/src/features/topic-navigation/utils/workspaceRoutes.ts
+- [x] frontend/src/features/trending/TrendingDashboard.tsx
+- [x] frontend/src/features/trending/api/adapters/ApifyAdapter.ts
+- [x] frontend/src/features/trending/api/adapters/BaseAdapter.ts
+- [x] frontend/src/features/trending/api/adapters/InstagramAdapter.ts
+- [x] frontend/src/features/trending/api/adapters/LinkedInAdapter.ts
+- [x] frontend/src/features/trending/api/adapters/PhantomBusterAdapter.ts
+- [x] frontend/src/features/trending/api/adapters/SociaVaultAdapter.ts
+- [x] frontend/src/features/trending/api/adapters/YouTubeAdapter.ts
+- [x] frontend/src/features/trending/api/config.ts
+- [x] frontend/src/features/trending/api/index.ts
+- [x] frontend/src/features/trending/api/types.ts
+- [x] frontend/src/features/trending/components/FeedSection.tsx
+- [x] frontend/src/features/trending/components/InstagramPanel.tsx
+- [x] frontend/src/features/trending/components/LinkedInPanel.tsx
+- [x] frontend/src/features/trending/components/NewsCard.tsx
+- [x] frontend/src/features/trending/components/NewsPanel.tsx
+- [x] frontend/src/features/trending/components/PanelToggle.tsx
+- [x] frontend/src/features/trending/components/PlatformPanel.tsx
+- [x] frontend/src/features/trending/components/RecommendationsPanel.tsx
+- [x] frontend/src/features/trending/components/TrendingFilters.tsx
+- [x] frontend/src/features/trending/components/TrendingGraph.tsx
+- [x] frontend/src/features/trending/components/TrendingSearchBar.tsx
+- [x] frontend/src/features/trending/components/TrendingSidebar.tsx
+- [x] frontend/src/features/trending/components/TrendingWordsWidget.tsx
+- [x] frontend/src/features/trending/components/YouTubePanel.tsx
+- [x] frontend/src/features/trending/hooks/index.ts
+- [x] frontend/src/features/trending/hooks/useInstagramTrending.ts
+- [x] frontend/src/features/trending/hooks/useLinkedInTrending.ts
+- [x] frontend/src/features/trending/hooks/useNewsTrending.ts
+- [x] frontend/src/features/trending/hooks/useTrending.ts
+- [x] frontend/src/features/trending/hooks/useTrendingSearch.ts
+- [x] frontend/src/features/trending/hooks/useYouTubeTrending.ts
+- [x] frontend/src/features/trending/index.ts
+- [x] frontend/src/features/trending/types.ts
+- [x] frontend/src/features/variant/components/EditorVariantBar.tsx
+- [x] frontend/src/features/variant/components/VariantCarousel.tsx
+- [x] frontend/src/features/variant/screens/VariantSelectionScreen.tsx
+- [x] frontend/src/features/who-am-i/WhoAmISection.tsx
+- [x] frontend/src/features/who-am-i/default-author-profile-template.ts
+- [x] frontend/src/features/workflows/WorkflowBuilderModal.tsx
+- [x] frontend/src/features/workflows/useCustomWorkflows.ts
+- [x] frontend/src/generated/features.ts
+- [x] frontend/src/hooks/useGlobalShortcuts.ts
+- [x] frontend/src/hooks/useMediaQuery.ts
+- [x] frontend/src/hooks/useTextUndoRedo.ts
+- [x] frontend/src/integrations/channels.ts
+- [x] frontend/src/integrations/gmail/index.ts
+- [x] frontend/src/integrations/instagram/index.ts
+- [x] frontend/src/integrations/linkedin/index.ts
+- [x] frontend/src/integrations/telegram/index.ts
+- [x] frontend/src/integrations/whatsapp/index.ts
+- [x] frontend/src/lib/appBuildLabel.ts
+- [x] frontend/src/lib/cn.ts
+- [x] frontend/src/lib/motion.ts
+- [x] frontend/src/lib/postLoginRedirect.ts
+- [x] frontend/src/lib/relativeTime.ts
+- [x] frontend/src/lib/topicDisplay.ts
+- [x] frontend/src/lib/topicEffectivePrefs.ts
+- [x] frontend/src/lib/utils.ts
+- [x] frontend/src/lib/workspaceDocumentTitle.ts
+- [x] frontend/src/main.tsx
+- [x] frontend/src/pages/AboutPage.tsx
+- [x] frontend/src/pages/EnrichmentFlowPage.tsx
+- [x] frontend/src/pages/GlobalRulesPage.tsx
+- [x] frontend/src/pages/PricingPage.tsx
+- [x] frontend/src/pages/TermsOfServicePage.tsx
+- [x] frontend/src/pages/UsagePage.tsx
+- [x] frontend/src/pages/connections/ConnectionsPage.tsx
+- [x] frontend/src/pages/connections/SheetConnectionCard.tsx
+- [x] frontend/src/pages/connections/SocialAccountCard.tsx
+- [x] frontend/src/pages/connections/providerLogos.tsx
+- [x] frontend/src/plugins/dev-google-auth-bypass/config.ts
+- [x] frontend/src/plugins/dev-google-auth-bypass/index.ts
+- [x] frontend/src/plugins/dev-google-auth-bypass/profile.ts
+- [x] frontend/src/plugins/dev-google-auth-bypass/token.ts
+- [x] frontend/src/services/backendApi.ts
+- [x] frontend/src/services/configService.ts
+- [x] frontend/src/services/deliveryImageUrl.ts
+- [x] frontend/src/services/draftService.ts
+- [x] frontend/src/services/imageUrls.ts
+- [x] frontend/src/services/selectedImageUrls.ts
+- [x] frontend/src/services/sheets.ts
+- [x] frontend/src/stores/feedStore.ts
+- [x] frontend/src/test/setup.ts
+- [x] frontend/src/utils/__tests__/recordsEqual.test.ts
+- [x] frontend/src/utils/googleIdTokenProfile.ts
+- [x] frontend/src/utils/lineDiff.ts
+- [x] frontend/src/utils/recordsEqual.ts
+- [x] frontend/src/vite-env.d.ts
+- [x] frontend/tailwind.config.js
+- [x] frontend/tests/e2e/add-topic.spec.ts
+- [x] frontend/tests/e2e/automations.spec.ts
+- [x] frontend/tests/e2e/campaign.spec.ts
+- [x] frontend/tests/e2e/cloud.spec.ts
+- [x] frontend/tests/e2e/connections.spec.ts
+- [x] frontend/tests/e2e/content-flow.spec.ts
+- [x] frontend/tests/e2e/editor.spec.ts
+- [x] frontend/tests/e2e/feed-page.spec.ts
+- [x] frontend/tests/e2e/helpers/cleanup.ts
+- [x] frontend/tests/e2e/helpers/mockApi.ts
+- [x] frontend/tests/e2e/helpers/mockSetupApi.ts
+- [x] frontend/tests/e2e/helpers/testData.ts
+- [x] frontend/tests/e2e/integration/error-states.spec.ts
+- [x] frontend/tests/e2e/integration/saas-admin.spec.ts
+- [x] frontend/tests/e2e/integration/saas-usage.spec.ts
+- [x] frontend/tests/e2e/integration/saas-waitlist.spec.ts
+- [x] frontend/tests/e2e/integration/worker-auth.spec.ts
+- [x] frontend/tests/e2e/integration/worker-routes.spec.ts
+- [x] frontend/tests/e2e/journeys/01-auth-onboarding.spec.ts
+- [x] frontend/tests/e2e/journeys/02-create-topic.spec.ts
+- [x] frontend/tests/e2e/journeys/03-generate-draft.spec.ts
+- [x] frontend/tests/e2e/journeys/04-review-edit.spec.ts
+- [x] frontend/tests/e2e/journeys/05-publish-linkedin.spec.ts
+- [x] frontend/tests/e2e/journeys/06-publish-channels.spec.ts
+- [x] frontend/tests/e2e/journeys/07-connections-setup.spec.ts
+- [x] frontend/tests/e2e/journeys/08-model-provider-selection.spec.ts
+- [x] frontend/tests/e2e/journeys/09-automations.spec.ts
+- [x] frontend/tests/e2e/journeys/10-trending-research.spec.ts
+- [x] frontend/tests/e2e/journeys/11-scheduled-publish.spec.ts
+- [x] frontend/tests/e2e/journeys/12-feed-feature.spec.ts
+- [x] frontend/tests/e2e/journeys/13-enrichment-pipeline.spec.ts
+- [x] frontend/tests/e2e/journeys/14-real-user-journey.spec.ts
+- [x] frontend/tests/e2e/journeys/15-marketing-pages.spec.ts
+- [x] frontend/tests/e2e/journeys/16-admin-panel.spec.ts
+- [x] frontend/tests/e2e/journeys/17-navigation-deep-links.spec.ts
+- [x] frontend/tests/e2e/journeys/18-channel-previews.spec.ts
+- [x] frontend/tests/e2e/journeys/19-token-usage.spec.ts
+- [x] frontend/tests/e2e/journeys/20-full-lifecycle.spec.ts
+- [x] frontend/tests/e2e/landing.spec.ts
+- [x] frontend/tests/e2e/news-research.spec.ts
+- [x] frontend/tests/e2e/onboarding.spec.ts
+- [x] frontend/tests/e2e/scheduling.spec.ts
+- [x] frontend/tests/e2e/settings.spec.ts
+- [x] frontend/tests/e2e/setup-flow.spec.ts
+- [x] frontend/tests/e2e/setup-wizard-mode.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-deployment-mode.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-errors.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-mock-contract.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-navigation.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-resume.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-saas-happy.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-self-hosted-happy.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-state-detection.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-status-actions.spec.ts
+- [x] frontend/tests/e2e/setup/wizard-stt.spec.ts
+- [x] frontend/tests/e2e/trending.spec.ts
+- [x] frontend/vite.config.ts
+- [x] frontend/vitest.config.ts
+- [x] generation-worker/src/cloudflare-types.d.ts
+- [x] generation-worker/src/image-gen/connectors/falai.ts
+- [x] generation-worker/src/image-gen/connectors/openai-images.ts
+- [x] generation-worker/src/image-gen/connectors/runway.ts
+- [x] generation-worker/src/image-gen/connectors/stability.ts
+- [x] generation-worker/src/image-gen/index.ts
+- [x] generation-worker/src/image-gen/providers/dall-e.ts
+- [x] generation-worker/src/image-gen/providers/flux-kontext.ts
+- [x] generation-worker/src/image-gen/providers/ideogram.ts
+- [x] generation-worker/src/image-gen/providers/kling.ts
+- [x] generation-worker/src/image-gen/providers/runway.ts
+- [x] generation-worker/src/image-gen/providers/seedance.ts
+- [x] generation-worker/src/image-gen/providers/stability.ts
+- [x] generation-worker/src/image-gen/providers/veo.ts
+- [x] generation-worker/src/image-gen/registry.ts
+- [x] generation-worker/src/image-gen/types.ts
+- [x] generation-worker/src/index.ts
+- [x] generation-worker/src/llmFromWorker.ts
+- [x] generation-worker/src/modules/_shared/creator.ts
+- [x] generation-worker/src/modules/_shared/documentContextBlock.ts
+- [x] generation-worker/src/modules/_shared/knowledgeLoader.ts
+- [x] generation-worker/src/modules/_shared/orchestrator.ts
+- [x] generation-worker/src/modules/_shared/selector.ts
+- [x] generation-worker/src/modules/_shared/types.ts
+- [x] generation-worker/src/modules/channel-adapter/index.ts
+- [x] generation-worker/src/modules/color-emotion/index.ts
+- [x] generation-worker/src/modules/copywriting/index.ts
+- [x] generation-worker/src/modules/emotion/index.ts
+- [x] generation-worker/src/modules/image-generation/index.ts
+- [x] generation-worker/src/modules/image-generation/providers/gemini.ts
+- [x] generation-worker/src/modules/image-generation/providers/pixazo.ts
+- [x] generation-worker/src/modules/image-generation/providers/seedance.ts
+- [x] generation-worker/src/modules/image-search/index.ts
+- [x] generation-worker/src/modules/image-strategy/index.ts
+- [x] generation-worker/src/modules/md.d.ts
+- [x] generation-worker/src/modules/persona/index.ts
+- [x] generation-worker/src/modules/persuasion/index.ts
+- [x] generation-worker/src/modules/psychology-deep/index.ts
+- [x] generation-worker/src/modules/stickiness/index.ts
+- [x] generation-worker/src/modules/storytelling/index.ts
+- [x] generation-worker/src/modules/trending/index.ts
+- [x] generation-worker/src/modules/typography/index.ts
+- [x] generation-worker/src/modules/viral-patterns/index.ts
+- [x] generation-worker/src/modules/vocabulary/index.ts
+- [x] generation-worker/src/pipeline.ts
+- [x] generation-worker/src/players/articleInsights.ts
+- [x] generation-worker/src/players/clips.ts
+- [x] generation-worker/src/players/creator.ts
+- [x] generation-worker/src/players/feedback.ts
+- [x] generation-worker/src/players/imagePicker.test.ts
+- [x] generation-worker/src/players/imagePicker.ts
+- [x] generation-worker/src/players/imageRelator.test.ts
+- [x] generation-worker/src/players/imageRelator.ts
+- [x] generation-worker/src/players/patternFinder.ts
+- [x] generation-worker/src/players/patternRepository.ts
+- [x] generation-worker/src/players/qualityScorer.test.ts
+- [x] generation-worker/src/players/qualityScorer.ts
+- [x] generation-worker/src/players/requirementReport.ts
+- [x] generation-worker/src/players/retryUtils.ts
+- [x] generation-worker/src/players/review.ts
+- [x] generation-worker/src/players/variants.ts
+- [x] generation-worker/src/preview.ts
+- [x] generation-worker/src/shared-rules.ts
+- [x] generation-worker/src/types.ts
+- [x] generation-worker/tests/smoke.config.ts
+- [x] generation-worker/tests/smoke.spec.ts
+- [x] generation-worker/vitest.config.ts
+- [x] packages/llm-core/src/index.ts
+- [x] packages/llm-core/src/providers.ts
+- [x] packages/llm-core/src/schemas.ts
+- [x] packages/llm-core/src/static-models.ts
+- [x] packages/llm-core/src/types.ts
+- [x] packages/researcher/src/config.ts
+- [x] packages/researcher/src/dedupe.ts
+- [x] packages/researcher/src/env.ts
+- [x] packages/researcher/src/index.ts
+- [x] packages/researcher/src/providers/newsApis.ts
+- [x] packages/researcher/src/providers/rss.ts
+- [x] packages/researcher/src/search.ts
+- [x] packages/researcher/src/trim.ts
+- [x] packages/researcher/src/types.ts
+- [x] scheduler/__init__.py
+- [x] scripts/__init__.py
+- [x] scripts/generate_features.py
+- [x] scripts/test-connectivity.js
+- [x] setup.py :: shard-run-blocked (setup script) :: manual
+- [x] setup/__init__.py
+- [x] setup/cli.py
+- [x] setup/cloudflare.py
+- [x] setup/constants.py
+- [x] setup/features.py
+- [x] setup/github.py
+- [x] setup/google_resources.py
+- [x] setup/python_requirements.py
+- [x] setup/utils.py
+- [x] setup/verification.py
+- [x] setup/wizard/__init__.py
+- [x] setup/wizard/server.py
+- [x] setup/wizard/state.py
+- [x] setup/wizard/steps/__init__.py
+- [x] setup/wizard/steps/apikeys.py
+- [x] setup/wizard/steps/cloudflare.py
+- [x] setup/wizard/steps/deploy.py
+- [x] setup/wizard/steps/google.py
+- [x] setup/wizard/steps/mode.py
+- [x] setup/wizard/steps/prereqs.py
+- [x] setup/wizard/steps/test_google.py
+- [x] setup/wizard/steps/verify.py
+- [x] setup/wizard/test_state.py
+- [x] setup/wizard/tests/__init__.py
+- [x] setup/wizard/tests/conftest.py
+- [x] setup/wizard/tests/test_apikeys.py
+- [x] setup/wizard/tests/test_cloudflare.py
+- [x] setup/wizard/tests/test_deploy.py
+- [x] setup/wizard/tests/test_flow_happy.py
+- [x] setup/wizard/tests/test_google.py
+- [x] setup/wizard/tests/test_mode.py
+- [x] setup/wizard/tests/test_state_resume.py
+- [x] setup/worker_config.py
+- [x] tests-e2e/e2e/add-topic.spec.ts
+- [x] tests-e2e/e2e/automations.spec.ts
+- [x] tests-e2e/e2e/campaign.spec.ts
+- [x] tests-e2e/e2e/connections.spec.ts
+- [x] tests-e2e/e2e/content-flow.spec.ts
+- [x] tests-e2e/e2e/editor.spec.ts
+- [x] tests-e2e/e2e/helpers/cleanup.ts
+- [x] tests-e2e/e2e/helpers/mockApi.ts
+- [x] tests-e2e/e2e/helpers/mockSetupApi.ts
+- [x] tests-e2e/e2e/helpers/testData.ts
+- [x] tests-e2e/e2e/integration/error-states.spec.ts
+- [x] tests-e2e/e2e/integration/saas-admin.spec.ts
+- [x] tests-e2e/e2e/integration/saas-usage.spec.ts
+- [x] tests-e2e/e2e/integration/saas-waitlist.spec.ts
+- [x] tests-e2e/e2e/integration/worker-auth.spec.ts
+- [x] tests-e2e/e2e/integration/worker-routes.spec.ts
+- [x] tests-e2e/e2e/journeys/01-auth-onboarding.spec.ts
+- [x] tests-e2e/e2e/journeys/02-create-topic.spec.ts
+- [x] tests-e2e/e2e/journeys/03-generate-draft.spec.ts
+- [x] tests-e2e/e2e/journeys/04-review-edit.spec.ts
+- [x] tests-e2e/e2e/journeys/05-publish-linkedin.spec.ts
+- [x] tests-e2e/e2e/journeys/06-publish-channels.spec.ts
+- [x] tests-e2e/e2e/journeys/07-connections-setup.spec.ts
+- [x] tests-e2e/e2e/journeys/08-model-provider-selection.spec.ts
+- [x] tests-e2e/e2e/journeys/09-automations.spec.ts
+- [x] tests-e2e/e2e/journeys/10-trending-research.spec.ts
+- [x] tests-e2e/e2e/journeys/11-scheduled-publish.spec.ts
+- [x] tests-e2e/e2e/journeys/12-feed-feature.spec.ts
+- [x] tests-e2e/e2e/journeys/13-enrichment-pipeline.spec.ts
+- [x] tests-e2e/e2e/journeys/14-real-user-journey.spec.ts
+- [x] tests-e2e/e2e/journeys/15-marketing-pages.spec.ts
+- [x] tests-e2e/e2e/journeys/16-admin-panel.spec.ts
+- [x] tests-e2e/e2e/journeys/17-navigation-deep-links.spec.ts
+- [x] tests-e2e/e2e/journeys/18-channel-previews.spec.ts
+- [x] tests-e2e/e2e/journeys/19-token-usage.spec.ts
+- [x] tests-e2e/e2e/journeys/20-full-lifecycle.spec.ts
+- [x] tests-e2e/e2e/journeys/21-wiring-issues.spec.ts
+- [x] tests-e2e/e2e/journeys/22-wiring-issues-round1.spec.ts
+- [x] tests-e2e/e2e/journeys/23-wiring-loop3.spec.ts
+- [x] tests-e2e/e2e/journeys/24-wiring-loop4.spec.ts
+- [x] tests-e2e/e2e/journeys/25-wiring-loop9.spec.ts
+- [x] tests-e2e/e2e/journeys/26-wiring-loop16.spec.ts
+- [x] tests-e2e/e2e/journeys/27-wiring-loop19.spec.ts
+- [x] tests-e2e/e2e/journeys/28-wiring-loop20.spec.ts
+- [x] tests-e2e/e2e/journeys/29-wiring-loop23.spec.ts
+- [x] tests-e2e/e2e/journeys/30-wiring-loop24.spec.ts
+- [x] tests-e2e/e2e/journeys/31-wiring-loop24.spec.ts
+- [x] tests-e2e/e2e/journeys/32-wiring-loop24.spec.ts
+- [x] tests-e2e/e2e/journeys/33-wiring-loop24.spec.ts
+- [x] tests-e2e/e2e/journeys/34-wiring-loop24.spec.ts
+- [x] tests-e2e/e2e/journeys/35-wiring-loop24.spec.ts
+- [x] tests-e2e/e2e/journeys/35-wiring-loop25.spec.ts
+- [x] tests-e2e/e2e/journeys/36-wiring-loop25.spec.ts
+- [x] tests-e2e/e2e/journeys/37-wiring-loop25.spec.ts
+- [x] tests-e2e/e2e/journeys/38-wiring-loop26.spec.ts
+- [x] tests-e2e/e2e/journeys/39-wiring-loop25.spec.ts
+- [x] tests-e2e/e2e/journeys/39-wiring-loop26.spec.ts
+- [x] tests-e2e/e2e/journeys/40-wiring-loop26.spec.ts
+- [x] tests-e2e/e2e/journeys/41-wiring-loop26.spec.ts
+- [x] tests-e2e/e2e/journeys/42-wiring-loop27.spec.ts
+- [x] tests-e2e/e2e/journeys/43-wiring-loop28.spec.ts
+- [x] tests-e2e/e2e/journeys/44-wiring-loop28.spec.ts
+- [x] tests-e2e/e2e/journeys/45-wiring-loop28.spec.ts
+- [x] tests-e2e/e2e/journeys/46-wiring-loop28.spec.ts
+- [x] tests-e2e/e2e/journeys/47-wiring-loop28.spec.ts
+- [x] tests-e2e/e2e/journeys/48-wiring-loop28.spec.ts
+- [x] tests-e2e/e2e/journeys/48-wiring-loop29.spec.ts
+- [x] tests-e2e/e2e/journeys/49-wiring-loop29.spec.ts
+- [x] tests-e2e/e2e/journeys/50-wiring-loop29.spec.ts
+- [x] tests-e2e/e2e/journeys/51-wiring-loop30.spec.ts
+- [x] tests-e2e/e2e/journeys/52-wiring-loop31.spec.ts
+- [x] tests-e2e/e2e/journeys/53-wiring-loop32.spec.ts
+- [x] tests-e2e/e2e/journeys/54-wiring-loop32.spec.ts
+- [x] tests-e2e/e2e/journeys/55-wiring-loop31.spec.ts
+- [x] tests-e2e/e2e/journeys/56-wiring-loop33.spec.ts
+- [x] tests-e2e/e2e/journeys/57-wiring-loop33.spec.ts
+- [x] tests-e2e/e2e/journeys/58-wiring-loop34.spec.ts
+- [x] tests-e2e/e2e/journeys/59-wiring-loop35.spec.ts
+- [x] tests-e2e/e2e/journeys/60-wiring-loop34.spec.ts
+- [x] tests-e2e/e2e/journeys/60-wiring-loop35.spec.ts
+- [x] tests-e2e/e2e/journeys/61-wiring-loop35.spec.ts
+- [x] tests-e2e/e2e/journeys/62-wiring-loop36.spec.ts
+- [x] tests-e2e/e2e/journeys/63-wiring-loop37.spec.ts
+- [x] tests-e2e/e2e/journeys/64-wiring-loop38.spec.ts
+- [x] tests-e2e/e2e/journeys/65-wiring-loop40.spec.ts
+- [x] tests-e2e/e2e/journeys/65-wiring-loop43.spec.ts
+- [x] tests-e2e/e2e/journeys/66-wiring-loop44.spec.ts
+- [x] tests-e2e/e2e/journeys/67-wiring-loop43.spec.ts
+- [x] tests-e2e/e2e/journeys/68-wiring-loop45.spec.ts
+- [x] tests-e2e/e2e/journeys/69-wiring-loop50.spec.ts
+- [x] tests-e2e/e2e/landing.spec.ts
+- [x] tests-e2e/e2e/news-research.spec.ts
+- [x] tests-e2e/e2e/onboarding.spec.ts
+- [x] tests-e2e/e2e/scheduling.spec.ts
+- [x] tests-e2e/e2e/settings.spec.ts
+- [x] tests-e2e/e2e/setup-flow.spec.ts
+- [x] tests-e2e/e2e/setup-wizard-mode.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-deployment-mode.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-errors.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-mock-contract.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-navigation.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-resume.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-saas-happy.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-self-hosted-happy.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-state-detection.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-status-actions.spec.ts
+- [x] tests-e2e/e2e/setup/wizard-stt.spec.ts
+- [x] tests-e2e/e2e/trending.spec.ts
+- [x] tests/automations/__init__.py
+- [x] tests/automations/test_youtube_poller.py
+- [x] tests/frontend/server/__init__.py
+- [x] tests/frontend/server/test_eslint_config.py
+- [x] tests/frontend/server/test_playwright_config.py
+- [x] tests/frontend/server/test_sttConfig.py
+- [x] tests/frontend/src/components/__init__.py
+- [x] tests/frontend/src/components/test_SocialIcons.py
+- [x] tests/scripts/__init__.py
+- [x] tests/scripts/test_generate_features.py
+- [x] tests/scripts/test_init.py
+- [x] tests/setup/__init__.py
+- [x] tests/setup/test_cloudflare.py
+- [x] tests/setup/test_constants.py
+- [x] tests/setup/test_features.py
+- [x] tests/setup/test_github.py
+- [x] tests/setup/test_google_resources.py
+- [x] tests/setup/test_init.py
+- [x] tests/setup/test_python_requirements.py
+- [x] tests/setup/test_setup_wiring.py
+- [x] tests/setup/test_utils.py
+- [x] tests/setup/test_verification.py
+- [x] tests/smoke.test.ts
+- [x] vitest.config.ts :: shard-run-blocked (config file) :: manual
+- [x] worker/src/auth.test.ts
+- [x] worker/src/auth.ts
+- [x] worker/src/automations/cleanup.test.ts
+- [x] worker/src/automations/cleanup.ts
+- [x] worker/src/automations/engine.ts
+- [x] worker/src/automations/index.ts
+- [x] worker/src/automations/kv.ts
+- [x] worker/src/automations/platforms/gmail.ts
+- [x] worker/src/automations/platforms/instagram.ts
+- [x] worker/src/automations/platforms/linkedin.ts
+- [x] worker/src/automations/platforms/telegram.ts
+- [x] worker/src/automations/platforms/youtube.ts
+- [x] worker/src/automations/routes.ts
+- [x] worker/src/automations/types.ts
+- [x] worker/src/automations/webhook-verify.ts
+- [x] worker/src/cloudflare-types.d.ts
+- [x] worker/src/db/clips.ts
+- [x] worker/src/db/feedArticles.ts
+- [x] worker/src/db/interestGroups.ts
+- [x] worker/src/db/llm-usage.ts
+- [x] worker/src/db/socialIntegrations.ts
+- [x] worker/src/db/users.ts
+- [x] worker/src/engine/brief/GenerationBriefBuilder.ts
+- [x] worker/src/engine/context/ContextAccumulator.ts
+- [x] worker/src/engine/events/LifecycleEventBus.ts
+- [x] worker/src/engine/executor/DagResolver.ts
+- [x] worker/src/engine/executor/WorkflowRunner.ts
+- [x] worker/src/engine/gap-scorer.ts
+- [x] worker/src/engine/importance/ImportanceResolver.ts
+- [x] worker/src/engine/index.ts
+- [x] worker/src/engine/nodes/definitions/constraint-validator.ts
+- [x] worker/src/engine/nodes/definitions/draft-generator.ts
+- [x] worker/src/engine/nodes/definitions/hook-designer.ts
+- [x] worker/src/engine/nodes/definitions/narrative-arc.ts
+- [x] worker/src/engine/nodes/definitions/psychology-analyzer.ts
+- [x] worker/src/engine/nodes/definitions/research-context.ts
+- [x] worker/src/engine/nodes/definitions/tone-calibrator.ts
+- [x] worker/src/engine/nodes/definitions/vocabulary-selector.ts
+- [x] worker/src/engine/nodes/prompt-utils.ts
+- [x] worker/src/engine/nodes/registry-setup.ts
+- [x] worker/src/engine/registry/NodeRegistry.ts
+- [x] worker/src/engine/registry/WorkflowRegistry.ts
+- [x] worker/src/engine/types.ts
+- [x] worker/src/engine/workflows/definitions/__tests__/contentPostTypesPlaybook.spec.test.ts
+- [x] worker/src/engine/workflows/definitions/__tests__/newsletterRealtimePreview.test.ts
+- [x] worker/src/engine/workflows/definitions/__tests__/postTypesPlaybook.test.ts
+- [x] worker/src/engine/workflows/definitions/appreciation.ts
+- [x] worker/src/engine/workflows/definitions/base.ts
+- [x] worker/src/engine/workflows/definitions/educational.ts
+- [x] worker/src/engine/workflows/definitions/engagement-trap.ts
+- [x] worker/src/engine/workflows/definitions/event-insight.ts
+- [x] worker/src/engine/workflows/definitions/informational-news.ts
+- [x] worker/src/engine/workflows/definitions/newsletter-realtime-preview.ts
+- [x] worker/src/engine/workflows/definitions/personal-brand.ts
+- [x] worker/src/engine/workflows/definitions/personal-story.ts
+- [x] worker/src/engine/workflows/definitions/satirical.ts
+- [x] worker/src/engine/workflows/definitions/thought-leadership.ts
+- [x] worker/src/engine/workflows/definitions/trend-commentary.ts
+- [x] worker/src/engine/workflows/definitions/viral-story.ts
+- [x] worker/src/engine/workflows/definitions/week-in-review.ts
+- [x] worker/src/engine/workflows/registry-setup.ts
+- [x] worker/src/features/content-review/imageReviewRunner.ts
+- [x] worker/src/features/content-review/index.ts
+- [x] worker/src/features/content-review/newsContextBuilder.ts
+- [x] worker/src/features/content-review/orchestrator.ts
+- [x] worker/src/features/content-review/prompts/imageMultimodal.ts
+- [x] worker/src/features/content-review/prompts/relevanceWithContext.ts
+- [x] worker/src/features/content-review/prompts/textGuardrails.ts
+- [x] worker/src/features/content-review/storedNormalize.ts
+- [x] worker/src/features/content-review/textReviewRunner.ts
+- [x] worker/src/features/content-review/types.ts
+- [x] worker/src/features/custom-workflows/__tests__/customWorkflowToDefinition.test.ts
+- [x] worker/src/features/custom-workflows/customWorkflowActions.ts
+- [x] worker/src/features/custom-workflows/customWorkflowD1.ts
+- [x] worker/src/features/custom-workflows/customWorkflowToDefinition.ts
+- [x] worker/src/features/custom-workflows/types.ts
+- [x] worker/src/generated/features.ts
+- [x] worker/src/generation/__tests__/nodeInsightSummary.test.ts
+- [x] worker/src/generation/author-profile/default-template.ts
+- [x] worker/src/generation/author-profile/format-for-prompt.ts
+- [x] worker/src/generation/generationWorkerClient.ts
+- [x] worker/src/generation/nodeInsightSummary.ts
+- [x] worker/src/generation/normalize.ts
+- [x] worker/src/generation/prompts.ts
+- [x] worker/src/generation/rules.ts
+- [x] worker/src/generation/service.ts
+- [x] worker/src/generation/types.ts
+- [x] worker/src/google-model-policy.ts
+- [x] worker/src/google/drivePermissions.ts
+- [x] worker/src/image-gen/connectors/falai.ts
+- [x] worker/src/image-gen/connectors/openai-images.ts
+- [x] worker/src/image-gen/connectors/runway.ts
+- [x] worker/src/image-gen/connectors/stability.ts
+- [x] worker/src/image-gen/index.ts
+- [x] worker/src/image-gen/model-catalog.ts
+- [x] worker/src/image-gen/providers/dall-e.ts
+- [x] worker/src/image-gen/providers/flux-kontext.ts
+- [x] worker/src/image-gen/providers/ideogram.ts
+- [x] worker/src/image-gen/providers/kling.ts
+- [x] worker/src/image-gen/providers/runway.ts
+- [x] worker/src/image-gen/providers/seedance.ts
+- [x] worker/src/image-gen/providers/stability.ts
+- [x] worker/src/image-gen/providers/veo.ts
+- [x] worker/src/image-gen/registry.ts
+- [x] worker/src/image-gen/types.ts
+- [x] worker/src/index.ts
+- [x] worker/src/integrations/_shared/fetchWithRetry.ts
+- [x] worker/src/integrations/gmail/index.ts
+- [x] worker/src/integrations/instagram/index.ts
+- [x] worker/src/integrations/linkedin/index.ts
+- [x] worker/src/integrations/media.ts
+- [x] worker/src/integrations/telegram/index.ts
+- [x] worker/src/integrations/whatsapp/index.ts
+- [x] worker/src/llm/catalog.ts
+- [x] worker/src/llm/d1Settings.ts
+- [x] worker/src/llm/gateway.ts
+- [x] worker/src/llm/genWorkerDefaults.ts
+- [x] worker/src/llm/index.ts
+- [x] worker/src/llm/policy.ts
+- [x] worker/src/llm/pricing.ts
+- [x] worker/src/llm/providers/gemini.ts
+- [x] worker/src/llm/providers/grok.ts
+- [x] worker/src/llm/providers/minimax.ts
+- [x] worker/src/llm/providers/openrouter.ts
+- [x] worker/src/llm/structuredJson.ts
+- [x] worker/src/llm/types.ts
+- [x] worker/src/media/selectedImageUrls.ts
+- [x] worker/src/modes/saas/__tests__/waitlist.test.ts
+- [x] worker/src/modes/saas/admin.ts
+- [x] worker/src/modes/saas/waitlist.ts
+- [x] worker/src/newsletter/__tests__/emailRenderer.test.ts
+- [x] worker/src/newsletter/contentAssembler.ts
+- [x] worker/src/newsletter/draftCreator.ts
+- [x] worker/src/newsletter/emailRenderer.ts
+- [x] worker/src/newsletter/handlers.ts
+- [x] worker/src/newsletter/persistence.ts
+- [x] worker/src/newsletter/scheduler.ts
+- [x] worker/src/newsletter/types.ts
+- [x] worker/src/persistence/drafts.ts
+- [x] worker/src/persistence/pipeline-db/index.ts
+- [x] worker/src/persistence/pipeline-db/mappers.ts
+- [x] worker/src/persistence/pipeline-db/news.ts
+- [x] worker/src/persistence/pipeline-db/pipeline.ts
+- [x] worker/src/persistence/pipeline-db/types.ts
+- [x] worker/src/plugins/dev-google-auth-bypass/env.ts
+- [x] worker/src/plugins/dev-google-auth-bypass/index.ts
+- [x] worker/src/plugins/dev-google-auth-bypass/resolve-session.ts
+- [x] worker/src/plugins/dev-google-auth-bypass/timing-safe-equal.ts
+- [x] worker/src/researcher/config.ts
+- [x] worker/src/researcher/dedupe.ts
+- [x] worker/src/researcher/keywords.ts
+- [x] worker/src/researcher/providers/googleTrends.ts
+- [x] worker/src/researcher/providers/hackerNews.ts
+- [x] worker/src/researcher/providers/newsApis.ts
+- [x] worker/src/researcher/providers/reddit.ts
+- [x] worker/src/researcher/providers/rss.ts
+- [x] worker/src/researcher/search.ts
+- [x] worker/src/researcher/trendingSearch.ts
+- [x] worker/src/researcher/trim.ts
+- [x] worker/src/researcher/types.ts
+- [x] worker/src/researcher/utils.ts
+- [x] worker/src/routes/patterns.ts
+- [x] worker/src/scheduled-publish/ScheduledPublishAlarm.ts
+- [x] worker/src/scheduled-publish/durablePublishScheduler.ts
+- [x] worker/src/scheduled-publish/handleCancelDispatch.ts
+- [x] worker/src/scheduled-publish/index.ts
+- [x] worker/src/scheduled-publish/time.ts
+- [x] worker/src/scheduled-publish/types.ts
+- [x] worker/src/services.ts
+- [x] worker/vitest.config.ts
