@@ -45807,9 +45807,9 @@
 - [ ] scripts/__init__.py
 - [ ] scripts/generate_features.py
 - [ ] scripts/test-connectivity.js
-- [x] setup.py  <!-- done shard-run-blocked 2026-05-10 -->
+- [x] setup.py  <!-- done 2c900fc 2026-05-10 -->
 - [ ] setup/__init__.py
-- [>] setup/cli.py
+- [x] setup/cli.py  <!-- done shard-run-blocked 2026-05-10 -->
 - [ ] setup/cloudflare.py
 - [ ] setup/constants.py
 - [ ] setup/features.py
