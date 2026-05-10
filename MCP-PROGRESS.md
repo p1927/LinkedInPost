@@ -45811,7 +45811,7 @@
 - [x] setup/__init__.py  <!-- done d048e87 2026-05-10 -->
 - [x] setup/cli.py  <!-- done shard-run-blocked 2026-05-10 -->
 - [x] setup/cloudflare.py  <!-- done f8b493f 2026-05-10 -->
-- [ ] setup/constants.py
+- [x] setup/constants.py  <!-- done 4eb1e4b 2026-05-10 -->
 - [ ] setup/features.py
 - [ ] setup/github.py
 - [ ] setup/google_resources.py
