@@ -20,8 +20,15 @@ REPLIED_MARKER = ".youtube_replied_ids"
 
 def yt_get(path: str, params: dict) -> dict:
     url = f"{YT_API}/{path}?" + urllib.parse.urlencode(params)
-    with urllib.request.urlopen(url) as r:
-        return json.loads(r.read())
+    try:
+        with urllib.request.urlopen(url) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        print(f"[poller] yt_get {path} failed: HTTP {e.code}", file=sys.stderr)
+        return {}
+    except urllib.error.URLError as e:
+        print(f"[poller] yt_get {path} failed: {e.reason}", file=sys.stderr)
+        return {}
 
 
 def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
