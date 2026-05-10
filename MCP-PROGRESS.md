@@ -45803,11 +45803,11 @@
 - [ ] packages/researcher/src/search.ts
 - [ ] packages/researcher/src/trim.ts
 - [ ] packages/researcher/src/types.ts
-- [ ] scheduler/__init__.py
+- [x] scheduler/__init__.py  <!-- done shard-run-blocked 2026-05-10 -->
 - [ ] scripts/__init__.py
 - [ ] scripts/generate_features.py
 - [ ] scripts/test-connectivity.js
-- [ ] setup.py
+- [x] setup.py  <!-- done shard-run-blocked 2026-05-10 -->
 - [ ] setup/__init__.py
 - [ ] setup/cli.py
 - [ ] setup/cloudflare.py
