@@ -45804,7 +45804,7 @@
 - [ ] packages/researcher/src/trim.ts
 - [ ] packages/researcher/src/types.ts
 - [x] scheduler/__init__.py  <!-- done shard-run-blocked 2026-05-10 -->
-- [ ] scripts/__init__.py
+- [x] scripts/__init__.py  <!-- done dd8f5e7 2026-05-10 -->
 - [ ] scripts/generate_features.py
 - [ ] scripts/test-connectivity.js
 - [x] setup.py  <!-- done 2c900fc 2026-05-10 -->
