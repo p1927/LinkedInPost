@@ -1,9 +1,9 @@
 # MCP Progress — linkedin-post codebase
 # Format: - [ ] pending | - [>] in-progress | - [x] done (commit hash)
 
-- [ ] __init__.py
-- [ ] automations/__init__.py
-- [ ] automations/youtube_poller.py
+- [x] __init__.py  <!-- done no-commit 2026-05-10 -->
+- [x] automations/__init__.py  <!-- done no-commit 2026-05-10 -->
+- [x] automations/youtube_poller.py  <!-- done shard-run-blocked 2026-05-10 -->
 - [ ] frontend/dist/assets/index-DJNwu0fc.js
 - [ ] frontend/dist/assets/whisperWorker-DC2kZHEk.js
 - [ ] frontend/eslint.config.js
