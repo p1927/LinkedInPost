@@ -45813,7 +45813,7 @@
 - [x] setup/cloudflare.py  <!-- done f8b493f 2026-05-10 -->
 - [x] setup/constants.py  <!-- done 4eb1e4b 2026-05-10 -->
 - [x] setup/features.py  <!-- done 3d0a42d 2026-05-10 -->
-- [ ] setup/github.py
+- [x] setup/github.py  <!-- done 4c65e56 2026-05-10 -->
 - [ ] setup/google_resources.py
 - [ ] setup/python_requirements.py
 - [ ] setup/utils.py
