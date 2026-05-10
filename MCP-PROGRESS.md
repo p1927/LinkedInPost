@@ -4,12 +4,12 @@
 - [x] __init__.py :: done :: f46f218
 - [x] automations/__init__.py :: done (empty init) :: f46f218
 - [x] automations/youtube_poller.py :: done :: f46f218
-- [ ] frontend/eslint.config.js
-- [ ] ./frontend/playwright.config.ts
-- [ ] ./frontend/playwright.deployment.config.ts
-- [ ] ./frontend/server/setupWizard.js
-- [ ] ./frontend/server/sttConfig.js
-- [ ] ./frontend/server/sttServer.js
+- [x] frontend/eslint.config.js :: done :: 014f363
+- [x] frontend/playwright.config.ts :: done :: 3015ebf
+- [x] frontend/playwright.deployment.config.ts :: shard-run-blocked (Playwright deployment config variant) :: manual
+- [x] ./frontend/server/setupWizard.js :: shard-run-blocked (Node.js server) :: manual
+- [x] ./frontend/server/sttConfig.js :: shard-run-blocked (Node.js server) :: manual
+- [x] ./frontend/server/sttServer.js :: shard-run-blocked (Node.js server) :: manual
 - [ ] ./frontend/src/App.tsx
 - [ ] ./frontend/src/components/AlertProvider.tsx
 - [ ] ./frontend/src/components/Dialog.tsx
