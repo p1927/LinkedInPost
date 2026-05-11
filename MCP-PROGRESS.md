@@ -5,7 +5,7 @@
 
 ^- [x] automations/youtube_poller.py  <!-- done 555f186 2026-05-11 -->
 ^- [x] scripts/generate_features.py  <!-- done 968cdfc 2026-05-11 -->
-- [ ] setup.py
+^- [x] setup.py  <!-- done cf46098 2026-05-11 -->
 ^- [x] setup/cli.py  <!-- done 968cdfc 2026-05-11 -->
 ^- [x] setup/cloudflare.py  <!-- done 968cdfc 2026-05-11 -->
 ^- [x] setup/constants.py  <!-- done 968cdfc 2026-05-11 -->
