@@ -19,7 +19,7 @@
 - [x] setup/wizard/state.py  <!-- real tests verified -->
 ^- [x] setup/wizard/steps/apikeys.py  <!-- done 968cdfc 2026-05-11 -->
 - [x] setup/wizard/steps/cloudflare.py  <!-- done 66e5158 2026-05-11 -->
-- [ ] setup/wizard/steps/deploy.py
+- [x] setup/wizard/steps/deploy.py  <!-- done 6a672f0 2026-05-11 -->
 - [x] setup/wizard/steps/google.py  <!-- real tests verified -->
 - [ ] setup/wizard/steps/mode.py
 - [ ] setup/wizard/steps/prereqs.py
