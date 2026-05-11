@@ -26,4 +26,4 @@
 ^- [x] setup/wizard/steps/verify.py  <!-- done 968cdfc 2026-05-11 -->
 ^- [x] setup/worker_config.py  <!-- done 968cdfc 2026-05-11 -->
 
-# 2 done, 20 pending, 22 total
+# 22 done, 0 pending, 22 total
