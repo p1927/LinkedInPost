@@ -3,7 +3,7 @@
 # Scope: ~22 Python files we wrote (no deps/generated/node_modules)
 # Quality: [x] = non-smoke test with real assertions exists
 
-- [ ] automations/youtube_poller.py
+^- [x] automations/youtube_poller.py  <!-- done 555f186 2026-05-11 -->
 - [ ] scripts/generate_features.py
 - [ ] setup.py
 - [ ] setup/cli.py
