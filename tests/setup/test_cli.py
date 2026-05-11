@@ -13,8 +13,7 @@ def test_all_flag_is_accepted():
     """--all must be accepted and set args.all=True."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli'] = module
     spec.loader.exec_module(module)
@@ -23,14 +22,15 @@ def test_all_flag_is_accepted():
         args = module.parse_args()
 
     assert args.all is True
+    assert args.deploy_worker is False
+    assert args.cloudflare is False
 
 
 def test_deploy_worker_flag_is_accepted():
     """--deploy-worker must be accepted and set args.deploy_worker=True."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli2',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli2'] = module
     spec.loader.exec_module(module)
@@ -39,14 +39,14 @@ def test_deploy_worker_flag_is_accepted():
         args = module.parse_args()
 
     assert args.deploy_worker is True
+    assert args.web is False
 
 
 def test_cloudflare_flag_is_accepted():
     """--cloudflare must be accepted and set args.cloudflare=True."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli3',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli3'] = module
     spec.loader.exec_module(module)
@@ -55,14 +55,14 @@ def test_cloudflare_flag_is_accepted():
         args = module.parse_args()
 
     assert args.cloudflare is True
+    assert args.all is False
 
 
 def test_install_worker_deps_flag_is_accepted():
     """--install-worker-deps must be accepted and set args.install_worker_deps=True."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli4',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli4'] = module
     spec.loader.exec_module(module)
@@ -71,14 +71,14 @@ def test_install_worker_deps_flag_is_accepted():
         args = module.parse_args()
 
     assert args.install_worker_deps is True
+    assert args.cloudflare is False
 
 
 def test_skip_google_flag_is_accepted():
     """--skip-google must be accepted and set args.skip_google=True."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli5',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli5'] = module
     spec.loader.exec_module(module)
@@ -87,14 +87,14 @@ def test_skip_google_flag_is_accepted():
         args = module.parse_args()
 
     assert args.skip_google is True
+    assert args.all is False
 
 
 def test_skip_google_defaults_to_false():
     """--skip-google defaults to False when no flag is given."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli6',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli6'] = module
     spec.loader.exec_module(module)
@@ -103,14 +103,14 @@ def test_skip_google_defaults_to_false():
         args = module.parse_args()
 
     assert args.skip_google is False
+    assert args.web is False
 
 
 def test_share_email_from_env():
     """--share-email must default to GOOGLE_SHARE_EMAIL env var."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli7',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli7'] = module
     spec.loader.exec_module(module)
@@ -120,14 +120,31 @@ def test_share_email_from_env():
             args = module.parse_args()
 
     assert args.share_email == 'test@example.com'
+    assert args.share_email != ''
+
+
+def test_share_email_defaults_to_empty_string():
+    """--share-email defaults to empty string when env var is not set."""
+    spec = importlib.util.spec_from_file_location(
+        'setup_cli9',
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
+    module = importlib.util.module_from_spec(spec)
+    sys.modules['setup_cli9'] = module
+    spec.loader.exec_module(module)
+
+    with patch.dict(os.environ, {}, clear=True):
+        with patch.object(sys, 'argv', ['setup.py']):
+            args = module.parse_args()
+
+    assert args.share_email == ''
+    assert 'GOOGLE_SHARE_EMAIL' not in os.environ
 
 
 def test_web_flag_is_accepted():
     """--web must be accepted and set args.web=True."""
     spec = importlib.util.spec_from_file_location(
         'setup_cli8',
-        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py')
-    )
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     sys.modules['setup_cli8'] = module
     spec.loader.exec_module(module)
@@ -136,3 +153,21 @@ def test_web_flag_is_accepted():
         args = module.parse_args()
 
     assert args.web is True
+    assert args.cloudflare is False
+
+
+def test_multiple_flags_can_be_combined():
+    """Multiple flags can be passed together."""
+    spec = importlib.util.spec_from_file_location(
+        'setup_cli10',
+        Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
+    module = importlib.util.module_from_spec(spec)
+    sys.modules['setup_cli10'] = module
+    spec.loader.exec_module(module)
+
+    with patch.object(sys, 'argv', ['setup.py', '--cloudflare', '--skip-google']):
+        args = module.parse_args()
+
+    assert args.cloudflare is True
+    assert args.skip_google is True
+    assert args.web is False

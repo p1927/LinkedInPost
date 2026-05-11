@@ -20,7 +20,8 @@ class TestOk:
             Path('/home/openclaw/workspaces/linkedin-post/setup/utils.py')
         )
         assert callable(module.ok)
-        module.ok('test', 'value')
+        result = module.ok('test', 'value')
+        assert result is None
 
     def test_warn_is_callable(self):
         module = load_module(
@@ -28,7 +29,8 @@ class TestOk:
             Path('/home/openclaw/workspaces/linkedin-post/setup/utils.py')
         )
         assert callable(module.warn)
-        module.warn('test', 'warning')
+        result = module.warn('test', 'warning')
+        assert result is None
 
     def test_fail_is_callable(self):
         module = load_module(
@@ -36,7 +38,8 @@ class TestOk:
             Path('/home/openclaw/workspaces/linkedin-post/setup/utils.py')
         )
         assert callable(module.fail)
-        module.fail('test', 'failing')
+        result = module.fail('test', 'failing')
+        assert result is None
 
 
 class TestGenerateEncryptionKey:
@@ -57,6 +60,8 @@ class TestGenerateEncryptionKey:
         k1 = module.generate_encryption_key()
         k2 = module.generate_encryption_key()
         assert k1 != k2
+        assert isinstance(k1, str)
+        assert isinstance(k2, str)
 
 
 class TestEnsureCommand:
@@ -65,7 +70,9 @@ class TestEnsureCommand:
             'setup_utils6',
             Path('/home/openclaw/workspaces/linkedin-post/setup/utils.py')
         )
-        module.ensure_command('python3', 'Python is required')
+        result = module.ensure_command('python3', 'Python is required')
+        assert result is None
+        assert result is None or result == True
 
     def test_raises_for_nonexistent_command(self):
         import pytest
@@ -75,3 +82,7 @@ class TestEnsureCommand:
         )
         with pytest.raises(RuntimeError, match='nonexistent_cmd_12345 is not available'):
             module.ensure_command('nonexistent_cmd_12345', 'This command does not exist')
+        try:
+            module.ensure_command('nonexistent_cmd_12345', 'This command does not exist')
+        except RuntimeError as e:
+            assert 'nonexistent_cmd_12345' in str(e)

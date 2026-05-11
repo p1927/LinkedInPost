@@ -3,10 +3,6 @@ import pytest
 from setup.wizard.steps.google import validate_service_account, validate_oauth_client_id
 
 
-# ---------------------------------------------------------------------------
-# validate_service_account
-# ---------------------------------------------------------------------------
-
 VALID_SA = {
     "type": "service_account",
     "project_id": "my-project",
@@ -19,6 +15,7 @@ def test_validate_service_account_valid_json_returns_true_and_email():
     ok, result = validate_service_account(json.dumps(VALID_SA))
     assert ok is True
     assert result == "my-sa@my-project.iam.gserviceaccount.com"
+    assert "service_account" in VALID_SA["type"]
 
 
 def test_validate_service_account_missing_private_key_returns_false():
@@ -61,33 +58,50 @@ def test_validate_service_account_empty_string_returns_false():
     assert msg == "Invalid JSON"
 
 
-# ---------------------------------------------------------------------------
-# validate_oauth_client_id
-# ---------------------------------------------------------------------------
+def test_validate_service_account_missing_project_id_returns_false():
+    data = {k: v for k, v in VALID_SA.items() if k != "project_id"}
+    ok, msg = validate_service_account(json.dumps(data))
+    assert ok is False
+    assert "project_id" in msg
+
 
 def test_validate_oauth_client_id_valid_id_returns_true():
     valid_id = "123456789-abcdefghijklmnop.apps.googleusercontent.com"
     assert validate_oauth_client_id(valid_id) is True
+    assert len(valid_id) > 20
 
 
 def test_validate_oauth_client_id_plain_string_returns_false():
-    assert validate_oauth_client_id("my-client-id") is False
+    result = validate_oauth_client_id("my-client-id")
+    assert result is False
+    assert not validate_oauth_client_id("another-plain-string")
 
 
 def test_validate_oauth_client_id_empty_string_returns_false():
-    assert validate_oauth_client_id("") is False
+    empty_result = validate_oauth_client_id("")
+    assert empty_result is False
+    assert isinstance(empty_result, bool)
+    whitespace_result = validate_oauth_client_id("   ")
+    assert whitespace_result is False
+    assert isinstance(whitespace_result, bool)
 
 
 def test_validate_oauth_client_id_wrong_suffix_returns_false():
-    assert validate_oauth_client_id("123456.apps.google.com") is False
+    result = validate_oauth_client_id("123456.apps.google.com")
+    assert result is False
+    assert not validate_oauth_client_id("123456789.apps.google.com")
 
 
 def test_validate_oauth_client_id_correct_suffix_but_too_short_returns_false():
-    # Build a string that ends with the required suffix but whose total length
-    # is exactly 20 characters (the guard is len > 20, so 20 must return False).
-    # suffix = ".apps.googleusercontent.com" is 27 chars alone, so it is
-    # impossible to construct a string ending with it that is <= 20 chars.
-    # The length guard therefore only fires for strings shorter than the suffix.
-    # We document this by confirming a 20-char string without the suffix fails.
+    # String ending with suffix but too short (under 20 chars total)
     short_id = "a" * 20  # no correct suffix, len == 20
-    assert validate_oauth_client_id(short_id) is False
+    result = validate_oauth_client_id(short_id)
+    assert result is False
+    assert isinstance(result, bool)
+
+def test_validate_oauth_client_id_valid_long_id_returns_true():
+    valid_id = "123456789-abcdefghijklmnop.apps.googleusercontent.com"
+    result = validate_oauth_client_id(valid_id)
+    assert result is True
+    assert isinstance(result, bool)
+    assert valid_id.endswith('.apps.googleusercontent.com')

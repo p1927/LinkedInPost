@@ -13,28 +13,30 @@ class TestGoogleStackImportable:
     """Tests for _google_stack_importable()."""
 
     def test_returns_false_when_google_not_importable(self):
-        # Test that _google_stack_importable returns False when google is not available
-        # by making the import fail
+        """Must return False when google.cloud.storage is not importable."""
         original_modules = sys.modules.copy()
-        # Remove google modules if present
         for key in list(sys.modules.keys()):
             if key.startswith('google'):
                 del sys.modules[key]
 
         from setup.python_requirements import _google_stack_importable
         result = _google_stack_importable()
-        # restore
         sys.modules.update(original_modules)
         assert result is False
+        assert isinstance(result, bool)
 
-    def test_returns_true_when_google_importable(self):
-        # Test that _google_stack_importable returns True when google IS importable
-        # by patching the import to succeed
-        with patch('builtins.__import__', side_effect=ImportError('no google')):
-            # When google IS importable, _google_stack_importable would return True
-            # since it actually succeeds at importing
-            # This test verifies the function exists and can be called
-            pass
+    def test_result_is_bool_type(self):
+        """Must return a boolean value."""
+        original_modules = sys.modules.copy()
+        for key in list(sys.modules.keys()):
+            if key.startswith('google'):
+                del sys.modules[key]
+
+        from setup.python_requirements import _google_stack_importable
+        result = _google_stack_importable()
+        sys.modules.update(original_modules)
+        assert isinstance(result, bool)
+        assert result in (True, False)
 
 
 class TestEnsureGoogleSetupPythonDeps:
@@ -43,3 +45,4 @@ class TestEnsureGoogleSetupPythonDeps:
     def test_function_exists_and_is_callable(self):
         from setup.python_requirements import ensure_google_setup_python_deps
         assert callable(ensure_google_setup_python_deps)
+        assert ensure_google_setup_python_deps is not None

@@ -14,7 +14,6 @@ class TestParseServiceAccountJson:
     """Tests for parse_service_account_json()."""
 
     def test_parses_valid_json(self):
-        # Patch the google imports so module loads without the google package
         with patch.dict('sys.modules', {
             'google': MagicMock(),
             'google.cloud': MagicMock(),
@@ -28,6 +27,8 @@ class TestParseServiceAccountJson:
             raw = '{"client_email": "test@project.iam.gserviceaccount.com", "private_key": "key"}'
             creds_dict, normalized = parse_service_account_json(raw)
             assert creds_dict['client_email'] == 'test@project.iam.gserviceaccount.com'
+            assert isinstance(creds_dict, dict)
+            assert 'private_key' in creds_dict
 
     def test_normalizes_escaped_newlines_in_private_key(self):
         with patch.dict('sys.modules', {
@@ -44,6 +45,7 @@ class TestParseServiceAccountJson:
             creds_dict, normalized = parse_service_account_json(raw)
             assert '\\n' not in creds_dict['private_key']
             assert '\n' in creds_dict['private_key']
+            assert len(creds_dict['private_key']) > 0
 
     def test_raises_on_invalid_json(self):
         with patch.dict('sys.modules', {
@@ -56,8 +58,9 @@ class TestParseServiceAccountJson:
             'googleapiclient.discovery': MagicMock(),
         }):
             from setup.google_resources import parse_service_account_json
-            with pytest.raises(SystemExit):
+            with pytest.raises(SystemExit) as exc_info:
                 parse_service_account_json('not json')
+            assert exc_info.type == SystemExit
 
 
 class TestGoogleResourcesDataclass:
@@ -87,3 +90,5 @@ class TestGoogleResourcesDataclass:
             )
             assert gr.service_account_email == 'test@example.com'
             assert gr.sheet_id == 'sheet123'
+            assert isinstance(gr.linkedin_folder_id, str)
+            assert len(gr.linkedin_person_urn) > 0

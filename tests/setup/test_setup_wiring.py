@@ -194,6 +194,9 @@ def test_cloudflare_only_does_not_call_write_generation_worker_dev_vars(isolate_
         "generation-worker/.dev.vars was created with only --cloudflare; "
         "write_generation_worker_dev_vars should only be called when --deploy-worker is set"
     )
+    assert not gen_dev_vars.exists()
+    content_check = gen_dev_vars.read_text() if gen_dev_vars.exists() else ''
+    assert 'WORKER_SHARED_SECRET' not in content_check
 
 
 def test_deploy_worker_alone_without_cloudflare_still_skips(isolate_env, monkeypatch):
@@ -250,6 +253,8 @@ def test_deploy_worker_alone_without_cloudflare_still_skips(isolate_env, monkeyp
         "generation-worker/.dev.vars was created with only --deploy-worker; "
         "write_generation_worker_dev_vars should only be called when --cloudflare is set"
     )
+    content_check = gen_dev_vars.read_text() if gen_dev_vars.exists() else ''
+    assert 'WORKER_SHARED_SECRET' not in content_check
 
 
 def test_all_flag_enables_cloudflare_and_deploy_worker(isolate_env, monkeypatch):
@@ -384,3 +389,5 @@ def test_deploy_worker_calls_write_generation_worker_dev_vars(isolate_env, monke
     content = gen_dev_vars.read_text()
     assert 'WORKER_SHARED_SECRET=gen' in content
     assert 'XAI_API_KEY=xai-test-key' in content
+    assert len(content) > 0
+    assert isinstance(content, str)

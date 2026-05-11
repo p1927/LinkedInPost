@@ -17,6 +17,8 @@ class TestLoadFeaturesMap:
             from setup.features import load_features_map
             result = load_features_map()
             assert result == {'newsResearch': True}
+            assert isinstance(result, dict)
+            assert 'newsResearch' in result
 
     def test_returns_defaults_on_yaml_error(self, tmp_path):
         bad_yaml = tmp_path / 'features.yaml'
@@ -25,6 +27,8 @@ class TestLoadFeaturesMap:
             from setup.features import load_features_map
             result = load_features_map()
             assert result == {'newsResearch': True}
+            assert isinstance(result, dict)
+            assert 'newsResearch' in result
 
     def test_loads_newsresearch_flag(self, tmp_path):
         yaml_file = tmp_path / 'features.yaml'
@@ -33,3 +37,5 @@ class TestLoadFeaturesMap:
             from setup.features import load_features_map
             result = load_features_map()
             assert result['newsResearch'] is False
+            assert isinstance(result, dict)
+            assert len(result) == 1

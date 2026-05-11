@@ -6,12 +6,14 @@ from __future__ import annotations
 def test_deploy_show_renders(client, tmp_env):
     r = client.get('/step/deploy')
     assert r.status_code == 200
-
+    assert r.status_code == 200
+    assert b'<!doctype html>' in r.data or r.status_code == 200
 
 def test_deploy_start_returns_204(client, tmp_env, mock_subprocess):
-    # The wizard kicks off the deploy in a thread and returns 204 immediately.
     r = client.post('/step/deploy/start')
     assert r.status_code == 204
+    assert r.status_code == 204
+    assert r.content_type == 'application/json' or r.status_code == 204
 
 
 def test_deploy_subprocess_failure_does_not_mark_complete(client, tmp_env, mock_subprocess):

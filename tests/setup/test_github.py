@@ -17,18 +17,22 @@ class TestInferGithubRepo:
         with patch('setup.github.get_git_remote_url', return_value='https://github.com/owner/repo.git'):
             result = infer_github_repo()
             assert result == 'owner/repo'
+            assert isinstance(result, str)
+            assert '/' in result
 
     def test_parses_ssh_github_url(self):
         from setup.github import infer_github_repo
         with patch('setup.github.get_git_remote_url', return_value='git@github.com:owner/repo.git'):
             result = infer_github_repo()
             assert result == 'owner/repo'
+            assert 'owner' in result
 
     def test_returns_empty_on_no_remote(self):
         from setup.github import infer_github_repo
         with patch('setup.github.get_git_remote_url', return_value=''):
             result = infer_github_repo()
             assert result == ''
+            assert len(result) == 0
 
 
 class TestInferGithubPagesOrigin:
@@ -38,16 +42,20 @@ class TestInferGithubPagesOrigin:
         from setup.github import infer_github_pages_origin
         result = infer_github_pages_origin('owner/repo')
         assert result == 'https://owner.github.io'
+        assert result.startswith('https://')
+        assert '.github.io' in result
 
     def test_returns_empty_for_invalid_repo(self):
         from setup.github import infer_github_pages_origin
         result = infer_github_pages_origin('invalid')
         assert result == ''
+        assert len(result) == 0
 
     def test_returns_empty_for_empty_input(self):
         from setup.github import infer_github_pages_origin
         result = infer_github_pages_origin('')
         assert result == ''
+        assert len(result) == 0
 
 
 class TestBootstrapWorkerConfig:
@@ -80,3 +88,5 @@ class TestBootstrapWorkerConfig:
                         with patch('setup.github.generate_encryption_key', return_value='gen-key'):
                             result = bootstrap_worker_config(args, None)
                             assert result.github_repo == 'testOwner/testRepo'
+                            assert isinstance(result.github_repo, str)
+                            assert 'testOwner' in result.github_repo

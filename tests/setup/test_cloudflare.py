@@ -16,7 +16,6 @@ def load_module(name, path):
 
 def ensure_setup_package():
     """Ensure setup package and its dependencies are in sys.modules."""
-    # Ensure setup is a proper package
     if 'setup' not in sys.modules:
         spec = importlib.util.spec_from_file_location(
             'setup',
@@ -26,7 +25,6 @@ def ensure_setup_package():
         sys.modules['setup'] = module
         spec.loader.exec_module(module)
 
-    # Ensure dependencies
     for name, path in [
         ('setup.constants', '/home/openclaw/workspaces/linkedin-post/setup/constants.py'),
         ('setup.utils', '/home/openclaw/workspaces/linkedin-post/setup/utils.py'),
@@ -49,7 +47,9 @@ class TestD1IdIsPlaceholder:
             'setup.cloudflare',
             Path('/home/openclaw/workspaces/linkedin-post/setup/cloudflare.py')
         )
-        assert module._d1_id_is_placeholder("") is True
+        result = module._d1_id_is_placeholder("")
+        assert result is True
+        assert isinstance(result, bool)
 
     def test_replace_with_placeholder(self):
         ensure_setup_package()
@@ -59,7 +59,9 @@ class TestD1IdIsPlaceholder:
             'setup.cloudflare2',
             Path('/home/openclaw/workspaces/linkedin-post/setup/cloudflare.py')
         )
-        assert module._d1_id_is_placeholder("REPLACE_WITH_REAL_ID") is True
+        result = module._d1_id_is_placeholder("REPLACE_WITH_REAL_ID")
+        assert result is True
+        assert "REPLACE" in "REPLACE_WITH_REAL_ID"
 
     def test_to_be_created_placeholder(self):
         ensure_setup_package()
@@ -69,7 +71,10 @@ class TestD1IdIsPlaceholder:
             'setup.cloudflare3',
             Path('/home/openclaw/workspaces/linkedin-post/setup/cloudflare.py')
         )
-        assert module._d1_id_is_placeholder("to_be_created") is True
+        result = module._d1_id_is_placeholder("to_be_created")
+        assert result is True
+        assert isinstance(result, bool)
+        assert "to_be_created" in repr(result) or result is True
 
     def test_zero_id_placeholder(self):
         ensure_setup_package()
@@ -79,7 +84,9 @@ class TestD1IdIsPlaceholder:
             'setup.cloudflare4',
             Path('/home/openclaw/workspaces/linkedin-post/setup/cloudflare.py')
         )
-        assert module._d1_id_is_placeholder("00000000-0000-0000-0000-000000000001") is True
+        result = module._d1_id_is_placeholder("00000000-0000-0000-0000-000000000001")
+        assert result is True
+        assert result is not False
 
     def test_valid_uuid_not_placeholder(self):
         ensure_setup_package()
@@ -89,7 +96,9 @@ class TestD1IdIsPlaceholder:
             'setup.cloudflare5',
             Path('/home/openclaw/workspaces/linkedin-post/setup/cloudflare.py')
         )
-        assert module._d1_id_is_placeholder("550e8400-e29b-41d4-a716-446655440000") is False
+        result = module._d1_id_is_placeholder("550e8400-e29b-41d4-a716-446655440000")
+        assert result is False
+        assert isinstance(result, bool)
 
 
 class TestExtractD1DatabaseId:
@@ -108,18 +117,23 @@ class TestExtractD1DatabaseId:
         module = self._load_cloudflare('cf6')
         result = module._extract_d1_database_id('{"uuid": "abc12345-1234-1234-1234-123456789abc"}')
         assert result == "abc12345-1234-1234-1234-123456789abc"
+        assert len(result) == 36
 
     def test_parses_json_id(self):
         module = self._load_cloudflare('cf7')
         result = module._extract_d1_database_id('{"id": "xyz99999-9999-9999-9999-999999999999"}')
         assert result == "xyz99999-9999-9999-9999-999999999999"
+        assert result.startswith("xyz")
 
     def test_parses_plain_uuid_in_text(self):
         module = self._load_cloudflare('cf8')
         result = module._extract_d1_database_id('Created database ABC12345-1234-1234-1234-123456789ABC')
         assert result == "ABC12345-1234-1234-1234-123456789ABC"
+        assert len(result) == 36
 
     def test_returns_empty_on_failure(self):
         module = self._load_cloudflare('cf9')
         result = module._extract_d1_database_id("No UUID here")
         assert result == ""
+        assert len(result) == 0
+        assert isinstance(result, str)

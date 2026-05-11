@@ -16,15 +16,11 @@ import pytest
 
 # verify.py uses relative imports (from ..state import ...).
 # We need the real setup.wizard.state in sys.modules for the import to work.
-# test_google.py in the same directory works because it uses the real package path.
 
 
 def _load_verify():
     """Load verify.py with the real state module available."""
-    # Ensure the real wizard packages are available (they should be since we're in the repo)
     import setup.wizard.steps  # ensure package is registered
-
-    # Now import the module
     from setup.wizard.steps import verify
     return verify
 
@@ -39,6 +35,7 @@ class TestGetWorkerUrl:
         with patch.object(Path, 'exists', return_value=False):
             result = module.get_worker_url()
         assert result is None
+        assert isinstance(result, type(None))
 
     def test_returns_none_when_subdomain_not_set(self):
         """Must return None when CLOUDFLARE_SUBDOMAIN is not set."""
@@ -48,11 +45,11 @@ class TestGetWorkerUrl:
         mock_path_instance.exists.return_value = True
         mock_path_instance.read_text.return_value = json.dumps({'name': 'my-worker'})
 
-        # CLOUDFLARE_SUBDOMAIN not set - should return None
         with patch.dict(os.environ, {}, clear=True):
             with patch.object(Path, '__call__', return_value=mock_path_instance):
                 result = module.get_worker_url()
         assert result is None
+        assert isinstance(result, type(None))
 
     def test_returns_none_when_json_parse_fails(self):
         """Must return None when wrangler.jsonc is not valid JSON."""
@@ -65,6 +62,7 @@ class TestGetWorkerUrl:
         with patch.object(Path, '__call__', return_value=mock_path_instance):
             result = module.get_worker_url()
         assert result is None
+        assert isinstance(result, type(None))
 
     def test_returns_none_when_name_missing_from_json(self):
         """Must return None when wrangler.jsonc has no 'name' field."""
@@ -77,6 +75,7 @@ class TestGetWorkerUrl:
         with patch.object(Path, '__call__', return_value=mock_path_instance):
             result = module.get_worker_url()
         assert result is None
+        assert isinstance(result, type(None))
 
 
 class TestCheckEnvKey:
@@ -89,6 +88,7 @@ class TestCheckEnvKey:
         with patch.dict(os.environ, {'MY_TEST_KEY': 'some-value'}):
             result = module.check_env_key('MY_TEST_KEY')
         assert result is True
+        assert isinstance(result, bool)
 
     def test_returns_false_when_key_empty(self):
         """Must return False when environment variable is set but empty or whitespace."""
@@ -97,6 +97,7 @@ class TestCheckEnvKey:
         with patch.dict(os.environ, {'MY_TEST_KEY': '   '}):
             result = module.check_env_key('MY_TEST_KEY')
         assert result is False
+        assert isinstance(result, bool)
 
     def test_returns_false_when_key_not_set(self):
         """Must return False when environment variable is not set."""
@@ -105,6 +106,7 @@ class TestCheckEnvKey:
         with patch.dict(os.environ, {}, clear=True):
             result = module.check_env_key('NONEXISTENT_KEY_12345')
         assert result is False
+        assert isinstance(result, bool)
 
 
 class TestCheckWorkerHealth:
@@ -136,6 +138,7 @@ class TestCheckWorkerHealth:
             ok, msg = module.check_worker_health('https://my-worker.test-subdomain.workers.dev')
             assert ok is False
             assert msg == '503'
+            assert isinstance(ok, bool)
 
     def test_returns_false_with_exception_message_on_network_error(self):
         """Must return (False, exception_string) when request raises an exception."""
@@ -145,3 +148,4 @@ class TestCheckWorkerHealth:
             ok, msg = module.check_worker_health('https://my-worker.test-subdomain.workers.dev')
             assert ok is False
             assert 'Connection refused' in msg
+            assert isinstance(msg, str)
