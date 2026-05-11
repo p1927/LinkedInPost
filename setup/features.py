@@ -29,6 +29,10 @@ def run_generate_features_script() -> None:
     if not script.is_file():
         return
     try:
-        subprocess.run([sys.executable, str(script)], cwd=str(ROOT), check=True)
+        subprocess.run(
+            [sys.executable, str(script)], cwd=str(ROOT), check=True, timeout=30
+        )
+    except subprocess.TimeoutExpired:
+        warn('generate_features.py', 'timed out after 30s — feature flag refresh skipped')
     except (subprocess.CalledProcessError, OSError) as exc:
         warn('generate_features.py', f'could not refresh feature flags: {exc}')
