@@ -15,7 +15,7 @@
 ^- [x] setup/python_requirements.py  <!-- done 968cdfc 2026-05-11 -->
 ^- [x] setup/utils.py  <!-- done 968cdfc 2026-05-11 -->
 ^- [x] setup/verification.py  <!-- done 968cdfc 2026-05-11 -->
-- [ ] setup/wizard/server.py
+- [x] setup/wizard/server.py  <!-- done dfd7534 2026-05-11 -->
 - [x] setup/wizard/state.py  <!-- real tests verified -->
 ^- [x] setup/wizard/steps/apikeys.py  <!-- done 968cdfc 2026-05-11 -->
 - [ ] setup/wizard/steps/cloudflare.py
