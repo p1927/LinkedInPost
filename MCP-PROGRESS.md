@@ -21,8 +21,8 @@
 - [x] setup/wizard/steps/cloudflare.py  <!-- done 66e5158 2026-05-11 -->
 - [x] setup/wizard/steps/deploy.py  <!-- done 6a672f0 2026-05-11 -->
 - [x] setup/wizard/steps/google.py  <!-- real tests verified -->
-- [ ] setup/wizard/steps/mode.py
-- [ ] setup/wizard/steps/prereqs.py
+- [x] setup/wizard/steps/mode.py  <!-- done 92fae52 2026-05-11 -->
+- [x] setup/wizard/steps/prereqs.py  <!-- done 92fae52 2026-05-11 -->
 ^- [x] setup/wizard/steps/verify.py  <!-- done 968cdfc 2026-05-11 -->
 ^- [x] setup/worker_config.py  <!-- done 968cdfc 2026-05-11 -->
 
