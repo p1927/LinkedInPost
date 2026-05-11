@@ -29,6 +29,9 @@ def yt_get(path: str, params: dict) -> dict:
     except urllib.error.URLError as e:
         print(f"[poller] yt_get {path} failed: {e.reason}", file=sys.stderr)
         return {}
+    except json.JSONDecodeError as e:
+        print(f"[poller] yt_get {path} invalid JSON: {e}", file=sys.stderr)
+        return {}
 
 
 def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
@@ -73,6 +76,9 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
     except urllib.error.HTTPError as e:
         print(f"[poller] reply failed: {e.read().decode()}", file=sys.stderr)
         return False
+    except urllib.error.URLError as e:
+        print(f"[poller] reply network error: {e.reason}", file=sys.stderr)
+        return False
 
 
 def record_poll(worker_url: str, channel_id: str, secret: str) -> None:
@@ -97,11 +103,18 @@ def load_replied() -> set:
             return set(json.load(f))
     except FileNotFoundError:
         return set()
+    except (json.JSONDecodeError, ValueError) as e:
+        # Corrupted state file — start fresh rather than crashing the poller
+        print(f"[poller] replied marker corrupt, resetting: {e}", file=sys.stderr)
+        return set()
 
 
 def save_replied(ids: set) -> None:
-    with open(REPLIED_MARKER, "w") as f:
-        json.dump(list(ids), f)
+    try:
+        with open(REPLIED_MARKER, "w") as f:
+            json.dump(list(ids), f)
+    except OSError as e:
+        print(f"[poller] failed to save replied IDs: {e}", file=sys.stderr)
 
 
 def main():

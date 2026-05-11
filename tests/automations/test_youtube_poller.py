@@ -349,3 +349,144 @@ class TestLoadRepliedSaveReplied:
                 assert len(result) == 0
         finally:
             os.unlink(marker_path)
+
+# ── REGRESSION TESTS FOR 4 BUG FIXES ─────────────────────────────────────────
+
+_MODULE_PATH = Path(__file__).resolve().parents[2] / 'automations' / 'youtube_poller.py'
+
+
+def _load_module(name: str):
+    spec = importlib.util.spec_from_file_location(name, _MODULE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+class TestYtGetJsonDecodeError:
+    """Regression: yt_get must not raise on malformed JSON response (bug fix)."""
+
+    def test_returns_empty_dict_on_invalid_json(self):
+        """yt_get returns {} when the API responds with non-JSON content."""
+        module = _load_module('yt_get_json_regression')
+
+        class _FakeResponse:
+            def read(self): return b"not-json-at-all!!!"
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        with patch('urllib.request.urlopen', return_value=_FakeResponse()):
+            result = module.yt_get('search', {'key': 'test'})
+        assert result == {}
+        assert isinstance(result, dict)
+
+    def test_returns_empty_dict_on_empty_response(self):
+        """yt_get returns {} when the API responds with empty body."""
+        module = _load_module('yt_get_empty_regression')
+
+        class _FakeResponse:
+            def read(self): return b""
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        with patch('urllib.request.urlopen', return_value=_FakeResponse()):
+            result = module.yt_get('commentThreads', {'key': 'test'})
+        assert result == {}
+        assert isinstance(result, dict)
+
+
+class TestPostReplyUrlError:
+    """Regression: post_reply must not raise on network error (bug fix)."""
+
+    def test_returns_false_on_url_error(self):
+        """post_reply returns False (not raises) on URLError."""
+        from urllib.error import URLError
+        module = _load_module('post_reply_urlerror_regression')
+
+        with patch('urllib.request.urlopen', side_effect=URLError('Network unreachable')):
+            result = module.post_reply('vid123', 'parent456', 'Hello!', 'oauth_token')
+        assert result is False
+        assert isinstance(result, bool)
+
+    def test_http_error_still_returns_false(self):
+        """post_reply still returns False (not raises) on HTTPError."""
+        from urllib.error import HTTPError
+        import io
+        module = _load_module('post_reply_httperr_regression')
+
+        with patch('urllib.request.urlopen', side_effect=HTTPError(
+            'url', 401, 'Unauthorized', {}, io.BytesIO(b'{"error":"auth"}')
+        )):
+            result = module.post_reply('vid123', 'parent456', 'Hello!', 'bad_token')
+        assert result is False
+        assert isinstance(result, bool)
+
+
+class TestLoadRepliedCorruptFile:
+    """Regression: load_replied must not crash on corrupt state file (bug fix)."""
+
+    def test_returns_empty_set_on_corrupt_json(self):
+        """load_replied returns empty set when state file has invalid JSON."""
+        module = _load_module('load_replied_corrupt_regression')
+
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as f:
+            f.write("this is not valid json {{{")
+            marker = f.name
+
+        try:
+            with patch.object(module, 'REPLIED_MARKER', marker):
+                result = module.load_replied()
+            assert result == set()
+            assert isinstance(result, set)
+        finally:
+            os.unlink(marker)
+
+    def test_returns_valid_data_after_corruption_recovery(self):
+        """load_replied recovers gracefully and returns empty set, not partial data."""
+        module = _load_module('load_replied_partial_regression')
+
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as f:
+            f.write("[")  # truncated JSON
+            marker = f.name
+
+        try:
+            with patch.object(module, 'REPLIED_MARKER', marker):
+                result = module.load_replied()
+            assert isinstance(result, set)
+            assert len(result) == 0
+        finally:
+            os.unlink(marker)
+
+
+class TestSaveRepliedOsError:
+    """Regression: save_replied must not raise on disk error (bug fix)."""
+
+    def test_logs_error_but_does_not_raise_on_oserror(self, capsys):
+        """save_replied silently logs OSError instead of propagating it."""
+        module = _load_module('save_replied_oserr_regression')
+
+        with patch('builtins.open', side_effect=OSError("disk full")):
+            # Must not raise
+            module.save_replied({"id1", "id2"})
+
+        captured = capsys.readouterr()
+        assert "failed to save replied IDs" in captured.err
+        assert "disk full" in captured.err
+
+    def test_saves_normally_when_disk_is_fine(self):
+        """save_replied writes correctly to a temp file when disk is available."""
+        module = _load_module('save_replied_normal_regression')
+
+        ids = {"id-A", "id-B", "id-C"}
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as f:
+            marker = f.name
+
+        try:
+            with patch.object(module, 'REPLIED_MARKER', marker):
+                module.save_replied(ids)
+            with open(marker) as f:
+                loaded = set(json.load(f))
+            assert loaded == ids
+            assert len(loaded) == 3
+        finally:
+            os.unlink(marker)
