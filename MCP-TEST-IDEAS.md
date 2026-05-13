@@ -5,7 +5,7 @@
 - [!] find and fix bugs in assert_density_check.py  <!-- shard CPU 100%, LLM coder missing cycle markers -->
 - [x] find and fix bugs in automations/youtube_poller.py  <!-- 7872f89: fix committed -->
 - [!] find and fix bugs in mutation_tester.py  <!-- Hermes corrupted, reverted -->
-- [>] find and fix bugs in scripts/generate_features.py
+- [~] find and fix bugs in scripts/generate_features.py  <!-- no bugs found — load_feature_map() handles missing/empty YAML gracefully; emit_ts() produces correct TS; update_wrangler_deployment_mode() regex works correctly -->
 - [x] find and fix bugs in setup.py  <!-- inverted if not args.skip_google: fix -->
 - [>] find and fix bugs in setup/cli.py
 - [ ] find and fix bugs in setup/cloudflare.py
