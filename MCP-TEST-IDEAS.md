@@ -6,8 +6,8 @@
 - [x] find and fix bugs in automations/youtube_poller.py  <!-- 7872f89: fix committed -->
 - [!] find and fix bugs in mutation_tester.py  <!-- Hermes corrupted, reverted -->
 - [>] find and fix bugs in scripts/generate_features.py
-- [ ] find and fix bugs in setup.py
-- [ ] find and fix bugs in setup/cli.py
+- [x] find and fix bugs in setup.py  <!-- inverted if not args.skip_google: fix -->
+- [>] find and fix bugs in setup/cli.py
 - [ ] find and fix bugs in setup/cloudflare.py
 - [ ] find and fix bugs in setup/constants.py
 - [ ] find and fix bugs in setup/features.py
