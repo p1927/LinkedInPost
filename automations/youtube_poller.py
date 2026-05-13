@@ -162,7 +162,7 @@ def main():
             "key": api_key,
         })
         for thread in comments_data.get("items", []):
-            thread_id = thread["id"]
+            thread_id = thread["snippet"]["topLevelComment"]["id"]
             if thread_id in replied:
                 continue
 
