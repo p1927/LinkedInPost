@@ -9,23 +9,23 @@
 - [x] find and fix bugs in setup.py  <!-- inverted if not args.skip_google: fix -->
 - [x] find and fix bugs in setup/cli.py  <!-- no bugs found -->
 - [x] find and fix bugs in setup/cloudflare.py  <!-- no bugs found -->
-- [ ] find and fix bugs in setup/constants.py
-- [ ] find and fix bugs in setup/features.py
-- [ ] find and fix bugs in setup/github.py
-- [ ] find and fix bugs in setup/google_resources.py
-- [ ] find and fix bugs in setup/python_requirements.py
-- [ ] find and fix bugs in setup/utils.py
-- [ ] find and fix bugs in setup/verification.py
-- [ ] find and fix bugs in setup/wizard/server.py
-- [ ] find and fix bugs in setup/wizard/state.py
-- [ ] find and fix bugs in setup/wizard/steps/apikeys.py
-- [ ] find and fix bugs in setup/wizard/steps/cloudflare.py
-- [ ] find and fix bugs in setup/wizard/steps/deploy.py
-- [ ] find and fix bugs in setup/wizard/steps/google.py
-- [ ] find and fix bugs in setup/wizard/steps/mode.py
-- [ ] find and fix bugs in setup/wizard/steps/prereqs.py
-- [ ] find and fix bugs in setup/wizard/steps/verify.py
-- [ ] find and fix bugs in setup/worker_config.py
+- [>] find and fix bugs in setup/constants.py
+- [x] find and fix bugs in setup/features.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/github.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/google_resources.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/python_requirements.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/utils.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/verification.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/server.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/state.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/apikeys.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/cloudflare.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/deploy.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/google.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/mode.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/prereqs.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/verify.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/worker_config.py  <!-- no bugs -->
 
 ## Creative ideas (child-2 will expand)
 - [ ] Test setup/cli.py with missing environment variables — setup should fail gracefully
