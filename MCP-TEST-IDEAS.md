@@ -2,10 +2,10 @@
 # Format: - [ ] pending | - [>] assigned | - [~] hermes done | - [v] verified | - [x] done | - [!] bounced
 
 ## Seeded from source files
-- [ ] find and fix bugs in assert_density_check.py
-- [ ] find and fix bugs in automations/youtube_poller.py
-- [ ] find and fix bugs in mutation_tester.py
-- [ ] find and fix bugs in scripts/generate_features.py
+- [!] find and fix bugs in assert_density_check.py  <!-- shard CPU 100%, LLM coder missing cycle markers -->
+- [x] find and fix bugs in automations/youtube_poller.py  <!-- 7872f89: fix committed -->
+- [>] find and fix bugs in mutation_tester.py
+- [>] find and fix bugs in scripts/generate_features.py
 - [ ] find and fix bugs in setup.py
 - [ ] find and fix bugs in setup/cli.py
 - [ ] find and fix bugs in setup/cloudflare.py
