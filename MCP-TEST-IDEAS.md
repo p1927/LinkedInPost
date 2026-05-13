@@ -7,8 +7,8 @@
 - [!] find and fix bugs in mutation_tester.py  <!-- Hermes corrupted, reverted -->
 - [x] find and fix bugs in scripts/generate_features.py  <!-- verified: load_feature_map + emit_ts + update_wrangler_deployment_mode OK -->
 - [x] find and fix bugs in setup.py  <!-- inverted if not args.skip_google: fix -->
-- [>] find and fix bugs in setup/cli.py
-- [>] find and fix bugs in setup/cloudflare.py
+- [x] find and fix bugs in setup/cli.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/cloudflare.py  <!-- no bugs found -->
 - [ ] find and fix bugs in setup/constants.py
 - [ ] find and fix bugs in setup/features.py
 - [ ] find and fix bugs in setup/github.py
