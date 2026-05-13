@@ -28,7 +28,7 @@
 - [x] find and fix bugs in setup/worker_config.py  <!-- no bugs -->
 
 ## Creative ideas (child-2 will expand)
-- [ ] Test setup/cli.py with missing environment variables — setup should fail gracefully
+- [x] Test setup/cli.py with missing environment variables  <!-- fails gracefully with clear error + exit 1 -->
 - [ ] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
 - [ ] Test setup/github.py with revoked GitHub token — should report auth error clearly
 - [ ] Test setup/google_resources.py with invalid GCP project ID format
