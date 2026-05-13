@@ -54,9 +54,17 @@ def load_feature_map() -> dict[str, bool | str]:
             continue
         val = raw[key]
         if isinstance(default, str):
-            out[key] = str(val) if isinstance(val, str) else default
+            if isinstance(val, str):
+                out[key] = val
+            else:
+                print(f'  [warn] {key}={val!r} is not a string, using default={default!r}', file=sys.stderr)
+                out[key] = default
         else:
-            out[key] = bool(val) if isinstance(val, bool) else default
+            if isinstance(val, bool):
+                out[key] = val
+            else:
+                print(f'  [warn] {key}={val!r} is not a bool, using default={default!r}', file=sys.stderr)
+                out[key] = default
     return out
 
 

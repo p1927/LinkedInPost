@@ -43,6 +43,16 @@ class TestLoadFeatureMap:
             assert result["newsResearch"] is False
             assert isinstance(result, dict)
 
+    def test_warns_on_wrong_type_uses_default(self, tmp_path):
+        """Wrong type in features.yaml prints warning and falls back to default."""
+        features_yaml = tmp_path / "features.yaml"
+        features_yaml.write_text("newsResearch: 'yes'\n")  # string instead of bool
+        with patch('scripts.generate_features.FEATURES_FILE', features_yaml):
+            from scripts.generate_features import load_feature_map
+            result = load_feature_map()
+            assert result["newsResearch"] is True  # falls back to default
+
+
 
 class TestEmitTs:
     """Tests for emit_ts()."""
