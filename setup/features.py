@@ -6,6 +6,8 @@ import sys
 from .constants import FEATURES_YAML, ROOT
 from .utils import warn
 
+__version__ = "0.1.0"
+
 
 def _detect_duplicate_keys(raw_text: str) -> list[str]:
     """Detect duplicate top-level YAML keys by scanning raw text before parsing."""

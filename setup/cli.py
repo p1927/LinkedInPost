@@ -3,9 +3,12 @@ from __future__ import annotations
 import argparse
 import os
 
+from .features import __version__
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Bootstrap LinkedIn Bot resources and deployment config.')
+    parser = argparse.ArgumentParser(prog='setup', description='Bootstrap LinkedIn Bot resources and deployment config.')
+    parser.add_argument('--version', action='version', version='setup ' + __version__)
     parser.add_argument('--install-worker-deps', action='store_true', help='Install Worker dependencies, including Wrangler, before any Worker-related steps.')
     parser.add_argument('--cloudflare', action='store_true', help='Create Worker config, KV namespaces, and .dev.vars when possible.')
     parser.add_argument('--deploy-worker', action='store_true', help='Deploy the Worker after Cloudflare bootstrap.')
@@ -31,3 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--all', action='store_true', help='Run Google setup, Cloudflare bootstrap, Worker deploy, and GitHub secret sync.')
     parser.add_argument('--web', action='store_true', help='Start the web-based setup wizard at localhost:4242')
     return parser.parse_args()
+
+
+if __name__ == '__main__':
+    parse_args()
