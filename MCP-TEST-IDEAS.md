@@ -51,4 +51,8 @@
 ## Hermes task (assigned)
 - [x] Test mutation_tester.py on a file with syntax errors — exits 2 with no mutable lines found
   <!-- Expected outcome: mutation_tester.py exits 1 or returns error, no crash, no partial output -->
-  <!-- Cycle markers NOT required — return results directly with exit code -->
+  <!-- Cycle markers NOT required — return results directly with exit code -->- [ ] Test assert_density_check.py with a file that has 100% coverage but only one assertion
+- [ ] Test assert_density_check.py with a test file that has no assertions at all
+- [ ] Test setup/cli.py with an empty argument — should show help
+- [ ] Test setup/cli.py with --help flag — should display usage
+- [ ] Test setup/cli.py with invalid subcommand — should error gracefully
