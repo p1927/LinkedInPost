@@ -37,17 +37,17 @@
 - [!] Test worker OAuth handlers (worker/src/index.ts:3900+ / 3927+) — Hermes down (LLM gateway 503)
 - [!] Test cloudflare perms — Hermes timeout + CPU 100%
 - [!] Test wizard deploy step with Workers script size at the 1MB limit — Hermes down
-- [ ] Test wizard verify step when no GitHub app is installed
-- [ ] Concurrent test: run setup/cli.py twice simultaneously — should not corrupt state
-- [ ] Test setup/worker_config.py when wrangler.toml is missing entirely
-- [ ] End-to-end: fresh `python setup.py` with valid API keys end-to-end
-- [ ] Test automations/youtube_poller.py with an empty YouTube video ID
-- [ ] Test automations/youtube_poller.py with a rate-limited YouTube API response
-- [ ] Test setup/wizard/steps/deploy.py with missing Cloudflare credentials
-- [ ] Test setup/wizard/steps/deploy.py with invalid deployment region
-- [ ] Test setup/github.py with expired GitHub App token
-- [ ] Test setup/github.py with repository not found error
-- [ ] Test setup/google_resources.py with quota exceeded error
+- [!] Test wizard verify step when no GitHub app is installed (stuck — shard timeout, CPU spike)
+- [x] Concurrent test: run setup/cli.py twice simultaneously — should not corrupt state
+- [x] Test setup/worker_config.py when wrangler.toml is missing entirely
+- [x] End-to-end: fresh `python setup.py` with valid API keys end-to-end
+- [x] Test automations/youtube_poller.py with an empty YouTube video ID
+- [x] Test automations/youtube_poller.py with a rate-limited YouTube API response
+- [x] Test setup/wizard/steps/deploy.py with missing Cloudflare credentials
+- [x] Test setup/wizard/steps/deploy.py with invalid deployment region
+- [x] Test setup/github.py with expired GitHub App token
+- [x] Test setup/github.py with repository not found error
+- [x] Test setup/google_resources.py with quota exceeded error
 ## Hermes task (assigned)
 - [x] Test mutation_tester.py on a file with syntax errors — exits 2 with no mutable lines found
   <!-- Expected outcome: mutation_tester.py exits 1 or returns error, no crash, no partial output -->
