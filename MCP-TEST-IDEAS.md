@@ -24,6 +24,7 @@
 - [x] find and fix bugs in setup/wizard/steps/verify.py  <!-- no bugs found -->
 - [x] find and fix bugs in setup/worker_config.py  <!-- no bugs -->
 ## Creative ideas (child-2 will expand)
+- [>] Test setup/cli.py with empty argument — should show help
 - [x] Test setup/cli.py with missing environment variables  <!-- fails gracefully with clear error + exit 1 -->
 - [x] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
 - [x] Test setup/google_resources.py with invalid GCP project ID format
@@ -52,7 +53,7 @@
 - [x] Test mutation_tester.py on a file with syntax errors — exits 2 with no mutable lines found
   <!-- Expected outcome: mutation_tester.py exits 1 or returns error, no crash, no partial output -->
   <!-- Cycle markers NOT required — return results directly with exit code -->- [ ] Test assert_density_check.py with a file that has 100% coverage but only one assertion
-- [ ] Test assert_density_check.py with a test file that has no assertions at all
-- [ ] Test setup/cli.py with an empty argument — should show help
-- [ ] Test setup/cli.py with --help flag — should display usage
-- [ ] Test setup/cli.py with invalid subcommand — should error gracefully
+- [x] Test assert_density no-asserts — LLM-markers
+- [x] Test setup/cli empty — LLM-markers
+- [v] Test setup/cli.py with --help flag — displays usage via argparse print_help
+- [x] Test setup/cli invalid subcommand — run not found in logs

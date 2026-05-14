@@ -16,6 +16,30 @@ def test_deploy_start_returns_204(client, tmp_env, mock_subprocess):
     assert r.content_type == 'application/json' or r.status_code == 204
 
 
+def test_deploy_npx_missing_does_not_mark_complete(client, tmp_env, mock_subprocess):
+    """When npx is not on PATH, ensure_command raises RuntimeError — deploy must NOT be marked complete."""
+    from setup.wizard.steps import deploy as deploy_module
+
+    class FakePopenNpx:
+        def __init__(self, args, *_a, **_kw):
+            if args and args[0] == 'npx':
+                raise FileNotFoundError('npx not found')
+            self.returncode = 0
+            self.stdout = iter(['mock deploy line\n'])
+
+        def wait(self):
+            return self.returncode
+
+    # Patch Popen to raise for npx calls
+    deploy_module.subprocess.Popen = FakePopenNpx
+
+    r = client.post('/step/deploy/start')
+    assert r.status_code == 204
+
+    from setup.wizard import state as state_module
+    assert state_module.is_complete('deploy') is False
+
+
 def test_deploy_subprocess_failure_does_not_mark_complete(client, tmp_env, mock_subprocess):
     """When the deploy subprocess exits non-zero, deploy step must NOT be marked complete."""
     mock_subprocess.set_popen_exit(1)  # type: ignore[attr-defined]
