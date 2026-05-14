@@ -9,7 +9,7 @@
 - [x] find and fix bugs in setup.py  <!-- inverted if not args.skip_google: fix -->
 - [x] find and fix bugs in setup/cli.py  <!-- no bugs found -->
 - [x] find and fix bugs in setup/cloudflare.py  <!-- no bugs found -->
-- [>] find and fix bugs in setup/constants.py
+- [x] find and fix bugs in setup/constants.py  <!-- PIPELINE_TAB_HEADERS missing 'Delivery channel' and 'Generation model' -->
 - [x] find and fix bugs in setup/features.py  <!-- no bugs found -->
 - [x] find and fix bugs in setup/github.py  <!-- no bugs found -->
 - [x] find and fix bugs in setup/google_resources.py  <!-- no bugs found -->
@@ -29,9 +29,9 @@
 
 ## Creative ideas (child-2 will expand)
 - [x] Test setup/cli.py with missing environment variables  <!-- fails gracefully with clear error + exit 1 -->
-- [ ] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
-- [ ] Test setup/github.py with revoked GitHub token — should report auth error clearly
-- [ ] Test setup/google_resources.py with invalid GCP project ID format
+- [>] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
+- [!] Test setup/github.py with revoked GitHub token — Hermes 503/LLM coder cycle markers
+- [~] Test setup/google_resources.py with invalid GCP project ID format
 - [ ] Test setup/features.py with conflicting feature flag names
 - [ ] Test the YouTube poller with a video that has no transcripts available
 - [ ] Test the YouTube poller with a private/unavailable video ID
