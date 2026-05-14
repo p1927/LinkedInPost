@@ -1,5 +1,6 @@
 """Tests for setup.github module."""
 
+import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -56,6 +57,60 @@ class TestInferGithubPagesOrigin:
         result = infer_github_pages_origin('')
         assert result == ''
         assert len(result) == 0
+
+
+class TestSyncGithubSecretsAuthFailure:
+    """Tests for sync_github_secrets() when gh auth is invalid/revoked."""
+
+    def test_gh_auth_failure_reports_error_per_secret_and_continues(self):
+        """When gh secret set fails with auth error, fail() is called for that secret
+        and the loop continues to remaining secrets rather than raising."""
+        from setup import github as gh_module
+        from dataclasses import dataclass
+
+        @dataclass
+        class FakeBootstrap:
+            google_client_id: str = 'fake-google-id'
+            worker_url: str = 'https://fake.workers.dev'
+            cors_allowed_origins: str = 'http://localhost:5173'
+            scheduler_secret: str = 'fake-scheduler'
+            github_repo: str = 'fake/repo'
+            gmail_client_id: str = ''
+            gmail_client_secret: str = ''
+
+        calls = []
+
+        def mock_run(cmd, cwd=None, capture_output=True, input_text=None):
+            if cmd[0] == 'gh' and 'secret' in cmd[1]:
+                calls.append('gh:' + cmd[2])
+                err = subprocess.CalledProcessError(1, cmd)
+                err.stderr = 'Error: HTTP 401: Unauthorized'
+                raise RuntimeError('GitHub authentication failed') from err
+            return MagicMock(stdout='', stderr='')
+
+        with patch('setup.verification.verify_worker_endpoint'), \
+             patch('setup.cloudflare.get_cloudflare_account_id', return_value='fake-acct'), \
+             patch.object(gh_module, 'run_command', mock_run), \
+             patch.object(gh_module, 'fail', lambda l, v: calls.append(f'fail:{v}')), \
+             patch.object(gh_module, 'ok', lambda l, v: calls.append(f'ok:{v}')), \
+             patch.object(gh_module, 'warn', lambda l, v: calls.append(f'warn:{v}')):
+
+            dv_backup = ''
+            if gh_module.WORKER_DEV_VARS.exists():
+                dv_backup = gh_module.WORKER_DEV_VARS.read_text()
+                gh_module.WORKER_DEV_VARS.write_text('')
+
+            try:
+                gh_module.sync_github_secrets(FakeBootstrap(), None)
+            finally:
+                if dv_backup is not None:
+                    gh_module.WORKER_DEV_VARS.write_text(dv_backup)
+
+        # Should have called fail() for at least the first secret,
+        # and NOT raised an exception that would have aborted the loop
+        assert 'fail:VITE_GOOGLE_CLIENT_ID' in calls, f"Expected auth failure to be reported via fail(), got: {calls}"
+        # Loop should have continued to at least one more secret
+        assert len(calls) > 1, f"Expected loop to continue after failure, got only: {calls}"
 
 
 class TestBootstrapWorkerConfig:
