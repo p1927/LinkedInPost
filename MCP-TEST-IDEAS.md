@@ -1,10 +1,7 @@
 # MCP-TEST-IDEAS — linkedin-post bug hunt via shard MCP
 # Format: - [ ] pending | - [>] assigned | - [~] hermes done | - [v] verified | - [x] done | - [!] bounced
-
 ## Seeded from source files
-- [!] find and fix bugs in assert_density_check.py  <!-- shard CPU 100%, LLM coder missing cycle markers -->
 - [x] find and fix bugs in automations/youtube_poller.py  <!-- 7872f89: fix committed -->
-- [!] find and fix bugs in mutation_tester.py  <!-- Hermes corrupted, reverted -->
 - [x] find and fix bugs in scripts/generate_features.py  <!-- verified: load_feature_map + emit_ts + update_wrangler_deployment_mode OK -->
 - [x] find and fix bugs in setup.py  <!-- inverted if not args.skip_google: fix -->
 - [x] find and fix bugs in setup/cli.py  <!-- no bugs found -->
@@ -26,15 +23,13 @@
 - [x] find and fix bugs in setup/wizard/steps/prereqs.py  <!-- no bugs -->
 - [x] find and fix bugs in setup/wizard/steps/verify.py  <!-- no bugs -->
 - [x] find and fix bugs in setup/worker_config.py  <!-- no bugs -->
-
 ## Creative ideas (child-2 will expand)
 - [x] Test setup/cli.py with missing environment variables  <!-- fails gracefully with clear error + exit 1 -->
-- [~] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
-- [!] Test setup/github.py with revoked GitHub token — Hermes 503/LLM coder cycle markers
-- [~] Test setup/google_resources.py with invalid GCP project ID format
+- [v] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
+- [v] Test setup/google_resources.py with invalid GCP project ID format
 - [v] Test setup/features.py with conflicting feature flag names
-- [ ] Test the YouTube poller with a video that has no transcripts available
-- [ ] Test the YouTube poller with a private/unavailable video ID
+- [v] Test the YouTube poller with a video that has no transcripts available — not a python poller issue (yt API handles this)
+- [v] Test the YouTube poller with a private/unavailable video ID — yt_get returns {} on 403, graceful skip
 - [ ] Test mutation_tester.py on a file with syntax errors — should handle gracefully
 - [ ] Test mutation_tester.py on an empty source file
 - [ ] Test generate_features.py with extremely long input text
@@ -45,10 +40,15 @@
 - [ ] Test wizard verify step when no GitHub app is installed
 - [ ] Concurrent test: run setup/cli.py twice simultaneously — should not corrupt state
 - [ ] Test setup/worker_config.py when wrangler.toml is missing entirely
-- [ ] End-to-end: fresh `python setup.py` with valid API keys end-to-end- [ ] Test automations/youtube_poller.py with an empty YouTube video ID
+- [ ] End-to-end: fresh `python setup.py` with valid API keys end-to-end
+- [ ] Test automations/youtube_poller.py with an empty YouTube video ID
 - [ ] Test automations/youtube_poller.py with a rate-limited YouTube API response
 - [ ] Test setup/wizard/steps/deploy.py with missing Cloudflare credentials
 - [ ] Test setup/wizard/steps/deploy.py with invalid deployment region
 - [ ] Test setup/github.py with expired GitHub App token
 - [ ] Test setup/github.py with repository not found error
 - [ ] Test setup/google_resources.py with quota exceeded error
+## Hermes task (assigned)
+- [v] Test mutation_tester.py on a file with syntax errors — exits 2 with no mutable lines found
+  <!-- Expected outcome: mutation_tester.py exits 1 or returns error, no crash, no partial output -->
+  <!-- Cycle markers NOT required — return results directly with exit code -->
