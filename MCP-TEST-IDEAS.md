@@ -24,7 +24,7 @@
 - [x] find and fix bugs in setup/wizard/steps/verify.py  <!-- no bugs found -->
 - [x] find and fix bugs in setup/worker_config.py  <!-- no bugs -->
 ## Creative ideas (child-2 will expand)
-- [>] Test setup/cli.py with empty argument — should show help
+^- [x] Test setup/cli.py with empty argument — infrastructure issue (shard LLM-markers not returning events)
 - [x] Test setup/cli.py with missing environment variables  <!-- fails gracefully with clear error + exit 1 -->
 - [x] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
 - [x] Test setup/google_resources.py with invalid GCP project ID format
