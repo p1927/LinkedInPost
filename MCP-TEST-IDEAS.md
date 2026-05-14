@@ -3,4 +3,4 @@
 ^- [!] Test cli missing req args — not found in MCP log
 ^- [!] Test setup/cli.py with credentials file that has expired tokens (stuck — blocked state, LLM timeout)
 ^- [!] Test automations/youtube_poller.py with malformed video ID format (stuck — blocked state, LLM timeout)
-- [ ] Test generate_features.py with conflicting feature names
+^- [!] Test generate_features.py with conflicting feature names (stuck — shard timeout)
