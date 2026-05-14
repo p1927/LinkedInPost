@@ -18,6 +18,28 @@ from .utils import fail, ok, warn
 load_dotenv()
 
 
+import re
+
+PROJECT_ID_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$')
+
+
+def _validate_project_id(project_id: str | None) -> None:
+    """Validate GCP project ID format. Raises ValueError if invalid."""
+    if not project_id:
+        raise ValueError(
+            "GCP project_id is missing from credentials. "
+            "Ensure your service account JSON has a valid 'project_id' field."
+        )
+    if not PROJECT_ID_PATTERN.match(project_id):
+        raise ValueError(
+            f"GCP project_id format is invalid: {project_id!r}. "
+            "Project IDs must contain only lowercase letters, numbers, and hyphens, "
+            "start and end with a letter or number, and be 6-30 characters. "
+            "Example: 'my-project-123'. "
+            "See https://cloud.google.com/resource-manager/docs/creating-managing-projects"
+        )
+
+
 @dataclass
 class GoogleResources:
     service_account_email: str
@@ -104,6 +126,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         sys.exit(1)
 
     creds_dict, normalized_creds_json = parse_service_account_json(creds_json)
+    _validate_project_id(creds_dict.get('project_id'))
     gcs_bucket_name = os.environ.get('GOOGLE_CLOUD_STORAGE_BUCKET', '').strip()
     if not gcs_bucket_name:
         fail('GOOGLE_CLOUD_STORAGE_BUCKET', 'not set. Configure a Google Cloud Storage bucket for generated images before running setup.py.')
