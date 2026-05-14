@@ -15,13 +15,13 @@
 - [x] find and fix bugs in setup/verification.py  <!-- no bugs -->
 - [x] find and fix bugs in setup/wizard/server.py  <!-- no bugs -->
 - [x] find and fix bugs in setup/wizard/state.py  <!-- no bugs -->
-- [x] find and fix bugs in setup/wizard/steps/apikeys.py  <!-- no bugs -->
-- [x] find and fix bugs in setup/wizard/steps/cloudflare.py  <!-- no bugs -->
-- [x] find and fix bugs in setup/wizard/steps/deploy.py  <!-- no bugs -->
-- [x] find and fix bugs in setup/wizard/steps/google.py  <!-- no bugs -->
-- [x] find and fix bugs in setup/wizard/steps/mode.py  <!-- no bugs -->
-- [x] find and fix bugs in setup/wizard/steps/prereqs.py  <!-- no bugs -->
-- [x] find and fix bugs in setup/wizard/steps/verify.py  <!-- no bugs -->
+- [x] find and fix bugs in setup/wizard/steps/apikeys.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/wizard/steps/cloudflare.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/wizard/steps/deploy.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/wizard/steps/google.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/wizard/steps/mode.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/wizard/steps/prereqs.py  <!-- no bugs found -->
+- [x] find and fix bugs in setup/wizard/steps/verify.py  <!-- no bugs found -->
 - [x] find and fix bugs in setup/worker_config.py  <!-- no bugs -->
 ## Creative ideas (child-2 will expand)
 - [x] Test setup/cli.py with missing environment variables  <!-- fails gracefully with clear error + exit 1 -->
@@ -30,12 +30,12 @@
 - [v] Test setup/features.py with conflicting feature flag names
 - [v] Test the YouTube poller with a video that has no transcripts available — not a python poller issue (yt API handles this)
 - [v] Test the YouTube poller with a private/unavailable video ID — yt_get returns {} on 403, graceful skip
-- [>] Test mutation_tester.py on a file with syntax errors — should handle gracefully
-- [>] Test mutation_tester.py on an empty source file
-- [ ] Test generate_features.py with extremely long input text
-- [ ] Test generate_features.py with special characters and Unicode
-- [ ] Test setup/wizard/steps/google.py OAuth flow with expired refresh token
-- [ ] Test setup/wizard/steps/cloudflare.py with zone read permission but not write
+- [!] Test mutation_tester.py on a file with syntax errors — Hermes 503 (cycle markers)
+- [!] Test mutation_tester.py on an empty source file — Hermes 503 (cycle markers)
+- [x] Test generate_features.py with extremely long input text  <!-- test added: test_handles_100kb_string_value in tests/scripts/test_generate_features.py -->
+- [x] Test generate_features.py with special characters and Unicode  <!-- test added: TestEmitTsSpecialChars + unicode case in TestEmitTs -->
+- [>] Test setup/wizard/steps/google.py OAuth flow with expired refresh token
+- [>] Test setup/wizard/steps/cloudflare.py with zone read permission but not write
 - [ ] Test wizard deploy step with Workers script size at the 1MB limit
 - [ ] Test wizard verify step when no GitHub app is installed
 - [ ] Concurrent test: run setup/cli.py twice simultaneously — should not corrupt state

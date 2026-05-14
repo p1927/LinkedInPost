@@ -62,7 +62,7 @@ def mutable_linenos(source: str) -> list[int]:
 
 def apply_mutation(lines: list[str], lineno: int) -> list[str]:
     mutated = lines.copy()
-    original = mutated[lineno - 1]
+    mutated[lineno - 1] = "pass  # MUTANT"
     indent = len(original) - len(original.lstrip())
     mutated[lineno - 1] = " " * indent + "pass  # MUTANT\n"
     return mutated

@@ -80,11 +80,12 @@ def emit_ts(features: dict[str, bool | str]) -> str:
     for key in sorted(features.keys()):
         value = features[key]
         if isinstance(value, str):
+            escaped = value.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace("'", "\\'")
             if key == 'deploymentMode':
-                lines.append(f"export const deploymentMode = '{value}' as const;\n")
+                lines.append(f"export const deploymentMode = '{escaped}' as const;\n")
                 lines.append(f"export type DeploymentMode = typeof deploymentMode;\n")
             else:
-                lines.append(f"export const {key} = '{value}' as const;\n")
+                lines.append(f"export const {key} = '{escaped}' as const;\n")
         else:
             const = TS_CONST_NAMES.get(key, f'FEATURE_{key.upper()}')
             lines.append(f'export const {const} = {"true" if value else "false"} as const;\n')

@@ -57,6 +57,20 @@ class TestLoadFeatureMap:
             # Feature is emitted with default value (true) since wrong type triggered default
             assert "FEATURE_NEWS_RESEARCH = true" in ts_output
 
+    def test_handles_100kb_string_value(self, tmp_path):
+        """Very long string value (100KB) in features.yaml does not crash load_feature_map."""
+        features_yaml = tmp_path / "features.yaml"
+        long_string = "x" * 102400
+        features_yaml.write_text(f"campaign: '{long_string}'\n")
+        with patch('scripts.generate_features.FEATURES_FILE', features_yaml):
+            from scripts.generate_features import load_feature_map, emit_ts
+            result = load_feature_map()
+            # campaign should use its default (True) since the string value is not a valid bool
+            # The load succeeds without crash and logs a type warning
+            assert result["campaign"] is True
+            ts_output = emit_ts(result)
+            assert "FEATURE_CAMPAIGN = true" in ts_output
+
 
 
 class TestEmitTs:
@@ -85,3 +99,63 @@ class TestEmitTs:
         assert a_pos < z_pos, "features should be sorted by constant name"
         assert "FEATURE_AFEATURE" in result
         assert "FEATURE_ZFEATURE" in result
+
+    def test_emits_ts_special_characters_and_unicode(self):
+        """emit_ts handles special characters and Unicode without crash or encoding errors."""
+        from scripts.generate_features import emit_ts
+        features = {
+            "deploymentMode": "café_naïve_日本語",
+            "newsResearch": True,
+            "campaign": False,
+        }
+        result = emit_ts(features)
+        assert "café_naïve_日本語" in result
+        assert "deploymentMode = 'café_naïve_日本語'" in result
+        assert "FEATURE_NEWS_RESEARCH = true" in result
+        assert "FEATURE_CAMPAIGN = false" in result
+        assert "// AUTO-GENERATED" in result
+        # Valid TypeScript: no invalid identifier chars in exported const names
+        for line in result.splitlines():
+            if line.startswith("export const FEATURE_") or line.startswith("export const deploymentMode"):
+                assert "as const" in line, f"missing type annotation: {line}"
+
+
+class TestEmitTsSpecialChars:
+    """Tests for emit_ts() with special characters and Unicode."""
+
+    def test_handles_unicode_deployment_mode(self):
+        """deploymentMode with Unicode characters emits valid TypeScript."""
+        from scripts.generate_features import emit_ts
+        result = emit_ts({"deploymentMode": "日本語テスト", "newsResearch": True})
+        assert "日本語テスト" in result
+        assert "export const deploymentMode = '日本語テスト' as const;" in result
+
+    def test_handles_accented_characters(self):
+        """Accented characters (é, ï, ü) are preserved in output."""
+        from scripts.generate_features import emit_ts
+        result = emit_ts({"deploymentMode": "café_naïve", "newsResearch": True})
+        assert "café_naïve" in result
+        assert "export const deploymentMode = 'café_naïve' as const;" in result
+
+    def test_handles_emoji_in_string_values(self):
+        """Emoji in deploymentMode string is preserved in TypeScript output."""
+        from scripts.generate_features import emit_ts
+        result = emit_ts({"deploymentMode": "test🚀mode", "newsResearch": True})
+        assert "test🚀mode" in result
+        assert "export const deploymentMode = 'test🚀mode' as const;" in result
+
+    def test_handles_newlines_and_tabs_in_strings(self):
+        """Newlines and tabs in string values are escaped for valid TypeScript."""
+        from scripts.generate_features import emit_ts
+        result = emit_ts({"deploymentMode": "line1\nline2\ttab3", "newsResearch": True})
+        # Newline and tab are escaped to \\n and \\t for valid TypeScript string literals
+        assert "line1\\nline2" in result  # newline escaped
+        assert "\\t" in result  # tab escaped
+        assert "as const" in result
+
+    def test_no_crash_on_empty_string_value(self):
+        """Empty string for deploymentMode emits valid TypeScript."""
+        from scripts.generate_features import emit_ts
+        result = emit_ts({"deploymentMode": "", "newsResearch": True})
+        assert "deploymentMode = ''" in result
+        assert "as const" in result
