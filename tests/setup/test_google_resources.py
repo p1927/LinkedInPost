@@ -92,3 +92,87 @@ class TestGoogleResourcesDataclass:
             assert gr.sheet_id == 'sheet123'
             assert isinstance(gr.linkedin_folder_id, str)
             assert len(gr.linkedin_person_urn) > 0
+
+
+class TestValidateProjectId:
+    """Tests for _validate_project_id()."""
+
+    def test_valid_lowercase_with_hyphens(self):
+        with patch.dict('sys.modules', {
+            'google': MagicMock(),
+            'google.cloud': MagicMock(),
+            'google.cloud.storage': MagicMock(),
+            'google.oauth2': MagicMock(),
+            'google.oauth2.service_account': MagicMock(),
+            'googleapiclient': MagicMock(),
+            'googleapiclient.discovery': MagicMock(),
+        }):
+            from setup.google_resources import _validate_project_id
+            # Should not raise
+            _validate_project_id('my-project-123')
+            _validate_project_id('a')
+            _validate_project_id('a1b-2c3')
+
+    def test_missing_project_id_raises_clear_error(self):
+        with patch.dict('sys.modules', {
+            'google': MagicMock(),
+            'google.cloud': MagicMock(),
+            'google.cloud.storage': MagicMock(),
+            'google.oauth2': MagicMock(),
+            'google.oauth2.service_account': MagicMock(),
+            'googleapiclient': MagicMock(),
+            'googleapiclient.discovery': MagicMock(),
+        }):
+            from setup.google_resources import _validate_project_id
+            with pytest.raises(ValueError) as exc_info:
+                _validate_project_id(None)
+            assert 'missing' in str(exc_info.value).lower()
+            assert 'project_id' in str(exc_info.value)
+
+    def test_empty_project_id_raises_clear_error(self):
+        with patch.dict('sys.modules', {
+            'google': MagicMock(),
+            'google.cloud': MagicMock(),
+            'google.cloud.storage': MagicMock(),
+            'google.oauth2': MagicMock(),
+            'google.oauth2.service_account': MagicMock(),
+            'googleapiclient': MagicMock(),
+            'googleapiclient.discovery': MagicMock(),
+        }):
+            from setup.google_resources import _validate_project_id
+            with pytest.raises(ValueError) as exc_info:
+                _validate_project_id('')
+            assert 'missing' in str(exc_info.value).lower()
+
+    def test_uppercase_project_id_raises_clear_error(self):
+        with patch.dict('sys.modules', {
+            'google': MagicMock(),
+            'google.cloud': MagicMock(),
+            'google.cloud.storage': MagicMock(),
+            'google.oauth2': MagicMock(),
+            'google.oauth2.service_account': MagicMock(),
+            'googleapiclient': MagicMock(),
+            'googleapiclient.discovery': MagicMock(),
+        }):
+            from setup.google_resources import _validate_project_id
+            with pytest.raises(ValueError) as exc_info:
+                _validate_project_id('My-Project')
+            err_msg = str(exc_info.value)
+            assert 'invalid' in err_msg.lower()
+            assert 'project_id' in err_msg
+            assert 'lowercase' in err_msg.lower()
+
+    def test_underscore_in_project_id_raises_clear_error(self):
+        with patch.dict('sys.modules', {
+            'google': MagicMock(),
+            'google.cloud': MagicMock(),
+            'google.cloud.storage': MagicMock(),
+            'google.oauth2': MagicMock(),
+            'google.oauth2.service_account': MagicMock(),
+            'googleapiclient': MagicMock(),
+            'googleapiclient.discovery': MagicMock(),
+        }):
+            from setup.google_resources import _validate_project_id
+            with pytest.raises(ValueError) as exc_info:
+                _validate_project_id('my_project')
+            assert 'invalid' in str(exc_info.value).lower()
