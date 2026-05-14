@@ -59,3 +59,6 @@
 - [!] Test assert_density_check.py with a test file that has no assertions at all
 ^- [!] Test setup/cli --version — _single_gather_t bug (SHARD fixed 383ed3c4)
 - [x] Test setup/cli.py with valid subcommand but missing required args — fails gracefully with clear error + exit 1
+- [ ] Test setup/cli.py with --version flag — should display version info
+- [ ] Test setup/cli.py with valid subcommand but missing required args
+- [ ] Test setup/cli.py with credentials file that has expired tokens
