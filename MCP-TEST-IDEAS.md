@@ -62,6 +62,9 @@
 ^- [!] Test setup/cli --version — run not in MCP log
 - [!] Test setup/cli.py with valid subcommand but missing required args
 - [!] Test setup/cli.py with credentials file that has expired tokens
+- [x] Test setup/cli.py with --version flag
+^- [!] Test cli expired tokens — _heartbeat_interval bug
+^- [!] Test youtube poller private — _heartbeat_interval bug
 - [ ] Test setup/cli.py with --version flag — should display version info
 - [ ] Test setup/cli.py with credentials file that has expired tokens
 - [ ] Test automations/youtube_poller.py with private video ID
