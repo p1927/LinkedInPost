@@ -57,6 +57,4 @@
 - [!] Test setup/cli.py with empty argument
 - [!] Test assert_density_check.py with a file that has 100% coverage but only one assertion
 - [!] Test assert_density_check.py with a test file that has no assertions at all
-- [ ] Test automations/youtube_poller.py with malformed video ID format
-- [ ] Test generate_features.py with conflicting feature names
-- [ ] Test setup/cli.py with --version flag
+- [>] Test automations/youtube_poller.py with malformed video ID format
