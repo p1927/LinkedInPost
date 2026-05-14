@@ -55,5 +55,5 @@
   <!-- Cycle markers NOT required — return results directly with exit code -->- [ ] Test assert_density_check.py with a file that has 100% coverage but only one assertion
 - [x] Test assert_density no-asserts — LLM-markers
 - [x] Test setup/cli empty — LLM-markers
-- [v] Test setup/cli.py with --help flag — displays usage via argparse print_help
+- [x] Test setup/cli.py with --help flag — displays usage via argparse print_help
 - [x] Test setup/cli invalid subcommand — run not found in logs
