@@ -82,3 +82,24 @@ class TestRunGenerateFeaturesScriptTimeout:
         call_module, call_msg = mock_warn.call_args[0]
         assert 'timed out' in call_msg
         assert 'generate_features.py' in call_module
+
+
+class TestLoadFeaturesMapDuplicateKeys:
+    """Regression: duplicate keys in features.yaml must be reported."""
+
+    def test_duplicate_key_reports_warning(self, tmp_path):
+        """When features.yaml has duplicate keys, warn() is called for each dup."""
+        from setup.features import load_features_map
+        from unittest.mock import MagicMock
+
+        yaml_file = tmp_path / 'features.yaml'
+        yaml_file.write_text('newsResearch: true\ncampaign: true\nnewsResearch: false\n')
+
+        with patch('setup.features.FEATURES_YAML', yaml_file):
+            with patch('setup.features.warn') as mock_warn:
+                result = load_features_map()
+                # Should have warned about duplicate newsResearch
+                assert mock_warn.called
+                _, msg = mock_warn.call_args[0]
+                assert 'newsResearch' in msg
+                assert 'duplicate' in msg.lower()
