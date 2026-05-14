@@ -34,9 +34,9 @@
 - [x] Test mutation_tester.py on an empty source file — exits 2 (no mutable lines), no crash
 - [x] Test generate_features.py with extremely long input text  <!-- test added: test_handles_100kb_string_value in tests/scripts/test_generate_features.py -->
 - [x] Test generate_features.py with special characters and Unicode  <!-- test added: TestEmitTsSpecialChars + unicode case in TestEmitTs -->
-- [ ] Test worker OAuth handlers (worker/src/index.ts:3900+ / 3927+) with expired refresh token — gmail/youtube token refresh returns 400, needs_reauth flag set, user notified to re-authenticate
-- [>] Test setup/wizard/steps/cloudflare.py with zone read permission but not write
-- [ ] Test wizard deploy step with Workers script size at the 1MB limit
+- [!] Test worker OAuth handlers (worker/src/index.ts:3900+ / 3927+) — Hermes down (LLM gateway 503)
+- [!] Test cloudflare perms — Hermes timeout + CPU 100%
+- [!] Test wizard deploy step with Workers script size at the 1MB limit — Hermes down
 - [ ] Test wizard verify step when no GitHub app is installed
 - [ ] Concurrent test: run setup/cli.py twice simultaneously — should not corrupt state
 - [ ] Test setup/worker_config.py when wrangler.toml is missing entirely
