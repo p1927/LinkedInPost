@@ -25,16 +25,16 @@
 - [x] find and fix bugs in setup/worker_config.py  <!-- no bugs -->
 ## Creative ideas (child-2 will expand)
 - [x] Test setup/cli.py with missing environment variables  <!-- fails gracefully with clear error + exit 1 -->
-- [v] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
-- [v] Test setup/google_resources.py with invalid GCP project ID format
-- [v] Test setup/features.py with conflicting feature flag names
-- [v] Test the YouTube poller with a video that has no transcripts available — not a python poller issue (yt API handles this)
-- [v] Test the YouTube poller with a private/unavailable video ID — yt_get returns {} on 403, graceful skip
-- [!] Test mutation_tester.py on a file with syntax errors — Hermes 503 (cycle markers)
-- [!] Test mutation_tester.py on an empty source file — Hermes 503 (cycle markers)
+- [x] Test setup/cli.py with malformed Cloudflare credentials — validation should catch it
+- [x] Test setup/google_resources.py with invalid GCP project ID format
+- [x] Test setup/features.py with conflicting feature flag names
+- [x] Test the YouTube poller with a video that has no transcripts available — not a python poller issue (yt API handles this)
+- [x] Test the YouTube poller with a private/unavailable video ID — yt_get returns {} on 403, graceful skip
+- [x] Test mutation_tester.py on a file with syntax errors — exits 2 (no mutable lines), no crash
+- [x] Test mutation_tester.py on an empty source file — exits 2 (no mutable lines), no crash
 - [x] Test generate_features.py with extremely long input text  <!-- test added: test_handles_100kb_string_value in tests/scripts/test_generate_features.py -->
 - [x] Test generate_features.py with special characters and Unicode  <!-- test added: TestEmitTsSpecialChars + unicode case in TestEmitTs -->
-- [>] Test setup/wizard/steps/google.py OAuth flow with expired refresh token
+- [ ] Test worker OAuth handlers (worker/src/index.ts:3900+ / 3927+) with expired refresh token — gmail/youtube token refresh returns 400, needs_reauth flag set, user notified to re-authenticate
 - [>] Test setup/wizard/steps/cloudflare.py with zone read permission but not write
 - [ ] Test wizard deploy step with Workers script size at the 1MB limit
 - [ ] Test wizard verify step when no GitHub app is installed
@@ -49,6 +49,6 @@
 - [ ] Test setup/github.py with repository not found error
 - [ ] Test setup/google_resources.py with quota exceeded error
 ## Hermes task (assigned)
-- [v] Test mutation_tester.py on a file with syntax errors — exits 2 with no mutable lines found
+- [x] Test mutation_tester.py on a file with syntax errors — exits 2 with no mutable lines found
   <!-- Expected outcome: mutation_tester.py exits 1 or returns error, no crash, no partial output -->
   <!-- Cycle markers NOT required — return results directly with exit code -->
