@@ -19,8 +19,16 @@ class TestGoogleStackImportable:
             if key.startswith('google'):
                 del sys.modules[key]
 
-        from setup.python_requirements import _google_stack_importable
-        result = _google_stack_importable()
+        import builtins
+        original_import = builtins.__import__
+        def mock_import(name, *args, **kwargs):
+            if name == 'google' or name.startswith('google.'):
+                raise ImportError(f"No module named '{name}'")
+            return original_import(name, *args, **kwargs)
+
+        with patch.object(builtins, '__import__', mock_import):
+            from setup.python_requirements import _google_stack_importable
+            result = _google_stack_importable()
         sys.modules.update(original_modules)
         assert result is False
         assert isinstance(result, bool)

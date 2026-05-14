@@ -30,8 +30,8 @@
 - [v] Test setup/features.py with conflicting feature flag names
 - [v] Test the YouTube poller with a video that has no transcripts available — not a python poller issue (yt API handles this)
 - [v] Test the YouTube poller with a private/unavailable video ID — yt_get returns {} on 403, graceful skip
-- [ ] Test mutation_tester.py on a file with syntax errors — should handle gracefully
-- [ ] Test mutation_tester.py on an empty source file
+- [>] Test mutation_tester.py on a file with syntax errors — should handle gracefully
+- [>] Test mutation_tester.py on an empty source file
 - [ ] Test generate_features.py with extremely long input text
 - [ ] Test generate_features.py with special characters and Unicode
 - [ ] Test setup/wizard/steps/google.py OAuth flow with expired refresh token

@@ -109,6 +109,7 @@ def _load_setup_with_patched_root(isolate_env, monkeypatch):
     import setup.cloudflare as cloudflare_module
     import setup.github as github_module
     import setup.python_requirements as pr_module
+    import setup.google_resources as google_resources_module
 
     monkeypatch.setattr(cloudflare_module, 'GEN_WORKER_DIR', isolate_env / 'generation-worker')
     monkeypatch.setattr(cloudflare_module, 'GEN_WORKER_DEV_VARS', isolate_env / 'generation-worker' / '.dev.vars')
@@ -152,6 +153,7 @@ def test_cloudflare_only_does_not_call_write_generation_worker_dev_vars(isolate_
     import setup.cloudflare as cloudflare_module
     import setup.github as github_module
     import setup.python_requirements as pr_module
+    import setup.google_resources as google_resources_module
 
     import setup.constants
     monkeypatch.setattr(setup.constants, 'ROOT', isolate_env)
@@ -175,6 +177,9 @@ def test_cloudflare_only_does_not_call_write_generation_worker_dev_vars(isolate_
     ))
 
     monkeypatch.setattr(pr_module, 'ensure_google_setup_python_deps', lambda: None)
+    monkeypatch.setattr(pr_module, '_google_stack_importable', lambda: True)
+
+    monkeypatch.setattr(google_resources_module, 'create_google_resources', lambda *a, **kw: None)
 
     import importlib.util
 
@@ -209,6 +214,7 @@ def test_deploy_worker_alone_without_cloudflare_still_skips(isolate_env, monkeyp
     import setup.cloudflare as cloudflare_module
     import setup.github as github_module
     import setup.python_requirements as pr_module
+    import setup.google_resources as google_resources_module
 
     import setup.constants
     monkeypatch.setattr(setup.constants, 'ROOT', isolate_env)
@@ -232,6 +238,9 @@ def test_deploy_worker_alone_without_cloudflare_still_skips(isolate_env, monkeyp
     ))
 
     monkeypatch.setattr(pr_module, 'ensure_google_setup_python_deps', lambda: None)
+    monkeypatch.setattr(pr_module, '_google_stack_importable', lambda: True)
+
+    monkeypatch.setattr(google_resources_module, 'create_google_resources', lambda *a, **kw: None)
 
     import importlib.util
 
@@ -267,6 +276,7 @@ def test_all_flag_enables_cloudflare_and_deploy_worker(isolate_env, monkeypatch)
     import setup.cloudflare as cloudflare_module
     import setup.github as github_module
     import setup.python_requirements as pr_module
+    import setup.google_resources as google_resources_module
 
     import setup.constants
     monkeypatch.setattr(setup.constants, 'ROOT', isolate_env)
@@ -299,6 +309,9 @@ def test_all_flag_enables_cloudflare_and_deploy_worker(isolate_env, monkeypatch)
     monkeypatch.setattr(github_module, 'sync_github_secrets', lambda *a, **kw: None)
 
     monkeypatch.setattr(pr_module, 'ensure_google_setup_python_deps', lambda: None)
+    monkeypatch.setattr(pr_module, '_google_stack_importable', lambda: True)
+
+    monkeypatch.setattr(google_resources_module, 'create_google_resources', lambda *a, **kw: None)
 
     import importlib.util
 
@@ -338,6 +351,7 @@ def test_deploy_worker_calls_write_generation_worker_dev_vars(isolate_env, monke
     import setup.cloudflare as cloudflare_module
     import setup.github as github_module
     import setup.python_requirements as pr_module
+    import setup.google_resources as google_resources_module
 
     monkeypatch.setattr(cloudflare_module, 'GEN_WORKER_DIR', isolate_env / 'generation-worker')
     monkeypatch.setattr(cloudflare_module, 'GEN_WORKER_DEV_VARS', isolate_env / 'generation-worker' / '.dev.vars')
@@ -365,6 +379,9 @@ def test_deploy_worker_calls_write_generation_worker_dev_vars(isolate_env, monke
     ))
 
     monkeypatch.setattr(pr_module, 'ensure_google_setup_python_deps', lambda: None)
+    monkeypatch.setattr(pr_module, '_google_stack_importable', lambda: True)
+
+    monkeypatch.setattr(google_resources_module, 'create_google_resources', lambda *a, **kw: None)
 
     import importlib.util
 

@@ -16,6 +16,7 @@ PIPELINE_TAB_HEADERS = [
     'Selected Text', 'Selected Image ID', 'Post Time',
     'Email To', 'Email Cc', 'Email Bcc', 'Email Subject',
     'Topic rules', 'Image URLs JSON', 'Generation template id', 'Topic Id',
+    'Delivery channel', 'Generation model',
 ]
 TOPICS_HEADERS = ['Topic', 'Date', 'Topic Id']
 POST_TEMPLATES_HEADERS = ['Template id', 'Name', 'Rules']

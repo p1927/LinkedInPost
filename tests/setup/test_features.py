@@ -103,3 +103,36 @@ class TestLoadFeaturesMapDuplicateKeys:
                 _, msg = mock_warn.call_args[0]
                 assert 'newsResearch' in msg
                 assert 'duplicate' in msg.lower()
+                # Last value wins (false)
+                assert result['newsResearch'] is False
+
+    def test_conflicting_snake_case_variant_logs_warning(self, tmp_path):
+        """snake_case news_research key should emit a warning and use its bool value."""
+        from setup.features import load_features_map
+
+        yaml_file = tmp_path / 'features.yaml'
+        yaml_file.write_text('newsResearch: false\nnews_research: true\n')
+
+        with patch('setup.features.FEATURES_YAML', yaml_file):
+            with patch('setup.features.warn') as mock_warn:
+                result = load_features_map()
+            assert result['newsResearch'] is True
+            assert mock_warn.called
+            _, msg = mock_warn.call_args[0]
+            assert 'news_research' in msg
+            assert 'camelCase' in msg
+
+    def test_snake_case_only_is_used_without_warning_for_valid_key(self, tmp_path):
+        """If only snake_case key exists (no camelCase), apply it silently."""
+        from setup.features import load_features_map
+
+        yaml_file = tmp_path / 'features.yaml'
+        yaml_file.write_text('news_research: true\n')
+
+        with patch('setup.features.FEATURES_YAML', yaml_file):
+            with patch('setup.features.warn') as mock_warn:
+                result = load_features_map()
+            assert result['newsResearch'] is True
+            # Only the "use camelCase" warning should fire, not a dup key warning
+            camel_warnings = [c for c in mock_warn.call_args_list if 'news_research' in str(c) and 'camelCase' in str(c)]
+            assert len(camel_warnings) == 1

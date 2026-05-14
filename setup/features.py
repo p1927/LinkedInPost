@@ -39,11 +39,12 @@ def load_features_map() -> dict[str, bool]:
     if not isinstance(raw, dict):
         return defaults
     out = dict(defaults)
-    if 'newsResearch' in raw and isinstance(raw['newsResearch'], bool):
-        out['newsResearch'] = raw['newsResearch']
-    elif 'news_research' in raw and isinstance(raw['news_research'], bool):
+    # Prefer snake_case variant if present — it signals a user mistake
+    if 'news_research' in raw and isinstance(raw['news_research'], bool):
         warn('FEATURES_YAML', "found 'news_research' (snake_case) in features.yaml — use 'newsResearch' (camelCase) instead; flag value applied")
         out['newsResearch'] = raw['news_research']
+    elif 'newsResearch' in raw and isinstance(raw['newsResearch'], bool):
+        out['newsResearch'] = raw['newsResearch']
     return out
 
 

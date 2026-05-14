@@ -28,6 +28,11 @@ import shutil
 from pathlib import Path
 
 
+class SyntaxParseError(Exception):
+    """Raised when the source file cannot be parsed due to syntax errors."""
+    pass
+
+
 def find_project_root(start: Path) -> Path:
     for marker in ("pytest.ini", "setup.cfg", "pyproject.toml", "setup.py"):
         p = start
@@ -41,8 +46,8 @@ def find_project_root(start: Path) -> Path:
 def mutable_linenos(source: str) -> list[int]:
     try:
         tree = ast.parse(source)
-    except SyntaxError:
-        return []
+    except SyntaxError as e:
+        raise SyntaxParseError(f"Syntax error in source: {e}")
     lines = set()
     for node in ast.walk(tree):
         # if-body first line, return, raise, assert — these are highest-value mutation targets
@@ -93,7 +98,13 @@ def main():
 
     source = src_path.read_text()
     source_lines = source.splitlines(keepends=True)
-    candidates = mutable_linenos(source)
+
+    try:
+        candidates = mutable_linenos(source)
+    except SyntaxParseError as e:
+        print(f"ERROR: {src_path.name} has a syntax error and cannot be mutated.")
+        print(f"       {e}")
+        sys.exit(2)
 
     if not candidates:
         print(f"No mutable lines found in {src_path.name}")
