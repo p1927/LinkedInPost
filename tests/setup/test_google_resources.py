@@ -108,10 +108,17 @@ class TestValidateProjectId:
             'googleapiclient.discovery': MagicMock(),
         }):
             from setup.google_resources import _validate_project_id
-            # Should not raise
-            _validate_project_id('my-project-123')
-            _validate_project_id('a')
-            _validate_project_id('a1b-2c3')
+            # Valid project IDs should pass without raising
+            valid_ids = ['my-project-123', 'a', 'a1b-2c3', 'project', 'my-project-v2']
+            errors = []
+            for pid in valid_ids:
+                try:
+                    _validate_project_id(pid)
+                except ValueError as e:
+                    errors.append(str(e))
+            # All should pass — no ValueErrors raised
+            assert len(errors) == 0, f"Unexpected validation errors: {errors}"
+            assert len(valid_ids) == 5
 
     def test_missing_project_id_raises_clear_error(self):
         with patch.dict('sys.modules', {

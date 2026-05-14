@@ -48,9 +48,14 @@ class TestLoadFeatureMap:
         features_yaml = tmp_path / "features.yaml"
         features_yaml.write_text("newsResearch: 'yes'\n")  # string instead of bool
         with patch('scripts.generate_features.FEATURES_FILE', features_yaml):
-            from scripts.generate_features import load_feature_map
+            from scripts.generate_features import load_feature_map, emit_ts
             result = load_feature_map()
-            assert result["newsResearch"] is True  # falls back to default
+            # Wrong type causes default (True) to be used, not the string value
+            assert result["newsResearch"] is True  # falls back to default, not 'yes'
+            # emit_ts should include the feature using the default value
+            ts_output = emit_ts(result)
+            # Feature is emitted with default value (true) since wrong type triggered default
+            assert "FEATURE_NEWS_RESEARCH = true" in ts_output
 
 
 
