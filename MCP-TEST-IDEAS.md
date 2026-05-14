@@ -59,6 +59,4 @@
 - [!] Test assert_density_check.py with a file that has 100% coverage but only one assertion
 - [!] Test assert_density_check.py with a test file that has no assertions at all
 - [!] Test setup/cli.py with --version flag — _single_gather_t bug (SHARD fixed 383ed3c4)
-- [!] Test setup/cli.py with valid subcommand but missing required args — duplicate of [x] item above- [ ] Test setup/cli.py with --version flag — should display version info
-- [ ] Test setup/cli.py with credentials file that has expired tokens
-- [ ] Test automations/youtube_poller.py with private video ID
+- [!] Test setup/cli.py with valid subcommand but missing required args — duplicate of [x] item above
