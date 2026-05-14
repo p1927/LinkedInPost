@@ -62,7 +62,7 @@ def mutable_linenos(source: str) -> list[int]:
 
 def apply_mutation(lines: list[str], lineno: int) -> list[str]:
     mutated = lines.copy()
-    mutated[lineno - 1] = "pass  # MUTANT"
+    original = mutated[lineno - 1]
     indent = len(original) - len(original.lstrip())
     mutated[lineno - 1] = " " * indent + "pass  # MUTANT\n"
     return mutated
@@ -122,7 +122,7 @@ def main():
         tmp_proj = tmpdir / "proj"
         shutil.copytree(
             proj_root, tmp_proj,
-            ignore=shutil.ignore_patterns("__pycache__", ".venv", "node_modules", ".git", "dist", "build"),
+            ignore=shutil.ignore_patterns("__pycache__", ".venv", "node_modules", ".git", "dist", "build", "tmux-1000"),
         )
         tmp_src = tmp_proj / src_path.relative_to(proj_root)
 
