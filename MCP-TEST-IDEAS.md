@@ -57,3 +57,8 @@
 - [x] Test setup/cli empty — LLM-markers
 - [x] Test setup/cli.py with --help flag — displays usage via argparse print_help
 - [x] Test setup/cli invalid subcommand — run not found in logs
+- [ ] Test setup/cli.py with --version flag — should display version info
+- [ ] Test setup/cli.py with valid subcommand but missing required args
+- [ ] Test setup/cli.py with credentials file that has expired tokens
+- [ ] Test automations/youtube_poller.py with malformed video ID format
+- [ ] Test generate_features.py with conflicting feature names
