@@ -62,3 +62,6 @@
 ^- [!] Test setup/cli --version — run not in MCP log
 - [!] Test setup/cli.py with valid subcommand but missing required args
 - [!] Test setup/cli.py with credentials file that has expired tokens
+- [ ] Test setup/cli.py with --version flag — should display version info
+- [ ] Test setup/cli.py with credentials file that has expired tokens
+- [ ] Test automations/youtube_poller.py with private video ID
