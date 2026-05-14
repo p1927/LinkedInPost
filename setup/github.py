@@ -6,7 +6,7 @@ import re
 import subprocess
 
 from .constants import ROOT, WORKER_DEV_VARS
-from .utils import generate_encryption_key, ok, run_command, warn
+from .utils import fail, generate_encryption_key, ok, run_command, warn
 from .worker_config import (
     WorkerBootstrap,
     load_worker_encryption_key,
@@ -198,5 +198,9 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
         if not value:
             warn('GitHub secret skipped', f'{name} has no value')
             continue
-        run_command(['gh', 'secret', 'set', name, '--body', value], cwd=ROOT, capture_output=True)
-        ok('GitHub secret synced', name)
+        try:
+            run_command(['gh', 'secret', 'set', name, '--body', value], cwd=ROOT, capture_output=True)
+            ok('GitHub secret synced', name)
+        except RuntimeError:
+            fail('GitHub secret sync failed', name)
+            # Continue syncing remaining secrets rather than aborting entirely
