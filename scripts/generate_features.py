@@ -47,6 +47,13 @@ def load_feature_map() -> dict[str, bool | str]:
     raw = yaml.safe_load(FEATURES_FILE.read_text()) or {}
     if not isinstance(raw, dict):
         return dict(DEFAULTS)
+    # Detect duplicate keys (PyYAML silently overwrites with last value)
+    keys_seen: set[str] = set()
+    for key in raw:
+        if key in keys_seen:
+            print(f'  [warn] FEATURES_YAML has duplicate key {key!r} — last value wins', file=sys.stderr)
+        else:
+            keys_seen.add(key)
     out: dict[str, bool | str] = {}
     for key, default in DEFAULTS.items():
         if key not in raw:

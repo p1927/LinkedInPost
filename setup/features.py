@@ -18,6 +18,13 @@ def load_features_map() -> dict[str, bool]:
         return defaults
     if not isinstance(raw, dict):
         return defaults
+    # Detect duplicate keys (PyYAML silently overwrites with last value)
+    keys_seen: set[str] = set()
+    for key in raw:
+        if key in keys_seen:
+            warn('FEATURES_YAML', f'duplicate key {key!r} — last value wins, check features.yaml for duplicates')
+        else:
+            keys_seen.add(key)
     out = dict(defaults)
     if 'newsResearch' in raw and isinstance(raw['newsResearch'], bool):
         out['newsResearch'] = raw['newsResearch']
