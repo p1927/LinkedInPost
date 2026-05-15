@@ -12,6 +12,8 @@ from unittest.mock import MagicMock, patch
 def _load_cli_module():
     """Load setup/cli.py with setup.features mocked to avoid relative import errors."""
     fake_features = MagicMock(__version__='0.0.0')
+    original_features = sys.modules.get('setup.features')
+    original_setup = sys.modules.get('setup')
     sys.modules['setup.features'] = fake_features
 
     spec = importlib.util.spec_from_file_location(
@@ -19,11 +21,21 @@ def _load_cli_module():
         Path('/home/openclaw/workspaces/linkedin-post/setup/cli.py'))
     module = importlib.util.module_from_spec(spec)
     module.__package__ = 'setup'
-    # Ensure setup and setup.cli are in sys.modules so relative imports work
-    if 'setup' not in sys.modules or isinstance(sys.modules.get('setup'), type(sys)):
-        sys.modules['setup'] = type(sys)('setup')
     sys.modules['setup.cli'] = module
     spec.loader.exec_module(module)
+
+    # Restore to avoid polluting other tests
+    if original_features is not None:
+        sys.modules['setup.features'] = original_features
+    else:
+        sys.modules.pop('setup.features', None)
+    # Restore original setup module (don't leave the bare type module)
+    if original_setup is not None:
+        sys.modules['setup'] = original_setup
+    else:
+        sys.modules.pop('setup', None)
+    sys.modules.pop('setup.cli', None)
+
     return module
 
 
