@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# journey-health — LinkedIn-post: check which user journeys are passing right now.
+# Requires wrangler dev on :8787 and vite dev on :5173 to be running.
+# Start them first: bash tests-e2e/e2e/start-worker.sh && cd frontend && npm run dev &
+# Exit code: number of failing journeys (0 = all pass)
+
+set -uo pipefail
+
+LP_ROOT="/home/openclaw/workspaces/linkedin-post"
+WORKER_PORT="${LP_WORKER_PORT:-8787}"
+VITE_PORT="${LP_VITE_PORT:-5173}"
+E2E_DIR="$LP_ROOT/tests-e2e"
+FAIL=0
+RESULTS=()
+
+pass() { RESULTS+=("$1 PASS"); }
+fail() { RESULTS+=("$1 FAIL ($2)"); FAIL=$((FAIL + 1)); }
+
+cd "$LP_ROOT"
+
+# ── Stack health check ────────────────────────────────────────────────────────
+WORKER_UP=0
+VITE_UP=0
+curl -sf --max-time 5 "http://localhost:$WORKER_PORT" >/dev/null 2>&1 && WORKER_UP=1
+curl -sf --max-time 5 "http://localhost:$VITE_PORT" >/dev/null 2>&1 && VITE_UP=1
+
+if [ "$WORKER_UP" -eq 0 ] && [ "$VITE_UP" -eq 0 ]; then
+  # Try starting the stack
+  echo "[journey-health] Stack not running. Starting worker..."
+  bash "$LP_ROOT/tests-e2e/e2e/start-worker.sh" >/dev/null 2>&1 && WORKER_UP=1 || true
+  echo "[journey-health] Starting vite frontend..."
+  cd "$LP_ROOT/frontend" && npm run dev >/tmp/lp-vite.log 2>&1 &
+  VITE_PID=$!
+  echo "$VITE_PID" > /tmp/lp-vite.pid
+  for i in $(seq 1 20); do
+    curl -sf --max-time 2 "http://localhost:$VITE_PORT" >/dev/null 2>&1 && VITE_UP=1 && break
+    sleep 1
+  done
+  cd "$LP_ROOT"
+fi
+
+if [ "$WORKER_UP" -eq 0 ]; then
+  fail "LP-STACK" "wrangler dev not running on :$WORKER_PORT (run start-worker.sh)"
+fi
+if [ "$VITE_UP" -eq 0 ]; then
+  fail "LP-STACK" "vite dev not running on :$VITE_PORT (run: cd frontend && npm run dev)"
+fi
+
+# ── Run journey specs only if stack is up ────────────────────────────────────
+if [ "$WORKER_UP" -eq 1 ] && [ "$VITE_UP" -eq 1 ]; then
+
+  run_journey() {
+    local label="$1"; local spec="$2"
+    local result
+    result=$(cd "$E2E_DIR" && npx playwright test "e2e/journeys/$spec" \
+      --reporter=line --timeout=30000 2>&1 | tail -3)
+    if echo "$result" | grep -q 'passed'; then
+      pass "$label"
+    else
+      local reason
+      reason=$(echo "$result" | grep -v '^$' | tail -1 | cut -c1-80)
+      fail "$label" "$reason"
+    fi
+  }
+
+  # Core user journeys (01-05)
+  run_journey "LP-J1-auth"      "01-auth-onboarding.spec.ts"
+  run_journey "LP-J2-topic"     "02-create-topic.spec.ts"
+  run_journey "LP-J3-generate"  "03-generate-draft.spec.ts"
+  run_journey "LP-J4-edit"      "04-review-edit.spec.ts"
+  run_journey "LP-J5-publish"   "05-publish-linkedin.spec.ts"
+
+  # Wiring integrity (21 is the canonical wiring test, not a loop artifact)
+  run_journey "LP-J6-wiring"    "21-wiring-issues.spec.ts"
+
+else
+  fail "LP-J1-auth"     "stack not running"
+  fail "LP-J2-topic"    "stack not running"
+  fail "LP-J3-generate" "stack not running"
+  fail "LP-J4-edit"     "stack not running"
+  fail "LP-J5-publish"  "stack not running"
+  fail "LP-J6-wiring"   "stack not running"
+fi
+
+echo ""
+echo "=== LINKEDIN-POST JOURNEY HEALTH ($(date -u +%Y-%m-%dT%H:%M:%SZ)) ==="
+for r in "${RESULTS[@]}"; do echo "  $r"; done
+echo "  Failing: $FAIL / 6"
+echo ""
+exit "$FAIL"
