@@ -14,7 +14,7 @@
 - [x] setup/utils.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/verification.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/server.py  <!-- done 428dc85 2026-05-11 -->
-- [x] setup/wizard/state.py  <!-- done 428dc85 2026-05-11 -->
+- [x] setup/wizard/state.py  <!-- done 84887f7 2026-05-11 -->
 - [x] setup/wizard/steps/apikeys.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/steps/cloudflare.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/steps/deploy.py  <!-- done 428dc85 2026-05-11 -->
