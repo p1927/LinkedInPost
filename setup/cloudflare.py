@@ -372,7 +372,7 @@ def _apply_generation_worker_d1_migrations(remote: bool = False) -> None:
         )
         ok('Generation Worker D1 migrations', f'applied {flag}')
     except RuntimeError as error:
-        warn('Generation Worker D1 migrations', str(error))
+        raise RuntimeError(f'Generation Worker D1 migrations failed ({flag}): {error}') from error
 
 
 def provision_generation_worker_d1() -> None:
