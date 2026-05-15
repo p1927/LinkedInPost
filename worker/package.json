@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "pretypecheck": "python3 ../scripts/generate_features.py",
-    "dev": "NODE_OPTIONS=--use-system-ca wrangler dev --env local --port 8787",
-    "dev:default": "NODE_OPTIONS=--use-system-ca wrangler dev",
-    "dev:remote": "NODE_OPTIONS=--use-system-ca wrangler dev --env local --remote --port 8787",
-    "deploy": "NODE_OPTIONS=--use-system-ca wrangler deploy --env \"\"",
+    "dev": "wrangler dev --env local --port 8787",
+    "dev:default": "wrangler dev",
+    "dev:remote": "wrangler dev --env local --remote --port 8787",
+    "deploy": "wrangler deploy --env \"\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
