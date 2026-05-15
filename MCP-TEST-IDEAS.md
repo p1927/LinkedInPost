@@ -56,5 +56,21 @@
 ## Bounced (infrastructure limits — shard LLM gateway timeouts)
 - [!] Test setup/cli.py with credentials file that has expired tokens — infrastructure unavailable
 - [!] Test setup/cli.py with empty argument — infrastructure issue
-- [>] Test assert_density_check.py with a file that has 100% coverage but only one assertion
+- [x] Test assert_density_check.py: correctly exits 1 for 1-assertion file (verified)
 - [x] Test assert_density_check.py: correctly exits 1 for zero-assertion file (expected behavior)
+
+## New ideas — worker/backend coverage
+- [ ] Test worker auth middleware with malformed Authorization header
+- [ ] Test worker D1 database queries with invalid SQL parameters
+- [ ] Test worker/llm client with missing API credentials
+- [ ] Test generation-worker image pipeline with empty variant text
+- [ ] Test generation-worker image pipeline with very long variant text (>2000 chars)
+
+## New ideas — frontend coverage  
+- [ ] Test frontend App.tsx bootstrap with missing backend URL
+- [ ] Test frontend services/backendApi.ts with network timeout
+- [ ] Test frontend feature/feed with empty news feed response
+
+## New ideas — packages coverage
+- [ ] Test packages/llm-core provider config with missing model key
+- [ ] Test packages/researcher search with rate-limited API response
