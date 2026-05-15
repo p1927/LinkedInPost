@@ -56,7 +56,5 @@
 ## Bounced (infrastructure limits — shard LLM gateway timeouts)
 - [!] Test setup/cli.py with credentials file that has expired tokens — infrastructure unavailable
 - [!] Test setup/cli.py with empty argument — infrastructure issue
-- [!] Test assert_density_check.py with a file that has 100% coverage but only one assertion
-- [!] Test assert_density_check.py with a test file that has no assertions at all
-- [!] Test setup/cli.py with --version flag — _single_gather_t bug (SHARD fixed 383ed3c4)
-- [!] Test setup/cli.py with valid subcommand but missing required args — duplicate of [x] item above
+- [>] Test assert_density_check.py with a file that has 100% coverage but only one assertion
+- [x] Test assert_density_check.py: correctly exits 1 for zero-assertion file (expected behavior)
