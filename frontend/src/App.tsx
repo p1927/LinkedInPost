@@ -300,8 +300,27 @@ function App() {
     setErrorMessage('')
     setLlmCatalog(null)
 
-    api
-      .bootstrap(idToken)
+    const BOOTSTRAP_TIMEOUT_MS = 10_000
+
+    const bootstrapWithTimeout = (): Promise<AppSession> => {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          reject(new Error('Unable to reach the backend server. Please check your connection and try again.'))
+        }, BOOTSTRAP_TIMEOUT_MS)
+        api.bootstrap(idToken).then(
+          (session) => {
+            clearTimeout(timer)
+            resolve(session)
+          },
+          (err) => {
+            clearTimeout(timer)
+            reject(err)
+          }
+        )
+      })
+    }
+
+    bootstrapWithTimeout()
       .then(async (nextSession) => {
         setSession(nextSession)
         setIntegrations(nextSession.integrations ?? [])
