@@ -124,4 +124,16 @@ describe('checkTokenBudget', () => {
     expect(result.budget).toBe(500000);
     expect(result.allowed).toBe(true);
   });
+
+  it('re-throws when getMonthlyTokenUsage throws in saas mode', async () => {
+    const errorDb = {
+      prepare: vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnValue({
+          first: vi.fn().mockRejectedValue(new Error('D1 error: out of query budget')),
+          run: vi.fn().mockResolvedValue({}),
+        }),
+      }),
+    } as unknown as D1Database;
+    await expect(checkTokenBudget(errorDb, 'user-1', 'saas')).rejects.toThrow('D1 error: out of query budget');
+  });
 });

@@ -369,11 +369,21 @@ export async function setupApiMocks(
       const overrideData = action === 'bootstrap'
         ? { ...MOCK_SESSION, ...(overrides[action] as Record<string, unknown>) }
         : overrides[action];
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ok: true, data: overrideData }),
-      });
+      // Raw-object overrides (e.g. { pros: [...] }) are already shaped data — pass through directly.
+      // Structured overrides (e.g. { ok: false, error: "..." }) are full responses — use as-is.
+      if (overrideData && typeof overrideData === 'object' && !('ok' in overrideData) && !('action' in overrideData)) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true, data: overrideData }),
+        });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(overrideData),
+        });
+      }
       return;
     }
 

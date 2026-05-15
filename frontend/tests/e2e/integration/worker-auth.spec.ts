@@ -14,7 +14,7 @@ test.describe('Worker Integration: Auth Bypass', () => {
     await page.waitForLoadState('networkidle');
     // Should NOT show sign-in page (bypass worked)
     const signInButton = page.getByRole('button', { name: /sign in/i });
-    await expect(signInButton).not.toBeVisible({ timeout: 5000 }).catch(() => {});
+    await expect(signInButton).not.toBeVisible({ timeout: 5000 });
     // Should show some authenticated content
   });
 
