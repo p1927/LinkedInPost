@@ -298,7 +298,7 @@ def _apply_d1_migrations(remote: bool = False) -> None:
         )
         ok('D1 migrations', f'applied {flag}')
     except RuntimeError as error:
-        warn('D1 migrations', str(error))
+        raise RuntimeError(f'D1 migrations failed ({flag}): {error}') from error
 
 
 def provision_d1_database() -> None:
@@ -337,9 +337,10 @@ def provision_d1_database() -> None:
 
     database_id = _extract_d1_database_id(stdout)
     if not database_id:
-        warn('D1 database', 'Could not parse database_id from wrangler output. Patch wrangler.jsonc manually.')
-        warn('D1 database output', stdout)
-        return
+        raise RuntimeError(
+            f'D1 database created but could not parse its ID from wrangler output. '
+            f'Patch the database_id manually in wrangler.jsonc. Output: {stdout[:500]}'
+        )
 
     _patch_d1_database_id(database_id)
     ok('D1 database ID', database_id)
@@ -415,9 +416,10 @@ def provision_generation_worker_d1() -> None:
 
     database_id = _extract_d1_database_id(stdout)
     if not database_id:
-        warn('Generation Worker D1', 'Could not parse database_id from wrangler output.')
-        warn('Generation Worker D1 output', stdout)
-        return
+        raise RuntimeError(
+            f'D1 database created for {GEN_WORKER_DB_NAME} but could not parse its ID. '
+            f'Patch database_id manually in {GEN_WORKER_WRANGLER_CONFIG}. Output: {stdout[:500]}'
+        )
 
     entry['database_id'] = database_id
     if not str(entry.get('migrations_dir', '') or '').strip():
