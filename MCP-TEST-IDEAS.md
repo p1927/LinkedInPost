@@ -80,5 +80,5 @@
 - [ ] Test bin/journey-health with wrangler dev killed (reports failures correctly) — requires killing infra
 - [ ] Test setup/cli.py bootstrap with already-configured state (idempotent)
 - [x] Test setup/cli.py bootstrap --help outputs usage — exits 0 with full help text
-- [ ] Test mutation_tester.py on setup/wizard/steps/deploy.py — kill rate report
+- [~] Test mutation_tester.py on setup/wizard/steps/deploy.py — 0% kill rate, tests are decorative (mock subprocess)
 - [x] Test assert_density_check.py on tests/wizard/ — 99/99 density bar passes (confirmed)
