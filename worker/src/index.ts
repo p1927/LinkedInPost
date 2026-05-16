@@ -3014,7 +3014,12 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
     return { ...bypassSession, userId: bypassSession.email };
   }
 
-  const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+  let response: Response;
+  try {
+    response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+  } catch (fetchErr) {
+    throw new Error('Unauthorized: Google token verification unavailable.');
+  }
   if (!response.ok) {
     throw new Error('Unauthorized: invalid or expired Google token.');
   }
