@@ -89,6 +89,11 @@
 - [x] Test setup/utils.py: ensure_command returns None for existing command, raises RuntimeError for missing — PASS
 - [x] Test setup/utils.py: run_command captures stdout, raises RuntimeError on non-zero exit — PASS
 - [x] Test setup/verification.py: parse_curl_headers lowercases keys, extracts status from HTTP status line — PASS
+- [x] Test setup/github.py: get_git_remote_url returns github.com URL, infer_github_repo parses owner/repo — PASS
+- [x] Test setup/github.py: _generate_secret returns 43-char string — PASS
+- [x] Test setup/google_resources.py: _validate_project_id accepts valid ID, raises ValueError for None — PASS
+- [x] Test setup/google_resources.py: parse_service_account_json extracts project_id from valid JSON — PASS
+- [x] Test setup/python_requirements.py: _google_stack_importable returns True (google packages available) — PASS
 
 ## New ideas — wizard and state integration
 - [x] Test setup/wizard/state.py: reset is idempotent (calling reset twice succeeds) — PASS
