@@ -107,6 +107,9 @@
 ## New ideas — mutation_tester.py systemic issues
 - [!] mutation_tester.py: find_project_root() returns wrong path (file instead of dir), shutil.copytree copies entire repo to temp causing 300s+ timeout — systemic blocked-state issue
 
+## New ideas — wizard blueprint coverage
+- [x] Test setup/wizard/steps/verify.py: GET /step/verify returns 200, POST /step/verify/start returns 404 (no POST start route — verify is read-only display) — PASS
+
 ## New ideas — wizard and state integration
 - [x] Test setup/python_requirements.py: _google_stack_importable returns True (google packages available) — PASS
 - [x] Test setup/constants.py: module exports SCOPES list, PIPELINE_TAB_HEADERS, Path constants — data only, no runtime logic to test
