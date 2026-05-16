@@ -83,9 +83,16 @@
 - [x] Test mutation_tester.py on setup/wizard/steps/deploy.py — 0% kill rate, tests are decorative (mock subprocess) — delegated to Hermes
 - [x] Test assert_density_check.py on tests/wizard/ — 99/99 density bar passes (confirmed)
 
+## New ideas — uncovered module tests (bash-level)
+- [x] Test setup/features.py: load_features_map returns dict with newsResearch key (defaults to True when file missing) — PASS
+- [x] Test setup/utils.py: generate_encryption_key returns 44-char base64 string — PASS
+- [x] Test setup/utils.py: ensure_command returns None for existing command, raises RuntimeError for missing — PASS
+- [x] Test setup/utils.py: run_command captures stdout, raises RuntimeError on non-zero exit — PASS
+- [x] Test setup/verification.py: parse_curl_headers lowercases keys, extracts status from HTTP status line — PASS
+
 ## New ideas — wizard and state integration
 - [x] Test setup/wizard/state.py: reset is idempotent (calling reset twice succeeds) — PASS
 - [x] Test setup/wizard/state.py: load returns empty dict when state file absent — PASS
 - [x] Test setup/wizard/steps/verify.py: get_worker_url returns None on missing wrangler.jsonc — PASS
-- [~] Test mutation_tester.py on setup/wizard/steps/mode.py — 0% kill rate (same as deploy.py: Blueprint + file-read mutations survive)
+- [!] Test mutation_tester.py on setup/wizard/steps/mode.py — blocked after 300s, systemic blocked-state issue
 - [x] Test scripts/generate_features.py with empty string input — exits 0 cleanly
