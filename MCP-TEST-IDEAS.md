@@ -63,14 +63,14 @@
 ✗ [x] Test worker auth middleware: infrastructure blocked (gateway model not allowed)
 ✗ [x] Test worker D1 database queries with invalid SQL parameters — shard MCP model 403 blocked (infrastructure)
 - [>] Test worker/llm client with missing API credentials
-- [ ] Test generation-worker image pipeline with empty variant text
-- [ ] Test generation-worker image pipeline with very long variant text (>2000 chars)
+✗ [x] Test generation-worker image pipeline with empty variant text — shard MCP model 403 blocked (infrastructure)
+✗ [x] Test generation-worker image pipeline with very long variant text (>2000 chars) — shard MCP model 403 blocked (infrastructure)
 
 ## New ideas — frontend coverage  
-- [ ] Test frontend App.tsx bootstrap with missing backend URL
-- [ ] Test frontend services/backendApi.ts with network timeout
-- [ ] Test frontend feature/feed with empty news feed response
+✗ [x] Test frontend App.tsx bootstrap with missing backend URL — shard MCP model 403 blocked (infrastructure)
+✗ [x] Test frontend services/backendApi.ts with network timeout — shard MCP model 403 blocked (infrastructure)
+✗ [x] Test frontend feature/feed with empty news feed response — shard MCP model 403 blocked (infrastructure)
 
 ## New ideas — packages coverage
-- [ ] Test packages/llm-core provider config with missing model key
-- [ ] Test packages/researcher search with rate-limited API response
+✗ [x] Test packages/llm-core provider config with missing model key — shard MCP model 403 blocked (infrastructure)
+✗ [x] Test packages/researcher search with rate-limited API response — shard MCP model 403 blocked (infrastructure)
