@@ -20,6 +20,6 @@
 - [x] setup/wizard/steps/deploy.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/steps/google.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/steps/mode.py  <!-- done 657b22c 2026-05-11 -->
-- [x] setup/wizard/steps/prereqs.py  <!-- done 428dc85 2026-05-11 -->
+- [x] setup/wizard/steps/prereqs.py  <!-- done c15ceef 2026-05-11 -->
 - [x] setup/wizard/steps/verify.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/worker_config.py  <!-- done 428dc85 2026-05-11 -->
