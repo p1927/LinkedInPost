@@ -69,7 +69,20 @@ class MockArgs:
 
 @pytest.fixture(autouse=True)
 def isolate_env(tmp_path, monkeypatch):
-    """Point all writable paths into a temp dir so tests never touch the real repo."""
+    """Point all writable paths into a temp dir so tests never touch the real repo.
+
+    Runs automatically for every test in this file (autouse=True). The fixture:
+    1. Scrubs all setup.* modules from sys.modules so each test loads them fresh
+       with the patched ROOT (prevents module-level state from leaking between tests)
+    2. Sets required env vars so setup.py never tries to read real credentials
+    """
+    # Wipe setup.* modules BEFORE any test runs — prevents state from prior tests
+    # in this file (or prior pytest sessions) from leaking into the current test
+    import sys
+    for key in list(sys.modules.keys()):
+        if key == 'setup' or key.startswith('setup.'):
+            del sys.modules[key]
+
     root = tmp_path / 'repo'
     root.mkdir()
 

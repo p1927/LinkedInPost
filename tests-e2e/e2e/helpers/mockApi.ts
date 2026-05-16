@@ -379,6 +379,13 @@ export async function setupApiMocks(
   page: Page,
   overrides: ApiMockOverrides = {},
 ): Promise<void> {
+  // Clear any pre-existing route handlers from prior tests in the same worker.
+  // Without this, handlers from error-states.spec.ts (page.route('**', ...)) or
+  // other earlier tests leak into subsequent tests and cause crashes — e.g.
+  // J1 passes then J2 gets "Page.goto: Page crashed" because a stale handler
+  // intercepts the navigation and returns a response that corrupts React state.
+  await page.unrouteAll();
+
   // -------------------------------------------------------------------------
   // Token usage endpoint — GET /api/usage (not a POST action)
   // -------------------------------------------------------------------------
