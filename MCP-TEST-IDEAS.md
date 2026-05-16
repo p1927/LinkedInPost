@@ -109,6 +109,8 @@
 
 ## New ideas — wizard blueprint coverage
 - [x] Test setup/wizard/steps/verify.py: GET /step/verify returns 200, POST /step/verify/start returns 404 (no POST start route — verify is read-only display) — PASS
+- [x] Test setup/cloudflare.py: _is_strict_json returns True for strict JSON, False for comments and trailing commas — PASS
+- [x] Test setup/cloudflare.py: ensure_cloudflare_auth raises RuntimeError with descriptive message for invalid token — PASS
 
 ## New ideas — wizard and state integration
 - [x] Test setup/python_requirements.py: _google_stack_importable returns True (google packages available) — PASS
