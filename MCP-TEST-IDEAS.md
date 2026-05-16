@@ -94,6 +94,7 @@
 - [x] Test setup/google_resources.py: _validate_project_id accepts valid ID, raises ValueError for None — PASS
 - [x] Test setup/google_resources.py: parse_service_account_json extracts project_id from valid JSON — PASS
 - [x] Test setup/python_requirements.py: _google_stack_importable returns True (google packages available) — PASS
+- [x] Test setup/constants.py: module exports SCOPES list, PIPELINE_TAB_HEADERS, Path constants — data only, no runtime logic to test
 
 ## New ideas — wizard and state integration
 - [x] Test setup/wizard/state.py: reset is idempotent (calling reset twice succeeds) — PASS
