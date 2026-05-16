@@ -104,6 +104,9 @@
 - [x] Test setup/google_resources.py: parse_service_account_json calls fail() which calls sys.exit(1) — cannot test without mocking sys.exit — DESIGN ISSUE
 - [x] Test setup/worker_config.py: normalize_space_delimited collapses multiple spaces, normalize_origin strips trailing slash — PASS
 
+## New ideas — mutation_tester.py systemic issues
+- [!] mutation_tester.py: find_project_root() returns wrong path (file instead of dir), shutil.copytree copies entire repo to temp causing 300s+ timeout — systemic blocked-state issue
+
 ## New ideas — wizard and state integration
 - [x] Test setup/python_requirements.py: _google_stack_importable returns True (google packages available) — PASS
 - [x] Test setup/constants.py: module exports SCOPES list, PIPELINE_TAB_HEADERS, Path constants — data only, no runtime logic to test
