@@ -11,6 +11,13 @@ import { setupApiMocks, gotoAuthenticated, MOCK_SESSION, MOCK_ROWS, MOCK_INTERES
 
 test.describe('Journey 21: Wiring Issues & Edge Cases', () => {
 
+  // Close page and clean up after each test to prevent memory buildup
+  // across the 59 tests in this suite. Each test attaches pageerror
+  // listeners that would otherwise accumulate and crash Chromium.
+  test.afterEach(async ({ page }) => {
+    await page.close();
+  });
+
   // ── Feed: sort pill wiring ────────────────────────────────────────────────
 
   test('feed sort pill clicking fires sort state change', async ({ page }) => {
