@@ -76,9 +76,16 @@
 ✗ [x] Test packages/researcher search with rate-limited API response — shard MCP model 403 blocked (infrastructure)
 
 ## New ideas — CLI and script coverage (bash-level, no LLM)
-- [~] Test bin/journey-health with wrangler dev running (healthy exit 0) — stack UP, J1 5/6 ran before timeout
+- [!] Test bin/journey-health with wrangler dev running (healthy exit 0) — stack UP, J1 5/6 ran before timeout
 - [ ] Test bin/journey-health with wrangler dev killed (reports failures correctly) — requires killing infra
 - [x] Test setup/cli.py bootstrap with already-configured state (idempotent) — CLI is scaffold only: parse_args() with no main() action, all flags silently accepted but no execution. Bootstrap intended via wizard web UI (--web flag also inert — wizard runs via python -m flask in setup/wizard/server.py)
 - [x] Test setup/cli.py bootstrap --help outputs usage — exits 0 with full help text
-- [~] Test mutation_tester.py on setup/wizard/steps/deploy.py — 0% kill rate, tests are decorative (mock subprocess)
+- [x] Test mutation_tester.py on setup/wizard/steps/deploy.py — 0% kill rate, tests are decorative (mock subprocess) — delegated to Hermes
 - [x] Test assert_density_check.py on tests/wizard/ — 99/99 density bar passes (confirmed)
+
+## New ideas — wizard and state integration
+- [x] Test setup/wizard/state.py: reset is idempotent (calling reset twice succeeds) — PASS
+- [x] Test setup/wizard/state.py: load returns empty dict when state file absent — PASS
+- [x] Test setup/wizard/steps/verify.py: get_worker_url returns None on missing wrangler.jsonc — PASS
+- [~] Test mutation_tester.py on setup/wizard/steps/mode.py — 0% kill rate (same as deploy.py: Blueprint + file-read mutations survive)
+- [x] Test scripts/generate_features.py with empty string input — exits 0 cleanly
