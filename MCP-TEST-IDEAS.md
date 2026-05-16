@@ -76,9 +76,9 @@
 ✗ [x] Test packages/researcher search with rate-limited API response — shard MCP model 403 blocked (infrastructure)
 
 ## New ideas — CLI and script coverage (bash-level, no LLM)
-- [>] Test bin/journey-health with wrangler dev running (healthy exit 0)
-- [ ] Test bin/journey-health with wrangler dev killed (reports failures correctly)
+- [~] Test bin/journey-health with wrangler dev running (healthy exit 0) — stack UP, J1 5/6 ran before timeout
+- [ ] Test bin/journey-health with wrangler dev killed (reports failures correctly) — requires killing infra
 - [ ] Test setup/cli.py bootstrap with already-configured state (idempotent)
-- [ ] Test setup/cli.py bootstrap --help outputs usage
+- [x] Test setup/cli.py bootstrap --help outputs usage — exits 0 with full help text
 - [ ] Test mutation_tester.py on setup/wizard/steps/deploy.py — kill rate report
-- [ ] Test assert_density_check.py on tests/wizard/ — 99/99 density bar passes
+- [x] Test assert_density_check.py on tests/wizard/ — 99/99 density bar passes (confirmed)
