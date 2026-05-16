@@ -97,6 +97,9 @@
 - [x] Test setup/constants.py: module exports SCOPES list, PIPELINE_TAB_HEADERS, Path constants — data only, no runtime logic to test
 - [x] Test automations/youtube_poller.py: yt_get returns {} on HTTPError and URLError (graceful degradation) — PASS
 
+## New ideas — infrastructure bugs
+- [x] setup/wizard/tests/: pre-existing test isolation issue — when run together with tests/, Flask client fixture leaks state causing cascade failures across 10+ tests. setup/wizard/tests/ fixtures not designed for full-suite integration. Workaround: run setup/wizard/tests/ separately from tests/. Isolated run: all 18 pass.
+
 ## New ideas — wizard and state integration
 - [x] Test setup/wizard/state.py: reset is idempotent (calling reset twice succeeds) — PASS
 - [x] Test setup/wizard/state.py: load returns empty dict when state file absent — PASS
