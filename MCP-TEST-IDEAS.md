@@ -126,3 +126,10 @@
 - [x] Test setup/wizard/steps/verify.py: get_worker_url returns None on missing wrangler.jsonc — PASS
 - [!] Test mutation_tester.py on setup/wizard/steps/mode.py — blocked after 300s, systemic blocked-state issue
 - [x] Test scripts/generate_features.py with empty string input — exits 0 cleanly
+
+- [x] Test shard MCP workspace_status tool — AttributeError 'WorkspaceCoordinator' has no 'status' method (coordinator has active_claims/file_status/claim/release but no .status()) — PASS after fix
+
+- [x] Fix conformance/test_hermes_mcp_tools_smoke.py::TestExportedAPISurface — _tools len>0 assertion failed (lazy dict populated by register_tools(), not pre-populated) — PASS after fix
+
+## E2E journey crash investigations
+- [x] LP-J2 (02-create-topic scratchpad) crash after J1 in sequential runs: root cause was test isolation failure — route handlers from error-states.spec.ts (page.route('**', ...)) and other earlier tests persist in the browser worker and intercept subsequent test navigations, returning responses that corrupt React state causing Page.goto to crash. Fix: page.unrouteAll() at start of setupApiMocks clears all pre-existing handlers before each test sets up its own. Confirmed: J1+J2 pass sequentially with this fix. NOT a frontend or worker bug — test infrastructure only.
