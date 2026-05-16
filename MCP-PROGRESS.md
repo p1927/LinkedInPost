@@ -23,3 +23,4 @@
 - [x] setup/wizard/steps/prereqs.py  <!-- done c15ceef 2026-05-11 -->
 - [x] setup/wizard/steps/verify.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/worker_config.py  <!-- done 428dc85 2026-05-11 -->
+- [x] assert_density_check.py  <!-- done 2084970 -->
