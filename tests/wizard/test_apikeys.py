@@ -27,9 +27,12 @@ class TestValidateGeminiKey:
     def test_returns_false_on_whitespace_key(self):
         """Must return False when key is only whitespace."""
         from setup.wizard.steps.apikeys import validate_gemini_key
-        result = validate_gemini_key('   ')
-        assert result is False
-        assert result != '   '
+        mock_resp = MagicMock()
+        mock_resp.status_code = 400
+        with patch('requests.post', return_value=mock_resp):
+            result = validate_gemini_key('   ')
+            assert result is False
+            assert result != '   '
 
     def test_returns_false_on_http_400(self):
         """Must return False when API returns 400 Bad Request."""
