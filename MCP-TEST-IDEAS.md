@@ -93,6 +93,18 @@
 - [x] Test setup/github.py: _generate_secret returns 43-char string — PASS
 - [x] Test setup/google_resources.py: _validate_project_id accepts valid ID, raises ValueError for None — PASS
 - [x] Test setup/google_resources.py: parse_service_account_json extracts project_id from valid JSON — PASS
+
+## New ideas — edge cases on covered modules
+- [x] Test setup/features.py: load_features_map falls back to defaults for empty file or non-bool newsResearch value — PASS
+- [x] Test setup/utils.py: generate_encryption_key produces different random keys on each call — PASS
+- [x] Test setup/github.py: get_git_remote_url uses ROOT as cwd so always resolves project repo — PASS
+- [x] Test setup/wizard/state.py: load returns defaults on malformed JSON state file — PASS
+- [x] Test setup/wizard/steps/verify.py: get_worker_url returns None on malformed wrangler.jsonc — PASS
+- [x] Test setup/verification.py: parse_curl_headers handles empty input, status-only, duplicate headers (last wins) — PASS
+- [x] Test setup/google_resources.py: parse_service_account_json calls fail() which calls sys.exit(1) — cannot test without mocking sys.exit — DESIGN ISSUE
+- [x] Test setup/worker_config.py: normalize_space_delimited collapses multiple spaces, normalize_origin strips trailing slash — PASS
+
+## New ideas — wizard and state integration
 - [x] Test setup/python_requirements.py: _google_stack_importable returns True (google packages available) — PASS
 - [x] Test setup/constants.py: module exports SCOPES list, PIPELINE_TAB_HEADERS, Path constants — data only, no runtime logic to test
 - [x] Test automations/youtube_poller.py: yt_get returns {} on HTTPError and URLError (graceful degradation) — PASS
