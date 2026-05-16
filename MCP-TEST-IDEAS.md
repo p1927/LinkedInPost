@@ -60,7 +60,7 @@
 - [x] Test assert_density_check.py: correctly exits 1 for zero-assertion file (expected behavior)
 
 ## New ideas — worker/backend coverage
-- [ ] Test worker auth middleware with malformed Authorization header
+✗ [x] Test worker auth middleware: infrastructure blocked (gateway model not allowed)
 - [ ] Test worker D1 database queries with invalid SQL parameters
 - [ ] Test worker/llm client with missing API credentials
 - [ ] Test generation-worker image pipeline with empty variant text
