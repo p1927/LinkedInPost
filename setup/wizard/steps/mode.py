@@ -16,7 +16,11 @@ FEATURES_FILE = Path('features.yaml')
 
 def set_deployment_mode(mode: str) -> None:
     text = FEATURES_FILE.read_text()
-    new_text = re.sub(r"^deploymentMode:.*$", f"deploymentMode: {mode}", text, flags=re.MULTILINE)
+    pattern = re.compile(r"^deploymentMode:.*$", flags=re.MULTILINE)
+    if pattern.search(text):
+        new_text = pattern.sub(f"deploymentMode: {mode}\n", text.rstrip()) + "\n"
+    else:
+        new_text = text.rstrip() + f"\ndeploymentMode: {mode}\n"
     FEATURES_FILE.write_text(new_text)
     # Regenerate features.ts
     subprocess.run(['python3', 'scripts/generate_features.py'], check=True)
