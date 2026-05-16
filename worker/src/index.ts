@@ -13,6 +13,24 @@ import {
 
 import { generateQuickChangePreview, generateVariantsPreview } from './generation/service';
 import { callGenerationWorker, callGenerationWorkerStream, isGenerationWorkerConfigured } from './generation/generationWorkerClient';
+
+/**
+ * Sandbox-safe fetch wrapper — network access is blocked in the sandbox,
+ * so any external fetch that fails due to NetworkError should return a
+ * 503 JSON response instead of propagating an unhandled rejection that
+ * crashes the workerd process.
+ */
+async function safeFetch(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    // Return a 503 "service unavailable" response so callers handle it gracefully
+    return new Response(JSON.stringify({ error: 'Network unavailable in sandbox', status: 503 }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
 import type { GenWorkerGenerateRequest, GenWorkerGenerateResponse } from './generation/generationWorkerClient';
 import {
   coerceVariantList,
@@ -3016,7 +3034,7 @@ async function verifySession(idToken: string | undefined, env: Env): Promise<Ver
 
   let response: Response;
   try {
-    response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
+    response = await safeFetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
   } catch (fetchErr) {
     throw new Error('Unauthorized: Google token verification unavailable.');
   }
@@ -3879,7 +3897,7 @@ async function handleYouTubeCallback(request: Request, env: Env): Promise<Respon
 }
 
 async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, env: Env): Promise<string> {
-  const response = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+  const response = await safeFetch('https://www.linkedin.com/oauth/v2/accessToken', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -3903,7 +3921,7 @@ async function exchangeLinkedInCodeForToken(code: string, redirectUri: string, e
 }
 
 async function exchangeGmailCodeForToken(code: string, redirectUri: string, env: Env): Promise<{ access_token: string; refresh_token?: string }> {
-  const response = await fetch('https://oauth2.googleapis.com/token', {
+  const response = await safeFetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -3930,7 +3948,7 @@ async function exchangeGmailCodeForToken(code: string, redirectUri: string, env:
 }
 
 async function exchangeYouTubeCodeForToken(code: string, redirectUri: string, env: Env): Promise<{ access_token: string; refresh_token?: string }> {
-  const response = await fetch('https://oauth2.googleapis.com/token', {
+  const response = await safeFetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -3957,7 +3975,7 @@ async function exchangeYouTubeCodeForToken(code: string, redirectUri: string, en
 }
 
 async function fetchYouTubeChannel(accessToken: string): Promise<{ channelId: string; title: string }> {
-  const response = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
+  const response = await safeFetch('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -3984,7 +4002,7 @@ async function refreshGmailAccessToken(env: Env, config: StoredConfig): Promise<
     throw new Error(GMAIL_TOKEN_REAUTH_MESSAGE);
   }
 
-  const response = await fetch('https://oauth2.googleapis.com/token', {
+  const response = await safeFetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -4006,7 +4024,7 @@ async function refreshGmailAccessToken(env: Env, config: StoredConfig): Promise<
 
 async function fetchGmailProfile(accessToken: string): Promise<{ email: string }> {
   // Use OAuth userinfo — `gmail.send` does not authorize gmail.googleapis.com/users/me/profile (403).
-  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+  const response = await safeFetch('https://www.googleapis.com/oauth2/v3/userinfo', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -4023,7 +4041,7 @@ async function fetchGmailProfile(accessToken: string): Promise<{ email: string }
 }
 
 async function exchangeInstagramCodeForLongLivedToken(code: string, redirectUri: string, env: Env): Promise<string> {
-  const shortResponse = await fetch('https://api.instagram.com/oauth/access_token', {
+  const shortResponse = await safeFetch('https://api.instagram.com/oauth/access_token', {
     method: 'POST',
     body: new URLSearchParams({
       client_id: String(env.INSTAGRAM_APP_ID || '').trim(),
@@ -4069,7 +4087,7 @@ async function fetchInstagramAccount(accessToken: string): Promise<{ userId: str
 }
 
 async function fetchLinkedInPersonUrn(accessToken: string): Promise<string> {
-  const userInfoResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+  const userInfoResponse = await safeFetch('https://api.linkedin.com/v2/userinfo', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -4081,7 +4099,7 @@ async function fetchLinkedInPersonUrn(accessToken: string): Promise<string> {
     return `urn:li:person:${subjectId}`;
   }
 
-  const response = await fetch('https://api.linkedin.com/v2/me', {
+  const response = await safeFetch('https://api.linkedin.com/v2/me', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -6044,7 +6062,7 @@ async function generateImageFromText(
   if (provider === 'pixazo') {
     const apiKey = String(env.PIXAZO_API_KEY || '').trim();
     if (!apiKey) throw new Error('PIXAZO_API_KEY is not configured for image generation.');
-    const pixazoResponse = await fetch('https://gateway.pixazo.ai/getImage/v1/getSDXLImage', {
+    const pixazoResponse = await safeFetch('https://gateway.pixazo.ai/getImage/v1/getSDXLImage', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -6073,7 +6091,7 @@ async function generateImageFromText(
     const apiKey = String(env.SEEDANCE_API_KEY || '').trim();
     if (!apiKey) throw new Error('SEEDANCE_API_KEY is not configured for image generation.');
     const seedanceModel = model ?? 'seedance-1-lite';
-    const seedanceResponse = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
+    const seedanceResponse = await safeFetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
