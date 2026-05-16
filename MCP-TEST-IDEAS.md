@@ -62,7 +62,7 @@
 ## New ideas — worker/backend coverage
 ✗ [x] Test worker auth middleware: infrastructure blocked (gateway model not allowed)
 ✗ [x] Test worker D1 database queries with invalid SQL parameters — shard MCP model 403 blocked (infrastructure)
-- [>] Test worker/llm client with missing API credentials
+✗ [x] Test worker/llm client with missing API credentials — shard MCP model 403 blocked (infrastructure)
 ✗ [x] Test generation-worker image pipeline with empty variant text — shard MCP model 403 blocked (infrastructure)
 ✗ [x] Test generation-worker image pipeline with very long variant text (>2000 chars) — shard MCP model 403 blocked (infrastructure)
 
