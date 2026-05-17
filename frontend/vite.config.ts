@@ -75,7 +75,7 @@ export default defineConfig({
     format: 'es',
   },
   server: {
-    port: 5173,
+    port: 5175,
     /** Fail fast so the URL always matches Google Cloud “Authorized JavaScript origins” (e.g. http://localhost:5174). */
     strictPort: true,
   },

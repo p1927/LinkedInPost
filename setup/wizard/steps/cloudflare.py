@@ -14,6 +14,9 @@ bp = Blueprint('cloudflare', __name__)
 
 
 def validate_cf_token(token: str) -> tuple[bool, str]:
+    # Short‑circuit for empty tokens to avoid unnecessary network calls and failures.
+    if not token:
+        return False, 'Empty token'
     resp = requests.get(
         'https://api.cloudflare.com/client/v4/user/tokens/verify',
         headers={'Authorization': f'Bearer {token}'},

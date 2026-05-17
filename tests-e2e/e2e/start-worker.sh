@@ -3,7 +3,7 @@ WORKER_DIR="/home/openclaw/workspaces/linkedin-post/worker"
 
 echo "Starting Wrangler dev worker on port 8787..."
 cd "$WORKER_DIR"
-npm run dev > /tmp/wrangler-test.log 2>&1 &
+nohup npm run dev > /tmp/wrangler-test.log 2>&1 &
 WORKER_PID=$!
 echo $WORKER_PID > /tmp/wrangler-test.pid
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # journey-health — LinkedIn-post: check which user journeys are passing right now.
-# Requires wrangler dev on :8787 and vite dev on :5174 to be running.
+# Requires wrangler dev on :8787 and vite dev on :5175 to be running.
 # Start them first: bash tests-e2e/e2e/start-worker.sh && cd frontend && npm run dev &
 # Exit code: number of failing journeys (0 = all pass)
 
@@ -8,7 +8,7 @@ set -uo pipefail
 
 LP_ROOT="/home/openclaw/workspaces/linkedin-post"
 WORKER_PORT="${LP_WORKER_PORT:-8787}"
-VITE_PORT="${LP_VITE_PORT:-5174}"
+VITE_PORT="${LP_VITE_PORT:-5175}"
 E2E_DIR="$LP_ROOT/tests-e2e"
 FAIL=0
 RESULTS=()
