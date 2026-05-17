@@ -8,7 +8,7 @@ set -uo pipefail
 
 LP_ROOT="/home/openclaw/workspaces/linkedin-post"
 WORKER_PORT="${LP_WORKER_PORT:-8787}"
-VITE_PORT="${LP_VITE_PORT:-5173}"
+VITE_PORT="${LP_VITE_PORT:-5174}"
 E2E_DIR="$LP_ROOT/tests-e2e"
 FAIL=0
 RESULTS=()
@@ -25,24 +25,24 @@ VITE_UP=0
 # Check worker health with retries
 attempt=0
 WORKER_UP=0
-while [ "$attempt" -lt 3 ] && [ "$WORKER_UP" -eq 0 ]; do
+while [ "$attempt" -lt 12 ] && [ "$WORKER_UP" -eq 0 ]; do
   if curl -s --max-time 5 "http://localhost:$WORKER_PORT/" | grep -q '"ok"'; then
     WORKER_UP=1
   else
     attempt=$((attempt + 1))
-    sleep 1
+    sleep 2
   fi
 done
 
 # Check vite health with retries
 attempt=0
 VITE_UP=0
-while [ "$attempt" -lt 3 ] && [ "$VITE_UP" -eq 0 ]; do
+while [ "$attempt" -lt 12 ] && [ "$VITE_UP" -eq 0 ]; do
   if curl -sf --max-time 5 "http://localhost:$VITE_PORT" >/dev/null 2>&1; then
     VITE_UP=1
   else
     attempt=$((attempt + 1))
-    sleep 1
+    sleep 2
   fi
 done
 
