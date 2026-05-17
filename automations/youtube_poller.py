@@ -21,7 +21,7 @@ REPLIED_MARKER = ".youtube_replied_ids"
 def yt_get(path: str, params: dict) -> dict:
     url = f"{YT_API}/{path}?" + urllib.parse.urlencode(params)
     try:
-        with urllib.request.urlopen(url) as r:
+        with urllib.request.urlopen(url, timeout=10) as r:
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
         print(f"[poller] yt_get {path} failed: HTTP {e.code}", file=sys.stderr)

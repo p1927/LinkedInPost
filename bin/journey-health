@@ -8,7 +8,7 @@ set -uo pipefail
 
 LP_ROOT="/home/openclaw/workspaces/linkedin-post"
 WORKER_PORT="${LP_WORKER_PORT:-8787}"
-VITE_PORT="${LP_VITE_PORT:-5174}"
+VITE_PORT="${LP_VITE_PORT:-5173}"
 E2E_DIR="$LP_ROOT/tests-e2e"
 FAIL=0
 RESULTS=()
