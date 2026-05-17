@@ -19,6 +19,7 @@
 - [x] setup/wizard/steps/cloudflare.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/steps/deploy.py  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/steps/google.py  <!-- done c458caf 2026-05-11 -->
+ - [x] Bridge Trigger Implementation  <!-- done 428dc85 2026-05-11 -->
 - [x] setup/wizard/steps/mode.py  <!-- done 657b22c 2026-05-11 -->
 - [x] setup/wizard/steps/prereqs.py  <!-- done c15ceef 2026-05-11 -->
 - [x] setup/wizard/steps/verify.py  <!-- done 428dc85 2026-05-11 -->

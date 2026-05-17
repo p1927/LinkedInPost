@@ -6,7 +6,17 @@
 # ignores related client payloads.
 
 # Deployment mode: 'saas' (hosted, multi-tenant, waitlist) or 'selfHosted' (single-owner, direct login).
-deploymentMode: saas
+deploymentMode: selfHosted
+
+
+
+
+
+
+
+
+
+
 newsResearch: true
 # Bulk campaign import (Topics + Draft rows, Claude JSON paste).
 campaign: true

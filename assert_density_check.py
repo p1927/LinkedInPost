@@ -32,18 +32,20 @@ def is_trivial_assert(node: ast.Assert) -> bool:
     # assert True / assert False / assert None
     if isinstance(test, ast.Constant) and str(test.value) in TRIVIAL_ASSERT_VALUES:
         return True
-    # assert 1 == 1 / assert x == x
+    # assert 1 == 1 / assert x == x — only Eq/Is operators are trivial
     if isinstance(test, ast.Compare):
-        if len(test.comparators) == 1:
-            left = ast.dump(test.left)
-            right = ast.dump(test.comparators[0])
-            if left == right:
-                return True
-            # assert 1 == 1
-            if (isinstance(test.left, ast.Constant) and
-                    isinstance(test.comparators[0], ast.Constant) and
-                    test.left.value == test.comparators[0].value):
-                return True
+        if len(test.comparators) == 1 and len(test.ops) == 1:
+            from ast import Eq, Is
+            if isinstance(test.ops[0], (Eq, Is)):
+                left = ast.dump(test.left)
+                right = ast.dump(test.comparators[0])
+                if left == right:
+                    return True
+                # assert 1 == 1
+                if (isinstance(test.left, ast.Constant) and
+                        isinstance(test.comparators[0], ast.Constant) and
+                        test.left.value == test.comparators[0].value):
+                    return True
     return False
 
 def count_real_assertions(func_node: ast.FunctionDef) -> int:

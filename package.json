@@ -13,6 +13,7 @@
     "test:setup": "npm run test:setup-wizard && npm run test:setup-react"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1"
+    "@playwright/test": "^1.59.1",
+    "wrangler": "^3.114.17"
   }
 }
