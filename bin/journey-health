@@ -82,6 +82,7 @@ run_journey() {
     fail "$label" "$reason"
   fi
 }
+if [ "$WORKER_UP" -eq 1 ] && [ "$VITE_UP" -eq 1 ]; then
 
 # Core user journeys (01-05)
 run_journey "LP-J1-auth"      "01-auth-onboarding.spec.ts"
