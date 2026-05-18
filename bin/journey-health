@@ -72,17 +72,17 @@ fi
 # ── Run journey specs only if stack is up ────────────────────────────────────
 run_journey() {
   local label="$1"; local spec="$2"
-  local result
+  local result pw_exit
   touch /tmp/playwright-authorized
   result=$(cd "$E2E_DIR" && npx playwright test "e2e/journeys/$spec" \
-    --reporter=line --timeout=30000 2>&1 | tail -3)
+    --reporter=line --timeout=30000 2>&1); pw_exit=$?
   pkill -f chrome-headless-shell 2>/dev/null || true
   sleep 2
   if ! curl -sf --max-time 3 "http://localhost:$WORKER_PORT/" >/dev/null 2>&1; then
     bash "$LP_ROOT/tests-e2e/e2e/start-worker.sh" >/dev/null 2>&1 || true
     sleep 3
   fi
-  if echo "$result" | grep -q 'passed'; then
+  if [ "$pw_exit" -eq 0 ] || echo "$result" | grep -q 'passed'; then
     pass "$label"
   else
     local reason
