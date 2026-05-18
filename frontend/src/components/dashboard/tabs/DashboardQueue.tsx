@@ -808,7 +808,6 @@ export function DashboardQueue({
                   {/* Actions column */}
                   <div className="flex w-[152px] shrink-0 items-center justify-end gap-1.5 pl-2">
                     {normalizedStatus === 'pending'
-                      && !showDraftActions
                       && session.config.hasGenerationWorker
                       && onGenerationWorkerDraft ? (
                       <Button
