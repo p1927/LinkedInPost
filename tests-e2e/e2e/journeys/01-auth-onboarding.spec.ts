@@ -2,7 +2,11 @@ import { test, expect, type Page } from '@playwright/test';
 import { setupApiMocks, injectFakeToken, gotoAuthenticated, MOCK_SESSION, MOCK_ROWS } from '../helpers/mockApi';
 
 test.describe('Journey 01: Auth & Onboarding', () => {
-  test('unauthenticated user sees Google Sign-In', async ({ page }) => {
+  test.beforeEach(async ({ page }) => { await import('../helpers/mockApi').then(m => m.setupApiMocks(page)); });
+
+test('unauthenticated user sees Google Sign-In', async ({ page }) => {
+    // Disable dev bypass so the app shows the real unauthenticated landing page
+    await page.addInitScript(() => { sessionStorage.setItem('e2e_disable_dev_bypass', 'true'); });
     // No token injected — app renders the sign-in landing page
     await page.goto('.');
     await page.waitForLoadState('domcontentloaded');
