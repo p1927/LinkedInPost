@@ -7,9 +7,14 @@ echo "Building worker bundle..."
 cd "$WORKER_DIR"
 "$LP_ROOT/node_modules/.bin/esbuild" src/index.ts --bundle --platform=browser --target=es2022 --format=esm --define:global=globalThis --outfile="$BUNDLE_OUT" 2>&1 | tail -2
 
+echo "Killing any existing wrangler on port 8787..."
+pkill -f 'wrangler.*8787' 2>/dev/null || true
+pkill -f workerd 2>/dev/null || true
+sleep 2
+
 echo "Starting Wrangler dev worker on port 8787 (no-bundle mode)..."
 cd "$WORKER_DIR"
-nohup ./node_modules/.bin/wrangler dev "$BUNDLE_OUT" --env local --port 8787 --no-bundle --show-interactive-dev-session=false > /tmp/wrangler-test.log 2>&1 &
+NODE_OPTIONS="--max-old-space-size=512" nohup ./node_modules/.bin/wrangler dev "$BUNDLE_OUT" --config wrangler.jsonc --env local --port 8787 --no-bundle --show-interactive-dev-session=false > /tmp/wrangler-test.log 2>&1 &
 WORKER_PID=$!
 echo "$WORKER_PID" > /tmp/wrangler-test.pid
 
