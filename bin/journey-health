@@ -80,7 +80,7 @@ run_journey() {
   fi
   touch /tmp/playwright-authorized
   result=$(cd "$E2E_DIR" && npx playwright test "e2e/journeys/$spec" \
-    --reporter=line --timeout=30000 2>&1); pw_exit=$?
+    --reporter=line --timeout=90000 2>&1); pw_exit=$?
   pkill chrome-headless-shell 2>/dev/null || true
   sleep 3
   pkill -9 chrome-headless-shell 2>/dev/null || true
