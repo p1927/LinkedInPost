@@ -47,11 +47,13 @@ while [ "$attempt" -lt 12 ] && [ "$VITE_UP" -eq 0 ]; do
   fi
 done
 
-if [ "$WORKER_UP" -eq 0 ] && [ "$VITE_UP" -eq 0 ]; then
-  # Try starting the stack
+if [ "$WORKER_UP" -eq 0 ]; then
   echo "[journey-health] Stack not running. Starting worker..."
   bash "$LP_ROOT/tests-e2e/e2e/start-worker.sh" >/dev/null 2>&1 && WORKER_UP=1 || true
-  echo "[journey-health] Starting vite frontend..."
+fi
+
+if [ "$VITE_UP" -eq 0 ]; then
+  echo "[journey-health] Vite not running. Starting vite..."
   cd "$LP_ROOT/frontend" && npm run dev >/tmp/lp-vite.log 2>&1 &
   VITE_PID=$!
   echo "$VITE_PID" > /tmp/lp-vite.pid
