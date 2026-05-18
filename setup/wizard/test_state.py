@@ -7,6 +7,18 @@ from unittest.mock import patch, MagicMock
 import setup.wizard.state as state_module
 
 
+@pytest.fixture(autouse=True)
+def _reset_state_cache():
+    """Clear the module-level _state cache between tests.
+
+    Without this, tests that call mark_complete() (which sets _state) pollute
+    the cache seen by subsequent tests that patch STATE_FILE to a different path.
+    """
+    state_module._state = None
+    yield
+    state_module._state = None
+
+
 def _fresh_state():
     return {step: False for step in state_module.STEPS}
 

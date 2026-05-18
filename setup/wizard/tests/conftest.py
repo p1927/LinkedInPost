@@ -34,6 +34,23 @@ from setup.wizard.steps import mode as mode_module
 
 
 # ---------------------------------------------------------------------------
+# Per-test state isolation
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _reset_state_cache():
+    """Clear the module-level _state cache between tests.
+
+    Without this, tests that call mark_complete() (which sets _state) pollute
+    the cache seen by subsequent tests that patch STATE_FILE to a different path.
+    """
+    state_module._state = None
+    yield
+    state_module._state = None
+
+
+# ---------------------------------------------------------------------------
 # Env file isolation
 # ---------------------------------------------------------------------------
 
