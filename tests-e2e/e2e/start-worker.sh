@@ -19,12 +19,12 @@ WORKER_PID=$!
 echo "$WORKER_PID" > /tmp/wrangler-test.pid
 
 echo "Waiting for worker to start..."
-for i in $(seq 1 30); do
+for i in $(seq 1 60); do
   if curl -sf http://localhost:8787 >/dev/null 2>&1; then
     echo "Worker ready (PID: $WORKER_PID)"
     exit 0
   fi
   sleep 1
 done
-echo "Worker failed to start after 30s. Check /tmp/wrangler-test.log"
+echo "Worker failed to start after 60s. Check /tmp/wrangler-test.log"
 exit 1
