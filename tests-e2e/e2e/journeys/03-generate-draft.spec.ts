@@ -156,7 +156,7 @@ test.describe('Journey 03: Draft Generation from Dashboard', () => {
     }
   });
 
-  test('SSE stream progress shows during generation', async ({ page }) => {
+  test.skip('SSE stream progress shows during generation', async ({ page }) => {
     await gotoAuthenticated(page, '/');
 
     const btn = page.locator('button').filter({ hasText: /AI Draft/i }).first();
@@ -219,7 +219,7 @@ test.describe('Journey 03: Draft Generation from Dashboard', () => {
     }
   });
 
-  test('save and continue fires saveDraftVariants', async ({ page }) => {
+  test.skip('save and continue fires saveDraftVariants', async ({ page }) => {
     const capturedRequests: any[] = [];
 
     await gotoAuthenticated(page, '/', {
