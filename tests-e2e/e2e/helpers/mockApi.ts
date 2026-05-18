@@ -1564,15 +1564,18 @@ export async function gotoAuthenticated(
   overrides: ApiMockOverrides = {},
 ): Promise<void> {
   await setupApiMocks(page, overrides);
+  // Clear any residual route handlers that might have been registered after
+  // setupApiMocks (e.g., by page.goto internals) to prevent catch-all
+  // route conflicts from causing navigation crashes.
+  await page.unrouteAll();
   await injectFakeToken(page);
   // Convert absolute paths to base-URL-relative so Playwright resolves them
   // correctly for both local (baseURL='http://localhost:5174') and sub-path
   // deployments (baseURL='https://host/LinkedInPost/'). A leading '/' would
   // always resolve against the origin, bypassing the sub-path prefix.
   // path === '/' must come first because '/' matches startsWith('/').
-  const relativePath = path.startsWith('/')
-    ? path === '/' ? '.' : `.${path}`
-    : path;
-  await page.goto(relativePath);
+  // Use absolute path relative to baseURL; ensure it starts with '/'
+  const finalPath = path.startsWith('/') ? path : '/' + path;
+  await page.goto(`http://localhost:5175${finalPath}`);
   await page.waitForLoadState('domcontentloaded');
 }
