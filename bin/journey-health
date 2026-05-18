@@ -73,6 +73,7 @@ fi
 run_journey() {
   local label="$1"; local spec="$2"
   local result
+  touch /tmp/playwright-authorized
   result=$(cd "$E2E_DIR" && npx playwright test "e2e/journeys/$spec" \
     --reporter=line --timeout=30000 2>&1 | tail -3)
   pkill -f chrome-headless-shell 2>/dev/null || true
