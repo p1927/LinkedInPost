@@ -77,6 +77,10 @@ run_journey() {
     --reporter=line --timeout=30000 2>&1 | tail -3)
   pkill -f chrome-headless-shell 2>/dev/null || true
   sleep 2
+  if ! curl -sf --max-time 3 "http://localhost:$WORKER_PORT/" >/dev/null 2>&1; then
+    bash "$LP_ROOT/tests-e2e/e2e/start-worker.sh" >/dev/null 2>&1 || true
+    sleep 3
+  fi
   if echo "$result" | grep -q 'passed'; then
     pass "$label"
   else
