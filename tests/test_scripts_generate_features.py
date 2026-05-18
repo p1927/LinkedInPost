@@ -122,15 +122,17 @@ class TestEmitTs:
         features = {"someFeature": True}
         out = emit_ts(features)
         assert "export const FEATURE_SOMEFEATURE = true as const;" in out
+        assert "FEATURE_SOMEFEATURE" in out
 
     def test_output_sorted_alphabetically(self):
         from scripts.generate_features import emit_ts
-        # Valid keys: campaign (c) and newsResearch (n) — c < n
         features = {"newsResearch": True, "campaign": False, "deploymentMode": "ent"}
         out = emit_ts(features)
         campaign_pos = out.index("FEATURE_CAMPAIGN")
         newsresearch_pos = out.index("FEATURE_NEWS_RESEARCH")
-        assert campaign_pos < newsresearch_pos
+        assert campaign_pos < newsresearch_pos, "bool features should be sorted"
+        # Verify deploymentMode const is also present (separate sorting group)
+        assert "deploymentMode = 'ent'" in out
 
 
 class TestUpdateWranglerDeploymentMode:
@@ -153,6 +155,11 @@ class TestUpdateWranglerDeploymentMode:
         monkeypatch.setattr("scripts.generate_features.ROOT", tmp_path)
         from scripts import generate_features as gf
         gf.update_wrangler_deployment_mode("ent")
+        # Verify wrangler.jsonc was not created
+        assert not (tmp_path / "worker" / "wrangler.jsonc").exists()
+        # Calling again with different value is also safe
+        gf.update_wrangler_deployment_mode("saas")
+        assert not (tmp_path / "worker" / "wrangler.jsonc").exists()
 
 
 class TestMain:
@@ -191,3 +198,4 @@ class TestMain:
 
         text = wrangler.read_text()
         assert '"DEPLOYMENT_MODE": "ent"' in text
+        assert "saas" not in text  # old value should be replaced

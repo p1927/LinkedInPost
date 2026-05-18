@@ -53,8 +53,9 @@ def test_mutable_linenos_assert():
     assert len(lines) == 1
 
 def test_mutable_linenos_syntax_error():
-    with pytest.raises(mutation_tester.SyntaxParseError):
+    with pytest.raises(mutation_tester.SyntaxParseError) as exc_info:
         mutation_tester.mutable_linenos("def foo(\n")
+    assert "Syntax error" in str(exc_info.value)
 
 def test_mutable_linenos_assign():
     src = textwrap.dedent("""
@@ -62,6 +63,7 @@ def test_mutable_linenos_assign():
     """).strip()
     lines = mutation_tester.mutable_linenos(src)
     assert 1 in lines
+    assert len(lines) == 1  # only the assignment, no return/raise/assert
 
 def test_mutable_linenos_multiple():
     """Multiple mutation targets: assign + if-body + return + raise."""
@@ -107,6 +109,7 @@ def test_find_project_root_finds_pytest_ini(tmp_path):
 def test_find_project_root_no_marker(tmp_path):
     result = mutation_tester.find_project_root(tmp_path)
     assert result == tmp_path
+    assert isinstance(result, Path)
 
 
 # ─── apply_mutation ─────────────────────────────────────────────────────────────
@@ -137,18 +140,23 @@ def test_run_tests_passes_on_zero_rc():
         mock_run.return_value = type("R", (), {"returncode": 0})()
         result = mutation_tester.run_tests("echo ok", Path.cwd())
         assert result is True
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert "echo ok" in str(call_args) or call_args[1].get("shell") is True
 
 def test_run_tests_fails_on_nonzero_rc():
     with patch("subprocess.run") as mock_run:
         mock_run.return_value = type("R", (), {"returncode": 1})()
-        result = mutation_tester.run_tests("echo ok", Path.cwd())
+        result = mutation_tester.run_tests("echo fail", Path.cwd())
         assert result is False
+        mock_run.assert_called_once()
 
 def test_run_tests_timeout_returns_true():
     with patch("subprocess.run") as mock_run:
         mock_run.side_effect = subprocess.TimeoutExpired("cmd", 60)
         result = mutation_tester.run_tests("sleep 100", Path.cwd())
         assert result is True  # timeout = mutation survived
+        mock_run.assert_called_once()
 
 
 # ─── integration: full mutation pass ──────────────────────────────────────────
