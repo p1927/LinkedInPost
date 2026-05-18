@@ -81,6 +81,8 @@ run_journey() {
   touch /tmp/playwright-authorized
   result=$(cd "$E2E_DIR" && npx playwright test "e2e/journeys/$spec" \
     --reporter=line --timeout=30000 2>&1); pw_exit=$?
+  pkill chrome-headless-shell 2>/dev/null || true
+  sleep 3
   pkill -9 chrome-headless-shell 2>/dev/null || true
   sleep 2
   grep -qE ":2253 " /proc/net/tcp /proc/net/tcp6 2>/dev/null || { bash "$LP_ROOT/tests-e2e/e2e/start-worker.sh" >/dev/null 2>&1; sleep 3; }
