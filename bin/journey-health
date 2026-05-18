@@ -73,6 +73,11 @@ fi
 run_journey() {
   local label="$1"; local spec="$2"
   local result pw_exit
+  # Ensure worker up before running tests
+  if ! curl -sf --max-time 10 "http://localhost:$WORKER_PORT/" >/dev/null 2>&1; then
+    bash "$LP_ROOT/tests-e2e/e2e/start-worker.sh" >/dev/null 2>&1 || true
+    sleep 5
+  fi
   touch /tmp/playwright-authorized
   result=$(cd "$E2E_DIR" && npx playwright test "e2e/journeys/$spec" \
     --reporter=line --timeout=30000 2>&1); pw_exit=$?
@@ -80,7 +85,7 @@ run_journey() {
   sleep 2
   if ! curl -sf --max-time 10 "http://localhost:$WORKER_PORT/" >/dev/null 2>&1; then
     bash "$LP_ROOT/tests-e2e/e2e/start-worker.sh" >/dev/null 2>&1 || true
-    sleep 3
+    sleep 5
   fi
   if [ "$pw_exit" -eq 0 ] || echo "$result" | grep -q 'passed'; then
     pass "$label"
