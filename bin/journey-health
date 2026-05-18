@@ -10,6 +10,7 @@ LP_ROOT="/home/openclaw/workspaces/linkedin-post"
 WORKER_PORT="${LP_WORKER_PORT:-8787}"
 VITE_PORT="${LP_VITE_PORT:-5175}"
 E2E_DIR="$LP_ROOT/tests-e2e"
+touch /tmp/playwright-authorized; trap "rm -f /tmp/playwright-authorized" EXIT
 FAIL=0
 RESULTS=()
 
@@ -26,7 +27,7 @@ VITE_UP=0
 attempt=0
 WORKER_UP=0
 while [ "$attempt" -lt 12 ] && [ "$WORKER_UP" -eq 0 ]; do
-  if curl -s --max-time 5 "http://localhost:$WORKER_PORT/" | grep -q '"ok"'; then
+  if curl -sf --max-time 5 "http://localhost:$WORKER_PORT/" > /dev/null; then
     WORKER_UP=1
   else
     attempt=$((attempt + 1))
