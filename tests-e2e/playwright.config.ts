@@ -21,7 +21,7 @@ export default defineConfig({
         '--disable-background-timer-throttling',
         '--disable-renderer-backgrounding',
         '--disable-backgrounding-occluded-windows',
-        '--js-flags=--max-old-space-size=256',
+        '--js-flags=--max-old-space-size=512',
       ],
     },
   },
