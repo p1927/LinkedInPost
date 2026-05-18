@@ -93,8 +93,9 @@ def record_poll(worker_url: str, channel_id: str, secret: str) -> None:
     try:
         with urllib.request.urlopen(req):
             pass
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[poller] failed to record poll: {e}", file=sys.stderr)
+        raise
 
 
 def load_replied() -> set:
