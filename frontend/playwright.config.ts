@@ -28,7 +28,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'], launchOptions: { args: ['--disable-dev-shm-usage', '--disable-gpu', '--no-sandbox', '--disable-extensions', '--disable-background-networking', '--disable-sync', '--disable-features=Translate,AudioServiceOutOfProcess', '--disable-software-rasterizer'] } },
+      use: { ...devices['Desktop Chrome'], launchOptions: { args: ['--disable-dev-shm-usage', '--disable-gpu', '--no-sandbox', '--disable-extensions', '--disable-background-networking', '--disable-sync', '--disable-features=Translate,AudioServiceOutOfProcess', '--disable-software-rasterizer', '--js-flags=--max-old-space-size=512'] } },
     },
   ],
   // Disable webServer when targeting a remote/cloud URL — the server isn't local
