@@ -1563,11 +1563,10 @@ export async function gotoAuthenticated(
   path: string,
   overrides: ApiMockOverrides = {},
 ): Promise<void> {
+  // setupApiMocks() calls unrouteAll() internally to clear stale handlers
+  // from prior tests before registering fresh mocks — no additional
+  // unrouteAll() needed here (would remove the mocks we just registered).
   await setupApiMocks(page, overrides);
-  // Clear any residual route handlers that might have been registered after
-  // setupApiMocks (e.g., by page.goto internals) to prevent catch-all
-  // route conflicts from causing navigation crashes.
-  await page.unrouteAll();
   await injectFakeToken(page);
   // Convert absolute paths to base-URL-relative so Playwright resolves them
   // correctly for both local (baseURL='http://localhost:5174') and sub-path
