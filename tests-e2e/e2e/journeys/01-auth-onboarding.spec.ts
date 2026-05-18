@@ -8,7 +8,7 @@ test('unauthenticated user sees Google Sign-In', async ({ page }) => {
     // Disable dev bypass so the app shows the real unauthenticated landing page
     await page.addInitScript(() => { sessionStorage.setItem('e2e_disable_dev_bypass', 'true'); });
     // No token injected — app renders the sign-in landing page
-    await page.goto('.');
+    await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(500);
 
