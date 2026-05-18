@@ -5,8 +5,8 @@ const baseURL = process.env.BASE_URL || 'http://localhost:5175';
 export default defineConfig({
   testDir: './e2e',
   retries: 2,
-  workers: 4,
-  fullyParallel: true,
+  workers: 2,
+  fullyParallel: false,
   use: {
     baseURL,
     launchOptions: {
