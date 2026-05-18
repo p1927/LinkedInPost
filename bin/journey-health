@@ -75,6 +75,8 @@ run_journey() {
   local result
   result=$(cd "$E2E_DIR" && npx playwright test "e2e/journeys/$spec" \
     --reporter=line --timeout=30000 2>&1 | tail -3)
+  pkill -f chrome-headless-shell 2>/dev/null || true
+  sleep 2
   if echo "$result" | grep -q 'passed'; then
     pass "$label"
   else
