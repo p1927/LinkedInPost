@@ -22,6 +22,7 @@ class TestBug1_KeyboardInterruptNotCaught:
 
             with pytest.raises(KeyboardInterrupt):
                 get_cloudflare_account_id()
+            mock_run.assert_called_once()
 
     def test_system_exit_propagates(self) -> None:
         """SystemExit must NOT be caught by the bare except Exception."""
@@ -33,6 +34,7 @@ class TestBug1_KeyboardInterruptNotCaught:
 
             with pytest.raises(SystemExit):
                 get_cloudflare_account_id()
+            mock_run.assert_called_once()
 
     def test_runtime_error_still_caught(self) -> None:
         """Other RuntimeErrors (e.g. command failures) should still be caught gracefully."""
@@ -45,3 +47,4 @@ class TestBug1_KeyboardInterruptNotCaught:
             # Should return empty string, not raise
             result = get_cloudflare_account_id()
             assert result == ''
+            mock_run.assert_called_once()
