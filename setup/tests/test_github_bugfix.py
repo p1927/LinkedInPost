@@ -47,10 +47,11 @@ class TestSyncGithubSecretsRuntimeErrorNotSilentlySwallowed:
                         )
 
                         # Simulate gh command failing with RuntimeError
-                        with patch("setup.github.run_command", side_effect=RuntimeError("gh secret set failed")):
+                        with patch("setup.github.run_command", side_effect=RuntimeError("gh secret set failed")) as mock_run:
                             with pytest.raises(RuntimeError, match="Failed to sync GitHub secrets"):
                                 from setup.github import sync_github_secrets
                                 sync_github_secrets(bootstrap, None)
+                            assert mock_run.call_count >= 1, "run_command should be called at least once before raising"
 
     def test_runtimeerror_for_single_secret_propagates_failure(self, tmp_path: Path) -> None:
         """When one secret fails, RuntimeError is raised listing the failed secret."""
@@ -92,10 +93,11 @@ class TestSyncGithubSecretsRuntimeErrorNotSilentlySwallowed:
                                 raise RuntimeError("gh secret set failed")
                             return MagicMock()
 
-                        with patch("setup.github.run_command", side_effect=run_command_side_effect):
+                        with patch("setup.github.run_command", side_effect=run_command_side_effect) as mock_run:
                             with pytest.raises(RuntimeError, match="VITE_GOOGLE_CLIENT_ID"):
                                 from setup.github import sync_github_secrets
                                 sync_github_secrets(bootstrap, None)
+                            assert mock_run.call_count >= 1
 
     def test_successful_sync_does_not_raise(self, tmp_path: Path) -> None:
         """When all secrets sync successfully, no RuntimeError is raised."""
@@ -131,7 +133,11 @@ class TestSyncGithubSecretsRuntimeErrorNotSilentlySwallowed:
                             worker_url="",
                         )
 
-                        with patch("setup.github.run_command", return_value=MagicMock()):
+                        with patch("setup.github.run_command", return_value=MagicMock()) as mock_run:
                             from setup.github import sync_github_secrets
                             # Should NOT raise
                             sync_github_secrets(bootstrap, None)
+                            assert mock_run.call_count >= 1, "run_command should be called for each secret"
+                            # Verify gh secret set was called (all secrets should be synced)
+                            call_args_list = [str(args) for args, kwargs in mock_run.call_args_list]
+                            assert any('gh' in c for c in call_args_list), "gh command should be in run_command calls"
