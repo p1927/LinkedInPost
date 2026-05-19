@@ -10,6 +10,7 @@ Usage:
 import os
 import json
 import sys
+import tempfile
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -51,9 +52,11 @@ def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
         with urllib.request.urlopen(req, timeout=10) as r:
             body = json.loads(r.read())
             return body.get("data")
-    except Exception as e:
+    except (OSError, ValueError) as e:
         print(f"[poller] failed to fetch rule: {e}", file=sys.stderr)
         return None
+    except (SystemExit, KeyboardInterrupt):
+        raise
 
 
 def apply_template(template: str, name: str) -> str:
@@ -126,8 +129,10 @@ def record_poll(worker_url: str, channel_id: str, secret: str) -> None:
     try:
         with urllib.request.urlopen(req):
             pass
-    except Exception as e:
+    except (OSError, ValueError) as e:
         print(f"[poller] failed to record poll: {e}", file=sys.stderr)
+    except (SystemExit, KeyboardInterrupt):
+        raise
 
 
 def load_replied() -> set:
@@ -144,16 +149,12 @@ def load_replied() -> set:
 
 def save_replied(ids: set) -> None:
     try:
-        with open(REPLIED_MARKER, "w") as f:
-            json.dump(list(ids), f)
+        with tempfile.NamedTemporaryFile(mode="w", prefix=".youtube_replied_ids.", suffix=".tmp", delete=False) as tf:
+            json.dump(list(ids), tf)
+            tmp_path = tf.name
+        os.replace(tmp_path, REPLIED_MARKER)  # atomic on POSIX
     except OSError as e:
         print(f"[poller] failed to save replied IDs: {e}", file=sys.stderr)
-        # NOTE: IDs added to in-memory set before this call are LOST if the write
-        # fails. Next run will re-read the stale file and may re-reply to those
-        # comments. This is a known trade-off — failing the poll on disk-full
-        # would cause repeated retries every invocation, which is worse than the
-        # occasional duplicate reply. There is no safe partial-write here because
-        # we need an atomic rename to avoid corrupting the marker on crash.
 
 
 def main():
@@ -188,11 +189,7 @@ def main():
         "key": api_key,
     }
     while True:
-        try:
-            videos_data = yt_get("search", search_params)
-        except Exception:
-            print("[poller] search API failed, aborting", file=sys.stderr)
-            return
+        videos_data = yt_get("search", search_params)
         # yt_get now returns {"_error": ...} on failures (not {}), so distinguish
         # transient error from empty result page.
         if videos_data == {}:
@@ -224,21 +221,14 @@ def main():
             "key": api_key,
         }
         while True:
-            try:
-                comments_data = yt_get("commentThreads", comment_params)
-            except Exception:
-                print(f"[poller] commentThreads API failed for video {video_id}, skipping remaining videos", file=sys.stderr)
-                video_ids = []  # signal outer loop to stop
-                break
+            comments_data = yt_get("commentThreads", comment_params)
             # {} means empty page; error sentinel means transient failure.
             if comments_data == {}:
                 print(f"[poller] commentThreads API empty for video {video_id}", file=sys.stderr)
                 break
-            # yt_get now returns {"_error": ...} on failures (not {}), so we can
-            # distinguish a transient error from an empty page.
             if "error" in comments_data or "_error" in comments_data:
                 err = comments_data.get("_error") or comments_data.get("error")
-                print(f"[poller] commentThreads error for video {video_id}: {err}", file=sys.stderr)
+                print(f"[poller] commentThreads error for video {video_id}: {err}, breaking to next video", file=sys.stderr)
                 break
             for thread in comments_data.get("items", []):
                 thread_id = thread.get("snippet", {}).get("topLevelComment", {}).get("id")
@@ -262,6 +252,8 @@ def main():
     save_replied(new_replied)
     try:
         record_poll(worker_url, channel_id, secret)
+    except (SystemExit, KeyboardInterrupt):
+        raise
     except Exception:
         print("[poller] poll record failed, continuing", file=sys.stderr)
     print(f"[poller] done — replied to {total_replied} comments")

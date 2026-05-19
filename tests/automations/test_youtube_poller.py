@@ -469,7 +469,7 @@ class TestSaveRepliedOsError:
         """save_replied silently logs OSError instead of propagating it."""
         module = _load_module('save_replied_oserr_regression')
 
-        with patch('builtins.open', side_effect=OSError("disk full")):
+        with patch('tempfile.NamedTemporaryFile', side_effect=OSError("disk full")):
             # Must not raise
             module.save_replied({"id1", "id2"})
 
