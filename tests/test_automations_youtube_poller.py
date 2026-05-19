@@ -155,14 +155,16 @@ class TestRecordPoll:
             # Verify request has JSON content-type header
             assert "application/json" in req.get_header("Content-type")
 
-    def test_raises_on_connection_error(self, capsys):
+    def test_connection_error_is_logged_without_raising(self, capsys):
         with patch("automations.youtube_poller.urllib.request.urlopen") as mock:
             mock.side_effect = Exception("connection refused")
-            with pytest.raises(Exception) as exc_info:
-                record_poll("http://worker", "channel123", "secret")
-            assert "connection refused" in str(exc_info.value)
+            # record_poll deliberately catches and logs exceptions without raising,
+            # so the outer main() loop can continue polling even if record fails.
+            result = record_poll("http://worker", "channel123", "secret")
+            assert result is None
             stderr = capsys.readouterr().err
             assert "failed to record poll" in stderr
+            assert "connection refused" in stderr
 
 
 class TestLoadReplied:
