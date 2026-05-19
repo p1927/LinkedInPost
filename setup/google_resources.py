@@ -234,7 +234,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
         ensure_sheet_tab(sheets, sheet_id, 'PostTemplates', POST_TEMPLATES_HEADERS)
         ok('Google Sheet tabs', 'Topics, Draft, Post, PostTemplates')
         print('  [info] Pipeline content (drafts, news runs) lives in Worker D1; apply migrations from `worker/` (see module docstring). No NewsResearch sheet is created.')
-    except Exception as error:
+    except (googleapiclient_errors.HttpError, requests.RequestException) as error:
         warn('Google Sheet tabs', str(error))
 
     print("\n[2/3] Checking for existing 'Published Posts' doc...")
