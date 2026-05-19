@@ -51,7 +51,7 @@ def validate_gemini_key(key: str) -> bool:
         json={'contents': [{'parts': [{'text': 'hi'}]}]},
         timeout=10,
     )
-    return resp.status_code != 400 and resp.status_code != 401
+    return resp.status_code == 200
 
 
 def _write_key(env_file: str, key: str, value: str) -> None:
