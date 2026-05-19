@@ -29,6 +29,10 @@ def check_prereqs() -> list[dict]:
             checks.append({'name': 'Node.js 18+', 'ok': major_node >= 18, 'found': version or 'not found', 'fix': 'Install Node.js 18+ from nodejs.org'})
         except subprocess.TimeoutExpired:
             checks.append({'name': 'Node.js 18+', 'ok': False, 'found': 'timed out', 'fix': 'Node.js is hanging — restart the node process'})
+        except OSError:
+            checks.append({'name': 'Node.js 18+', 'ok': False, 'found': 'error', 'fix': 'Node.js is not working correctly'})
+        except Exception as e:
+            checks.append({'name': 'Node.js 18+', 'ok': False, 'found': 'error', 'fix': 'Node.js is not working correctly'})
     else:
         checks.append({'name': 'Node.js 18+', 'ok': False, 'found': 'not found', 'fix': 'Install Node.js 18+ from nodejs.org'})
 

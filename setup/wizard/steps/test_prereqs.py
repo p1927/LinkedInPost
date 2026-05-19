@@ -75,6 +75,38 @@ class TestCheckPrereqs:
         checks = self._run_with_mocks(py_version=(3, 12), node_found=True, node_version=20, wrangler_found=True, git_found=True)
         assert all(c['ok'] for c in checks)
 
+    def test_node_subprocess_error(self):
+        """subprocess.run error (non-timeout) must not crash check_prereqs."""
+        mock_version_info = MagicMock()
+        mock_version_info.__getitem__ = lambda self, i: (3, 12)[i]
+        mock_version_info.__iter__ = lambda self: iter((3, 12))
+        mock_version_info[:2] = (3, 12)
+        mock_sys = MagicMock(version_info=mock_version_info)
+
+        # Custom TimeoutExpired that won't catch OSError (different exception hierarchy)
+        class CustomTimeoutExpired(Exception):
+            pass
+
+        with patch.object(prereqs, 'sys', mock_sys), \
+             patch.object(prereqs, 'shutil') as mock_shutil:
+            def which_side_effect(cmd):
+                if cmd == 'node':
+                    return '/usr/bin/node'
+                if cmd in ('wrangler', 'npx'):
+                    return '/usr/local/bin/wrangler'
+                if cmd == 'git':
+                    return '/usr/bin/git'
+                return None
+            mock_shutil.which.side_effect = which_side_effect
+
+            with patch.object(prereqs, 'subprocess') as mock_subprocess:
+                mock_subprocess.run.side_effect = OSError('node broken')
+                mock_subprocess.TimeoutExpired = CustomTimeoutExpired
+                checks = prereqs.check_prereqs()
+        node_check = next(c for c in checks if c['name'] == 'Node.js 18+')
+        assert node_check['ok'] is False
+        assert node_check['found'] == 'error'
+
     def test_one_fails_returns_false(self):
         checks = self._run_with_mocks(py_version=(3, 10), node_found=True, node_version=20, wrangler_found=True, git_found=True)
         assert not all(c['ok'] for c in checks)
