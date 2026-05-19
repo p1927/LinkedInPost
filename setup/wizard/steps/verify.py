@@ -36,7 +36,7 @@ def check_worker_health(worker_url: str) -> tuple[bool, str]:
     try:
         resp = requests.get(f'{worker_url}/health', timeout=10)
         return resp.ok, str(resp.status_code)
-    except requests.RequestException as e:
+    except (requests.RequestException, OSError) as e:
         return False, str(e)
     except Exception as e:
         # Programming error — surface it rather than silently hiding it
