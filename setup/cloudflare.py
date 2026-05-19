@@ -323,6 +323,7 @@ def provision_d1_database() -> None:
         return
 
     print('\n[D1] Creating D1 database linkedin-pipeline-db...')
+    stdout = ''
     try:
         result = run_command(
             ['npx', 'wrangler', 'd1', 'create', 'linkedin-pipeline-db', '--json'],
@@ -335,6 +336,12 @@ def provision_d1_database() -> None:
             cwd=WORKER_DIR, capture_output=True,
         )
         stdout = result.stdout.strip()
+
+    if not stdout:
+        raise RuntimeError(
+            'D1 database creation command produced no output. '
+            'Verify wrangler is configured correctly and you have permission to create D1 databases.'
+        )
 
     database_id = _extract_d1_database_id(stdout)
     if not database_id:
