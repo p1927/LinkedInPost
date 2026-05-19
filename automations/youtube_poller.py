@@ -30,15 +30,15 @@ def yt_get(path: str, params: dict) -> dict:
         body = e.read()
         if isinstance(body, bytes):
             body = body.decode(errors="replace")
-        body = str(body)[:200]
-        print(f"[poller] yt_get {path} failed: HTTP {e.code} — {body!r}", file=sys.stderr)
+        body_str = str(body)[:200]
+        print(f"[poller] yt_get {path} failed: HTTP {e.code} — {body_str!r}", file=sys.stderr)
         return {}
     except urllib.error.URLError as e:
         print(f"[poller] yt_get {path} failed: {e.reason}", file=sys.stderr)
         return {}
     except json.JSONDecodeError as e:
         print(f"[poller] yt_get {path} invalid JSON: {e}", file=sys.stderr)
-        return {}  # unexpected but non-fatal
+        return {}
 
 
 def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
@@ -48,7 +48,7 @@ def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
     )
     req = urllib.request.Request(url, headers={"X-Scheduler-Secret": secret})
     try:
-        with urllib.request.urlopen(req) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:
             body = json.loads(r.read())
             return body.get("data")
     except Exception as e:
@@ -84,11 +84,24 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
         body = e.read()
         if isinstance(body, bytes):
             body = body.decode()
-        print(f"[poller] reply failed HTTP {e.code}: {str(body)[:200]}", file=sys.stderr)
-        # 403 = comment disabled / 404 = comment deleted — permanent, don't retry
-        if e.code in (403, 404):
+        body_str = str(body)[:200]
+        print(f"[poller] reply failed HTTP {e.code}: {body_str}", file=sys.stderr)
+        # 404 = comment deleted — permanent, don't retry.
+        if e.code == 404:
             return True  # treat as succeeded so we don't re-reply
-        return False  # retryable (429, 500, etc.)
+        # 403 has two distinct meanings in the YouTube API:
+        #   - "comments disabled" (body contains "commentsDisabled")
+        #   - quota exceeded / token revoked (body contains "quotaExceeded" / "forbidden")
+        # We distinguish them by parsing the response body.
+        if e.code == 403:
+            if "commentsDisabled" in body_str or "forbidden" in body_str.lower():
+                return True  # permanent failure — skip silently
+            # Otherwise assume quota/token issue — retry on next run.
+            return False
+        if e.code == 429:
+            print(f"[poller] reply rate-limited (429), retrying on next run", file=sys.stderr)
+            return False
+        return False  # retryable (5xx, etc.)
     except urllib.error.URLError as e:
         print(f"[poller] reply network error: {e.reason}", file=sys.stderr)
         return False  # retryable
@@ -173,7 +186,9 @@ def main():
         except Exception:
             print("[poller] search API failed, aborting", file=sys.stderr)
             return
-        if not videos_data:
+        # Empty {} means no results page; error sentinel means transient failure —
+        # stop pagination but do not silently halt.
+        if videos_data == {}:
             print("[poller] search API returned empty, aborting", file=sys.stderr)
             return
         for item in videos_data.get("items", []):
@@ -204,8 +219,12 @@ def main():
                 print(f"[poller] commentThreads API failed for video {video_id}, skipping remaining videos", file=sys.stderr)
                 video_ids = []  # signal outer loop to stop
                 break
-            if not comments_data:
+            # {} means empty page; error sentinel means transient failure.
+            if comments_data == {}:
                 print(f"[poller] commentThreads API empty for video {video_id}", file=sys.stderr)
+                break
+            if "_error" in comments_data:
+                print(f"[poller] commentThreads error for video {video_id}: {comments_data['_error']}", file=sys.stderr)
                 break
             for thread in comments_data.get("items", []):
                 thread_id = thread.get("snippet", {}).get("topLevelComment", {}).get("id")
