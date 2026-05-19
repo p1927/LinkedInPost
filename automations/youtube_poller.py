@@ -34,7 +34,7 @@ def yt_get(path: str, params: dict) -> dict:
         return {}
     except json.JSONDecodeError as e:
         print(f"[poller] yt_get {path} invalid JSON: {e}", file=sys.stderr)
-        return {}
+        return {}  # unexpected but non-fatal
 
 
 def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
@@ -77,11 +77,15 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
         with urllib.request.urlopen(req) as r:
             return r.status == 200
     except urllib.error.HTTPError as e:
-        print(f"[poller] reply failed: {e.read().decode()}", file=sys.stderr)
-        return False
+        body = e.read().decode()
+        print(f"[poller] reply failed HTTP {e.code}: {body[:200]}", file=sys.stderr)
+        # 403 = comment disabled / 404 = comment deleted — permanent, don't retry
+        if e.code in (403, 404):
+            return True  # treat as succeeded so we don't re-reply
+        return False  # retryable (429, 500, etc.)
     except urllib.error.URLError as e:
         print(f"[poller] reply network error: {e.reason}", file=sys.stderr)
-        return False
+        return False  # retryable
 
 
 def record_poll(worker_url: str, channel_id: str, secret: str) -> None:
@@ -119,6 +123,7 @@ def save_replied(ids: set) -> None:
             json.dump(list(ids), f)
     except OSError as e:
         print(f"[poller] failed to save replied IDs: {e}", file=sys.stderr)
+        pass  # swallow — replied IDs are best-effort
 
 
 def main():
@@ -153,9 +158,13 @@ def main():
         "key": api_key,
     }
     while True:
-        videos_data = yt_get("search", search_params)
-        if not videos_data:
+        try:
+            videos_data = yt_get("search", search_params)
+        except Exception:
             print("[poller] search API failed, aborting", file=sys.stderr)
+            return
+        if not videos_data:
+            print("[poller] search API returned empty, aborting", file=sys.stderr)
             return
         for item in videos_data.get("items", []):
             vid = item.get("id", {}).get("videoId")
@@ -179,9 +188,14 @@ def main():
             "key": api_key,
         }
         while True:
-            comments_data = yt_get("commentThreads", comment_params)
+            try:
+                comments_data = yt_get("commentThreads", comment_params)
+            except Exception:
+                print(f"[poller] commentThreads API failed for video {video_id}, skipping remaining videos", file=sys.stderr)
+                video_ids = []  # signal outer loop to stop
+                break
             if not comments_data:
-                print(f"[poller] commentThreads API failed for video {video_id}", file=sys.stderr)
+                print(f"[poller] commentThreads API empty for video {video_id}", file=sys.stderr)
                 break
             for thread in comments_data.get("items", []):
                 thread_id = thread.get("snippet", {}).get("topLevelComment", {}).get("id")
