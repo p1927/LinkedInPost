@@ -22,10 +22,13 @@ def check_prereqs() -> list[dict]:
     # Node >= 18
     node = shutil.which('node')
     if node:
-        result = subprocess.run(['node', '--version'], capture_output=True, text=True)
-        version = result.stdout.strip().lstrip('v')
-        major_node = int(version.split('.')[0]) if version else 0
-        checks.append({'name': 'Node.js 18+', 'ok': major_node >= 18, 'found': version or 'not found', 'fix': 'Install Node.js 18+ from nodejs.org'})
+        try:
+            result = subprocess.run(['node', '--version'], capture_output=True, text=True, timeout=10)
+            version = result.stdout.strip().lstrip('v')
+            major_node = int(version.split('.')[0]) if version else 0
+            checks.append({'name': 'Node.js 18+', 'ok': major_node >= 18, 'found': version or 'not found', 'fix': 'Install Node.js 18+ from nodejs.org'})
+        except subprocess.TimeoutExpired:
+            checks.append({'name': 'Node.js 18+', 'ok': False, 'found': 'timed out', 'fix': 'Node.js is hanging — restart the node process'})
     else:
         checks.append({'name': 'Node.js 18+', 'ok': False, 'found': 'not found', 'fix': 'Install Node.js 18+ from nodejs.org'})
 

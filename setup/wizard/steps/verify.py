@@ -28,7 +28,7 @@ def get_worker_url() -> str | None:
         if cf_subdomain:
             return f'https://{name}.{cf_subdomain}.workers.dev'
         return None
-    except Exception:
+    except (json.JSONDecodeError, OSError):
         return None
 
 
@@ -36,6 +36,8 @@ def check_worker_health(worker_url: str) -> tuple[bool, str]:
     try:
         resp = requests.get(f'{worker_url}/health', timeout=10)
         return resp.ok, str(resp.status_code)
+    except requests.RequestException:
+        raise
     except Exception as e:
         return False, str(e)
 
