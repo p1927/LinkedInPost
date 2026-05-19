@@ -107,8 +107,8 @@ class TestEmitTs:
         from scripts.generate_features import emit_ts
         features = {"deploymentMode": "ent"}
         out = emit_ts(features)
-        assert "export const deploymentMode = 'ent' as const;" in out
-        assert "export type DeploymentMode = typeof deploymentMode;" in out
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = 'ent'" in out
+        assert "export type DeploymentMode = 'selfHosted' | 'saas'" in out
 
     def test_bool_feature_emits_const(self):
         from scripts.generate_features import emit_ts
@@ -132,7 +132,7 @@ class TestEmitTs:
         newsresearch_pos = out.index("FEATURE_NEWS_RESEARCH")
         assert campaign_pos < newsresearch_pos, "bool features should be sorted"
         # Verify deploymentMode const is also present (separate sorting group)
-        assert "deploymentMode = 'ent'" in out
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = 'ent'" in out
 
 
 class TestUpdateWranglerDeploymentMode:
@@ -180,7 +180,7 @@ class TestMain:
         ts = tmp_path / "worker" / "src" / "generated" / "features.ts"
         assert ts.exists(), f"features.ts not created"
         content = ts.read_text()
-        assert "deploymentMode = 'ent'" in content
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = 'ent'" in content
         assert "FEATURE_NEWS_RESEARCH = false" in content
 
     def test_main_updates_wrangler_deployment_mode(self, tmp_path, monkeypatch):

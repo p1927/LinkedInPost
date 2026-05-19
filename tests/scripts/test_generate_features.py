@@ -86,8 +86,8 @@ class TestEmitTs:
     def test_emits_string_feature_as_const(self):
         from scripts.generate_features import emit_ts
         result = emit_ts({"deploymentMode": "enterprise"})
-        assert "deploymentMode = 'enterprise'" in result
-        assert "as const" in result
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = 'enterprise'" in result
+        assert "export type DeploymentMode = 'selfHosted' | 'saas'" in result
         assert "export const" in result
 
     def test_emits_sorted_output(self):
@@ -110,13 +110,13 @@ class TestEmitTs:
         }
         result = emit_ts(features)
         assert "café_naïve_日本語" in result
-        assert "deploymentMode = 'café_naïve_日本語'" in result
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = 'café_naïve_日本語'" in result
         assert "FEATURE_NEWS_RESEARCH = true" in result
         assert "FEATURE_CAMPAIGN = false" in result
         assert "// AUTO-GENERATED" in result
         # Valid TypeScript: no invalid identifier chars in exported const names
         for line in result.splitlines():
-            if line.startswith("export const FEATURE_") or line.startswith("export const deploymentMode"):
+            if line.startswith("export const FEATURE_"):
                 assert "as const" in line, f"missing type annotation: {line}"
 
 
@@ -128,21 +128,21 @@ class TestEmitTsSpecialChars:
         from scripts.generate_features import emit_ts
         result = emit_ts({"deploymentMode": "日本語テスト", "newsResearch": True})
         assert "日本語テスト" in result
-        assert "export const deploymentMode = '日本語テスト' as const;" in result
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = '日本語テスト'" in result
 
     def test_handles_accented_characters(self):
         """Accented characters (é, ï, ü) are preserved in output."""
         from scripts.generate_features import emit_ts
         result = emit_ts({"deploymentMode": "café_naïve", "newsResearch": True})
         assert "café_naïve" in result
-        assert "export const deploymentMode = 'café_naïve' as const;" in result
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = 'café_naïve'" in result
 
     def test_handles_emoji_in_string_values(self):
         """Emoji in deploymentMode string is preserved in TypeScript output."""
         from scripts.generate_features import emit_ts
         result = emit_ts({"deploymentMode": "test🚀mode", "newsResearch": True})
         assert "test🚀mode" in result
-        assert "export const deploymentMode = 'test🚀mode' as const;" in result
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = 'test🚀mode'" in result
 
     def test_handles_newlines_and_tabs_in_strings(self):
         """Newlines and tabs in string values are escaped for valid TypeScript."""
@@ -151,11 +151,11 @@ class TestEmitTsSpecialChars:
         # Newline and tab are escaped to \\n and \\t for valid TypeScript string literals
         assert "line1\\nline2" in result  # newline escaped
         assert "\\t" in result  # tab escaped
-        assert "as const" in result
+        # deploymentMode uses typed format, not `as const`
+        assert "export const deploymentMode: 'selfHosted' | 'saas'" in result
 
     def test_no_crash_on_empty_string_value(self):
         """Empty string for deploymentMode emits valid TypeScript."""
         from scripts.generate_features import emit_ts
         result = emit_ts({"deploymentMode": "", "newsResearch": True})
-        assert "deploymentMode = ''" in result
-        assert "as const" in result
+        assert "export const deploymentMode: 'selfHosted' | 'saas' = ''" in result
