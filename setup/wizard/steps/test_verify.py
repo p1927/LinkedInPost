@@ -19,15 +19,21 @@ from setup.wizard.steps.verify import check_env_key, check_worker_health, get_wo
 class TestCheckEnvKey:
     def test_key_present_and_non_empty_returns_true(self):
         with patch.dict(os.environ, {'MY_KEY': 'some-value'}):
-            assert check_env_key('MY_KEY') is True
+            result = check_env_key('MY_KEY')
+            assert result is True
+            assert 'MY_KEY' in os.environ
 
     def test_key_not_present_returns_false(self):
         with patch.dict(os.environ, {}, clear=True):
-            assert check_env_key('MISSING_KEY') is False
+            result = check_env_key('MISSING_KEY')
+            assert result is False
+            assert 'MISSING_KEY' not in os.environ
 
     def test_key_present_but_whitespace_only_returns_false(self):
         with patch.dict(os.environ, {'WHITESPACE_KEY': '   '}):
-            assert check_env_key('WHITESPACE_KEY') is False
+            result = check_env_key('WHITESPACE_KEY')
+            assert result is False
+            assert 'WHITESPACE_KEY' in os.environ
 
 
 class TestGetWorkerUrl:
@@ -41,7 +47,9 @@ class TestGetWorkerUrl:
 
     def test_wrangler_jsonc_missing_returns_none(self):
         Path('worker').mkdir()
-        assert get_worker_url() is None
+        result = get_worker_url()
+        assert result is None
+        assert not (Path('worker') / 'wrangler.jsonc').exists()
 
     def test_wrangler_jsonc_exists_but_no_subdomain_returns_none(self, tmp_path):
         os.chdir(tmp_path)
@@ -50,7 +58,9 @@ class TestGetWorkerUrl:
             json.dumps({'name': 'my-worker'})
         )
         with patch.dict(os.environ, {}, clear=True):
-            assert get_worker_url() is None
+            result = get_worker_url()
+            assert result is None
+            assert (tmp_path / 'worker' / 'wrangler.jsonc').exists()
 
     def test_wrangler_jsonc_with_name_and_subdomain_returns_correct_url(self, tmp_path):
         os.chdir(tmp_path)
@@ -59,14 +69,18 @@ class TestGetWorkerUrl:
             json.dumps({'name': 'my-worker'})
         )
         with patch.dict(os.environ, {'CLOUDFLARE_SUBDOMAIN': 'example.com'}):
-            assert get_worker_url() == 'https://my-worker.example.com.workers.dev'
+            result = get_worker_url()
+            assert result == 'https://my-worker.example.com.workers.dev'
+            assert os.environ.get('CLOUDFLARE_SUBDOMAIN') == 'example.com'
 
     def test_invalid_json_in_wrangler_jsonc_returns_none(self, tmp_path):
         os.chdir(tmp_path)
         (tmp_path / 'worker').mkdir()
         (tmp_path / 'worker' / 'wrangler.jsonc').write_text('{ invalid json }')
         with patch.dict(os.environ, {'CLOUDFLARE_SUBDOMAIN': 'example.com'}):
-            assert get_worker_url() is None
+            result = get_worker_url()
+            assert result is None
+            assert (tmp_path / 'worker' / 'wrangler.jsonc').exists()
 
 
 class TestCheckWorkerHealth:
@@ -79,6 +93,7 @@ class TestCheckWorkerHealth:
 
         result = check_worker_health('https://example.com')
         assert result == (True, '200')
+        mock_get.assert_called_once()
 
     @patch('setup.wizard.steps.verify.requests.get')
     def test_mocked_http_error_response_returns_false_and_status_code(self, mock_get):
@@ -89,6 +104,7 @@ class TestCheckWorkerHealth:
 
         result = check_worker_health('https://example.com')
         assert result == (False, '500')
+        mock_get.assert_called_once()
 
     @patch('setup.wizard.steps.verify.requests.get')
     def test_mocked_connection_error_returns_false_with_message(self, mock_get):
@@ -96,3 +112,4 @@ class TestCheckWorkerHealth:
 
         result = check_worker_health('https://example.com')
         assert result == (False, 'connection failed')
+        mock_get.assert_called_once()
