@@ -130,6 +130,18 @@ class TestNormalizeOrigin:
         assert result == ''
         assert len(result) == 0
 
+    def test_prepends_http_for_host_with_port_but_no_scheme(self):
+        # urlsplit misinterprets "localhost:8787" as scheme=localhost, path=8787.
+        # normalize_origin must detect this and prepend http:// so it's a valid URL.
+        result = normalize_origin('localhost:8787')
+        assert result == 'http://localhost:8787'
+        assert result.startswith('http://')
+        assert not result.endswith('/')
+
+    def test_prepends_http_for_ip_with_port_but_no_scheme(self):
+        result = normalize_origin('127.0.0.1:8787')
+        assert result == 'http://127.0.0.1:8787'
+
 
 class TestReadWorkerDevVar:
     """Tests for read_worker_dev_var()."""

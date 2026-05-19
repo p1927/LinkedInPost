@@ -75,12 +75,27 @@ def _merge_cors_origins(existing: str, incoming: str) -> str:
     return ' '.join(merged)
 
 
+def _looks_like_host_port(value: str) -> bool:
+    """Return True if value looks like 'host:port' (no scheme), e.g. 'localhost:8787', '127.0.0.1:8787'."""
+    if not value or value.startswith('http://') or value.startswith('https://'):
+        return False
+    parts = value.split(':')
+    return len(parts) == 2 and parts[1].isdigit()
+
+
 def normalize_origin(value: str) -> str:
     trimmed = value.strip()
     if not trimmed:
         return ''
     parsed = urlsplit(trimmed)
     if not parsed.scheme or not parsed.netloc:
+        # urlsplit misinterprets "localhost:8787" as scheme=localhost, path=8787.
+        if parsed.scheme and not parsed.netloc and parsed.path.isdigit():
+            return f'http://{parsed.scheme}:{parsed.path}'.rstrip('/')
+        # Also handle IP:port without scheme where urlsplit returns scheme='' and the
+        # whole thing in path (e.g. "127.0.0.1:8787").
+        if not parsed.scheme and _looks_like_host_port(trimmed):
+            return f'http://{trimmed}'.rstrip('/')
         return trimmed.rstrip('/')
     return f'{parsed.scheme}://{parsed.netloc}'.rstrip('/')
 
