@@ -60,6 +60,7 @@ class TestFetchLinkedinPersonUrnNetworkError:
                 result = fetch_linkedin_person_urn()
 
                 assert result == ''
+                mock_get.assert_called_once()
 
     def test_requests_get_http_error_is_handled(self):
         """requests.HTTPError should be caught."""
@@ -75,3 +76,4 @@ class TestFetchLinkedinPersonUrnNetworkError:
                 result = fetch_linkedin_person_urn()
 
                 assert result == ''
+                mock_get.assert_called_once()
