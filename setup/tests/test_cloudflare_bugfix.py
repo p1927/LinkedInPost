@@ -240,9 +240,10 @@ class TestEnsureCloudflareAuth:
         mock_result.stderr = ''
 
         with patch('subprocess.run', return_value=mock_result) as mock_run:
-            with pytest.raises(RuntimeError, match='No Cloudflare authentication detected'):
-                ensure_cloudflare_auth()
-            mock_run.assert_called_once()
+            with patch.dict('os.environ', {'CLOUDFLARE_API_TOKEN': ''}, clear=False):
+                with pytest.raises(RuntimeError, match='No Cloudflare authentication detected'):
+                    ensure_cloudflare_auth()
+                mock_run.assert_called_once()
 
     def test_code_9109_auth_error(self) -> None:
         """'code: 9109' in output must cause RuntimeError."""
@@ -297,9 +298,10 @@ class TestEnsureCloudflareAuth:
         mock_result.stderr = ''
 
         with patch('subprocess.run', return_value=mock_result) as mock_run:
-            with pytest.raises(RuntimeError, match='CLOUDFLARE_API_TOKEN is unset'):
-                ensure_cloudflare_auth()
-            mock_run.assert_called_once()
+            with patch.dict('os.environ', {'CLOUDFLARE_API_TOKEN': ''}, clear=False):
+                with pytest.raises(RuntimeError, match='CLOUDFLARE_API_TOKEN is unset'):
+                    ensure_cloudflare_auth()
+                mock_run.assert_called_once()
 
     def test_combined_stdout_stderr_checked(self) -> None:
         """Error string in stderr (not stdout) must still be detected."""
@@ -311,6 +313,7 @@ class TestEnsureCloudflareAuth:
         mock_result.stderr = 'You are not authenticated'
 
         with patch('subprocess.run', return_value=mock_result) as mock_run:
-            with pytest.raises(RuntimeError, match='No Cloudflare authentication detected'):
-                ensure_cloudflare_auth()
-            mock_run.assert_called_once()
+            with patch.dict('os.environ', {'CLOUDFLARE_API_TOKEN': ''}, clear=False):
+                with pytest.raises(RuntimeError, match='No Cloudflare authentication detected'):
+                    ensure_cloudflare_auth()
+                mock_run.assert_called_once()

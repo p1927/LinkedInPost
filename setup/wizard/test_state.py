@@ -95,8 +95,8 @@ def test_is_complete_returns_false_for_unmarked_step(tmp_path):
     fake_path = tmp_path / ".wizard_state.json"
     with patch.object(state_module, "STATE_FILE", fake_path):
         result = state_module.is_complete("google")
-    assert result is False
-    assert state_module.is_complete("prereqs") is False
+        assert result is False
+        assert state_module.is_complete("prereqs") is False
 
 
 def test_is_complete_returns_false_for_unknown_step(tmp_path):
