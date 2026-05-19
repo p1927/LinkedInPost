@@ -1,7 +1,7 @@
 """Tests for setup/wizard/steps/verify module.
 
 Tests get_worker_url, check_worker_health, check_env_key functions.
-Does NOT test Flask routes (those are covered by wizard integration tests).
+Flask route tests added in TestVerifyShowRoute.
 """
 
 from __future__ import annotations
@@ -149,3 +149,93 @@ class TestCheckWorkerHealth:
             assert ok is False
             assert 'Connection refused' in msg
             assert isinstance(msg, str)
+
+
+class TestCheckWorkerHealthErrorPaths:
+    """Tests for check_worker_health RuntimeError path."""
+
+    def test_unexpected_exception_raises_runtime_error(self, monkeypatch):
+        """Programming errors (TypeError, AttributeError) must raise RuntimeError, not silently caught."""
+        import requests as requests_lib
+        from setup.wizard.steps import verify as verify_module
+
+        def fake_get(*args, **kwargs):
+            raise TypeError('unexpected type error in requests.get')
+
+        monkeypatch.setattr(requests_lib, 'get', fake_get)
+        try:
+            verify_module.check_worker_health('https://worker.example.com/health')
+            assert False, "Expected RuntimeError to be raised"
+        except RuntimeError as exc:
+            assert 'Unexpected error in health check' in str(exc)
+            assert 'unexpected type error' in str(exc)
+
+
+class TestVerifyShowRoute:
+    """Tests for verify.show() Flask route (GET /step/verify)."""
+
+    def test_show_renders_verify_page(self, client, tmp_env, monkeypatch):
+        """GET /step/verify must return 200 and render the verification page."""
+        from setup.wizard.steps import verify as verify_module
+        monkeypatch.setenv('GEMINI_API_KEY', 'test-key')
+        monkeypatch.setenv('GOOGLE_SERVICE_ACCOUNT_JSON', '{"type":"service_account"}')
+        monkeypatch.setenv('CLOUDFLARE_API_TOKEN', 'test-token')
+        monkeypatch.setenv('CLOUDFLARE_SUBDOMAIN', 'test-subdomain')
+        mock_resp = type('MockResp', (), {'ok': True, 'status_code': 200})()
+        monkeypatch.setattr(verify_module.requests, 'get', lambda *a, **kw: mock_resp)
+        monkeypatch.setattr(verify_module, 'get_worker_url', lambda: 'https://my-worker.test-subdomain.workers.dev')
+        r = client.get('/step/verify')
+        assert r.status_code == 200
+        assert b'verify' in r.data.lower() or b'verification' in r.data.lower()
+
+    def test_show_all_ok_marks_verify_complete(self, client, tmp_env, monkeypatch):
+        """When all checks pass, verify step must be marked complete in state."""
+        from setup.wizard import state as state_module
+        from setup.wizard.steps import verify as verify_module
+        monkeypatch.setattr(state_module, '_state', None)
+        monkeypatch.setenv('GEMINI_API_KEY', 'test-key')
+        monkeypatch.setenv('GOOGLE_SERVICE_ACCOUNT_JSON', '{"type":"service_account"}')
+        monkeypatch.setenv('CLOUDFLARE_API_TOKEN', 'test-token')
+        monkeypatch.setenv('CLOUDFLARE_SUBDOMAIN', 'test-subdomain')
+        mock_resp = type('MockResp', (), {'ok': True, 'status_code': 200})()
+        monkeypatch.setattr(verify_module.requests, 'get', lambda *a, **kw: mock_resp)
+        monkeypatch.setattr(verify_module, 'get_worker_url', lambda: 'https://my-worker.test-subdomain.workers.dev')
+        r = client.get('/step/verify')
+        assert r.status_code == 200
+        assert state_module.is_complete('verify') is True
+
+    def test_show_missing_wrangler_jsonc_still_renders(self, client, tmp_env, monkeypatch):
+        """When worker/wrangler.jsonc is missing (get_worker_url returns None), show() must still render (not 500)."""
+        from setup.wizard import state as state_module
+        from setup.wizard.steps import verify as verify_module
+        monkeypatch.setattr(state_module, '_state', None)
+        monkeypatch.setenv('GEMINI_API_KEY', 'test-key')
+        monkeypatch.setenv('GOOGLE_SERVICE_ACCOUNT_JSON', '{"type":"service_account"}')
+        monkeypatch.setenv('CLOUDFLARE_API_TOKEN', 'test-token')
+        monkeypatch.setenv('CLOUDFLARE_SUBDOMAIN', 'test-subdomain')
+        # get_worker_url returns None = worker URL unknown
+        monkeypatch.setattr(verify_module, 'get_worker_url', lambda: None)
+        mock_resp = type('MockResp', (), {'ok': False, 'status_code': 500})()
+        monkeypatch.setattr(verify_module.requests, 'get', lambda *a, **kw: mock_resp)
+        r = client.get('/step/verify')
+        assert r.status_code == 200
+        assert b'unknown' in r.data.lower() or b'not found' in r.data.lower()
+
+    def test_show_graceful_on_mark_complete_oserror(self, client, tmp_env, monkeypatch):
+        """When mark_complete('verify') raises OSError, show() must still render with all_ok=False."""
+        from setup.wizard import state as state_module
+        from setup.wizard.steps import verify as verify_module
+        monkeypatch.setattr(state_module, '_state', None)
+        monkeypatch.setenv('GEMINI_API_KEY', 'test-key')
+        monkeypatch.setenv('GOOGLE_SERVICE_ACCOUNT_JSON', '{"type":"service_account"}')
+        monkeypatch.setenv('CLOUDFLARE_API_TOKEN', 'test-token')
+        monkeypatch.setenv('CLOUDFLARE_SUBDOMAIN', 'test-subdomain')
+        mock_resp = type('MockResp', (), {'ok': True, 'status_code': 200})()
+        monkeypatch.setattr(verify_module.requests, 'get', lambda *a, **kw: mock_resp)
+        monkeypatch.setattr(verify_module, 'get_worker_url', lambda: 'https://my-worker.test-subdomain.workers.dev')
+        # Patch mark_complete at the usage site (verify module) to raise OSError
+        monkeypatch.setattr(verify_module, 'mark_complete', lambda step: (_ for _ in ()).throw(OSError('read-only file system')))
+        r = client.get('/step/verify')
+        assert r.status_code == 200
+        # State should NOT be marked complete due to the OSError
+        assert state_module.is_complete('verify') is False

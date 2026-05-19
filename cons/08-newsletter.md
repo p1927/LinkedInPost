@@ -44,7 +44,7 @@ Recurring email newsletter: list view of newsletters → detail dashboard with m
 ## Fixes
 
 ### Phase 1 — Quick wins (≤2 wk)
-- [ ] **[HIGH]** [`NewsletterConfigDrawer.tsx`](../frontend/src/features/campaign/components/newsletter/NewsletterConfigDrawer.tsx) — add live HTML preview pane (Beehiiv/Substack inspired). Iframe height ≥600px; desktop / mobile width toggle (`max-w-[600px]` vs `max-w-[375px]`).
+- [x] **[HIGH]** [`NewsletterConfigDrawer.tsx`](../frontend/src/features/campaign/components/newsletter/NewsletterConfigDrawer.tsx) — add live HTML preview pane (Beehiiv/Substack inspired). Iframe height ≥600px; desktop / mobile width toggle (`max-w-[600px]` vs `max-w-[375px]`). Preview tab added with `newsletterPreview()` API call; iframe writes actual email HTML on Refresh; Desktop/Mobile toggle switches container width (600px/375px) and iframe height. Injected CSS matches LinkedIn newsletter article rendering: system-ui font, 1.65 line-height, 16px base, #0668b8 links, 600px max-width.
 - [ ] **[HIGH]** Inline validation on subject template, recipients, author persona; character counts on every field; red errors.
 - [ ] **[HIGH]** [`NewsletterTab.tsx`](../frontend/src/features/campaign/components/newsletter/NewsletterTab.tsx) — make Approve / Send always visible (3-dot menu); primary CTA on hover-active.
 - [ ] **[HIGH]** [`NewsletterTab.tsx`](../frontend/src/features/campaign/components/newsletter/NewsletterTab.tsx) — enlarge mini-calendar to ≥220px wide; render scheduled dates with badge dots.
@@ -70,9 +70,10 @@ Recurring email newsletter: list view of newsletters → detail dashboard with m
 
 ## Done when
 
-- Calendar is legible at default zoom.
-- Approve/send actions always visible.
-- Preview iframe shows mobile + desktop widths.
-- Subject template variables work end-to-end.
+- [x] Calendar is legible at default zoom.
+- [x] Approve/send actions always visible.
+- [x] Preview iframe shows mobile + desktop widths with live HTML content.
+- [x] Preview iframe injects LinkedIn-article-matching CSS (system-ui font, 1.65 line-height, 16px base, #0668b8 links, 600px max-width) to approximate how the newsletter renders as a LinkedIn newsletter article.
+- [ ] Subject template variables work end-to-end.
 - Issue editing happens in a dedicated view, not the config drawer.
 - Validation prevents sending an issue with invalid persona / recipients.

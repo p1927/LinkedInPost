@@ -81,7 +81,7 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:
             return r.status == 200
     except urllib.error.HTTPError as e:
         body = e.read()
@@ -127,7 +127,7 @@ def record_poll(worker_url: str, channel_id: str, secret: str) -> None:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req):
+        with urllib.request.urlopen(req, timeout=10):
             pass
     except (OSError, ValueError) as e:
         print(f"[poller] failed to record poll: {e}", file=sys.stderr)

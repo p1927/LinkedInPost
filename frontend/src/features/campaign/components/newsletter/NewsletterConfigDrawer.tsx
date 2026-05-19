@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   X,
   Sparkles,
@@ -10,6 +10,10 @@ import {
   Mail,
   CheckCircle2,
   AlertTriangle,
+  Eye,
+  Monitor,
+  Smartphone,
+  RefreshCw,
 } from 'lucide-react';
 import clsx from 'clsx';
 import type { NewsletterRecord, NewsletterConfigInput } from '../../schema/newsletterTypes';
@@ -37,13 +41,14 @@ interface Props {
   asPage?: boolean;
 }
 
-type ConfigTab = 'sources' | 'delivery' | 'schedule' | 'voice';
+type ConfigTab = 'sources' | 'delivery' | 'schedule' | 'voice' | 'preview';
 
 const CONFIG_TABS: { id: ConfigTab; label: string; icon: typeof Rss }[] = [
   { id: 'sources', label: 'Sources', icon: Rss },
   { id: 'delivery', label: 'Delivery', icon: Send },
   { id: 'schedule', label: 'Schedule', icon: CalendarIcon },
   { id: 'voice', label: 'Voice & Style', icon: Mic },
+  { id: 'preview', label: 'Preview', icon: Eye },
 ];
 
 function getApiStatusKey(providerValue: string): string {
@@ -89,6 +94,12 @@ export function NewsletterConfigDrawer({
   const [generateSuccess, setGenerateSuccess] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState<ConfigTab>('sources');
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [livePreviewHtml, setLivePreviewHtml] = useState<string>('');
+  const [livePreviewLoading, setLivePreviewLoading] = useState(false);
+  const [livePreviewError, setLivePreviewError] = useState<string | null>(null);
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
+  const sectionIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     setLocalConfig(newsletter.config);
@@ -97,6 +108,8 @@ export function NewsletterConfigDrawer({
     setGenerateSuccess(null);
     setSubmitted(false);
     setActiveTab('sources');
+    setLivePreviewHtml('');
+    setLivePreviewError(null);
   }, [newsletter.id, open]);
 
   if (!asPage && !open) return null;
@@ -161,6 +174,83 @@ export function NewsletterConfigDrawer({
   const handleSendTest = () => {
     alert('Test email not yet implemented');
   };
+
+  /** Fetch fresh HTML from the worker and write it into the iframe. */
+  const fetchLivePreview = async () => {
+    setLivePreviewLoading(true);
+    setLivePreviewHtml('');
+    setLivePreviewError(null);
+    try {
+      const data = await api.newsletterPreview(idToken, newsletter.id);
+      setLivePreviewHtml(data.renderedContent);
+    } catch (err) {
+      setLivePreviewError(err instanceof Error ? err.message : 'Failed to load preview.');
+    } finally {
+      setLivePreviewLoading(false);
+    }
+  };
+
+  /** Write livePreviewHtml into all preview iframes (tab + section panel).
+   *  Injects LinkedIn-article-matching CSS before the email HTML so the preview
+   *  visually approximates how the newsletter renders as a LinkedIn newsletter article.
+   */
+  useEffect(() => {
+    const iframes = [previewIframeRef.current, sectionIframeRef.current].filter(Boolean) as HTMLIFrameElement[];
+    if (!livePreviewHtml) return;
+    for (const iframe of iframes) {
+      const doc = iframe.contentDocument;
+      if (!doc) continue;
+      try {
+        doc.open();
+        // LinkedIn newsletter article CSS — injected before the email HTML so it
+        // cascades into the rendered content. Matches LinkedIn's clean editorial feel:
+        // system-ui font, ~1.6 line-height, comfortable paragraph spacing.
+        const linkedInCss = `
+          <style>
+            *, *::before, *::after { box-sizing: border-box; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+              font-size: 16px;
+              line-height: 1.65;
+              color: #1a1a2e;
+              background: #ffffff;
+              margin: 0;
+              padding: 24px;
+              max-width: 600px;
+            }
+            h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 16px; color: #1a1a2e; }
+            h2 { font-size: 1.25rem; line-height: 1.35; margin: 24px 0 12px; color: #1a1a2e; }
+            h3 { font-size: 1.1rem; line-height: 1.4; margin: 20px 0 10px; color: #333; }
+            p  { margin: 0 0 16px; }
+            a  { color: #0668b8; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+            img { max-width: 100%; height: auto; display: block; margin: 16px 0; }
+            ul, ol { margin: 0 0 16px 24px; }
+            li { margin-bottom: 8px; }
+            blockquote {
+              border-left: 3px solid #e0e7ff;
+              margin: 16px 0;
+              padding: 8px 16px;
+              color: #555;
+              font-style: italic;
+            }
+            hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+          </style>
+        `;
+        doc.write(linkedInCss + livePreviewHtml);
+        doc.close();
+      } catch {
+        // contentDocument may be null on cross-origin iframes or blocked by CSP — skip silently
+      }
+    }
+  }, [livePreviewHtml]);
+
+  /** Auto-fetch preview when switching to the preview tab. */
+  useEffect(() => {
+    if (activeTab === 'preview' && !livePreviewHtml && !livePreviewLoading) {
+      void fetchLivePreview();
+    }
+  }, [activeTab, livePreviewHtml, livePreviewLoading]);
 
   const globalFeeds = session.config.newsResearch?.rssFeeds ?? [];
   const apiStatus = session.config.newsResearch?.apis ?? {
@@ -597,6 +687,118 @@ export function NewsletterConfigDrawer({
                 </div>
               )}
 
+              {/* PREVIEW */}
+              {activeTab === 'preview' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-700">Rendered Preview</p>
+                    <p className="text-[11px] text-slate-400">Live from your sources</p>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    This preview shows how your newsletter will look when rendered with the current configuration.
+                    Click Refresh to fetch live articles from your sources and see the actual email HTML.
+                  </p>
+
+                  {/* Source breakdown */}
+                  {livePreviewHtml && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2 py-1 rounded-full text-[10px] bg-violet-50 text-violet-600 font-medium">
+                        Live preview
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Live iframe */}
+                  <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                    {/* Preview width toggle */}
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 bg-slate-50/50">
+                      <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewMode('desktop')}
+                          className={clsx(
+                            'flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-colors',
+                            previewMode === 'desktop'
+                              ? 'bg-violet-600 text-white'
+                              : 'bg-white text-slate-500 hover:bg-slate-50',
+                          )}
+                        >
+                          <Monitor className="h-3 w-3" />
+                          Desktop
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewMode('mobile')}
+                          className={clsx(
+                            'flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-colors',
+                            previewMode === 'mobile'
+                              ? 'bg-violet-600 text-white'
+                              : 'bg-white text-slate-500 hover:bg-slate-50',
+                          )}
+                        >
+                          <Smartphone className="h-3 w-3" />
+                          Mobile
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={livePreviewLoading}
+                        onClick={() => void fetchLivePreview()}
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-500 hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className={clsx('h-3 w-3', livePreviewLoading && 'animate-spin')} />
+                        Refresh
+                      </button>
+                    </div>
+
+                    {/* iframe */}
+                    <div className={clsx(
+                      'flex justify-center p-4 bg-slate-100',
+                    )}>
+                      {livePreviewLoading ? (
+                        <div className="flex items-center gap-2 py-12">
+                          <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                          <span className="text-sm text-slate-500">Fetching articles…</span>
+                        </div>
+                      ) : livePreviewError ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center w-full max-w-[480px]">
+                          <AlertTriangle className="h-8 w-8 text-rose-300 mb-3" />
+                          <p className="text-sm font-medium text-rose-600 mb-1">Preview unavailable</p>
+                          <p className="text-xs text-rose-400">{livePreviewError}</p>
+                        </div>
+                      ) : livePreviewHtml ? (
+                        <div
+                          className={clsx(
+                            'bg-white rounded-lg shadow-sm transition-all duration-300',
+                            previewMode === 'mobile' ? 'w-[375px]' : 'w-full max-w-[600px]',
+                          )}
+                        >
+                          <iframe
+                            ref={previewIframeRef}
+                            className="w-full rounded-lg border-0"
+                            style={{ height: previewMode === 'mobile' ? '812px' : '640px' }}
+                            sandbox="allow-same-origin"
+                            title="Newsletter live preview"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-center w-full max-w-[480px]">
+                          <Eye className="h-8 w-8 text-slate-200 mb-3" />
+                          <p className="text-sm font-medium text-slate-500 mb-1">No preview yet</p>
+                          <p className="text-xs text-slate-400">
+                            Click Refresh to load live newsletter content from your sources.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 text-center italic">
+                    Preview reflects the current newsletter configuration at send time.
+                  </p>
+                </div>
+              )}
+
             </div>
 
             {/* Save buttons — always visible */}
@@ -623,54 +825,100 @@ export function NewsletterConfigDrawer({
 
           </aside>
 
-          {/* RIGHT: live preview */}
-          <section className="flex-1 overflow-y-auto bg-white p-8">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 mb-4">
-              Live preview · what subscribers receive
-            </p>
-            <div className="max-w-md mx-auto rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-600 to-amber-500 shrink-0" />
-                <div className="leading-tight">
-                  <p className="font-semibold text-sm text-slate-900">{localName || 'My Newsletter'}</p>
-                  <p className="text-[11px] text-slate-400">
-                    {localConfig.scheduleDays.length > 0 ? scheduleSummary : 'No schedule set'} · {localConfig.emailRecipients.length || 0} recipients
-                  </p>
+          {/* RIGHT: live newsletter preview — desktop iframe matching LinkedIn/email rendering */}
+          <section className="flex flex-col flex-1 overflow-hidden bg-slate-50">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 bg-white shrink-0">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400">
+                Live preview · what subscribers receive
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode('desktop')}
+                    className={clsx(
+                      'flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-colors',
+                      previewMode === 'desktop'
+                        ? 'bg-violet-600 text-white'
+                        : 'bg-white text-slate-500 hover:bg-slate-50',
+                    )}
+                  >
+                    <Monitor className="h-3 w-3" />
+                    Desktop
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode('mobile')}
+                    className={clsx(
+                      'flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium transition-colors',
+                      previewMode === 'mobile'
+                        ? 'bg-violet-600 text-white'
+                        : 'bg-white text-slate-500 hover:bg-slate-50',
+                    )}
+                  >
+                    <Smartphone className="h-3 w-3" />
+                    Mobile
+                  </button>
                 </div>
-              </div>
-              <h1 className="text-lg font-bold mb-3 leading-tight text-slate-900">
-                {localConfig.subjectTemplate || '{{date}} — Issue digest'}
-              </h1>
-              {localConfig.newsletterIntro && (
-                <p className="text-[12px] text-slate-600 leading-relaxed mb-3 italic">
-                  {localConfig.newsletterIntro}
-                </p>
-              )}
-              <div className="space-y-3">
-                {[
-                  'Top story from your sources will appear here…',
-                  'Second story with summary and read-more link…',
-                  'Third story from your configured feeds…',
-                ].map((placeholder, i) => (
-                  <article key={i}>
-                    <h3 className="text-xs font-semibold text-slate-800">{i + 1}. {placeholder}</h3>
-                    <a className="text-[11px] text-violet-700 font-semibold mt-0.5 inline-block">Read more →</a>
-                  </article>
-                ))}
-              </div>
-              {localConfig.newsletterOutro && (
-                <p className="text-[12px] text-slate-600 leading-relaxed mt-3 italic">
-                  {localConfig.newsletterOutro}
-                </p>
-              )}
-              <div className="mt-5 pt-4 border-t border-slate-200 text-[11px] text-slate-400">
-                You're receiving this because you opted in.{' '}
-                <span className="underline cursor-pointer">Unsubscribe</span>.
+                <button
+                  type="button"
+                  disabled={livePreviewLoading}
+                  onClick={() => void fetchLivePreview()}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-500 hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={clsx('h-3 w-3', livePreviewLoading && 'animate-spin')} />
+                  Refresh
+                </button>
               </div>
             </div>
-            <p className="mt-4 text-[11px] text-slate-400 text-center">
-              This is a layout preview — actual content is generated at send time.
-            </p>
+
+            {/* Scrollable iframe container */}
+            <div className="flex-1 overflow-y-auto flex justify-center p-6">
+              {livePreviewLoading ? (
+                <div className="flex items-center gap-2 py-16">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                  <span className="text-sm text-slate-500">Fetching articles…</span>
+                </div>
+              ) : livePreviewError ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center max-w-[280px]">
+                  <AlertTriangle className="h-8 w-8 text-rose-300 mb-3" />
+                  <p className="text-sm font-medium text-rose-600 mb-1">Preview unavailable</p>
+                  <p className="text-xs text-rose-400 mb-4">{livePreviewError}</p>
+                  <button
+                    type="button"
+                    onClick={() => void fetchLivePreview()}
+                    className="flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs text-rose-500 hover:bg-rose-50 transition-colors"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Try again
+                  </button>
+                </div>
+              ) : livePreviewHtml ? (
+                <div
+                  className={clsx(
+                    'bg-white rounded-xl shadow-sm border border-slate-200 transition-all duration-300',
+                    previewMode === 'mobile' ? 'w-[375px] max-w-full' : 'w-full max-w-[600px]',
+                  )}
+                >
+                  <iframe
+                    ref={sectionIframeRef}
+                    className="w-full rounded-xl border-0"
+                    style={{ height: previewMode === 'mobile' ? '812px' : '700px' }}
+                    sandbox="allow-same-origin"
+                    title="Newsletter live preview"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Eye className="h-8 w-8 text-slate-200 mb-3" />
+                  <p className="text-sm font-medium text-slate-500 mb-1">No preview yet</p>
+                  <p className="text-xs text-slate-400 max-w-[200px]">
+                    Click Refresh to load the live newsletter.
+                  </p>
+                </div>
+              )}
+            </div>
           </section>
 
         </div>

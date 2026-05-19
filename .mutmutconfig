@@ -1,0 +1,3 @@
+[mutmut]
+paths_to_mutate = /home/openclaw/workspaces/linkedin-post/setup/wizard/steps/deploy.py /home/openclaw/workspaces/linkedin-post/setup/wizard/steps/mode.py
+test_command = cd /home/openclaw/workspaces/linkedin-post && PYTHONPATH=/home/openclaw/workspaces/linkedin-post python3 -m pytest setup/wizard/tests/test_deploy.py setup/wizard/tests/test_mode.py -q
