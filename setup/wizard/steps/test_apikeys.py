@@ -57,3 +57,20 @@ def test_show_renders(client):
         mock_render.return_value = 'OK'
         resp = client.get('/step/apikeys')
         assert resp.status_code == 200
+
+
+def test_validate_gemini_key_passes_key_in_url():
+    """Regression: key must be interpolated into the API URL, not hardcoded as ***."""
+    from setup.wizard.steps.apikeys import validate_gemini_key
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+
+    with patch('setup.wizard.steps.apikeys.requests.post', return_value=mock_resp) as mock_post:
+        result = validate_gemini_key('my-test-api-key-12345')
+        assert result is True
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
+        url = call_args[0][0]
+        # Key must appear in URL, not as literal '***'
+        assert 'key=my-test-api-key-12345' in url, f"key not in URL: {url}"
+        assert 'key=***' not in url, f"hardcoded *** still in URL: {url}"
