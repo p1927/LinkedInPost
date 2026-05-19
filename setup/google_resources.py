@@ -105,11 +105,15 @@ def fetch_linkedin_person_urn() -> str:
         return ''
 
     print('\n[4/4] Fetching LinkedIn Person URN...')
-    response = requests.get(
-        'https://api.linkedin.com/v2/me',
-        headers={'Authorization': f'Bearer {access_token}'},
-        timeout=30,
-    )
+    try:
+        response = requests.get(
+            'https://api.linkedin.com/v2/me',
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=30,
+        )
+    except requests.RequestException as e:
+        warn('LinkedIn Person URN', f'network error: {e}. Set LINKEDIN_PERSON_URN manually.')
+        return ''
     if not response.ok:
         warn('LinkedIn Person URN', f'status {response.status_code}. Set LINKEDIN_PERSON_URN manually.')
         return ''
