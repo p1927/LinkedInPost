@@ -25,7 +25,7 @@ def _run_deploy():
             [sys.executable, 'setup.py', '--deploy-worker'],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
         )
-    except Exception as e:
+    except OSError as e:
         _log_queue.put(f'[ERROR] Failed to start deploy: {e}\n')
         _log_queue.put(None)  # sentinel
         _deploy_done.set()
@@ -41,7 +41,7 @@ def _run_deploy():
                 _log_queue.put(None)  # sentinel
                 _deploy_done.set()
                 return
-    except Exception as e:
+    except OSError as e:
         _log_queue.put(f'[ERROR] Deploy stream broken: {e}\n')
     finally:
         proc.wait()
