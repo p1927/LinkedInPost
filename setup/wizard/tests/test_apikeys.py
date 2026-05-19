@@ -111,3 +111,27 @@ def test_apikeys_serpapi_key_uses_correct_name(client, tmp_env):
     assert 'SERPAPI_API_KEY' in root
     assert 'SERPAPI_KEY' not in root  # the buggy name is gone
     assert root['SERPAPI_API_KEY'] == 'serp-fixed-name'
+
+
+def test_apikeys_gemini_validation_rejects_403_and_429(mock_gemini, monkeypatch):
+    """Regression: validate_gemini_key must reject 403 (forbidden) and 429 (rate limit).
+
+    Previously only checked != 400 and != 401, allowing revoked/rate-limited keys
+    to pass validation.
+    """
+    from setup.wizard.steps import apikeys as apikeys_module
+    from setup.wizard.tests.conftest import MockResponse
+
+    # Simulate 403 Forbidden — revoked or disabled key
+    def fake_post_403(*_args, **_kwargs):
+        return MockResponse(status_code=403, ok=False)
+
+    # Simulate 429 Rate Limited
+    def fake_post_429(*_args, **_kwargs):
+        return MockResponse(status_code=429, ok=False)
+
+    monkeypatch.setattr(apikeys_module.requests, 'post', fake_post_403)
+    assert apikeys_module.validate_gemini_key('test-key') is False, "403 should be rejected"
+
+    monkeypatch.setattr(apikeys_module.requests, 'post', fake_post_429)
+    assert apikeys_module.validate_gemini_key('test-key') is False, "429 should be rejected"
