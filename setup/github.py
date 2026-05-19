@@ -194,6 +194,7 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
         'CLOUDFLARE_ACCOUNT_ID': cloudflare_account_id,
     }
 
+    failed_secrets: list[str] = []
     for name, value in secrets_to_sync.items():
         if not value:
             warn('GitHub secret skipped', f'{name} has no value')
@@ -203,4 +204,7 @@ def sync_github_secrets(worker_bootstrap: WorkerBootstrap, google_resources: obj
             ok('GitHub secret synced', name)
         except RuntimeError:
             fail('GitHub secret sync failed', name)
+            failed_secrets.append(name)
             # Continue syncing remaining secrets rather than aborting entirely
+    if failed_secrets:
+        raise RuntimeError('Failed to sync GitHub secrets: ' + ', '.join(failed_secrets))
