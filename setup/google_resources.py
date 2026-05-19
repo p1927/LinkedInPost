@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from google.cloud import storage
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from googleapiclient import errors as googleapiclient_errors
 
 from .constants import PIPELINE_TAB_HEADERS, POST_TEMPLATES_HEADERS, SCOPES, TOPICS_HEADERS
 from .utils import fail, ok, warn
@@ -118,7 +119,11 @@ def fetch_linkedin_person_urn() -> str:
         warn('LinkedIn Person URN', f'status {response.status_code}. Set LINKEDIN_PERSON_URN manually.')
         return ''
 
-    urn = f"urn:li:person:{response.json()['id']}"
+    urn_id = response.json().get('id')
+    if not urn_id:
+        warn('LinkedIn Person URN', 'no id in API response — set LINKEDIN_PERSON_URN manually.')
+        return ''
+    urn = f"urn:li:person:{urn_id}"
     ok('LinkedIn Person URN', urn)
     return urn
 
@@ -193,7 +198,7 @@ def create_google_resources(shared_email: str) -> GoogleResources:
                 supportsAllDrives=True,
             ).execute()
             ok('LINKEDIN folder shared with', shared_email)
-        except Exception as error:
+        except (googleapiclient_errors.HttpError, requests.RequestException) as error:
             warn('LINKEDIN folder share', str(error))
 
     print("\n[1/4] Checking for existing 'Content Calendar' sheet...")
