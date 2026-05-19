@@ -434,7 +434,7 @@ def print_bootstrap_summary(
                 print(f'PIPELINE_DB (D1)        = {_d1_id}')
             else:
                 print('PIPELINE_DB (D1)        = <not yet provisioned — run setup.py --cloudflare or wrangler d1 create>')
-        except Exception:
+        except (OSError, ValueError, RuntimeError):
             pass
         try:
             if GEN_WORKER_WRANGLER_CONFIG.is_file():
@@ -446,7 +446,7 @@ def print_bootstrap_summary(
                     print(f'GEN_DB (generation D1)  = {_gid}')
                 else:
                     print('GEN_DB (generation D1)  = <not yet provisioned — run setup.py --cloudflare>')
-        except Exception:
+        except (OSError, ValueError, RuntimeError):
             pass
         try:
             _cfg2 = load_wrangler_jsonc(wrangler_config_path)
@@ -460,7 +460,7 @@ def print_bootstrap_summary(
                     'GENERATION_WORKER_URL   = <empty in wrangler — run setup.py --deploy-worker with GEMINI_API_KEY '
                     'and/or XAI_API_KEY, or use local http://127.0.0.1:8788 via worker/.dev.vars>'
                 )
-        except Exception:
+        except (OSError, ValueError, RuntimeError):
             pass
         print(
             'GENERATION_WORKER_SECRET = <stored in worker/.dev.vars and as a Worker secret; matches generation '
