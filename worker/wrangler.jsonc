@@ -42,6 +42,12 @@
       ]
     }
   ],
+  "services": [
+    {
+      "binding": "GENERATION_WORKER",
+      "service": "linkedin-generation-worker"
+    }
+  ],
   "vars": {
     "ALLOWED_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com 99jbphome@gmail.com",
     "ADMIN_EMAILS": "99pratyush@gmail.com kanuhr7@gmail.com",
