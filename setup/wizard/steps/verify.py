@@ -25,7 +25,7 @@ def get_worker_url() -> str | None:
         name = data.get('name', '')
         # Derive workers.dev URL from worker name
         cf_subdomain = os.environ.get('CLOUDFLARE_SUBDOMAIN', '')
-        if cf_subdomain:
+        if cf_subdomain and name:
             return f'https://{name}.{cf_subdomain}.workers.dev'
         return None
     except (json.JSONDecodeError, OSError):
@@ -36,10 +36,11 @@ def check_worker_health(worker_url: str) -> tuple[bool, str]:
     try:
         resp = requests.get(f'{worker_url}/health', timeout=10)
         return resp.ok, str(resp.status_code)
-    except requests.RequestException:
-        raise
-    except Exception as e:
+    except requests.RequestException as e:
         return False, str(e)
+    except Exception as e:
+        # Programming error — surface it rather than silently hiding it
+        raise RuntimeError(f"Unexpected error in health check for {worker_url!r}: {e}") from e
 
 
 def check_env_key(key: str) -> bool:
