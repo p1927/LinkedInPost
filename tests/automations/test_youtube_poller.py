@@ -20,8 +20,9 @@ import pytest
 class TestYtGet:
     """Tests for yt_get HTTP error handling."""
 
-    def test_returns_empty_dict_on_http_error(self):
-        """yt_get must return {} (not raise) when HTTPError occurs."""
+    def test_returns_error_sentinel_on_http_error(self):
+        """yt_get returns {_error: code, _reason: body} (not {}) so caller can distinguish
+        transient HTTP errors from empty result pages."""
         spec = importlib.util.spec_from_file_location(
             'youtube_poller_err',
             Path(__file__).resolve().parents[2] / 'automations' / 'youtube_poller.py'
@@ -40,11 +41,13 @@ class TestYtGet:
                 None,
             )
             result = module.yt_get('search', {'key': 'test'})
-            assert result == {}
+            assert '_error' in result
+            assert result['_error'] == 403
             assert isinstance(result, dict)
 
-    def test_returns_empty_dict_on_network_error(self):
-        """yt_get must return {} (not raise) when URLError occurs."""
+    def test_returns_error_sentinel_on_network_error(self):
+        """yt_get returns {_error: 'network', _reason: ...} (not {}) so caller can
+        distinguish network failures from empty result pages."""
         spec = importlib.util.spec_from_file_location(
             'youtube_poller_net',
             Path(__file__).resolve().parents[2] / 'automations' / 'youtube_poller.py'
@@ -57,11 +60,12 @@ class TestYtGet:
             from urllib.error import URLError
             mock_urlopen.side_effect = URLError('Connection refused')
             result = module.yt_get('search', {'key': 'test'})
-            assert result == {}
+            assert '_error' in result
+            assert result['_error'] == 'network'
             assert isinstance(result, dict)
 
-    def test_returns_false_on_non_httpurl_error(self):
-        """yt_get must return {} when urlopen raises a non-HTTP URL error."""
+    def test_returns_error_sentinel_on_non_httpurl_error(self):
+        """yt_get returns {_error: 'network', _reason: ...} when urlopen raises URLError."""
         spec = importlib.util.spec_from_file_location(
             'youtube_poller_exc',
             Path(__file__).resolve().parents[2] / 'automations' / 'youtube_poller.py'
@@ -74,9 +78,9 @@ class TestYtGet:
             from urllib.error import URLError
             mock_urlopen.side_effect = URLError('Unknown error')
             result = module.yt_get('search', {'key': 'test'})
-            assert result == {}
+            assert '_error' in result
+            assert result['_error'] == 'network'
             assert isinstance(result, dict)
-            assert len(result) == 0
 
 
 class TestApplyTemplate:
@@ -216,8 +220,8 @@ class TestFetchRule:
 class TestPostReply:
     """Tests for post_reply HTTP response handling."""
 
-    def test_returns_false_on_http_error(self):
-        """post_reply must return False (not raise) when HTTPError occurs."""
+    def test_returns_true_on_401_auth_failure(self):
+        """post_reply returns True (permanent failure, do not retry) on 401 Unauthorized."""
         spec = importlib.util.spec_from_file_location(
             'youtube_poller_reply1',
             Path(__file__).resolve().parents[2] / 'automations' / 'youtube_poller.py'
@@ -238,8 +242,7 @@ class TestPostReply:
                 err_response,
             )
             result = module.post_reply('vid123', 'parent456', 'Hello', 'bad_token')
-            assert result is False
-            assert result != True
+            assert result is True  # permanent failure — skip silently, do NOT retry
 
     def test_returns_true_on_success(self):
         """post_reply must return True when HTTP response is 200."""
@@ -366,8 +369,8 @@ def _load_module(name: str):
 class TestYtGetJsonDecodeError:
     """Regression: yt_get must not raise on malformed JSON response (bug fix)."""
 
-    def test_returns_empty_dict_on_invalid_json(self):
-        """yt_get returns {} when the API responds with non-JSON content."""
+    def test_returns_error_sentinel_on_invalid_json(self):
+        """yt_get returns {_error: 'json', _reason: ...} on malformed JSON response."""
         module = _load_module('yt_get_json_regression')
 
         class _FakeResponse:
@@ -377,7 +380,8 @@ class TestYtGetJsonDecodeError:
 
         with patch('urllib.request.urlopen', return_value=_FakeResponse()):
             result = module.yt_get('search', {'key': 'test'})
-        assert result == {}
+        assert '_error' in result
+        assert result['_error'] == 'json'
         assert isinstance(result, dict)
 
     def test_returns_empty_dict_on_empty_response(self):
@@ -408,17 +412,17 @@ class TestPostReplyUrlError:
         assert result is False
         assert isinstance(result, bool)
 
-    def test_http_error_still_returns_false(self):
-        """post_reply still returns False (not raises) on HTTPError."""
+    def test_http_500_still_returns_false(self):
+        """post_reply still returns False (retryable) on HTTP 500 internal error."""
         from urllib.error import HTTPError
         import io
         module = _load_module('post_reply_httperr_regression')
 
         with patch('urllib.request.urlopen', side_effect=HTTPError(
-            'url', 401, 'Unauthorized', {}, io.BytesIO(b'{"error":"auth"}')
+            'url', 500, 'Internal Server Error', {}, io.BytesIO(b'{"error":"server"}')
         )):
-            result = module.post_reply('vid123', 'parent456', 'Hello!', 'bad_token')
-        assert result is False
+            result = module.post_reply('vid123', 'parent456', 'Hello!', 'oauth_token')
+        assert result is False  # 5xx is retryable
         assert isinstance(result, bool)
 
 

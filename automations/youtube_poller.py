@@ -32,13 +32,13 @@ def yt_get(path: str, params: dict) -> dict:
             body = body.decode(errors="replace")
         body_str = str(body)[:200]
         print(f"[poller] yt_get {path} failed: HTTP {e.code} — {body_str!r}", file=sys.stderr)
-        return {}
+        return {"_error": e.code, "_reason": body_str}
     except urllib.error.URLError as e:
         print(f"[poller] yt_get {path} failed: {e.reason}", file=sys.stderr)
-        return {}
+        return {"_error": "network", "_reason": str(e.reason)}
     except json.JSONDecodeError as e:
         print(f"[poller] yt_get {path} invalid JSON: {e}", file=sys.stderr)
-        return {}
+        return {"_error": "json", "_reason": str(e)}
 
 
 def fetch_rule(worker_url: str, channel_id: str, secret: str) -> dict | None:
@@ -94,10 +94,17 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
         #   - quota exceeded / token revoked (body contains "quotaExceeded" / "forbidden")
         # We distinguish them by parsing the response body.
         if e.code == 403:
-            if "commentsDisabled" in body_str or "forbidden" in body_str.lower():
+            # "commentsDisabled" means the video owner disabled comments — permanent,
+            # skip silently. Everything else in a 403 (quota exceeded, token revoked,
+            # "forbidden" in other error contexts) is retryable on the next run.
+            if "commentsDisabled" in body_str:
                 return True  # permanent failure — skip silently
             # Otherwise assume quota/token issue — retry on next run.
             return False
+        # 401 = token expired or revoked — NOT retryable, must refresh token externally.
+        if e.code == 401:
+            print(f"[poller] reply auth failed (401): token expired or revoked", file=sys.stderr)
+            return True  # treat as permanent so we don't infinite-loop
         if e.code == 429:
             print(f"[poller] reply rate-limited (429), retrying on next run", file=sys.stderr)
             return False
@@ -186,10 +193,14 @@ def main():
         except Exception:
             print("[poller] search API failed, aborting", file=sys.stderr)
             return
-        # Empty {} means no results page; error sentinel means transient failure —
-        # stop pagination but do not silently halt.
+        # yt_get now returns {"_error": ...} on failures (not {}), so distinguish
+        # transient error from empty result page.
         if videos_data == {}:
             print("[poller] search API returned empty, aborting", file=sys.stderr)
+            return
+        if "_error" in videos_data or "error" in videos_data:
+            err = videos_data.get("_error") or videos_data.get("error")
+            print(f"[poller] search API error: {err}, aborting", file=sys.stderr)
             return
         for item in videos_data.get("items", []):
             vid = item.get("id", {}).get("videoId")
@@ -223,8 +234,11 @@ def main():
             if comments_data == {}:
                 print(f"[poller] commentThreads API empty for video {video_id}", file=sys.stderr)
                 break
-            if "_error" in comments_data:
-                print(f"[poller] commentThreads error for video {video_id}: {comments_data['_error']}", file=sys.stderr)
+            # yt_get now returns {"_error": ...} on failures (not {}), so we can
+            # distinguish a transient error from an empty page.
+            if "error" in comments_data or "_error" in comments_data:
+                err = comments_data.get("_error") or comments_data.get("error")
+                print(f"[poller] commentThreads error for video {video_id}: {err}", file=sys.stderr)
                 break
             for thread in comments_data.get("items", []):
                 thread_id = thread.get("snippet", {}).get("topLevelComment", {}).get("id")
