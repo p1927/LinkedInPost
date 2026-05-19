@@ -21,6 +21,7 @@ load_dotenv()
 
 import re
 
+# Regex pattern for validating GCP project ID format (lowercase letters, numbers, hyphens, 6-30 chars).
 PROJECT_ID_PATTERN = re.compile(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$')
 
 

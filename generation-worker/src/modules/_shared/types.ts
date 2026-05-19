@@ -148,9 +148,15 @@ export interface ChannelFormattedOutput {
 export interface VocabularySignal {
   industryTerms: string[];
   powerPhrases: string[];
+  /** Alias for powerPhrases — matches VocabularySelection.powerWords in worker engine. */
+  powerWords: string[];
   avoidWords: string[];
   registerLevel: string;
   toneWords: string[];
+  /** Alias for toneWords — matches VocabularySelection.toneMarkers in worker engine. */
+  toneMarkers: string[];
+  /** Phrases from the author's past writing to mirror for voice consistency. */
+  signaturePhrases: string[];
   jargonBudget: number;
 }
 

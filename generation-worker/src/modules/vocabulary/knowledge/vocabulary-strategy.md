@@ -38,6 +38,12 @@ Register is the formality and style of language appropriate for a given audience
 
 The jargon budget controls how much insider terminology to use. Too little signals outsider status; too much alienates the uninitiated or reads as performative.
 
+When the `VocabularySignal.jargonBudget` field is a number (0–10), apply it directly:
+- 0–2 → use only plain-language equivalents
+- 3–4 → light term usage; define any non-obvious term in-context
+- 5–6 → moderate usage; assume shared domain vocabulary
+- 7–10 → dense insider language; do not define terms
+
 | Score | Description | Best For |
 |-------|-------------|----------|
 | 0 | Zero jargon. Plain language only. | Mass consumer audiences, beginners |

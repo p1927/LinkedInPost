@@ -113,13 +113,18 @@ Story devices are techniques applied within a narrative structure to sharpen imp
 
 ## Device Selection Rules
 
-| Goal | Recommended Device |
-|---|---|
-| Ground an abstract point | anecdote or specific-detail |
-| Explain an unfamiliar concept | metaphor or analogy |
-| Position a counterintuitive idea | contrast |
-| Create a satisfying ending | callback |
-| Maximize hook engagement | cliffhanger |
-| Add credibility to a claim | specific-detail |
-| Short educational post | analogy or metaphor |
-| Long narrative post | callback + anecdote |
+The table below maps content goals to recommended devices. One device is primary; secondary devices may be layered on top.
+
+| Goal | Primary Device | Secondary(s) | When to Avoid |
+|---|---|---|---|
+| Ground an abstract point | anecdote | specific-detail | When no real incident is available |
+| Explain an unfamiliar concept | metaphor | analogy | When audience already understands the concept |
+| Position a counterintuitive idea | contrast | — | When the contrast is predictable |
+| Create a satisfying ending | callback | specific-detail | Short-form posts (<300 chars); callback feels unearned |
+| Maximize hook engagement | cliffhanger | — | When the payoff cannot justify the tension |
+| Add credibility to a claim | specific-detail | — | When real numbers are unavailable |
+| Short educational post (<150 words) | analogy | metaphor | — |
+| Long narrative post (>300 chars) | callback | anecdote | Callback requires space for planted element |
+| Before-after structure | contrast | specific-detail | — |
+
+**Rule of thumb:** One primary device per post. Layer a maximum of two devices total. Multiple devices competing for attention dilute the texture of each.

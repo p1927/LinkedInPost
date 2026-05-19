@@ -86,6 +86,8 @@ Words that signal belonging, shared identity, and collective experience.
 
 ## General Usage Rules
 
+These rules are **binding extraction guidelines** — always apply them when selecting power words for any post. They are not optional style preferences; violating them undermines the authenticity the power words are meant to create.
+
 1. **One category per section**: Mixing too many power word categories in a single sentence dilutes all of them.
 2. **Placement matters**: Power words hit hardest in the hook, at the start of key insight sentences, and in the CTA.
 3. **Specificity beats volume**: Five precisely placed power words outperform thirty scattered ones.

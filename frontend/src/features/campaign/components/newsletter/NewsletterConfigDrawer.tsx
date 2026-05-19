@@ -159,9 +159,7 @@ export function NewsletterConfigDrawer({
         setError(err instanceof Error ? err.message : 'Save failed. Please try again.');
       }
     } finally {
-      if (isMountedRef.current) {
-        setSaving(false);
-      }
+      setSaving(false);
     }
   };
 
@@ -182,9 +180,7 @@ export function NewsletterConfigDrawer({
         setError(err instanceof Error ? err.message : 'Failed to generate draft.');
       }
     } finally {
-      if (isMountedRef.current) {
-        setGenerating(false);
-      }
+      setGenerating(false);
     }
   };
 
@@ -208,7 +204,9 @@ export function NewsletterConfigDrawer({
         setLivePreviewError(err instanceof Error ? err.message : 'Failed to load preview.');
       }
     } finally {
-      if (isMountedRef.current && fetchId === activePreviewFetchIdRef.current) {
+      // Always reset loading state — even if unmounted mid-fetch.
+      // fetchId guard prevents a slow old response from clobbering a newer fetch.
+      if (fetchId === activePreviewFetchIdRef.current) {
         setLivePreviewLoading(false);
       }
     }

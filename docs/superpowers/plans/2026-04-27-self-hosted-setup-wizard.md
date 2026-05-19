@@ -55,6 +55,7 @@
 # setup/wizard/server.py
 from __future__ import annotations
 
+import secrets
 import threading
 import webbrowser
 from pathlib import Path
@@ -65,7 +66,7 @@ TEMPLATES_DIR = Path(__file__).parent / 'templates'
 
 def create_app() -> Flask:
     app = Flask(__name__, template_folder=str(TEMPLATES_DIR))
-    app.secret_key = 'linkedin-setup-wizard-local'
+    app.secret_key = secrets.token_hex(16)
 
     from .steps import prereqs, google, cloudflare, apikeys, deploy, verify
     app.register_blueprint(prereqs.bp)
@@ -149,15 +150,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-STATE_FILE = Path('.wizard_state.json')
+# Store state alongside the wizard script to avoid CWD-dependent state loss
+_STATE_FILE = Path(__file__).parent.parent / '.wizard_state.json'
 
 STEPS = ['prereqs', 'google', 'cloudflare', 'apikeys', 'deploy', 'verify']
 
 
 def load() -> dict:
-    if STATE_FILE.exists():
+    if _STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            return json.loads(_STATE_FILE.read_text())
         except Exception:
             pass
     return {step: False for step in STEPS}
@@ -166,7 +168,7 @@ def load() -> dict:
 def mark_complete(step: str) -> None:
     state = load()
     state[step] = True
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    _STATE_FILE.write_text(json.dumps(state, indent=2))
 
 
 def is_complete(step: str) -> bool:
@@ -174,7 +176,7 @@ def is_complete(step: str) -> bool:
 
 
 def reset() -> None:
-    STATE_FILE.unlink(missing_ok=True)
+    _STATE_FILE.unlink(missing_ok=True)
 ```
 
 - [ ] **Step 2: Commit**

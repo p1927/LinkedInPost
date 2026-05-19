@@ -83,6 +83,8 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
             return r.status == 200
+    except (SystemExit, KeyboardInterrupt):
+        raise
     except urllib.error.HTTPError as e:
         body = e.read()
         if isinstance(body, bytes):
@@ -195,7 +197,7 @@ def main():
         if videos_data == {}:
             print("[poller] search API returned empty, aborting", file=sys.stderr)
             return
-        if "_error" in videos_data or "error" in videos_data:
+        if "_error" in videos_data or videos_data.get("error"):
             err = videos_data.get("_error") or videos_data.get("error")
             print(f"[poller] search API error: {err}, aborting", file=sys.stderr)
             return
