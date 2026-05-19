@@ -57,6 +57,10 @@ def show():
 @bp.post('/step/prereqs/complete')
 def complete():
     checks = check_prereqs()
-    if all(c['ok'] for c in checks):
-        mark_complete('prereqs')
+    if not all(c['ok'] for c in checks):
+        all_ok = False
+        return render_template('step_prereqs.html',
+                               checks=checks, all_ok=all_ok,
+                               wizard_state=load(), current_step='prereqs')
+    mark_complete('prereqs')
     return redirect(url_for('google.show'))
