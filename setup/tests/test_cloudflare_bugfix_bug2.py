@@ -30,6 +30,7 @@ class TestBug2_D1CreationSubprocessFailure:
                 with patch.object(cf_module, '_apply_d1_migrations'):
                     with pytest.raises(RuntimeError, match='Command failed'):
                         provision_d1_database()
+                    assert call_count == 2
 
     def test_fallback_command_failure_raises_with_correct_message(self) -> None:
         """If --json command fails and fallback also fails, error propagates."""
@@ -53,6 +54,7 @@ class TestBug2_D1CreationSubprocessFailure:
                 with patch.object(cf_module, '_apply_d1_migrations'):
                     with pytest.raises(RuntimeError, match='fallback'):
                         provision_d1_database()
+                    assert call_count == 2
 
     def test_json_command_succeeds_normal_flow(self) -> None:
         """Normal flow: --json command succeeds, no fallback needed."""
@@ -120,8 +122,9 @@ class TestBug2_D1CreationSubprocessFailure:
         mock_result = MagicMock()
         mock_result.stdout = ''  # Empty output!
 
-        with patch.object(cf_module, 'run_command', return_value=mock_result):
+        with patch.object(cf_module, 'run_command', return_value=mock_result) as mock_run:
             with patch.object(cf_module, '_extract_d1_database_id', return_value=''):
                 with patch.object(cf_module, '_apply_d1_migrations'):
                     with pytest.raises(RuntimeError, match='produced no output'):
                         provision_d1_database()
+                    mock_run.assert_called_once()
