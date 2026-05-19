@@ -76,8 +76,8 @@ export function Tour({ tourKey, steps, onDone }: TourProps) {
           'rounded-2xl border border-white/60 bg-white/95 shadow-2xl backdrop-blur-md',
           'flex flex-col gap-3 p-5',
         )}
-        role="dialog"
-        aria-label={`Tour: ${current.title}`}
+        role="tooltip"
+        aria-label={`Tour tip: ${current.title}`}
       >
         {/* Top row */}
         <div className="flex items-start justify-between gap-3">
