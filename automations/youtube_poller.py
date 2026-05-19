@@ -139,43 +139,65 @@ def main():
         print("[poller] no comment_reply_template set")
         return
 
-    # Fetch recent videos
-    videos_data = yt_get("search", {
+    # Fetch recent videos (paginate to completion)
+    video_ids = []
+    search_params = {
         "part": "id",
         "channelId": channel_id,
         "type": "video",
         "order": "date",
-        "maxResults": "10",
+        "maxResults": "50",
         "key": api_key,
-    })
-    video_ids = [item["id"]["videoId"] for item in videos_data.get("items", []) if item.get("id", {}).get("videoId")]
+    }
+    while True:
+        videos_data = yt_get("search", search_params)
+        if videos_data is None:
+            print("[poller] search API failed, aborting", file=sys.stderr)
+            return
+        for item in videos_data.get("items", []):
+            vid = item.get("id", {}).get("videoId")
+            if vid:
+                video_ids.append(vid)
+        next_page = videos_data.get("nextPageToken")
+        if not next_page:
+            break
+        search_params["pageToken"] = next_page
 
     replied = load_replied()
     new_replied = set(replied)
     total_replied = 0
 
     for video_id in video_ids:
-        comments_data = yt_get("commentThreads", {
+        comment_params = {
             "part": "snippet",
             "videoId": video_id,
             "order": "time",
-            "maxResults": "50",
+            "maxResults": "100",
             "key": api_key,
-        })
-        for thread in comments_data.get("items", []):
-            thread_id = thread["snippet"]["topLevelComment"]["id"]
-            if thread_id in replied:
-                continue
+        }
+        while True:
+            comments_data = yt_get("commentThreads", comment_params)
+            if comments_data is None:
+                print(f"[poller] commentThreads API failed for video {video_id}", file=sys.stderr)
+                break
+            for thread in comments_data.get("items", []):
+                thread_id = thread.get("snippet", {}).get("topLevelComment", {}).get("id")
+                if not thread_id or thread_id in replied:
+                    continue
 
-            snippet = thread.get("snippet", {}).get("topLevelComment", {}).get("snippet", {})
-            author = snippet.get("authorDisplayName", "there")
-            reply_text = apply_template(template, author)
+                snippet = thread.get("snippet", {}).get("topLevelComment", {}).get("snippet", {})
+                author = snippet.get("authorDisplayName", "there")
+                reply_text = apply_template(template, author)
 
-            ok = post_reply(video_id, thread_id, reply_text, oauth_token)
-            if ok:
-                new_replied.add(thread_id)
-                total_replied += 1
-                print(f"[poller] replied to {thread_id} by {author}")
+                ok = post_reply(video_id, thread_id, reply_text, oauth_token)
+                if ok:
+                    new_replied.add(thread_id)
+                    total_replied += 1
+                    print(f"[poller] replied to {thread_id} by {author}")
+            next_page = comments_data.get("nextPageToken")
+            if not next_page:
+                break
+            comment_params["pageToken"] = next_page
 
     save_replied(new_replied)
     record_poll(worker_url, channel_id, secret)
