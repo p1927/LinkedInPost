@@ -68,3 +68,54 @@ def test_deploy_kill_reaps_zombie_on_timeout():
     assert 'wait' in kill_order, f"proc.wait() should be called to reap zombie, got: {kill_order}"
     assert kill_order.index('wait') > kill_order.index('kill'), \
         f"proc.wait() must be called AFTER proc.kill(), order: {kill_order}"
+
+
+def test_deploy_popen_failure_logs_error_and_sends_sentinel():
+    """Popen failure (e.g. setup.py missing) must not crash the thread — log error and send sentinel."""
+    import queue, threading
+    from unittest.mock import patch, MagicMock
+    from setup.wizard.steps.deploy import _run_deploy
+
+    log_q = queue.Queue()
+    with patch('setup.wizard.steps.deploy.subprocess.Popen', side_effect=FileNotFoundError('setup.py not found')), \
+         patch('setup.wizard.steps.deploy._log_queue', log_q):
+        t = threading.Thread(target=_run_deploy)
+        t.start()
+        t.join(timeout=5)
+        assert not t.is_alive(), "Thread must exit after Popen failure"
+
+    # Should have sent sentinel (None) to signal done
+    items = []
+    while True:
+        try:
+            items.append(log_q.get_nowait())
+        except queue.Empty:
+            break
+    assert None in items, f"Sentinel (None) must be in queue on Popen failure, got: {items}"
+
+
+def test_deploy_stream_broken_logs_error_and_sends_sentinel():
+    """stdout iteration failure must not crash thread — log error and send sentinel."""
+    import queue, threading
+    from unittest.mock import patch, MagicMock
+    from setup.wizard.steps.deploy import _run_deploy
+
+    mock_proc = MagicMock()
+    mock_proc.stdout.__iter__ = MagicMock(side_effect=IOError('pipe broken'))
+
+    log_q = queue.Queue()
+    with patch('setup.wizard.steps.deploy.subprocess.Popen', return_value=mock_proc), \
+         patch('setup.wizard.steps.deploy._log_queue', log_q):
+        t = threading.Thread(target=_run_deploy)
+        t.start()
+        t.join(timeout=5)
+        assert not t.is_alive(), "Thread must exit after stdout error"
+
+    # Should have sent sentinel (None) to signal done
+    items = []
+    while True:
+        try:
+            items.append(log_q.get_nowait())
+        except queue.Empty:
+            break
+    assert None in items, f"Sentinel (None) must be in queue after stdout error, got: {items}"

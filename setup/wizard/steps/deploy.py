@@ -20,25 +20,35 @@ _DEPLOY_TIMEOUT_SEC = 600  # 10 minutes
 def _run_deploy():
     _deploy_done.clear()
     _deploy_success.clear()
-    proc = subprocess.Popen(
-        [sys.executable, 'setup.py', '--deploy-worker'],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-    )
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, 'setup.py', '--deploy-worker'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        )
+    except Exception as e:
+        _log_queue.put(f'[ERROR] Failed to start deploy: {e}\n')
+        _log_queue.put(None)  # sentinel
+        _deploy_done.set()
+        return
     start = time.monotonic()
-    for line in proc.stdout:
-        _log_queue.put(line)
-        # Kill subprocess if it runs longer than _DEPLOY_TIMEOUT_SEC
-        if time.monotonic() - start > _DEPLOY_TIMEOUT_SEC:
-            proc.kill()
-            proc.wait()  # reap zombie; kill() is asynchronous
-            _log_queue.put(None)  # sentinel
-            _deploy_done.set()
-            return
-    proc.wait()
-    if proc.returncode == 0:
-        _deploy_success.set()
-    _log_queue.put(None)  # sentinel
-    _deploy_done.set()
+    try:
+        for line in proc.stdout:
+            _log_queue.put(line)
+            # Kill subprocess if it runs longer than _DEPLOY_TIMEOUT_SEC
+            if time.monotonic() - start > _DEPLOY_TIMEOUT_SEC:
+                proc.kill()
+                proc.wait()  # reap zombie; kill() is asynchronous
+                _log_queue.put(None)  # sentinel
+                _deploy_done.set()
+                return
+    except Exception as e:
+        _log_queue.put(f'[ERROR] Deploy stream broken: {e}\n')
+    finally:
+        proc.wait()
+        if proc.returncode == 0:
+            _deploy_success.set()
+        _log_queue.put(None)  # sentinel
+        _deploy_done.set()
 
 
 @bp.get('/step/deploy')
