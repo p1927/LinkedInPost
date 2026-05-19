@@ -56,6 +56,7 @@ class TestSheetTabsExceptionHandling:
 
                                 with pytest.raises(KeyboardInterrupt):
                                     create_google_resources('')
+                                mock_sheets.spreadsheets().get().execute.assert_called_once()
 
     def test_system_exit_propagates_in_sheet_tabs(self):
         """SystemExit raised in sheet tabs should NOT be caught."""
@@ -88,6 +89,7 @@ class TestSheetTabsExceptionHandling:
 
                                 with pytest.raises(SystemExit):
                                     create_google_resources('')
+                                mock_sheets.spreadsheets().get().execute.assert_called_once()
 
     def test_googleapiclient_http_error_is_caught_in_sheet_tabs(self):
         """googleapiclient.errors.HttpError in sheet tabs should be caught (warn)."""
@@ -124,6 +126,7 @@ class TestSheetTabsExceptionHandling:
 
                                 result = create_google_resources('')
                                 assert result is not None
+                                mock_sheets.spreadsheets().get().execute.assert_called_once()
 
     def test_requests_exception_is_caught_in_sheet_tabs(self):
         """requests.RequestException in sheet tabs should be caught (warn)."""
@@ -156,3 +159,4 @@ class TestSheetTabsExceptionHandling:
 
                                 result = create_google_resources('')
                                 assert result is not None
+                                mock_sheets.spreadsheets().get().execute.assert_called_once()
