@@ -56,6 +56,7 @@ class TestFolderSharingExceptionHandling:
 
                                 with pytest.raises(KeyboardInterrupt):
                                     create_google_resources('share@example.com')
+                                mock_drive.permissions().create().execute.assert_called_once()
 
     def test_system_exit_propagates_in_folder_sharing(self):
         """SystemExit raised in folder sharing should NOT be caught."""
@@ -88,6 +89,7 @@ class TestFolderSharingExceptionHandling:
 
                                 with pytest.raises(SystemExit):
                                     create_google_resources('share@example.com')
+                                mock_drive.permissions().create().execute.assert_called_once()
 
     def test_googleapiclient_http_error_is_caught_in_folder_sharing(self):
         """googleapiclient.errors.HttpError in folder sharing should be caught (warn)."""
@@ -124,6 +126,7 @@ class TestFolderSharingExceptionHandling:
 
                                 result = create_google_resources('share@example.com')
                                 assert result is not None
+                                mock_drive.permissions().create().execute.assert_called_once()
 
     def test_requests_exception_is_caught_in_folder_sharing(self):
         """requests.RequestException in folder sharing should be caught (warn)."""
@@ -156,3 +159,4 @@ class TestFolderSharingExceptionHandling:
 
                                 result = create_google_resources('share@example.com')
                                 assert result is not None
+                                mock_drive.permissions().create().execute.assert_called_once()
