@@ -4,6 +4,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def load_module(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -86,3 +88,23 @@ class TestEnsureCommand:
             module.ensure_command('nonexistent_cmd_12345', 'This command does not exist')
         except RuntimeError as e:
             assert 'nonexistent_cmd_12345' in str(e)
+
+
+class TestRunCommand:
+    """Tests for run_command()."""
+
+    def test_raises_runtime_error_when_command_not_found(self):
+        module = load_module(
+            'setup_utils8',
+            Path('/home/openclaw/workspaces/linkedin-post/setup/utils.py')
+        )
+        with pytest.raises(RuntimeError, match='Command failed'):
+            module.run_command(['nonexistent_cmd_xyz_123'], cwd=Path('.'), capture_output=False)
+
+    def test_raises_runtime_error_on_nonzero_exit(self):
+        module = load_module(
+            'setup_utils9',
+            Path('/home/openclaw/workspaces/linkedin-post/setup/utils.py')
+        )
+        with pytest.raises(RuntimeError, match='Command failed'):
+            module.run_command(['false'], cwd=Path('.'), capture_output=False)

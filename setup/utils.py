@@ -44,7 +44,10 @@ def run_command(
             text=True,
             input=input_text,
         )
-    except subprocess.CalledProcessError as error:
+    except (subprocess.CalledProcessError, OSError) as error:
+        if isinstance(error, OSError):
+            # FileNotFoundError (executable not found) or permission errors
+            raise RuntimeError(f'Command failed: {" ".join(command)}\n{error.strerror or str(error)}') from error
         stdout = error.stdout.strip() if error.stdout else ''
         stderr = error.stderr.strip() if error.stderr else ''
         details = '\n'.join(part for part in [stdout, stderr] if part)

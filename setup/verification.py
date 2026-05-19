@@ -24,7 +24,7 @@ def verify_worker_endpoint(worker_url: str, cors_allowed_origins: str) -> None:
             raise RuntimeError(
                 f'Worker verification failed for {worker_url}: response body was not valid JSON.'
             ) from error
-    except requests.exceptions.SSLError:
+    except requests.RequestException:
         status_code, headers, body_text = curl_http_request(worker_url)
         content_type = headers.get('content-type', '').lower()
         try:
@@ -71,7 +71,7 @@ def verify_worker_endpoint(worker_url: str, cors_allowed_origins: str) -> None:
         )
         preflight_status = preflight.status_code
         allow_origin = preflight.headers.get('Access-Control-Allow-Origin', '')
-    except requests.exceptions.SSLError:
+    except requests.RequestException:
         preflight_status, preflight_headers, _body_text = curl_http_request(
             worker_url,
             method='OPTIONS',

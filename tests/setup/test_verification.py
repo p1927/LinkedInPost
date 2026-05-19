@@ -70,3 +70,55 @@ class TestVerifyWorkerEndpoint:
             with pytest.raises(RuntimeError, match='did not return the expected backend') as exc_info:
                 verify_worker_endpoint('https://example.com/worker', '*')
             assert 'nginx' not in str(exc_info.value) or 'expected backend' in str(exc_info.value)
+
+    def test_connection_error_falls_back_to_curl(self):
+        import requests as req
+        from setup.verification import verify_worker_endpoint
+        mock_options_resp = MagicMock()
+        mock_options_resp.status_code = 204
+        mock_options_resp.headers = {'Access-Control-Allow-Origin': '*'}
+        with patch('setup.verification.requests.get', side_effect=req.ConnectionError('connection failed')):
+            with patch('setup.verification.requests.options', return_value=mock_options_resp):
+                with patch('setup.verification.curl_http_request', return_value=(200, {'content-type': 'application/json'}, '{"data": {"backend": "cloudflare-worker"}}')) as mock_curl:
+                    verify_worker_endpoint('https://example.com/worker', '*')
+                    mock_curl.assert_called_once()
+
+    def test_timeout_error_falls_back_to_curl(self):
+        import requests as req
+        from setup.verification import verify_worker_endpoint
+        mock_options_resp = MagicMock()
+        mock_options_resp.status_code = 204
+        mock_options_resp.headers = {'Access-Control-Allow-Origin': '*'}
+        with patch('setup.verification.requests.get', side_effect=req.Timeout('timed out')):
+            with patch('setup.verification.requests.options', return_value=mock_options_resp):
+                with patch('setup.verification.curl_http_request', return_value=(200, {'content-type': 'application/json'}, '{"data": {"backend": "cloudflare-worker"}}')) as mock_curl:
+                    verify_worker_endpoint('https://example.com/worker', '*')
+                    mock_curl.assert_called_once()
+
+    def test_preflight_connection_error_uses_curl(self):
+        import requests as req
+        from setup.verification import verify_worker_endpoint
+        mock_get_resp = MagicMock()
+        mock_get_resp.status_code = 200
+        mock_get_resp.headers = {'content-type': 'application/json'}
+        mock_get_resp.text = '{"data": {"backend": "cloudflare-worker"}}'
+        mock_get_resp.json.return_value = {'data': {'backend': 'cloudflare-worker'}}
+        with patch('setup.verification.requests.get', return_value=mock_get_resp):
+            with patch('setup.verification.requests.options', side_effect=req.ConnectionError('connection failed')):
+                with patch('setup.verification.curl_http_request', return_value=(204, {'access-control-allow-origin': 'https://example.com'}, '')) as mock_curl:
+                    verify_worker_endpoint('https://example.com/worker', 'https://example.com')
+                    mock_curl.assert_called_once()
+
+    def test_preflight_ssl_error_uses_curl(self):
+        import requests as req
+        from setup.verification import verify_worker_endpoint
+        mock_get_resp = MagicMock()
+        mock_get_resp.status_code = 200
+        mock_get_resp.headers = {'content-type': 'application/json'}
+        mock_get_resp.text = '{"data": {"backend": "cloudflare-worker"}}'
+        mock_get_resp.json.return_value = {'data': {'backend': 'cloudflare-worker'}}
+        with patch('setup.verification.requests.get', return_value=mock_get_resp):
+            with patch('setup.verification.requests.options', side_effect=req.exceptions.SSLError('SSL failed')):
+                with patch('setup.verification.curl_http_request', return_value=(204, {'access-control-allow-origin': 'https://example.com'}, '')) as mock_curl:
+                    verify_worker_endpoint('https://example.com/worker', 'https://example.com')
+                    mock_curl.assert_called_once()
