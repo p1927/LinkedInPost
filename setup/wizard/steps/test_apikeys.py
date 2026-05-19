@@ -28,16 +28,20 @@ def test_validate_gemini_key_200_returns_true():
     from setup.wizard.steps.apikeys import validate_gemini_key
     mock_resp = MagicMock()
     mock_resp.status_code = 200
-    with patch('setup.wizard.steps.apikeys.requests.post', return_value=mock_resp):
-        assert validate_gemini_key('test-key') is True
+    with patch('setup.wizard.steps.apikeys.requests.post', return_value=mock_resp) as mock_post:
+        result = validate_gemini_key('test-key')
+        assert result is True
+        mock_post.assert_called_once()
 
 
 def test_validate_gemini_key_401_returns_false():
     from setup.wizard.steps.apikeys import validate_gemini_key
     mock_resp = MagicMock()
     mock_resp.status_code = 401
-    with patch('setup.wizard.steps.apikeys.requests.post', return_value=mock_resp):
-        assert validate_gemini_key('bad-key') is False
+    with patch('setup.wizard.steps.apikeys.requests.post', return_value=mock_resp) as mock_post:
+        result = validate_gemini_key('bad-key')
+        assert result is False
+        mock_post.assert_called_once()
 
 
 def test_validate_gemini_key_500_returns_false():
@@ -45,24 +49,30 @@ def test_validate_gemini_key_500_returns_false():
     from setup.wizard.steps.apikeys import validate_gemini_key
     mock_resp = MagicMock()
     mock_resp.status_code = 500
-    with patch('setup.wizard.steps.apikeys.requests.post', return_value=mock_resp):
-        assert validate_gemini_key('valid-format-key') is False
+    with patch('setup.wizard.steps.apikeys.requests.post', return_value=mock_resp) as mock_post:
+        result = validate_gemini_key('valid-format-key')
+        assert result is False
+        mock_post.assert_called_once()
 
 
 def test_validate_gemini_key_network_error_returns_false():
     """Network error (ConnectionError, Timeout, etc.) must not crash validate_gemini_key."""
     import requests as req
     from setup.wizard.steps.apikeys import validate_gemini_key
-    with patch('setup.wizard.steps.apikeys.requests.post', side_effect=req.ConnectionError('no network')):
-        assert validate_gemini_key('some-key') is False
+    with patch('setup.wizard.steps.apikeys.requests.post', side_effect=req.ConnectionError('no network')) as mock_post:
+        result = validate_gemini_key('some-key')
+        assert result is False
+        mock_post.assert_called_once()
 
 
 def test_validate_gemini_key_timeout_error_returns_false():
     """requests.Timeout must not crash validate_gemini_key — return False instead."""
     import requests as req
     from setup.wizard.steps.apikeys import validate_gemini_key
-    with patch('setup.wizard.steps.apikeys.requests.post', side_effect=req.Timeout('timed out')):
-        assert validate_gemini_key('some-key') is False
+    with patch('setup.wizard.steps.apikeys.requests.post', side_effect=req.Timeout('timed out')) as mock_post:
+        result = validate_gemini_key('some-key')
+        assert result is False
+        mock_post.assert_called_once()
 
 
 def test_show_renders(client):
@@ -73,6 +83,7 @@ def test_show_renders(client):
         mock_render.return_value = 'OK'
         resp = client.get('/step/apikeys')
         assert resp.status_code == 200
+        mock_load.assert_called_once()
 
 
 def test_validate_gemini_key_passes_key_in_url():

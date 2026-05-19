@@ -12,6 +12,7 @@ Bugs fixed:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from unittest.mock import MagicMock
 
@@ -54,8 +55,12 @@ class TestCheckWorkerHealth:
             raise TypeError('unexpected type error')
 
         monkeypatch.setattr(requests, 'get', fake_get)
-        with pytest.raises(RuntimeError, match='Unexpected error in health check'):
+        try:
             verify_module.check_worker_health('https://worker.example.com/health')
+            assert False, "Should have raised RuntimeError"
+        except RuntimeError as exc:
+            assert 'Unexpected error in health check' in str(exc)
+            assert 'unexpected type error' in str(exc)
 
 
 class TestGetWorkerUrl:
@@ -70,6 +75,7 @@ class TestGetWorkerUrl:
 
         result = verify_module.get_worker_url()
         assert result is None
+        assert (worker_dir / 'wrangler.jsonc').exists()
 
     def test_missing_name_returns_none(self, monkeypatch, tmp_path):
         """When wrangler.jsonc omits 'name' entirely, return None — not a malformed URL."""
@@ -80,6 +86,7 @@ class TestGetWorkerUrl:
 
         result = verify_module.get_worker_url()
         assert result is None
+        assert (worker_dir / 'wrangler.jsonc').exists()
 
     def test_valid_name_returns_correct_url(self, monkeypatch, tmp_path):
         """When name is present and CLOUDFLARE_SUBDOMAIN is set, return correct workers.dev URL."""
@@ -91,6 +98,7 @@ class TestGetWorkerUrl:
 
         result = verify_module.get_worker_url()
         assert result == 'https://my-worker.myteam.workers.dev'
+        assert os.environ.get('CLOUDFLARE_SUBDOMAIN') == 'myteam'
 
     def test_no_subdomain_returns_none(self, monkeypatch, tmp_path):
         """When CLOUDFLARE_SUBDOMAIN is not set, return None even with a valid name."""
@@ -102,3 +110,4 @@ class TestGetWorkerUrl:
 
         result = verify_module.get_worker_url()
         assert result is None
+        assert (worker_dir / 'wrangler.jsonc').exists()
