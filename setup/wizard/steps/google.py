@@ -17,6 +17,8 @@ def validate_service_account(json_str: str) -> tuple[bool, str]:
         data = json.loads(json_str)
     except json.JSONDecodeError:
         return False, 'Invalid JSON'
+    if not isinstance(data, dict):
+        return False, 'Invalid JSON structure: expected an object'
     required = ['type', 'project_id', 'private_key', 'client_email']
     for field in required:
         if field not in data:

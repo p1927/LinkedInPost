@@ -96,6 +96,34 @@ class TestValidateServiceAccount:
         assert ok is False
         assert 'JSON must be a service_account key' in msg
 
+    def test_returns_false_on_json_array(self):
+        """Must return False when JSON parses to an array instead of an object."""
+        from setup.wizard.steps.google import validate_service_account
+        ok, msg = validate_service_account('[1, 2, 3]')
+        assert ok is False
+        assert 'Invalid JSON structure' in msg
+
+    def test_returns_false_on_json_string(self):
+        """Must return False when JSON parses to a string instead of an object."""
+        from setup.wizard.steps.google import validate_service_account
+        ok, msg = validate_service_account('"just a string"')
+        assert ok is False
+        assert 'Invalid JSON structure' in msg
+
+    def test_returns_false_on_json_number(self):
+        """Must return False when JSON parses to a number instead of an object."""
+        from setup.wizard.steps.google import validate_service_account
+        ok, msg = validate_service_account('12345')
+        assert ok is False
+        assert 'Invalid JSON structure' in msg
+
+    def test_returns_false_on_json_null(self):
+        """Must return False when JSON parses to null instead of an object."""
+        from setup.wizard.steps.google import validate_service_account
+        ok, msg = validate_service_account('null')
+        assert ok is False
+        assert 'Invalid JSON structure' in msg
+
 
 class TestValidateOAuthClientId:
     """Tests for validate_oauth_client_id()."""

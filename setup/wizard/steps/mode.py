@@ -32,6 +32,8 @@ def show():
     if FEATURES_FILE.exists():
         try:
             data = yaml.safe_load(FEATURES_FILE.read_text())
+            if data is None:
+                data = {}
             current = data.get('deploymentMode', 'saas')
         except Exception:
             pass
