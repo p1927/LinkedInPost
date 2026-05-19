@@ -107,8 +107,9 @@ def get_cloudflare_account_id() -> str:
         if account_id:
             ok('Cloudflare account ID', account_id)
             return account_id
-    except Exception:
-        pass
+    except Exception as error:
+        if isinstance(error, (KeyboardInterrupt, SystemExit)):
+            raise
     warn('Cloudflare account ID', 'CLOUDFLARE_ACCOUNT_ID not set and could not parse from wrangler whoami')
     return ''
 
