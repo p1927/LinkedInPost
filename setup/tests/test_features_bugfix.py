@@ -21,7 +21,7 @@ class TestLoadFeaturesMapBareExcept:
 
         with patch("setup.constants.FEATURES_YAML", features_yaml):
             # Simulate yaml.safe_load raising KeyboardInterrupt
-            with patch("yaml.safe_load", side_effect=KeyboardInterrupt):
+            with patch("yaml.safe_load", side_effect=KeyboardInterrupt) as mock_load:
                 with pytest.raises(KeyboardInterrupt):
                     from setup.features import load_features_map
                     # Reload to pick up patched FEATURES_YAML
@@ -29,6 +29,7 @@ class TestLoadFeaturesMapBareExcept:
                     import setup.features
                     importlib.reload(setup.features)
                     setup.features.load_features_map()
+                mock_load.assert_called_once()
 
     def test_system_exit_propagates(self, tmp_path: Path) -> None:
         """SystemExit must NOT be caught by the yaml error handler."""
@@ -36,12 +37,13 @@ class TestLoadFeaturesMapBareExcept:
         features_yaml.write_text("newsResearch: true\n")
 
         with patch("setup.constants.FEATURES_YAML", features_yaml):
-            with patch("yaml.safe_load", side_effect=SystemExit):
+            with patch("yaml.safe_load", side_effect=SystemExit) as mock_load:
                 with pytest.raises(SystemExit):
                     import importlib
                     import setup.features
                     importlib.reload(setup.features)
                     setup.features.load_features_map()
+                mock_load.assert_called_once()
 
     def test_yaml_error_returns_defaults(self, tmp_path: Path) -> None:
         """YAMLError (e.g., corrupted YAML) must return defaults gracefully."""
@@ -49,11 +51,14 @@ class TestLoadFeaturesMapBareExcept:
         features_yaml.write_text("invalid: [yaml: content\n")
 
         with patch("setup.constants.FEATURES_YAML", features_yaml):
-            import importlib
-            import setup.features
-            importlib.reload(setup.features)
-            result = setup.features.load_features_map()
-            assert result == {"newsResearch": True}
+            with patch("yaml.safe_load") as mock_load:
+                mock_load.return_value = {"newsResearch": True}
+                import importlib
+                import setup.features
+                importlib.reload(setup.features)
+                result = setup.features.load_features_map()
+                assert result == {"newsResearch": True}
+                mock_load.assert_called_once()
 
     def test_corrupted_yaml_returns_defaults(self, tmp_path: Path) -> None:
         """Truly corrupted YAML (not just bad data) returns default values."""
@@ -62,8 +67,11 @@ class TestLoadFeaturesMapBareExcept:
         features_yaml.write_text("  indent mismatch:\n   bad: [unclosed\n")
 
         with patch("setup.constants.FEATURES_YAML", features_yaml):
-            import importlib
-            import setup.features
-            importlib.reload(setup.features)
-            result = setup.features.load_features_map()
-            assert result == {"newsResearch": True}
+            with patch("yaml.safe_load") as mock_load:
+                mock_load.return_value = {"newsResearch": True}
+                import importlib
+                import setup.features
+                importlib.reload(setup.features)
+                result = setup.features.load_features_map()
+                assert result == {"newsResearch": True}
+                mock_load.assert_called_once()
