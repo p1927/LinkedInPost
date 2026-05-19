@@ -36,7 +36,9 @@ def load_features_map() -> dict[str, bool]:
         for key in _detect_duplicate_keys(raw_text):
             warn('FEATURES_YAML', f'duplicate key {key!r} — last value wins, check features.yaml for duplicates')
         raw = yaml.safe_load(raw_text) or {}
-    except Exception:
+    except Exception as error:
+        if isinstance(error, (KeyboardInterrupt, SystemExit)):
+            raise
         return defaults
     if not isinstance(raw, dict):
         return defaults
