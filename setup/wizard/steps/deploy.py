@@ -30,6 +30,7 @@ def _run_deploy():
         # Kill subprocess if it runs longer than _DEPLOY_TIMEOUT_SEC
         if time.monotonic() - start > _DEPLOY_TIMEOUT_SEC:
             proc.kill()
+            proc.wait()  # reap zombie; kill() is asynchronous
             _log_queue.put(None)  # sentinel
             _deploy_done.set()
             return
