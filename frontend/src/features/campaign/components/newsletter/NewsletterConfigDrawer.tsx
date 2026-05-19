@@ -100,6 +100,8 @@ export function NewsletterConfigDrawer({
   const [livePreviewError, setLivePreviewError] = useState<string | null>(null);
   const previewIframeRef = useRef<HTMLIFrameElement>(null);
   const sectionIframeRef = useRef<HTMLIFrameElement>(null);
+  const isMountedRef = useRef(true);
+  const activePreviewFetchIdRef = useRef(0);
 
   useEffect(() => {
     setLocalConfig(newsletter.config);
@@ -110,6 +112,9 @@ export function NewsletterConfigDrawer({
     setActiveTab('sources');
     setLivePreviewHtml('');
     setLivePreviewError(null);
+    // Mark mounted and clean up on unmount
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
   }, [newsletter.id, open]);
 
   if (!asPage && !open) return null;
@@ -146,11 +151,17 @@ export function NewsletterConfigDrawer({
     setError(null);
     try {
       await api.updateNewsletter(idToken, newsletter.id, { ...localConfig, name: localName });
-      onSaved({ ...newsletter, name: localName, config: localConfig });
+      if (isMountedRef.current) {
+        onSaved({ ...newsletter, name: localName, config: localConfig });
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed. Please try again.');
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Save failed. Please try again.');
+      }
     } finally {
-      setSaving(false);
+      if (isMountedRef.current) {
+        setSaving(false);
+      }
     }
   };
 
@@ -163,11 +174,17 @@ export function NewsletterConfigDrawer({
     try {
       await api.updateNewsletter(idToken, newsletter.id, { ...localConfig, name: localName });
       const result = await api.createNewsletterDraftByNewsletter(idToken, newsletter.id);
-      setGenerateSuccess(`Draft generated: "${result.subject || 'New issue'}". Close this panel to see it.`);
+      if (isMountedRef.current) {
+        setGenerateSuccess(`Draft generated: "${result.subject || 'New issue'}". Close this panel to see it.`);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate draft.');
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to generate draft.');
+      }
     } finally {
-      setGenerating(false);
+      if (isMountedRef.current) {
+        setGenerating(false);
+      }
     }
   };
 
@@ -177,16 +194,23 @@ export function NewsletterConfigDrawer({
 
   /** Fetch fresh HTML from the worker and write it into the iframe. */
   const fetchLivePreview = async () => {
+    const fetchId = ++activePreviewFetchIdRef.current;
     setLivePreviewLoading(true);
     setLivePreviewHtml('');
     setLivePreviewError(null);
     try {
       const data = await api.newsletterPreview(idToken, newsletter.id);
-      setLivePreviewHtml(data.renderedContent);
+      if (isMountedRef.current && fetchId === activePreviewFetchIdRef.current) {
+        setLivePreviewHtml(data.renderedContent);
+      }
     } catch (err) {
-      setLivePreviewError(err instanceof Error ? err.message : 'Failed to load preview.');
+      if (isMountedRef.current && fetchId === activePreviewFetchIdRef.current) {
+        setLivePreviewError(err instanceof Error ? err.message : 'Failed to load preview.');
+      }
     } finally {
-      setLivePreviewLoading(false);
+      if (isMountedRef.current && fetchId === activePreviewFetchIdRef.current) {
+        setLivePreviewLoading(false);
+      }
     }
   };
 
