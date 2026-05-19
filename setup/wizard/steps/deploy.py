@@ -4,6 +4,7 @@ import queue
 import subprocess
 import sys
 import threading
+import time
 
 from flask import Blueprint, Response, render_template, stream_with_context
 
@@ -13,6 +14,7 @@ bp = Blueprint('deploy', __name__)
 _log_queue: queue.Queue = queue.Queue()
 _deploy_done = threading.Event()
 _deploy_success = threading.Event()
+_DEPLOY_TIMEOUT_SEC = 600  # 10 minutes
 
 
 def _run_deploy():
@@ -22,8 +24,15 @@ def _run_deploy():
         [sys.executable, 'setup.py', '--deploy-worker'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
     )
+    start = time.monotonic()
     for line in proc.stdout:
         _log_queue.put(line)
+        # Kill subprocess if it runs longer than _DEPLOY_TIMEOUT_SEC
+        if time.monotonic() - start > _DEPLOY_TIMEOUT_SEC:
+            proc.kill()
+            _log_queue.put(None)  # sentinel
+            _deploy_done.set()
+            return
     proc.wait()
     if proc.returncode == 0:
         _deploy_success.set()
