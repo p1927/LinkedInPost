@@ -101,16 +101,16 @@ class TestSyncGithubSecretsAuthFailure:
                 gh_module.WORKER_DEV_VARS.write_text('')
 
             try:
-                gh_module.sync_github_secrets(FakeBootstrap(), None)
+                with pytest.raises(RuntimeError, match='Failed to sync GitHub secrets'):
+                    gh_module.sync_github_secrets(FakeBootstrap(), None)
             finally:
                 if dv_backup is not None:
                     gh_module.WORKER_DEV_VARS.write_text(dv_backup)
 
-        # Should have called fail() for at least the first secret,
-        # and NOT raised an exception that would have aborted the loop
+        # RuntimeError should be raised listing all failed secrets after loop completes
+        # fail() is called for each secret before RuntimeError is raised
         assert 'fail:VITE_GOOGLE_CLIENT_ID' in calls, f"Expected auth failure to be reported via fail(), got: {calls}"
-        # Loop should have continued to at least one more secret
-        assert len(calls) > 1, f"Expected loop to continue after failure, got only: {calls}"
+        assert 'fail:WORKER_SCHEDULER_SECRET' in calls, f"Expected auth failure for scheduler secret, got: {calls}"
 
 
 class TestBootstrapWorkerConfig:
