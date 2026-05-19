@@ -82,8 +82,8 @@ def emit_ts(features: dict[str, bool | str]) -> str:
         if isinstance(value, str):
             escaped = value.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace("'", "\\'")
             if key == 'deploymentMode':
-                lines.append(f"export const deploymentMode = '{escaped}' as const;\n")
-                lines.append(f"export type DeploymentMode = typeof deploymentMode;\n")
+                lines.append(f"export const deploymentMode: 'selfHosted' | 'saas' = '{escaped}';\n")
+                lines.append(f"export type DeploymentMode = 'selfHosted' | 'saas';\n")
             else:
                 lines.append(f"export const {key} = '{escaped}' as const;\n")
         else:

@@ -4,8 +4,8 @@
 export const FEATURE_CAMPAIGN = true as const;
 export const FEATURE_CONTENT_FLOW = true as const;
 export const FEATURE_CONTENT_REVIEW = true as const;
-export const deploymentMode = 'selfHosted' as const;
-export type DeploymentMode = typeof deploymentMode;
+export const deploymentMode: 'selfHosted' | 'saas' = 'selfHosted';
+export type DeploymentMode = 'selfHosted' | 'saas';
 export const FEATURE_ENRICHMENT = true as const;
 export const FEATURE_MULTI_PROVIDER_LLM = true as const;
 export const FEATURE_NEWS_RESEARCH = true as const;

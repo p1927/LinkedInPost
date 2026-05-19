@@ -29,6 +29,7 @@ export interface NewsArticle {
   publishedAt: string;
   url: string;
   imageUrl?: string;
+  content?: string;
   platform: 'news';
 }
 

@@ -54,11 +54,10 @@ jobs:
         with:
           node-version: "24"
           cache: "npm"
-          cache-dependency-path: generation-worker/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: ./generation-worker
 
       - name: Run typecheck
         run: npm run typecheck
