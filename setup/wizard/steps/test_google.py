@@ -32,6 +32,13 @@ def test_validate_service_account_missing_client_email_returns_false():
     assert "client_email" in msg
 
 
+def test_validate_service_account_null_client_email_returns_false():
+    data = {**VALID_SA, "client_email": None}
+    ok, msg = validate_service_account(json.dumps(data))
+    assert ok is False
+    assert "client_email" in msg
+
+
 def test_validate_service_account_missing_type_returns_false():
     data = {k: v for k, v in VALID_SA.items() if k != "type"}
     ok, msg = validate_service_account(json.dumps(data))

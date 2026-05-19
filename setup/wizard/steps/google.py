@@ -23,7 +23,10 @@ def validate_service_account(json_str: str) -> tuple[bool, str]:
             return False, f'Missing field: {field}'
     if data.get('type') != 'service_account':
         return False, 'JSON must be a service_account key, not ' + data.get('type', '?')
-    return True, data['client_email']
+    client_email = data.get('client_email')
+    if not client_email:
+        return False, 'Missing field: client_email'
+    return True, client_email
 
 
 def validate_oauth_client_id(client_id: str) -> bool:
