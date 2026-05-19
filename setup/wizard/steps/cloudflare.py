@@ -1,3 +1,4 @@
+# setup/wizard/steps/cloudflare.py
 from __future__ import annotations
 
 import os
@@ -26,7 +27,10 @@ def validate_cf_token(token: str) -> tuple[bool, str]:
         return False, 'Request failed'
     data = resp.json()
     if data.get('success'):
-        return True, data['result']['status']
+        result = data.get('result')
+        if isinstance(result, dict) and 'status' in result:
+            return True, result['status']
+        return False, 'Invalid response: result missing or malformed'
     return False, str(data.get('errors', 'Unknown error'))
 
 
@@ -39,7 +43,9 @@ def get_cf_account_id(token: str) -> str | None:
     if not resp.ok:
         return None
     accounts = resp.json().get('result', [])
-    return accounts[0]['id'] if accounts else None
+    if accounts and isinstance(accounts[0], dict) and 'id' in accounts[0]:
+        return accounts[0]['id']
+    return None
 
 
 @bp.get('/step/cloudflare')
