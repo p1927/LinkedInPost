@@ -35,13 +35,21 @@ jobs:
         run: npm run typecheck
         working-directory: ./worker
 
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./worker
+          command: d1 migrations apply PIPELINE_DB --remote
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./worker
-          command: npx wrangler d1 migrations apply PIPELINE_DB --local=false && npx wrangler deploy --env ""
+          command: deploy
 
   deploy-generation-worker:
     name: Deploy generation-worker
@@ -63,10 +71,18 @@ jobs:
         run: npm run typecheck
         working-directory: ./generation-worker
 
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ./generation-worker
+          command: d1 migrations apply GEN_DB --remote
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./generation-worker
-          command: npx wrangler d1 migrations apply GEN_DB --local=false && npx wrangler deploy
+          command: deploy
