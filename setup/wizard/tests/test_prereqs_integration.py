@@ -36,6 +36,10 @@ def test_prereqs_complete_re_renders_when_checks_fail(client, tmp_env, monkeypat
     assert r.status_code == 200
     # Must re-render the step_prereqs template, not redirect
     assert b'step_prereqs' in r.data or b'Python' in r.data
+    # Ensure state was not modified
+    from setup.wizard import state as state_module
+    state_val = state_module._state
+    assert state_val is None or state_val.get('prereqs') is not True
 
 
 def test_prereqs_complete_does_not_mark_complete_on_failure(client, tmp_env, monkeypatch):
@@ -51,5 +55,6 @@ def test_prereqs_complete_does_not_mark_complete_on_failure(client, tmp_env, mon
         {'name': 'Wrangler CLI', 'ok': True, 'found': '/usr/bin/wrangler', 'fix': ''},
         {'name': 'Git', 'ok': True, 'found': '/usr/bin/git', 'fix': ''},
     ])
-    client.post('/step/prereqs/complete')
+    r = client.post('/step/prereqs/complete')
     assert state_module.is_complete('prereqs') is False
+    assert r.status_code == 200

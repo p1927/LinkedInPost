@@ -40,40 +40,48 @@ class TestCheckPrereqs:
         checks = self._run_with_mocks(py_version=(3, 11), node_found=True, node_version=18, wrangler_found=True, git_found=True)
         py_check = next(c for c in checks if c['name'] == 'Python 3.11+')
         assert py_check['ok'] is True
+        assert len(checks) == 4
 
     def test_python_version_too_low(self):
         checks = self._run_with_mocks(py_version=(3, 10), node_found=True, node_version=18, wrangler_found=True, git_found=True)
         py_check = next(c for c in checks if c['name'] == 'Python 3.11+')
         assert py_check['ok'] is False
+        assert 'fix' in py_check
 
     def test_node_found_version_ok(self):
         checks = self._run_with_mocks(py_version=(3, 12), node_found=True, node_version=20, wrangler_found=True, git_found=True)
         node_check = next(c for c in checks if c['name'] == 'Node.js 18+')
         assert node_check['ok'] is True
+        assert '20' in str(node_check.get('found', ''))
 
     def test_node_found_version_too_low(self):
         checks = self._run_with_mocks(py_version=(3, 12), node_found=True, node_version=16, wrangler_found=True, git_found=True)
         node_check = next(c for c in checks if c['name'] == 'Node.js 18+')
         assert node_check['ok'] is False
+        assert 'fix' in node_check
 
     def test_node_not_found(self):
         checks = self._run_with_mocks(py_version=(3, 12), node_found=False, node_version=None, wrangler_found=True, git_found=True)
         node_check = next(c for c in checks if c['name'] == 'Node.js 18+')
         assert node_check['ok'] is False
+        assert 'not found' in str(node_check.get('found', ''))
 
     def test_wrangler_found(self):
         checks = self._run_with_mocks(py_version=(3, 12), node_found=True, node_version=18, wrangler_found=True, git_found=True)
         wrangler_check = next(c for c in checks if c['name'] == 'Wrangler CLI')
         assert wrangler_check['ok'] is True
+        assert wrangler_check.get('found') is not None
 
     def test_git_found(self):
         checks = self._run_with_mocks(py_version=(3, 12), node_found=True, node_version=18, wrangler_found=True, git_found=True)
         git_check = next(c for c in checks if c['name'] == 'Git')
         assert git_check['ok'] is True
+        assert git_check.get('found') is not None
 
     def test_all_ok_true(self):
         checks = self._run_with_mocks(py_version=(3, 12), node_found=True, node_version=20, wrangler_found=True, git_found=True)
         assert all(c['ok'] for c in checks)
+        assert len(checks) == 4
 
     def test_node_subprocess_error(self):
         """subprocess.run error (non-timeout) must not crash check_prereqs."""
@@ -106,7 +114,10 @@ class TestCheckPrereqs:
         node_check = next(c for c in checks if c['name'] == 'Node.js 18+')
         assert node_check['ok'] is False
         assert node_check['found'] == 'error'
+        assert len(checks) == 4
 
     def test_one_fails_returns_false(self):
         checks = self._run_with_mocks(py_version=(3, 10), node_found=True, node_version=20, wrangler_found=True, git_found=True)
         assert not all(c['ok'] for c in checks)
+        py_check = next(c for c in checks if c['name'] == 'Python 3.11+')
+        assert py_check['ok'] is False
