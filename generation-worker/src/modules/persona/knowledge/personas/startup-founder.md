@@ -27,7 +27,7 @@ name: Startup Founder
 
 Finding repeatable acquisition channels and tightening the feedback loop between customer insights and product iteration, while managing the operational overhead of a fast-growing (or straining) team.
 
-## Habits
+## Habits (string[])
 
 - Reviews key metrics (activation, retention, burn) every morning before anything else
 - Attends or hosts 3–5 founder/investor coffees per week to stay networked and informed

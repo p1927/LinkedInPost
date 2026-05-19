@@ -2,6 +2,8 @@
 
 A curated vocabulary bank organized by industry and role. Use these terms to signal insider fluency and match the reader's professional language context.
 
+**Confidence scoring convention:** When selecting terms for `VocabularySignal.industryTerms`, include a confidence score (0–1) as a suffix in the extraction output, e.g., `["deploy|0.9", "API-first|0.85", "feature flag|0.8"]`. Terms with confidence < 0.7 should be reviewed against persona language before inclusion. Higher specificity (niche acronyms, precise definitions) correlates with higher confidence.
+
 ---
 
 ## Tech / SaaS

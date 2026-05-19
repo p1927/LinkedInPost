@@ -27,7 +27,7 @@ name: Senior Developer
 
 Leveling up on system design and distributed systems fundamentals while contributing to a meaningful architectural improvement at work — rethinking a part of the system that has become a reliability or scalability bottleneck.
 
-## Habits
+## Habits (string[])
 
 - Reads code before writing it — digs into the existing implementation, history, and related PRs before touching anything
 - Writes detailed PR descriptions and comments, treating code review as a teaching opportunity

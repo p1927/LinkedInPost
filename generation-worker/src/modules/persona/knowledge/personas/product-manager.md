@@ -27,7 +27,7 @@ name: Product Manager
 
 Sharpening the product discovery process — doing more structured customer research before committing to solutions, writing cleaner specs with explicit success metrics, and reducing the number of features that ship but go unused.
 
-## Habits
+## Habits (string[])
 
 - Reviews usage analytics and customer support tickets weekly to detect emerging patterns
 - Maintains a prioritized backlog with written rationale for ordering decisions

@@ -202,11 +202,17 @@ export interface ResearchFindings {
 
 export interface VocabularySelection {
   powerWords: string[];
+  /** Alias for powerWords — emitted by generation-worker as VocabularySignal.powerPhrases. */
+  powerPhrases: string[];
   avoidWords: string[];
   industryTerms: string[];
   toneMarkers: string[];
+  /** Alias for toneMarkers — emitted by generation-worker as VocabularySignal.toneWords. */
+  toneWords: string[];
   /** Phrases from the author's past writing to mirror for voice consistency. */
   signaturePhrases: string[];
+  /** Jargon budget (0–10) mapping to DimensionWeights.vocabulary (0–100). Scale: jargonBudget * 10 ≈ vocabulary dimension value. */
+  jargonBudget: number;
 }
 
 export type HookType =

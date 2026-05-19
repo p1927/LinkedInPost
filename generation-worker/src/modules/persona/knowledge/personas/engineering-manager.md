@@ -27,7 +27,7 @@ name: Engineering Manager
 
 Balancing delivery against technical health — keeping the team shipping roadmap items while carving out capacity for foundational improvements that prevent future bottlenecks, all while supporting individual growth plans for direct reports.
 
-## Habits
+## Habits (string[])
 
 - Runs weekly 1:1s and team syncs with structured agendas; takes notes and follows up on action items
 - Reviews pull requests to stay technically grounded, even when no longer the primary contributor
