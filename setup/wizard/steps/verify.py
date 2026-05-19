@@ -61,7 +61,10 @@ def show():
     ]
     all_ok = all(c['ok'] for c in checks if 'optional' not in c['detail'])
     if all_ok:
-        mark_complete('verify')
+        try:
+            mark_complete('verify')
+        except OSError:
+            all_ok = False
     return render_template('step_verify.html',
                            checks=checks,
                            all_ok=all_ok,

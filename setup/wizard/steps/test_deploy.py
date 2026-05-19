@@ -119,3 +119,47 @@ def test_deploy_stream_broken_logs_error_and_sends_sentinel():
         except queue.Empty:
             break
     assert None in items, f"Sentinel (None) must be in queue after stdout error, got: {items}"
+
+
+def test_start_drains_stale_queue_items_before_deploy():
+    """Regression: stale queue items from a previous interrupted deploy must be drained in start()."""
+    import queue, threading, time
+    from unittest.mock import patch, MagicMock
+    from flask import Flask
+    from setup.wizard.steps import deploy as deploy_module
+
+    app = Flask(__name__)
+    app.config['TESTING'] = True
+    app.register_blueprint(deploy_module.bp)
+
+    # Simulate a previous interrupted deploy that left items and sentinel in the queue
+    deploy_module._log_queue.put("stale line from previous deploy\n")
+    deploy_module._log_queue.put(None)  # stale sentinel
+
+    mock_proc = MagicMock()
+    mock_proc.stdout.__iter__ = MagicMock(return_value=iter(['new deploy line\n']))
+    mock_proc.returncode = 0
+    mock_proc.kill = MagicMock()
+    mock_proc.wait = MagicMock()
+
+    with patch('setup.wizard.steps.deploy.subprocess.Popen', return_value=mock_proc):
+        client = app.test_client()
+        resp = client.post('/step/deploy/start')
+        assert resp.status_code == 204
+        # Give the deploy thread time to put its items
+        time.sleep(0.2)
+
+    # Drain all items produced by this deploy
+    items = []
+    while True:
+        try:
+            items.append(deploy_module._log_queue.get_nowait())
+        except queue.Empty:
+            break
+
+    # Stale items must NOT appear in the new deploy's output
+    assert 'stale line from previous deploy' not in items
+    # New deploy output should be present
+    assert 'new deploy line\n' in items
+    # Exactly one sentinel for this deploy
+    assert items.count(None) == 1

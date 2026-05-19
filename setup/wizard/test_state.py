@@ -123,3 +123,13 @@ def test_reset_is_idempotent_when_file_does_not_exist(tmp_path):
     assert not fake_path.exists()
     # reset() returns None; verifying no exception raised proves idempotency
     assert result is None or not fake_path.exists()
+
+
+def test_mark_complete_raises_meaningful_oseror_on_write_failure(tmp_path):
+    """Regression: write failure must raise OSError with path context, not crash silently."""
+    fake_path = tmp_path / "nonexistent_dir" / "state.json"
+    with patch.object(state_module, "STATE_FILE", fake_path):
+        with pytest.raises(OSError) as exc_info:
+            state_module.mark_complete("prereqs")
+    assert "Failed to write wizard state" in str(exc_info.value)
+    assert str(fake_path) in str(exc_info.value)

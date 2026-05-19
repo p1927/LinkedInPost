@@ -128,5 +128,9 @@ def submit():
         if k == 'GENERATION_WORKER_SECRET':
             _write_key(GEN_WORKER_DEV_VARS, 'WORKER_SHARED_SECRET', v)
 
-    mark_complete('apikeys')
+    try:
+        mark_complete('apikeys')
+    except OSError as e:
+        return render_template('step_apikeys.html', wizard_state=load(), current_step='apikeys',
+                               error=f'Failed to save progress: {e}')
     return redirect(url_for('deploy.show'))

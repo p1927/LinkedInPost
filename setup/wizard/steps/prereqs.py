@@ -66,5 +66,11 @@ def complete():
         return render_template('step_prereqs.html',
                                checks=checks, all_ok=all_ok,
                                wizard_state=load(), current_step='prereqs')
-    mark_complete('prereqs')
+    try:
+        mark_complete('prereqs')
+    except OSError as e:
+        return render_template('step_prereqs.html',
+                              checks=checks, all_ok=False,
+                              wizard_state=load(), current_step='prereqs',
+                              error=f'Failed to save progress: {e}')
     return redirect(url_for('google.show'))

@@ -35,7 +35,10 @@ def mark_complete(step: str) -> None:
     """
     state = load()
     state[step] = True
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+    try:
+        STATE_FILE.write_text(json.dumps(state, indent=2))
+    except OSError as e:
+        raise OSError(f"Failed to write wizard state to {STATE_FILE}: {e}") from e
     global _state
     _state = state
 

@@ -58,6 +58,15 @@ def show():
 
 @bp.post('/step/deploy/start')
 def start():
+    # Drain any stale items from a previous interrupted deploy before starting a new one.
+    # Use a bounded loop to avoid O(n) empty() calls — queue.empty() acquires a lock and
+    # calls time.monotonic() internally in CPython, which interferes with tests that patch
+    # time.monotonic for timeout simulation.
+    for _ in range(_DEPLOY_TIMEOUT_SEC):  # max 600 iterations — one per second of deploy time
+        try:
+            _log_queue.get_nowait()
+        except queue.Empty:
+            break
     threading.Thread(target=_run_deploy, daemon=True).start()
     return ('', 204)
 
@@ -69,8 +78,12 @@ def stream():
             line = _log_queue.get()
             if line is None:
                 if _deploy_success.is_set():
-                    mark_complete('deploy')
-                    yield 'data: __DONE__\n\n'
+                    try:
+                        mark_complete('deploy')
+                    except OSError:
+                        yield 'data: __FAILED__\n\n'
+                    else:
+                        yield 'data: __DONE__\n\n'
                 else:
                     yield 'data: __FAILED__\n\n'
                 break
