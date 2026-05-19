@@ -75,10 +75,13 @@ def isolate_env(tmp_path, monkeypatch):
     1. Scrubs all setup.* modules from sys.modules so each test loads them fresh
        with the patched ROOT (prevents module-level state from leaking between tests)
     2. Sets required env vars so setup.py never tries to read real credentials
+    3. Restores setup.* modules after each test so later tests (e.g. tests/wizard/)
+       see the same module objects they imported at conftest load time.
     """
-    # Wipe setup.* modules BEFORE any test runs — prevents state from prior tests
-    # in this file (or prior pytest sessions) from leaking into the current test
     import sys
+    # Save existing setup.* modules so we can restore them after the test
+    saved_modules = {k: v for k, v in sys.modules.items() if k == 'setup' or k.startswith('setup.')}
+    # Wipe setup.* modules so this test loads them fresh with patched ROOT
     for key in list(sys.modules.keys()):
         if key == 'setup' or key.startswith('setup.'):
             del sys.modules[key]
@@ -104,7 +107,14 @@ def isolate_env(tmp_path, monkeypatch):
     monkeypatch.setenv('SECRET_ENCRYPTION_KEY', 'test-enc-key-32-chars-long-xxxx')
     monkeypatch.setenv('WORKER_SCHEDULER_SECRET', 'test-sched-secret')
     monkeypatch.setenv('GENERATION_WORKER_SECRET', 'test-gen-secret')
-    return root
+    yield root
+
+    # Restore setup.* modules so subsequent tests (e.g. tests/wizard/) see the
+    # original module objects their conftest imported at session start.
+    for key in list(sys.modules.keys()):
+        if key == 'setup' or key.startswith('setup.'):
+            del sys.modules[key]
+    sys.modules.update(saved_modules)
 
 
 def _load_setup_with_patched_root(isolate_env, monkeypatch):
