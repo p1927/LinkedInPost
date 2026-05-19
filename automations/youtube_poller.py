@@ -22,7 +22,10 @@ def yt_get(path: str, params: dict) -> dict:
     url = f"{YT_API}/{path}?" + urllib.parse.urlencode(params)
     try:
         with urllib.request.urlopen(url, timeout=10) as r:
-            return json.loads(r.read())
+            data = r.read()
+            if not data:
+                return {}
+            return json.loads(data)
     except urllib.error.HTTPError as e:
         print(f"[poller] yt_get {path} failed: HTTP {e.code}", file=sys.stderr)
         return {}
@@ -151,7 +154,7 @@ def main():
     }
     while True:
         videos_data = yt_get("search", search_params)
-        if videos_data is None:
+        if not videos_data:
             print("[poller] search API failed, aborting", file=sys.stderr)
             return
         for item in videos_data.get("items", []):
@@ -177,7 +180,7 @@ def main():
         }
         while True:
             comments_data = yt_get("commentThreads", comment_params)
-            if comments_data is None:
+            if not comments_data:
                 print(f"[poller] commentThreads API failed for video {video_id}", file=sys.stderr)
                 break
             for thread in comments_data.get("items", []):
@@ -200,7 +203,10 @@ def main():
             comment_params["pageToken"] = next_page
 
     save_replied(new_replied)
-    record_poll(worker_url, channel_id, secret)
+    try:
+        record_poll(worker_url, channel_id, secret)
+    except Exception:
+        print("[poller] poll record failed, continuing", file=sys.stderr)
     print(f"[poller] done — replied to {total_replied} comments")
 
 
