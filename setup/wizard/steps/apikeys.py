@@ -46,12 +46,15 @@ _WORKER_KEYS = {
 def validate_gemini_key(key: str) -> bool:
     if not key:
         return False
-    resp = requests.post(
-        f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}',
-        json={'contents': [{'parts': [{'text': 'hi'}]}]},
-        timeout=10,
-    )
-    return resp.status_code == 200
+    try:
+        resp = requests.post(
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}',
+            json={'contents': [{'parts': [{'text': 'hi'}]}]},
+            timeout=10,
+        )
+        return resp.status_code == 200
+    except requests.RequestException:
+        return False
 
 
 def _write_key(env_file: str, key: str, value: str) -> None:

@@ -49,6 +49,22 @@ def test_validate_gemini_key_500_returns_false():
         assert validate_gemini_key('valid-format-key') is False
 
 
+def test_validate_gemini_key_network_error_returns_false():
+    """Network error (ConnectionError, Timeout, etc.) must not crash validate_gemini_key."""
+    import requests as req
+    from setup.wizard.steps.apikeys import validate_gemini_key
+    with patch('setup.wizard.steps.apikeys.requests.post', side_effect=req.ConnectionError('no network')):
+        assert validate_gemini_key('some-key') is False
+
+
+def test_validate_gemini_key_timeout_error_returns_false():
+    """requests.Timeout must not crash validate_gemini_key — return False instead."""
+    import requests as req
+    from setup.wizard.steps.apikeys import validate_gemini_key
+    with patch('setup.wizard.steps.apikeys.requests.post', side_effect=req.Timeout('timed out')):
+        assert validate_gemini_key('some-key') is False
+
+
 def test_show_renders(client):
     """GET /step/apikeys returns 200."""
     with patch('setup.wizard.steps.apikeys.load') as mock_load, \
