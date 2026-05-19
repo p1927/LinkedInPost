@@ -68,10 +68,14 @@ class TestValidateGeminiKey:
         """Must return False when API returns 500 (server error, not a valid key)."""
         mock_resp = MagicMock()
         mock_resp.status_code = 500
-        with patch('requests.post', return_value=mock_resp):
+        with patch('requests.post', return_value=mock_resp) as mock_post:
             from setup.wizard.steps.apikeys import validate_gemini_key
             result = validate_gemini_key('test-key')
             assert result is False
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+            url = call_args[0][0] if call_args[0] else call_args[1].get('url', '')
+            assert 'test-key' in url
 
     def test_raises_on_network_error(self):
         """Must raise OSError when network request fails (no exception handling)."""
