@@ -27,7 +27,11 @@ def yt_get(path: str, params: dict) -> dict:
                 return {}
             return json.loads(data)
     except urllib.error.HTTPError as e:
-        print(f"[poller] yt_get {path} failed: HTTP {e.code}", file=sys.stderr)
+        body = e.read()
+        if isinstance(body, bytes):
+            body = body.decode(errors="replace")
+        body = str(body)[:200]
+        print(f"[poller] yt_get {path} failed: HTTP {e.code} — {body!r}", file=sys.stderr)
         return {}
     except urllib.error.URLError as e:
         print(f"[poller] yt_get {path} failed: {e.reason}", file=sys.stderr)
@@ -77,8 +81,10 @@ def post_reply(video_id: str, parent_id: str, text: str, oauth_token: str) -> bo
         with urllib.request.urlopen(req) as r:
             return r.status == 200
     except urllib.error.HTTPError as e:
-        body = e.read().decode()
-        print(f"[poller] reply failed HTTP {e.code}: {body[:200]}", file=sys.stderr)
+        body = e.read()
+        if isinstance(body, bytes):
+            body = body.decode()
+        print(f"[poller] reply failed HTTP {e.code}: {str(body)[:200]}", file=sys.stderr)
         # 403 = comment disabled / 404 = comment deleted — permanent, don't retry
         if e.code in (403, 404):
             return True  # treat as succeeded so we don't re-reply
@@ -102,7 +108,6 @@ def record_poll(worker_url: str, channel_id: str, secret: str) -> None:
             pass
     except Exception as e:
         print(f"[poller] failed to record poll: {e}", file=sys.stderr)
-        raise
 
 
 def load_replied() -> set:
@@ -123,7 +128,12 @@ def save_replied(ids: set) -> None:
             json.dump(list(ids), f)
     except OSError as e:
         print(f"[poller] failed to save replied IDs: {e}", file=sys.stderr)
-        pass  # swallow — replied IDs are best-effort
+        # NOTE: IDs added to in-memory set before this call are LOST if the write
+        # fails. Next run will re-read the stale file and may re-reply to those
+        # comments. This is a known trade-off — failing the poll on disk-full
+        # would cause repeated retries every invocation, which is worse than the
+        # occasional duplicate reply. There is no safe partial-write here because
+        # we need an atomic rename to avoid corrupting the marker on crash.
 
 
 def main():
