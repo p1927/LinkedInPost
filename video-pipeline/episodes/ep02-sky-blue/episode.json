@@ -2,7 +2,7 @@
   "id": "ep02-sky-blue",
   "title": "Why is the sky blue? (it's not the ocean)",
   "series": "Big Questions, Tiny Words",
-  "status": "scripted",
+  "status": "rendered",
   "topic_area": "science",
   "format_id": "myth_busting",
   "format": {
@@ -206,5 +206,6 @@
       "tag": "SHARE",
       "tagColor": "mint"
     }
-  ]
+  ],
+  "updated_at": "2026-10-04T21:27:24Z"
 }

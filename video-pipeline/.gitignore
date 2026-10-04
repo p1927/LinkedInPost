@@ -6,3 +6,5 @@ __pycache__/
 .secrets/
 remotion-app/public/ep*/
 assets/music/gen_*.wav
+
+.bin/

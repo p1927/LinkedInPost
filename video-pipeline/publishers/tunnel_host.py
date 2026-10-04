@@ -64,10 +64,39 @@ def _handler(file: Path, name: str):
     return H
 
 
+NATIVE = Path(__file__).resolve().parent.parent / ".bin" / "cloudflared"
+
+
+def _host_native(server, port, name, timeout):
+    """Native cloudflared trusts the macOS keychain (works behind TLS-inspecting networks, unlike the container)."""
+    proc = subprocess.Popen([str(NATIVE), "tunnel", "--no-autoupdate", "--protocol", "http2", "--url", f"http://localhost:{port}"],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    url, t0 = None, time.time()
+    buf = []
+
+    def reader():
+        for line in proc.stdout:
+            buf.append(line)
+
+    threading.Thread(target=reader, daemon=True).start()
+    while time.time() - t0 < timeout and not url and proc.poll() is None:
+        m = re.search(r"https://[a-z0-9-]+\.trycloudflare\.com", "".join(buf))
+        url = m.group(0) if m else None
+        time.sleep(1)
+    if not url:
+        proc.terminate()
+        server.shutdown()
+        raise RuntimeError("tunnel URL did not appear: " + "".join(buf)[-300:])
+    time.sleep(4)
+    return f"{url}/{name}", (server, proc)
+
+
 def host(path: Path, name: str, timeout: int = 90):
     server = ThreadingHTTPServer(("0.0.0.0", 0), _handler(path, name))
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
+    if NATIVE.exists():
+        return _host_native(server, port, name, timeout)
     env = {**os.environ, "PATH": DOCKER_PATH}
     subprocess.run(["docker", "rm", "-f", NAME], env=env, capture_output=True)
     r = subprocess.run(["docker", "run", "-d", "--rm", "--name", NAME, IMAGE, "tunnel", "--no-autoupdate",
@@ -89,6 +118,9 @@ def host(path: Path, name: str, timeout: int = 90):
 
 
 def delete(handle) -> None:
-    server, name = handle
-    subprocess.run(["docker", "rm", "-f", name], env={**os.environ, "PATH": DOCKER_PATH}, capture_output=True)
+    server, ref = handle
+    if hasattr(ref, "terminate"):  # native process
+        ref.terminate()
+    else:
+        subprocess.run(["docker", "rm", "-f", ref], env={**os.environ, "PATH": DOCKER_PATH}, capture_output=True)
     server.shutdown()

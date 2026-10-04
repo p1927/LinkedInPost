@@ -212,7 +212,63 @@ def cmd_publish(ref, platform, confirm, visibility):
         raise SystemExit("platform must be youtube or instagram")
 
 
+def cmd_ready(ref):
+    """Pre-flight for posting: prints READY/BLOCKED per platform with the exact next step."""
+    import lint
+    ep_dir = registry.resolve(ref)
+    ep = registry.read(ep_dir)
+    video = ROOT / "out" / ep["id"] / "final.mp4"
+    common, ig, yt = [], [], []
+    if video.exists():
+        probe = subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                         "stream=width,height:format=duration,size", "-of", "json", str(video)])
+        j = json.loads(probe)
+        w, h, dur = j["streams"][0]["width"], j["streams"][0]["height"], float(j["format"]["duration"])
+        if (w, h) != (1080, 1920):
+            common.append(f"video is {w}x{h}, expected 1080x1920")
+        if not (5 <= dur <= 90):
+            common.append(f"duration {dur:.0f}s outside 5-90s")
+        print(f"video: {w}x{h}, {dur:.1f}s, {int(j['format']['size']) / 1e6:.1f} MB")
+    else:
+        common.append("no rendered video (run: run.py %s all)" % ep["id"])
+    if any(i[0] == "error" for i in lint.run(ep)):
+        common.append("lint errors (run: run.py lint %s)" % ep["id"])
+    if registry.status_of(ep) not in ("reviewed", "scheduled", "posted"):
+        common.append(f"status is '{registry.status_of(ep)}': watch it, then run: run.py status {ep['id']} reviewed")
+    pub = ep.get("publish") or {}
+    if not pub.get("instagram"):
+        ig.append("no publish.instagram caption")
+    if not pub.get("youtube"):
+        yt.append("no publish.youtube title/description")
+    # Instagram: token + tunnel binary
+    try:
+        from publishers import instagram_reels, tunnel_host
+        m = instagram_reels.me()
+        print(f"instagram: token OK for @{m.get('username')} ({m.get('account_type')})")
+    except Exception as e:
+        ig.append(f"instagram token: {str(e)[:140]}")
+    if not (ROOT / ".bin" / "cloudflared").exists():
+        ig.append("cloudflared binary missing in .bin/ (needed for the temporary public video link)")
+    # YouTube: oauth client + cached token
+    sec = ROOT / ".secrets"
+    if not (sec / "youtube_client.json").exists():
+        yt.append("missing .secrets/youtube_client.json (Google OAuth 'Desktop app' client)")
+    elif not (sec / "youtube_token.json").exists():
+        yt.append("not signed in yet: run: run.py yt-auth")
+    for name, issues in (("Instagram Reels", ig), ("YouTube Shorts", yt)):
+        blockers = common + issues
+        print(f"{name}: {'READY' if not blockers else 'BLOCKED'}")
+        for b in blockers:
+            print("   -", b)
+
+
 def main(argv):
+    global PROFILE, SUFFIX
+    for a in argv:  # --profile=<name> loads config/profiles/<name>.json and writes props_<name>.json / final_<name>.mp4
+        if a.startswith("--profile="):
+            name = a.split("=", 1)[1]
+            PROFILE = json.loads((ROOT / "config" / "profiles" / f"{name}.json").read_text())
+            SUFFIX = "_" + name
     flags = {a for a in argv if a.startswith("--")}
     args = [a for a in argv if not a.startswith("--")]
     vis = "private"
@@ -236,6 +292,10 @@ def main(argv):
         print("ok")
     elif cmd == "publish":
         cmd_publish(args[1], args[2], "--confirm" in flags, vis)
+    elif cmd == "ready":
+        for r in args[1:] or [d.name for d in registry.episode_dirs()]:
+            print(f"== {r}")
+            cmd_ready(r)
     elif cmd == "ig-me":
         from publishers import instagram_reels
         m = instagram_reels.me()
