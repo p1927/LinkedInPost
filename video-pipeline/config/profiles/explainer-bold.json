@@ -1,0 +1,23 @@
+{
+  "name": "explainer-bold",
+  "_doc": "Techie/business audience: dark graphite background, electric blue + lime accents. JetBrains Mono for number/label scenes, tight fast motion, sticker captions, no sparkles.",
+  "font": "jetbrains",
+  "palette": { "bg": "#141820", "ink": "#E8EDF4", "sunny": "#39FF7A", "coral": "#2D8EFF", "sky": "#2D8EFF", "mint": "#39FF7A", "grape": "#9D7EFF", "white": "#FFFFFF" },
+  "music": { "file": "assets/music/gen_calm.wav", "volume": 0.14 },
+  "musicDuck": 0.3,
+  "transitions": {
+    "default": ["fade", "wipe-left"],
+    "story_hook": ["slide-bottom"],
+    "term": ["wipe-left"],
+    "story_payoff": ["slide-right"],
+    "cta": ["fade"]
+  },
+  "zoom": { "default": [1.03, 1.10], "story_hook": [1.06, 1.16], "story_payoff": [1.05, 1.12], "cta": [1.0, 1.05] },
+  "punch": { "story_hook": 0.07, "story_payoff": 0.05 },
+  "sparkles": { "default": 0 },
+  "captions": { "style": "sticker", "size": 80, "bottom": 290 },
+  "termStyle": "card",
+  "grade": { "saturate": 1.1, "contrast": 1.08, "vignette": 0.4 },
+  "progress": true,
+  "sfx": { "boundary": { "default": "whoosh", "term": "switch", "story_payoff": "whip" }, "term": "ding" }
+}

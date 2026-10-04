@@ -43,7 +43,7 @@ const Page: React.FC<{ page: any; pal: Palette; bottom: number; variant: "sticke
           const active = nowMs >= t.fromMs && nowMs < t.toMs + 60;
           return (
             <span key={i} style={{ fontFamily, fontWeight: 600, fontSize: fs, lineHeight: 1.2, whiteSpace: "pre", padding: "2px 14px", borderRadius: 14,
-              color: active ? pal.ink : pal.white, background: active ? pal.sunny : "rgba(20,28,50,0.55)", textShadow: active ? "none" : "0 3px 12px rgba(0,0,0,0.45)" }}>
+              color: pal.ink, background: active ? pal.sunny : "rgba(255,255,255,0.88)", boxShadow: "0 2px 10px rgba(20,28,50,0.12)" }}>
               {String(t.text).trim()}
             </span>
           );

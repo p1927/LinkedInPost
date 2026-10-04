@@ -35,10 +35,11 @@ def provenance(ep: dict, catalog_urls) -> list:
     whether the page really backs the sentence is still the human reviewer's job."""
     cat, issues = set(catalog_urls), []
     for i, c in enumerate(ep.get("claims") or []):
-        ok = bool(c.get("source_url")) and c["source_url"] in cat
-        c["verified"] = ok
-        if not ok:
-            issues.append(("error", "claims_urls_in_catalog", f"claim {i + 1} cites a URL that was not fetched: {c.get('source_url') or '(none)'}"))
+        url = c.pop("source_url", None) or c.get("url") or ""   # canonical key is `url` (older drafts used source_url)
+        c["url"] = url
+        c["verified"] = url in cat
+        if not c["verified"]:
+            issues.append(("error", "claims_urls_in_catalog", f"claim {i + 1} cites a URL that was not fetched: {url or '(none)'}"))
     return issues
 
 
@@ -81,7 +82,7 @@ def _explanation_checks(ep: dict) -> list:
             if not (m.get("source") or "").startswith("http"):
                 out.append(("warn", "mechanism_sourced", f"step '{m['step'][:40]}' has no source URL"))
     kinds = {s["visual"]["type"] for s in sc}
-    if not kinds & {"diagram", "steps", "clip"}:
+    if not kinds & {"diagram", "steps", "orbit", "clip"}:
         out.append(("error", "mechanism_visual", "no scene SHOWS the mechanism (need a diagram/steps scene or a clip)"))
     # concepts introduced before use
     new_terms = 0
@@ -141,7 +142,7 @@ def run(ep: dict) -> list:
             total_sec += json.loads(a.read_text())["duration"]
         else:
             have_audio = False
-            total_sec += n / 2.5
+            total_sec += n / (2.5 * (ep.get('voice_override') or {}).get('speed', 1.0))
     dlo, dhi = thr("total_duration_range", "threshold_min", 25), thr("total_duration_range", "threshold_max", 90)
     if not (dlo <= total_sec <= dhi):
         add(sev("total_duration_range", "error"), "total_duration_range", f"~{total_sec:.0f}s{'' if have_audio else ' (estimated)'} (target {dlo}-{dhi}s)")
@@ -162,9 +163,9 @@ def run(ep: dict) -> list:
             if wps > wps_max + 0.2:
                 add("warn", "scene_pace", f"{s['id']}: {wps:.1f} words/s in this scene (kids may find it fast)")
     first = sc[0]
-    if first["beat"] not in ("story_hook", "hook") or not ("?" in first["narration"] or len(first["narration"].split()) <= 12):
-        add("error", "hook_in_first_scene", "scene 1 must be a hook beat: a question or <=12 words")
-    if sc[-1]["beat"] != "cta":
+    if not (first["beat"] == "story_hook" or first["beat"].startswith("hook") or first["beat"].endswith("hook")) or not ("?" in first["narration"] or len(first["narration"].split()) <= 12):
+        add("error", "hook_in_first_scene", f"scene 1 (beat '{first['beat']}') must be a hook beat (name contains hook) with a question or <=12 words")
+    if not sc[-1]["beat"].endswith("cta"):
         add("warn", "cta_present", "last scene is not a CTA beat")
     srcs = ep.get("claims") or ep.get("sources") or []
     if not srcs or any(not (c.get("url") or "").startswith("http") for c in srcs):

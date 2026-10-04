@@ -22,9 +22,22 @@ export const DEFAULT_PROFILE: Required<Pick<Profile, "font" | "transitions" | "z
   musicDuck: 1,
 };
 
+// format_catalog.yaml uses many beat names (hook_end_state, callback_cta, therefore_analogy, ...). Profiles are written in one small
+// vocabulary; canonBeat() maps any catalog beat onto it by prefix/suffix so profiles never need per-format copies.
+export const canonBeat = (b: string): string => {
+  if (b === "story_hook" || b.startsWith("hook") || b.endsWith("hook")) return "story_hook";
+  if (b.endsWith("cta")) return "cta";
+  if (b.includes("payoff") || b.includes("callback")) return "story_payoff";
+  if (b.includes("analogy") || b === "and_normal") return "analogy";
+  if (b === "but_surprise" || b.includes("worry") || b.includes("twist")) return "worry";
+  if (b.includes("term") || b === "rehook" || b.includes("definition") || b.includes("reveal")) return "term";
+  return b;
+};
+
 export const pick = <T,>(m: BeatMap<T> | Record<string, T> | undefined, beat: string, fallback: T): T => {
   if (!m) return fallback;
-  return (m as Record<string, T>)[beat] ?? (m as Record<string, T>).default ?? fallback;
+  const r = m as Record<string, T>;
+  return r[beat] ?? r[canonBeat(beat)] ?? r.default ?? fallback;
 };
 
 export const resolve = (p?: Profile) => ({ ...DEFAULT_PROFILE, ...(p ?? {}) });

@@ -52,10 +52,17 @@ def sha256(p: Path) -> str:
     return h.hexdigest()
 
 
-def set_status(ep_dir: Path, status: str) -> None:
+def set_status(ep_dir: Path, status: str, skip_verify: bool = False) -> None:
     if status not in STATUSES:
         raise SystemExit(f"status must be one of {STATUSES}")
     ep = read(ep_dir)
+    if status == "approved":  # QA gate (verify.py): audience-declared scripts must pass the verifier agents first
+        import verify
+        ok, why = verify.is_clear(ep)
+        if not ok and not skip_verify:
+            raise SystemExit(f"cannot approve {ep['id']}: {why}  (override: --skip-verify)")
+        if not ok:
+            print(f"WARNING: approving without a passing QA report ({why})")
     ep["status"] = status
     if status == "reviewed":  # provenance: lock the exact file the owner reviewed
         video = ROOT / "out" / ep["id"] / "final.mp4"

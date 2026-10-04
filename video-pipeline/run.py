@@ -30,6 +30,18 @@ def load(ep_dir: Path):
     return ep, out
 
 
+def ensure_music(mood: str, ep_id: str) -> str:
+    """Audience cards own `music_mood`; the bed is generated offline (tools/gen_music.py) and unique per episode (seed from id)."""
+    import zlib
+    seed = zlib.crc32(ep_id.encode()) % 97
+    rel = f"assets/music/gen_{mood}_{seed}.wav"
+    if not (ROOT / rel).exists():
+        sys.path.insert(0, str(ROOT / "tools"))
+        import gen_music
+        gen_music.write_wav(str(ROOT / rel), gen_music.render(mood, 90, seed))
+    return rel
+
+
 def audience_card(ep: dict):
     """Episode field `audience` (kids | curious_adult | older_adult | techie) selects voice, pace, look and lint limits."""
     a = ep.get("audience")
@@ -55,7 +67,10 @@ def stage_tts(ep, out, force):
     if card:  # audience card overrides the default voice/pace
         tts.voice_id, tts.speed = card["voice"]["voice_id"], card["voice"].get("speed", tts.speed)
         tts.emotion = card["voice"].get("emotion")
-        cfg = {**cfg, "voice_override": card["voice"]}
+        ov = ep.get("voice_override") or {}
+        if "speed" in ov:
+            tts.speed = ov["speed"]
+        cfg = {**cfg, "voice_override": {**card["voice"], **ov}}
     for sc in ep["scenes"]:
         meta = out / "audio" / f"{sc['id']}.json"
         mp3 = out / "audio" / f"{sc['id']}.mp3"
@@ -144,6 +159,8 @@ def stage_props(ep, out, force):
     t += TR
     music = None
     mcfg = (PROFILE or {}).get("music") or ep.get("music")
+    if (ep.get("_card") or {}).get("music_mood"):  # card decides the mood; profile/ep only supply volume
+        mcfg = {"volume": 0.14, **(mcfg or {}), "file": ensure_music(ep["_card"]["music_mood"], ep["id"])}
     if mcfg:
         src = ROOT / mcfg["file"]
         shutil.copy(src, pub / ("music" + SUFFIX + src.suffix))
@@ -171,6 +188,44 @@ def stage_render(ep, out, force):
     registry.advance(ROOT / "episodes" / ep["id"], "rendered")
 
 
+def stage_thumbs(ep, out, force):
+    """YouTube thumbnail (1280x720) + Reels/Shorts cover (1080x1920) from a frame of the finished video + packaging.thumbnail."""
+    pk = (ep.get("packaging") or {})
+    th = pk.get("thumbnail")
+    if not th:
+        print("no packaging.thumbnail; skipping")
+        return
+    props = json.loads((out / "props.json").read_text())
+    sc = next((x for x in props["scenes"] if x["id"] == th.get("scene")), props["scenes"][len(props["scenes"]) // 2])
+    frame = sc["from"] + int(sc["frames"] * th.get("at", 0.7))
+    pub = ROOT / "remotion-app" / "public" / ep["id"]
+    pub.mkdir(parents=True, exist_ok=True)
+    hero = pub / "thumb_hero.png"
+    hp = json.loads(json.dumps(props))  # clean hero: same scene frame, but no captions / progress bar
+    hp.setdefault("profile", {})["progress"] = False
+    for x in hp["scenes"]:
+        x["visual"]["captions"] = False
+        if x["id"] == sc["id"]:  # hero scene: no headline / readout text, just the diagram
+            for st in x["visual"].get("reveal", []):
+                st.pop("caption", None)
+                st.pop("readout", None)
+            x["visual"].pop("note", None)
+    hpj = out / "thumb_hero_props.json"
+    hpj.write_text(json.dumps(hp))
+    subprocess.run(["npx", "remotion", "still", "src/index.ts", "Episode", str(hero), f"--props={hpj}", f"--frame={frame}"],
+                   cwd=ROOT / "remotion-app", check=True, capture_output=True)
+    palette = (PROFILE or {}).get("palette") or ep["style"]["palette"]
+    tp = {"title": th["text"], "kicker": th.get("kicker", ""), "image": f"{ep['id']}/thumb_hero.png", "palette": palette,
+          "accent": palette.get("coral", "#E85B45"), "badge": th.get("badge", "HOW IT WORKS"),
+          "focusY": th.get("focusY", 0.42), "zoom": th.get("zoom", 1.0)}
+    pj = out / "thumb_props.json"
+    pj.write_text(json.dumps(tp))
+    for comp, name in (("ThumbYT", "thumb_youtube.png"), ("ThumbCover", "thumb_cover.png")):
+        subprocess.run(["npx", "remotion", "still", "src/index.ts", comp, str(out / name), f"--props={pj}"],
+                       cwd=ROOT / "remotion-app", check=True, capture_output=True)
+        print(f"thumb {name}")
+
+
 def stage_carousel(ep, out, force):
     app = ROOT / "remotion-app"
     cdir = out / "carousel"
@@ -191,7 +246,7 @@ def stage_carousel(ep, out, force):
 
 
 STAGES = {"tts": stage_tts, "illustrations": stage_illustrations, "keyframes": stage_keyframes, "clips": stage_clips,
-          "props": stage_props, "render": stage_render, "carousel": stage_carousel}
+          "props": stage_props, "render": stage_render, "carousel": stage_carousel, "thumbs": stage_thumbs}
 
 def stage_publish_dry(ep, platform, visibility):
     pk = ep.get("packaging")
@@ -270,11 +325,26 @@ def cmd_ready(ref):
         common.append("lint errors (run: run.py lint %s)" % ep["id"])
     if registry.status_of(ep) not in ("reviewed", "scheduled", "posted"):
         common.append(f"status is '{registry.status_of(ep)}': watch it, then run: run.py status {ep['id']} reviewed")
+    pk = ep.get("packaging") or {}
     pub = ep.get("publish") or {}
-    if not pub.get("instagram"):
-        ig.append("no publish.instagram caption")
-    if not pub.get("youtube"):
-        yt.append("no publish.youtube title/description")
+    if pk:
+        if not pk.get("instagram_caption"):
+            ig.append("no packaging.instagram_caption")
+        if not (pk.get("title") and pk.get("description")):
+            yt.append("no packaging.title / description")
+        import packaging as _pk
+        bad = [i for i in _pk.run(ep) if i[0] == "error"]
+        if bad:
+            common.append("packaging errors: " + "; ".join(f"{b[1]}" for b in bad))
+        if not (ROOT / "out" / ep["id"] / "thumb_youtube.png").exists():
+            yt.append("no thumbnail yet (run: run.py %s thumbs)" % ep["id"])
+        if not (ROOT / "out" / ep["id"] / "thumb_cover.png").exists():
+            ig.append("no Reels cover yet (run: run.py %s thumbs)" % ep["id"])
+    else:
+        if not pub.get("instagram"):
+            ig.append("no publish.instagram caption")
+        if not pub.get("youtube"):
+            yt.append("no publish.youtube title/description")
     # Instagram: token + tunnel binary
     try:
         from publishers import instagram_reels, tunnel_host
@@ -323,7 +393,7 @@ def main(argv):
         import lint
         sys.exit(lint.report(registry.read(registry.resolve(args[1]))))
     elif cmd == "status":
-        registry.set_status(registry.resolve(args[1]), args[2])
+        registry.set_status(registry.resolve(args[1]), args[2], skip_verify="--skip-verify" in flags)
         print("ok")
     elif cmd == "publish":
         cmd_publish(args[1], args[2], "--confirm" in flags, vis)
@@ -338,6 +408,12 @@ def main(argv):
     elif cmd == "ig-refresh":
         from publishers import instagram_reels
         print(instagram_reels.refresh())
+    elif cmd == "verify":
+        import verify
+        sys.exit(verify.main(args[1]))
+    elif cmd == "director":
+        import director
+        director.main(argv[argv.index("director") + 1:])
     elif cmd == "yt-auth":
         from publishers import youtube_shorts
         youtube_shorts.credentials()

@@ -33,7 +33,9 @@ def osc(f, t, kind):
 def render(mood, seconds, seed=0):
     m = MOODS[mood]
     rng = np.random.default_rng(seed)
-    beat = 60 / m["bpm"]
+    shift = (seed * 5) % 7                      # transpose by 0-6 semitones per seed
+    beat = 60 / (m["bpm"] * (1 + ((seed * 3) % 9 - 4) / 100))  # +-4% tempo
+    m = {**m, "prog": [(r + shift, q) for r, q in m["prog"]]}
     bar = beat * 4
     n = int(seconds * SR)
     out = np.zeros((n, 2))

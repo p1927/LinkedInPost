@@ -1,0 +1,658 @@
+{
+  "id": "ep03-iss-rendezvous",
+  "title": "How Crew-13 reached the space station in under 8 hours",
+  "series": "How It Actually Works",
+  "audience": "curious_adult",
+  "status": "rendered",
+  "topic_area": "technology",
+  "format_id": "why_is_x",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "sponsor": null,
+  "disclosure": null,
+  "news_hook": {
+    "event": "NASA's SpaceX Crew-13 (Crew Dragon 'Grace', Falcon 9) launched Oct 1 2026 at 11:10 a.m. EDT from Space Launch Complex 40, Cape Canaveral, and docked autonomously to the Harmony module's forward port at 7:05 p.m. EDT: 7 h 55 min launch-to-docking, called the fastest launch-to-docking of a U.S. spacecraft in ISS history.",
+    "date": "2026-10-01",
+    "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+  },
+  "original_contribution": "A step-by-step visual explanation of the counterintuitive core (speeding up makes you fall behind; dropping lower lets you catch up), built from sourced orbital-mechanics facts, with NASA's own wording on the record claim instead of the usual overstatement.",
+  "mechanism": [
+    {
+      "step": "An orbit is falling around Earth while moving sideways fast enough to keep missing it",
+      "scene": "s3",
+      "source": "https://www.nasa.gov/international-space-station/space-station-facts-and-figures/"
+    },
+    {
+      "step": "A forward burn swings you into a wider loop; wider loops take longer, so the target pulls ahead",
+      "scene": "s4",
+      "source": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "step": "Braking (firing backward) drops you lower, where gravity is stronger: faster, shorter laps",
+      "scene": "s5",
+      "source": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "step": "Phasing: the shorter lap gains a few degrees on the target each time around",
+      "scene": "s6",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "The gap is an angle; gap divided by degrees gained per lap = laps needed",
+      "scene": "s7",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "Launch time sets the gap: the station's orbit must sweep over the launch site; smaller gap, fewer laps",
+      "scene": "s8",
+      "source": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "step": "A short burn climbs you back to the station's orbit; pause at checkpoints; dock autonomously",
+      "scene": "s10",
+      "source": "https://sentinelmission.org/blog/how-does-the-iss-dock-with-spacecraft/"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "orbit",
+      "kind": "everyday",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s4",
+        "s5"
+      ],
+      "definition": "a path where you keep missing Earth because you move sideways fast enough"
+    },
+    {
+      "name": "phasing",
+      "kind": "term",
+      "introduced_in": "s6",
+      "needed_in": [
+        "s7",
+        "s8"
+      ],
+      "definition": "using a shorter lap to close the angle between you and the target"
+    },
+    {
+      "name": "gap as an angle",
+      "kind": "everyday",
+      "introduced_in": "s7",
+      "needed_in": [
+        "s8"
+      ],
+      "definition": "how far around the circle the target is ahead of you"
+    }
+  ],
+  "loops": [
+    {
+      "question": "How do you catch something that travels almost five miles a second?",
+      "raised_in": "s2",
+      "paid_in": "s5"
+    },
+    {
+      "question": "How did the crew reach the station in under eight hours?",
+      "raised_in": "s1",
+      "paid_in": "s9"
+    },
+    {
+      "question": "What is the catch with speeding up?",
+      "raised_in": "s4",
+      "paid_in": "s5"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "Crew-13 launched Oct 1 2026 at 11:10 a.m. EDT",
+      "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/liftoff-nasas-spacex-crew-13-begins-journey-to-international-space-station/"
+    },
+    {
+      "claim": "Crew-13 docked at 7:05 p.m. EDT (7 h 55 min); NASA calls it the fastest launch-to-docking of a U.S. spacecraft in ISS history",
+      "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+    },
+    {
+      "claim": "The station travels about 4.8 miles per second (NASA rounds to five; 7.67 km/s)",
+      "url": "https://www.nasa.gov/international-space-station/space-station-facts-and-figures/"
+    },
+    {
+      "claim": "Lower circular orbits are faster with shorter periods; speeding up gives a higher orbit",
+      "url": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "claim": "Phasing: a different-period orbit turns the angle between spacecraft into time",
+      "url": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "claim": "A drop of ~96.6 km (60 miles) saves ~118 s per lap and gains ~7.8 degrees per lap (computed from circular-orbit formulas, independently recomputed by the fact-check agent)",
+      "url": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "claim": "Rendezvous needs the same orbital plane; launch windows are critical",
+      "url": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "claim": "A Dragon program official said the station was in a good/opportune spot (SECONDARY source; title and exact wording unverified against a NASA transcript)",
+      "url": "https://interestingengineering.com/space/spacex-reach-iss-under-8-hours",
+      "secondary": true
+    },
+    {
+      "claim": "Staged approach with checkpoints, final approach a few cm/s, Dragon docks autonomously",
+      "url": "https://sentinelmission.org/blog/how-does-the-iss-dock-with-spacecraft/"
+    }
+  ],
+  "sources": [
+    {
+      "claim": "NASA station blog: Dragon docks, Crew-13",
+      "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+    },
+    {
+      "claim": "NASA station facts and figures",
+      "url": "https://www.nasa.gov/international-space-station/space-station-facts-and-figures/"
+    },
+    {
+      "claim": "Soyuz MS-17 ultrafast rendezvous",
+      "url": "https://www.nasaspaceflight.com/2020/10/soyuz-ms17-ultrafast-journey-to-iss/"
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "how spacecraft dock with the space station",
+    "title_options": [
+      "How Crew-13 reached the space station in under 8 hours",
+      "Why you can't catch the space station by speeding up",
+      "How spacecraft actually catch the space station"
+    ],
+    "title": "How Crew-13 reached the space station in under 8 hours",
+    "title_rationale": "Names the real news event (searchable) and the surprising number; the counterintuitive angle is the hook inside the video. Calibrated with seo.py: top 'dock' results are raw footage; few explain the mechanism.",
+    "description": "On October 1, SpaceX Crew-13 launched at 11:10 a.m. EDT and docked with the space station at 7:05 that night, a U.S. record. Here is how a spacecraft actually catches something moving almost five miles a second.\n\nThe surprise: speeding up makes you fall behind. Braking into a lower orbit, where you move faster, is what lets you catch up. NASA hasn't detailed Crew-13's exact burns, so this is the standard method, shown with a worked example.\n\nSources:\nNASA, Crew-13 liftoff: https://www.nasa.gov/blogs/spacestation/2026/10/01/liftoff-nasas-spacex-crew-13-begins-journey-to-international-space-station/\nNASA, Crew-13 docking: https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/\nNASA, station facts: https://www.nasa.gov/international-space-station/space-station-facts-and-figures/\nOrbital rendezvous: https://en.wikipedia.org/wiki/Orbital_rendezvous\nOrbit phasing: https://en.wikipedia.org/wiki/Orbit_phasing\n\n#ISS #SpaceX #Crew13 #orbit #science",
+    "tags": [
+      "how spacecraft dock with the ISS",
+      "Crew-13",
+      "space station",
+      "orbital rendezvous",
+      "orbit phasing",
+      "SpaceX Dragon",
+      "how things work"
+    ],
+    "instagram_caption": "A crew left Florida at 11:10 a.m. and docked at the space station by 7:05 that night. The trick: to catch something in orbit, you drop lower, not faster.\nSend this to someone who thinks you just fly straight at it.\nSources: NASA (Crew-13 liftoff and docking blogs, station facts).\n#ISS #SpaceX #Crew13 #howthingswork #space",
+    "pinned_comment": "Which machine should we take apart next? Main source: NASA's Crew-13 docking blog.",
+    "thumbnail": {
+      "text": "DROP TO CATCH UP",
+      "kicker": "Crew-13: 7 h 55 min",
+      "scene": "s6",
+      "at": 0.3,
+      "badge": "HOW IT WORKS",
+      "focusY": 0.36,
+      "zoom": 1.0
+    }
+  },
+  "style": {
+    "palette": {
+      "bg": "#F4F7F8",
+      "ink": "#13232B",
+      "sunny": "#F5B83D",
+      "coral": "#E8604C",
+      "sky": "#1F9DB5",
+      "mint": "#2BB58E",
+      "grape": "#5C5BD6",
+      "white": "#FFFFFF"
+    },
+    "cast": {}
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "story_hook",
+      "narration": "A SpaceX Dragon capsule left Florida at 11:10 a.m. and reached the space station by 7:05 that night. How?",
+      "visual": {
+        "type": "number",
+        "value": "7 h 55 min",
+        "unit": "launch to docking",
+        "label": "Crew-13, Oct 1. Crew Dragon's first crewed flight (2020) took about 19 h",
+        "source": "Source: NASA",
+        "animation": "countup"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "puzzle",
+      "narration": "The station is already up there, far ahead on the circle, moving almost five miles every second. How do you catch it?",
+      "visual": {
+        "type": "orbit",
+        "mode": "orbit",
+        "rings": [
+          {
+            "id": "iss",
+            "r": 0.635,
+            "main": true
+          }
+        ],
+        "bodies": [
+          {
+            "id": "iss",
+            "ring": "iss",
+            "label": "Station",
+            "color": "mint",
+            "keyframes": [
+              {
+                "at": 0,
+                "angle": 62
+              },
+              {
+                "at": 1,
+                "angle": 135.7
+              }
+            ],
+            "trail": true
+          },
+          {
+            "id": "ship",
+            "ring": "iss",
+            "label": "Your ship",
+            "color": "coral",
+            "keyframes": [
+              {
+                "at": 0,
+                "angle": 12
+              },
+              {
+                "at": 1,
+                "angle": 85.7
+              }
+            ]
+          }
+        ],
+        "gap": {
+          "body1": "ship",
+          "body2": "iss"
+        },
+        "reveal": [
+          {
+            "at": 0.0,
+            "show": [
+              "iss"
+            ],
+            "caption": "The station never stops"
+          },
+          {
+            "at": 0.25,
+            "show": [
+              "ship"
+            ],
+            "caption": "You start far behind it, on the same orbit"
+          },
+          {
+            "at": 0.45,
+            "readout": {
+              "label": "Station speed",
+              "value": "≈ 17,000 mph"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "explain",
+      "narration": "What is an orbit? Throw a ball sideways fast enough, and the ground curves away before it lands.",
+      "visual": {
+        "type": "orbit",
+        "mode": "cannon",
+        "shots": [
+          {
+            "speed": 0.55,
+            "label": "Too slow: lands",
+            "at": 0.08,
+            "color": "coral"
+          },
+          {
+            "speed": 0.88,
+            "label": "Faster: lands farther",
+            "at": 0.24,
+            "color": "sky"
+          },
+          {
+            "speed": 1.0,
+            "label": "Fast enough: keeps missing",
+            "at": 0.42,
+            "color": "mint"
+          }
+        ],
+        "reveal": [
+          {
+            "at": 0.0,
+            "caption": "Throw it sideways from a mountain"
+          },
+          {
+            "at": 0.62,
+            "caption": "An orbit: falling, but always missing"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "explain",
+      "narration": "Here is the catch. Burn forward, and you swing out into a wider loop. Wider loops take longer, so the station pulls ahead.",
+      "visual": {
+        "type": "orbit",
+        "mode": "orbit",
+        "rings": [
+          {
+            "id": "iss",
+            "r": 0.635,
+            "main": true
+          },
+          {
+            "id": "high",
+            "r": 0.7
+          }
+        ],
+        "bodies": [
+          {
+            "id": "station",
+            "ring": "iss",
+            "label": "Station",
+            "color": "mint",
+            "keyframes": [
+              {
+                "at": 0,
+                "angle": 60
+              },
+              {
+                "at": 1,
+                "angle": 145.3
+              }
+            ]
+          },
+          {
+            "id": "chaser",
+            "ring": "iss",
+            "label": "You",
+            "color": "coral",
+            "trail": true,
+            "keyframes": [
+              {
+                "at": 0,
+                "angle": 20.0
+              },
+              {
+                "at": 0.28,
+                "angle": 43.88
+              },
+              {
+                "at": 0.48,
+                "angle": 56.44
+              },
+              {
+                "at": 1,
+                "angle": 78.3
+              }
+            ]
+          }
+        ],
+        "gap": {
+          "body1": "chaser",
+          "body2": "station"
+        },
+        "reveal": [
+          {
+            "at": 0.0,
+            "caption": "You are behind the station"
+          },
+          {
+            "at": 0.095,
+            "highlight": [
+              "chaser"
+            ],
+            "burn": {
+              "body": "chaser",
+              "dir": "prograde"
+            },
+            "move": {
+              "body": "chaser",
+              "toRing": "high",
+              "over": 51
+            },
+            "caption": "Burn forward: you swing out",
+            "readout": {
+              "label": "Higher orbit",
+              "value": "Longer, slower lap"
+            }
+          },
+          {
+            "at": 0.4,
+            "caption": "Wider loop: a longer lap"
+          },
+          {
+            "at": 0.78,
+            "highlight": [
+              "station"
+            ],
+            "caption": "The station pulls ahead",
+            "readout": {
+              "label": "Gap",
+              "value": "growing"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "explain",
+      "narration": "So do the opposite: fire backward to brake. You sink lower, where gravity is stronger, and speed up. Each lap is shorter.",
+      "visual": {
+        "type": "compare",
+        "colA": "Higher orbit",
+        "colB": "Lower orbit",
+        "rows": [
+          {
+            "a": "Slower",
+            "b": "Faster"
+          },
+          {
+            "a": "Longer lap",
+            "b": "Shorter lap"
+          },
+          {
+            "a": "Falls behind",
+            "b": "Gains on the station"
+          }
+        ],
+        "winner": "B"
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "term",
+      "narration": "Drop about 60 miles and you gain almost eight degrees a lap, a slice of the 360-degree circle. Engineers call this phasing.",
+      "visual": {
+        "type": "orbit",
+        "mode": "orbit",
+        "rings": [
+          {
+            "id": "iss",
+            "r": 0.635,
+            "main": true
+          },
+          {
+            "id": "low",
+            "r": 0.565
+          }
+        ],
+        "bodies": [
+          {
+            "id": "station",
+            "ring": "iss",
+            "label": "Station",
+            "color": "mint",
+            "keyframes": [
+              {
+                "at": 0,
+                "angle": 55
+              },
+              {
+                "at": 1,
+                "angle": 146
+              }
+            ]
+          },
+          {
+            "id": "chaser",
+            "ring": "low",
+            "label": "You",
+            "color": "coral",
+            "trail": true,
+            "keyframes": [
+              {
+                "at": 0,
+                "angle": 19
+              },
+              {
+                "at": 0.78,
+                "angle": 123.98
+              },
+              {
+                "at": 0.85,
+                "angle": 130.35
+              },
+              {
+                "at": 0.92,
+                "angle": 130.72
+              },
+              {
+                "at": 1,
+                "angle": 135
+              }
+            ]
+          }
+        ],
+        "gap": {
+          "body1": "chaser",
+          "body2": "station"
+        },
+        "reveal": [
+          {
+            "at": 0.0,
+            "caption": "Lower orbit: shorter laps",
+            "readout": {
+              "label": "Drop about 60 miles",
+              "value": "Gain ≈ 8° per lap"
+            }
+          },
+          {
+            "at": 0.8,
+            "highlight": [
+              "chaser"
+            ],
+            "caption": "PHASING: closing the gap, lap by lap"
+          },
+          {
+            "at": 0.9,
+            "burn": {
+              "body": "chaser",
+              "dir": "prograde"
+            },
+            "move": {
+              "body": "chaser",
+              "toRing": "iss",
+              "over": 33
+            },
+            "hideGap": true,
+            "caption": "Gap closed: climb back up"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s7",
+      "beat": "explain",
+      "narration": "The gap is the angle between you and the station. Say it is 40 degrees. At eight degrees a lap, that is five laps: about seven and a half hours.",
+      "visual": {
+        "type": "number",
+        "value": "40° ÷ 8° = 5 laps",
+        "unit": "about 7½ hours",
+        "label": "each lap ≈ 90 min · a worked example, not Crew-13's actual numbers",
+        "source": "Source: circular-orbit formulas",
+        "animation": "countup"
+      }
+    },
+    {
+      "id": "s8",
+      "beat": "explain",
+      "narration": "Launch time sets the gap. Liftoff waits until the station's orbit sweeps over Florida. A smaller gap means fewer laps.",
+      "visual": {
+        "type": "orbit",
+        "mode": "groundtrack",
+        "site": {
+          "lon": -80.6,
+          "lat": 28.5,
+          "label": "Florida pad"
+        },
+        "inclination": 51.6,
+        "laps": 3,
+        "lapShift": 23.2,
+        "reveal": [
+          {
+            "at": 0.0,
+            "caption": "Earth turns under the station's orbit"
+          },
+          {
+            "at": 0.55,
+            "readout": {
+              "value": "Launch when the track sweeps over the pad"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "s9",
+      "beat": "evidence",
+      "narration": "Crew-13 took seven hours and 55 minutes, a U.S. record. A Dragon program official said the station was in a good spot.",
+      "visual": {
+        "type": "number",
+        "value": "U.S. record",
+        "unit": "7 h 55 min, launch to docking",
+        "label": "A Dragon program official said the station was in a good spot",
+        "source": "Via Interesting Engineering. NASA hasn't detailed Crew-13's burns; this is the standard method.",
+        "animation": "countup"
+      }
+    },
+    {
+      "id": "s10",
+      "beat": "explain",
+      "narration": "A short burn then climbs you back to the station's orbit. The ship pauses at checkpoints, then docks itself.",
+      "visual": {
+        "type": "steps",
+        "title": "The last stretch",
+        "steps": [
+          "Short burn: climb to the station's orbit",
+          "Pause at checkpoints",
+          "Dock itself"
+        ]
+      }
+    },
+    {
+      "id": "s11",
+      "beat": "cta",
+      "narration": "So: drop lower, close the gap, climb back. Send this to someone who thinks you fly straight at it.",
+      "visual": {
+        "type": "steps",
+        "title": "The trick",
+        "steps": [
+          "Drop lower",
+          "Close the gap",
+          "Climb back"
+        ]
+      }
+    }
+  ],
+  "voice_override": {
+    "speed": 1.06
+  },
+  "updated_at": "2026-10-04T22:46:55Z"
+}

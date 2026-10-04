@@ -9,6 +9,7 @@ EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿]")
 
 
 def _txt_checks(label: str, text: str, issues: list, max_excl=1):
+    text = re.sub(r"https?://\S+", "", text)  # URL slugs are not prose
     low = text.lower()
     for b in BANNED:
         if b in low:

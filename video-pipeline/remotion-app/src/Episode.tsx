@@ -3,30 +3,94 @@ import { AbsoluteFill, Audio, Sequence, interpolate, staticFile, useCurrentFrame
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import type { EpisodeProps, SceneData } from "./types";
 import { ClipScene, IllustrationScene } from "./Scenes";
+import { DiagramScene, StepsScene, NumberScene, CompareScene, PhotoScene } from "./NewScenes";
+import { OrbitScene } from "./OrbitScene";
 import { Captions } from "./Captions";
 import { pick, presentationByName, resolve, sfxByName } from "./profile";
 
 type R = ReturnType<typeof resolve>;
 
+/** Returns the CSS bottom offset for captions, accounting for scene type. */
+function captionsBottom(v: SceneData["visual"], profBottom: number | undefined): number {
+  if (profBottom !== undefined) return profBottom;
+  switch (v.type) {
+    case "clip":      return 280;
+    case "diagram":   return 480; // above diagram content, inside safe zone
+    case "steps":     return 240;
+    case "number":    return 200;
+    case "compare":   return 220;
+    case "photo":     return 300;
+    case "orbit":     return 460; // above diagram + captions safe area
+    default:          return 300;
+  }
+}
+
 const SceneView: React.FC<{ sc: SceneData; props: EpisodeProps; index: number; prof: R }> = ({ sc, props, index, prof }) => {
   const v = sc.visual;
   const punch = pick(prof.punch, sc.beat, 0);
   const grade = prof.grade;
-  const bottom = prof.captions.bottom ?? (v.type === "clip" ? 280 : 300);
+  const showCaptions = (v as any).captions !== false;
+  const bottom = captionsBottom(v, prof.captions.bottom);
+
+  const visual = (() => {
+    switch (v.type) {
+      case "clip":
+        return <ClipScene src={v.src} dur={sc.frames} rate={v.rate} pal={props.style} punch={punch} grade={grade} />;
+
+      case "illustration":
+        return (
+          <IllustrationScene
+            still={v.still!} term={v.term} pal={props.style} dur={sc.frames} index={index}
+            zoom={pick(prof.zoom, sc.beat, [1.04, 1.16] as [number, number])} punch={punch}
+            sparkles={pick(prof.sparkles, sc.beat, 4)} termStyle={prof.termStyle}
+            font={prof.font} termSfx={sfxByName(prof.sfx.term)} grade={grade}
+          />
+        );
+
+      case "diagram":
+        return <DiagramScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} />;
+
+      case "steps":
+        return <StepsScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} />;
+
+      case "number":
+        return <NumberScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} />;
+
+      case "compare":
+        return <CompareScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} />;
+
+      case "photo":
+        return (
+          <PhotoScene
+            visual={v} pal={props.style} dur={sc.frames} index={index}
+            font={prof.font} grade={grade}
+          />
+        );
+
+      case "orbit":
+        return <OrbitScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} />;
+
+      default:
+        // Unknown type — render a plain colour fill so the video still renders
+        return <AbsoluteFill style={{ background: props.style.bg }} />;
+    }
+  })();
+
   return (
     <AbsoluteFill>
-      {v.type === "clip"
-        ? <ClipScene src={v.src} dur={sc.frames} rate={v.rate} pal={props.style} punch={punch} grade={grade} />
-        : <IllustrationScene still={v.still!} term={v.term} pal={props.style} dur={sc.frames} index={index}
-            zoom={pick(prof.zoom, sc.beat, [1.04, 1.16] as [number, number])} punch={punch} sparkles={pick(prof.sparkles, sc.beat, 4)}
-            termStyle={prof.termStyle} font={prof.font} termSfx={sfxByName(prof.sfx.term)} grade={grade} />}
-      <Captions words={sc.words} pal={props.style} bottom={bottom} variant={prof.captions.style} size={prof.captions.size} font={prof.font} />
+      {visual}
+      {showCaptions && (
+        <Captions
+          words={sc.words} pal={props.style} bottom={bottom}
+          variant={prof.captions.style} size={prof.captions.size} font={prof.font}
+        />
+      )}
       <Audio src={staticFile(sc.audio)} />
     </AbsoluteFill>
   );
 };
 
-// Thin top bar: progress fill + one dot per scene (the viewer always knows where they are in the explanation).
+// Thin top bar: progress fill + one dot per scene
 const Progress: React.FC<{ props: EpisodeProps }> = ({ props }) => {
   const f = useCurrentFrame();
   const total = props.totalFrames;
@@ -55,7 +119,7 @@ export const Episode: React.FC<EpisodeProps> = (props) => {
       </TransitionSeries.Sequence>,
     );
     if (i < props.scenes.length - 1) {
-      const next = props.scenes[i + 1];  // transition style follows the beat we are entering
+      const next = props.scenes[i + 1];
       const names = pick(prof.transitions, next.beat, ["fade"]);
       used[next.beat] = (used[next.beat] ?? -1) + 1;
       const name = names[(i + used[next.beat]) % names.length];
@@ -65,7 +129,6 @@ export const Episode: React.FC<EpisodeProps> = (props) => {
     }
   });
   const m = props.music;
-  // Narration windows (frames): music ducks while someone is speaking, swells back in the gaps.
   const voice = props.scenes.map((sc) => {
     const last = sc.words.length ? sc.words[sc.words.length - 1].e : sc.frames / fps;
     return [sc.from + 3, sc.from + Math.round(last * fps) + 4] as [number, number];
