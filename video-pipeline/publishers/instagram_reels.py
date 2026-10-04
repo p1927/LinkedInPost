@@ -42,12 +42,18 @@ def refresh() -> str:
     return f"refreshed; valid for {round(j.get('expires_in', 0) / 86400)} days"
 
 
-def publish_reel(video_url: str, caption: str, share_to_feed: bool = True) -> dict:
+def publish_reel(video_url: str, caption: str, share_to_feed: bool = True, cover_url: str = None) -> dict:
     t = token()
     uid = me()["user_id"]
-    r = requests.post(f"{BASE}/{uid}/media", data={"media_type": "REELS", "video_url": video_url, "caption": caption,
-                                                  "share_to_feed": str(share_to_feed).lower(), "access_token": t}, timeout=120)
-    j = r.json()
+    data = {"media_type": "REELS", "video_url": video_url, "caption": caption,
+            "share_to_feed": str(share_to_feed).lower(), "access_token": t}
+    if cover_url:
+        data["cover_url"] = cover_url
+    j = requests.post(f"{BASE}/{uid}/media", data=data, timeout=120).json()
+    if "id" not in j and cover_url:  # cover not accepted: retry without it rather than lose the post
+        print(f"  note: cover_url rejected ({_err(j)}); retrying without a custom cover")
+        data.pop("cover_url")
+        j = requests.post(f"{BASE}/{uid}/media", data=data, timeout=120).json()
     if "id" not in j:
         raise RuntimeError(f"Reel container failed: {_err(j)}")
     cid = j["id"]

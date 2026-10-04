@@ -46,3 +46,15 @@ def upload(path: Path, title: str, description: str, tags: list, privacy: str = 
             print(f"  upload {int(status.progress() * 100)}%")
     vid = resp["id"]
     return {"id": vid, "url": f"https://youtube.com/shorts/{vid}", "privacy": resp.get("status", {}).get("privacyStatus", privacy)}
+
+
+def set_thumbnail(video_id: str, image: Path) -> str:
+    """Custom thumbnail (JPEG/PNG < 2 MB). May be ignored in the Shorts feed; returns a status string."""
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    yt = build("youtube", "v3", credentials=credentials(), cache_discovery=False)
+    try:
+        yt.thumbnails().set(videoId=video_id, media_body=MediaFileUpload(str(image), mimetype="image/png" if image.suffix == ".png" else "image/jpeg")).execute()
+        return "thumbnail set"
+    except Exception as e:  # e.g. channel not eligible for custom thumbnails
+        return f"thumbnail NOT set: {str(e)[:160]}"

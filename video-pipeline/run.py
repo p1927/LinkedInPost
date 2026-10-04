@@ -14,6 +14,8 @@ import cache
 import registry
 from adapters.common import ROOT, load_provider, provider_cfg
 
+import yaml
+
 PAID = {"tts", "illustrations", "keyframes", "clips"}  # stages that spend money: need an approved script
 
 PAD = 0.45  # seconds of air after each narration line
@@ -28,6 +30,17 @@ def load(ep_dir: Path):
     return ep, out
 
 
+def audience_card(ep: dict):
+    """Episode field `audience` (kids | curious_adult | older_adult | techie) selects voice, pace, look and lint limits."""
+    a = ep.get("audience")
+    if not a:
+        return None
+    f = ROOT / "direction" / "audiences" / f"{a}.yaml"
+    if not f.exists():
+        raise SystemExit(f"unknown audience '{a}' (expected one of: {', '.join(x.stem for x in (ROOT / 'direction' / 'audiences').glob('*.yaml'))})")
+    return yaml.safe_load(f.read_text())
+
+
 def fill(tpl: str, style: dict) -> str:
     tpl = tpl.replace("{character}", style.get("character", "")).replace("{look}", style.get("look", ""))
     for k, v in (style.get("cast") or {}).items():
@@ -38,6 +51,11 @@ def fill(tpl: str, style: dict) -> str:
 def stage_tts(ep, out, force):
     tts = load_provider("tts")
     cfg = provider_cfg("tts")
+    card = ep.get("_card")
+    if card:  # audience card overrides the default voice/pace
+        tts.voice_id, tts.speed = card["voice"]["voice_id"], card["voice"].get("speed", tts.speed)
+        tts.emotion = card["voice"].get("emotion")
+        cfg = {**cfg, "voice_override": card["voice"]}
     for sc in ep["scenes"]:
         meta = out / "audio" / f"{sc['id']}.json"
         mp3 = out / "audio" / f"{sc['id']}.mp3"
@@ -66,9 +84,10 @@ def stage_keyframes(ep, out, force):
 def stage_illustrations(ep, out, force):
     img = load_provider("image")
     (out / "illustrations").mkdir(exist_ok=True)
-    for sc in (s for s in ep["scenes"] if s["visual"]["type"] == "illustration"):
+    for sc in (s for s in ep["scenes"] if s["visual"]["type"] in ("illustration", "photo")):
         p = out / "illustrations" / f"{sc['id']}.png"
-        prompt = fill(sc["visual"]["prompt"], ep["style"]) + ", " + ep["style"]["illustration_style"]
+        suffix = ep["style"].get("photo_style", "") if sc["visual"]["type"] == "photo" else ep["style"].get("illustration_style", "")
+        prompt = fill(sc["visual"]["prompt"], ep["style"]) + (", " + suffix if suffix else "")
         k = cache.key("ill", prompt, provider_cfg("image"), 4242)
         if cache.fresh(p, k) and not force:
             continue
@@ -105,7 +124,7 @@ def stage_props(ep, out, force):
         frames = round((a["duration"] + PAD) * fps)
         shutil.copy(out / "audio" / f"{sc['id']}.mp3", pub / f"{sc['id']}.mp3")
         v = dict(sc["visual"])
-        if v["type"] == "illustration":
+        if v["type"] in ("illustration", "photo"):
             shutil.copy(out / "illustrations" / f"{sc['id']}.png", pub / f"{sc['id']}.png")
             v["still"] = f"{ep['id']}/{sc['id']}.png"
         clip = out / "clips" / f"{sc['id']}.mp4"
@@ -175,6 +194,11 @@ STAGES = {"tts": stage_tts, "illustrations": stage_illustrations, "keyframes": s
           "props": stage_props, "render": stage_render, "carousel": stage_carousel}
 
 def stage_publish_dry(ep, platform, visibility):
+    pk = ep.get("packaging")
+    if pk:  # new-style episodes: copy comes from the linted packaging block
+        if platform == "youtube":
+            return {"title": pk["title"], "description": pk["description"], "tags": pk.get("tags", [])}
+        return {"caption": pk["instagram_caption"]}
     pub = (ep.get("publish") or {}).get(platform)
     if not pub:
         raise SystemExit(f"episode has no publish.{platform} block (title/description/tags or caption)")
@@ -202,13 +226,19 @@ def cmd_publish(ref, platform, confirm, visibility):
         from publishers import youtube_shorts
         r = youtube_shorts.upload(video, pub["title"], pub["description"], pub.get("tags", []), visibility, synthetic=True)
         print("uploaded:", r)
+        thumb = ROOT / "out" / ep["id"] / "thumb_youtube.png"
+        if thumb.exists():
+            print("  ", youtube_shorts.set_thumbnail(r["id"], thumb))
         registry.add_post(ep_dir, "youtube", r["url"], r["privacy"], sha)
     elif platform == "instagram":
         from publishers import instagram_reels, tunnel_host
         instagram_reels.me()  # fail fast on a bad/expired token before uploading anything
-        url, handle = tunnel_host.host(video, f"{ep['id']}.mp4")
+        cover = ROOT / "out" / ep["id"] / "thumb_cover.png"
+        extra = {"cover.png": cover} if cover.exists() else None
+        url, handle = tunnel_host.host(video, f"{ep['id']}.mp4", extra=extra)
         try:
-            r = instagram_reels.publish_reel(url, pub["caption"])
+            cover_url = url.rsplit("/", 1)[0] + "/cover.png" if extra else None
+            r = instagram_reels.publish_reel(url, pub["caption"], cover_url=cover_url)
         finally:
             tunnel_host.delete(handle)
         print("published:", r)
@@ -315,6 +345,9 @@ def main(argv):
     else:  # <episode> <stage|all>
         ep_dir, which = registry.resolve(args[0]), args[1]
         ep, out = load(ep_dir)
+        ep["_card"] = audience_card(ep)
+        if ep["_card"] and PROFILE is None:  # audience picks the visual profile (no filename suffix)
+            PROFILE = json.loads((ROOT / "config" / "profiles" / f"{ep['_card']['remotion_profile']}.json").read_text())
         names = list(STAGES) if which == "all" else [which]
         if PAID & set(names) and registry.status_of(ep) in ("idea", "scripted") and "--unapproved" not in flags:
             raise SystemExit(f"{ep['id']} is '{registry.status_of(ep)}': approve the script first "

@@ -1,0 +1,22 @@
+id: older_adult
+name: "Older adult (about 65+)"
+who: "Experienced, capable adults who did not grow up with the technology; value clarity, respect and unhurried pace."
+pace_wps: 2.0
+sentence_words_max: 14
+sentence_words_avg: 9
+jargon_budget: 2
+assumed_knowledge: [television, phone calls, banking basics, household appliances, cars, mail, gardening]
+analogy_domains: [household, kitchen, garden, car, post office, bank branch]
+tone: "respectful, calm, unhurried; no slang, no 'it's easy'; never condescending"
+humor: "gentle"
+avoid: [fast cuts, flashing, slang, assuming app literacy, small text, "the words 'just' and 'simply'"]
+repeat_key_terms: true           # say the key noun again instead of 'it' [F]
+recap_required: true             # short plain recap before the end
+length_sec: [60, 90]
+scene_len_sec: [6, 10]
+mechanism_steps: [3, 5]
+remotion_profile: explainer-large
+voice: {voice_id: English_Gentle-voiced_man, speed: 0.9, emotion: null}
+music_mood: calm
+visuals: "large clear diagrams, big high-contrast captions (>=76px), few cuts, no flashing"
+cta: "share it with family"

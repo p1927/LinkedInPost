@@ -1,0 +1,21 @@
+id: techie
+name: "Techie / business"
+who: "People interested in tech, business, money and skills; know common terms; want mechanisms, trade-offs, numbers and the 'so what'."
+pace_wps: 3.0
+sentence_words_max: 22
+sentence_words_avg: 14
+jargon_budget: 6                 # domain terms the audience already knows are not counted; new ones are
+assumed_knowledge: [APIs, latency, margins, ROI, basic finance, software basics]
+analogy_domains: [supply chains, markets, networks]   # use sparingly
+tone: "direct, analytical, concrete; numbers with sources; no hype"
+humor: "dry"
+principle: "Mechanism first, then the trade-off, then what it means for money / career / product decisions. Second-order effects beat definitions."
+avoid: [motivational fluff, unsourced figures, hype words like game-changer]
+length_sec: [45, 90]
+scene_len_sec: [3, 6]
+mechanism_steps: [4, 8]
+remotion_profile: explainer-bold
+voice: {voice_id: English_Trustworth_Man, speed: 1.05, emotion: null}
+music_mood: curious
+visuals: "diagrams, number scenes with sources, comparison tables, real product/hardware photos"
+cta: "save / share with a colleague"

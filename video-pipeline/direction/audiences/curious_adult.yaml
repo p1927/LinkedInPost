@@ -1,0 +1,21 @@
+id: curious_adult
+name: "Curious adult"
+who: "Adults who use technology and money daily but never learned how it works; smart, time-poor, allergic to condescension."
+pace_wps: 2.6
+sentence_words_max: 18
+sentence_words_avg: 12
+jargon_budget: 3
+assumed_knowledge: [smartphone, internet, banking apps, cars, household appliances, high-school science]
+analogy_domains: [everyday tech, home, transport, cooking, shipping]
+tone: "smart friend explaining over coffee; plain words; no kid language ('grown-ups'); no hype"
+humor: "dry and sparing; never at the viewer's expense"
+principle: "Show the REAL mechanism step by step. A metaphor may bridge in one beat, but the real parts must be named and shown, never hidden behind it."
+avoid: [vague abstractions, 'it just works', skipping steps, unexplained acronyms, filler intros]
+length_sec: [55, 90]
+scene_len_sec: [4, 8]
+mechanism_steps: [4, 7]
+remotion_profile: explainer-clean
+voice: {voice_id: English_WiseScholar, speed: 1.0, emotion: null}
+music_mood: calm
+visuals: "realistic photos/clips for the real-world object, animated diagrams for the mechanism, one number/stat scene when a figure matters"
+cta: "save this / send it to someone who asks how this works"

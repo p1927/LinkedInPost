@@ -1,0 +1,20 @@
+id: kids
+name: "Kids (about 6-9)"
+who: "Children who know everyday objects and school basics; no background in the topic."
+pace_wps: 2.3                    # narration words per second (tuned slower for young listeners) [F]
+sentence_words_max: 12
+sentence_words_avg: 8
+jargon_budget: 1                 # new technical terms allowed per episode; each defined at first use
+assumed_knowledge: [toys, snacks, playground, school, pets, family, simple machines]
+analogy_domains: [toys, food, playground, animals]
+tone: "warm, playful, curious; second person; short punchy lines"
+humor: "only when the joke IS the explanation"
+avoid: [sarcasm, abstract money talk without a concrete picture, fear framing]
+length_sec: [35, 55]
+scene_len_sec: [3, 6]
+mechanism_steps: [3, 5]
+remotion_profile: storybook-v2
+voice: {voice_id: English_Kind-heartedGirl, speed: 0.95, emotion: null}
+music_mood: playful
+visuals: "picture-book illustrations plus a simple step-by-step animation; at least one animated 'how it works' scene"
+cta: "ask a grown-up / share with a friend"

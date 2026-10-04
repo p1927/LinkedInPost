@@ -13,15 +13,18 @@ IMAGE = "cloudflare/cloudflared:latest"
 NAME = "vp-tunnel"
 
 
-def _handler(file: Path, name: str):
+def _handler(files: dict):
     class H(BaseHTTPRequestHandler):
         def log_message(self, *a):  # quiet
             pass
 
         def _serve(self, head=False):
-            if self.path.lstrip("/").split("?")[0] != name:
+            name = self.path.lstrip("/").split("?")[0]
+            file = files.get(name)
+            if file is None:
                 self.send_error(404)
                 return
+            ctype = "image/png" if name.endswith(".png") else "image/jpeg" if name.endswith((".jpg", ".jpeg")) else "video/mp4"
             size = file.stat().st_size
             start, end, code = 0, size - 1, 200
             rng = self.headers.get("Range")
@@ -34,7 +37,7 @@ def _handler(file: Path, name: str):
                 end = min(end, size - 1)
                 code = 206
             self.send_response(code)
-            self.send_header("Content-Type", "video/mp4")
+            self.send_header("Content-Type", ctype)
             self.send_header("Accept-Ranges", "bytes")
             self.send_header("Content-Length", str(end - start + 1))
             if code == 206:
@@ -67,7 +70,7 @@ def _handler(file: Path, name: str):
 NATIVE = Path(__file__).resolve().parent.parent / ".bin" / "cloudflared"
 
 
-def _host_native(server, port, name, timeout):
+def _host_native(server, port, name, timeout, base_only=False):
     """Native cloudflared trusts the macOS keychain (works behind TLS-inspecting networks, unlike the container)."""
     proc = subprocess.Popen([str(NATIVE), "tunnel", "--no-autoupdate", "--protocol", "http2", "--url", f"http://localhost:{port}"],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -88,11 +91,13 @@ def _host_native(server, port, name, timeout):
         server.shutdown()
         raise RuntimeError("tunnel URL did not appear: " + "".join(buf)[-300:])
     time.sleep(4)
-    return f"{url}/{name}", (server, proc)
+    return (url if base_only else f"{url}/{name}"), (server, proc)
 
 
-def host(path: Path, name: str, timeout: int = 90):
-    server = ThreadingHTTPServer(("0.0.0.0", 0), _handler(path, name))
+def host(path: Path, name: str, timeout: int = 90, extra: dict = None):
+    """Serve `path` as /name (plus optional extra {name: Path}). Returns (url_of_main_file, handle); extra files live at <base>/<name>."""
+    files = {name: path, **(extra or {})}
+    server = ThreadingHTTPServer(("0.0.0.0", 0), _handler(files))
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
     if NATIVE.exists():
