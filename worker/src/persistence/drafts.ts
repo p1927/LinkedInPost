@@ -770,6 +770,30 @@ export class SheetsGateway {
     return response.json<T>();
   }
 
+  /**
+   * Reads all rows (including header row 1) from the 'Episodes' tab.
+   * Returns an empty array if the tab does not exist (tolerated — the tab is
+   * written by the local video-pipeline, not the app itself).
+   */
+  async getEpisodesTab(spreadsheetId: string): Promise<string[][]> {
+    try {
+      const [rows] = await this.batchGetValues(spreadsheetId, ['Episodes!A1:O']);
+      return rows ?? [];
+    } catch (err) {
+      // If the sheet or tab doesn't exist, the Sheets API returns 400/404.
+      // Tolerate this so the route returns an empty list with a hint.
+      const message = String(err instanceof Error ? err.message : err);
+      if (
+        message.includes('Unable to parse range') ||
+        message.includes('404') ||
+        message.includes('does not exist')
+      ) {
+        return [];
+      }
+      throw err;
+    }
+  }
+
   private async getAccessToken(): Promise<string> {
     if (!this.accessTokenPromise) {
       this.accessTokenPromise = mintGoogleAccessToken(this.env.GOOGLE_SERVICE_ACCOUNT_JSON);

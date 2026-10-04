@@ -28,6 +28,7 @@ DEFAULTS: dict[str, bool | str] = {
     'contentReview': False,
     'contentFlow': False,
     'enrichment': True,
+    'videoEpisodes': False,
 }
 
 # TypeScript export name per YAML key (extend when adding features)
@@ -38,6 +39,7 @@ TS_CONST_NAMES: dict[str, str] = {
     'contentReview': 'FEATURE_CONTENT_REVIEW',
     'contentFlow': 'FEATURE_CONTENT_FLOW',
     'enrichment': 'FEATURE_ENRICHMENT',
+    'videoEpisodes': 'FEATURE_VIDEO_EPISODES',
 }
 
 

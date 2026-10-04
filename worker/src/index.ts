@@ -101,7 +101,8 @@ import { listGrokModels, STATIC_GROK_MODELS } from './llm/providers/grok';
 import { listOpenrouterModels, STATIC_OPENROUTER_MODELS } from './llm/providers/openrouter';
 import { listMinimaxModels, STATIC_MINIMAX_MODELS } from './llm/providers/minimax';
 
-import { FEATURE_CAMPAIGN, FEATURE_CONTENT_FLOW, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH } from './generated/features';
+import { FEATURE_CAMPAIGN, FEATURE_CONTENT_FLOW, FEATURE_CONTENT_REVIEW, FEATURE_MULTI_PROVIDER_LLM, FEATURE_NEWS_RESEARCH, FEATURE_VIDEO_EPISODES } from './generated/features';
+import { listEpisodes } from './features/episodes/listEpisodes';
 import { normalizeContentReviewStored, runContentReview } from './features/content-review';
 import {
   handleGetPatternAssignment,
@@ -1824,6 +1825,13 @@ async function dispatchAction(
     }
     case 'listClips': {
       return listClips(env.PIPELINE_DB, session.userId);
+    }
+    case 'listEpisodes': {
+      if (!FEATURE_VIDEO_EPISODES) {
+        throw new Error('Video episodes is disabled for this deployment.');
+      }
+      ensureSpreadsheetConfigured(storedConfig);
+      return listEpisodes(sheets, storedConfig.spreadsheetId);
     }
     case 'createClip': {
       const raw = payload as Record<string, unknown>;

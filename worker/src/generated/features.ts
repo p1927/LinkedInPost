@@ -9,3 +9,4 @@ export type DeploymentMode = 'selfHosted' | 'saas';
 export const FEATURE_ENRICHMENT = true as const;
 export const FEATURE_MULTI_PROVIDER_LLM = true as const;
 export const FEATURE_NEWS_RESEARCH = true as const;
+export const FEATURE_VIDEO_EPISODES = true as const;

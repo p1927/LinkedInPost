@@ -19,3 +19,6 @@ contentReview: true
 contentFlow: true
 # Modular content enrichment layer — emotion, psychology, persuasion, etc.
 enrichment: true
+# Video episodes page (/videos) — reads the 'Episodes' tab of the Google Sheet.
+# true for selfHosted instances; false for saas (tab is written by the local video-pipeline).
+videoEpisodes: true

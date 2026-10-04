@@ -1,16 +1,16 @@
 import clsx from 'clsx';
 import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, Rss, ScrollText, Settings, Wrench, Zap } from 'lucide-react';
+import { BarChart2, ChevronLeft, ChevronRight, GitBranch, ListOrdered, Megaphone, PlusCircle, PlugZap, Rss, ScrollText, Settings, Video, Wrench, Zap } from 'lucide-react';
 import { type AppSession } from '../../services/backendApi';
 import { WORKSPACE_PATHS } from '../../features/topic-navigation/utils/workspaceRoutes';
 import { type GoogleIdTokenProfile } from '../../utils/googleIdTokenProfile';
 import { useWorkspaceChrome } from './WorkspaceChromeContext';
 import { Button } from '@/components/ui/button';
 import { getAppBuildLabel } from '@/lib/appBuildLabel';
-import { FEATURE_CAMPAIGN } from '@/generated/features';
+import { FEATURE_CAMPAIGN, FEATURE_VIDEO_EPISODES } from '@/generated/features';
 
-export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'feed' | 'automations' | 'setup' | 'admin';
+export type WorkspaceNavPage = 'topics' | 'add-topic' | 'settings' | 'rules' | 'campaign' | 'usage' | 'connections' | 'enrichment' | 'trending' | 'feed' | 'automations' | 'setup' | 'admin' | 'videos';
 
 const SIDEBAR_COLLAPSED_KEY = 'linked_sidebar_collapsed';
 
@@ -123,6 +123,7 @@ const PAGE_TO_PATH: Record<WorkspaceNavPage, string> = {
   setup: WORKSPACE_PATHS.setup,
   admin: WORKSPACE_PATHS.admin,
   automations: WORKSPACE_PATHS.automations,
+  videos: WORKSPACE_PATHS.videos,
 };
 
 export function AppSidebar({
@@ -260,6 +261,7 @@ export function AppSidebar({
             {link('topics', <ListOrdered aria-hidden />, 'Posts')}
             {link('add-topic', <PlusCircle aria-hidden />, 'New Post')}
             {link('feed', <Rss aria-hidden />, 'Feed')}
+            {FEATURE_VIDEO_EPISODES ? link('videos', <Video aria-hidden />, 'Videos') : null}
             {FEATURE_CAMPAIGN ? link('campaign', <Megaphone aria-hidden />, 'Campaign') : null}
             {link('rules', <ScrollText aria-hidden />, 'Rules')}
             {link('usage', <BarChart2 aria-hidden />, 'Usage')}

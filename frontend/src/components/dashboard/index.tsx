@@ -45,8 +45,10 @@ import {
   FEATURE_CONTENT_REVIEW,
   FEATURE_MULTI_PROVIDER_LLM,
   FEATURE_NEWS_RESEARCH,
+  FEATURE_VIDEO_EPISODES,
 } from '../../generated/features';
 import { CampaignPage } from '../../features/campaign';
+import { EpisodesPage } from '../../features/videos/EpisodesPage';
 import { FeedPage } from '../../features/feed/FeedPage';
 import type { TrendingCapabilities } from '../../features/trending/hooks/useTrending';
 import { AddTopicPage } from '../../features/add-topic/AddTopicPage';
@@ -922,6 +924,16 @@ export function Dashboard({
           element={
             session.isAdmin ? (
               <AdminPanel idToken={idToken} api={api} />
+            ) : (
+              <Navigate to={WORKSPACE_PATHS.topics} replace />
+            )
+          }
+        />
+        <Route
+          path={WORKSPACE_ROUTE_PATHS.videos}
+          element={
+            FEATURE_VIDEO_EPISODES ? (
+              <EpisodesPage idToken={idToken} api={api} />
             ) : (
               <Navigate to={WORKSPACE_PATHS.topics} replace />
             )

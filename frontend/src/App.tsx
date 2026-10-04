@@ -117,7 +117,9 @@ function WorkspaceSession({
                     ? 'setup'
                     : path.startsWith(WORKSPACE_PATHS.admin)
                       ? 'admin'
-                      : 'topics'
+                      : path.startsWith(WORKSPACE_PATHS.videos)
+                        ? 'videos'
+                        : 'topics'
   const lockMainScroll = isWorkspaceTopicReviewPath(location.pathname)
   const autoCollapseMainSidebar = isTopicEditorWorkspacePath(location.pathname)
   const [helpOpen, setHelpOpen] = useState(false)

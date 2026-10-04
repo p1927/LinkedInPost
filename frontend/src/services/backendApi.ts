@@ -7,6 +7,7 @@ import type { TrendingSearchRequest, TrendingSearchResult } from '../features/tr
 import type { NewsletterRecord } from '../features/campaign/schema/newsletterTypes';
 import type { CustomWorkflowSummary } from '../features/generation/WorkflowCardPicker';
 import type { InterestGroup, CreateInterestGroupPayload, UpdateInterestGroupPayload, Clip, CreateClipPayload, UpdateClipPayload, ArticleAnalysis, ClipClusterResult, DraftConnectionsResult, DebateArticle, CrossDomainResult, OpinionLeadersResult, FeedArticlesResult, ArticleFeedbackMap, FeedVote, SetFeedbackResult } from '../features/feed/types';
+import type { ListEpisodesResult } from '../features/videos/types';
 
 export interface SocialIntegration {
   provider: string;
@@ -1762,6 +1763,11 @@ export class BackendApi {
 
   getArticleFeedback(idToken: string): Promise<ArticleFeedbackMap> {
     return this.post<ArticleFeedbackMap>('getArticleFeedback', idToken);
+  }
+
+  // --- Video Episodes ---
+  listEpisodes(idToken: string): Promise<ListEpisodesResult> {
+    return this.post<ListEpisodesResult>('listEpisodes', idToken);
   }
 }
 
