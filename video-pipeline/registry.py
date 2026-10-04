@@ -1,5 +1,6 @@
 """Episode registry: status lifecycle, list view, and sync to the 'Episodes' tab of the Google Sheet
 (the LinkedInPost /videos page reads that tab)."""
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,11 +44,24 @@ def status_of(ep: dict) -> str:
     return ep.get("status") or "approved"  # legacy episodes (pre-registry) count as approved
 
 
+def sha256(p: Path) -> str:
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def set_status(ep_dir: Path, status: str) -> None:
     if status not in STATUSES:
         raise SystemExit(f"status must be one of {STATUSES}")
     ep = read(ep_dir)
     ep["status"] = status
+    if status == "reviewed":  # provenance: lock the exact file the owner reviewed
+        video = ROOT / "out" / ep["id"] / "final.mp4"
+        if not video.exists():
+            raise SystemExit(f"cannot mark reviewed: {video} does not exist")
+        ep["reviewed_sha256"] = sha256(video)
     write(ep_dir, ep)
 
 
@@ -59,9 +73,10 @@ def advance(ep_dir: Path, status: str) -> None:
         write(ep_dir, ep)
 
 
-def add_post(ep_dir: Path, platform: str, url: str, visibility: str) -> None:
+def add_post(ep_dir: Path, platform: str, url: str, visibility: str, file_sha256: str = "") -> None:
     ep = read(ep_dir)
-    ep.setdefault("posts", []).append({"platform": platform, "url": url, "visibility": visibility, "posted_at": now()})
+    ep.setdefault("posts", []).append({"platform": platform, "url": url, "visibility": visibility, "posted_at": now(),
+                                       "sha256": file_sha256})
     if visibility == "public":
         ep["status"] = "posted"
     write(ep_dir, ep)

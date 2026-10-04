@@ -188,6 +188,11 @@ def cmd_publish(ref, platform, confirm, visibility):
     if not video.exists():
         raise SystemExit(f"no rendered video at {video}")
     pub = stage_publish_dry(ep, platform, visibility)
+    sha = registry.sha256(video)
+    if ep.get("reviewed_sha256") and ep["reviewed_sha256"] != sha and "--allow-changed" not in sys.argv:
+        raise SystemExit("REFUSED: final.mp4 differs from the render the owner reviewed "
+                         f"(reviewed {ep['reviewed_sha256'][:12]}, now {sha[:12]}). Review the new file and run: run.py status {ep['id']} reviewed")
+    print(f"file sha256: {sha[:16]}...")
     print(f"PUBLISH {platform} | {ep['id']} | visibility={visibility}")
     print(json.dumps(pub, indent=2, ensure_ascii=False))
     if not confirm:
@@ -197,7 +202,7 @@ def cmd_publish(ref, platform, confirm, visibility):
         from publishers import youtube_shorts
         r = youtube_shorts.upload(video, pub["title"], pub["description"], pub.get("tags", []), visibility, synthetic=True)
         print("uploaded:", r)
-        registry.add_post(ep_dir, "youtube", r["url"], r["privacy"])
+        registry.add_post(ep_dir, "youtube", r["url"], r["privacy"], sha)
     elif platform == "instagram":
         from publishers import instagram_reels, tunnel_host
         instagram_reels.me()  # fail fast on a bad/expired token before uploading anything
@@ -207,7 +212,7 @@ def cmd_publish(ref, platform, confirm, visibility):
         finally:
             tunnel_host.delete(handle)
         print("published:", r)
-        registry.add_post(ep_dir, "instagram", r["url"], "public")
+        registry.add_post(ep_dir, "instagram", r["url"], "public", sha)
     else:
         raise SystemExit("platform must be youtube or instagram")
 

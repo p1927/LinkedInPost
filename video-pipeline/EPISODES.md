@@ -3,5 +3,5 @@
 | id | title | status | format | series | posts |
 |---|---|---|---|---|---|
 | ep01-interest-rates | Why banks raise interest rates to fight inflation | rendered | eli5_story | Economics, explained simply | - |
-| ep01-interest-rates-v2 | Why do prices go up? (explained like you're 5) | reviewed | eli5_story | Big Questions, Tiny Words | - |
+| ep01-interest-rates-v2 | Why do prices go up? (explained like you're 5) | posted | eli5_story | Big Questions, Tiny Words | [youtube](https://youtube.com/shorts/DdE0emxvE-g), [instagram](https://www.instagram.com/reel/DeFofksgkDO/) |
 | ep02-sky-blue | Why is the sky blue? (it's not the ocean) | rendered | myth_busting | Big Questions, Tiny Words | - |

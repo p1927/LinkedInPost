@@ -207,5 +207,6 @@
       "tagColor": "mint"
     }
   ],
-  "updated_at": "2026-10-04T21:27:24Z"
+  "updated_at": "2026-10-04T21:27:24Z",
+  "notes": "needs_rework: see docs/plans/youtube-automation/GAPS-AND-IMPROVEMENT-PLAN.md (open loop, analogy mismaps physics, slideshow look). Do not post."
 }

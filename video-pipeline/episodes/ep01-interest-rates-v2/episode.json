@@ -196,7 +196,7 @@
       "tagColor": "mint"
     }
   ],
-  "status": "reviewed",
+  "status": "posted",
   "topic_area": "economics",
   "publish": {
     "youtube": {
@@ -214,5 +214,24 @@
       "caption": "Why do prices go up? A tiny cookie town explains inflation and interest rates in 50 seconds.\nSave this for the next time rates are in the news.\nGeneral education, not financial advice.\n#economics #inflation #interestrates #explainlikeimfive #moneybasics"
     }
   },
-  "format_id": "eli5_story"
+  "format_id": "eli5_story",
+  "posts": [
+    {
+      "platform": "youtube",
+      "url": "https://youtube.com/shorts/DdE0emxvE-g",
+      "visibility": "public",
+      "posted_at": "2026-10-04T21:45:01Z",
+      "sha256": "d02506c802425eca2e37dbc68381ea35debd87c0fcf8d710f2a8a3ee6b3bbefb"
+    },
+    {
+      "platform": "instagram",
+      "url": "https://www.instagram.com/reel/DeFofksgkDO/",
+      "visibility": "public",
+      "posted_at": "2026-10-04T21:47:08Z",
+      "sha256": "d02506c802425eca2e37dbc68381ea35debd87c0fcf8d710f2a8a3ee6b3bbefb"
+    }
+  ],
+  "updated_at": "2026-10-04T21:47:08Z",
+  "reviewed_sha256": "d02506c802425eca2e37dbc68381ea35debd87c0fcf8d710f2a8a3ee6b3bbefb",
+  "provenance_note": "2026-10-05: the render the owner reviewed (02:00) was overwritten at 02:43 by a parallel session's re-render; that re-render (this hash) is what was posted to YouTube and Instagram. Same script/narration/illustrations; motion, SFX and music level differ."
 }
