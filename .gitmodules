@@ -1,0 +1,21 @@
+[submodule "video-pipeline/vendor/ViMax"]
+	path = video-pipeline/vendor/ViMax
+	url = https://github.com/p1927/ViMax.git
+[submodule "video-pipeline/vendor/MoneyPrinterTurbo"]
+	path = video-pipeline/vendor/MoneyPrinterTurbo
+	url = https://github.com/p1927/MoneyPrinterTurbo.git
+[submodule "video-pipeline/vendor/youtube-automation-agent"]
+	path = video-pipeline/vendor/youtube-automation-agent
+	url = https://github.com/p1927/youtube-automation-agent.git
+[submodule "video-pipeline/vendor/remotion"]
+	path = video-pipeline/vendor/remotion
+	url = https://github.com/p1927/remotion.git
+[submodule "video-pipeline/vendor/OpenMontage"]
+	path = video-pipeline/vendor/OpenMontage
+	url = https://github.com/p1927/OpenMontage.git
+[submodule "video-pipeline/reference/3b1b-videos"]
+	path = video-pipeline/reference/3b1b-videos
+	url = https://github.com/p1927/videos.git
+[submodule "video-pipeline/reference/3b1b-manim"]
+	path = video-pipeline/reference/3b1b-manim
+	url = https://github.com/p1927/manim.git

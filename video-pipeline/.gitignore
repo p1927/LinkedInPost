@@ -1,0 +1,8 @@
+.venv/
+out/
+node_modules/
+__pycache__/
+.cache/
+.secrets/
+remotion-app/public/ep*/
+assets/music/gen_*.wav

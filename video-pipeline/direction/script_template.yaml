@@ -1,0 +1,125 @@
+# Script / episode.json template
+# Compatible with video-pipeline/run.py — all fields used by run.py are preserved.
+# New optional fields are added at the episode level; scenes schema is unchanged.
+# run.py reads: id, title, format, music, style, scenes (id, beat, narration, visual), sponsor, disclosure, carousel
+
+# ──────────────────────────────────────────────
+# EPISODE-LEVEL FIELDS
+# ──────────────────────────────────────────────
+
+id: "ep##-slug"              # unique, filesystem-safe; used as output directory name
+title: "Title (question form preferred)"
+series: "Series Name"        # optional; e.g. "Big Questions, Tiny Words"
+status: draft                # draft | approved | produced | published
+
+# NEW optional fields (run.py ignores unknown top-level keys)
+format_id: eli5_story        # id from format_catalog.yaml
+topic_area: economics        # economics | science | physics | food | places | math | current_events
+one_idea: ""                 # one sentence in true terms; the anchor for QA
+analogy:
+  source_term: ""            # the real mechanism in plain language
+  domain: ""                 # familiar domain (food / toys / playground / traffic / water)
+  mapping:                   # source element → analogy element pairs
+    - [source_element, analogy_element]
+  limitation: ""             # one line: where the analogy breaks
+  true_term_reveal_beat: ""  # scene id where true term first appears on screen
+audience_misconception: ""   # what viewers likely believe before watching
+structure: ABT               # ABT | Spine | Circle
+
+claims:                      # every factual assertion must appear here
+  - claim: ""
+    source_url: ""
+    verified: false
+
+sponsor:                     # null if no sponsor
+  brand: ""
+  product: ""
+  integration_format: native_example   # native_example | prop | sponsored_explainer | affiliate | bumper | series
+  claims_allowed: []         # list of claims the brand has approved
+  disclosure_line: ""        # exact text spoken in audio: e.g. "sponsored by Brand"
+  usage_rights: ""           # e.g. "30 days social; no paid amplification"
+
+posts:                       # planned distribution
+  - platform: youtube_shorts
+    scheduled: null
+  - platform: instagram_reels
+    scheduled: null
+  - platform: tiktok
+    scheduled: null
+
+# ──────────────────────────────────────────────
+# FORMAT / TECH (read by run.py)
+# ──────────────────────────────────────────────
+
+format:
+  width: 1080
+  height: 1920
+  fps: 30
+
+music:
+  file: "assets/music/filename.wav"
+  volume: 0.09
+
+disclosure: null             # on-screen text for paid-promotion overlay; null if no sponsor
+
+# ──────────────────────────────────────────────
+# STYLE (read by run.py → fill())
+# ──────────────────────────────────────────────
+
+style:
+  palette:
+    bg: "#FFF3D6"
+    ink: "#3B2F2F"
+    sunny: "#FFC83D"
+    coral: "#FF6F59"
+    sky: "#4CC3F7"
+    mint: "#2FD3A0"
+    grape: "#8E6CEF"
+    white: "#FFFFFF"
+  character: "Description string; repeated verbatim in every prompt referencing this character"
+  look: "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos"
+  illustration_style: "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+  cast: {}                   # named character descriptors; referenced as {key} in prompts
+
+# ──────────────────────────────────────────────
+# SCENES (read by run.py)
+# ──────────────────────────────────────────────
+# beat values used by run.py: any string; convention matches format beats.
+# visual.type: "clip" | "illustration"
+# clip scenes: motion_prompt (+ optional keyframe_prompt for I2V first frame)
+# illustration scenes: prompt (+ optional term sub-object)
+# term sub-object: rendered by Remotion as an on-screen label
+# run.py fill() expands {character}, {look}, {cast_key} tokens in prompt strings
+
+scenes:
+  - id: s1
+    beat: hook               # hook | and | but | rehook | therefore | term | analogy | worry | story_payoff | cta | sponsor
+    narration: ""            # spoken text; word count drives scene duration via TTS
+    visual:
+      type: clip             # clip → run.py → stage_clips; illustration → stage_illustrations
+      motion_prompt: ""      # for type: clip — Hailuo I2V prompt; use [Camera command] syntax
+      keyframe_prompt: ""    # optional; for type: clip — generates the first frame image before the clip
+      # ── OR for type: illustration ──
+      prompt: ""             # illustration prompt; {cast} tokens expanded; no text in AI images
+      term:                  # optional; Remotion renders this as an on-screen label
+        label: "TERM"
+        sub: "plain-language definition"
+        color: sky           # palette key
+
+  # Repeat scene block for each beat.
+  # Guidelines:
+  #   - One idea per scene; no scene over 8 s without a visual change
+  #   - Narration drives duration; budget words at 2.5 words/sec
+  #   - Illustration prompts: append ", absolutely no text" to avoid AI-rendered text
+  #   - term.label appears on screen at the moment narration names the true term (picture before term rule)
+
+# ──────────────────────────────────────────────
+# CAROUSEL (optional; read by run.py → stage_carousel)
+# ──────────────────────────────────────────────
+
+carousel:
+  - image: s1               # must be an illustration scene id
+    h: "Slide headline"
+    body: "Optional body text"
+    tag: "OPTIONAL TAG"
+    tagColor: coral          # palette key

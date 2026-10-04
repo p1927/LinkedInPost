@@ -1,0 +1,22 @@
+# Swap any provider by changing class_path (module.Class) and init_args.
+# Same idea as ViMax's class_path/init_args configs. Keys come from ../.env (never stored here).
+tts:
+  class_path: adapters.tts_minimax.MiniMaxTTS
+  init_args:
+    model: speech-2.8-hd
+    voice_id: English_WiseScholar
+    speed: 0.95
+image:
+  class_path: adapters.image_minimax.MiniMaxImage
+  init_args:
+    model: image-01
+video:
+  class_path: adapters.video_minimax.MiniMaxVideo
+  init_args:
+    model: MiniMax-Hailuo-2.3
+    resolution: 768P
+    duration: 6
+# Alternatives (add an adapter file with the same method names, then point class_path at it):
+#   tts:   adapters.tts_fish.FishTTS | adapters.tts_elevenlabs.ElevenLabsTTS | adapters.tts_gemini.GeminiTTS
+#   video: adapters.video_higgsfield.HiggsfieldVideo | adapters.video_veo.VeoVideo
+#   image: adapters.image_gemini.GeminiImage

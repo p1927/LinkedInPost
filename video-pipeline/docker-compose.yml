@@ -1,0 +1,11 @@
+# Usage (after `python run.py <episode> props` has produced out/<id>/props.json):
+#   docker compose run --rm render render src/index.ts Episode /out/<id>/final.mp4 --props=/out/<id>/props.json --codec=h264 --crf=20
+# Public assets (audio/clips) are read from remotion-app/public, mounted below.
+services:
+  render:
+    build:
+      context: .
+      dockerfile: Dockerfile.render
+    volumes:
+      - ./out:/out
+      - ./remotion-app/public:/app/remotion-app/public:ro

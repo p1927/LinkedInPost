@@ -1,0 +1,5 @@
+vendor
+.venv
+out
+remotion-app/node_modules
+remotion-app/out

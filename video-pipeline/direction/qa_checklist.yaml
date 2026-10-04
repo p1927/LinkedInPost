@@ -1,0 +1,188 @@
+# QA Checklist — machine-checkable rules for the AI director linter
+# Each rule: id, severity (error|warn), description, check (named check type), threshold (if numeric)
+
+rules:
+
+  # ── Pacing / word count ─────────────────────────────────────────────────
+
+  - id: words_per_second_max
+    severity: error
+    description: Total narration words / target runtime must not exceed 3.0 w/s (leaves pause budget)
+    check: words_per_second_max
+    threshold: 3.0
+
+  - id: words_per_second_min
+    severity: warn
+    description: Total narration words / target runtime should not be below 1.5 w/s (may feel sparse)
+    check: words_per_second_min
+    threshold: 1.5
+
+  - id: sentence_words_max
+    severity: error
+    description: No individual sentence exceeds 18 words
+    check: sentence_words_max
+    threshold: 18
+
+  - id: sentence_words_avg
+    severity: warn
+    description: Average sentence word count should be ≤ 12 words
+    check: sentence_words_avg
+    threshold: 12
+
+  - id: total_duration_range
+    severity: error
+    description: Sum of scene durations (derived from TTS or word-count estimate) must be 25–90 s
+    check: total_duration_range
+    threshold_min: 25
+    threshold_max: 90
+
+  # ── Scene count / structure ─────────────────────────────────────────────
+
+  - id: scene_count_range
+    severity: error
+    description: Episode must have between 4 and 16 scenes
+    check: scene_count_range
+    threshold_min: 4
+    threshold_max: 16
+
+  - id: hook_in_first_scene
+    severity: error
+    description: First scene beat must be "hook" or "story_hook"
+    check: hook_in_first_scene
+
+  - id: one_idea_per_scene
+    severity: warn
+    description: Each scene narration should contain at most one distinct claim or step
+    check: one_idea_per_scene_heuristic   # heuristic: flag if sentence count > 4 in one scene
+
+  - id: scene_duration_max
+    severity: warn
+    description: No single scene should exceed 8 s without a visual change (estimate from word count)
+    check: scene_duration_max_sec
+    threshold: 8
+
+  - id: cta_after_payoff
+    severity: error
+    description: A scene with beat "cta" must not appear before a scene with beat "payoff" or "story_payoff"
+    check: cta_after_payoff
+
+  - id: repeated_structure
+    severity: warn
+    description: At least 3 distinct beat types must be present (hook + 2 others) to avoid structural monotony
+    check: distinct_beat_count
+    threshold_min: 3
+
+  # ── Analogy / term reveal ───────────────────────────────────────────────
+
+  - id: term_after_picture
+    severity: error
+    description: A scene with visual.term must have a preceding scene where the analogy was shown (beat "analogy" or "and" before beat "term")
+    check: term_after_picture
+
+  - id: analogy_limitation_present
+    severity: error
+    description: episode.analogy.limitation must be a non-empty string
+    check: analogy_limitation_present
+
+  - id: analogy_mapping_present
+    severity: warn
+    description: episode.analogy.mapping must have at least 1 entry
+    check: analogy_mapping_min_entries
+    threshold: 1
+
+  # ── Claims / sources ─────────────────────────────────────────────────────
+
+  - id: claims_have_sources
+    severity: error
+    description: Every entry in episode.claims[] must have a non-empty source_url
+    check: claims_have_sources
+
+  - id: claims_array_present
+    severity: error
+    description: episode.claims must be a non-empty array (at least 1 claim documented)
+    check: claims_array_min_length
+    threshold: 1
+
+  # ── Sponsor / disclosure ─────────────────────────────────────────────────
+
+  - id: sponsor_disclosure_present_if_sponsor
+    severity: error
+    description: If episode.sponsor is not null, episode.disclosure must be a non-empty string AND at least one scene narration must include the disclosure_line text
+    check: sponsor_disclosure_present
+
+  - id: sponsor_beat_placement
+    severity: warn
+    description: If a sponsor beat is present, it should appear after beat "hook" and before or at beat "cta"
+    check: sponsor_beat_after_hook
+
+  # ── Image / video prompts ────────────────────────────────────────────────
+
+  - id: no_text_in_image_prompts
+    severity: error
+    description: Illustration and keyframe prompts must not instruct the model to render text, letters, numbers, or words. Check for disallowed tokens.
+    check: no_text_in_image_prompts
+    disallowed_tokens: ["text", "letter", "number", "word", "sign that says", "label that reads", "caption", "subtitle", "writes"]
+    exception: "the string 'no text' and 'no letters' in a negative instruction are allowed"
+
+  - id: character_descriptor_consistency
+    severity: warn
+    description: Every prompt referencing a character name from style.cast should include that character's full descriptor string
+    check: cast_descriptor_in_prompt
+
+  - id: camera_command_syntax
+    severity: warn
+    description: Clip motion_prompts should contain at least one [Camera command] bracket from the documented command list
+    check: camera_command_present
+    known_commands: ["Push in","Pull out","Pan left","Pan right","Tilt up","Tilt down","Truck left","Truck right","Pedestal up","Pedestal down","Zoom in","Zoom out","Shake","Tracking shot","Static shot"]
+
+  # ── Hook integrity ───────────────────────────────────────────────────────
+
+  - id: hook_payoff_present
+    severity: error
+    description: If the first scene narration contains a question, a payoff beat must exist (beat is "payoff", "story_payoff", or "term")
+    check: hook_payoff_present
+
+  - id: hook_length_max
+    severity: warn
+    description: First scene word count should not exceed 15 words (hook should be brief)
+    check: first_scene_words_max
+    threshold: 15
+
+  # ── Format compliance ────────────────────────────────────────────────────
+
+  - id: format_id_valid
+    severity: warn
+    description: episode.format_id (if present) must match a known id in format_catalog.yaml
+    check: format_id_in_catalog
+    catalog_path: direction/format_catalog.yaml
+
+  - id: one_idea_field_present
+    severity: warn
+    description: episode.one_idea must be a non-empty string
+    check: one_idea_present
+
+  # ── Required scene fields ────────────────────────────────────────────────
+
+  - id: scene_narration_present
+    severity: error
+    description: Every scene must have a non-empty narration string
+    check: scene_narration_present
+
+  - id: scene_visual_type_valid
+    severity: error
+    description: Every scene visual.type must be "clip" or "illustration"
+    check: scene_visual_type_valid
+    valid_values: ["clip", "illustration"]
+
+  - id: scene_visual_prompt_present
+    severity: error
+    description: illustration scenes must have visual.prompt; clip scenes must have visual.motion_prompt
+    check: scene_visual_prompt_present
+
+  # ── Series / authenticity ────────────────────────────────────────────────
+
+  - id: episode_id_unique_slug
+    severity: warn
+    description: episode.id should follow the pattern ep##-slug (no spaces, no uppercase)
+    check: episode_id_slug_format
+    pattern: "^ep\\d{2,}-[a-z0-9-]+$"

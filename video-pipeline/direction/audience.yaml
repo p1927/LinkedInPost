@@ -1,0 +1,74 @@
+# ELI5 audience profile for the AI video director
+# Evidence tags: [E] sourced, [F] folk/craft heuristic, [U] unverified—test on your own analytics
+
+profile:
+  name: "Explain Like I'm 5"
+  target: General adult curiosity audience; assumes no prior domain knowledge.
+  reading_aloud_pace_wps: 2.5        # 150 wpm; use for word-budget math [F, vendor blogs]
+  word_budgets:
+    30s: 70
+    45s: 105
+    60s: 135
+
+sentence_rules:
+  max_words: 18                       # hard ceiling; QA will flag over this [F]
+  target_average_words: 12            # aim here; vary around it [F]
+  min_words_short: 4                  # intentional short punches are good
+  rhythm_pattern: "short, short, longer, short"
+  one_idea_per_sentence: true
+  end_on_stressed_noun: true          # put the surprise last in the sentence [F]
+
+vocabulary_rules:
+  grade_level_target: "3-5 (Flesch-Kincaid proxy; treat as a guide, not a threshold)" # [F]
+  prefer_concrete_nouns: true
+  avoid:
+    - jargon before it is explained
+    - stacked subordinate clauses
+    - parenthetical asides
+    - "homophone traps (e.g. 'affect' vs 'effect' mid-sentence)"
+    - numbers spoken as digits ("1,200,000" → "one point two million")
+    - "passive voice ('rates were raised' → 'the bank raised rates')"
+  repeat_key_noun: true               # say "the cookie" again, not "it" [F]
+  no_pronouns_for_novel_subjects: true
+
+analogy_rules:
+  order: "concrete picture first, true term second"  # [E, Mayer multimedia / analogy research]
+  steps:
+    1: Name the real mechanism in one plain sentence.
+    2: Pick a familiar domain a child has touched (food, toys, playground, traffic, water).
+    3: Map each source element to an analogy element explicitly.
+    4: Test—does the analogy predict any wrong results? If yes, discard or fix.
+    5: State the one key limitation in the script (one line).
+    6: Reveal the true term on-screen at the moment it is named in narration.
+  max_per_video: 1
+  picture_before_term_required: true
+  limitation_line_required: true      # e.g. "unlike a real bank, the piggy bank can't lend your coins out"
+  avoid:
+    - mixing two analogies in one video
+    - analogies whose wrong parts are more memorable than the right ones
+    - analogies that imply the mechanism is "used up" (e.g. "electricity like water disappearing")
+
+tone:
+  voice: conversational
+  second_person: true                 # use "you" and "your" [E, Mayer personalization principle]
+  no_lecture: true
+  humor_rule: "only if the joke IS the explanation; side gags are seductive details" # [E, seductive-details meta-analysis]
+  warmth: high
+
+ear_rules:                            # [F, craft consensus]
+  read_aloud_before_approval: true
+  no_tongue_twisters: true
+  no_parentheses: true
+  no_stacked_clauses: true
+  include_pronunciation_list: true    # list hard terms phonetically for TTS
+  sentence_variety: "vary length—never three long sentences in a row"
+
+things_to_avoid:
+  - logos or intros (cuts retention) # [F]
+  - on-screen full-sentence transcripts (redundancy effect hurts learning) # [E, Mayer]
+  - decorative footage unrelated to the idea  # [E, coherence principle]
+  - music with lyrics under narration  # [E, coherence principle inference]
+  - more than one CTA
+  - trailing sentences ("so yeah", "anyway")
+  - false urgency in hook
+  - unverified statistics cited as facts

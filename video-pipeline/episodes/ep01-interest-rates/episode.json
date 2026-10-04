@@ -1,0 +1,197 @@
+{
+  "id": "ep01-interest-rates",
+  "title": "Why banks raise interest rates to fight inflation",
+  "series": "Economics, explained simply",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "sponsor": null,
+  "disclosure": "Contains AI-generated visuals and an AI voice.",
+  "sources": [
+    {
+      "claim": "Central banks raise policy rates to slow demand and bring inflation down",
+      "url": "https://www.federalreserve.gov/monetarypolicy/monetary-policy-what-are-its-goals-how-does-it-work.htm"
+    },
+    {
+      "claim": "Inflation = general rise in prices, measured e.g. by CPI",
+      "url": "https://www.bls.gov/cpi/"
+    }
+  ],
+  "style": {
+    "palette": {
+      "bg": "#0B1B33",
+      "bg2": "#13294B",
+      "accent": "#FFB400",
+      "good": "#3DDC97",
+      "bad": "#FF5A5F",
+      "text": "#F4F7FB"
+    },
+    "character": "Maya, a woman in her late 20s, shoulder-length black hair, mustard-yellow jacket, warm brown skin, expressive face",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos"
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "story_hook",
+      "narration": "Same cart. Higher bill. That's inflation.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "{character} stands in a supermarket aisle holding a receipt, staring at it in dismay, a shopping cart full of groceries beside her, medium shot, {look}",
+        "motion_prompt": "[Push in] She looks from the receipt to the price tags on the shelf, eyebrows rising in disbelief, subtle handheld camera movement"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "explainer",
+      "narration": "Inflation means prices rise across the whole economy. It happens when lots of money chases a limited supply of stuff.",
+      "visual": {
+        "type": "remotion",
+        "template": "MoneyVsGoods",
+        "props": {
+          "title": "INFLATION",
+          "left": "MORE MONEY",
+          "right": "SAME STUFF",
+          "result": "PRICES RISE"
+        }
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "explainer",
+      "narration": "So the central bank steps in, and its main lever is the interest rate. That's simply the price of borrowing money.",
+      "visual": {
+        "type": "remotion",
+        "template": "Lever",
+        "props": {
+          "title": "THE CENTRAL BANK'S LEVER",
+          "label": "INTEREST RATE",
+          "sub": "the price of borrowing money"
+        }
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "explainer",
+      "narration": "Raise the rate, and loans, mortgages and credit cards cost more. People and businesses spend less, demand cools, and prices climb more slowly.",
+      "visual": {
+        "type": "remotion",
+        "template": "Chain",
+        "props": {
+          "title": "RATES UP",
+          "steps": [
+            "Loans cost more",
+            "Less spending",
+            "Demand cools",
+            "Prices rise slower"
+          ]
+        }
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "explainer",
+      "narration": "People worry about high inflation because savings buy less, paychecks often lag behind, and nobody knows what comes next.",
+      "visual": {
+        "type": "remotion",
+        "template": "Worries",
+        "props": {
+          "title": "WHY PEOPLE WORRY",
+          "items": [
+            "Savings buy less",
+            "Paychecks lag prices",
+            "Future feels uncertain"
+          ]
+        }
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "explainer",
+      "narration": "It's a balancing act. Raise rates too much, and growth and jobs take the hit. Too little, and prices keep climbing.",
+      "visual": {
+        "type": "remotion",
+        "template": "Seesaw",
+        "props": {
+          "title": "THE BALANCING ACT",
+          "left": "TOO LITTLE: prices keep climbing",
+          "right": "TOO MUCH: jobs and growth suffer"
+        }
+      }
+    },
+    {
+      "id": "s7",
+      "beat": "story_payoff",
+      "narration": "So when you hear rates are going up, the bank is trying to cool prices.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "{character}, young and youthful, at home at a kitchen table, smiling gently with visible relief, looking at a grocery receipt in her hand, bright warm evening light, medium close-up, {look}",
+        "motion_prompt": "[Pull out] She exhales with relief and gives a small satisfied nod, gentle camera drift"
+      }
+    },
+    {
+      "id": "s8",
+      "beat": "cta",
+      "narration": "Follow for the economy, explained simply.",
+      "visual": {
+        "type": "remotion",
+        "template": "Outro",
+        "props": {
+          "title": "Economics, explained simply",
+          "sub": "Follow for more"
+        }
+      }
+    }
+  ],
+  "carousel": [
+    {
+      "kind": "cover",
+      "h": "Why do banks raise interest rates when prices rise?",
+      "body": "Inflation, explained simply"
+    },
+    {
+      "kind": "point",
+      "h": "Inflation = prices rising everywhere",
+      "body": "It happens when lots of money chases a limited supply of stuff."
+    },
+    {
+      "kind": "point",
+      "h": "The lever: interest rates",
+      "body": "The price of borrowing money. Central banks raise or lower it to steer the economy."
+    },
+    {
+      "kind": "chain",
+      "h": "Rates up, prices cool",
+      "steps": [
+        "Loans cost more",
+        "People & firms spend less",
+        "Demand cools",
+        "Prices rise slower"
+      ]
+    },
+    {
+      "kind": "list",
+      "h": "Why people worry about inflation",
+      "items": [
+        "Savings buy less",
+        "Paychecks lag prices",
+        "The future feels uncertain"
+      ]
+    },
+    {
+      "kind": "point",
+      "h": "It's a balancing act",
+      "body": "Too little: prices keep climbing. Too much: jobs and growth suffer."
+    },
+    {
+      "kind": "cta",
+      "h": "Follow for the economy, explained simply",
+      "body": "Save this for the next time rates are in the news."
+    }
+  ],
+  "status": "rendered",
+  "topic_area": "economics",
+  "notes": "v1 (superseded by ep01-interest-rates-v2)",
+  "format_id": "eli5_story"
+}

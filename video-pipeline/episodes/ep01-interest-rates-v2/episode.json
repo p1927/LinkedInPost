@@ -1,0 +1,218 @@
+{
+  "id": "ep01-interest-rates-v2",
+  "title": "Why do prices go up? (explained like you're 5)",
+  "series": "Big Questions, Tiny Words",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "sponsor": null,
+  "disclosure": null,
+  "music": {
+    "file": "assets/music/acestep_kids_01.wav",
+    "volume": 0.09
+  },
+  "sources": [
+    {
+      "claim": "Central banks raise policy rates to slow demand and bring inflation down",
+      "url": "https://www.federalreserve.gov/monetarypolicy/monetary-policy-what-are-its-goals-how-does-it-work.htm"
+    },
+    {
+      "claim": "Inflation = general rise in prices, measured e.g. by CPI",
+      "url": "https://www.bls.gov/cpi/"
+    }
+  ],
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Maya, a woman in her late 20s, shoulder-length black hair, mustard-yellow jacket, warm brown skin, expressive face",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "bruno": "Bruno, a friendly round brown bear baker wearing a white apron and a tiny white chef hat",
+      "kids": "three happy kids: a girl with a red bow, a boy with a blue cap, and a small girl in a yellow raincoat",
+      "piggy": "Big Piggy, a giant pink piggy bank wearing a small gold crown"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "story_hook",
+      "narration": "Mom's shopping cart costs more than last year. Why?",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] She looks from the receipt to the price tags on the shelf, eyebrows rising in disbelief, subtle handheld camera movement"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "analogy",
+      "narration": "Imagine a tiny town with only a few cookies.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{bruno} stands behind a cute bakery stall with a small tray of a few round cookies on a tray, {kids} look at the cookies with big smiles, medium wide shot, sunny village street"
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "analogy",
+      "narration": "One day, everyone gets lots of extra coins!",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{kids} cheer while holding overflowing bags of shiny gold coins, golden coins raining down around them, confetti, joyful, medium shot, sunny village street"
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "analogy",
+      "narration": "Everybody wants cookies, but there are only a few! So Bruno says, cookies cost more now.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{kids} crowd eagerly around the bakery stall waving coins, {bruno} holds up a plain wooden sign that has only one bold arrow pointing up drawn on it, no writing on the sign, he looks apologetic, only a few cookies on the tray, medium wide shot"
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "When prices keep going up like that, grown-ups call it inflation.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "a tall stack of gold coins growing taller next to a single cookie, {bruno} gently smiling in the background, simple clean composition, close shot",
+        "term": {
+          "label": "INFLATION",
+          "sub": "prices going up",
+          "color": "coral"
+        }
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "term",
+      "narration": "So the boss of the Big Piggy Bank says, borrowing coins now costs extra. That extra is called an interest rate.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{piggy} stands proudly and gestures with one hoof to {kids}, one child holds out an empty hand asking to borrow coins, a small extra coin is being added onto the pile, medium shot, sunny village street",
+        "term": {
+          "label": "INTEREST RATE",
+          "sub": "extra cost to borrow",
+          "color": "sky"
+        }
+      }
+    },
+    {
+      "id": "s7",
+      "beat": "analogy",
+      "narration": "Now fewer kids borrow coins, fewer cookies get bought, and Bruno stops raising his price.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{kids} walk away calmly with coins safely in their pockets, {bruno} smiles happily behind the stall with a few cookies left on the tray, calm peaceful mood, medium wide shot"
+      }
+    },
+    {
+      "id": "s8",
+      "beat": "worry",
+      "narration": "But when prices climb, your coins buy fewer cookies. That's why grown-ups worry.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "the small girl in a yellow raincoat looks worriedly at one gold coin in her palm and a big cookie that looks far away, thought bubble shows her tiny piggy bank, soft worried mood, close shot"
+      }
+    },
+    {
+      "id": "s9",
+      "beat": "story_payoff",
+      "narration": "So when you hear, rates are going up, they're just keeping prices from running away!",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Pull out] She exhales with relief and gives a small satisfied nod, gentle camera drift"
+      }
+    },
+    {
+      "id": "s10",
+      "beat": "cta",
+      "narration": "Now you know! Follow for more big questions, in tiny words.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{bruno} waves happily at the viewer holding a warm cookie, {kids} wave behind him, big smiles, bright celebratory mood, sparkles, medium shot",
+        "term": {
+          "label": "NOW YOU KNOW!",
+          "sub": "follow for more",
+          "color": "mint"
+        }
+      }
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s10",
+      "h": "Why do prices go up?",
+      "body": "Explained like you're 5",
+      "tag": "BIG QUESTIONS",
+      "tagColor": "grape"
+    },
+    {
+      "image": "s2",
+      "h": "A tiny town has only a few cookies."
+    },
+    {
+      "image": "s3",
+      "h": "One day, everyone gets extra coins!"
+    },
+    {
+      "image": "s4",
+      "h": "More coins, same cookies. Cookies cost more!",
+      "tag": "INFLATION",
+      "tagColor": "coral",
+      "body": "Prices going up"
+    },
+    {
+      "image": "s6",
+      "h": "The Big Piggy Bank makes borrowing cost extra.",
+      "tag": "INTEREST RATE",
+      "tagColor": "sky",
+      "body": "The extra cost of borrowing"
+    },
+    {
+      "image": "s7",
+      "h": "Fewer cookies bought. Prices calm down."
+    },
+    {
+      "image": "s8",
+      "h": "Prices climbing means coins buy less. That is why grown-ups worry."
+    },
+    {
+      "image": "s10",
+      "h": "Now you know!",
+      "body": "Follow for more big questions, in tiny words.",
+      "tag": "SAVE THIS",
+      "tagColor": "mint"
+    }
+  ],
+  "status": "reviewed",
+  "topic_area": "economics",
+  "publish": {
+    "youtube": {
+      "title": "Why do prices go up? (explained like you're 5) #Shorts",
+      "description": "A tiny cookie town and a Big Piggy Bank explain: why prices go up, what an interest rate is, and why grown-ups worry. Simple words, no jargon.\n\nSources: Federal Reserve (monetary policy overview), U.S. Bureau of Labor Statistics (CPI).\nGeneral education, not financial advice.\n\n#Shorts #economics #inflation",
+      "tags": [
+        "inflation for kids",
+        "interest rates explained",
+        "economics explained simply",
+        "why do prices go up",
+        "personal finance basics"
+      ]
+    },
+    "instagram": {
+      "caption": "Why do prices go up? A tiny cookie town explains inflation and interest rates in 50 seconds.\nSave this for the next time rates are in the news.\nGeneral education, not financial advice.\n#economics #inflation #interestrates #explainlikeimfive #moneybasics"
+    }
+  },
+  "format_id": "eli5_story"
+}

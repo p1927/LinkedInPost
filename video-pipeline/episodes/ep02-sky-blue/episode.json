@@ -1,0 +1,210 @@
+{
+  "id": "ep02-sky-blue",
+  "title": "Why is the sky blue? (it's not the ocean)",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "topic_area": "science",
+  "format_id": "myth_busting",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "sponsor": null,
+  "disclosure": null,
+  "music": {
+    "file": "assets/music/acestep_kids_01.wav",
+    "volume": 0.09
+  },
+  "analogy": {
+    "domain": "playground / bouncy balls",
+    "mapping": {
+      "sunlight colors": "rainbow bouncy balls",
+      "air molecules": "playground bumpers",
+      "scattering": "bouncing"
+    },
+    "limitation": "Light is not really a ball; it is a wave, and blue waves are shorter.",
+    "true_term_beat": "s5"
+  },
+  "claims": [
+    {
+      "claim": "Sunlight looks white but is made of all the colors of the rainbow",
+      "url": "https://spaceplace.nasa.gov/blue-sky/en/"
+    },
+    {
+      "claim": "Blue light has shorter waves and is scattered more by the atmosphere than red",
+      "url": "https://spaceplace.nasa.gov/blue-sky/en/"
+    },
+    {
+      "claim": "At sunset light passes through more air so more blue is scattered away, leaving reds and oranges",
+      "url": "https://spaceplace.nasa.gov/blue-sky/en/"
+    },
+    {
+      "claim": "The ocean is blue mainly because water absorbs red light (not because it mirrors the sky)",
+      "url": "https://oceanservice.noaa.gov/facts/oceanblue.html"
+    }
+  ],
+  "sources": [
+    {
+      "claim": "NASA SpacePlace: Why is the sky blue?",
+      "url": "https://spaceplace.nasa.gov/blue-sky/en/"
+    },
+    {
+      "claim": "NOAA: Why is the ocean blue?",
+      "url": "https://oceanservice.noaa.gov/facts/oceanblue.html"
+    }
+  ],
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "pip": "Pip, a curious little owl with round glasses and a yellow scarf",
+      "tia": "Tia, a girl of about seven in a green hoodie with two black pigtails",
+      "sunny": "Sunny, a cheerful cartoon sun with a round smiling face"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "Is the sky blue because it copies the ocean? Nope! The sky has its own trick.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{tia} and {pip} stand on a grassy hill looking up at a bright blue sky, with a calm blue sea far behind them, wide shot, sunny day"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "reveal",
+      "narration": "Sunlight looks white, but it is secretly a bag of rainbow colors.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{sunny} happily tips open a big cloth bag and rainbow-colored bouncy balls (red, orange, yellow, green, blue, violet) tumble out, {pip} watches amazed, medium shot, simple sky background"
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "analogy",
+      "narration": "Imagine those colors are bouncy balls, rolling through a playground full of tiny bumpers.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "colorful bouncy balls rolling down a playground slope full of little round bumper pegs like a pinball board, bright cheerful, {tia} watches from the side, medium wide shot"
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "analogy",
+      "narration": "Little blue balls hit every bumper and bounce everywhere. Big red balls roll straight through.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "many small blue bouncy balls bouncing in all directions off round bumper pegs, while a few big red balls roll straight through the middle in a clean line, close shot, playful"
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "Grown-ups call that bouncing scattering. Blue scatters the most. So blue reaches your eyes from everywhere in the sky.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{tia} looks up wide-eyed at a sky full of tiny sparkling blue dots drifting everywhere, {pip} points upward beside her, medium shot, big sky",
+        "term": {
+          "label": "SCATTERING",
+          "sub": "blue light bounces the most",
+          "color": "sky"
+        }
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "evidence",
+      "narration": "At sunset, light travels through more air. The blue bounces away, and the reds and oranges are left.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "a glowing orange and pink sunset over a calm hill, {tia} and {pip} sit together watching it, {sunny} sinking low on the horizon, wide shot, warm light"
+      }
+    },
+    {
+      "id": "s7",
+      "beat": "limitation",
+      "narration": "Light is not really a ball, of course. It is a wave, and blue waves are just shorter.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{pip} holds up two ribbons, a short wiggly blue ribbon and a long smooth red ribbon, side by side, {tia} nods, close shot, plain pastel background"
+      }
+    },
+    {
+      "id": "s8",
+      "beat": "cta",
+      "narration": "So the sky's trick is bouncing blue light. Send this to someone who looks up a lot!",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{tia} and {pip} wave happily toward the viewer under a bright blue sky, {sunny} smiling above them, sparkles, medium shot",
+        "term": {
+          "label": "NOW YOU KNOW!",
+          "sub": "send it to a sky-watcher",
+          "color": "mint"
+        }
+      }
+    }
+  ],
+  "publish": {
+    "youtube": {
+      "title": "Why is the sky blue? (it's NOT the ocean) #Shorts",
+      "description": "Bouncy balls, bumpers and a very curious owl explain why the sky is blue and sunsets are red.\n\nSources: NASA SpaceScience (Why is the sky blue?), NOAA (Why is the ocean blue?).\n\n#Shorts #science #skyblue",
+      "tags": [
+        "why is the sky blue",
+        "science for kids",
+        "rayleigh scattering explained",
+        "sunset colors",
+        "science explained simply"
+      ]
+    },
+    "instagram": {
+      "caption": "Is the sky blue because of the ocean? Nope! A tiny playground explains the real reason in 50 seconds.\nSend this to someone who looks up a lot.\n#science #skyblue #explainlikeimfive #sciencefacts #learnontiktok"
+    }
+  },
+  "carousel": [
+    {
+      "image": "s1",
+      "h": "Is the sky blue because of the ocean?",
+      "body": "Nope! Let's find out.",
+      "tag": "MYTH",
+      "tagColor": "coral"
+    },
+    {
+      "image": "s2",
+      "h": "Sunlight is a bag of rainbow colors."
+    },
+    {
+      "image": "s4",
+      "h": "Little blue balls bounce everywhere. Big red balls roll straight through.",
+      "tag": "SCATTERING",
+      "tagColor": "sky"
+    },
+    {
+      "image": "s5",
+      "h": "Blue bounces the most, so blue comes from everywhere in the sky."
+    },
+    {
+      "image": "s6",
+      "h": "At sunset, light travels through more air. Blue bounces away.",
+      "body": "Reds and oranges are left."
+    },
+    {
+      "image": "s8",
+      "h": "Now you know!",
+      "body": "Send this to someone who looks up a lot.",
+      "tag": "SHARE",
+      "tagColor": "mint"
+    }
+  ]
+}

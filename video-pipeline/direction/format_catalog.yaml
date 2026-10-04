@@ -1,0 +1,348 @@
+# Format Catalog — 14 short-form explainer formats
+# All ratings [OUR JUDGMENT] unless noted; no source validates them.
+# word_budget at 2.5 words/sec (150 wpm); leave ~10% margin for pauses.
+
+formats:
+
+  - id: eli5_story
+    name: "ELI5 Story-Wrapped"
+    best_topics: [concepts, economics, physics, math]
+    visual_mode: illustration        # Remotion illustrations primary
+    cost_level: low_medium
+    retention_risk: "analogy drift; slow setup"
+    sponsor_fit: high                # brand plays the character or tool in the story
+    example_topic: "Why do prices go up?"
+    structure:
+      - beat: hook
+        target_sec: [0, 4]
+        word_budget: 10
+      - beat: and_normal
+        target_sec: [4, 14]
+        word_budget: 25
+      - beat: but_surprise
+        target_sec: [14, 26]
+        word_budget: 30
+      - beat: rehook
+        target_sec: [26, 30]
+        word_budget: 10            # visual change + "but here's the catch"
+      - beat: therefore_analogy
+        target_sec: [30, 48]
+        word_budget: 45
+      - beat: payoff_callback
+        target_sec: [48, 56]
+        word_budget: 20
+      - beat: cta
+        target_sec: [56, 60]
+        word_budget: 10
+    hook_patterns: [question, second_person_scenario, kid_question]
+
+  - id: what_if
+    name: "What If"
+    best_topics: [physics, science, places]
+    visual_mode: mixed               # AI clips + illustration
+    cost_level: medium
+    retention_risk: "needs real numbers or reads as fluff"
+    sponsor_fit: medium
+    example_topic: "What if gravity doubled for one second?"
+    structure:
+      - beat: hook_absurd_premise
+        target_sec: [0, 5]
+        word_budget: 12
+      - beat: step1_consequence
+        target_sec: [5, 20]
+        word_budget: 37
+      - beat: step2_escalation
+        target_sec: [20, 38]
+        word_budget: 45
+      - beat: surprising_limit
+        target_sec: [38, 50]
+        word_budget: 30
+      - beat: payoff_cta
+        target_sec: [50, 60]
+        word_budget: 20
+    hook_patterns: [challenge, stakes, number_with_a_face]
+
+  - id: myth_busting
+    name: "Myth-Busting"
+    best_topics: [food, science, economics]
+    visual_mode: illustration
+    cost_level: low
+    retention_risk: "low; strong curiosity gap"
+    sponsor_fit: medium_high         # product tests the myth
+    example_topic: "You don't really need 8 glasses of water a day."
+    structure:
+      - beat: state_myth
+        target_sec: [0, 8]
+        word_budget: 20
+      - beat: actually_reveal
+        target_sec: [8, 22]
+        word_budget: 35
+      - beat: evidence
+        target_sec: [22, 36]
+        word_budget: 35
+      - beat: rule_of_thumb_cta
+        target_sec: [36, 45]
+        word_budget: 20
+    hook_patterns: [you_were_told_wrong, contradiction, challenge]
+
+  - id: why_is_x
+    name: "Why Is X"
+    best_topics: [all]
+    visual_mode: illustration
+    cost_level: low_medium
+    retention_risk: "low if hook is concrete"
+    sponsor_fit: high
+    example_topic: "Why is the sea salty?"
+    structure:
+      - beat: hook_observation
+        target_sec: [0, 5]
+        word_budget: 12
+      - beat: cause_link_1
+        target_sec: [5, 18]
+        word_budget: 32
+      - beat: cause_link_2
+        target_sec: [18, 32]
+        word_budget: 35
+      - beat: twist_payoff_cta
+        target_sec: [32, 45]
+        word_budget: 30
+    hook_patterns: [question, contradiction, mystery]
+
+  - id: versus
+    name: "Versus / Comparison"
+    best_topics: [economics, food, places, products]
+    visual_mode: illustration        # split-screen templates
+    cost_level: low
+    retention_risk: "verdict must be earned"
+    sponsor_fit: highest             # affiliate; keep editorial independence
+    example_topic: "Butter vs margarine: which is actually worse for you?"
+    structure:
+      - beat: hook_two_options
+        target_sec: [0, 5]
+        word_budget: 12
+      - beat: criterion_1
+        target_sec: [5, 20]
+        word_budget: 37
+      - beat: criterion_2
+        target_sec: [20, 35]
+        word_budget: 37
+      - beat: criterion_3
+        target_sec: [35, 50]
+        word_budget: 37
+      - beat: verdict_cta
+        target_sec: [50, 60]
+        word_budget: 20
+    hook_patterns: [challenge, stakes, contradiction]
+
+  - id: history_timeline
+    name: "History / Timeline in 60s"
+    best_topics: [economics, places, science]
+    visual_mode: mixed
+    cost_level: medium
+    retention_risk: "date-dump fatigue"
+    sponsor_fit: low_medium
+    example_topic: "How the internet went from a military secret to your pocket in 60 years."
+    structure:
+      - beat: hook_end_state
+        target_sec: [0, 6]
+        word_budget: 15
+      - beat: dated_beat_1
+        target_sec: [6, 20]
+        word_budget: 35
+      - beat: dated_beat_2
+        target_sec: [20, 36]
+        word_budget: 40
+      - beat: dated_beat_3
+        target_sec: [36, 52]
+        word_budget: 40
+      - beat: callback_cta
+        target_sec: [52, 60]
+        word_budget: 20
+    hook_patterns: [cold_open_result, stakes, number_with_a_face]
+
+  - id: news_explainer
+    name: "News Explainer"
+    best_topics: [current_events]
+    visual_mode: clip                # speed-sensitive; AI clips + remotion_chart
+    cost_level: medium
+    retention_risk: "accuracy and sourcing risk; sensitive-topic limits"
+    sponsor_fit: low                 # brand-safety concern; series sponsor only
+    example_topic: "Why did the SVB bank collapse in 48 hours?"
+    structure:
+      - beat: event_hook
+        target_sec: [0, 6]
+        word_budget: 15
+      - beat: one_line_context
+        target_sec: [6, 16]
+        word_budget: 25
+      - beat: stakes
+        target_sec: [16, 32]
+        word_budget: 40
+      - beat: what_to_watch_cta
+        target_sec: [32, 45]
+        word_budget: 30
+    hook_patterns: [stakes, cold_open_result, question]
+
+  - id: case_study
+    name: "Case Study / Mini-Doc"
+    best_topics: [economics, food, places]
+    visual_mode: mixed
+    cost_level: medium_high
+    retention_risk: "length vs Shorts feed"
+    sponsor_fit: high                # brand can be the case subject
+    example_topic: "How IKEA keeps prices low while paying workers well."
+    structure:
+      - beat: hook_outcome
+        target_sec: [0, 6]
+        word_budget: 15
+      - beat: setup
+        target_sec: [6, 22]
+        word_budget: 40
+      - beat: turning_point
+        target_sec: [22, 52]
+        word_budget: 75
+      - beat: lesson_cta
+        target_sec: [52, 60]
+        word_budget: 20
+    hook_patterns: [cold_open_result, stakes, question]
+
+  - id: place_explainer
+    name: "Place / Travel Explainer"
+    best_topics: [places, experiences]
+    visual_mode: clip                # AI clips; label if realistic
+    cost_level: medium
+    retention_risk: "generic-AI look; label if realistic to avoid misleading viewers"
+    sponsor_fit: high                # travel, booking, gear
+    example_topic: "Why is Venice sinking?"
+    structure:
+      - beat: map_zoom_hook
+        target_sec: [0, 6]
+        word_budget: 15
+      - beat: surprising_fact
+        target_sec: [6, 20]
+        word_budget: 35
+      - beat: how_it_works_locally
+        target_sec: [20, 45]
+        word_budget: 62
+      - beat: tip_cta
+        target_sec: [45, 55]
+        word_budget: 25
+    hook_patterns: [contradiction, question, visual_shock]
+
+  - id: food_science
+    name: "Food Science"
+    best_topics: [food]
+    visual_mode: illustration
+    cost_level: low_medium
+    retention_risk: "low"
+    sponsor_fit: high                # cookware, ingredients
+    example_topic: "Why does bread go stale — and how to stop it."
+    structure:
+      - beat: weird_result_hook
+        target_sec: [0, 5]
+        word_budget: 12
+      - beat: mechanism
+        target_sec: [5, 30]
+        word_budget: 62
+      - beat: kitchen_tip_cta
+        target_sec: [30, 45]
+        word_budget: 37
+    hook_patterns: [contradiction, question, visual_shock]
+
+  - id: experiment
+    name: "Experiment / Demonstration"
+    best_topics: [physics, science, food]
+    visual_mode: clip                # needs real or simulated footage
+    cost_level: high
+    retention_risk: "fake-looking sims hurt trust; label AI clearly"
+    sponsor_fit: high                # product as apparatus
+    example_topic: "What happens if you microwave a grape?"
+    structure:
+      - beat: predict_hook
+        target_sec: [0, 6]
+        word_budget: 15
+      - beat: run
+        target_sec: [6, 24]
+        word_budget: 45
+      - beat: reveal
+        target_sec: [24, 38]
+        word_budget: 35
+      - beat: why_cta
+        target_sec: [38, 50]
+        word_budget: 30
+    hook_patterns: [challenge, visual_shock, cold_open_result]
+
+  - id: visual_math
+    name: "Visual Math Proof"
+    best_topics: [math]
+    visual_mode: manim
+    cost_level: high
+    retention_risk: "audience niche; pacing critical"
+    sponsor_fit: medium              # education apps
+    example_topic: "Why 0.999… equals 1 — one animated proof."
+    structure:
+      - beat: puzzle_hook
+        target_sec: [0, 6]
+        word_budget: 15
+      - beat: animated_insight
+        target_sec: [6, 38]
+        word_budget: 80
+      - beat: aha_moment
+        target_sec: [38, 50]
+        word_budget: 30
+      - beat: generalise_cta
+        target_sec: [50, 60]
+        word_budget: 25
+    hook_patterns: [question, challenge, contradiction]
+
+  - id: data_chart_story
+    name: "Data / Chart Story"
+    best_topics: [economics, current_events]
+    visual_mode: remotion_chart
+    cost_level: low
+    retention_risk: "misleading scales; must cite source on screen"
+    sponsor_fit: medium_high         # finance tools; mind health/finance policy limits
+    example_topic: "US inflation, visualized: one chart, 40 years."
+    structure:
+      - beat: one_chart_animates_hook
+        target_sec: [0, 8]
+        word_budget: 20
+      - beat: annotate_the_change
+        target_sec: [8, 34]
+        word_budget: 65
+      - beat: so_what_cta
+        target_sec: [34, 48]
+        word_budget: 35
+    hook_patterns: [number_with_a_face, stakes, cold_open_result]
+
+  - id: character_series
+    name: "Character Series"
+    best_topics: [all]
+    visual_mode: illustration        # fixed cast; template after setup
+    cost_level: medium_upfront_low_after
+    retention_risk: "template sameness; YouTube inauthentic-content risk if scripts differ only superficially"
+    sponsor_fit: highest             # series sponsorship
+    example_topic: "Bruno's Big Questions — recurring mascot across all topics"
+    structure:
+      - beat: hook
+        target_sec: [0, 4]
+        word_budget: 10
+      - beat: and_normal
+        target_sec: [4, 14]
+        word_budget: 25
+      - beat: but_surprise
+        target_sec: [14, 26]
+        word_budget: 30
+      - beat: rehook
+        target_sec: [26, 30]
+        word_budget: 10
+      - beat: therefore_analogy
+        target_sec: [30, 48]
+        word_budget: 45
+      - beat: payoff_callback
+        target_sec: [48, 56]
+        word_budget: 20
+      - beat: catchphrase_cta
+        target_sec: [56, 60]
+        word_budget: 10
+    hook_patterns: [question, second_person_scenario, kid_question]

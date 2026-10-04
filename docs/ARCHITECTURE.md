@@ -400,7 +400,40 @@ npx tsc --noEmit -p worker/
 | Worker unit (Vitest) | `cd worker && npm test` |
 | Generation worker typecheck | `npm run typecheck:gen` (root) |
 
-## 9. Pointers
+## 9. Video pipeline — Episodes tab contract
+
+The `video-pipeline/` directory contains a local Python pipeline that produces short-form video content. It writes episode metadata to a dedicated **'Episodes'** tab in the same Google Sheet identified by `GOOGLE_SHEET_ID`. The app only reads this tab; the pipeline owns all writes.
+
+### Episodes tab layout
+
+| Column | Header (exact) | Notes |
+|--------|---------------|-------|
+| A | `id` | Stable UUID assigned by the pipeline |
+| B | `title` | Episode title |
+| C | `series` | Series name (e.g. "Tech Bytes") |
+| D | `topic_area` | Broad topic category |
+| E | `format` | Production format (e.g. interview, explainer) |
+| F | `status` | One of: `idea`, `scripted`, `approved`, `rendered`, `reviewed`, `scheduled`, `posted` |
+| G | `sponsor` | Sponsor name if applicable |
+| H | `video_url` | Direct link to the rendered video file |
+| I | `cover_url` | Thumbnail / cover image URL |
+| J | `carousel_urls_json` | JSON array of carousel image URLs |
+| K | `youtube_url` | Published YouTube URL |
+| L | `instagram_url` | Published Instagram URL |
+| M | `posted_at` | ISO-8601 date the episode was posted |
+| N | `updated_at` | ISO-8601 date of last update |
+| O | `notes` | Free-form notes |
+
+Row 1 is the header row. Data starts at row 2.
+
+### App integration
+
+- **Feature flag**: `videoEpisodes` in `features.yaml` (default `true` for selfHosted). Regenerate via `python3 scripts/generate_features.py`.
+- **Worker action**: `listEpisodes` — reads the Episodes tab via `SheetsGateway.getEpisodesTab()` and returns `{ episodes: Episode[], hint?: string }`. Tolerates a missing tab (returns empty list + hint).
+- **Frontend route**: `/videos` — gated by `FEATURE_VIDEO_EPISODES`; provides filters by status, topic area, series, and text search.
+- **Local sync**: Run `python run.py sync` inside `video-pipeline/` to push episode data into the sheet.
+
+## 10. Pointers
 
 - [README.md](../README.md) — high-level pitch + quick start
 - [SETUP.md](../SETUP.md) — full deployment checklist
