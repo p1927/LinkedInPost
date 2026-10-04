@@ -1,5 +1,16 @@
 # ROADMAP - the one-by-one build plan (supersedes the roadmap table in v2-plan.md)
 
+## PROGRESS (updated 2026-10-05, after implementation pass 1)
+| Step | State | Notes |
+|---|---|---|
+| S1 direction KB | DONE | video-pipeline/direction/ (10 files); evidence tags inside; unverified items flagged |
+| S2 lint + hash cache | DONE, tested | cache: unchanged = 0 paid calls, edit = only that scene; lint reads direction/qa_checklist.yaml |
+| S3 /episode skill + registry | DONE | skill at .claude/skills/episode (that dir is gitignored; copy in direction/EPISODE_SKILL.md); run.py list/sync/status/lint/publish |
+| S4 posting | CODE DONE, NOT LIVE | no paid scheduler. Instagram Reels (Graph API) + YouTube (Data API, private by default) are dry-run tested only. Blocked: IG token expired 2026-06-21 (needs new token); YouTube needs a Google OAuth Desktop client file; IG needs a public URL for the MP4 and the Docker quick tunnel fails TLS on this network (GCS bucket's project has billing disabled) |
+| S5 /videos page | DONE, NOT DEPLOYED | worker listEpisodes + /videos route, 269/269 worker tests, frontend typechecks; reads Sheet tab "Episodes" (created and synced). Needs a worker/frontend deploy by the owner |
+| S6 episode 2 | SCRIPT READY, AWAITING APPROVAL | ep02-sky-blue (myth-busting), lint clean, paid generation blocked until approved |
+| S7-S12 | NOT STARTED | formats, manim, sponsors, analytics, direct uploader, backlog |
+
 Status: PLAN. Nothing below is built yet. Decisions taken by the owner (2026-10-05):
 - Build the `/videos` tracking page directly (no Sheet-first detour).
 - Posting: pick whatever is simplest to see the full flow immediately.
