@@ -70,6 +70,8 @@ Separation of roles: author and reviewer are different agents (project rule: nev
 | P5 | Director automation + news/topic ingestion (G9) | topic -> episode | 3 topics in a row pass QA without hand edits |
 | P6 | Audio system, packaging, analytics loop (G10, G11, G14) | | |
 
+**Status update (2026-10-05):** P1 audience cards + explanation lint are in. P5 is built as a first version (`python run.py director`; see `DIRECTOR-AND-VARIETY-PLAN.md`): topic -> lint-passing draft works, but the "3 topics in a row without hand edits" exit test is NOT met (drafts show two analogies in one video, weak mechanism steps). P2 verifier agents are built as `verify.py` (analogy attack, claim support, comprehension test -> `qa_report.json`, enforced at approval); first runs correctly FAIL ep05/ep06 drafts, so the lever now is getting a draft to pass. P3 is partly done: 4 profiles exist, selected per audience card; template library not yet.
+
 ## 6. Decisions needed from the owner
 1. Pick the two audience cards to start with (suggested: `kids-6-9` and `adult-newcomer`) and which one is the primary channel voice.
 2. For adult-newcomer, is a second look acceptable (diagram/chalkboard/news-desk) alongside the storybook look? (GR experiment says the same illustrations only partly read as adult.)

@@ -9,6 +9,8 @@
 | S4 posting | CODE DONE, NOT LIVE | no paid scheduler. Instagram Reels (Graph API) + YouTube (Data API, private by default) are dry-run tested only. Blocked: IG token expired 2026-06-21 (needs new token); YouTube needs a Google OAuth Desktop client file; IG needs a public URL for the MP4 and the Docker quick tunnel fails TLS on this network (GCS bucket's project has billing disabled) |
 | S5 /videos page | DONE, NOT DEPLOYED | worker listEpisodes + /videos route, 269/269 worker tests, frontend typechecks; reads Sheet tab "Episodes" (created and synced). Needs a worker/frontend deploy by the owner |
 | S6 episode 2 | SCRIPT READY, AWAITING APPROVAL | ep02-sky-blue (myth-busting), lint clean, paid generation blocked until approved |
+| Director + variety (GAPS P3/P5) | DONE (drafts), see DIRECTOR-AND-VARIETY-PLAN.md | `run.py director` (news intake, schema + lint + provenance, repair loop), audience-card-driven profile/voice/music, offline generated music, beat vocabulary `canonBeat`. ep04/ep05 generated, lint-clean, not rendered. Verifier agents: `verify.py` + approval gate in registry (DONE v1; judge quality unproven). Next: get a draft to pass, rotating profiles per audience, templates |
+| Design system + skills research | PARTLY DONE | `video-pipeline/direction/DESIGN_SYSTEM.md` (one spec), research 09/10; eased transitions, safe zones, per-audience art style, render QA applied. TODO list in DIRECTOR-AND-VARIETY-PLAN.md 6b |
 | S7-S12 | NOT STARTED | formats, manim, sponsors, analytics, direct uploader, backlog |
 
 Status: PLAN. Nothing below is built yet. Decisions taken by the owner (2026-10-05):

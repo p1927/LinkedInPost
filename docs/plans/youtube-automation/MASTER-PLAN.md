@@ -40,6 +40,7 @@ topic -> [Director: Claude] -> episode.json (scenes, beats, narration, visuals)
 | v1.2 | Music, clean frames, ELI5 direction, Remotion packages instead of custom code (see `v1.2-improvements.md`) | DONE - ep01-interest-rates-v2 rendered; owner review pending |
 | v2 | Topic->video director system, formats, math (ManimCE), tracking, posting, sponsors - see `v2-plan.md`; step-by-step in `ROADMAP.md` (S1-S12) | PLAN WRITTEN, awaiting owner go |
 | v1.1 | Publish drafts to YouTube Shorts / IG Reels via LinkedInPost channels or Postiz | planned |
+| v2 (Director + variety slice) | `python run.py director`: news -> sourced topic -> lint-passing episode.json; audience cards pick look/voice/music; profiles + generated music. See `DIRECTOR-AND-VARIETY-PLAN.md` | BUILT 2026-10-05 (incl. verifier agents + approval gate); templates + rotating looks pending |
 | (old v2, folded into the new v2) | Director skill for repeatable episodes, series/style bible library, sponsor field, news trigger | planned |
 | v3 | Analytics loop, A/B titles/thumbnails, scheduling, voice clone of owner | planned |
 
@@ -56,6 +57,11 @@ topic -> [Director: Claude] -> episode.json (scenes, beats, narration, visuals)
 - 09 Episode 1: economics (interest rates and inflation)
 
 Progress is tracked in `v1/README.md`.
+
+## Newer plans
+- `v2-plan.md` / `ROADMAP.md` (S1-S12): director system, tracking, posting
+- `GAPS-AND-IMPROVEMENT-PLAN.md`: explanation-quality gaps and phases P0-P6
+- `DIRECTOR-AND-VARIETY-PLAN.md`: the built Director, ownership map (who owns what), vendored-repo reuse map. **Read before editing director/profiles/music code.**
 
 ## Compliance rules (non-negotiable)
 - YouTube inauthentic-content policy: human-directed variation, original framing, own/clear voice.

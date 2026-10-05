@@ -458,6 +458,8 @@ These are the answer to "how do we create more variety".
 
 ## 6. Prioritised recommendations
 
+> **Implementation status and ownership map:** see `docs/plans/youtube-automation/DIRECTOR-AND-VARIETY-PLAN.md`. Built so far: profile layer + beat-aware renderer (Experiment 1), generated mood music, Director v1 (news intake, claim gate, repair loop). Profile `explainer-calm` was renamed `explainer-clean` to match the `curious_adult` audience card.
+
 ### Phase 1: Quick wins (a few days)
 Immediate variety with little architecture change.
 
@@ -537,12 +539,35 @@ Goal: test whether the variety architecture (profile + beat-aware renderer + aud
 - Baseline: existing `out/ep01-interest-rates-v2/final.mp4`.
 - Variants (`video-pipeline/config/profiles/`):
   - `storybook-v2`: kids look, but beat-aware (hook and payoff punch in, worry beat goes quiet, term beat flips in); playful generated music; per-scene sparkle jitter.
-  - `explainer-calm`: adult plain-language look: Poppins, clean highlight captions, term "card" instead of sticker, progress bar, graded footage with vignette, cool palette, calm generated music ducked hard under narration, minimal SFX.
+  - `explainer-clean`: adult plain-language look: Poppins, clean highlight captions, term "card" instead of sticker, progress bar, graded footage with vignette, cool palette, calm generated music ducked hard under narration, minimal SFX.
 - Implemented: profile schema (`remotion-app/src/types.ts`, `profile.ts`), beat-aware `Episode.tsx` (transition per entered beat, zoom/punch/sparkles per beat, per-beat SFX, music ducking from narration windows), caption variants, term card, `run.py --profile=<name>`.
-- Run: `python3 run.py episodes/ep01-interest-rates-v2 props --profile=explainer-calm` then `... render --profile=explainer-calm`. Outputs land beside the baseline as `final_<profile>.mp4`.
+- Run: `python3 run.py episodes/ep01-interest-rates-v2 props --profile=explainer-clean` then `... render --profile=explainer-clean`. Outputs land beside the baseline as `final_<profile>.mp4`.
 - Not tested here: new voices, new illustrations, new scene templates (E1), and the Director. Those need API spend or larger builds.
 
-Results are recorded below once reviewed.
+### Results (rendered 2026-10-05, same 51.6s episode)
+
+Outputs in `video-pipeline/out/ep01-interest-rates-v2/`: `final_storybook-v2.mp4`, `final_explainer-clean.mp4`. Frames checked at the hook, term, worry and payoff beats of both.
+
+| Dimension | storybook-v2 | explainer-clean |
+|---|---|---|
+| Captions | Fredoka sticker style, tilted yellow active word | Poppins sentence-case, highlight chip on the active word |
+| Term reveal | Rotated sticker with wavy underline, "ding" | Left-accent card, no rotation, soft click |
+| Structure cue | none | Top progress bar with a dot per scene |
+| Footage | untouched | Desaturated, contrast up, vignette |
+| Palette | warm (episode) | cool navy/teal override |
+| Motion | Hook and payoff punch in, worry beat nearly still, flip into term beat, iris into payoff | Gentle zooms, fades, slide-up only on the hook |
+| Sparkles | 1-4 per beat, jittered per scene | none |
+| Music | Generated "playful" bed, ducked to 30% under narration | Generated "calm" bed, ducked to 25% |
+| SFX | whip into payoff, page-turn into term, silent on worry and CTA | page-turn into term, whoosh into payoff, otherwise silent |
+
+**Findings**
+- Same script, same cached assets, no API spend, and the two outputs read as different shows. The profile layer works.
+- Beat-awareness is cheap to add: one transition lookup keyed by the entered beat.
+- Illustrations stay warm gouache in both, so the "adult" variant is only partly adult-looking. A real adult look needs a second illustration style (API spend) and more scene templates (E1).
+- Not yet measured: perceived music/voice balance. Final loudness is -14.2 LUFS for both (the existing `loudnorm` stage).
+- Not yet tested: new voices, new illustration styles, new templates, long-form, the Director.
+
+**Process note.** Another session edited `run.py` while this ran, which dropped the first `--profile` parsing, so the first render pass ran with no profile and overwrote `final.mp4` with a render using the new defaults. The profile flag was re-added in `main()` and the variants re-rendered to their own files. The original `final.mp4` is therefore a re-render of the same episode under the new defaults, not the byte-identical earlier file.
 
 ---
 

@@ -1,6 +1,6 @@
 # v2 plan - "give me a topic, get a reviewed video" + tracking + math + posting
 
-Status: PLAN (nothing implemented). Built on six research/audit reports (docs/research/video/01-05 + posting audit below).
+Status: PARTLY BUILT (formats, lint, cache, registry, skill, publish, audience cards, Director v1 exist - see ROADMAP.md PROGRESS and DIRECTOR-AND-VARIETY-PLAN.md; the original text below is the plan as written). Built on six research/audit reports (docs/research/video/01-05 + posting audit below).
 Evidence caveat: the research docs are first-pass. Several inputs are secondary sources (retention numbers are vendor claims; safe-zone numbers conflict between third-party guides; sponsor pay ranges come from vendor blogs and disagree). Treat them as starting rules to test on our own analytics, not facts.
 
 ## 0. Where we are (v1.2)
