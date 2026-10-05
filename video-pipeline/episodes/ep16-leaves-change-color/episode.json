@@ -1,0 +1,468 @@
+{
+  "id": "ep16-leaves-change-color",
+  "title": "Why Do Leaves Change Color in Autumn?",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "audience": "kids",
+  "format_id": "what_if",
+  "topic_area": "science",
+  "one_idea": "Trees deliberately stop making green chlorophyll in autumn, revealing yellow-orange pigments that were always there and making red pigments from trapped sugars.",
+  "analogy": {
+    "source_term": "Trees stop making green chlorophyll in autumn, uncovering hidden pigments",
+    "domain": "playground",
+    "mapping": [
+      [
+        "green chlorophyll",
+        "a green costume covering the raccoon's face"
+      ],
+      [
+        "leaf's hidden yellow and orange pigments",
+        "the raccoon's real orange-and-yellow fur underneath"
+      ],
+      [
+        "tree stops making chlorophyll",
+        "raccoon takes off the costume"
+      ]
+    ],
+    "limitation": "Unlike a costume, the yellow and orange colors were inside the leaf all along — the tree just stops hiding them.",
+    "true_term_reveal_beat": "s4"
+  },
+  "audience_misconception": "Kids think autumn cold or frost directly causes color change, rather than the tree deliberately stopping chlorophyll production.",
+  "structure": "ABT",
+  "direction": {
+    "mode": "cold-open-drama",
+    "mode_reason": "A single leaf visibly changing color embodies the question; drama 4 vs explainer 3.",
+    "lens": "lens-wonder-reaction",
+    "skills_used": [
+      "mode-cold-open-drama",
+      "arch-before-after",
+      "mode-bridge-question-card",
+      "cont-identity-string",
+      "arch-conventions",
+      "plan-scene-formula",
+      "real-dramatization-fidelity",
+      "cont-style-bridge"
+    ],
+    "cold_open": {
+      "archetype": "before-after",
+      "duration_s": 6,
+      "bridge": "question-card",
+      "bridge_frames": 30,
+      "question": "Why do trees change colors?",
+      "scene_ids": [
+        "s1",
+        "s2",
+        "s3"
+      ]
+    },
+    "style_segments": [
+      {
+        "id": "open",
+        "medium": "native",
+        "scene_ids": [
+          "s1",
+          "s2",
+          "s3"
+        ],
+        "description": "Cinematic-style before-after clip of a single autumn leaf; warm natural light on a single leaf against a soft bokeh forest background."
+      },
+      {
+        "id": "explain",
+        "medium": "native",
+        "scene_ids": [
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8"
+        ],
+        "description": "Children's picture-book illustration in warm candy colors with a raccoon character; flat frontal diorama lens, one soft-shadow painted shape, even warm daylight."
+      }
+    ]
+  },
+  "continuity": {
+    "characters": [
+      {
+        "id": "bruno",
+        "identity_string": "Bruno, a friendly round brown bear baker with a white apron and a tiny white chef hat, standing upright"
+      },
+      {
+        "id": "raccoon",
+        "identity_string": "a cute raccoon with dark grey fur, a grey scarf, big curious eyes, and tiny paws"
+      }
+    ],
+    "locations": [
+      {
+        "id": "autumn_hillside",
+        "description": "a sunny autumn hillside with trees in peak orange, yellow and red foliage, soft warm light, simple uncluttered background"
+      },
+      {
+        "id": "forest_close",
+        "description": "a single green-to-orange leaf on a branch against a softly blurred bright autumn forest background"
+      }
+    ],
+    "props": [],
+    "ledger": []
+  },
+  "claims": [
+    {
+      "claim": "Trees stop making green chlorophyll in autumn, revealing yellow and orange pigments that were always present in the leaf.",
+      "url": "https://www.farmersalmanac.com",
+      "verified": false
+    },
+    {
+      "claim": "Red and purple pigments are made by the leaf in autumn from sugars that become trapped as the leaf's connection to the tree closes.",
+      "url": "https://www.farmersalmanac.com",
+      "verified": false
+    },
+    {
+      "claim": "Sunny days and cool nights produce the most vivid autumn colors.",
+      "url": "https://www.almanac.com",
+      "verified": false
+    },
+    {
+      "claim": "The timing of autumn leaf color change varies by region and elevation, typically beginning in northern areas in September.",
+      "url": "https://www.almanac.com",
+      "verified": false
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.farmersalmanac.com",
+      "label": "Farmers' Almanac"
+    },
+    {
+      "url": "https://www.almanac.com",
+      "label": "The Old Farmer's Almanac"
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "1",
+      "scene": "s4",
+      "source": "https://www.farmersalmanac.com"
+    },
+    {
+      "step": "2",
+      "scene": "s5",
+      "source": "https://www.farmersalmanac.com"
+    },
+    {
+      "step": "3",
+      "scene": "s6",
+      "source": "https://www.almanac.com"
+    },
+    {
+      "step": "4",
+      "scene": "s7",
+      "source": "https://www.farmersalmanac.com"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "chlorophyll",
+      "kind": "term",
+      "definition": "the green pigment in leaves that makes food for the tree during summer",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s4",
+        "s5"
+      ]
+    },
+    {
+      "name": "carotenoid pigments",
+      "kind": "term",
+      "definition": "yellow and orange pigments that were always hiding inside the leaf",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "name": "anthocyanin pigments",
+      "kind": "term",
+      "definition": "red and purple pigments made by the leaf in autumn from trapped sugars",
+      "introduced_in": "s6",
+      "needed_in": [
+        "s6"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Why does a single leaf change from green to orange right before our eyes?",
+      "raised_in": "s1",
+      "paid_in": "s4"
+    }
+  ],
+  "news_hook": {
+    "event": "The Old Farmer's Almanac 2026 Fall Foliage Map and Forecast was published, showing autumn colors beginning across northern states in September.",
+    "date": "2026-09-15",
+    "url": "https://www.almanac.com"
+  },
+  "original_contribution": "Explains the three-pigment mechanism (masked yellow/orange + newly-made red) clearly for kids, using a costume-reveal analogy, making it concrete and memorable.",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "sponsor": null,
+  "disclosure": null,
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Maya, a woman in her late 20s, shoulder-length black hair, mustard-yellow jacket, warm brown skin, expressive face",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "bruno": "Bruno, a friendly round brown bear baker with a white apron and a tiny white chef hat, standing upright",
+      "raccoon": "a cute raccoon with dark grey fur, a grey scarf, big curious eyes, and tiny paws"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "Watch this leaf. It just turned orange right in front of you.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Wide establishing shot of a sunny autumn forest hillside in full orange, yellow and red foliage; warm golden-hour light streaming through the trees; a single branch is prominent in the foreground, medium shot, cinematic, soft natural light, shallow depth of field.",
+        "motion_prompt": "The camera holds a static shot as a single green leaf on a branch slowly transforms, its edges and veins flushing from vivid green into warm bright orange and golden yellow; the soft blurred autumn forest glows behind it; the leaf is the bright focal point in the frame.",
+        "last_frame_prompt": "The same single leaf is now fully bright orange and golden yellow; warm autumn light surrounds it; the blurred forest glows in the background; the leaf is the bright focal point in the frame."
+      },
+      "shot": {
+        "archetype": "awe-scale",
+        "size": "ws",
+        "move": "static",
+        "light_source": "warm golden-hour side light, soft forest bokeh fill",
+        "action": "the leaf transforms from green to orange",
+        "duration_s": 4,
+        "continuity_ids": [],
+        "location_id": "autumn_hillside",
+        "style_segment": "open"
+      },
+      "intent": "The viewer sees a leaf change color in real time and wants to know how."
+    },
+    {
+      "id": "s2",
+      "beat": "hook_absurd_premise",
+      "narration": "How does one leaf know to do that?",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Close-up of a single autumn leaf on a branch, viewed from slightly below, the leaf now fully bright orange and golden yellow with crisp veins; warm autumn light on its surface; the softly blurred forest glows gold and red in the background; medium close-up shot, cinematic, warm natural light.",
+        "motion_prompt": "The camera pushes in with small amplitude at slow speed toward the single bright orange leaf; the motion is gentle and curious, as if leaning closer to understand; the leaf hangs still and vivid against the warm glowing forest background.",
+        "last_frame_prompt": "The single bright orange leaf fills more of the frame, its veins crisp and golden; warm autumn light saturates the frame; the blurred forest glows behind it."
+      },
+      "shot": {
+        "archetype": "discovery",
+        "size": "mcu",
+        "move": "push in, small amplitude, slow",
+        "light_source": "warm top light on the leaf surface, soft forest bokeh fill",
+        "action": "the camera leans closer to the changed leaf",
+        "duration_s": 3,
+        "continuity_ids": [],
+        "location_id": "forest_close",
+        "style_segment": "open"
+      },
+      "intent": "The viewer's curiosity peaks — they need the answer."
+    },
+    {
+      "id": "s3",
+      "beat": "question",
+      "narration": "Why do trees change colors?",
+      "visual": {
+        "type": "steps",
+        "title": "Here's why",
+        "steps": [
+          "Chlorophyll masks the real colors",
+          "Trees stop making it in fall",
+          "The true colors shine through"
+        ]
+      },
+      "shot": {
+        "size": "ws",
+        "style_segment": "open"
+      },
+      "intent": "The question is stated clearly, setting up the explanation."
+    },
+    {
+      "id": "s4",
+      "beat": "analogy",
+      "narration": "All summer, the leaf wears a green costume called chlorophyll. It hides the leaf's true colors!",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A cute raccoon with dark grey fur, a grey scarf, big curious eyes, and tiny paws wears a bright vivid green costume that covers his whole body like a full disguise, only his bright eyes and tiny paws peek out from under the green; he stands on a sunny autumn hillside with orange trees behind him; he looks mischievous; medium wide shot, children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, absolutely no text, no letters"
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "The child sees the picture of the analogy — a raccoon hidden under a green costume — and links it to the leaf."
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "In autumn, the tree stops making chlorophyll. The costume comes off! Orange and yellow were hiding underneath all along.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A cute raccoon with dark grey fur, a grey scarf, big curious eyes, and tiny paws pulls off a bright vivid green costume; underneath he is bright warm orange and golden yellow with dark stripes on his tail; he looks surprised and delighted, eyes wide and sparkling; he wiggles happily on a sunny autumn hillside with orange and red trees behind him; medium shot, children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, absolutely no text, no letters",
+        "term": {
+          "label": "CHLOROPHYLL",
+          "sub": "the green costume the tree stops making",
+          "color": "sky"
+        }
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "The child sees the orange and yellow reveal — the costume metaphor lands clearly and the real term 'chlorophyll' is named."
+    },
+    {
+      "id": "s6",
+      "beat": "step2_escalation",
+      "narration": "Bright sun and cool nights make the most vivid red and purple. That is why colors look different every year.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Two cute raccoons with dark grey fur and grey scarves stand together under the same autumn tree; one raccoon is bathed in warm bright golden sunlight and his coat glows vivid orange and deep rich red; the other raccoon is in cool shade and his coat looks duller and more brown; both look up at the tree together, medium shot, children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, absolutely no text, no letters"
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "The child understands why some autumns have brighter colors than others."
+    },
+    {
+      "id": "s7",
+      "beat": "surprising_limit",
+      "narration": "Yellow and orange were always inside. The tree just stopped hiding them.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A cute raccoon with dark grey fur, a grey scarf, big curious eyes, and tiny paws looks down at his own paws, realizing his true colors were always there underneath; he stands on a sunny autumn hillside with trees glowing orange, yellow and red all around him; he smiles softly with understanding, medium shot, children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, absolutely no text, no letters"
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "The child grasps the limitation of the analogy — the colors were always present, just hidden."
+    },
+    {
+      "id": "s8",
+      "beat": "payoff_cta",
+      "narration": "Each autumn, trees drop their disguise. They show their true colors! Share this with a friend!",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "The camera holds a static shot as a cute raccoon with dark grey fur, a grey scarf, big curious eyes, and tiny paws wiggles happily and waves at the viewer with both tiny paws; he stands surrounded by trees glowing vivid orange, yellow and red; warm sparkles float in the air around him; the autumn hillside is bright and celebratory.",
+        "last_frame_prompt": "A cute raccoon with dark grey fur, a grey scarf, big curious eyes, and tiny paws waves happily at the viewer; trees glow vivid orange, yellow and red all around him; warm sparkles float in the air; the autumn hillside is bright and celebratory."
+      },
+      "shot": {
+        "archetype": "impact",
+        "size": "ms",
+        "move": "static",
+        "light_source": "warm top sunlight, bright autumn bokeh",
+        "action": "the raccoon waves and wiggles joyfully",
+        "duration_s": 5,
+        "continuity_ids": [
+          "raccoon"
+        ],
+        "location_id": "autumn_hillside",
+        "style_segment": "explain"
+      },
+      "intent": "The child leaves with the key idea: trees are showing their true colors, and feels proud to share it."
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s1",
+      "h": "Watch this leaf change color right before your eyes!",
+      "body": "How does one leaf know to do that?",
+      "tag": "WHY DO LEAVES CHANGE?",
+      "tagColor": "coral"
+    },
+    {
+      "image": "s4",
+      "h": "All summer, the leaf wears a green costume called chlorophyll.",
+      "tag": "CHLOROPHYLL",
+      "tagColor": "sky",
+      "body": "The green costume hiding the leaf's true colors"
+    },
+    {
+      "image": "s5",
+      "h": "In autumn, the tree stops making chlorophyll. The costume comes off!",
+      "tag": "ORANGE AND YELLOW",
+      "tagColor": "sunny",
+      "body": "These colors were hiding underneath all along"
+    },
+    {
+      "image": "s6",
+      "h": "Bright sun and cool nights make the most vivid colors.",
+      "tag": "WHY COLORS VARY",
+      "tagColor": "grape",
+      "body": "This is why autumn looks different every year"
+    },
+    {
+      "image": "s7",
+      "h": "The orange and yellow were always inside the leaf — the tree just stopped hiding them.",
+      "body": "Unlike a costume, the true colors were always there"
+    },
+    {
+      "image": "s8",
+      "h": "So every autumn, trees take off their disguise and show you who they really are!",
+      "tag": "NOW YOU KNOW!",
+      "tagColor": "mint",
+      "body": "Share this with a friend!"
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "Why Do Leaves Change Color in Autumn",
+    "title": "Why Do Leaves Change Color in Autumn?",
+    "title_options": [
+      "Why Do Leaves Change Color in Autumn? 🧡🍂",
+      "Why One Leaf Turns Orange Right Before Your Eyes",
+      "Why Trees Take Off Their Green Costume Every Fall",
+      "The Real Reason Leaves Change Color (Not What You Think!)",
+      "What Happens Inside a Leaf When It Turns Orange?"
+    ],
+    "title_rationale": "Uses the actual 'leaves change color' keyword from the news hook; concrete payoff line 'right before your eyes' adds curiosity; not a repeat of past titles.",
+    "description": "A raccoon in a green costume reveals the real reason trees change color every autumn. Chlorophyll, the disguise, comes off — and the true colors shine through!\n\nSources: Farmers' Almanac — https://www.farmersalmanac.com; The Old Farmer's Almanac — https://www.almanac.com.\n\n#Shorts #autumn #scienceforkids #leaves #fallcolors",
+    "tags": [
+      "why do leaves change color autumn",
+      "autumn science for kids",
+      "chlorophyll explained for kids",
+      "fall colors science",
+      "why leaves turn orange red yellow"
+    ],
+    "instagram_caption": "Why do leaves change color every autumn? 🍂 A raccoon in a green costume has the answer! Save this for your next fall walk. #autumn #scienceforkids #fallcolors #leaves #fall",
+    "pinned_comment": "What color do you think is the prettiest autumn leaf? Tell us below! Source: Farmers' Almanac — https://www.farmersalmanac.com",
+    "thumbnail": {
+      "text": "WHY LEAVES CHANGE"
+    },
+    "content_type": "explainer",
+    "long_form": {}
+  },
+  "topic": {
+    "headline": "Why do leaves change color in autumn",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://www.bls.gov/bls/",
+      "https://news.google.com/rss/articles/CBMiqAFBVV95cUxNUzJaSTZUM28ybXN0SVp2UkpONVJrQjZiTnRSSEJldkhDV01IUDJQTF9zQ2h5Y1g1Zm9LcDhUWENLYXcxdFhLNXQzTVRVNVdpZWFmRTZPS1BDVU9Td09DRUcwNXEzMW1STHlwanVFVzNTN3VWNUlSRHk4c0JSVkR2UEU2bTVuLVpibGRTWW1JbUQya3BFSm1sY0U1Znp0Nm9vbGxaLXBBcnQ?oc=5",
+      "https://news.google.com/rss/articles/CBMiekFVX3lxTE4wb2pMdmNqOFREdmp2WWFaTGpxbTRTMHlnSm91MjU1Z01KY05FTEdySGhuM3Z1SDFSWU1HcjF4ZF81LXRRMUtHdFV4bGZYRm5ORmFCQ1JId2NqbzR4LUhmRHR3UURoMU95d096OXJaV2lKb1Z0NF9mS3V3?oc=5",
+      "https://news.google.com/rss/articles/CBMiigFBVV95cUxPOUNkdzRNRV96eDFUNnlTZ2JCaWRyMkdoYV90QWd3Wmh2bUdvLWpkU3lhTDRWWFpNNjhwNFhPZFJUNXRHamxudzl5ejI2dnZuWW5HT3ItbldadXh1UjZpVTN4OEtaRDJlbHczcGhweTQwdjM0bTQxVndtRWxkN3dVR0c4UUJ4UENxLUE?oc=5",
+      "https://news.google.com/rss/articles/CBMikwFBVV95cUxObFlDa3lkd1Rka0ZONUN3Zlh0Nk1xY2xCWElsY0pFdy1IcXdyNElaZFl5aFU2YlU4OUwzOUk3VWZhYW5nTFg0aXZJV1lXWUhOLWJRQW1YenB1MUpIT3J0NXV0dl9qYlZYUnVHMnJUQng2SkJUWkxWeW1qMU5NT3ZBU0NYcFdydmJXdVNjaENzX3VFRzg?oc=5",
+      "https://news.google.com/rss/articles/CBMimAFBVV95cUxQWGM3NDc1REIyY3VPMFhic2NEOXJoN2l6NTREWU02TE1fNnphVjFJbVlKT3FRdmNXUFp3eHF3ZU1uakxpTGJNTVpBQWlKWU1ZOG5Cbmh4NkhadlB4MkxrdjJvem10RDVrNDFUZlc0WWdWdWI3YXhaaGVMc190NXdkdmpXakFGaDBrUnBqZ2FIN3czUmdJbnc4NA?oc=5",
+      "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5zTW02Yjl2RmJPTXZBbEY2ZHRGQjVvZFM0OXJSSThYOHZaeFVHYklUWEJMdS15bHBUcUJYWkVsTnhGQlU5U0MyQ1E1RE5wdWZBbFE?oc=5",
+      "https://news.google.com/rss/articles/CBMiswFBVV95cUxOdlVhUUg5X3hNUjhSTU53eFZBV1hIU1g5OXg4aHJjLU1ESXpIUDc5R1hNTmJ5YzVUUWU1ZkZUZHlKQ1BWb1BGYTdRRzdKdVJUcmY3eFpiUGdXdWt3RHRZWG5EZTZOSFNzM3lTOHVPSXQ0Nmw2SnRtR2FSNUJjdlVjeVZCdExzUlprOXZEeGJWQUlyYkxNa0xHWWJpTkFNUV9NZUlzaktzMTRBMFNBUk5fSkFCMA?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-05T11:58:18Z"
+}

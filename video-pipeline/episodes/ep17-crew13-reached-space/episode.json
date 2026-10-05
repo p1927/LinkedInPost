@@ -1,0 +1,523 @@
+{
+  "id": "ep17-crew13-reached-space",
+  "title": "Why you can't catch the space station by speeding up",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "audience": "curious_adult",
+  "format_id": "experiment",
+  "topic_area": "science",
+  "one_idea": "Speeding up in orbit raises your altitude, making you move slower; spacecraft catch the station by orbiting ahead and waiting.",
+  "audience_misconception": "Viewers believe a spacecraft should simply accelerate to catch up with the station, as if driving faster on a road.",
+  "analogy": {
+    "source_term": "Spacecraft catch the station by going to a slightly higher orbit ahead of it, not by accelerating toward it.",
+    "domain": "transport",
+    "mapping": [
+      [
+        "higher orbit ahead of the station",
+        "car A pulling ahead on the outer lane"
+      ],
+      [
+        "the station in the lower orbit behind",
+        "car B on the inner lane, going faster but covering less distance per lap"
+      ],
+      [
+        "orbit phasing — higher orbit = longer path = slower lap time",
+        "outer lane takes longer to complete a lap than the inner lane"
+      ]
+    ],
+    "limitation": "Unlike cars on a road, spacecraft cannot simply brake to wait — they use thrusters to raise or lower their orbit precisely."
+  },
+  "claims": [
+    {
+      "claim": "SpaceX Crew-13 docked with the International Space Station in under 8 hours using orbital phasing.",
+      "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/",
+      "verified": true
+    },
+    {
+      "claim": "In orbital mechanics, forward thrust raises the orbit's altitude rather than directly increasing speed relative to the target.",
+      "url": "https://en.wikipedia.org/wiki/Orbital_rendezvous",
+      "verified": true
+    },
+    {
+      "claim": "Orbit phasing involves adjusting orbital altitude so a spacecraft in a higher orbit is overtaken by a target in a lower orbit.",
+      "url": "https://en.wikipedia.org/wiki/Orbit_phasing",
+      "verified": true
+    }
+  ],
+  "sources": [
+    {
+      "claim": "SpaceX Crew-13 docked with the ISS in under 8 hours",
+      "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+    },
+    {
+      "claim": "Space rendezvous mechanics",
+      "url": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "claim": "Orbit phasing technique",
+      "url": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "Fire engines forward to raise the orbit to just ahead of the station",
+      "scene": "s3",
+      "source": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "step": "At the higher orbit, orbital period is longer, so the spacecraft falls behind the station",
+      "scene": "s5",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "The station in its lower, faster orbit catches up to the spacecraft from behind",
+      "scene": "s6",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "Spacecraft and station meet in the same orbit; docking proceeds",
+      "scene": "s7",
+      "source": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "Orbit phasing",
+      "kind": "term",
+      "definition": "Adjusting your orbital altitude to change your lap speed so a target catches up to you from behind.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6",
+        "s7"
+      ]
+    },
+    {
+      "name": "Orbital period",
+      "kind": "term",
+      "definition": "The time it takes to complete one full orbit; higher orbits have longer periods.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Why can't the spacecraft just speed up to catch the station?",
+      "raised_in": "s2",
+      "paid_in": "s4"
+    }
+  ],
+  "news_hook": {
+    "event": "SpaceX Crew-13 docked with the International Space Station in under 8 hours using orbit phasing.",
+    "date": "2026",
+    "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+  },
+  "original_contribution": "Explains why spacecraft use orbit phasing — a counterintuitive technique where you go to a higher orbit ahead and let the station catch up from behind — rather than simply accelerating toward it.",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "direction": {
+    "mode": "cold-open-drama",
+    "mode_reason": "A spacecraft chasing but never closing the gap is a real visible moment of consequence that embodies the episode question perfectly.",
+    "lens": "lens-procedural-precision",
+    "skills_used": [
+      "mode-cold-open-drama",
+      "arch-pursuit",
+      "mode-bridge-question-card",
+      "cont-identity-string",
+      "arch-conventions",
+      "real-dramatization-fidelity",
+      "edit-dual-contrast-cut",
+      "plan-density-ladder"
+    ],
+    "cold_open": {
+      "archetype": "pursuit",
+      "duration_s": 6,
+      "bridge": "question-card",
+      "bridge_frames": 30,
+      "question": "Why can't you just speed up?",
+      "scene_ids": [
+        "s1",
+        "s2"
+      ],
+      "beats": {
+        "hook": "s1",
+        "obstacle": "s1",
+        "cost": "s2"
+      }
+    },
+    "style_segments": [
+      {
+        "id": "open",
+        "medium": "cinematic",
+        "scene_ids": [
+          "s1",
+          "s2"
+        ]
+      },
+      {
+        "id": "explain",
+        "medium": "native",
+        "scene_ids": [
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8",
+          "s9",
+          "s10"
+        ]
+      }
+    ]
+  },
+  "continuity": {
+    "characters": [
+      {
+        "id": "capsule",
+        "identity_string": "a white and black SpaceX Crew Dragon capsule in Earth orbit, solar panels spread wide, lit by the warm glow of Earth below"
+      }
+    ],
+    "locations": [
+      {
+        "id": "lEO",
+        "description": "low Earth orbit, deep black space, Earth limb glowing blue and white at the bottom of frame"
+      }
+    ],
+    "props": [],
+    "ledger": [],
+    "style_lock": "cool teal ambient fill from Earth below, warm amber rim light on the capsule edge, locked camera at exact eye level with the orbit plane"
+  },
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {}
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Wide shot in deep space, a white and black SpaceX Crew Dragon capsule with wide solar panels visible in the foreground chasing toward frame right, a large space station structure visible ahead in the distance against a dark star field, Earth glowing blue and white at the bottom of frame, cool teal ambient light from Earth below, warm amber rim light on the capsule edge, locked camera at eye level.",
+        "motion_prompt": "The camera holds a static shot. The capsule drifts forward toward frame right at a steady pace. The space station ahead remains the same distance away. A slow, subtle push in emphasizes the growing gap."
+      },
+      "shot": {
+        "archetype": "pursuit",
+        "size": "ews",
+        "move": "static",
+        "duration_s": 3,
+        "continuity_ids": [
+          "capsule"
+        ],
+        "location_id": "lEO",
+        "style_segment": "open"
+      },
+      "intent": "Show the spacecraft chasing but never closing the gap to establish the episode's core mystery."
+    },
+    {
+      "id": "s2",
+      "beat": "story_hook",
+      "narration": "",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Insert close on the white and black SpaceX Crew Dragon capsule in deep space, engines glowing bright blue from thruster firing, solar panels catching the engine glow, dark star field behind, cool teal ambient fill from Earth below camera-left, camera at close range.",
+        "motion_prompt": "The camera holds a static shot. Bright blue engine exhaust flares outward from the capsule rear. The engine glow intensifies briefly, then the capsule continues drifting. The space station remains the same distance ahead."
+      },
+      "shot": {
+        "archetype": "pursuit",
+        "size": "cu",
+        "move": "static",
+        "duration_s": 3,
+        "continuity_ids": [
+          "capsule"
+        ],
+        "location_id": "lEO",
+        "style_segment": "open"
+      },
+      "intent": "Show the spacecraft firing engines and failing to close the gap — the counterintuitive failure."
+    },
+    {
+      "id": "s3",
+      "beat": "analogy",
+      "narration": "Why can't you just speed up to catch the station? Think of two cars on a roundabout. The outer lane travels farther each lap, so it completes laps slower. The inner lane covers less distance, moving faster.",
+      "visual": {
+        "type": "steps",
+        "title": "What forward thrust does in orbit",
+        "steps": [
+          "Forward thrust raises your orbit higher",
+          "Higher orbit = longer path around Earth",
+          "You are now ahead but slower to complete each lap",
+          "The station catches up from behind"
+        ]
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Introduce the core rule using a car analogy: forward thrust raises your orbit, not your relative speed. The lane comparison shows how higher orbits mean slower lap times."
+    },
+    {
+      "id": "s4",
+      "beat": "term",
+      "narration": "This is orbital mechanics. Forward thrust in orbit raises your altitude, not your speed.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "a clean animated orbital diagram showing a small spacecraft at one point on a lower circular orbit around a large circle representing Earth, a second higher orbit shown as a dashed ellipse above the first, the spacecraft's forward thruster shown firing to the right, arrows indicating the orbit raising upward to the higher path, deep navy background, teal and amber accents, flat vector illustration, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+        "term": {
+          "label": "ORBITAL MECHANICS",
+          "sub": "forward thrust raises orbit",
+          "color": "sky"
+        }
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Name the concept and show the orbital diagram. The analogy from the previous scene explains why this happens."
+    },
+    {
+      "id": "s5",
+      "beat": "and",
+      "narration": "A higher orbit takes longer to complete. So while you are ahead in the slower orbit, the station behind you is doing laps faster.",
+      "visual": {
+        "type": "orbit",
+        "mode": "orbit",
+        "rings": [
+          {
+            "id": "lower",
+            "r": 0.62,
+            "main": true
+          },
+          {
+            "id": "higher",
+            "r": 0.68,
+            "main": false
+          }
+        ],
+        "bodies": [
+          {
+            "id": "station",
+            "ring": "lower",
+            "label": "Station",
+            "color": "coral",
+            "startAngle": 180
+          },
+          {
+            "id": "craft",
+            "ring": "higher",
+            "label": "Spacecraft",
+            "color": "sky",
+            "startAngle": 60
+          }
+        ],
+        "reveal": [
+          {
+            "at": 0.4,
+            "show": [
+              "station",
+              "craft"
+            ],
+            "readout": {
+              "label": "Higher orbit",
+              "value": "longer lap"
+            }
+          }
+        ]
+      },
+      "shot": {
+        "size": "insert",
+        "style_segment": "explain"
+      },
+      "intent": "Show the spacecraft ahead in the higher orbit as the station catches up — the technique called orbit phasing."
+    },
+    {
+      "id": "s6",
+      "beat": "and",
+      "narration": "You do not chase the station. You get ahead and wait.",
+      "visual": {
+        "type": "orbit",
+        "mode": "orbit",
+        "rings": [
+          {
+            "id": "lower",
+            "r": 0.62,
+            "main": true
+          },
+          {
+            "id": "higher",
+            "r": 0.68,
+            "main": false
+          }
+        ],
+        "bodies": [
+          {
+            "id": "station",
+            "ring": "lower",
+            "label": "Station",
+            "color": "coral",
+            "startAngle": 200
+          },
+          {
+            "id": "craft",
+            "ring": "higher",
+            "label": "Spacecraft",
+            "color": "sky",
+            "startAngle": 80
+          }
+        ],
+        "reveal": [
+          {
+            "at": 0.0,
+            "highlight": [
+              "craft"
+            ],
+            "readout": {
+              "label": "Phasing complete",
+              "value": "same orbit"
+            }
+          }
+        ]
+      },
+      "shot": {
+        "size": "insert",
+        "style_segment": "explain"
+      },
+      "intent": "Show the spacecraft ahead in the higher orbit as the station catches up — the technique called orbit phasing."
+    },
+    {
+      "id": "s7",
+      "beat": "and",
+      "narration": "The station arrives from behind, and they meet in the same orbit.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Wide cinematic shot in deep space showing a white and black SpaceX Crew Dragon capsule approaching a large space station structure from below, both silhouetted against the dark star field with Earth glowing softly at the frame bottom, cool blue ambient light from Earth fill, warm amber rim on both vehicles, the capsule approaching slowly from below, locked camera at eye level.",
+        "motion_prompt": "The camera holds a static shot as the capsule drifts upward toward the station from below at a slow, controlled pace. The station remains stationary in frame. The distance between them shortens steadily. The camera begins a very slow push in as they draw close."
+      },
+      "shot": {
+        "archetype": "pursuit",
+        "size": "ws",
+        "move": "push in, small amplitude, slow",
+        "duration_s": 6,
+        "continuity_ids": [
+          "capsule"
+        ],
+        "location_id": "lEO",
+        "style_segment": "explain"
+      },
+      "intent": "Show the spacecraft and station meeting as the station catches up from behind — the payoff."
+    },
+    {
+      "id": "s8",
+      "beat": "payoff",
+      "narration": "Spacecraft do not race the station. They orbit ahead and wait.",
+      "visual": {
+        "type": "steps",
+        "title": "The orbit phasing rule",
+        "steps": [
+          "Raise orbit ahead of target",
+          "Wait in the higher, slower orbit",
+          "Target catches up from behind"
+        ]
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Summarize the orbit phasing rule in three clear steps so viewers can state it themselves."
+    },
+    {
+      "id": "s9",
+      "beat": "payoff",
+      "narration": "That is exactly how Crew-13 reached the station in under 8 hours.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "a clean animated orbital diagram showing two vehicles on the same final orbit around a large circle representing Earth, one vehicle labelled implicitly as the Crew Dragon capsule and the other as the space station, both on the same circular path at matching orbital height, deep navy background, teal and amber accents, flat vector illustration, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+        "term": {
+          "label": "DOCKING COMPLETE",
+          "sub": "crew-13 arrived",
+          "color": "mint"
+        }
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Connect the technique to Crew-13's real mission, grounding the explanation in the actual event."
+    },
+    {
+      "id": "s10",
+      "beat": "cta",
+      "narration": "Catching the space station is not about speed. It is about being in the right orbit at the right time.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "a clean orbital diagram showing a small spacecraft on a higher orbit ahead of a space station on a lower orbit behind, both on the same approach trajectory, deep navy background, teal and amber accents, flat vector illustration, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+        "term": {
+          "label": "RIGHT ORBIT, RIGHT TIME",
+          "sub": "send to someone who asks how spacecraft dock",
+          "color": "sunny"
+        }
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Close with the core takeaway and a reshare CTA that names a specific recipient."
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "catch the space station",
+    "title": "Why you can't catch the space station by speeding up",
+    "title_options": [
+      "Why you can't catch the space station by speeding up",
+      "The counterintuitive way spacecraft dock with the space station",
+      "Why Crew-13 caught the station without chasing it",
+      "How spacecraft actually catch the space station",
+      "Why speeding up in space makes you slower"
+    ],
+    "title_rationale": "States the counterintuitive core claim directly; the contradiction drives curiosity without overpromising.",
+    "description": "A spacecraft firing its engines should catch the space station, right? Wrong. In orbit, speeding up raises your altitude, which makes you slower. Here is how spacecraft actually catch the station — and how Crew-13 did it in under 8 hours.\n\nSources: NASA https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/",
+    "tags": [
+      "catch the space station",
+      "spacecraft docking",
+      "orbit phasing",
+      "Crew-13",
+      "space station",
+      "orbital mechanics",
+      "SpaceX",
+      "how spacecraft work"
+    ],
+    "instagram_caption": "A spacecraft should just speed up to catch the station, right? In orbit, forward thrust raises your altitude instead of your speed. Here is how spacecraft actually dock. 🚀 Save this for the person who thinks space travel is like driving. #SpaceDocking #OrbitalMechanics #Crew13",
+    "pinned_comment": "Send this to the friend who thinks spacecraft catch the station by flying faster. Sources: NASA https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/",
+    "content_type": "explainer",
+    "thumbnail": {
+      "text": "WHY YOU CAN'T JUST SPEED UP"
+    }
+  },
+  "director_notes": "ASSUME: Real NASA footage for s7 (spacecraft approaching station) is treated as a cinematic clip; the keyframe describes a plausible real-world shot. If footage exists, s7 should be replaced with that real clip and the keyframe discarded. The orbit scenes (s5, s6) use the free Remotion orbit type, not a paid clip.",
+  "topic": {
+    "headline": "How Crew-13 reached the space station in under 8 hours: why you can't catch the station by speeding up",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/",
+      "https://en.wikipedia.org/wiki/Orbital_rendezvous",
+      "https://en.wikipedia.org/wiki/Orbit_phasing"
+    ]
+  },
+  "updated_at": "2026-10-05T12:56:41Z"
+}

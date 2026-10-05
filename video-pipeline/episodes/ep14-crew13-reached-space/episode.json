@@ -1,0 +1,482 @@
+{
+  "id": "ep14-crew13-reached-space",
+  "title": "Why you can't just speed up to catch the space station",
+  "series": "Big Questions, Tiny Words",
+  "audience": "curious_adult",
+  "status": "scripted",
+  "format_id": "news_explainer",
+  "topic_area": "science",
+  "one_idea": "Catching a space station is not about raw speed — it is about timing your orbit so that when you raise or lower your altitude, you meet the station at the same point.",
+  "audience_misconception": "Most people assume that to reach the ISS faster, you just fly faster — but going faster puts you in a higher orbit, which actually takes longer to circle Earth.",
+  "structure": "ABT",
+  "analogy": {
+    "source_term": "The spacecraft goes slower at a lower orbit and completes each lap faster, catching up to the station ahead.",
+    "domain": "transport",
+    "mapping": [
+      [
+        "Spacecraft",
+        "Inner-race car"
+      ],
+      [
+        "ISS",
+        "Outer-race car"
+      ],
+      [
+        "Orbit altitude",
+        "Track lane"
+      ],
+      [
+        "Orbital speed",
+        "Car speed"
+      ],
+      [
+        "Laps per hour",
+        "Laps per hour"
+      ]
+    ],
+    "limitation": "Unlike cars on a track, a spacecraft cannot just slow down — it must fire engines to drop to a lower orbit.",
+    "true_term_reveal_beat": "s5"
+  },
+  "claims": [
+    {
+      "claim": "The ISS orbits Earth at roughly 7.66 km/s, completing one lap every 90 minutes.",
+      "url": "https://en.wikipedia.org/wiki/Orbital_rendezvous",
+      "verified": true
+    },
+    {
+      "claim": "Going faster in space raises your orbit, giving you a longer path around Earth and causing you to fall further behind the station.",
+      "url": "https://en.wikipedia.org/wiki/Orbit_phasing",
+      "verified": true
+    },
+    {
+      "claim": "Spacecraft catch up to a station ahead by temporarily dropping into a lower orbit, where they travel a shorter path and close the distance.",
+      "url": "https://en.wikipedia.org/wiki/Orbit_phasing",
+      "verified": true
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "1",
+      "scene": "s3",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "2",
+      "scene": "s5",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "3",
+      "scene": "s6",
+      "source": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "Orbital speed",
+      "kind": "idea",
+      "definition": "The faster you travel in orbit, the higher your orbit becomes — and the longer your path around Earth.",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s4",
+        "s5"
+      ]
+    },
+    {
+      "name": "Orbit phasing",
+      "kind": "idea",
+      "definition": "Temporarily lowering your orbit so you complete laps faster and close the distance to a target ahead in the same orbit.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6",
+        "s7"
+      ]
+    },
+    {
+      "name": "Space rendezvous",
+      "kind": "idea",
+      "definition": "The process of bringing two spacecraft to the same point in orbit at the same time.",
+      "introduced_in": "s6",
+      "needed_in": [
+        "s7"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Why didn't Crew-13 just blast full speed to reach the station?",
+      "raised_in": "s1",
+      "paid_in": "s4"
+    }
+  ],
+  "news_hook": {
+    "event": "SpaceX Crew-13 arrived at the International Space Station in under 8 hours using a fast rendezvous profile",
+    "date": "2026-10-01",
+    "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+  },
+  "original_contribution": "Explains why speed alone cannot catch a space station, using a racetrack analogy that maps orbital altitude to track lanes, then reveals orbit phasing as the real mechanism Crew-13 uses.",
+  "packaging": {
+    "content_type": "explainer",
+    "primary_keyword": "catch the space station",
+    "title": "Why you can't just speed up to catch the space station",
+    "title_options": [
+      "Why you can't just speed up to catch the space station",
+      "How Crew-13 reached the ISS in under 8 hours",
+      "Why flying faster makes you miss the space station",
+      "The orbit phasing trick that brought Crew-13 to the station fast",
+      "Why speeding up won't catch the space station"
+    ],
+    "title_rationale": "The first option states the counterintuitive hook directly, matching the episode's core reveal.",
+    "description": "Flying faster should get you there sooner — except in orbit. Here's why Crew-13 used orbital geometry instead of raw speed to reach the ISS in under 8 hours.\n\nSources:\n- https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/\n- https://en.wikipedia.org/wiki/Orbital_rendezvous\n- https://en.wikipedia.org/wiki/Orbit_phasing\n\n#Shorts #space #spaceX #NASA #orbitalmechanics #ISS",
+    "tags": [
+      "orbital mechanics",
+      "space rendezvous",
+      "orbit phasing",
+      "ISS docking",
+      "Crew-13",
+      "spaceX dragon",
+      "how spacecraft catch the station"
+    ],
+    "instagram_caption": "Flying faster should get you to the space station sooner — except in orbit. Here's the orbital geometry trick Crew-13 used. Save this for the next launch. 🛰️\n#space #NASA #spaceX #orbitalmechanics #ISS #sciencetok",
+    "pinned_comment": "Which space mission should we take apart next? Let us know below.",
+    "thumbnail": {
+      "text": "DON'T JUST SPEED UP"
+    }
+  },
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "disclosure": null,
+  "sponsor": null,
+  "direction": {
+    "mode": "cold-open-drama",
+    "mode_reason": "A visible moment of consequence — the Dragon capsule gliding into the station — embodies the episode question without needing setup.",
+    "lens": "lens-observed-verite",
+    "skills_used": [
+      "mode-cold-open-drama",
+      "arch-pursuit",
+      "mode-bridge-question-card",
+      "mode-scene-engine-gate",
+      "arch-conventions",
+      "cont-identity-string",
+      "cont-axis-eyelines",
+      "cont-style-bridge",
+      "edit-hook-bridge",
+      "mode-loop-image"
+    ],
+    "cold_open": {
+      "archetype": "pursuit",
+      "duration_s": 5,
+      "bridge": "question-card",
+      "bridge_frames": 24,
+      "question": "Why didn't Crew-13 just fly faster?",
+      "scene_ids": [
+        "s1",
+        "s2"
+      ],
+      "beats": {
+        "hook": "s1",
+        "obstacle": "s2"
+      }
+    },
+    "style_segments": [
+      {
+        "id": "open",
+        "medium": "native",
+        "scene_ids": [
+          "s1",
+          "s2"
+        ],
+        "description": "Cinematic grade with paper-clean look; the clip of the Dragon approaching carries the cold open."
+      },
+      {
+        "id": "explain",
+        "medium": "native",
+        "scene_ids": [
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8"
+        ],
+        "description": "Clean editorial flat vector illustration, geometric shapes, isometric everyday objects, deep navy and teal on off-white, soft paper grain."
+      },
+      {
+        "id": "close",
+        "medium": "native",
+        "scene_ids": [
+          "s9"
+        ],
+        "description": "Same style as explain; callback to the cold open's final frame."
+      }
+    ],
+    "take_budget": {}
+  },
+  "continuity": {
+    "characters": [
+      {
+        "id": "dragon",
+        "identity_string": "the Dragon spacecraft: white capsule with black heat-shield tiles, visible thruster glow, solar wing panels extended"
+      },
+      {
+        "id": "station",
+        "identity_string": "the International Space Station: massive modular structure with silver and white panels, solar arrays spanning both sides, visible cupola windows"
+      }
+    ],
+    "locations": [
+      {
+        "id": "orbit",
+        "description": "low Earth orbit, 400 km altitude, Earth curved at the lower frame edge, deep black space with scattered stars"
+      },
+      {
+        "id": "racetrack_analogy",
+        "description": "abstract overhead view of two circular racetracks, concentric circles, one inner lane and one outer lane"
+      }
+    ],
+    "props": [],
+    "ledger": []
+  },
+  "style": {
+    "palette": {
+      "bg": "#F7F8FA",
+      "ink": "#1A2744",
+      "teal": "#1DB8A0",
+      "amber": "#F5A623",
+      "navy": "#1A2744",
+      "white": "#FFFFFF"
+    },
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "Watch the Dragon reach the station.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Wide shot of a white capsule approaching a massive modular space station from below against the black sky of low Earth orbit; Earth curved at the lower frame edge; the station's solar arrays span the full width of the frame; soft engine glow visible on the approaching capsule.",
+        "motion_prompt": "The camera holds a static shot as the Dragon capsule glides slowly into frame from below; the ISS fills the background; thrusters fire in small controlled bursts; the capsule rotates gently and drifts closer."
+      },
+      "intent": "The viewer sees the pursuit and the precise, unhurried nature of orbital approach.",
+      "shot": {
+        "archetype": "pursuit",
+        "size": "ews",
+        "move": "static",
+        "lens_mm": 35,
+        "location_id": "orbit",
+        "action": "Dragon drifts closer to ISS",
+        "action_s": 2,
+        "start_state": "Dragon out of frame below, ISS framed wide",
+        "end_state": "Dragon visible in lower frame, ISS dominant above",
+        "duration_s": 3,
+        "continuity_ids": [
+          "dragon",
+          "station"
+        ],
+        "style_segment": "open"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "hook_turn",
+      "narration": "Touchdown. Eight hours from Earth.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Close-up of the Dragon capsule nose in darkness against the soft glow of the station's solar panels; tiny thruster jets pulse with blue-white light; the ISS module fills the frame, lit silver and white against black space.",
+        "motion_prompt": "The camera pushes in with small amplitude at slow speed toward the Dragon's nose; thrusters pulse once more; the capsule edges forward and connects with the station docking port."
+      },
+      "intent": "The payoff of the pursuit — the docking — arrives without hurry, making the approach look effortless.",
+      "shot": {
+        "archetype": "pursuit",
+        "size": "cu",
+        "move": "push in, small amplitude, slow",
+        "lens_mm": 85,
+        "location_id": "orbit",
+        "action": "Thrusters pulse, capsule edges forward and docks",
+        "action_s": 3,
+        "start_state": "Dragon nose visible, ISS glowing in darkness",
+        "end_state": "Capsule connected to station port",
+        "duration_s": 3,
+        "continuity_ids": [
+          "dragon",
+          "station"
+        ],
+        "style_segment": "open"
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "event_hook",
+      "narration": "Why didn't Crew-13 just blast full speed to reach the station?",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "The Dragon spacecraft floats in deep space; Earth curves along the lower frame edge; stars fill the background; the station is visible ahead.",
+        "motion_prompt": "The camera holds a static shot as the Dragon drifts forward at a steady pace; the station ahead remains distant; the scene conveys unhurried precision."
+      },
+      "intent": "Restate the hook question so it is fully formed in the viewer's mind before the explanation begins.",
+      "shot": {
+        "archetype": "discovery",
+        "size": "ws",
+        "move": "static",
+        "lens_mm": 24,
+        "location_id": "orbit",
+        "action": "Dragon drifts at steady speed toward the station",
+        "action_s": 2,
+        "start_state": "Dragon mid-frame with station ahead",
+        "end_state": "Same frame, slight drift closer",
+        "duration_s": 2,
+        "continuity_ids": [
+          "dragon",
+          "station"
+        ],
+        "style_segment": "open"
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "one_line_context",
+      "narration": "Here is the misconception: faster means you arrive sooner.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy teal and one warm amber accent on an off-white background, a simple bold arrow pointing diagonally upward, representing speed, floating alone in a vast space of off-white, no text, no letters"
+      },
+      "intent": "Name the intuitive but wrong assumption clearly, so the reveal that follows has a target.",
+      "shot": {}
+    },
+    {
+      "id": "s5",
+      "beat": "stakes",
+      "narration": "But in orbit, faster means higher. Higher means a longer path. You fall further behind.",
+      "visual": {
+        "type": "diagram",
+        "nodes": [
+          {
+            "id": "earth",
+            "type": "sphere",
+            "position": "bottom_center",
+            "color": "navy"
+          },
+          {
+            "id": "inner_orbit",
+            "type": "ring",
+            "color": "teal"
+          },
+          {
+            "id": "outer_orbit",
+            "type": "ring",
+            "color": "amber"
+          }
+        ],
+        "prompt": "clean editorial flat vector illustration, geometric shapes, deep navy teal and one warm amber accent on an off-white background, Earth centered at the bottom of the frame, two concentric circular orbits shown as thin elegant rings, the inner orbit in teal colored slightly lower, the outer orbit in amber colored slightly higher, both orbits labeled with a subtle curved arrow showing direction of travel, no text no letters no numbers no words"
+      },
+      "intent": "Show the counterintuitive core: faster speed raises orbit, raising orbit lengthens the path.",
+      "shot": {}
+    },
+    {
+      "id": "s6",
+      "beat": "worry",
+      "narration": "Think of two cars on circular tracks. The inner car goes slower but finishes each lap faster.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "clean editorial flat vector illustration, geometric shapes, deep navy teal and one warm amber accent on an off-white background, overhead view of two concentric circular racetracks, an inner track colored teal with a small red toy-like car near the front, an outer track colored amber with a small blue toy-like car near the front, both cars pointing in the same clockwise direction, the outer car slightly larger to suggest higher speed, no text, no letters"
+      },
+      "intent": "The racetrack analogy makes the core paradox concrete before the limitation is stated.",
+      "shot": {}
+    },
+    {
+      "id": "s7",
+      "beat": "what_to_watch",
+      "narration": "Catching up means dropping lower, closing the gap, then rising back up to meet the station.",
+      "visual": {
+        "type": "steps",
+        "title": "Orbit Phasing",
+        "steps": [
+          "Match the station's altitude and speed",
+          "Lower your orbit slightly",
+          "Complete shorter laps and close the gap",
+          "Raise back to the station's orbit and dock"
+        ]
+      },
+      "intent": "Name the true mechanism — orbit phasing — on screen at the moment it is spoken.",
+      "shot": {}
+    },
+    {
+      "id": "s8",
+      "beat": "verdict",
+      "narration": "Old method: two days. Crew-13: under 8 hours. Same distance. Different timing.",
+      "visual": {
+        "type": "compare",
+        "colA": "OLD METHOD",
+        "colB": "CREW-13",
+        "rows": [
+          {
+            "a": "2 days to dock",
+            "b": "Under 8 hours to dock"
+          }
+        ],
+        "winner": "B"
+      },
+      "intent": "The comparison makes the achievement concrete and memorable with a real number.",
+      "shot": {}
+    },
+    {
+      "id": "s9",
+      "beat": "story_payoff",
+      "narration": "Catching the station is not about raw speed. It is about where you fly and when.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "clean editorial flat vector illustration, geometric shapes, deep navy teal and one warm amber accent on an off-white background, the Dragon spacecraft in white with visible thruster glow approaching the ISS in the same teal and amber color scheme, Earth just visible at the bottom edge, the two vehicles aligned at the same orbit line, no text, no letters"
+      },
+      "intent": "Visual callback to the cold open's final frame, now framed inside the explainer's style; the loop closes.",
+      "shot": {}
+    },
+    {
+      "id": "s10",
+      "beat": "cta",
+      "narration": "Now you know why Crew-13 reached the station in under 8 hours. Send this to someone who thinks you just fly faster in space.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "clean editorial flat vector illustration, geometric shapes, deep navy teal and one warm amber accent on an off-white background, the Dragon spacecraft in white and the ISS side by side in the same orbit, a small teal arrow curving from the Dragon toward the station, the two vehicles connected by a thin graceful line, space open and vast around them, no text, no letters"
+      },
+      "intent": "A reshare CTA naming the Dragon, the station, and the eight hours.",
+      "shot": {}
+    }
+  ],
+  "posts": [
+    {
+      "platform": "youtube_shorts",
+      "scheduled": null
+    },
+    {
+      "platform": "instagram_reels",
+      "scheduled": null
+    },
+    {
+      "platform": "tiktok",
+      "scheduled": null
+    }
+  ],
+  "director_notes": "ASSUME: the NASA blog post (source URL https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/) confirms the 8-hour docking timeline; the orbital rendezvous and orbit phasing Wikipedia pages confirm the mechanism.\n\nFormat chosen: news_explainer — the Crew-13 docking is a real event (2026-10-01) and the episode's core message is a mechanism reveal, best structured as event hook → misconception → analogy → real mechanism → comparison.\n\nAnalogy chosen: racetrack mapping — inner car (slower, lower orbit, more laps per hour) vs outer car (faster, higher orbit, fewer laps per hour); limitation: spacecraft cannot simply slow down, they must fire engines to change orbit.\n\nOpen loops: [s1-s2 opened — why didn't Crew-13 just fly faster?; paid at s4-s5 — faster raises orbit, you fall behind]; [s6 opened — racetrack analogy, paid at s7 — orbit phasing is the real mechanism].\n\nUnresolved QA warnings: none.\n\nClaims to verify before approval: the ISS orbital speed (~7.66 km/s) and lap time (90 min) should be confirmed from the Wikipedia orbital rendezvous source; the 8-hour Crew-13 docking time should be confirmed from the NASA blog source; the two-day old-method baseline for comparison should be sourced.",
+  "topic": {
+    "headline": "How Crew-13 reached the space station in under 8 hours: why you can't catch the station by speeding up",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/",
+      "https://en.wikipedia.org/wiki/Orbital_rendezvous",
+      "https://en.wikipedia.org/wiki/Orbit_phasing",
+      "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNcHZ3M1ozMmFmd3NydFZJVTh0a1h0dWtDT2szWUhCNVF2RDVCWWFjWEw4WlRGMDl0dHgxdGdYU3F1N3lHQ18zNFIzOVBPc1RRT1lTNzhubEw4Sk5iMmRPRDd2Xy1BbTZKdV9WMGdjcGE2YzdHdWI4RmI0R3pFRW5xaXR2TEJ5czRrR2U3S2pqQndwUVBWODJ2X3FsMWk4b2cySnJBN2FVUkU1bUZZVFZDSG82X05jTlRCdkhyQUJWb2gtLUthdThuWE1fMVBSVzFDSzRsR1J6VENZeEM4cW10UFZ3?oc=5",
+      "https://news.google.com/rss/articles/CBMiwgFBVV95cUxPbDVJOWJSa25mSEZWeWVFOFh3eE9EYWJXZUtlTUpWaXRvOGNEeWM1d2dsYmZ3b1c4Wl9feWJRczU3MXkwakZQQlJfVUswYmNyR2FxOHJZMl81Szk2blJtanIwR1VkZFVDNmc3NHBKbGdHa0I1QVo1eHUtWm9CT0w1dUQ1c3NCNXd4Z2hPNEFmTkpxcVo4bVlhQTNoVm5TYzF1dmNVWTlxSElSSnhuOG5pWmJQUEctQ3ozbndEQ19vcFpNUQ?oc=5",
+      "https://news.google.com/rss/articles/CBMixwFBVV95cUxPSWZLSUNzelc3Z0lldFBEQ2RENUQ1UVRRWTM1TGJEbmpOSndrWHZIVFlFbDMySkpFM3U4azc3UWlLeGlLYkNVclZoUUdUSGRXMGgwNzF5ZGd2MWxXRUcwYWdCOGxhZHB6eWFtUDZwZkFORG5JOG9Tb1pQTUVYa3dDUXcwQjl6SDkzVHpzUXNGbUU3MHhwOUxETnR2YU04dXh3TTU4eVo0UjJzVFdnaUFSV04ySjFsYlhTYjdyT1BfME10d0pid21Z?oc=5",
+      "https://news.google.com/rss/articles/CBMivAFBVV95cUxNeFUtOWtyelZfVjVTN1dFa3NCRTZGbVhhb0FGMlZKVjNwNVdZdHlNS1QxU0s5SS1jeVVLQnNIZzhGWWVuejREOVpuNFV1eVJOc3JjVmt0TmtiRnhmckszY2hnTm9SVVRmUk1ibDBsSFhJWUhITEtfVi1UM29RbWhBOVE0UVhoWU5NcmtGUkJrMlMxN2p2c0dBaHpMQlhNQWlwNEFaazJjUUZZbHkxY1VGTVNya3J5elJYaE5rWg?oc=5",
+      "https://news.google.com/rss/articles/CBMipAFBVV95cUxObUJDRlNkajBLY0hRRzlSY0VTa01IcURGSXJoVV9wc3Bfd0FqTFk1WldPOERLSXI1S0JfOHhyNF9vUTlKUW1qYVgySW5LNUFkWENKcXFWM01odTZ4eGtIQVNFcjNJbENkN0Y2YWdUMnhDNWZDa1ZxZnB2bnJYMElDUk5rS0RUMEdGc2lJbEotTE90NlZBT0tlcHJPTkZyR0FzOXNiRQ?oc=5",
+      "https://news.google.com/rss/articles/CBMiekFVX3lxTE1SRm93V1hZTEw2MWdxVlA0ZjNENVpKYXFaUnVJZFJkdUtBUU53R3dGZVMwSkFIeUJLY2NtMjdrY2ozQkN4Q0sycENwWi1vamF4U0Jsd242RnVzaFdFRExjMjdnVnhjcHU3TU1qandJVW9uUi1sQWhGdHhn?oc=5",
+      "https://news.google.com/rss/articles/CBMivwFBVV95cUxQSTZOcWNtT2w2LUg5U2VOTk9FVWFiclVxYkN2ejlPTWtBQnlWbVFqSm9LdFgtc04zRGlTQUtIamF6S1NaYVVXaE01QTRaM2VwalFROThlUW94aXBlaHdRMmQ0V2k2ZFM2LVZ5d1MtUllUTUF2aDROYVpYSkJVTlVuMEhMVjFNMjBUNEF1Vy1Va0pjMjB2cXNoUTlSQ05NNlg5dGptLVl3cm5ueTdUUEJkTHV3MmFVeVlSUEFhM2NGQdIBxAFBVV95cUxQUVB6UFl1WG9CUlg0bjg1S0o4WDRsbFdpWTE4ZWtpbEZPYVFXS3ZvSEZPTEpJTmg0dWNJb25hM1FSX19OZGl6OFRxU0JKdWVlVXFxaTJKN0RSV1Z2eDhhb2wzY2VBS1JfSGZ6RFhUem9tSEtGMHJUcjNrUmhOYTB3aTB0WHhUbFk3bkZCdUhMbm5jd0Z3MWJWaHRrUlBJREJOVTdkM0hpNEJZTnByNWg1S2o4UUVOZTFQMTdibjV1VThESVpw?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-05T11:03:11Z"
+}

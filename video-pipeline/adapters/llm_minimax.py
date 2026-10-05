@@ -5,6 +5,7 @@ M2.5/M2.7 are *thinking* models: their <think> tokens count against max_completi
 and strip any <think> block before the caller sees the text. Fallback chain over `models`; per model, a timeout / connection error / 429 / 5xx is retried with backoff (`retry_waits`, default
 30/90/180 s, i.e. up to 4 attempts) before the next model is tried; auth errors fail immediately."""
 import re
+import threading
 import time
 
 import requests
@@ -15,10 +16,32 @@ _BASE = "https://api.minimax.io/v1"
 _THINKING = ("MiniMax-M2.7", "MiniMax-M2.5", "MiniMax-M3")
 
 
+def _post_with_deadline(url: str, body: dict, headers: dict, timeout: float, deadline: float):
+    """requests' `timeout` is per read, so a server that dribbles bytes (or a stalled proxy) can hold a call forever. This adds an overall
+    wall-clock deadline: past it we raise requests.Timeout, which the retry/fallback logic below already handles."""
+    box: dict = {}
+
+    def run():
+        try:
+            box["r"] = requests.post(url, json=body, headers=headers, timeout=timeout)
+        except BaseException as e:  # noqa: BLE001
+            box["e"] = e
+
+    t = threading.Thread(target=run, daemon=True)  # daemon: a stuck socket must not keep the process alive after we give up
+    t.start()
+    t.join(deadline)
+    if t.is_alive():
+        raise requests.Timeout(f"no complete response within {deadline:.0f}s (wall-clock deadline)")
+    if "e" in box:
+        raise box["e"]
+    return box["r"]
+
+
 class MiniMaxLLM(JsonLLM):
-    def __init__(self, models=("MiniMax-M2.7",), temperature=0.7, max_tokens=12000, think_overhead=6000, tries=3, timeout=420, retry_waits=(30, 90, 180)):
+    def __init__(self, models=("MiniMax-M2.7",), temperature=0.7, max_tokens=12000, think_overhead=6000, tries=3, timeout=420, retry_waits=(30, 90, 180), deadline_extra=60):
         self.models, self.temperature, self.max_tokens = list(models), temperature, max_tokens
         self.think_overhead, self.timeout = think_overhead, timeout
+        self.deadline = timeout + deadline_extra  # overall cap per attempt (see _post_with_deadline)
         self.retry_waits = tuple(retry_waits)[:max(0, tries)] if tries else ()  # `tries` = number of RETRIES (kept for config compatibility)
 
     def generate(self, prompt: str, system: str = "", json_mode: bool = True, temperature=None) -> str:
@@ -33,7 +56,7 @@ class MiniMaxLLM(JsonLLM):
             for attempt in range(len(self.retry_waits) + 1):
                 retry = attempt < len(self.retry_waits)
                 try:
-                    r = requests.post(f"{_BASE}/chat/completions", json=body, headers=minimax_headers(), timeout=self.timeout)
+                    r = _post_with_deadline(f"{_BASE}/chat/completions", body, minimax_headers(), self.timeout, self.deadline)
                 except (requests.Timeout, requests.ConnectionError) as e:  # ReadTimeout after 420 s killed ep19's run: retry, then fall back
                     last = f"{model} {type(e).__name__}"
                     if retry:

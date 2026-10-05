@@ -112,6 +112,23 @@ def check_news_web() -> list:
     return out
 
 
+def check_live() -> list:
+    """No-network check of the live-runs viewer's safety contract: key-like strings are redacted, run ids cannot traverse paths."""
+    import live_server
+    import runlog
+    out = []
+    red = live_server.redact("Authorization: Bearer abcdefghijklmnop1234 api_key=sk-secretsecret123456 ok text")
+    if "abcdefghijklmnop1234" in red or "secretsecret123456" in red or "ok text" not in red:
+        out.append("live_server.redact: a key-like string leaked or normal text was damaged")
+    if any(live_server.RUN_ID.match(x) for x in ("../etc", "20261005-120000-1/../x", "", "abc")):
+        out.append("live_server.RUN_ID accepts an unsafe run id")
+    try:
+        runlog.list_runs(1)
+    except Exception as e:  # noqa: BLE001
+        out.append(f"runlog.list_runs raised {type(e).__name__}: {e}")
+    return out
+
+
 def check_checklist() -> list:
     out = []
     rules = yaml.safe_load((ROOT / "direction" / "qa_checklist.yaml").read_text())["rules"]
@@ -159,7 +176,7 @@ def main() -> int:
         print(f"       {i}")
     for i in snotes:
         print(f"       (draft, not gating) {i}")
-    for name, fn in (("safe zones", check_safe_zones), ("storyboard", check_storyboard), ("skill copies", check_skill_copies), ("news web", check_news_web), ("checklist", check_checklist), ("doc refs", check_doc_refs)):
+    for name, fn in (("safe zones", check_safe_zones), ("storyboard", check_storyboard), ("skill copies", check_skill_copies), ("news web", check_news_web), ("live runs", check_live), ("checklist", check_checklist), ("doc refs", check_doc_refs)):
         issues = fn()
         bad += bool(issues)
         print(f"{'FAIL' if issues else 'ok  '} {name}")

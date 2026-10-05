@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ExternalLink, Film, Search, Video, X } from 'lucide-react';
 import type { BackendApi } from '../../services/backendApi';
-import type { Episode, EpisodeStatus } from './types';
+import type { Episode } from './types';
 import { EPISODE_STATUSES } from './types';
 import { Button } from '@/components/ui/button';
+import { LiveRunsPanel } from './LiveRunsPanel';
 
 // ---------------------------------------------------------------------------
 // Status badge
@@ -181,6 +182,40 @@ function FilterBar({
 // Main page
 // ---------------------------------------------------------------------------
 
+
+type VideosTab = 'episodes' | 'live';
+
+function VideosHeader({ tab, onTab }: { tab: VideosTab; onTab: (t: VideosTab) => void }) {
+  const btn = (id: VideosTab, label: string) => (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={tab === id}
+      onClick={() => onTab(id)}
+      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+        tab === id ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-black/5 dark:hover:bg-white/[0.06]'
+      }`}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15">
+        <Video className="h-5 w-5" aria-hidden />
+      </span>
+      <div>
+        <h1 className="text-xl font-bold text-ink dark:text-slate-100">Videos</h1>
+        <p className="text-sm text-muted">{tab === 'live' ? 'Live pipeline runs on this machine' : 'Episodes from the video pipeline'}</p>
+      </div>
+      <div className="ml-auto flex gap-1" role="tablist" aria-label="Videos views">
+        {btn('episodes', 'Episodes')}
+        {btn('live', 'Live runs')}
+      </div>
+    </div>
+  );
+}
+
 export function EpisodesPage({
   idToken,
   api,
@@ -197,6 +232,7 @@ export function EpisodesPage({
   const [statusFilter, setStatusFilter] = useState('');
   const [topicAreaFilter, setTopicAreaFilter] = useState('');
   const [seriesFilter, setSeriesFilter] = useState('');
+  const [tab, setTab] = useState<VideosTab>('episodes');
 
   useEffect(() => {
     let cancelled = false;
@@ -240,18 +276,18 @@ export function EpisodesPage({
     return list;
   }, [episodes, statusFilter, topicAreaFilter, seriesFilter, search]);
 
+  if (tab === 'live') {
+    return (
+      <div className="flex flex-col gap-4 px-4 pb-12 pt-4 md:px-6">
+        <VideosHeader tab={tab} onTab={setTab} />
+        <LiveRunsPanel />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 px-4 pb-12 pt-4 md:px-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15">
-          <Video className="h-5 w-5" aria-hidden />
-        </span>
-        <div>
-          <h1 className="text-xl font-bold text-ink dark:text-slate-100">Videos</h1>
-          <p className="text-sm text-muted">Episodes from the video pipeline</p>
-        </div>
-      </div>
+      <VideosHeader tab={tab} onTab={setTab} />
 
       {/* Filters */}
       {!loading && !error && episodes.length > 0 && (

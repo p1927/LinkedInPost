@@ -16,6 +16,7 @@ const PAGE_TITLES: Record<WorkspaceNavPage, string> = {
   enrichment: 'Enrichment',
   trending: 'Trending',
   feed: 'Feed',
+  videos: 'Videos',
   'add-topic': 'New Post',
   automations: 'Automations',
   setup: 'Setup',

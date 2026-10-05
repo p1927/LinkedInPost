@@ -1,0 +1,427 @@
+{
+  "id": "ep15-crew13-reached-space",
+  "title": "The counterintuitive way spacecraft catch the space station",
+  "series": "Big Questions, Tiny Words",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "status": "scripted",
+  "format_id": "why_is_x",
+  "topic_area": "science",
+  "one_idea": "To catch something in orbit, you slow down and drop into a lower orbit — a lower orbit is faster, so you catch up.",
+  "analogy": {
+    "source_term": "To catch something in orbit, you slow down and drop into a lower orbit; a lower orbit is faster, so you close the gap.",
+    "domain": "shipping",
+    "mapping": [
+      [
+        "Dragon spacecraft trying to catch the ISS",
+        "a delivery truck trying to catch another truck on the same circular road"
+      ],
+      [
+        "Both spacecraft moving at thousands of miles per hour in orbit",
+        "both trucks driving at the same speed on the same road"
+      ],
+      [
+        "Dropping to a lower orbit to catch up faster",
+        "the chasing truck taking an inner lane, which has a shorter path and a higher speed"
+      ]
+    ],
+    "limitation": "Unlike trucks on a road, spacecraft in orbit are continuously falling around Earth — there is no road surface, just gravity.",
+    "true_term_reveal_beat": "s5"
+  },
+  "audience_misconception": "You should fly faster to catch the space station. In orbit, both objects are already moving at thousands of miles per hour; flying faster only raises your orbit and makes you move slower relative to the target.",
+  "structure": "ABT",
+  "claims": [
+    {
+      "claim": "SpaceX Crew-13 arrived at the International Space Station in under 8 hours using standard orbital rendezvous procedures.",
+      "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/",
+      "verified": true
+    },
+    {
+      "claim": "The ISS orbits Earth at approximately 17,500 miles per hour at an altitude of roughly 250 miles.",
+      "url": "https://en.wikipedia.org/wiki/Orbital_rendezvous",
+      "verified": true
+    },
+    {
+      "claim": "A spacecraft must match both the altitude and phase of the target orbit to dock; flying faster raises the orbit and does not close the gap.",
+      "url": "https://en.wikipedia.org/wiki/Orbit_phasing",
+      "verified": true
+    }
+  ],
+  "sponsor": null,
+  "disclosure": null,
+  "mechanism": [
+    {
+      "step": "1",
+      "scene": "s2",
+      "source": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "step": "2",
+      "scene": "s3",
+      "source": "https://en.wikipedia.org/wiki/Orbital_rendezvous"
+    },
+    {
+      "step": "3",
+      "scene": "s4",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "4",
+      "scene": "s5",
+      "source": "https://en.wikipedia.org/wiki/Orbit_phasing"
+    },
+    {
+      "step": "5",
+      "scene": "s6",
+      "source": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "orbital rendezvous",
+      "kind": "term",
+      "definition": "The process of bringing two orbiting spacecraft together so they can dock, requiring matched altitude, matched speed, and correct phase position.",
+      "introduced_in": "s2",
+      "needed_in": [
+        "s3",
+        "s4",
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "name": "orbit",
+      "kind": "idea",
+      "definition": "An object in orbit is constantly falling around a planet. The higher the orbit, the slower the orbital speed. The lower the orbit, the faster the speed.",
+      "introduced_in": "s2",
+      "needed_in": [
+        "s3",
+        "s4",
+        "s5"
+      ]
+    },
+    {
+      "name": "orbital phasing",
+      "kind": "term",
+      "definition": "Adjusting your orbit so that you arrive at the same point as the target at the same time, by raising or lowering your orbit to change your relative speed.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s5",
+        "s6"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "If the space station is so fast, why can't you just fly faster to reach it?",
+      "raised_in": "s1",
+      "paid_in": "s5"
+    }
+  ],
+  "news_hook": {
+    "event": "SpaceX Crew-13 docked with the International Space Station in under 8 hours after launch, using standard orbital rendezvous procedures.",
+    "date": "2026-10-01",
+    "url": "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/"
+  },
+  "original_contribution": "Explains the counterintuitive orbital phasing technique — that you must slow down to catch up — and connects it to the Crew-13 mission in plain terms without jargon.",
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "look": "Paper Clean; native dialect; cinematic segments use profile grade (saturate 0.95, contrast 1.04, vignette 0.25), tint 10-15% toward bg #F7F8FA, accent #1DB8A0 echo.",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {}
+  },
+  "direction": {
+    "mode": "explainer",
+    "mode_reason": "Abstract orbital mechanics mechanism; no named human-scale moment of consequence; curious_adult audience; format why_is_x aligns with explainer.",
+    "skills_used": [
+      "mode-explainer",
+      "arch-mechanism-demo",
+      "arch-analogy-world",
+      "real-analogy-world",
+      "plan-shot-fields",
+      "gram-shot-size",
+      "gram-camera-moves",
+      "prompt-leakage-sweep"
+    ],
+    "style_segments": [
+      {
+        "id": "native_explainer",
+        "medium": "native",
+        "scene_ids": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "description": "Remotion-native scenes using the curious_adult illustration style (flat vector, navy-teal palette, amber accent)."
+      }
+    ],
+    "take_budget": {}
+  },
+  "continuity": {
+    "characters": [],
+    "locations": [
+      {
+        "id": "earth_orbit",
+        "description": "Low Earth orbit, approximately 250 miles above Earth, showing the curvature of the planet and the blackness of space."
+      }
+    ],
+    "props": [
+      {
+        "id": "dragon_spacecraft",
+        "description": "SpaceX Dragon crew capsule with two outstretched solar panel wings, white and gray body, visible thruster pods."
+      },
+      {
+        "id": "iss",
+        "description": "International Space Station with solar panel arrays and module cylinders, shown smaller in the distance or in orbital path diagrams."
+      }
+    ],
+    "ledger": []
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "A spacecraft just reached the space station in under 8 hours.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "A SpaceX Dragon crew capsule with two white solar panel wings floats in the blackness of space, Earth glowing blue and curved in the background, the International Space Station with long solar arrays visible in the foreground, Lit by sunlight from camera-left, key light warm and hard, realistic, vertical 9:16 composition, absolutely no text",
+        "motion_prompt": "The Dragon spacecraft slowly rotates in orbit, Earth glowing in the background, the International Space Station remains visible in frame throughout the rotation.",
+        "reference_images": []
+      },
+      "shot": {
+        "archetype": "arch-awe-scale",
+        "size": "ews",
+        "angle": "eye-level",
+        "move": "Static shot",
+        "lens_mm": 35,
+        "location_id": "earth_orbit",
+        "action": "Dragon slowly rotates in orbit",
+        "start_state": "Dragon capsule visible against Earth with ISS in frame",
+        "end_state": "Dragon still visible with ISS in frame",
+        "duration_s": 6,
+        "keyframe_from": "s1_keyframe",
+        "style_segment": "native_explainer"
+      },
+      "intent": "The viewer sees a real spacecraft in orbit and asks: how did it get there so fast?"
+    },
+    {
+      "id": "s2",
+      "beat": "cause_link_1",
+      "narration": "You might think: fly faster. But the space station is not standing still. It is falling around Earth at seventeen thousand miles per hour.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Earth shown as a large blue-green sphere with a slight atmospheric glow at the edges, centered in the frame with generous negative space, a wide white curved orbital ring encircles the planet at mid-height, a small detailed white and gray spacecraft with a small arrow indicator sits on this ring, space is deep black with a few distant white stars, clean flat vector illustration in deep navy and teal on off-white background with subtle paper grain, soft long shadows, vertical 9:16 composition, absolutely no text"
+      },
+      "intent": "The viewer understands the ISS is not stationary — it is already moving at extreme speed in its orbit."
+    },
+    {
+      "id": "s3",
+      "beat": "analogy",
+      "narration": "Imagine two trucks on the same circular road, both driving at exactly the same speed. Driving faster does not help you catch up.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Two isometric delivery trucks on parallel circular roads, both shown driving at the same pace from a top-down perspective, one truck slightly behind the other on the outer road, the roads are clean gray asphalt rings, the trucks are simple flat vector style in teal and navy, dark background, geometric and minimal, clean flat vector illustration on off-white with subtle paper grain, soft long shadows, vertical 9:16 composition, absolutely no text"
+      },
+      "intent": "The viewer grasps the core idea through a familiar analogy: same speed means no closing of the gap."
+    },
+    {
+      "id": "s4",
+      "beat": "cause_link_2",
+      "narration": "Instead, the chasing truck takes the inner lane. The inner lane is shorter. It is faster. Now the truck catches up.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Two isometric delivery trucks now on different lanes of the same circular road, the chasing truck on the inner lane is visibly ahead of the outer truck, both still moving, the inner lane path is shorter and the truck is moving faster, simple flat vector style in teal and navy, dark background, geometric and minimal, clean flat vector illustration on off-white with subtle paper grain, soft long shadows, vertical 9:16 composition, absolutely no text"
+      },
+      "intent": "The viewer understands the counterintuitive solution: change your orbit, not your speed."
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "Unlike trucks on a road, spacecraft are continuously falling around Earth. In space, this is called orbital phasing. You slow down, drop into a lower orbit, and you move faster — catching up from behind.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Earth shown as a large blue-green sphere, two concentric orbital rings around it, the outer ring shows a small detailed space station, the inner ring shows a small detailed spacecraft ahead of the station on the inner path, a curved arrow on the inner ring shows the faster direction, deep navy and teal palette, amber accent on the two spacecraft, clean flat vector illustration on off-white with subtle paper grain, soft long shadows, vertical 9:16 composition, absolutely no text",
+        "term": {
+          "label": "ORBITAL PHASING",
+          "sub": "change your orbit, not your speed",
+          "color": "sky"
+        }
+      },
+      "intent": "The viewer learns the true term and understands the exact orbital mechanism."
+    },
+    {
+      "id": "s6",
+      "beat": "story_payoff",
+      "narration": "That is exactly how Crew-13 reached the space station in under 8 hours.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "A SpaceX Dragon crew capsule with two outstretched white solar panel wings approaches the larger International Space Station with its long solar panel arrays from behind, both in clear view against the blackness of space, Earth glowing below, Lit by sunlight from camera-left, key light warm and hard, realistic, vertical 9:16 composition, absolutely no text",
+        "motion_prompt": "The camera holds a static shot as the Dragon spacecraft slowly pulls alongside the space station, both orbiting at matched speed, Earth glowing in the background.",
+        "reference_images": []
+      },
+      "shot": {
+        "archetype": "arch-reveal",
+        "size": "ws",
+        "angle": "eye-level",
+        "move": "Static shot",
+        "lens_mm": 50,
+        "location_id": "earth_orbit",
+        "action": "Dragon pulls alongside the station",
+        "start_state": "Dragon approaching from behind",
+        "end_state": "Both spacecraft aligned in orbit",
+        "duration_s": 6,
+        "keyframe_from": "s6_keyframe",
+        "style_segment": "native_explainer"
+      },
+      "intent": "The viewer sees the real spacecraft using orbital phasing in the Crew-13 mission."
+    },
+    {
+      "id": "s7",
+      "beat": "cta",
+      "narration": "Now you know. Send this to someone who thinks you can just fly faster to catch the space station.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Earth shown as a blue-green sphere centered in frame with one orbital ring visible, deep navy and teal palette, one warm amber accent on the orbital ring, off-white background with subtle paper grain, soft long shadows, generous negative space, vertical 9:16 composition, absolutely no text",
+        "reference_images": []
+      },
+      "shot": {
+        "archetype": "arch-awe-scale",
+        "size": "ws",
+        "angle": "eye-level",
+        "move": "Slow zoom in",
+        "lens_mm": 50,
+        "location_id": "earth_orbit",
+        "action": "Slow zoom toward Earth and orbital ring",
+        "start_state": "Earth with orbital ring visible",
+        "end_state": "Closer view of Earth with orbital ring",
+        "duration_s": 4,
+        "keyframe_from": "s7_keyframe",
+        "style_segment": "native_explainer"
+      },
+      "intent": "The viewer leaves with the lesson and a reason to reshare it."
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s6",
+      "h": "The counterintuitive way spacecraft catch the space station",
+      "body": "You slow down to catch something going 17,500 mph. Send this to anyone who thinks you can just fly faster.",
+      "tag": "ORBITAL PHASING",
+      "tagColor": "sky"
+    },
+    {
+      "image": "s2",
+      "h": "The space station is falling around Earth at 17,000 mph.",
+      "body": "It is not standing still waiting to be caught."
+    },
+    {
+      "image": "s3",
+      "h": "Two trucks on the same road, same speed: no catching up."
+    },
+    {
+      "image": "s4",
+      "h": "The inner lane is shorter and faster. Now you catch up.",
+      "tag": "THE INSIGHT",
+      "tagColor": "coral"
+    },
+    {
+      "image": "s5",
+      "h": "Orbital phasing: slow down, drop lower, move faster.",
+      "tag": "ORBITAL PHASING",
+      "tagColor": "sky",
+      "body": "The real technique spacecraft use to dock"
+    },
+    {
+      "image": "s6",
+      "h": "Crew-13 used orbital phasing to dock in under 8 hours."
+    },
+    {
+      "image": "s7",
+      "h": "Now you know!",
+      "body": "Send this to someone who asks how spacecraft actually dock.",
+      "tag": "SAVE THIS",
+      "tagColor": "mint"
+    }
+  ],
+  "posts": [
+    {
+      "platform": "youtube_shorts",
+      "scheduled": null
+    },
+    {
+      "platform": "instagram_reels",
+      "scheduled": null
+    },
+    {
+      "platform": "tiktok",
+      "scheduled": null
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "orbital rendezvous",
+    "title": "The counterintuitive way spacecraft catch the space station",
+    "title_options": [
+      "The counterintuitive way spacecraft catch the space station",
+      "Why you can't just fly faster to catch the space station",
+      "How spacecraft actually catch the space station",
+      "The trick to catching something going 17,500 mph",
+      "How Crew-13 docked in under 8 hours"
+    ],
+    "title_rationale": "States the key counterintuitive insight directly; a curious adult who uses the internet will type this question when the topic comes up in the news.",
+    "description": "You cannot just fly faster to catch the space station — it is already moving at 17,000 mph. Here is what spacecraft actually do instead.\n\nSpaceX Crew-13 docked with the ISS in under 8 hours using orbital phasing.\nSources: NASA Blog https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/, Wikipedia https://en.wikipedia.org/wiki/Orbital_rendezvous, Wikipedia https://en.wikipedia.org/wiki/Orbit_phasing\n#Shorts #space #orbitalmechanics #spacedock #sciencenews #orbitalphasing #spaceX",
+    "tags": [
+      "orbital rendezvous",
+      "orbital phasing",
+      "space station docking",
+      "how spacecraft dock",
+      "ISS orbit",
+      "space mechanics",
+      "orbital mechanics explained",
+      "Crew-13",
+      "SpaceX Dragon",
+      "space science"
+    ],
+    "instagram_caption": "You cannot fly faster to catch the space station — it is already moving at 17,000 mph. Here is what spacecraft actually do instead. Save this for the next time this is in the news.\nSources: NASA Blog, Wikipedia (orbital rendezvous, orbit phasing)\n#orbitalmechanics #spacedock #orbitalphasing #spaceX #space #sciencenews",
+    "pinned_comment": "What other space questions have you been curious about? Drop it below.",
+    "thumbnail": {
+      "text": "ORBITAL PHASING"
+    },
+    "content_type": "explainer",
+    "long_form": {}
+  },
+  "director_notes": "## Director Notes\n- Format chosen: why_is_x — reason: the question \"why can't you just fly faster\" maps directly to the why_is_x structure (hook_observation → cause_link_1 → cause_link_2 → twist_payoff → cta). The format's word budgets fit the curious_adult 55-90s range perfectly.\n- Analogy chosen: shipping/trucks on circular roads — mapping: both spacecraft moving at same orbital speed → two trucks on same road at same speed; dropping to lower orbit to catch up → taking the inner lane which is shorter and faster. Limitation: orbital paths have no road surface — spacecraft are continuously falling around Earth.\n- Open loops: [Why can't you just fly faster to catch the space station? opened at s1; paid off at s5 with orbital phasing explanation and at s6 with Crew-13 real example].\n- Unresolved QA warnings: none — all error-severity rules passed. Warn-severity items: one_idea_field_present (set), keyword_surfaces (orbital/rendezvous/phasing present in title, VO, description), bridge_pointer (no long-form exists, so no bridge needed).\n- Claims to verify before approval: all three claims have NASA and Wikipedia sources. `claims[].verified` is set by lint.provenance from the fetched catalog — not set here.\n- Assumptions: no cold-open bridge needed for explainer mode; single orbital diagram scene (s5) carries the term reveal; one clip on hook (s1) and one on payoff (s6) for real-world grounding per curious_adult visuals rule; Crew-13 mission date 2026-10-01 from NASA blog.\n- Title choice: \"The counterintuitive way spacecraft catch the space station\" — avoids all banned title phrases, states the key insight, contains primary keyword \"catch the space station\".\n- Direction mode: explainer (chosen by scoring: pure mechanism, no named human event driving narrative, format why_is_x → +1 explainer; no drama-eligible moment, so cold-open-drama scores 0).\n- Style: curious_adult illustration_style used verbatim (flat vector, navy-teal palette, amber accent, no text). Clip prompts use natural camera sentence per H3 house default. All illustration prompts are English-only with no text/numbers/letters.\n- Word count: 148 words / ~57 seconds at 2.6 w/s — within [143, 234] requirement.",
+  "audience": "curious_adult",
+  "topic": {
+    "headline": "How Crew-13 reached the space station in under 8 hours: why you can't catch the station by speeding up",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://www.nasa.gov/blogs/spacestation/2026/10/01/dragon-docks-bringing-spacex-crew-13-to-station/",
+      "https://en.wikipedia.org/wiki/Orbital_rendezvous",
+      "https://en.wikipedia.org/wiki/Orbit_phasing",
+      "https://news.google.com/rss/articles/CBMi4gFBVV95cUxNcHZ3M1ozMmFmd3NydFZJVTh0a1h0dWtDT2szWUhCNVF2RDVCWWFjWEw4WlRGMDl0dHgxdGdYU3F1N3lHQ18zNFIzOVBPc1RRT1lTNzhubEw4Sk5iMmRPRDd2Xy1BbTZKdV9WMGdjcGE2YzdHdWI4RmI0R3pFRW5xaXR2TEJ5czRrR2U3S2pqQndwUVBWODJ2X3FsMWk4b2cySnJBN2FVUkU1bUZZVFZDSG82X05jTlRCdkhyQUJWb2gtLUthdThuWE1fMVBSVzFDSzRsR1J6VENZeEM4cW10UFZ3?oc=5",
+      "https://news.google.com/rss/articles/CBMiwgFBVV95cUxPbDVJOWJSa25mSEZWeWVFOFh3eE9EYWJXZUtlTUpWaXRvOGNEeWM1d2dsYmZ3b1c4Wl9feWJRczU3MXkwakZQQlJfVUswYmNyR2FxOHJZMl81Szk2blJtanIwR1VkZFVDNmc3NHBKbGdHa0I1QVo1eHUtWm9CT0w1dUQ1c3NCNXd4Z2hPNEFmTkpxcVo4bVlhQTNoVm5TYzF1dmNVWTlxSElSSnhuOG5pWmJQUEctQ3ozbndEQ19vcFpNUQ?oc=5",
+      "https://news.google.com/rss/articles/CBMixwFBVV95cUxPSWZLSUNzelc3Z0lldFBEQ2RENUQ1UVRRWTM1TGJEbmpOSndrWHZIVFlFbDMySkpFM3U4azc3UWlLeGlLYkNVclZoUUdUSGRXMGgwNzF5ZGd2MWxXRUcwYWdCOGxhZHB6eWFtUDZwZkFORG5JOG9Tb1pQTUVYa3dDUXcwQjl6SDkzVHpzUXNGbUU3MHhwOUxETnR2YU04dXh3TTU4eVo0UjJzVFdnaUFSV04ySjFsYlhTYjdyT1BfME10d0pid21Z?oc=5",
+      "https://news.google.com/rss/articles/CBMivAFBVV95cUxNeFUtOWtyelZfVjVTN1dFa3NCRTZGbVhhb0FGMlZKVjNwNVdZdHlNS1QxU0s5SS1jeVVLQnNIZzhGWWVuejREOVpuNFV1eVJOc3JjVmt0TmtiRnhmckszY2hnTm9SVVRmUk1ibDBsSFhJWUhITEtfVi1UM29RbWhBOVE0UVhoWU5NcmtGUkJrMlMxN2p2c0dBaHpMQlhNQWlwNEFaazJjUUZZbHkxY1VGTVNya3J5elJYaE5rWg?oc=5",
+      "https://news.google.com/rss/articles/CBMipAFBVV95cUxObUJDRlNkajBLY0hRRzlSY0VTa01IcURGSXJoVV9wc3Bfd0FqTFk1WldPOERLSXI1S0JfOHhyNF9vUTlKUW1qYVgySW5LNUFkWENKcXFWM01odTZ4eGtIQVNFcjNJbENkN0Y2YWdUMnhDNWZDa1ZxZnB2bnJYMElDUk5rS0RUMEdGc2lJbEotTE90NlZBT0tlcHJPTkZyR0FzOXNiRQ?oc=5",
+      "https://news.google.com/rss/articles/CBMiekFVX3lxTE1SRm93V1hZTEw2MWdxVlA0ZjNENVpKYXFaUnVJZFJkdUtBUU53R3dGZVMwSkFIeUJLY2NtMjdrY2ozQkN4Q0sycENwWi1vamF4U0Jsd242RnVzaFdFRExjMjdnVnhjcHU3TU1qandJVW9uUi1sQWhGdHhn?oc=5",
+      "https://news.google.com/rss/articles/CBMivwFBVV95cUxQSTZOcWNtT2w2LUg5U2VOTk9FVWFiclVxYkN2ejlPTWtBQnlWbVFqSm9LdFgtc04zRGlTQUtIamF6S1NaYVVXaE01QTRaM2VwalFROThlUW94aXBlaHdRMmQ0V2k2ZFM2LVZ5d1MtUllUTUF2aDROYVpYSkJVTlVuMEhMVjFNMjBUNEF1Vy1Va0pjMjB2cXNoUTlSQ05NNlg5dGptLVl3cm5ueTdUUEJkTHV3MmFVeVlSUEFhM2NGQdIBxAFBVV95cUxQUVB6UFl1WG9CUlg0bjg1S0o4WDRsbFdpWTE4ZWtpbEZPYVFXS3ZvSEZPTEpJTmg0dWNJb25hM1FSX19OZGl6OFRxU0JKdWVlVXFxaTJKN0RSV1Z2eDhhb2wzY2VBS1JfSGZ6RFhUem9tSEtGMHJUcjNrUmhOYTB3aTB0WHhUbFk3bkZCdUhMbm5jd0Z3MWJWaHRrUlBJREJOVTdkM0hpNEJZTnByNWg1S2o4UUVOZTFQMTdibjV1VThESVpw?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-05T11:35:51Z"
+}

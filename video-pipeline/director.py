@@ -29,6 +29,7 @@ import os
 import random
 import re
 import sys
+import time
 import urllib.parse
 
 import yaml
@@ -624,6 +625,35 @@ def token_count(text: str) -> int:
         return len(text) // 4
 
 
+def _progress(**kw) -> None:
+    """Live step info for the current run (runlog.py: out/runs/<id>/meta.json, shown by `run.py director-status` and the web UI)."""
+    import runlog
+    runlog.update(**kw)
+
+
+def status() -> int:
+    """`run.py director-status`: what the latest Director run is doing, and for how long."""
+    import runlog
+    runs = [r for r in runlog.list_runs(10) if r.get("label") == "director"]
+    if not runs:
+        print("no Director run recorded yet (only runs started after 2026-10-05 are recorded)")
+        return 1
+    p, t, now = runs[0], datetime.datetime.fromisoformat, datetime.datetime.now()
+    print(f"run {p['id']} | {p['state'].upper()} | activity: {p.get('activity', '-')} | stage: {p.get('stage', '-')}")
+    print(f"started {p['started_at']} ({(now - t(p['started_at'])).total_seconds() / 60:.1f} min ago); last update {(now - t(p['updated_at'])).total_seconds():.0f}s ago")
+    if p["state"] == "running" and p.get("activity") == "waiting for model" and p.get("call_started_at"):
+        w = (now - t(p["call_started_at"])).total_seconds()
+        print(f"waiting {w:.0f}s on the model for '{p.get('stage')}' (~{p.get('tokens_in')} tokens in). Normal for thinking models: 2-7 min. "
+              f"Per-attempt timeout is 420 s, then retries after 30/90/180 s, then the next model.")
+    print(f"LLM calls done: {len(p.get('calls_done', []))} | ~{p.get('tokens_so_far', 0)} tokens so far")
+    for label, secs in p.get("calls_done", []):
+        print(f"   {label}: {secs}s")
+    for k in ("episode", "error"):
+        if p.get(k):
+            print(f"{k}: {p[k]}")
+    return 0
+
+
 class Budget:
     """Estimated LLM tokens for one director run (input = system + prompt; output = the returned JSON). Every call prints
     its estimate before it is sent; a call that would push the run past `cap` is refused (BudgetExceeded)."""
@@ -635,12 +665,25 @@ class Budget:
         tin = token_count(prompt) + (token_count(system) if system else 0)
         if self.spent + tin + expect_out > self.cap:
             raise BudgetExceeded(f"{label}: ~{tin} in + ~{expect_out} out would exceed the run cap {self.cap} (spent ~{self.spent}); stopping")
-        print(f"LLM {label}: ~{tin} tokens in (system ~{token_count(system) if system else 0}, cl100k stand-in); run total so far ~{self.spent}")
+        print(f"[{time.strftime('%H:%M:%S')}] LLM {label}: ~{tin} tokens in (system ~{token_count(system) if system else 0}, cl100k stand-in); run total so far ~{self.spent}", flush=True)
+        t0 = time.time()
+        _progress(activity="waiting for model", stage=label, call_started_at=datetime.datetime.now().isoformat(timespec="seconds"), tokens_in=tin, tokens_so_far=self.spent)
         res = llm.generate_json(prompt, system=system) if system is not None else llm.generate_json(prompt)
+        dt = time.time() - t0
         tout = token_count(json.dumps(res, ensure_ascii=False)) if res is not None else 0
+        print(f"[{time.strftime('%H:%M:%S')}] LLM {label}: done in {dt:.0f}s (~{tout} tokens out)", flush=True)
+        _progress(activity="between calls", stage=label, tokens_so_far=self.spent + tin + tout, calls_done=(self._done() + [[label, round(dt)]]))
         self.spent += tin + tout
         self.calls.append((label, tin, tout))
         return res
+
+    @staticmethod
+    def _done() -> list:
+        try:
+            import runlog
+            return list(runlog.meta().get("calls_done", []))
+        except Exception:  # noqa: BLE001
+            return []
 
     def charge(self, label: str, tokens: int) -> None:
         """Calls made elsewhere (verify.run) are estimated and counted, not metered."""
@@ -1514,6 +1557,7 @@ def refine(llm_w, ep: dict, ep_id: str, var: dict, topic: dict, items: list, max
     ep = _strip_unmet_skills(ep, issues)
     save_state(ep_id, budget, mech, sem, "finished", max_mech=max_repairs, max_sem=max_semantic)
     print(f"LLM estimate for this run: ~{budget.spent} tokens over {len(budget.calls)} calls (cap {budget.cap})")
+    _progress(activity="finished", stage="done", episode=ep_id, tokens_so_far=budget.spent)
     return ep, issues
 
 

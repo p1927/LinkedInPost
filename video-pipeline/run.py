@@ -594,6 +594,12 @@ def main(argv):
     elif cmd == "animatic":  # free placeholder preview of the whole episode before paid media: run.py animatic <ep> [--render]
         import animatic
         sys.exit(animatic.main(args[1:] + (["--render"] if "--render" in flags else [])))
+    elif cmd == "live":  # read-only local server for the web UI's Live runs view: run.py live [--port 8765]
+        import live_server
+        sys.exit(live_server.main(argv[argv.index("live") + 1:]))
+    elif cmd == "director-status":  # live view of the running/last Director run (state, stage, time, per-call durations)
+        import director
+        sys.exit(director.status())
     elif cmd == "manifest":  # free plan of what a build would generate and cost: run.py manifest <ep> [--json]
         import manifest
         sys.exit(manifest.main(args[1:] + (["--json"] if "--json" in flags else [])))
@@ -662,8 +668,37 @@ def main(argv):
                              f"(python run.py status {ep['id']} approved) before paid generation.")
         for name in names:
             print(f"== {name}")
+            import runlog
+            runlog.update(step=name)
             STAGES[name](ep, out, "--force" in flags)
 
 
+_RECORDED = {"director", "verify", "manifest", "animatic", "publish"}
+
+
+def _recorded_label(argv: list):
+    """Commands worth a live run record (long, or they spend money): the few above and `<episode> <stage|all>`."""
+    if not argv or argv[0].startswith("-"):
+        return None
+    if argv[0] in _RECORDED:
+        return argv[0]
+    if len(argv) >= 2 and (argv[1] in STAGES or argv[1] == "all") and (ROOT / "episodes" / argv[0] / "episode.json").exists():
+        return f"{argv[0]} {argv[1]}"
+    return None
+
+
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    import runlog
+    _label = _recorded_label(sys.argv[1:])
+    if _label:
+        runlog.start(_label, sys.argv[1:])
+    try:
+        main(sys.argv[1:])
+    except SystemExit as _e:
+        runlog.finish(code=_e.code if isinstance(_e.code, int) else (0 if _e.code is None else 1), error=_e.code if isinstance(_e.code, str) else None)
+        raise
+    except BaseException as _e:
+        runlog.finish(code=1, error=f"{type(_e).__name__}: {_e}")
+        raise
+    else:
+        runlog.finish(code=0)
