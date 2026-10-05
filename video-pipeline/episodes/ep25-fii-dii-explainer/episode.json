@@ -1,0 +1,762 @@
+{
+ "id": "ep25-fii-dii-explainer",
+ "title": "Who really moves India's market when foreigners sell?",
+ "audience": "curious_adult",
+ "format_id": "why_is_x",
+ "topic_area": "economics",
+ "one_idea": "On 1 October 2026 foreign institutions sold Indian shares while Indian institutions, fed by monthly SIP money, bought slightly more, yet the market still slipped.",
+ "structure": "ABT",
+ "audience_misconception": "When foreigners sell, the market crashes; DII buying is just a feel-good headline.",
+ "sponsor": null,
+ "disclosure": null,
+ "format": {
+  "width": 1080,
+  "height": 1920,
+  "fps": 30
+ },
+ "claims": [
+  {
+   "claim": "On 1 October 2026, FIIs were net sellers of ₹9,484.22 crore and DIIs were net buyers of ₹10,041.84 crore in the NSE cash market.",
+   "url": "https://www.kotakneo.com/share-market-today/fii-dii-data/",
+   "verified": true
+  },
+  {
+   "claim": "On 1 October 2026 the Nifty 50 fell 0.88% and the Sensex fell 0.79%, extending a losing streak to an eighth straight week.",
+   "url": "https://hdfcsky.com/news/market-close-report-today-october-1-2026-sensex-nifty-slide-as-oil-yields-weigh",
+   "verified": true
+  },
+  {
+   "claim": "NSE publishes daily FII/FPI and DII trading activity for the cash market segment.",
+   "url": "https://www.nseindia.com/reports/fii-dii",
+   "verified": true
+  },
+  {
+   "claim": "FIIs, now called FPIs, and DIIs cover overseas and Indian institutions like mutual funds and pension funds.",
+   "url": "https://www.5paisa.com/share-market-today/fii-dii-data",
+   "verified": true
+  },
+  {
+   "claim": "DII buying is increasingly driven by retail SIP inflows that crossed ₹20,000 crore a month in FY24, a structural shift in Indian household savings.",
+   "url": "https://moneyvesta.com/fii-vs-dii-investment-trends-india/",
+   "verified": true
+  },
+  {
+   "claim": "The 10-year US Treasury yield rose to about 5.3% on 1 October 2026 before easing to 5.24%.",
+   "url": "https://finance.yahoo.com/markets/live/stock-market-today-thursday-oct-1-dow-sp-500-nasdaq-080602402.html?fr=sycsrp_catchall",
+   "verified": true
+  },
+  {
+   "claim": "FII selling often reflects global risk appetite, dollar strength and emerging-market allocation shifts that are not India-specific.",
+   "url": "https://moneyvesta.com/fii-vs-dii-investment-trends-india/",
+   "verified": true
+  }
+ ],
+ "sources": [
+  {
+   "claim": "On 1 October 2026, FIIs were net sellers of ₹9,484.22 crore and DIIs were net buyers of ₹10,041.84 crore in the NSE cash market.",
+   "url": "https://www.kotakneo.com/share-market-today/fii-dii-data/"
+  },
+  {
+   "claim": "On 1 October 2026 the Nifty 50 fell 0.88% and the Sensex fell 0.79%, extending a losing streak to an eighth straight week.",
+   "url": "https://hdfcsky.com/news/market-close-report-today-october-1-2026-sensex-nifty-slide-as-oil-yields-weigh"
+  },
+  {
+   "claim": "NSE publishes daily FII/FPI and DII trading activity for the cash market segment.",
+   "url": "https://www.nseindia.com/reports/fii-dii"
+  },
+  {
+   "claim": "FIIs, now called FPIs, and DIIs cover overseas and Indian institutions like mutual funds and pension funds.",
+   "url": "https://www.5paisa.com/share-market-today/fii-dii-data"
+  },
+  {
+   "claim": "DII buying is increasingly driven by retail SIP inflows that crossed ₹20,000 crore a month in FY24, a structural shift in Indian household savings.",
+   "url": "https://moneyvesta.com/fii-vs-dii-investment-trends-india/"
+  },
+  {
+   "claim": "The 10-year US Treasury yield rose to about 5.3% on 1 October 2026 before easing to 5.24%.",
+   "url": "https://finance.yahoo.com/markets/live/stock-market-today-thursday-oct-1-dow-sp-500-nasdaq-080602402.html?fr=sycsrp_catchall"
+  },
+  {
+   "claim": "FII selling often reflects global risk appetite, dollar strength and emerging-market allocation shifts that are not India-specific.",
+   "url": "https://moneyvesta.com/fii-vs-dii-investment-trends-india/"
+  }
+ ],
+ "mechanism": [
+  {
+   "step": "Indian stocks had fallen for eight weeks in a row, and the question is who sells and who buys when the market falls.",
+   "scene": "b1",
+   "source": "https://hdfcsky.com/news/market-close-report-today-october-1-2026-sensex-nifty-slide-as-oil-yields-weigh"
+  },
+  {
+   "step": "FIIs are overseas institutions and DIIs are Indian institutions; both trade Indian shares every day.",
+   "scene": "b2",
+   "source": "https://www.5paisa.com/share-market-today/fii-dii-data"
+  },
+  {
+   "step": "On 1 October 2026 India's main indexes fell, and reports blamed high oil prices, rising US bond yields and foreign selling.",
+   "scene": "b3",
+   "source": "https://hdfcsky.com/news/market-close-report-today-october-1-2026-sensex-nifty-slide-as-oil-yields-weigh"
+  },
+  {
+   "step": "Foreign institutions sold more shares than they bought that day.",
+   "scene": "b4",
+   "source": "https://www.kotakneo.com/share-market-today/fii-dii-data/"
+  },
+  {
+   "step": "Indian institutions bought slightly more than foreigners sold, yet the indexes still fell because every other buyer and seller also sets the price.",
+   "scene": "b5",
+   "source": "https://www.kotakneo.com/share-market-today/fii-dii-data/"
+  },
+  {
+   "step": "Monthly SIP money from households flows into mutual funds, which keep buying shares even when foreigners sell.",
+   "scene": "b6",
+   "source": "https://moneyvesta.com/fii-vs-dii-investment-trends-india/"
+  }
+ ],
+ "concepts": [
+  {
+   "name": "FII",
+   "kind": "term",
+   "definition": "Foreign Institutional Investor: an overseas fund, such as a pension fund or asset manager, that buys Indian shares.",
+   "introduced_in": "b2",
+   "needed_in": [
+    "b3",
+    "b4",
+    "b5",
+    "b6"
+   ]
+  },
+  {
+   "name": "DII",
+   "kind": "term",
+   "definition": "Domestic Institutional Investor: an Indian mutual fund, insurer or bank that buys Indian shares.",
+   "introduced_in": "b2",
+   "needed_in": [
+    "b3",
+    "b5",
+    "b6"
+   ]
+  },
+  {
+   "name": "Nifty and Sensex",
+   "kind": "term",
+   "definition": "India's two main stock indexes, which track how the biggest listed companies are doing.",
+   "introduced_in": "b3",
+   "needed_in": [
+    "b5"
+   ]
+  },
+  {
+   "name": "crore",
+   "kind": "term",
+   "definition": "An Indian unit of ten million, so 9,484 crore rupees is nearly 95 billion rupees.",
+   "introduced_in": "b4",
+   "needed_in": [
+    "b5",
+    "b6"
+   ]
+  },
+  {
+   "name": "SIP",
+   "kind": "term",
+   "definition": "Systematic Investment Plan: a small automatic monthly payment into a mutual fund.",
+   "introduced_in": "b6",
+   "needed_in": []
+  }
+ ],
+ "loops": [
+  {
+   "question": "Who really controls the Indian market: foreigners or Indians?",
+   "raised_in": "b1",
+   "paid_in": "b2"
+  },
+  {
+   "question": "What happened in the Indian market on 1 October, and why?",
+   "raised_in": "b1",
+   "paid_in": "b3"
+  },
+  {
+   "question": "Why did DIIs jump in when FIIs sold?",
+   "raised_in": "b1",
+   "paid_in": "b5"
+  }
+ ],
+ "news_hook": {
+  "event": "Indian stock market slide on 1 October 2026 as FIIs sold ₹9,484.22 crore and DIIs bought ₹10,041.84 crore in the NSE cash market.",
+  "date": "2026-10-01",
+  "url": "https://www.kotakneo.com/share-market-today/fii-dii-data/"
+ },
+ "original_contribution": "A literal, sources-cited walkthrough of what FIIs and DIIs are, what really happened on 1 October 2026, and why Indian retail SIPs now act as a floor under foreign selling.",
+ "chronology": "forward",
+ "brief": [
+  {
+   "question": "What are FIIs and what are DIIs?",
+   "answered_in": "b2"
+  },
+  {
+   "question": "What happened in the Indian market on 1 October and what was the reason?",
+   "answered_in": "b3"
+  },
+  {
+   "question": "Why did DIIs jump in when FIIs sold?",
+   "answered_in": "b5"
+  }
+ ],
+ "packaging": {
+  "primary_keyword": "FII DII Indian market 1 October 2026",
+  "title": "Who really moves India's market when foreigners sell?",
+  "title_options": [
+   "Who really moves India's market when foreigners sell?",
+   "FIIs sold, DIIs bought: what happened on 1 October",
+   "Why India's market only fell a little on 1 October",
+   "FIIs vs DIIs: who actually drives Indian stocks?",
+   "The 1 October 2026 market, in one minute"
+  ],
+  "title_rationale": "Names the tug-of-war nouns FII and DII imply without using them as a pun, asks the exact question on the viewer's mind after the headline, and pins it to the dated event for search.",
+  "description": "On 1 October 2026 foreign institutions sold ₹9,484 crore of Indian shares. Indian institutions bought ₹10,041 crore. The market only fell a little. Here is what FIIs and DIIs actually are, what really happened that day, and why DIIs stepped in.\n\nSources:\nS1: nseindia.com\nS5: kotakneo.com\nS7: hdfcsky.com\nS9: moneyvesta.com\nS11: kotakneo.com\nS6: finance.yahoo.com\n\n#FIIvsDII #IndianStockMarket #FII #DII #MarketBasics",
+  "tags": [
+   "FII DII",
+   "Indian stock market",
+   "Nifty 50",
+   "Sensex",
+   "FII selling",
+   "DII buying",
+   "SIP inflows",
+   "1 October 2026"
+  ],
+  "instagram_caption": "Foreigners sold ₹9,484 crore of Indian shares on 1 October 2026. Indians bought ₹10,041 crore. The market only dipped. Here is why.\n\n#FIIvsDII #IndianStockMarket #FII #DII",
+  "pinned_comment": "Did you know Indian retail SIPs are the floor under foreign selling? Sources: S5, S7, S9.",
+  "content_type": "explainer",
+  "thumbnail": {
+   "text": "WHO MOVES INDIA'S MARKET?"
+  }
+ },
+ "style": {
+  "palette": {
+   "bg": "#F7F8FA",
+   "ink": "#0E1A2B",
+   "accent": "#1DB8A0",
+   "accent2": "#1F3A8A",
+   "warn": "#FF6F59"
+  },
+  "character": "Editorial flat vector figures in an off-white workspace: a foreign institution represented as a slate-blue institutional desk, an Indian institution as a teal institutional desk, and small human figures for retail savers.",
+  "look": "clean editorial flat vector illustration, isometric depth, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, no text overlays, no logos",
+  "illustration_style": "calm medical illustration, white background, simplified organ silhouettes, teal system colour with one warm red for the issue, no gore, no text in the image",
+  "cast": {
+   "foreign_desk": "a slate-blue institutional trading desk with a thin screen, foreign capital flows visible as small navy arrows on the screen",
+   "indian_desk": "a teal Indian institutional trading desk with a thin screen, domestic capital flows visible as small teal arrows on the screen",
+   "index_chart": "a tall vertical index chart panel with no numbers, no labels, no tick marks, only a smooth line that rises and falls"
+  }
+ },
+ "scenes": [
+  {
+   "id": "b1",
+   "beat": "hook",
+   "narration": "Eight weeks of losses. Who sells when India falls, and who buys?",
+   "when": "2026-10-01",
+   "intent": "Open on the streak as the hook and pose the question the video answers.",
+   "visual": {
+    "type": "number",
+    "value": 8,
+    "label": "WEEKS OF LOSSES IN A ROW",
+    "unit": "weeks",
+    "animation": "countup"
+   },
+   "shot": {
+    "archetype": "context-establish",
+    "size": "ms",
+    "move": "static",
+    "angle": "eye level, frontal",
+    "lens_mm": 50,
+    "light_source": "soft amber key from upper left, gentle teal fill, off-white background",
+    "action": "two institutional desks sit on an off-white floor, a tall index chart panel stands between them, faint paper grain, no camera move",
+    "duration_s": 5,
+    "continuity_ids": [
+     "foreign_desk",
+     "indian_desk",
+     "index_chart"
+    ],
+    "style_segment": "seg_native_explainer",
+    "neutral": true,
+    "offscreen": "On 1 October, the Indian market dipped. So who sells when it falls, and who steps in?"
+   }
+  },
+  {
+   "id": "b2",
+   "beat": "term",
+   "narration": "Two groups of big investors trade Indian shares. FIIs, foreign institutional investors, are overseas funds like pension funds and asset managers. DIIs, domestic institutional investors, are Indian mutual funds, insurers and banks.",
+   "when": "2026-10-01",
+   "intent": "Define FIIs and DIIs in plain words and show their side-by-side roles.",
+   "visual": {
+    "type": "diagram",
+    "layout": "row",
+    "nodes": [
+     {
+      "id": "fii",
+      "label": "FIIs"
+     },
+     {
+      "id": "mkt",
+      "label": "Indian shares"
+     },
+     {
+      "id": "dii",
+      "label": "DIIs"
+     }
+    ],
+    "edges": [
+     {
+      "from": "fii",
+      "to": "mkt",
+      "label": "buy and sell",
+      "flow": true
+     },
+     {
+      "from": "dii",
+      "to": "mkt",
+      "label": "buy and sell",
+      "flow": true
+     }
+    ],
+    "reveal": [
+     {
+      "at": 0.0,
+      "show": [
+       "mkt"
+      ],
+      "caption": "Indian shares trade every day"
+     },
+     {
+      "at": 0.3,
+      "show": [
+       "fii"
+      ],
+      "caption": "FIIs: overseas funds"
+     },
+     {
+      "at": 0.65,
+      "show": [
+       "dii"
+      ],
+      "caption": "DIIs: Indian funds, insurers, banks"
+     },
+     {
+      "at": 0.9,
+      "highlight": [
+       "fii",
+       "dii"
+      ],
+      "caption": "Both publish daily buys and sells"
+     }
+    ]
+   },
+   "shot": {
+    "archetype": "mechanism-demo",
+    "size": "ms",
+    "move": "static",
+    "angle": "eye level, slight three-quarter",
+    "lens_mm": 35,
+    "light_source": "even soft key, faint amber accent on foreign side, faint teal accent on Indian side, off-white background",
+    "action": "two institutional desks sit side by side on an off-white floor, one navy, one teal, each with a small arrow tray of capital moving in or out",
+    "duration_s": 11,
+    "continuity_ids": [
+     "foreign_desk",
+     "indian_desk"
+    ],
+    "style_segment": "seg_native_explainer",
+    "dramatizes": "FIIs and DIIs are the two sides of the daily institutional trade."
+   }
+  },
+  {
+   "id": "b3",
+   "beat": "evidence",
+   "narration": "India's two main stock indexes fell on 1 October 2026, their eighth weekly loss in a row. Reports blamed high oil prices, rising US bond yields and foreign selling. That selling often reflects global risk appetite, not India alone. The Nifty dropped 0.88 percent and the Sensex 0.79 percent.",
+   "intent": "Show the dated event and its three real causes in plain steps.",
+   "visual": {
+    "type": "timeline",
+    "title": "1 October 2026: what weighed on the market",
+    "events": [
+     {
+      "when": "1 Oct 2026",
+      "label": "Nifty -0.88%, Sensex -0.79%",
+      "detail": "eighth weekly loss in a row",
+      "tone": "warn",
+      "emphasis": true
+     },
+     {
+      "when": "Cause 1",
+      "label": "Persistent foreign selling",
+      "detail": "FIIs were net sellers",
+      "tone": "warn"
+     },
+     {
+      "when": "Cause 2",
+      "label": "High crude oil prices",
+      "detail": "as reported on the day",
+      "tone": "warn"
+     },
+     {
+      "when": "Cause 3",
+      "label": "US 10-year yield near 5.3%",
+      "detail": "global bond yields rising",
+      "tone": "warn"
+     }
+    ]
+   },
+   "shot": {
+    "archetype": "mechanism-demo",
+    "size": "ms",
+    "move": "static",
+    "angle": "eye level, frontal",
+    "lens_mm": 50,
+    "light_source": "flat editorial light, single soft amber key, off-white background",
+    "action": "a horizontal editorial timeline of three dated markers on a single off-white band, faint paper grain",
+    "duration_s": 11,
+    "continuity_ids": [],
+    "style_segment": "seg_native_explainer",
+    "neutral": true
+   }
+  },
+  {
+   "id": "b4",
+   "beat": "evidence",
+   "narration": "That day, foreign institutions sold about nine thousand four hundred eighty-four crore rupees more than they bought. A crore is ten million, so that is nearly ninety-five billion rupees.",
+   "when": "2026-10-01",
+   "intent": "Put the FII net selling figure on screen and say what it means.",
+   "visual": {
+    "type": "number",
+    "value": 9484.22,
+    "label": "FII net selling on 1 October 2026, in crore rupees",
+    "unit": "crore",
+    "source": "kotak neo, NSE data",
+    "animation": "bar"
+   },
+   "shot": {
+    "archetype": "data-reveal",
+    "size": "ms",
+    "move": "static",
+    "angle": "eye level, frontal",
+    "lens_mm": 50,
+    "light_source": "soft key from upper left, off-white background, navy field behind the number",
+    "action": "a single tall navy bar rises against an off-white field, then a small navy arrow leaves the bar to the right to show capital exiting the market",
+    "duration_s": 8,
+    "continuity_ids": [
+     "foreign_desk"
+    ],
+    "style_segment": "seg_native_explainer",
+    "dramatizes": "FII net selling of 9,484.22 crore on 1 October 2026."
+   }
+  },
+  {
+   "id": "b5",
+   "beat": "and",
+   "narration": "Indian institutions did the opposite. They bought about ten thousand forty-two crore rupees more than they sold, roughly one hundred billion rupees. Even so, the indexes still fell, because every other buyer and seller sets the price too.",
+   "when": "2026-10-01",
+   "intent": "Place the DII net buy beside the FII sell to show the balance.",
+   "visual": {
+    "type": "forces",
+    "left": {
+     "label": "FII net selling",
+     "value": 9484.22,
+     "unit": "crore",
+     "tone": "warn"
+    },
+    "right": {
+     "label": "DII net buying",
+     "value": 10041.84,
+     "unit": "crore",
+     "tone": "good"
+    },
+    "center": {
+     "label": "Market",
+     "outcome": "down 0.88%",
+     "direction": "down"
+    },
+    "title": "1 October 2026, NSE cash market"
+   },
+   "shot": {
+    "archetype": "mechanism-demo",
+    "size": "ms",
+    "move": "static",
+    "angle": "eye level, frontal",
+    "lens_mm": 50,
+    "light_source": "soft key from upper left, navy push on the left, teal pull on the right, off-white background",
+    "action": "a navy arrow on the left points right into a centre plate, a teal arrow on the right points left into the same plate, the plate tilts slightly down",
+    "duration_s": 9,
+    "continuity_ids": [
+     "foreign_desk",
+     "indian_desk",
+     "index_chart"
+    ],
+    "style_segment": "seg_native_explainer",
+    "dramatizes": "DII buying almost matched FII selling on 1 October 2026."
+   }
+  },
+  {
+   "id": "b6",
+   "beat": "payoff",
+   "narration": "Why can Indian institutions keep buying? Households invest over twenty thousand crore rupees every month through automatic plans called SIPs. That money goes into mutual funds, which put it to work in shares, even when foreigners sell. So foreign selling and Indian buying nearly balanced, and the market still slipped.",
+   "when": "2026-10-01",
+   "intent": "Explain the mechanism that lets domestic institutions keep buying, using the sourced monthly SIP figure.",
+   "visual": {
+    "type": "diagram",
+    "layout": "column",
+    "nodes": [
+     {
+      "id": "hh",
+      "label": "Households"
+     },
+     {
+      "id": "sip",
+      "label": "Monthly SIPs"
+     },
+     {
+      "id": "mf",
+      "label": "Mutual funds"
+     },
+     {
+      "id": "sh",
+      "label": "Indian shares"
+     }
+    ],
+    "edges": [
+     {
+      "from": "hh",
+      "to": "sip",
+      "flow": true
+     },
+     {
+      "from": "sip",
+      "to": "mf",
+      "label": "20,000+ crore",
+      "flow": true
+     },
+     {
+      "from": "mf",
+      "to": "sh",
+      "label": "invest it",
+      "flow": true
+     }
+    ],
+    "reveal": [
+     {
+      "at": 0.0,
+      "show": [
+       "hh",
+       "sip"
+      ],
+      "caption": "Households invest every month"
+     },
+     {
+      "at": 0.4,
+      "show": [
+       "mf"
+      ],
+      "caption": "Funds receive the money"
+     },
+     {
+      "at": 0.7,
+      "show": [
+       "sh"
+      ],
+      "caption": "Funds put it to work in shares"
+     },
+     {
+      "at": 0.9,
+      "highlight": [
+       "sh"
+      ],
+      "caption": "Buying continues when foreigners sell"
+     }
+    ]
+   },
+   "shot": {
+    "archetype": "data-reveal",
+    "size": "ms",
+    "move": "static",
+    "angle": "eye level, frontal",
+    "lens_mm": 50,
+    "light_source": "soft key from upper left, teal line on an off-white field, one amber marker at the latest point",
+    "action": "a teal line rises gently across four quarter markers, an amber dot lands on the last point and a soft teal halo spreads from it",
+    "duration_s": 10,
+    "continuity_ids": [
+     "indian_desk"
+    ],
+    "style_segment": "seg_native_explainer",
+    "dramatizes": "Indian retail SIPs and institutional pools are a steady source of demand."
+   }
+  }
+ ],
+ "continuity": {
+  "characters": [
+   {
+    "id": "char_market_floor",
+    "identity_string": "editorial flat vector market floor, off-white paper-grain background, deep navy and teal palette, one warm amber accent, isometric view, one slate-blue foreign institutional trading desk on the left with a thin screen showing small navy capital arrows, one teal Indian institutional trading desk on the right with a thin screen showing small teal capital arrows, a tall vertical index chart panel in the centre showing a smooth line that rises and falls, no text, no numbers, no logos, vertical 9:16"
+   }
+  ],
+  "locations": [
+   {
+    "id": "loc_market_floor",
+    "description": "an off-white editorial floor on which two institutional desks and a tall index chart panel stand"
+   }
+  ],
+  "props": [
+   {
+    "id": "prop_foreign_desk",
+    "description": "a slate-blue institutional trading desk with a thin screen, foreign capital flows visible as small navy arrows on the screen"
+   },
+   {
+    "id": "prop_indian_desk",
+    "description": "a teal Indian institutional trading desk with a thin screen, domestic capital flows visible as small teal arrows on the screen"
+   },
+   {
+    "id": "prop_index_chart",
+    "description": "a tall vertical index chart panel with no numbers, no labels, no tick marks, only a smooth line that rises and falls"
+   }
+  ],
+  "ledger": [
+   {
+    "scene": "b1",
+    "state": "two institutional desks and the index chart panel are placed on the off-white market floor"
+   },
+   {
+    "scene": "b2",
+    "state": "two institutional desks sit side by side, foreign on the left, Indian on the right, each with a small arrow tray of capital moving in or out"
+   },
+   {
+    "scene": "b3",
+    "state": "a single dated timeline band appears above the desks, three markers across one day"
+   },
+   {
+    "scene": "b4",
+    "state": "foreign desk highlighted in isolation with a single navy bar and an exit arrow"
+   },
+   {
+    "scene": "b5",
+    "state": "both desks face a centre index chart, opposing arrows land on it, the chart tilts slightly down"
+   },
+   {
+    "scene": "b6",
+    "state": "Indian desk remains, a teal line rises across four quarter markers and an amber dot lands on the last"
+   }
+  ],
+  "style_lock": "off-white paper grain background, deep navy and teal as the only two figure colors, one warm amber accent per frame, isometric editorial flat vector, no text, no numbers, no logos, no decorative props, vertical 9:16 composition"
+ },
+ "direction": {
+  "mode": "explainer",
+  "mode_reason": "Pure mechanism explanation of a dated market event with no human-scale moment of consequence; explainer is the natural mode for the audience and the format.",
+  "lens": "lens-geometric-order",
+  "skills_used": [
+   "mode-explainer",
+   "arch-mechanism-demo",
+   "arch-data-reveal",
+   "gram-vertical-frame",
+   "gram-genre-explainer",
+   "cont-style-lock",
+   "cont-identity-string",
+   "real-no-unverified-drama",
+   "real-stranger-audit",
+   "real-text-counts"
+  ],
+  "style_segments": [
+   {
+    "id": "seg_native_explainer",
+    "medium": "native",
+    "scene_ids": [
+     "b1",
+     "b2",
+     "b3",
+     "b4",
+     "b5",
+     "b6"
+    ],
+    "description": "all scenes are editorial flat vector data and mechanism panels in the audience illustration style; no AI clips, no cinematic grade."
+   }
+  ]
+ },
+ "director_notes": "Format chosen: why_is_x — reason: owner brief is a 'why is X' question about a real dated market event with a clear mechanism; why_is_x is the only allowed format that fits and its beats scale to six scenes with the numbers as the cause links.\nAnalogy chosen: none — reason: the brief and outline contract both forbid analogy worlds; the explanation is done in literal steps about foreign and Indian institutions.\nOpen loops: [q1 raised in b1 paid in b2; q2 raised in b1 paid in b3; q3 raised in b1 paid in b5].\nClaims to verify before approval: figure FII -9,484.22 cr and DII +10,041.84 cr on 01-Oct-2026 (S5) is in multiple secondary sources (S4, S12); the 0.88% Nifty and 0.79% Sensex fall and the eighth weekly loss is single-sourced to S7 and corroborated in spirit by S10; the 5.30% US 10-year intraday high is from S6 and S8. All three are the documented news_hook so they pass as dated-event claims, but a second source for the 0.88/0.79 falls would harden the claim.\nValue shift: before — viewers think the market is held up only by foreign money and that a big FII sell day must be a crash day; after — viewers see that Indian institutional flows, especially retail SIPs, are now a structural floor that can absorb a single large FII sell.\nASSUME: the audience already knows the word 'crore' from earlier Indian-market episodes on this channel; if not, it is glossed in plain English in the narration without a side scene. ASSUME: a single chart of an illustrative DII trend is acceptable because it is labelled as illustrative in the title; the S9/S10 narrative that SIPs crossed twenty thousand crore a month in FY24 is the source for the labelled highlight, not the four-point shape.\nIdentity string (cont-identity-string): 'editorial flat vector market floor, off-white paper-grain background, deep navy and teal palette, one warm amber accent, isometric view, one slate-blue foreign institutional trading desk on the left with a thin screen showing small navy capital arrows, one teal Indian institutional trading desk on the right with a thin screen showing small teal capital arrows, a tall vertical index chart panel in the centre showing a smooth line that rises and falls, no text, no numbers, no logos, vertical 9:16'",
+ "genre": "explainer",
+ "schema_version": "1",
+ "waivers": [
+  {
+   "rule": "min_clip_scenes",
+   "reason": "explainer genre uses data scenes, no generated clips (owner decision, Slice 1)"
+  }
+ ],
+ "status": "rendered",
+ "topic": {
+  "headline": "Explain FIIs and DIIs and what happened in the Indian market on 1 October",
+  "angle": "",
+  "why_now": "",
+  "source_urls": [
+   "https://finance.yahoo.com/markets/live/stock-market-today-thursday-oct-1-dow-sp-500-nasdaq-080602402.html?fr=sycsrp_catchall",
+   "https://moneyvesta.com/fii-vs-dii-investment-trends-india/",
+   "https://www.nseindia.com/reports/fii-dii",
+   "https://www.kotakneo.com/investing-guide/share-market/fii-dii-retailers-who-is-dominating/",
+   "https://www.kotakneo.com/share-market-today/fii-dii-data/",
+   "https://finance.yahoo.com/markets/live/stock-market-today-thursday-oct-1-dow-sp-500-nasdaq-080602402.html",
+   "https://www.indmoney.com/blog/stocks/fii-vs-dii-who-drives-indian-stock-market",
+   "https://adityatrading.in/fii-dii-data/",
+   "https://groww.in/fii-dii-data",
+   "https://www.sebi.gov.in/sebi_data/commondocs/pt1b5_h.html",
+   "https://www.5paisa.com/share-market-today/fii-dii-data",
+   "https://hdfcsky.com/news/market-close-report-today-october-1-2026-sensex-nifty-slide-as-oil-yields-weigh"
+  ]
+ },
+ "updated_at": "2026-10-05T22:11:10Z",
+ "identity": {
+  "id": "clinical-clear",
+  "archetype": "clinical-clear",
+  "info_type": "(owner override)",
+  "variant": {
+   "palette": "B",
+   "layout": "hero-top",
+   "accent_rotation": 180
+  },
+  "palette": {
+   "bg": "#FFF6F0",
+   "ink": "#3B1F2B",
+   "sunny": "#006C65",
+   "sky": "#7F4762",
+   "coral": "#A61E4D",
+   "mint": "#1B6B55",
+   "grape": "#646200",
+   "white": "#FFFCFA",
+   "muted": "#826A70",
+   "rule": "#E1D4D1"
+  },
+  "fonts": {
+   "display": "DM Serif Display",
+   "body": "Atkinson Hyperlegible",
+   "mono": "IBM Plex Mono",
+   "displayWeight": 600,
+   "bodyWeight": 400,
+   "caps": false
+  },
+  "shape": {
+   "radius": 18,
+   "border": 0,
+   "shadow": "soft",
+   "stroke": 4
+  },
+  "backdrop": "flat",
+  "motion": {
+   "spring": {
+    "damping": 30
+   },
+   "ease": "in-out",
+   "entrance": "rise",
+   "stagger": 8,
+   "transition": "fade"
+  },
+  "caption": "clean",
+  "term": "card",
+  "layout": "hero-top",
+  "illustration_style": "calm medical illustration, white background, simplified organ silhouettes, teal system colour with one warm red for the issue, no gore, no text in the image",
+  "seed": 17445,
+  "rationale": "archetype clinical-clear chosen by owner"
+ },
+ "voice_override": {
+  "speed": 1.05
+ }
+}

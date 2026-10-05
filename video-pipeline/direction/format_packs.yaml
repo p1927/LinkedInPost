@@ -1,0 +1,177 @@
+# Format packs — genre selects structure, look, sound, narration, and gates.
+# Five packs; only 'explainer' is fully wired for Slice 1.
+# The other four carry complete data but are marked status: planned.
+# identity.py reads archetype_pool; lint.py reads gate_list; brief.json stores genre.
+
+packs:
+
+  - id: explainer
+    name: Explainer
+    status: active
+    description: "How or why something works, in plain words"
+    format_ids: [why_is_x, myth_busting, versus, news_explainer, food_science]
+    craft_mode: explainer
+    archetype_pool: [clinical-clear, blueprint, iso-systems, chalk-proof, flat-cosmos]
+    scene_vocabulary:
+      preferred: [diagram, steps, compare, number, term]
+      discouraged: [slow_push, silence_beat]
+    motion: {personality: calm_smooth, speed: normal}
+    sound:
+      bed_style: light
+      duck: true
+      sfx: key_terms
+    narration:
+      register: direct
+      person: second
+      sentence_style: short
+      define_before_use: true
+    hook_forms: [question, second_person_scenario, statistic, myth_busting]
+    pacing:
+      hold_floor_s: 3.0
+      change_cadence_s_max: 4.0
+    thumbnail_style: bold_text_on_clean_bg
+    voice_settings: {speed: normal, register: informational}
+    outline_approval_default: false
+    gate_list:
+      - terms_before_use
+      - comprehension
+      - analogy_attack
+      - claims_have_sources
+      - finance_advice_check
+      - understandability
+
+  - id: story
+    name: Story
+    status: planned
+    description: "A narrative with stakes where the idea rides on the plot"
+    format_ids: [eli5_story, case_study, character_series]
+    craft_mode: cold-open-drama
+    archetype_pool: [paper-atlas, archive-ink, flat-cosmos]
+    scene_vocabulary:
+      preferred: [image_clip, bridge, hold_shot]
+      discouraged: [diagram, term_card]
+    motion: {personality: slower_cinematic, speed: slow}
+    sound:
+      bed_style: underscore
+      duck: true
+      sfx: silence_before_turn
+    narration:
+      register: scene_voice
+      person: third
+      sentence_style: one_line_per_beat
+      define_before_use: false
+      payoff_callback: true
+    hook_forms: [second_person_scenario, stakes_open, character_intro]
+    pacing:
+      hold_floor_s: 4.0
+      change_cadence_s_max: 6.0
+    thumbnail_style: character_moment
+    voice_settings: {speed: slow, register: narrative}
+    outline_approval_default: false
+    gate_list:
+      - story_editor
+      - hook_checklist
+      - continuity
+      - claims_have_sources
+      - terms_before_use_paid_off_by_end
+      - finance_advice_check
+
+  - id: concept
+    name: Concept
+    status: planned
+    description: "One abstract idea built visually (math, physics, what-if)"
+    format_ids: [visual_math, what_if, experiment]
+    craft_mode: explainer
+    archetype_pool: [chalk-proof, blueprint, flat-cosmos]
+    scene_vocabulary:
+      preferred: [numberline, axes, morph, diagram]
+      discouraged: [compare, steps]
+    motion: {personality: precise_transformation, speed: normal}
+    sound:
+      bed_style: sparse_tonal
+      duck: true
+      sfx: none
+    narration:
+      register: question_led
+      person: second
+      sentence_style: one_idea_per_scene
+      define_before_use: true
+    hook_forms: [question, absurd_premise, what_if]
+    pacing:
+      hold_floor_s: 3.5
+      change_cadence_s_max: 5.0
+    thumbnail_style: equation_or_visual_paradox
+    voice_settings: {speed: measured, register: curious}
+    outline_approval_default: false
+    gate_list:
+      - one_idea_check
+      - comprehension
+      - claims_have_sources
+      - finance_advice_check
+
+  - id: data
+    name: Data
+    status: planned
+    description: "Numbers over time or shares, evidence first"
+    format_ids: [data_chart_story, news_explainer]
+    craft_mode: explainer
+    archetype_pool: [ledger, tape, data-poster]
+    scene_vocabulary:
+      preferred: [chart, timeline, forces, numberline, proportion]
+      discouraged: [image_clip]
+    motion: {personality: snappy, speed: fast}
+    sound:
+      bed_style: tick_on_numbers
+      duck: true
+      sfx: impact_on_key_figure
+    narration:
+      register: figure_first
+      person: third
+      sentence_style: source_named
+      define_before_use: true
+    hook_forms: [statistic, comparison, question]
+    pacing:
+      hold_floor_s: 3.0
+      change_cadence_s_max: 3.0
+    thumbnail_style: big_number_on_chart
+    voice_settings: {speed: normal, register: factual}
+    outline_approval_default: false
+    gate_list:
+      - number_match
+      - two_source_check
+      - chart_legibility
+      - claims_have_sources
+      - finance_advice_check
+
+  - id: documentary
+    name: Documentary
+    status: planned
+    description: "A place, event or history, observed"
+    format_ids: [place_explainer, history_timeline]
+    craft_mode: documentary
+    archetype_pool: [paper-atlas, archive-ink]
+    scene_vocabulary:
+      preferred: [photo, map, timeline, slow_push]
+      discouraged: [steps, compare]
+    motion: {personality: slow, speed: slow}
+    sound:
+      bed_style: ambient
+      duck: true
+      sfx: none
+    narration:
+      register: observational
+      person: third
+      sentence_style: dated_sourced
+      define_before_use: true
+    hook_forms: [place_opening, date_opening, mystery_opening]
+    pacing:
+      hold_floor_s: 4.0
+      change_cadence_s_max: 8.0
+    thumbnail_style: photographic_moment
+    voice_settings: {speed: slow, register: documentary}
+    outline_approval_default: false
+    gate_list:
+      - realism_fidelity
+      - claims_have_sources
+      - timeline_order
+      - finance_advice_check

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "brief.schema.json",
+  "description": "Owner brief for one episode. Written by brief.py; read by research.py, outline.py and every later layer. Questions and dates are locked after write — no layer may alter them.",
+  "type": "object",
+  "required": ["schema_version", "id", "genre", "audience", "topic", "questions", "approvals"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "id": {"type": "string", "pattern": "^ep[0-9]{2,3}-[a-z0-9-]+$"},
+    "genre": {"type": "string", "enum": ["explainer", "story", "concept", "data", "documentary"], "default": "explainer"},
+    "audience": {"type": "string", "enum": ["kids", "curious_adult", "older_adult", "techie"], "default": "curious_adult"},
+    "topic": {"type": "string", "minLength": 1, "description": "One-line topic summary"},
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "text"],
+        "properties": {
+          "id":   {"type": "string", "pattern": "^q[0-9]+$"},
+          "text": {"type": "string", "minLength": 5, "description": "Verbatim owner wording — never altered"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "dates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["raw", "iso"],
+        "properties": {
+          "raw": {"type": "string"},
+          "iso": {"type": "string", "description": "ISO 8601 date string (YYYY-MM-DD or YYYY-MM)"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "must_cover":  {"type": "array", "items": {"type": "string"}},
+        "must_avoid":  {"type": "array", "items": {"type": "string"}},
+        "length_hint": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "approvals": {
+      "type": "object",
+      "required": ["outline", "script", "preview", "publish"],
+      "properties": {
+        "outline": {"type": "boolean", "default": false},
+        "script":  {"type": "boolean", "default": true},
+        "preview": {"type": "boolean", "default": true},
+        "publish": {"type": "boolean", "default": true}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

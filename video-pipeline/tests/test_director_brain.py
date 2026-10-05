@@ -643,7 +643,7 @@ class R2Skeleton(unittest.TestCase):
                      "sources: [{claim: string, url: string", "packaging: {primary_keyword: string", "long_form?: {", "OMIT unless a real long-form",
                      "intent?: string (10-120 chars)", "term lives inside visual", "compare: {type: \"compare\", colA: string, colB: string, rows: [{a: string, b: string}], winner?: A|B}",
                      "steps: {type: \"steps\", title: string, steps: [string]}", "clip: {type: \"clip\", motion_prompt: string", "No field accepts null",
-                     "OMIT the key when there is no lens (never null)", "FREE scenes: steps, compare, number"):
+                     "OMIT the key when there is no lens (never null)", "FREE Remotion: chart, timeline, forces"):
             self.assertIn(frag, sk)
         self.assertNotIn("orbit: {type", sk)
         self.assertIn("orbit: {type: \"orbit\"", director.shape_skeleton(None, space=True))

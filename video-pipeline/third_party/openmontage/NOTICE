@@ -1,0 +1,6 @@
+OpenMontage — selected stdlib-only files copied verbatim for personal use.
+Source: https://github.com/OpenMontage/OpenMontage
+Licence: GNU Affero General Public License v3 (see LICENSE in this directory).
+Files copied: slideshow_risk.py, variation_checker.py, delivery_promise.py.
+These files are unmodified; thin adapters that convert our episode.json format into
+the shapes they expect live in tools/risk_adapters.py (our code, not part of OpenMontage).

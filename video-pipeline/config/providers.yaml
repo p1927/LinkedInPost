@@ -30,11 +30,13 @@ llm:                      # used by director.py (topic pick + script). Fallback 
   init_args:
     models: [MiniMax-M3, MiniMax-M2.7, MiniMax-M2.5]
     temperature: 0.8
+    reasoning: false        # M3 thinking off (about 6x faster); M2.x fallbacks still think
 llm_write:                # writer + repairer (director.py): strongest model first, analogies and accuracy matter most here
   class_path: adapters.llm_minimax.MiniMaxLLM   # mirrors worker/src/llm/providers/minimax.ts (same endpoint/params/model ids)
   init_args:
     models: [MiniMax-M3, MiniMax-M2.7]
     temperature: 0.7
+    reasoning: false        # writer/repair: M3 thinking off; set true if quality drops
 llm_verify:               # verifier agents (verify.py): a different, stronger model than the writer, low temperature
   class_path: adapters.llm_minimax.MiniMaxLLM
   init_args:

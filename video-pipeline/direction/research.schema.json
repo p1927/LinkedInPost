@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research.schema.json",
+  "description": "Research output for one episode. Written by research.py. Evidence ids are cited by outline.py and later layers.",
+  "type": "object",
+  "required": ["schema_version", "id", "questions", "evidence", "unsupported"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "id": {"type": "string"},
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "answer_summary", "evidence_ids", "unsupported"],
+        "properties": {
+          "id":             {"type": "string"},
+          "text":           {"type": "string"},
+          "answer_summary": {"type": ["string", "null"]},
+          "evidence_ids":   {"type": "array", "items": {"type": "string"}},
+          "unsupported":    {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "url", "source", "facts"],
+        "properties": {
+          "id":           {"type": "string", "pattern": "^ev-[0-9]+$"},
+          "url":          {"type": "string"},
+          "source":       {"type": "string"},
+          "retrieved_at": {"type": "string"},
+          "single_source_numbers": {"type": "array", "items": {"type": "string"}},
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["text", "source_id"],
+              "properties": {
+                "text":      {"type": "string"},
+                "number":    {"type": ["string", "null"]},
+                "unit":      {"type": ["string", "null"]},
+                "source_id": {"type": "string"},
+                "date":      {"type": ["string", "null"]}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unsupported": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Question ids with no supporting evidence"
+    }
+  },
+  "additionalProperties": false
+}

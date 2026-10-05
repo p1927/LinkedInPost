@@ -38,8 +38,9 @@ def _post_with_deadline(url: str, body: dict, headers: dict, timeout: float, dea
 
 
 class MiniMaxLLM(JsonLLM):
-    def __init__(self, models=("MiniMax-M2.7",), temperature=0.7, max_tokens=12000, think_overhead=6000, tries=3, timeout=420, retry_waits=(30, 90, 180), deadline_extra=60):
+    def __init__(self, models=("MiniMax-M2.7",), temperature=0.7, max_tokens=12000, think_overhead=6000, tries=3, timeout=420, retry_waits=(30, 90, 180), deadline_extra=60, reasoning=True):
         self.models, self.temperature, self.max_tokens = list(models), temperature, max_tokens
+        self.reasoning = reasoning  # False = send thinking disabled to models that support it (M3); M2.x always think (measured 2026-10-06: M3 off ~6 s vs ~35 s on a realistic outline call)
         self.think_overhead, self.timeout = think_overhead, timeout
         self.deadline = timeout + deadline_extra  # overall cap per attempt (see _post_with_deadline)
         self.retry_waits = tuple(retry_waits)[:max(0, tries)] if tries else ()  # `tries` = number of RETRIES (kept for config compatibility)
@@ -48,9 +49,11 @@ class MiniMaxLLM(JsonLLM):
         msgs = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
         last = None
         for model in self.models:
-            body = {"model": model, "messages": msgs, "reasoning_split": True,
+            no_think = not self.reasoning and model.startswith("MiniMax-M3")
+            body = {"model": model, "messages": msgs,
                     "temperature": self.temperature if temperature is None else temperature,
-                    "max_completion_tokens": self.max_tokens + (self.think_overhead if model.startswith(_THINKING) else 0)}
+                    "max_completion_tokens": self.max_tokens + (self.think_overhead if model.startswith(_THINKING) and not no_think else 0)}
+            body.update({"thinking": {"type": "disabled"}} if no_think else {"reasoning_split": True})
             if json_mode:
                 body["response_format"] = {"type": "json_object"}
             for attempt in range(len(self.retry_waits) + 1):

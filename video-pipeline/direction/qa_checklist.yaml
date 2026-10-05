@@ -355,3 +355,85 @@ rules:
     description: A new audience episode carries `direction` (mode, lens, skills_used) so the craft cards were actually applied. The Director sets it; hand-written episodes must too.
     check: direction_present
 
+
+  # ── Finance compliance (C1) ──────────────────────────────────────────────
+  - id: finance_advice_check
+    enforced_by: lint
+    severity: warn
+    description: >-
+      Scripts must not give actionable investment advice: no buy/sell/hold recommendations,
+      no price targets, no guarantees. Plain advisory for now; promotes to error for obvious
+      phrases ('you should buy', 'guaranteed return', specific price target with a date).
+      Craft card: direction/craft/finance-rules.md.
+    check: finance_advice_check
+    banned_phrases:
+      - "you should buy"
+      - "you should sell"
+      - "you should invest"
+      - "guaranteed"
+      - "risk-free"
+      - "will definitely"
+      - "certain to rise"
+      - "certain to fall"
+      - "price target"
+
+  # ── Design-system element rules (D1) ─────────────────────────────────────
+  - id: element_font_floor
+    enforced_by: lint
+    severity: warn
+    description: >-
+      Font sizes at 1080 wide: headline ≥84 px, secondary ≥44 px, caption ≥56 px,
+      diagram label ≥36 px. Judgment thresholds from tokens.yaml — advisory until
+      calibrated on the reference episode.
+    check: element_font_floor
+    threshold_headline: 84
+    threshold_secondary: 44
+    threshold_caption: 56
+    threshold_diagram_label: 36
+
+  - id: element_words_per_line
+    enforced_by: lint
+    severity: warn
+    description: >-
+      Max 6 words per on-screen line. Judgment — advisory. Checked against scene
+      narration as a proxy; definitive check requires rendered element data (F1).
+    check: element_words_per_line
+    threshold: 6
+
+  - id: element_words_per_scene
+    enforced_by: lint
+    severity: warn
+    description: >-
+      Max 12 words per scene on-screen (caption or text card). Advisory.
+    check: element_words_per_scene
+    threshold: 12
+
+  - id: element_hold_floor_text
+    enforced_by: lint
+    severity: warn
+    description: >-
+      Text-card scenes should be held at least 3.5 s. Estimated from word-count
+      when TTS duration is not present. Advisory.
+    check: element_hold_floor_text
+    threshold: 3.5
+
+  - id: element_hold_floor_stat
+    enforced_by: lint
+    severity: warn
+    description: >-
+      Number/stat scenes should be held at least 3.0 s. Advisory.
+    check: element_hold_floor_stat
+    threshold: 3.0
+
+  # ── Slideshow risk (D1 / S-03) ───────────────────────────────────────────
+  - id: slideshow_risk
+    enforced_by: lint
+    severity: warn
+    description: >-
+      OpenMontage slideshow-risk average score must be < 4.0 (revise) to proceed.
+      Advisory warning; hard fail at ≥4.0 is a future promotion. Scorer lives in
+      third_party/openmontage/slideshow_risk.py (AGPL, copied verbatim).
+      Adapter: tools/risk_adapters.py.
+    check: slideshow_risk
+    threshold_warn: 3.0
+    threshold_fail: 4.0

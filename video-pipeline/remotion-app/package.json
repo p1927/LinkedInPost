@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "scripts": {
     "studio": "remotion studio src/index.ts",
-    "render": "remotion render src/index.ts Episode out/test.mp4"
+    "render": "remotion render src/index.ts Episode out/test.mp4",
+    "lint": "ESLINT_USE_FLAT_CONFIG=true eslint src/"
   },
   "dependencies": {
     "@remotion/captions": "4.0.532",
@@ -21,7 +22,12 @@
     "remotion": "4.0.532"
   },
   "devDependencies": {
+    "@remotion/eslint-plugin": "4.0.532",
+    "@remotion/layout-utils": "4.0.532",
+    "@remotion/rough-notation": "4.0.532",
     "@types/react": "19.0.0",
+    "@typescript-eslint/parser": "8.71.1",
+    "eslint": "8.57.1",
     "typescript": "5.6.3"
   }
 }

@@ -129,6 +129,18 @@ def pick(ep: dict, info: str | None = None, archetype: str | None = None, palett
         aud = ep.get("audience")
         fit = [c for c in cands if not aud or aud in cat["archetypes"][c]["audience_fit"]]
         cands = fit or cands
+        # G1: narrow further by genre pack pool when genre is provided
+        genre = ep.get("genre")
+        if genre:
+            try:
+                import tokens as _tok
+                pool = _tok.archetype_pool(genre)
+                if pool:
+                    genre_fit = [c for c in cands if c in pool]
+                    cands = genre_fit or cands  # fall back to full list if pool doesn't overlap
+                    why.append(f"genre '{genre}' narrows archetype pool to {pool}")
+            except Exception:  # noqa: BLE001 — tokens/packs unavailable; keep existing cands
+                pass
         why.append(f"information type '{info}' -> {it['default']} (default) / {it['alternate']} (alternate)")
     used = {(h["archetype"], h["palette"]) for h in hist}
     used_triples = {(h["archetype"], h["palette"], int(h["accent_hue"] // 60)) for h in hist if h["accent_hue"] is not None}
@@ -186,8 +198,18 @@ def pick(ep: dict, info: str | None = None, archetype: str | None = None, palett
 
 
 # ------------------------------------------------------------------ checks
+def _load_tokens() -> dict:
+    """Load direction/tokens.yaml (cached lazily to avoid import-time I/O)."""
+    try:
+        import tokens as _tokens_mod
+        return _tokens_mod.load()
+    except Exception:  # noqa: BLE001 — tokens missing: skip new rules gracefully
+        return {}
+
+
 def validate(idn: dict) -> list:
-    """[(severity, rule, message)] for an episode's identity: contrast floors, known fonts/enums, banned AI-default looks."""
+    """[(severity, rule, message)] for an episode's identity: contrast floors, known fonts/enums, banned AI-default looks,
+    brightness band, accent separation, and (if coloraide CVD is available) colour-blind safety."""
     out, cat = [], catalog()
     pal = idn.get("palette") or {}
     if any(k not in pal for k in KEYS):
@@ -213,6 +235,72 @@ def validate(idn: dict) -> list:
         out.append(("warn", "identity_banned_default", "cream background + serif + terracotta accent is a known AI-default look; rotate the accent hue or pick the other palette"))
     if bg["lightness"] < 0.2 and 120 <= h <= 150 and acc["chroma"] > 0.18:
         out.append(("warn", "identity_banned_default", "near-black background + acid green accent is a known AI-default look"))
+
+    # ---- D1 brightness-band checks (advisory, from tokens.yaml) ----
+    tok = _load_tokens()
+    bright = tok.get("brightness") or {}
+    dark_band = bright.get("dark_bg") or {}
+    light_band = bright.get("light_bg") or {}
+    bg_l = float(bg["lightness"])
+    is_dark = bg_l < 0.5
+    if is_dark:
+        lo, hi = dark_band.get("l_min", 0.12), dark_band.get("l_max", 0.25)
+        if not (lo <= bg_l <= hi):
+            out.append(("warn", "identity_brightness_band",
+                        f"dark bg OKLCH L={bg_l:.3f} is outside the band [{lo}, {hi}]; "
+                        f"adjust lightness to stay in the dark-bg band (tokens.yaml brightness.dark_bg)"))
+        body_l = dark_band.get("body_text_l", 0.95)
+        ink_c = Color(pal["ink"]).convert("oklch")
+        if float(ink_c["lightness"]) > 0.999:
+            out.append(("warn", "identity_brightness_band",
+                        "body text is pure white (#FFFFFF) on dark bg; use OKLCH L≈0.95 (near-white) instead"))
+    else:
+        lo, hi = light_band.get("l_min", 0.94), light_band.get("l_max", 0.99)
+        if not (lo <= bg_l <= hi):
+            out.append(("warn", "identity_brightness_band",
+                        f"light bg OKLCH L={bg_l:.3f} is outside the band [{lo}, {hi}]; "
+                        f"adjust lightness to stay in the light-bg band (tokens.yaml brightness.light_bg)"))
+    # no pure black/white bg
+    if bg_l == 0.0:
+        out.append(("warn", "identity_brightness_band", "background is pure black (OKLCH L=0); use L≥0.12 (tokens.yaml)"))
+    if bg_l >= 1.0:
+        out.append(("warn", "identity_brightness_band", "background is pure white (OKLCH L=1); use L≤0.99 (tokens.yaml)"))
+
+    # ---- D1 accent-separation check (advisory) ----
+    accent_tok = tok.get("accent") or {}
+    min_lum_contrast = accent_tok.get("min_luminance_contrast", 3.0)
+    min_hue_sep = accent_tok.get("min_hue_separation", 40.0)
+    acc1 = Color(pal["sunny"])
+    acc2 = Color(pal["sky"])
+    lum_sep = acc1.contrast(acc2)
+    h1 = 0.0 if acc1.convert("oklch").is_nan("hue") else float(acc1.convert("oklch")["hue"])
+    h2 = 0.0 if acc2.convert("oklch").is_nan("hue") else float(acc2.convert("oklch")["hue"])
+    hue_sep = _gap(h1, h2)
+    if lum_sep < min_lum_contrast and hue_sep < min_hue_sep:
+        out.append(("warn", "identity_accent_separation",
+                    f"accents sunny ({pal['sunny']}) and sky ({pal['sky']}) are too close: "
+                    f"luminance contrast {lum_sep:.2f}:1 (need ≥{min_lum_contrast}:1) "
+                    f"AND hue gap {hue_sep:.1f}° (need ≥{min_hue_sep}°); at least one must pass"))
+
+    # ---- D1 colour-blind check (advisory; skip if coloraide CVD not available) ----
+    try:
+        def _sim(hex_color: str, mode: str) -> str:
+            c = Color(hex_color)
+            sim = c.filter(mode)
+            return _hex(sim.convert("oklch") if hasattr(sim, "convert") else sim)
+
+        acc1_d = _sim(pal["sunny"], "deuteranopia")
+        acc2_d = _sim(pal["sky"], "deuteranopia")
+        delta_d = Color(acc1_d).delta_e(Color(acc2_d), method="2000")
+        if delta_d < 10.0:
+            out.append(("warn", "identity_colour_blind",
+                        f"accents sunny and sky are indistinguishable under deuteranopia simulation "
+                        f"(ΔE={delta_d:.1f} < 10); avoid using only red/green to encode data meaning"))
+    except Exception:  # noqa: BLE001 — coloraide CVD filter not available in this version; skip
+        out.append(("warn", "identity_colour_blind",
+                    "colour-blind simulation skipped (coloraide CVD filter not available in this environment); "
+                    "verify manually that accents are distinguishable under deuteranopia"))
+
     return out
 
 

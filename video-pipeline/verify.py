@@ -428,11 +428,16 @@ def run(ep: dict, items: list | None = None, quiet: bool = False) -> dict:
         f = ROOT / "episodes" / ep["id"] / "sources.json"
         items = json.loads(f.read_text()) if f.exists() else []
     ev = _evidence(ep, items or [])  # fetched once; both the analogy and the claim pass read it
-    a = analogy_attack(llm, ep, ev)
-    c = claim_support(llm, ep, items, ev)
-    k = comprehension(llm, llm, ep)
-    st = story_review(llm, ep) if ep.get("audience") else {}
-    r = realism(llm, ep) if (ep.get("direction") or {}).get("mode", "explainer") != "explainer" or any(s.get("shot") for s in ep["scenes"]) else None
+    # the five judge passes are independent: run them concurrently (was sequential, about 9 minutes per verify on M2.7)
+    from concurrent.futures import ThreadPoolExecutor
+    want_realism = (ep.get("direction") or {}).get("mode", "explainer") != "explainer" or any(s.get("shot") for s in ep["scenes"])
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        fa, fc, fk = ex.submit(analogy_attack, llm, ep, ev), ex.submit(claim_support, llm, ep, items, ev), ex.submit(comprehension, llm, llm, ep)
+        fs = ex.submit(story_review, llm, ep) if ep.get("audience") else None
+        fr = ex.submit(realism, llm, ep) if want_realism else None
+        a, c, k = fa.result(), fc.result(), fk.result()
+        st = fs.result() if fs else {}
+        r = fr.result() if fr else None
     issues = []
     if int(a.get("analogy_count") or 0) > 1:
         issues.append(["error", "one_analogy", f"{a['analogy_count']} analogy worlds used ({', '.join(a.get('worlds', []))}); the rules allow one"])
@@ -565,6 +570,74 @@ def show(report: dict) -> None:
     errs = sum(1 for i in report["issues"] if i[0] == "error")
     g = report["comprehension"]["grade"]
     print(f"verify {report['episode']}: {'PASS' if report['passed'] else 'FAIL'} ({errs} error(s), {len(report['issues']) - errs} warning(s); comprehension {g.get('score')}/5)")
+
+
+def gates_view(ep_id: str, ep: dict | None = None) -> tuple:
+    """Merge gate_report.json + lint + qa_report findings into one view.
+    Returns (approved: bool, report_text: str).
+    Only non-advisory errors block. Advisory checks are marked but never block."""
+    import gate_report
+    import lint as _lint
+
+    errors: list = []       # (label, msg, advisory)
+    warnings: list = []     # (label, msg, advisory)
+
+    # 1. gate_report.json entries (from F1/A1/T1 layers)
+    gr_path = ROOT / "out" / ep_id / "gate_report.json"
+    for e in gate_report.load(gr_path):
+        label = f"[{e.get('layer','?')}:{e.get('rule','?')}]"
+        msg = e.get("evidence", "")[:120]
+        adv = bool(e.get("advisory", True))
+        sev = e.get("severity", "warn")
+        if sev == "error" and not adv:
+            errors.append((label, msg, False))
+        elif sev == "error" and adv:
+            warnings.append((label + " [advisory]", msg, True))
+        else:
+            warnings.append((label, msg, adv))
+
+    # 2. lint findings (if episode available)
+    if ep is not None:
+        try:
+            for sev, rid, msg in _lint.run(ep):
+                label = f"[lint:{rid}]"
+                if sev == "error":
+                    errors.append((label, str(msg)[:120], False))
+                else:
+                    warnings.append((label, str(msg)[:120], False))
+        except Exception as exc:
+            warnings.append(("[lint:unavailable]", str(exc)[:120], True))
+
+    # 3. qa_report.json (verify pass results)
+    qa_path = ROOT / "out" / ep_id / "qa_report.json"
+    if qa_path.exists():
+        try:
+            qa = json.loads(qa_path.read_text())
+            for item in qa.get("issues") or []:
+                sev, rid, msg = item[0], item[1], item[2] if len(item) > 2 else ""
+                label = f"[verify:{rid}]"
+                if sev == "error":
+                    errors.append((label, str(msg)[:120], False))
+                else:
+                    warnings.append((label, str(msg)[:120], False))
+        except Exception as exc:
+            warnings.append(("[verify:unavailable]", str(exc)[:120], True))
+
+    approved = not errors
+    n_e, n_w = len(errors), len(warnings)
+    lines = [f"gates {ep_id}: {'CLEAR' if approved else 'BLOCKED'} ({n_e} error(s), {n_w} warning(s))"]
+
+    for label, msg, adv in errors:
+        adv_tag = " [advisory]" if adv else ""
+        lines.append(f"  ERROR{adv_tag} {label}: {msg}")
+
+    shown_warnings = warnings[:8]
+    for label, msg, adv in shown_warnings:
+        lines.append(f"  warn  {label}: {msg}")
+    if n_w > 8:
+        lines.append(f"  ... and {n_w - 8} more warning(s)")
+
+    return approved, "\n".join(lines)
 
 
 def main(ref: str) -> int:

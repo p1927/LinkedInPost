@@ -610,7 +610,7 @@ class R2_VerifierDeterminism(unittest.TestCase):
         ep, _ = self.ep()
         rep, temps = self.run_verify({"analogy_count": 1, "breaks": [], "limitation_stated_in_script": True, "claims": [], "score": 5,
                                       "checks": []}, ep)
-        self.assertEqual(temps.count(verify.JUDGE_TEMPERATURE), 4)  # analogy, claims, grader, realism (the learner keeps 0.4)
+        self.assertEqual(temps.count(verify.JUDGE_TEMPERATURE), 5)  # analogy, claims, grader, realism, story_review (the learner keeps 0.4)
         self.assertIn(0.4, temps)
         self.assertEqual(rep["judge"]["temperature"], verify.JUDGE_TEMPERATURE)
 

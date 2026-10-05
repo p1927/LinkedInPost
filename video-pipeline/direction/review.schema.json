@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review.schema.json",
+  "description": "Owner taste-log for a preview review (E1). Written by review.add(); read by run.py metrics and check-precision log.",
+  "type": "object",
+  "required": ["ep_id", "reviewed_at", "understood", "tags"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1" },
+    "ep_id": { "type": "string" },
+    "reviewed_at": { "type": "string", "description": "ISO-8601 UTC timestamp" },
+    "understood": {
+      "type": "boolean",
+      "description": "Owner verdict: did I understand this? (required)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["keep", "too_similar", "too_flat", "confusing", "off_brand"]
+      },
+      "uniqueItems": true,
+      "description": "Taste tags — at least one required; 'keep' means it was good"
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Optional free-text note from the owner"
+    }
+  }
+}

@@ -24,6 +24,25 @@
       "minLength": 5,
       "maxLength": 100
     },
+    "schema_version": {
+      "type": "string",
+      "description": "Optional contract version string (V1). Omit or '1' for current shape. Upgrade shims live in registry.py."
+    },
+    "genre": {
+      "type": "string",
+      "enum": ["explainer", "story", "concept", "data", "documentary"],
+      "description": "Genre pack (G1). Optional — old episodes default to 'explainer' when absent."
+    },
+    "approvals": {
+      "type": "object",
+      "description": "Per-stage owner approvals (V1). All stages optional; absent = not yet approved.",
+      "properties": {
+        "outline": { "type": "boolean" },
+        "script":  { "type": "boolean" },
+        "preview": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
     "format_id": {
       "type": "string"
     },

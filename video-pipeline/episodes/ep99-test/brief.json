@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "ep99-test",
+  "genre": "explainer",
+  "audience": "curious_adult",
+  "topic": "FII and DII flows",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "What are FIIs?"
+    },
+    {
+      "id": "q2",
+      "text": "Why did DIIs jump?"
+    }
+  ],
+  "dates": [],
+  "constraints": {},
+  "approvals": {
+    "outline": false,
+    "script": true,
+    "preview": true,
+    "publish": true
+  }
+}

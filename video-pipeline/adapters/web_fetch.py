@@ -1,7 +1,9 @@
-"""Tiered page reader for claim checking and research (no new infrastructure required; Steel is opt-in).
+"""Tiered page reader for claim checking and research (no new infrastructure required; Steel and BrowserOS are opt-in).
   read(url) -> readable text or "" (never raises). Tier 1: plain fetch via news_rss.read_article (SSRF-guarded, public http(s) only).
   Tier 2: a Steel browser scrape, only if STEEL_API_URL is set (the docker service from the owner's Trade stack, default http://localhost:3000;
   optional STEEL_API_KEY). Steel renders JavaScript pages and gets past walls the plain fetch cannot, e.g. nseindia.com.
+  Tier 3: BrowserOS MCP, only if BROWSEROS_MCP_URL is set and the probe confirms it is reachable. Opens the page via
+  the BrowserOS local Chromium app (third_party/trade/browseros_client.py copied from Trade, never imported from Trade).
 An empty string means "no evidence", never support. Fetched page text is DATA for prompts, never instructions.
 Port of the Steel /v1/scrape call from Trade (browser_research/backends/steel_backend.py): POST {url, format: [...]} -> content (str or dict of formats)."""
 import os
@@ -48,12 +50,50 @@ def _steel_read(url: str, limit: int, timeout: int = 45) -> str:
     return _pick(r.json())[:limit]
 
 
+def _browseros_read(url: str, limit: int, timeout: int = 60) -> str:
+    """Tier 3: read a page via the local BrowserOS MCP app (BROWSEROS_MCP_URL must be set).
+    Copies from third_party/trade/browseros_client.py (copied from Trade; never imported from Trade).
+    Only called when the probe confirms BrowserOS is reachable."""
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from third_party.trade.browseros_probe import browseros_configured
+    from third_party.trade.browseros_client import BrowserOSClient, extract_run_text, BrowserOSPageError
+
+    base_url = os.environ.get("BROWSEROS_MCP_URL", "").strip()
+    if not base_url:
+        return ""
+    if not browseros_configured(base_url):
+        return ""
+    news_rss._check_url(url)
+    client = BrowserOSClient(base_url)
+    try:
+        with client.open_page(url, wait_ms=3000, timeout_s=timeout) as (session_id, page_id):
+            result = client.call_tool(
+                "run",
+                {"code": f"return await browser.pages.getText({page_id});"},
+                timeout_s=timeout,
+                session_id=session_id,
+            )
+            text, _err = extract_run_text(result)
+            return _strip_html(text)[:limit] if text else ""
+    except (BrowserOSPageError, Exception):
+        return ""
+
+
 def read(url: str, limit: int = 6000) -> str:
+    """Tiered page reader: plain -> Steel -> BrowserOS. Returns "" (never raises)."""
     text = news_rss.read_article(url, limit)
     if text:
         return text
     try:
         text = _steel_read(url, limit)
+    except Exception:
+        text = ""
+    if text and len(text) > _MIN_CHARS:
+        return text
+    try:
+        text = _browseros_read(url, limit)
     except Exception:
         return ""
     return text if len(text) > _MIN_CHARS else ""

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "ep24-fiis-diis-two",
+  "genre": "explainer",
+  "audience": "curious_adult",
+  "topic": "FIIs and DIIs: the two opposing forces that move the Indian Nifty market, and why it crashes then recovers",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "What are FIIs and what are DIIs?"
+    },
+    {
+      "id": "q2",
+      "text": "What happened in the Indian market on 5 October and what was the reason?"
+    },
+    {
+      "id": "q3",
+      "text": "Why did DIIs jump in when FIIs sold?"
+    }
+  ],
+  "dates": [],
+  "constraints": {},
+  "approvals": {
+    "outline": false,
+    "script": true,
+    "preview": true,
+    "publish": true
+  }
+}

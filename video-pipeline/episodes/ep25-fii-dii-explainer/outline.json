@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "id": "ep25-fii-dii-explainer",
+  "genre": "explainer",
+  "beats": [
+    {
+      "id": "b1",
+      "question_ids": [
+        "q1"
+      ],
+      "one_idea": "Who really controls the Indian market: foreigners or Indians?",
+      "terms_introduced": [],
+      "terms_used": [],
+      "visual_type": "number",
+      "evidence_ids": [
+        "ev-1",
+        "ev-3"
+      ],
+      "target_seconds": 5,
+      "when": null
+    },
+    {
+      "id": "b2",
+      "question_ids": [
+        "q1"
+      ],
+      "one_idea": "FIIs are foreign funds like sovereign wealth funds, pension funds and global asset managers registered with SEBI to buy Indian shares; DIIs are Indian institutions like mutual funds, banks and insurance companies that invest domestic money.",
+      "terms_introduced": [
+        "FII",
+        "DII"
+      ],
+      "terms_used": [],
+      "visual_type": "compare",
+      "evidence_ids": [
+        "ev-1",
+        "ev-2",
+        "ev-3",
+        "ev-4",
+        "ev-5"
+      ],
+      "target_seconds": 14,
+      "when": null
+    },
+    {
+      "id": "b3",
+      "question_ids": [
+        "q2"
+      ],
+      "one_idea": "On 1 October 2026 the Nifty fell 0.88% and the Sensex fell 0.79%, extending losses to an eighth straight week.",
+      "terms_introduced": [],
+      "terms_used": [
+        "FII",
+        "DII"
+      ],
+      "visual_type": "timeline",
+      "evidence_ids": [
+        "ev-6",
+        "ev-7",
+        "ev-8"
+      ],
+      "target_seconds": 12,
+      "when": "1 October 2026"
+    },
+    {
+      "id": "b4",
+      "question_ids": [
+        "q2"
+      ],
+      "one_idea": "FIIs were net sellers of ₹9,484.22 crore on 1 October 2026, with high crude oil prices and rising global bond yields adding to the pressure.",
+      "terms_introduced": [],
+      "terms_used": [
+        "FII"
+      ],
+      "visual_type": "number",
+      "evidence_ids": [
+        "ev-9",
+        "ev-10"
+      ],
+      "target_seconds": 12,
+      "when": "1 October 2026"
+    },
+    {
+      "id": "b5",
+      "question_ids": [
+        "q3"
+      ],
+      "one_idea": "DIIs jumped in as net buyers of ₹10,041.84 crore on 1 October 2026, almost matching the FII selling to absorb the pressure.",
+      "terms_introduced": [],
+      "terms_used": [
+        "FII",
+        "DII"
+      ],
+      "visual_type": "forces",
+      "evidence_ids": [
+        "ev-9",
+        "ev-10",
+        "ev-11"
+      ],
+      "target_seconds": 12,
+      "when": "1 October 2026"
+    },
+    {
+      "id": "b6",
+      "question_ids": [
+        "q3"
+      ],
+      "one_idea": "On 1 October 2026, steady Indian retail SIP inflows and a structural shift of household savings into financial assets give DIIs the firepower to step in, so the market holds even as sector leadership changes.",
+      "terms_introduced": [],
+      "terms_used": [
+        "DII",
+        "FII"
+      ],
+      "visual_type": "chart",
+      "evidence_ids": [
+        "ev-12",
+        "ev-13",
+        "ev-14",
+        "ev-15"
+      ],
+      "target_seconds": 12,
+      "when": "1 October 2026"
+    }
+  ]
+}

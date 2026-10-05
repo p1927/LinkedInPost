@@ -886,7 +886,73 @@ def brief_block(brief: list) -> str:
             "Set brief = [{question: <the question exactly as given>, answered_in: <the scene id that answers it>}, ...] covering every question.\n")
 
 
-def write_episode(llm, topic: dict, items: list, var: dict, ep_id: str, eps: list, budget: "Budget | None" = None, brief: list | None = None) -> dict:
+def _outline_contract_block(outline: dict, research: dict, items: list) -> str:
+    """Writer CONTRACT from the outline: one scene per beat, in order, with visual_type, evidence src ids, terms, target_seconds."""
+    beats = outline.get("beats") or []
+    if not beats:
+        return ""
+    ids = source_ids(items)
+    back = {u: k for k, u in ids.items()}
+    # Build evidence id -> source id mapping from research evidence list
+    ev_to_src: dict = {}
+    for ev in (research.get("evidence") or []):
+        eid = ev.get("id", "")
+        url = ev.get("url", "")
+        if eid and url and url in back:
+            ev_to_src[eid] = back[url]
+    lines = [
+        "OUTLINE CONTRACT (BINDING: write exactly these scenes in this order; use the beat id as the scene id):",
+        "For each beat create ONE scene. Set scene.id = beat id. Set visual.type = the beat's visual_type. The FIRST scene's beat field is 'hook' (a question or at most 12 words).",
+        "loops: exactly one entry per brief question (no duplicates): raised_in = the hook scene id, paid_in = the LATER scene that answers it.",
+        "Inject evidence as claims citing the source ids listed. Introduce terms_introduced BEFORE using them.",
+        "Keep narration within target_seconds * audience.pace_wps words. Do NOT add or remove beats.",
+        "SHOW THE INFORMATION ITSELF: no analogy world (set analogy to null), no invented characters or props (sacks, scales, bridges...), no clip scenes (the clip rule is waived for this genre), no continuity bible or cinematic shot plans, no splitting a beat into two scenes.",
+        "LITERAL LANGUAGE ONLY: say 'foreign institutions' and 'Indian institutions', never giants, sacks, tug-of-war, wave or similar images. Explain the why in plain steps before piling up numbers: each number scene says what it means in one short sentence.",
+        "Put the real figures and names from the sources into the scenes; every number cites a source id; define each term in plain words the first time it appears.",
+    ]
+    for b in beats:
+        ev_ids = b.get("evidence_ids") or []
+        src_ids_str = ", ".join(ev_to_src.get(e, e) for e in ev_ids) if ev_ids else "none"
+        terms = b.get("terms_introduced") or []
+        q_ids = b.get("question_ids") or []
+        lines.append(
+            f"  beat {b['id']:6s} | visual_type={b.get('visual_type','?'):12s} | {b.get('target_seconds',0):3}s"
+            f" | answers={q_ids} | sources={src_ids_str}"
+            + f" | MAX {int(b.get('target_seconds', 8) * 2.3)} words, at most 3 short sentences"
+            + (f" | define_first={terms}" if terms else "")
+            + f"\n    one_idea: {b.get('one_idea','')[:80]}"
+        )
+    return "\n".join(lines)
+
+
+def _fill_answered_in(ep: dict, brief_json: dict, outline: dict) -> dict:
+    """Fill brief[].answered_in from the outline's question_ids -> beat id -> scene id mapping.
+    Overwrites empty answered_in fields only; does not touch non-empty ones the writer set."""
+    beats = outline.get("beats") or []
+    q_to_beat: dict = {}
+    for b in beats:
+        for qid in (b.get("question_ids") or []):
+            if qid not in q_to_beat:
+                q_to_beat[qid] = b["id"]
+    scene_ids = {s.get("id") for s in (ep.get("scenes") or []) if isinstance(s, dict)}
+    brief_list = ep.get("brief") or []
+    brief_qs = brief_json.get("questions") or []
+    # Ensure brief list is aligned with brief_json questions
+    result = []
+    for i, q in enumerate(brief_qs):
+        qid = q["id"]
+        existing = brief_list[i] if i < len(brief_list) and isinstance(brief_list[i], dict) else {}
+        answered_in = existing.get("answered_in", "")
+        if not answered_in or answered_in not in scene_ids:
+            # Try to fill from outline beat id (if beat id is also a scene id)
+            beat_id = q_to_beat.get(qid, "")
+            answered_in = beat_id if beat_id in scene_ids else answered_in
+        result.append({"question": q["text"], "answered_in": answered_in})
+    ep["brief"] = result
+    return ep
+
+
+def write_episode(llm, topic: dict, items: list, var: dict, ep_id: str, eps: list, budget: "Budget | None" = None, brief: list | None = None, contract_block: str = "") -> dict:
     by_url = {i["url"]: i for i in items}
     cited = [by_url[u] for u in topic["source_urls"] if u in by_url]
     rest = [i for i in items if i["url"] not in {c["url"] for c in cited}][:15]
@@ -917,6 +983,7 @@ Direction: set `direction` (mode '{var.get('mode') or 'explainer'}'), `continuit
 Scenes: exactly the beats of the chosen format; narration within the format's word budgets; every illustration prompt contains no text/numbers.
 {brief_block(brief or [])}{STORY_RULES_TEXT}
 {precheck_block(var.get("precheck") or {})}
+{contract_block}
 {COLD_OPEN_NARRATION_RULE if var.get('mode') in brain.DRAMA_MODES else ''}
 WORKED EXAMPLE (script shape and quality bar; it predates `direction`; source ids are its own; do not copy its content): {example}"""
     system = system_prompt(var)
@@ -1684,6 +1751,141 @@ def precheck_block(pc: dict) -> str:
             f"'{p.get('analogy')}' predicts '{p.get('analogy_predicts')}' but really '{p.get('real_behaviour')}'" for p in bad) + " (do not use)")
     return "\n".join(lines)
 
+def run_from_brief(ep_id: str) -> None:
+    """--from-brief <episode-id>: load brief/research/outline, skip topic-pick and mode-choice LLM calls.
+    Format/mode come from direction/format_packs.yaml for brief.genre; sources come from research.json.
+    Prints per-stage wall time."""
+    import time
+    import brief as _brief_mod
+    import research as _research_mod
+    import outline as _outline_mod
+    import tokens as _tokens
+
+    t0 = time.time()
+
+    # 1. Load the three layer outputs
+    try:
+        brief_json = _brief_mod.load(ep_id)
+    except FileNotFoundError:
+        raise SystemExit(f"brief.json missing for {ep_id}: run `python run.py brief {ep_id} --text \"...\"` first")
+    try:
+        research_json = _research_mod.load(ep_id)
+    except FileNotFoundError:
+        raise SystemExit(f"research.json missing for {ep_id}: run `python run.py research {ep_id}` first")
+    try:
+        outline_json = _outline_mod.load(ep_id)
+    except FileNotFoundError:
+        raise SystemExit(f"outline.json missing for {ep_id}: run `python run.py outline {ep_id}` first")
+
+    print(f"[{time.strftime('%H:%M:%S')}] from-brief: loaded brief/research/outline ({time.time()-t0:.1f}s)")
+
+    # 2. Build source catalog from research.json (deduplicated across all questions)
+    seen_urls: set = set()
+    items: list = []
+    for ev in research_json.get("evidence") or []:
+        url = ev.get("url", "")
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        text = _research_mod._read_cached(ep_id, url) or " ".join(f.get("text", "") for f in ev.get("facts") or [])
+        items.append({
+            "url": url,
+            "title": (ev.get("facts") or [{}])[0].get("text", "")[:90] or _domain(url),
+            "source": ev.get("source") or _domain(url),
+            "text": text,
+            "summary": text[:300],
+            "published": ev.get("published") or "",
+        })
+    print(f"[{time.strftime('%H:%M:%S')}] from-brief: {len(items)} sources from research.json")
+
+    # 3. Audience + card
+    aud = brief_json.get("audience", "curious_adult")
+    cs = cards()
+    if aud not in cs:
+        raise SystemExit(f"audience '{aud}' not found; options: {', '.join(cs)}")
+    card = cs[aud]
+
+    # 4. Format/mode from format_packs for this genre
+    genre = brief_json.get("genre", "explainer")
+    pack = _tokens.pack(genre)
+    format_ids = (pack or {}).get("format_ids") or list(formats())[:3]
+    craft_mode = (pack or {}).get("craft_mode") or "explainer"
+    domains = card.get("analogy_domains", [])[:2]
+
+    var: dict = {
+        "audience": aud,
+        "card": card,
+        "formats": format_ids[:3],
+        "domains": domains,
+        "mode": craft_mode,
+        "mode_reason": f"from-brief ({genre} genre, format_packs.yaml)",
+        "space": False,
+    }
+
+    # 5. Topic from brief (no news fetch / topic-pick LLM call)
+    all_urls = list(seen_urls)[:20]
+    topic: dict = {
+        "headline": brief_json.get("topic", ep_id),
+        "angle": "",
+        "why_now": "",
+        "audience_misconception": "",
+        "source_urls": all_urls,
+    }
+
+    # 6. Write sources.json before long LLM call so --repair works
+    ep_dir = DATA / "episodes" / ep_id
+    ep_dir.mkdir(parents=True, exist_ok=True)
+    write_sources(ep_dir, items)
+
+    # 7. Build brief questions list (verbatim texts) + outline contract
+    brief_questions = [q["text"] for q in brief_json.get("questions") or []]
+    contract = _outline_contract_block(outline_json, research_json, items)
+
+    eps = existing()
+    budget = Budget()
+    llm_w = load_provider("llm_write")
+
+    # 8. Write episode (outline-driven; no example episode to keep prompt small)
+    t_write = time.time()
+    try:
+        ep = write_episode(llm_w, topic, items, var, ep_id, eps, budget, brief_questions, contract)
+    except BudgetExceeded as e:
+        save_state(ep_id, budget, 0, 0, "crashed", str(e), MAX_MECH_REPAIRS, MAX_SEMANTIC_REPAIRS)
+        raise SystemExit(f"budget: {e}")
+    print(f"[{time.strftime('%H:%M:%S')}] write: {time.time()-t_write:.0f}s")
+
+    ep["id"] = ep_id
+    ep["audience"] = aud
+    ep["genre"] = genre
+    if "schema_version" not in ep:
+        ep["schema_version"] = 1
+
+    # 9. Assert brief integrity — fail loudly if LLM rewrote a question or dropped a date
+    ep.setdefault("waivers", [])  # explainer genre (Slice 1): data-led scenes only, so the clip mandate is waived (owner decision)
+    for _rule in ("min_clip_scenes",):
+        if not any(w.get("rule") == _rule for w in ep["waivers"]):
+            ep["waivers"].append({"rule": _rule, "reason": "explainer genre uses data scenes, no generated clips (owner decision, Slice 1)"})
+    try:
+        _brief_mod.assert_intact(brief_json, ep)
+    except AssertionError as e:
+        print(f"[{time.strftime('%H:%M:%S')}] assert_intact FAILED: {e}")
+        print("Re-applying question wording from brief.json into episode.brief[]...")
+        ep["brief"] = [{"question": q["text"], "answered_in": ""} for q in brief_json.get("questions") or []]
+        _brief_mod.assert_intact(brief_json, ep)  # fail loudly if still broken after wording fix
+    print(f"[{time.strftime('%H:%M:%S')}] assert_intact: ok")
+
+    # 10. Fill answered_in from outline beats
+    ep = _fill_answered_in(ep, brief_json, outline_json)
+
+    # 11. Check/repair loop (existing refine: schema + lint + director + verify)
+    t_refine = time.time()
+    ep, issues = refine(llm_w, ep, ep_id, var, topic, items, budget=budget)
+    print(f"[{time.strftime('%H:%M:%S')}] refine: {time.time()-t_refine:.0f}s")
+
+    finish(ep, ep_id, var, topic, items, issues)
+    print(f"[{time.strftime('%H:%M:%S')}] from-brief total: {time.time()-t0:.0f}s")
+
+
 def finish(ep: dict, ep_id: str, var: dict, topic: dict, items: list, issues: list) -> None:
     _save_draft(ep_id, ep, var, topic)
     out = DATA / "episodes" / ep_id
@@ -1705,7 +1907,7 @@ def finish(ep: dict, ep_id: str, var: dict, topic: dict, items: list, issues: li
 
 # ---------------------------------------------------------------- CLI
 
-_VALUE_FLAGS = {"--topic", "--audience", "--format", "--mode", "--candidates", "--choose", "--repair", "--repairs", "--source", "--brief"}
+_VALUE_FLAGS = {"--topic", "--audience", "--format", "--mode", "--candidates", "--choose", "--repair", "--repairs", "--source", "--brief", "--from-brief"}
 _BOOL_FLAGS = {"--pick", "--dry", "--force-mode", "--no-analogy-check"}
 _REPEATABLE = {"--source", "--brief"}
 
@@ -1741,6 +1943,8 @@ def main(argv: list) -> None:
     opt = lambda k: argv[argv.index(k) + 1] if k in argv else None  # noqa: E731
     forced_urls = [argv[j + 1] for j, t in enumerate(argv) if t == "--source"]
     brief_qs = [q.strip() for j, t in enumerate(argv) if t == "--brief" for q in argv[j + 1].split("|") if q.strip()]  # repeatable; "|" also separates
+    if opt("--from-brief"):
+        return run_from_brief(opt("--from-brief"))
     if opt("--repair"):
         n = int(opt("--repairs") or MAX_MECH_REPAIRS)
         return repair(opt("--repair"), n, force="--force-mode" in argv, max_semantic=int(opt("--repairs") or MAX_SEMANTIC_REPAIRS))

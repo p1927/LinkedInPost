@@ -660,9 +660,190 @@ def main(argv):
     elif cmd == "direction":
         import brain
         sys.exit(brain.main(argv[argv.index("direction") + 1:]))
+    elif cmd == "brief":
+        import brief as _brief
+        sys.exit(_brief.main(argv[argv.index("brief") + 1:]))
+    elif cmd == "research":
+        import research as _research
+        sys.exit(_research.main(argv[argv.index("research") + 1:]))
+    elif cmd == "outline":
+        import outline as _outline
+        sys.exit(_outline.main(argv[argv.index("outline") + 1:]))
     elif cmd == "director":
         import director
         director.main(argv[argv.index("director") + 1:])
+    elif cmd == "gates":
+        # run.py gates <ep> — merge gate_report + lint + verify findings into one view
+        import verify as _verify
+        import registry as _reg
+        ep_id = args[1]
+        ep_dir = _reg.resolve(ep_id)
+        ep_ = _reg.read(ep_dir)
+        approved, report = _verify.gates_view(ep_id, ep_)
+        print(report)
+        sys.exit(0 if approved else 1)
+    elif cmd == "framecheck":
+        # run.py framecheck <ep> — frame QA on the latest render
+        ep_id = args[1]
+        video = ROOT / "out" / ep_id / "final.mp4"
+        if not video.exists():
+            raise SystemExit(f"no render yet at {video}; run `run.py {ep_id} render` first")
+        qa_out = ROOT / "out" / ep_id / "frame_qa.json"
+        sys.path.insert(0, str(ROOT / "tools"))
+        import frame_qa
+        sys.exit(frame_qa.main([str(video), "--out", str(qa_out), "--episode", ep_id]))
+    elif cmd == "mix":
+        # run.py mix <ep> — mix narration + music → out/<ep>/mix.mp3 + audio_qa.json
+        ep_id = args[1]
+        out_ep = ROOT / "out" / ep_id
+        out_ep.mkdir(parents=True, exist_ok=True)
+        audio_dir = out_ep / "audio"
+        narration_files = sorted(audio_dir.glob("*.mp3")) if audio_dir.exists() else []
+        if not narration_files:
+            raise SystemExit(f"no narration mp3 files in {audio_dir}; run tts first")
+        ep_dir_ = registry.resolve(ep_id)
+        ep_ = registry.read(ep_dir_)
+        card_ = audience_card(ep_)
+        mood = (card_ or {}).get("music_mood", "calm")
+        music_path = ROOT / ensure_music(mood, ep_id)
+        mix_out = out_ep / "mix.mp3"
+        qa_out = out_ep / "audio_qa.json"
+        sys.path.insert(0, str(ROOT / "tools"))
+        import mix_audio
+        mix_argv = [str(f) for f in narration_files] + ["--music", str(music_path), "--out", str(mix_out), "--qa", str(qa_out)]
+        sys.exit(mix_audio.main(mix_argv))
+    elif cmd == "transcribe":
+        # run.py transcribe <ep> — transcribe mix.mp3 (advisory; warns if parakeet not ready)
+        ep_id = args[1]
+        out_ep = ROOT / "out" / ep_id
+        audio_in = out_ep / "mix.mp3"
+        if not audio_in.exists():
+            # fall back to first narration file
+            audio_dir = out_ep / "audio"
+            mp3s = sorted(audio_dir.glob("*.mp3")) if audio_dir.exists() else []
+            if not mp3s:
+                raise SystemExit(f"no audio to transcribe in {out_ep}; run mix or tts first")
+            audio_in = mp3s[0]
+        words_out = out_ep / "words.json"
+        sys.path.insert(0, str(ROOT / "tools"))
+        import transcribe as _transcribe
+        targs = [str(audio_in), "--out", str(words_out)]
+        # optional script for WER check
+        script_file = ROOT / "episodes" / ep_id / "narration.txt"
+        if script_file.exists():
+            targs += ["--script", str(script_file)]
+        rc = _transcribe.main(targs)
+        if rc != 0:
+            print("transcribe: advisory warning — continuing (parakeet model may not be cached yet)")
+        sys.exit(0)  # always advisory
+    elif cmd == "review":
+        # run.py review <ep> --tags keep,... --understood yes|no [--note TEXT]
+        ep_id = args[1]
+        import review as _review
+        rc = _review._cli([ep_id] + argv[argv.index("review") + 2:])
+        sys.exit(rc)
+    elif cmd == "slice":
+        # run.py slice <id> --text "<owner request>" [--question "..."]... [--force]
+        # Runs brief -> research -> outline -> director --from-brief -> lint -> gates
+        # Resumable: skips layers whose output already exists unless --force.
+        # Prints per-layer wall time into out/<id>/metrics.json.
+        import time as _time
+        import json as _json
+        import brief as _brief_mod
+        import research as _research_mod
+        import outline as _outline_mod
+        import director as _director_mod
+        import lint as _lint_mod
+        import verify as _verify_mod
+
+        ep_id = args[1]
+        force = "--force" in flags
+        ep_dir_s = ROOT / "episodes" / ep_id
+        out_dir_s = ROOT / "out" / ep_id
+        out_dir_s.mkdir(parents=True, exist_ok=True)
+
+        metrics: list = []
+        def _run_layer(name: str, fn):
+            t = _time.time()
+            rc = fn()
+            secs = round(_time.time() - t, 2)
+            metrics.append({"stage": name, "seconds": secs})
+            (out_dir_s / "metrics.json").write_text(_json.dumps(metrics, indent=2))
+            print(f"[{name}] {secs:.1f}s")
+            if rc not in (None, 0):
+                raise SystemExit(f"slice stopped at {name} (exit {rc}); fix it, then rerun the same command (finished layers are skipped)")
+            return rc
+
+        # Parse --text and --question flags from argv after 'slice <id>'
+        slice_rest = argv[argv.index("slice") + 2:]
+        slice_text, slice_questions = "", []
+        si = 0
+        while si < len(slice_rest):
+            tok = slice_rest[si]
+            if tok in ("--text",) and si + 1 < len(slice_rest):
+                slice_text = slice_rest[si + 1]; si += 2
+            elif tok.startswith("--text="):
+                slice_text = tok[7:]; si += 1
+            elif tok in ("--question",) and si + 1 < len(slice_rest):
+                slice_questions.append(slice_rest[si + 1]); si += 2
+            elif tok.startswith("--question="):
+                slice_questions.append(tok[11:]); si += 1
+            else:
+                si += 1
+
+        if not slice_text and not (ep_dir_s / "brief.json").exists():
+            raise SystemExit("slice: --text is required to create the brief (or run `run.py brief` first)")
+
+        # L1 brief
+        brief_path = ep_dir_s / "brief.json"
+        if force or not brief_path.exists():
+            brief_argv = [ep_id, "--text", slice_text] + [x for q in slice_questions for x in ("--question", q)]
+            _run_layer("brief", lambda: _brief_mod.main(brief_argv))
+        else:
+            print(f"[brief] skip (exists)")
+
+        # L2 research
+        research_path = ep_dir_s / "research.json"
+        if force or not research_path.exists():
+            _run_layer("research", lambda: _research_mod.main([ep_id] + (["--allow-unsupported"] if "--allow-unsupported" in sys.argv else [])))
+        else:
+            print(f"[research] skip (exists)")
+
+        # L3 outline
+        outline_path = ep_dir_s / "outline.json"
+        if force or not outline_path.exists():
+            _run_layer("outline", lambda: _outline_mod.main([ep_id]))
+        else:
+            print(f"[outline] skip (exists)")
+
+        # L4 director --from-brief
+        episode_path = ep_dir_s / "episode.json"
+        if force or not episode_path.exists():
+            _run_layer("director", lambda: _director_mod.run_from_brief(ep_id))
+        else:
+            print(f"[director] skip (exists)")
+
+        # L5 lint
+        if episode_path.exists():
+            ep_ = _json.loads(episode_path.read_text())
+            lint_issues = list(_lint_mod.run(ep_))
+            n_err = sum(1 for i in lint_issues if i[0] == "error")
+            n_warn = sum(1 for i in lint_issues if i[0] == "warn")
+            print(f"[lint] {n_err} errors, {n_warn} warnings")
+
+        # L6 gates (lint + gate_report; verify is a paid/slow pass — not run in slice)
+        if episode_path.exists():
+            ep_ = _json.loads(episode_path.read_text())
+            approved, report = _verify_mod.gates_view(ep_id, ep_)
+            print(report)
+            if not approved:
+                print(f"\nStopped: gate errors found. Fix, then run: python run.py gates {ep_id}")
+                print(f"When gates clear and script is approved: python run.py {ep_id} all")
+                sys.exit(1)
+
+        print(f"\nSlice complete. Status: gates clear.")
+        print(f"Next: review the script, approve it (`run.py status {ep_id} approved`), then `run.py {ep_id} all`")
+        sys.exit(0)
     elif cmd == "yt-auth":
         from publishers import youtube_shorts
         youtube_shorts.credentials()

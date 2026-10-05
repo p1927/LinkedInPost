@@ -1,0 +1,399 @@
+{
+  "schema_version": 1,
+  "id": "ep25-fii-dii-explainer",
+  "questions": [
+    {
+      "id": "q1",
+      "text": "What are FIIs and what are DIIs?",
+      "answer_summary": "FIIs (Foreign Institutional Investors, now known as Foreign Portfolio Investors or FPIs) are overseas entities investing in Indian securities after SEBI registration, including sovereign wealth funds, pension funds, insurance companies, hedge funds, and global asset managers. DIIs (Domestic Institutional Investors) are Indian entities such as mutual funds, banks, and insurance companies that channel domestic capital.",
+      "evidence_ids": [
+        "ev-1",
+        "ev-2",
+        "ev-3",
+        "ev-4",
+        "ev-5"
+      ],
+      "unsupported": false
+    },
+    {
+      "id": "q2",
+      "text": "What happened in the Indian market on 1 October and what was the reason?",
+      "answer_summary": "On 1 October 2026, Indian equity benchmarks (Sensex and Nifty) extended their losing streak to an eighth consecutive week, with the Nifty falling 0.88% and the Sensex falling 0.79%, due to persistent foreign investor selling, elevated crude oil prices, and surging global bond yields. FIIs were net sellers of ₹9,484.22 crore while DIIs were net buyers of ₹10,041.84 crore in the cash segment on that day.",
+      "evidence_ids": [
+        "ev-6",
+        "ev-7",
+        "ev-8",
+        "ev-9",
+        "ev-10"
+      ],
+      "unsupported": false
+    },
+    {
+      "id": "q3",
+      "text": "Why did DIIs jump in when FIIs sold?",
+      "answer_summary": "DIIs step in when FIIs sell to absorb the selling pressure, provide a liquidity cushion, and reflect domestic retail confidence driven by SIP inflows and a structural shift in Indian household savings toward financial assets. As a result, market levels tend to hold though sector leadership changes.",
+      "evidence_ids": [
+        "ev-11",
+        "ev-12",
+        "ev-13",
+        "ev-14",
+        "ev-15"
+      ],
+      "unsupported": false
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-1",
+      "url": "https://www.nseindia.com/reports/fii-dii",
+      "source": "nseindia.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "FII/FPI & DII trading activity on NSE in Capital Market Segment",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-1",
+          "date": null
+        }
+      ],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-2",
+      "url": "https://www.sebi.gov.in/sebi_data/commondocs/pt1b5_h.html",
+      "source": "sebi.gov.in",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "the eligible categories of FIIs have been expanded to include university funds, endowments, foundations, charitable trusts and charitable societies which have a track record of 5 years and which are registered with a statutory authority in their country of incorporation or establishment",
+          "number": "5",
+          "unit": "years",
+          "source_id": "ev-2",
+          "date": null
+        },
+        {
+          "text": "each FII or sub-account of an FII has been permitted to invest upto 10% of the equity of any one company, subject to the overall limit of 24% on investments by all FIIs, NRIs and OCBs",
+          "number": "10",
+          "unit": "percent",
+          "source_id": "ev-2",
+          "date": null
+        },
+        {
+          "text": "the 24% limit may be raised to 30% in the case of individual companies who have obtained shareholder approval for the same",
+          "number": "24",
+          "unit": "percent",
+          "source_id": "ev-2",
+          "date": null
+        }
+      ],
+      "single_source_numbers": [
+        "10",
+        "24",
+        "5"
+      ]
+    },
+    {
+      "id": "ev-3",
+      "url": "https://www.5paisa.com/share-market-today/fii-dii-data",
+      "source": "5paisa.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "Foreign Institutional Investors (FIIs), now known as Foreign Portfolio Investors (FPIs), are overseas entities that invest in Indian securities post-registration with SEBI.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-3",
+          "date": null
+        },
+        {
+          "text": "This category includes sovereign wealth funds, pension funds, insurance companies, hedge funds, and global asset managers, with their investment decisions largely influenced by global economic conditions, interest rates, and currency fluctuations.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-3",
+          "date": null
+        },
+        {
+          "text": "Domestic Institutional Investors (DIIs) are Indian entities that channel domestic capital through mutual funds, insurance companies, banks, and pension funds, providing market stability during periods of volatility.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-3",
+          "date": null
+        },
+        {
+          "text": "Both FIIs and DIIs report their daily trading activities to the NSE and BSE within cash and derivatives segments, significantly impacting market sentiment, liquidity, and direction due to their large trading volumes.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-3",
+          "date": null
+        }
+      ],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-4",
+      "url": "https://groww.in/fii-dii-data",
+      "source": "groww.in",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "FII and DII data reflect the trading activity of foreign and domestic investors in a country's financial markets.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-4",
+          "date": null
+        }
+      ],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-5",
+      "url": "https://www.kotakneo.com/share-market-today/fii-dii-data/",
+      "source": "kotakneo.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-6",
+      "url": "https://www.nseindia.com/reports/fii-dii",
+      "source": "nseindia.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-7",
+      "url": "https://www.kotakneo.com/share-market-today/fii-dii-data/",
+      "source": "kotakneo.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "FII were net sellers of ₹-9484.22 Cr in the cash segment on 01-OCT-2026",
+          "number": "-9484.22",
+          "unit": "Rs crore",
+          "source_id": "ev-7",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "DII were net buyers of ₹10041.84 Cr in the cash segment on 01-OCT-2026",
+          "number": "10041.84",
+          "unit": "Rs crore",
+          "source_id": "ev-7",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "FII & DII Trading Activity : 01-OCT-2026 FII ₹-9484.22 Cr DII ₹10041.84 Cr",
+          "number": "-9484.22",
+          "unit": "Rs crore",
+          "source_id": "ev-7",
+          "date": "2026-10-01"
+        }
+      ],
+      "single_source_numbers": [
+        "-9484.22",
+        "10041.84"
+      ]
+    },
+    {
+      "id": "ev-8",
+      "url": "https://finance.yahoo.com/markets/live/stock-market-today-thursday-oct-1-dow-sp-500-nasdaq-080602402.html?fr=sycsrp_catchall",
+      "source": "finance.yahoo.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-9",
+      "url": "https://hdfcsky.com/news/market-close-report-today-october-1-2026-sensex-nifty-slide-as-oil-yields-weigh",
+      "source": "hdfcsky.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "Indian equity benchmarks extended their losing streak to an eighth consecutive week on Thursday, their longest such run in 25 years, as persistent foreign investor selling, elevated crude oil prices and a surge in global bond yields weighed on sentiment.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "The Nifty 50 fell 0.88%, while the Sensex declined 0.79% in a holiday-shortened week.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "The Sensex fell 570.59 points, or 0.79%, to close at 71,909.70, while the Nifty declined 198.50 points, or 0.88%, to 22,421.95.",
+          "number": "570.59",
+          "unit": "points",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "Sensex closed at 71,909.70",
+          "number": "71,909.70",
+          "unit": "points",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "Nifty closed at 22,421.95",
+          "number": "22,421.95",
+          "unit": "points",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "The Nifty lost 3.1% this week, while the Sensex fell 2.7%, marking their steepest weekly declines in more than six and four months, respectively.",
+          "number": "3.1",
+          "unit": "percent",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "Over the eight-week losing run, the two indices have fallen 8.7% and 8.4%, respectively.",
+          "number": "8.7",
+          "unit": "percent",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "The Nifty Midcap index fell 1.1%, while the Smallcap index declined nearly 1%.",
+          "number": "1.1",
+          "unit": "percent",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "Auto, Media, FMCG, Infrastructure, Metal, Consumer Durables and Realty indices fell between 2% and 3%",
+          "number": "2",
+          "unit": "percent",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "The Nifty IT index was the standout performer, gaining 2.2%",
+          "number": "2.2",
+          "unit": "percent",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        },
+        {
+          "text": "Brent crude, meanwhile, reclaimed the $100-a-ba[arrel]",
+          "number": "100",
+          "unit": "USD per barrel",
+          "source_id": "ev-9",
+          "date": "2026-10-01"
+        }
+      ],
+      "single_source_numbers": [
+        "100",
+        "3.1",
+        "1.1",
+        "2.2",
+        "8.7",
+        "2",
+        "71,909.70",
+        "570.59",
+        "22,421.95"
+      ]
+    },
+    {
+      "id": "ev-10",
+      "url": "https://finance.yahoo.com/markets/live/stock-market-today-thursday-oct-1-dow-sp-500-nasdaq-080602402.html",
+      "source": "finance.yahoo.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-11",
+      "url": "https://www.nseindia.com/reports/fii-dii",
+      "source": "nseindia.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-12",
+      "url": "https://moneyvesta.com/fii-vs-dii-investment-trends-india/",
+      "source": "moneyvesta.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "When FIIs sell, and DIIs absorb, market levels hold, but sector leadership changes.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-12",
+          "date": null
+        },
+        {
+          "text": "FII selling reflects global risk appetite, dollar strength, and emerging market allocation shifts, none of which are India-specific.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-12",
+          "date": null
+        },
+        {
+          "text": "DIIs provide long-term market stability. When FIIs sell aggressively, your portfolio drops. When DIIs step in and buy, the market finds its floor.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-12",
+          "date": null
+        }
+      ],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-13",
+      "url": "https://www.indmoney.com/blog/stocks/fii-vs-dii-who-drives-indian-stock-market",
+      "source": "indmoney.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "Domestic institutions now provide a much deeper and more consistent pool of capital than they did a decade ago. That has made the Indian market better able to absorb foreign selling.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-13",
+          "date": null
+        },
+        {
+          "text": "DIIs increasingly provide a liquidity cushion while large FPI orders can exert disproportionate influence on marginal prices, particularly in liquid, index-heavy stocks.",
+          "number": null,
+          "unit": null,
+          "source_id": "ev-13",
+          "date": null
+        }
+      ],
+      "single_source_numbers": []
+    },
+    {
+      "id": "ev-14",
+      "url": "https://www.kotakneo.com/investing-guide/share-market/fii-dii-retailers-who-is-dominating/",
+      "source": "kotakneo.com",
+      "retrieved_at": "2026-10-06",
+      "facts": [
+        {
+          "text": "FIIs now own about 16.7% of the active equity market capitalisation in BSE-500 businesses.",
+          "number": "16.7",
+          "unit": "percent",
+          "source_id": "ev-14",
+          "date": null
+        }
+      ],
+      "single_source_numbers": [
+        "16.7"
+      ]
+    },
+    {
+      "id": "ev-15",
+      "url": "https://adityatrading.in/fii-dii-data/",
+      "source": "adityatrading.in",
+      "retrieved_at": "2026-10-06",
+      "facts": [],
+      "single_source_numbers": []
+    }
+  ],
+  "unsupported": []
+}

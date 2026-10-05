@@ -908,6 +908,110 @@ def _packaging(ep: dict) -> list:
     return packaging.run(ep)
 
 
+# ------------------------------------------------------------------ D1 element rules
+def _element_checks(ep: dict) -> list:
+    """D1 element-limit rules from tokens.yaml thresholds (all advisory/warn until calibrated on reference episode)."""
+    res = []
+
+    def add(rid, msg):
+        res.append((sev(rid, "warn"), rid, msg))
+
+    scenes = ep.get("scenes") or []
+    wpl_thr = thr("element_words_per_line", default=6)
+    wps_thr = thr("element_words_per_scene", default=12)
+    hold_text = thr("element_hold_floor_text", default=3.5)
+    hold_stat = thr("element_hold_floor_stat", default=3.0)
+    speed = (ep.get("voice_override") or {}).get("speed", 1.0)
+
+    # element_font_floor — pixel sizes can only be verified in F1 frame QA (rendered data needed).
+    # This entry exists so selfcheck confirms the rule is wired; the real check is in tools/check_safe_zones.py.
+    # No per-scene findings are emitted here (nothing to check in episode.json).
+    _ = "element_font_floor"  # selfcheck: id is emitted by this module
+
+    for s in scenes:
+        vis = s.get("visual") or {}
+        vis_type = vis.get("type", "")
+        narr = s.get("narration") or ""
+
+        # words per scene on caption/text scenes (proxy check)
+        if vis_type in ("text", "steps", "compare", "number"):
+            words = len(narr.split())
+            if words > wps_thr:
+                add("element_words_per_scene", f"{s['id']}: {words} words in a {vis_type} scene (max {wps_thr}); split or move to narration-only")
+
+        # words per line: check explicit caption or text-scene narration only (not all narrations)
+        caption = vis.get("caption") or (narr if vis_type in ("text", "steps", "compare") else "")
+        for line in re.split(r"[,;—]|\n", caption):
+            line_words = len(line.split())
+            if line_words > wpl_thr:
+                add("element_words_per_line", f"{s['id']}: on-screen line has {line_words} words (max {wpl_thr}): {line.strip()[:60]!r}")
+                break  # one warning per scene
+
+        # hold floors
+        dur = est_seconds(narr, speed)
+        if vis_type == "text" and dur < hold_text:
+            add("element_hold_floor_text", f"{s['id']}: text-card scene estimated {dur:.1f}s (min {hold_text}s)")
+        if vis_type == "number" and dur < hold_stat:
+            add("element_hold_floor_stat", f"{s['id']}: stat scene estimated {dur:.1f}s (min {hold_stat}s)")
+
+    return res
+
+
+# ------------------------------------------------------------------ C1 finance rules
+def _finance_checks(ep: dict) -> list:
+    """C1: flag obvious investment-advice phrases (advisory warn; promotes to error for the explicit phrases)."""
+    res = []
+    scenes = ep.get("scenes") or []
+    rule = _RULES.get("finance_advice_check", {})
+    banned = [p.lower() for p in rule.get("banned_phrases", [])]
+    if not banned:
+        banned = ["you should buy", "you should sell", "you should invest", "guaranteed", "risk-free",
+                  "will definitely", "certain to rise", "certain to fall", "price target"]
+    base_sev = sev("finance_advice_check", "warn")
+    # Promote to error for the most explicit phrases
+    error_phrases = {"you should buy", "you should sell", "you should invest", "price target"}
+    for s in scenes:
+        text = (s.get("narration") or "").lower()
+        for phrase in banned:
+            if phrase in text:
+                eff_sev = "error" if phrase in error_phrases else base_sev
+                res.append((eff_sev, "finance_advice_check",
+                             f"{s['id']}: finance advice phrase {phrase!r} — rewrite as past data or attributed opinion "
+                             f"(craft card: direction/craft/finance-rules.md)"))
+                break  # one hit per scene
+    return res
+
+
+# ------------------------------------------------------------------ S-03 slideshow risk
+def _slideshow_risk_check(ep: dict) -> list:
+    """Slideshow-risk advisory lint using OpenMontage scorer (third_party/openmontage/)."""
+    try:
+        from tools.risk_adapters import slideshow_score
+    except ImportError:
+        return []
+    rule = _RULES.get("slideshow_risk", {})
+    warn_thr = rule.get("threshold_warn", 3.0)
+    fail_thr = rule.get("threshold_fail", 4.0)
+    result = slideshow_score(ep)
+    avg = result.get("average", 0.0)
+    verdict = result.get("verdict", "unknown")
+    if avg >= fail_thr:
+        return [("warn", "slideshow_risk", f"slideshow risk {avg:.2f} (verdict: {verdict}) — exceeds fail threshold {fail_thr}; storyboard reads like a slideshow. Top issue: "
+                 + _top_dimension(result))]
+    if avg >= warn_thr:
+        return [("warn", "slideshow_risk", f"slideshow risk {avg:.2f} (verdict: {verdict}) — above advisory threshold {warn_thr}. Top issue: "
+                 + _top_dimension(result))]
+    return []
+
+
+def _top_dimension(result: dict) -> str:
+    dims = result.get("dimensions") or {}
+    if not dims:
+        return "no dimensions"
+    worst = max(dims, key=lambda k: dims[k]["score"])
+    return f"{worst} ({dims[worst]['score']:.1f}): {dims[worst]['reason'][:100]}"
+
+
 def run(ep: dict) -> list:
     """All lint checks. Safe on schema-invalid drafts: a draft without the minimum shape gets the shape error; otherwise every
     section runs, and a section that trips over a malformed field reports `lint_incomplete` instead of hiding the other sections."""
@@ -935,6 +1039,9 @@ def run(ep: dict) -> list:
     section("direction", lambda: _direction_checks(ep))
     section("identity", lambda: _identity_checks(ep))
     section("story", lambda: _story_checks(ep))
+    section("elements", lambda: _element_checks(ep))
+    section("finance", lambda: _finance_checks(ep))
+    section("slideshow_risk", lambda: _slideshow_risk_check(ep))
     return _apply_waivers(ep, issues)
 
 

@@ -1,5 +1,7 @@
 # YouTube / Shorts Automation - MASTER PLAN
 
+> Entry point moved: see [../video-pipeline/00-MASTER-PLAN.md](../video-pipeline/00-MASTER-PLAN.md) (layer index with child plans). This file is v1 history.
+
 Owner goal: a running pipeline that turns a topic (and optional sponsor) into a polished 9:16 Short
 + carousel, using third-party components and APIs, at minimal cost. Videos first; code minimal.
 
