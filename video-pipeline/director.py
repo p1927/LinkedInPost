@@ -1191,6 +1191,14 @@ def _save_draft(ep_id: str, ep: dict, var: dict, topic: dict) -> None:
         (bad / "draft_invalid.json").write_text(json.dumps(ep, indent=1, ensure_ascii=False))
         print(f"draft has no scenes: kept in out/{ep_id}/draft_invalid.json, not in episodes/")
         return
+    if not ep.get("identity"):  # information decides the look: every new audience episode gets its own identity (identity.py), never the shared profile look
+        try:
+            import identity as _identity
+            ep["identity"] = _identity.pick({**ep, "id": ep_id})
+            ep.setdefault("style", {})["illustration_style"] = ep["identity"]["illustration_style"]
+            print(f"identity: {ep['identity']['archetype']} palette {ep['identity']['variant']['palette']} ({ep['identity']['rationale']})")
+        except (SystemExit, Exception) as e:  # noqa: BLE001 - a draft must still be saved; the owner can run `run.py identity pick`
+            print(f"identity: not set ({e}); run `python run.py identity pick {ep_id}`")
     out = DATA / "episodes" / ep_id
     out.mkdir(parents=True, exist_ok=True)
     registry.write(out, ep)

@@ -38,6 +38,14 @@ def safe_zone(profile) -> dict:
     return out
 
 
+def episode_palette(ep: dict) -> dict:
+    """The look's colours: the episode's identity (information decides the look) beats the audience profile, which beats the episode style."""
+    idn = ep.get("identity")
+    if idn:
+        return {k: idn["palette"][k] for k in ("bg", "ink", "sunny", "coral", "sky", "mint", "grape", "white")}
+    return (PROFILE or {}).get("palette") or ep["style"]["palette"]
+
+
 def load(ep_dir: Path):
     ep = json.loads((ep_dir / "episode.json").read_text())
     out = ROOT / "out" / ep["id"]
@@ -354,8 +362,8 @@ def stage_props(ep, out, force):
         src = ROOT / mcfg["file"]
         shutil.copy(src, pub / ("music" + SUFFIX + src.suffix))
         music = {"src": f"{ep['id']}/music{SUFFIX}{src.suffix}", "volume": mcfg.get("volume", 0.13)}
-    palette = (PROFILE or {}).get("palette") or ep["style"]["palette"]
-    props = {"title": ep["title"], "style": palette, "profile": {k: v for k, v in (PROFILE or {}).items() if k not in ("palette", "music") and not k.startswith("_")} | {"safe": safe_zone(PROFILE)}, "disclosure": ep.get("disclosure"), "music": music,
+    palette = episode_palette(ep)
+    props = {"title": ep["title"], "style": palette, "profile": {k: v for k, v in (PROFILE or {}).items() if k not in ("palette", "music") and not k.startswith("_")} | {"safe": safe_zone(PROFILE)}, "disclosure": ep.get("disclosure"), "music": music, **({"identity": ep["identity"]} if ep.get("identity") else {}),
              "transition": tr,
              "sponsor": ep.get("sponsor"), "scenes": scenes, "totalFrames": t, "fps": fps,
              "width": ep["format"]["width"], "height": ep["format"]["height"]}
@@ -373,7 +381,7 @@ def stage_render(ep, out, force):
     # Loudness-normalize to -14 LUFS (Shorts/Reels target), video stream copied untouched.
     loud = out / f"final{SUFFIX}_loudnorm.mp4"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(final), "-c:v", "copy", "-af",
-                    "loudnorm=I=-14:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "192k", str(loud)], check=True)
+                    "loudnorm=I=-14:TP=-2.0:LRA=11", "-c:a", "aac", "-b:a", "192k", str(loud)], check=True)
     loud.replace(final)
     try:  # contact sheet + loudness/format report (DESIGN_SYSTEM.md sections 7-8); never blocks a render
         import verify
@@ -413,7 +421,7 @@ def stage_thumbs(ep, out, force):
     hpj.write_text(json.dumps(hp))
     subprocess.run(["npx", "remotion", "still", "src/index.ts", "Episode", str(hero), f"--props={hpj}", f"--frame={frame}"],
                    cwd=ROOT / "remotion-app", check=True, capture_output=True)
-    palette = (PROFILE or {}).get("palette") or ep["style"]["palette"]
+    palette = episode_palette(ep)
     tp = {"title": th["text"], "kicker": th.get("kicker", ""), "image": f"{ep['id']}/thumb_hero.png", "palette": palette,
           "accent": palette.get("coral", "#E85B45"), "badge": th.get("badge", "HOW IT WORKS"),
           "focusY": th.get("focusY", 0.42), "zoom": th.get("zoom", 1.0)}
@@ -438,7 +446,7 @@ def stage_carousel(ep, out, force):
         sl["image"] = f"{ep['id']}/car_{sl['image']}.png"
     for i, sl in enumerate(slides):
         props = cdir / f"slide{i + 1}.json"
-        props.write_text(json.dumps({"slide": sl, "index": i, "total": len(slides), "style": ep["style"]["palette"]}))
+        props.write_text(json.dumps({"slide": sl, "index": i, "total": len(slides), "style": episode_palette(ep)}))
         subprocess.run(["npx", "remotion", "still", "src/index.ts", "Slide", str(cdir / f"slide{i + 1}.png"),
                         f"--props={props}"], cwd=app, check=True, capture_output=True)
     print(f"carousel: {len(slides)} slides in {cdir}")
@@ -591,6 +599,9 @@ def main(argv):
     elif cmd == "lint":
         import lint
         sys.exit(lint.report(registry.read(registry.resolve(args[1]))))
+    elif cmd == "identity":  # per-episode visual identity: run.py identity list | pick <ep> [--info T] [--archetype A] [--palette A|B] [--seed N] [--dry] | show <ep>
+        import identity
+        sys.exit(identity.main(argv[argv.index("identity") + 1:]))
     elif cmd == "animatic":  # free placeholder preview of the whole episode before paid media: run.py animatic <ep> [--render]
         import animatic
         sys.exit(animatic.main(args[1:] + (["--render"] if "--render" in flags else [])))

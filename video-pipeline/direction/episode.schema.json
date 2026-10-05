@@ -1188,6 +1188,228 @@
         }
       },
       "additionalProperties": true
+    },
+    "identity": {
+      "type": "object",
+      "description": "Per-episode visual identity (identity.py, direction/identities/archetypes.yaml): information decides the look. Read by the renderer as props.identity.",
+      "required": [
+        "id",
+        "palette",
+        "fonts",
+        "shape",
+        "backdrop",
+        "motion",
+        "caption",
+        "term",
+        "seed"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "archetype": {
+          "type": "string"
+        },
+        "info_type": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "object"
+        },
+        "palette": {
+          "type": "object",
+          "required": [
+            "bg",
+            "ink",
+            "sunny",
+            "coral",
+            "sky",
+            "mint",
+            "grape",
+            "white"
+          ],
+          "properties": {
+            "bg": {
+              "type": "string"
+            },
+            "ink": {
+              "type": "string"
+            },
+            "sunny": {
+              "type": "string"
+            },
+            "coral": {
+              "type": "string"
+            },
+            "sky": {
+              "type": "string"
+            },
+            "mint": {
+              "type": "string"
+            },
+            "grape": {
+              "type": "string"
+            },
+            "white": {
+              "type": "string"
+            },
+            "muted": {
+              "type": "string"
+            },
+            "surface": {
+              "type": "string"
+            },
+            "rule": {
+              "type": "string"
+            }
+          }
+        },
+        "fonts": {
+          "type": "object",
+          "required": [
+            "display",
+            "body",
+            "mono"
+          ],
+          "properties": {
+            "display": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            },
+            "mono": {
+              "type": "string"
+            },
+            "displayWeight": {
+              "type": "number"
+            },
+            "bodyWeight": {
+              "type": "number"
+            },
+            "caps": {
+              "type": "boolean"
+            }
+          }
+        },
+        "shape": {
+          "type": "object",
+          "required": [
+            "radius",
+            "border",
+            "shadow",
+            "stroke"
+          ],
+          "properties": {
+            "radius": {
+              "type": "number"
+            },
+            "border": {
+              "type": "number"
+            },
+            "shadow": {
+              "enum": [
+                "none",
+                "soft",
+                "paper"
+              ]
+            },
+            "stroke": {
+              "type": "number"
+            }
+          }
+        },
+        "backdrop": {
+          "enum": [
+            "flat",
+            "paper",
+            "grid",
+            "blueprint",
+            "ruled",
+            "starfield",
+            "grain"
+          ]
+        },
+        "motion": {
+          "type": "object",
+          "required": [
+            "spring",
+            "ease",
+            "entrance",
+            "stagger",
+            "transition"
+          ],
+          "properties": {
+            "spring": {
+              "type": "object",
+              "required": [
+                "damping"
+              ]
+            },
+            "ease": {
+              "enum": [
+                "linear",
+                "out-cubic",
+                "in-out",
+                "expo-out"
+              ]
+            },
+            "entrance": {
+              "enum": [
+                "rise",
+                "pop",
+                "slide",
+                "draw",
+                "type"
+              ]
+            },
+            "stagger": {
+              "type": "number"
+            },
+            "transition": {
+              "enum": [
+                "slide",
+                "fade",
+                "wipe",
+                "zoom",
+                "cut"
+              ]
+            }
+          }
+        },
+        "caption": {
+          "enum": [
+            "sticker",
+            "clean",
+            "mono-bar",
+            "serif-lower"
+          ]
+        },
+        "term": {
+          "enum": [
+            "sticker",
+            "card",
+            "tag",
+            "stamp"
+          ]
+        },
+        "layout": {
+          "enum": [
+            "hero-top",
+            "hero-center",
+            "split"
+          ]
+        },
+        "illustration_style": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "number"
+        },
+        "rationale": {
+          "type": "string"
+        }
+      }
     }
   },
   "additionalProperties": false,

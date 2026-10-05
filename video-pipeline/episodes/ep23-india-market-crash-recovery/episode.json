@@ -1,0 +1,407 @@
+{
+  "id": "ep23-india-market-crash-recovery",
+  "title": "Why India's market crashed in March, then jumped in April",
+  "series": "Big Questions, Tiny Words",
+  "audience": "curious_adult",
+  "status": "rendered",
+  "format_id": "why_is_x",
+  "topic_area": "markets",
+  "one_idea": "Foreign selling accompanied the March fall, domestic buying buffered it, and April's rebound came from news and valuations while foreign funds kept selling.",
+  "audience_misconception": "Foreign money alone decides whether the Indian market crashes or recovers.",
+  "claims": [
+    {
+      "claim": "In March 2026 foreign portfolio investors net sold a record ₹1,17,775 crore of Indian equities.",
+      "url": "https://www.finnovate.in/learn/blog/mutual-fund-data-march-2026"
+    },
+    {
+      "claim": "The Nifty 50 fell 9.37% in March 2026 (25,179 to 22,819.60, close to close), its steepest monthly fall since March 2020.",
+      "url": "https://www.finnovate.in/learn/blog/mutual-fund-data-march-2026"
+    },
+    {
+      "claim": "In April 2026 the Nifty rose 7.46%, its best month since December 2023; after a sharp sell-off triggered by the US-Iran war in March, a mid-April ceasefire, cheaper valuations and a steady earnings season helped markets rebound even as FIIs kept selling heavily.",
+      "url": "https://www.outlookmoney.com/invest/sensex-nifty-50-record-liggest-monthly-rally-in-april-2026-in-28-months-know-which-sectors-led-to-the-recovery"
+    },
+    {
+      "claim": "FPIs withdrew about ₹60,847 crore in April 2026.",
+      "url": "https://www.venturasecurities.com/news/daily-market-updates/fpis-return-to-india-after-4-month-selling-spree-relief-rally-or-temporary-pause/"
+    },
+    {
+      "claim": "SEBI's monthly bulletin says that during March 2026 DIIs were net buyers in the equity segment with net inflows of ₹1,43,169 crore and acted as a critical buffer against FPI outflows.",
+      "url": "https://www.sebi.gov.in/sebi_data/attachdocs/apr-2026/1777539656528.pdf"
+    },
+    {
+      "claim": "FIIs are large global funds investing in India; DIIs are primarily Indian mutual funds, insurance companies and pension funds.",
+      "url": "https://www.indmoney.com/blog/mutual-funds/nifty-50-2026-market-recovery"
+    },
+    {
+      "claim": "FIIs sold ₹44,013 crore of Indian equities in September 2026 while DIIs bought ₹76,030 crore.",
+      "url": "https://www.moneycontrol.com/news/business/markets/nifty-down-nearly-13-in-2026-as-september-delivers-11-of-fiis-year-to-date-selling-14042636.html"
+    },
+    {
+      "claim": "On 5 October 2026 FIIs net sold ₹4,699.14 crore and DIIs net bought ₹5,181.62 crore (NSE capital market data).",
+      "url": "https://www.nseindia.com/api/fiidiiTradeReact"
+    },
+    {
+      "claim": "Going long means buying a futures contract expecting the price to rise; going short means selling one expecting the price to fall.",
+      "url": "https://learn.robinhood.com/articles/going-long-or-short-a-futures-contract/"
+    },
+    {
+      "claim": "A put option becomes more valuable as the underlying asset's price decreases.",
+      "url": "https://www.investopedia.com/terms/p/putoption.asp"
+    },
+    {
+      "claim": "The seller of a call option profits from the premium if the price drops below the strike price at expiration.",
+      "url": "https://www.investopedia.com/terms/c/calloption.asp"
+    },
+    {
+      "claim": "On 1 October 2026 FII index futures were 29,605 long and 339,779 short; index calls 670,483 long and 1,101,948 short; index puts 1,114,773 long and 448,195 short (contracts).",
+      "url": "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv"
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "Foreign funds sold a record ₹1.17 lakh crore of Indian shares in March 2026.",
+      "scene": "s2",
+      "source": "https://www.finnovate.in/learn/blog/mutual-fund-data-march-2026"
+    },
+    {
+      "step": "DIIs bought ₹1.43 lakh crore of equities in March, which SEBI called a critical buffer against the foreign outflow.",
+      "scene": "s6",
+      "source": "https://www.sebi.gov.in/sebi_data/attachdocs/apr-2026/1777539656528.pdf"
+    },
+    {
+      "step": "A buffer is not a floor: DIIs bought more than foreign funds sold, yet the Nifty still fell 9.37%.",
+      "scene": "s8",
+      "source": "https://www.finnovate.in/learn/blog/mutual-fund-data-march-2026"
+    },
+    {
+      "step": "The April rebound followed a ceasefire, cheaper valuations and steady earnings while foreign funds kept selling.",
+      "scene": "s9",
+      "source": "https://www.outlookmoney.com/invest/sensex-nifty-50-record-liggest-monthly-rally-in-april-2026-in-28-months-know-which-sectors-led-to-the-recovery"
+    },
+    {
+      "step": "Flows in September and on 5 October show the same opposing pattern: foreign funds sell, domestic funds buy.",
+      "scene": "s10",
+      "source": "https://www.moneycontrol.com/news/business/markets/nifty-down-nearly-13-in-2026-as-september-delivers-11-of-fiis-year-to-date-selling-14042636.html"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "FII",
+      "kind": "term",
+      "definition": "Foreign institutional investors: large global funds that invest in Indian shares.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s8",
+        "s10"
+      ]
+    },
+    {
+      "name": "DII",
+      "kind": "term",
+      "definition": "Domestic institutional investors: Indian mutual funds, insurers and pension funds.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s10"
+      ]
+    },
+    {
+      "name": "Long and short positions",
+      "kind": "term",
+      "definition": "In futures, a long position bets on a rise and a short position bets on a fall.",
+      "introduced_in": "s11",
+      "needed_in": [
+        "s12",
+        "s13"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "India's market crashed in March, then jumped in April. Why?",
+      "raised_in": "s1",
+      "paid_in": "s9"
+    },
+    {
+      "question": "The market rose in April while foreign investors kept selling: what absorbed the selling?",
+      "raised_in": "s4",
+      "paid_in": "s6"
+    }
+  ],
+  "news_hook": {
+    "event": "On 5 October 2026 FIIs net sold ₹4,699 crore while DIIs net bought ₹5,182 crore; in September FIIs sold ₹44,013 crore and DIIs bought ₹76,030 crore.",
+    "date": "2026-10-05",
+    "url": "https://www.nseindia.com/api/fiidiiTradeReact"
+  },
+  "original_contribution": "Puts the March crash and April rebound next to the flow data, showing the rebound came while foreign funds were still selling, then adds NSE's 1 October derivatives positions.",
+  "packaging": {
+    "primary_keyword": "Indian market crash and recovery",
+    "title": "Indian market crash and recovery: FII vs DII explained",
+    "title_options": [
+      "Indian market crash and recovery: FII vs DII explained",
+      "Why India's market crashed in March, then jumped in April",
+      "FII selling vs DII buying: how the Nifty crashed and recovered",
+      "Why the Nifty rose in April while foreign investors kept selling"
+    ],
+    "title_rationale": "Leads with the searchable phrase, then names the two forces the video explains.",
+    "description": "Indian market crash and recovery: in March 2026 foreign investors pulled a record ₹1.17 lakh crore out of Indian stocks and the Nifty had its worst month since 2020. In April it jumped 7.46% while they kept selling. Here is what the data says.\n\nSources:\n- March flows, Nifty fall, mutual fund buying and SIPs: https://www.finnovate.in/learn/blog/mutual-fund-data-march-2026\n- April rally: https://www.outlookmoney.com/invest/sensex-nifty-50-record-liggest-monthly-rally-in-april-2026-in-28-months-know-which-sectors-led-to-the-recovery\n- FPI flows by month: https://www.venturasecurities.com/news/daily-market-updates/fpis-return-to-india-after-4-month-selling-spree-relief-rally-or-temporary-pause/\n- September flows: https://www.moneycontrol.com/news/business/markets/nifty-down-nearly-13-in-2026-as-september-delivers-11-of-fiis-year-to-date-selling-14042636.html\n- SEBI monthly bulletin, April 2026 (DII buying in March): https://www.sebi.gov.in/sebi_data/attachdocs/apr-2026/1777539656528.pdf\n- NSE FII/DII capital market data: https://www.nseindia.com/reports/fii-dii\n- NSE participant-wise open interest, 1 Oct 2026: https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv\n\nThis video is for education only. It is not financial advice.",
+    "tags": [
+      "Indian stock market",
+      "FII",
+      "DII",
+      "Nifty",
+      "SIP",
+      "stock market crash",
+      "market recovery",
+      "FPI selling",
+      "mutual funds"
+    ],
+    "instagram_caption": "India's market crashed in March, then jumped in April while foreign investors kept selling. Here is what the data shows. Sources are in the YouTube description. Not financial advice.",
+    "thumbnail": {
+      "text": "FII sells. DII buys."
+    }
+  },
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "style": {
+    "palette": {
+      "bg": "#F7F8FA",
+      "ink": "#1A1A2E",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "amber": "#F5A623",
+      "coral": "#FF6F59",
+      "white": "#FFFFFF"
+    },
+    "look": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+  },
+  "voice_override": {
+    "speed": 1.05
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "story_hook",
+      "narration": "India's market crashed in March, then jumped in April. Why?",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "A wide static view of a modern Indian financial district skyline at dawn, glass towers in soft haze, a quiet road with a few cars below, warm low sun, realistic documentary style, vertical 9:16 composition, no text, no letters, no numbers, no words",
+        "motion_prompt": "[Static shot] A wide view of a modern Indian financial district at dawn, glass towers in soft haze, a few cars moving slowly on the road below, warm low sunlight, calm realistic documentary style, steady and quiet"
+      },
+      "intent": "The viewer is curious about a puzzle: a crash and a rebound that do not seem to fit together."
+    },
+    {
+      "id": "s2",
+      "beat": "setup",
+      "narration": "In March, foreign investors pulled a record ₹1.17 lakh crore out of Indian stocks.",
+      "visual": {
+        "type": "number",
+        "value": "₹1.17 lakh crore",
+        "label": "pulled out by foreign investors, March 2026 (a record)",
+        "source": "Source: NSDL via Finnovate"
+      },
+      "intent": "The viewer sees how large the foreign exit was before any explanation is offered."
+    },
+    {
+      "id": "s3",
+      "beat": "setup",
+      "narration": "The Nifty, India's main share index, fell over 9%: its worst month since the COVID crash.",
+      "visual": {
+        "type": "number",
+        "value": "−9.37%",
+        "label": "Nifty 50, March 2026: worst month since March 2020",
+        "source": "Source: Finnovate, close to close"
+      },
+      "intent": "The viewer registers that the crash was real and severe, not a small dip."
+    },
+    {
+      "id": "s4",
+      "beat": "puzzle",
+      "narration": "In April the Nifty jumped 7.5%, its best month in 28 months. Foreign investors still sold about ₹61,000 crore.",
+      "visual": {
+        "type": "number",
+        "value": "+7.46%",
+        "label": "Nifty 50, April 2026, while foreign investors still sold ₹60,847 crore",
+        "source": "Sources: Outlook Money, Ventura"
+      },
+      "intent": "The viewer is stuck on the puzzle: the market rose while foreign money kept leaving."
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "Foreign funds are called FIIs. Indian mutual funds, insurers and pension funds are called DIIs.",
+      "visual": {
+        "type": "compare",
+        "colA": "FII",
+        "colB": "DII",
+        "rows": [
+          {
+            "a": "Foreign funds",
+            "b": "Indian funds"
+          },
+          {
+            "a": "Money from investors abroad",
+            "b": "Money from savers in India"
+          },
+          {
+            "a": "Global funds investing in India",
+            "b": "Mutual funds, insurers, pension funds"
+          }
+        ]
+      },
+      "intent": "The viewer can name the two sides before the story continues."
+    },
+    {
+      "id": "s6",
+      "beat": "explain",
+      "narration": "When foreign funds sold in March, DIIs bought ₹1.43 lakh crore. SEBI called it a critical buffer.",
+      "visual": {
+        "type": "number",
+        "value": "₹1.43 lakh crore",
+        "label": "bought by DIIs, March 2026",
+        "source": "Source: SEBI monthly bulletin, April 2026"
+      },
+      "intent": "The viewer sees the other side of the trade: domestic institutions absorbing what foreigners sold."
+    },
+    {
+      "id": "s8",
+      "beat": "explain",
+      "narration": "A buffer does not stop a fall. DIIs bought more than foreign funds sold, yet the Nifty fell over 9%.",
+      "visual": {
+        "type": "compare",
+        "colA": "Sold by foreign funds",
+        "colB": "Bought by DIIs",
+        "rows": [
+          {
+            "a": "₹1.17 lakh crore",
+            "b": "₹1.43 lakh crore"
+          },
+          {
+            "a": "March 2026",
+            "b": "March 2026"
+          }
+        ]
+      },
+      "intent": "The viewer learns the limit: domestic buying softens a fall but does not prevent it."
+    },
+    {
+      "id": "s9",
+      "beat": "payoff",
+      "narration": "April's rebound followed a US–Iran ceasefire, cheaper valuations and steady earnings. Foreign funds kept selling.",
+      "visual": {
+        "type": "steps",
+        "title": "What lifted April",
+        "steps": [
+          "US–Iran ceasefire mid-month",
+          "Cheaper stock valuations",
+          "A steady earnings season",
+          "Foreign funds still selling"
+        ]
+      },
+      "intent": "The viewer gets the answer: the rebound came from news and valuations, not from foreign money returning."
+    },
+    {
+      "id": "s10",
+      "beat": "evidence",
+      "narration": "In September, foreign funds sold about ₹44,000 crore and domestic funds bought about ₹76,000 crore.",
+      "visual": {
+        "type": "compare",
+        "colA": "Foreign funds (FIIs)",
+        "colB": "Domestic funds (DIIs)",
+        "rows": [
+          {
+            "a": "September: sold ₹44,013 crore",
+            "b": "September: bought ₹76,030 crore"
+          },
+          {
+            "a": "5 Oct: net sold ₹4,699 crore",
+            "b": "5 Oct: net bought ₹5,182 crore"
+          }
+        ]
+      },
+      "intent": "The viewer sees the same opposing pattern in the latest data, up to this week."
+    },
+    {
+      "id": "s11",
+      "beat": "derivatives",
+      "narration": "Foreign funds also trade derivatives. A long futures position bets on a rise; a short bets on a fall.",
+      "visual": {
+        "type": "steps",
+        "title": "Long and short futures",
+        "steps": [
+          "Long: expects the price to rise",
+          "Short: expects the price to fall"
+        ]
+      },
+      "intent": "The viewer can read the next two data scenes: what long and short mean, in one line each."
+    },
+    {
+      "id": "s12",
+      "beat": "derivatives",
+      "narration": "On 1 October, foreign funds held about 310,000 more short than long index futures contracts.",
+      "visual": {
+        "type": "number",
+        "value": "−310,174",
+        "label": "FII index futures net position, 1 Oct 2026 (short 339,779, long 29,605)",
+        "source": "Source: NSE participant-wise open interest"
+      },
+      "intent": "The viewer learns what foreign funds hold in derivatives, in plain contract counts."
+    },
+    {
+      "id": "s13",
+      "beat": "derivatives",
+      "narration": "Their options leaned the same way: more short calls, more long puts. Both benefit if the index falls.",
+      "visual": {
+        "type": "compare",
+        "colA": "FII index calls",
+        "colB": "FII index puts",
+        "rows": [
+          {
+            "a": "Long: 670,483",
+            "b": "Long: 1,114,773"
+          },
+          {
+            "a": "Short: 1,101,948",
+            "b": "Short: 448,195"
+          }
+        ]
+      },
+      "intent": "The viewer sees the options positions as numbers and which way they lean, with no claim about what they cause."
+    },
+    {
+      "id": "s14",
+      "beat": "cta",
+      "narration": "In March a shock started the fall. DIIs buffered it. Send this to the friend who tracks FII flows.",
+      "visual": {
+        "type": "steps",
+        "title": "The pattern",
+        "steps": [
+          "A US–Iran war shock started March's fall",
+          "DIIs buffered it",
+          "A ceasefire helped April's rebound"
+        ]
+      },
+      "intent": "The viewer leaves with the three-part pattern from 2026 and someone to send it to."
+    }
+  ],
+  "director_notes": "ASSUME: audience curious_adult, format why_is_x with extra beats; story chosen by the owner: FII vs DII opposing forces, hook 'why the market crashes then goes up'.\nRULING: March Nifty fall is spoken as 'more than 9%'. Sources disagree on the measure (9.37% close to close at Finnovate; 'more than 11%' at Outlook Money).\nRULING: April FPI selling uses ₹60,847 crore (Ventura, NSDL-based). Dhan reports 'over ₹70,000 crore' from a different dataset; not used.\nRULING: March DII buying uses SEBI's bulletin figure (₹1,43,169 crore, p.12). Other sources range from ₹1.26 to ₹1.95 lakh crore depending on what they count; the SEBI PDF cannot be read by the pipeline's page reader, so that claim was checked by hand (text extracted with pypdf).\nRULING: no claim that FIIs' futures positions amplify or cause moves. NSE data shows FIIs net short index futures, which contradicts a margin-call amplification story (see ep22 review).\nDEVIATE: the NSE flows URL (api/fiidiiTradeReact) returns only the latest day, so its 5 October figures will change; the same figures are shown on nseindia.com/reports/fii-dii for that date.\nRULING: derivatives scenes state positions as contract counts only; no causal claim.",
+  "topic": {
+    "headline": "Why India's market crashed in March, then jumped in April",
+    "angle": "FII selling vs DII buying with 2026 monthly data",
+    "why_now": "FIIs net sold again on 5 Oct 2026 while DIIs bought; September flows show the same pattern.",
+    "source_urls": [
+      "https://www.finnovate.in/learn/blog/mutual-fund-data-march-2026",
+      "https://www.outlookmoney.com/invest/sensex-nifty-50-record-liggest-monthly-rally-in-april-2026-in-28-months-know-which-sectors-led-to-the-recovery",
+      "https://www.venturasecurities.com/news/daily-market-updates/fpis-return-to-india-after-4-month-selling-spree-relief-rally-or-temporary-pause/",
+      "https://www.moneycontrol.com/news/business/markets/nifty-down-nearly-13-in-2026-as-september-delivers-11-of-fiis-year-to-date-selling-14042636.html",
+      "https://www.nseindia.com/api/fiidiiTradeReact",
+      "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv"
+    ]
+  },
+  "updated_at": "2026-10-05T16:04:07Z"
+}

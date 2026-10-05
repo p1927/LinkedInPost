@@ -5,7 +5,7 @@ import { evolvePath } from "@remotion/paths";
 import { noise2D } from "@remotion/noise";
 import { ding } from "@remotion/sfx";
 import type { Palette, SafeZone, Term } from "./types";
-import { fontFamily, fontFor } from "./theme";
+import { onFill, useLook } from "./identity";
 
 export const gradeCss = (g?: { saturate?: number; contrast?: number }) =>
   g && (g.saturate != null || g.contrast != null) ? `saturate(${g.saturate ?? 1}) contrast(${g.contrast ?? 1})` : undefined;
@@ -38,22 +38,49 @@ export const Sparkles: React.FC<{ pal: Palette; count?: number; seed?: number }>
 };
 
 // `top`/`left`/`right` = the safe zone (safe.top/left/right); the card variant sits 20 px lower. Without them the original 150/170 and 60 are used.
-export const TermSticker: React.FC<{ term: Term; pal: Palette; delay: number; variant?: "sticker" | "card"; font?: string; sfx?: any; top?: number; left?: number; right?: number }> = ({ term, pal, delay, variant = "sticker", font, sfx = ding, top, left = 60, right = 60 }) => {
+// Variants: sticker | card (profile termStyle) + tag | stamp (identity.term only). Identity sets fonts (display label, body sub) and shape tokens.
+export const TermSticker: React.FC<{ term: Term; pal: Palette; delay: number; variant?: "sticker" | "card" | "tag" | "stamp"; font?: string; sfx?: any; top?: number; left?: number; right?: number }> = ({ term, pal, delay, variant: v0 = "sticker", font, sfx = ding, top, left = 60, right = 60 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const s = spring({ frame: frame - delay, fps, config: { damping: 9, stiffness: 160 } });
-  const color = pal[term.color ?? "coral"];
+  const L = useLook(font);
+  const variant = L.id?.term ?? v0;
+  const s = spring({ frame: frame - delay, fps, config: L.cfg({ damping: 9, stiffness: 160 }) });
+  const color = pal[term.color ?? (L.on ? "sunny" : "coral")];
+  const ding0 = frame >= delay && frame < delay + 3 && sfx ? <Sequence from={0} layout="none"><Audio src={sfx} volume={0.3} /></Sequence> : null;
+  if (variant === "tag" || variant === "stamp") {
+    const t = L.enter(frame, delay, fps, { damping: 12, stiffness: 160 });
+    if (variant === "tag") return (  // newsroom tag: accent block label (mono, caps) + plain sub line, top-left
+      <>
+        {ding0}
+        <div style={{ position: "absolute", top: (top ?? 150) + 20, left, maxWidth: 1080 - left - right, ...L.fx(t, {}) }}>
+          <div style={{ display: "inline-block", background: color, color: onFill(color, pal.ink, pal.white), fontFamily: L.mono, fontWeight: 700, fontSize: 64, lineHeight: 1.1, padding: "12px 26px", borderRadius: L.r(6), textTransform: "uppercase", letterSpacing: 2 }}>{term.label}</div>
+          {term.sub && <div style={{ marginTop: 10, display: "inline-block", background: pal.white, color: pal.ink, fontFamily: L.body, fontWeight: L.bw(500), fontSize: 40, padding: "8px 22px", borderRadius: L.r(6), borderLeft: `${Math.max(4, L.b(4) * 2)}px solid ${color}` }}>{term.sub}</div>}
+        </div>
+      </>
+    );
+    return (  // stamp: slams down from 1.8x with a tilt, double rule
+      <>
+        {ding0}
+        <div style={{ position: "absolute", top: (top ?? 150) + 30, left: 0, right: 0, display: "flex", justifyContent: "center", opacity: Math.min(1, t * 3), transform: `scale(${1.8 - 0.8 * Math.min(1, t)}) rotate(-6deg)` }}>
+          <div style={{ border: `10px double ${pal.coral}`, borderRadius: L.r(10), background: `${pal.white}EE`, padding: "18px 44px", textAlign: "center", maxWidth: 1080 - left - right - 60, boxShadow: L.shadow("none") }}>
+            <div style={{ fontFamily: L.display, fontWeight: L.dw(800), fontSize: 84, lineHeight: 1, color: pal.coral, textTransform: "uppercase", letterSpacing: 4 }}>{term.label}</div>
+            {term.sub && <div style={{ fontFamily: L.mono, fontWeight: 600, fontSize: 36, color: pal.ink, marginTop: 10, textTransform: "uppercase", letterSpacing: 2 }}>{term.sub}</div>}
+          </div>
+        </div>
+      </>
+    );
+  }
   const underline = evolvePath(interpolate(frame - delay - 6, [0, 14], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }), "M 8 14 Q 70 -4 130 14 T 252 14 T 372 14 T 492 14");
   if (variant === "card") {
-    const ff = fontFor(font);
+    const ff = L.body;
     const t = interpolate(frame - delay, [0, 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
     return (
       <>
         {frame >= delay && frame < delay + 3 && sfx && <Sequence from={0} layout="none"><Audio src={sfx} volume={0.3} /></Sequence>}
         <div style={{ position: "absolute", top: top !== undefined ? top + 20 : 170, left, maxWidth: 1080 - left - right, opacity: t, transform: `translateY(${(1 - t) * -24}px)`, fontFamily: ff }}>
-          <div style={{ background: "rgba(255,255,255,0.96)", borderRadius: 22, padding: "22px 40px 24px 34px", borderLeft: `14px solid ${color}`, boxShadow: "0 14px 40px rgba(20,30,60,0.28)" }}>
-            <div style={{ fontWeight: 700, fontSize: 78, lineHeight: 1.05, color: pal.ink, letterSpacing: -1 }}>{term.label}</div>
-            {term.sub && <div style={{ fontWeight: 500, fontSize: 40, color, marginTop: 6 }}>{term.sub}</div>}
+          <div style={{ background: L.on ? pal.white : "rgba(255,255,255,0.96)", borderRadius: L.r(22), padding: "22px 40px 24px 34px", borderLeft: `${L.on ? Math.max(6, L.b(14) * 3) : 14}px solid ${color}`, boxShadow: L.shadow("0 14px 40px rgba(20,30,60,0.28)") }}>
+            <div style={{ fontWeight: L.dw(700), fontSize: 78, lineHeight: 1.05, color: pal.ink, letterSpacing: -1, fontFamily: L.on ? L.display : undefined, ...L.caps }}>{term.label}</div>
+            {term.sub && <div style={{ fontWeight: L.bw(500), fontSize: 40, color, marginTop: 6 }}>{term.sub}</div>}
           </div>
         </div>
       </>
@@ -63,12 +90,12 @@ export const TermSticker: React.FC<{ term: Term; pal: Palette; delay: number; va
     <>
       {frame >= delay && frame < delay + 3 && <Sequence from={0} layout="none">{sfx && <Audio src={sfx} volume={0.35} />}</Sequence>}
       <div style={{ position: "absolute", top: top ?? 150, left: 0, right: 0, display: "flex", justifyContent: "center", transform: `scale(${s}) rotate(${interpolate(s, [0, 1], [-14, -3])}deg)`, opacity: Math.min(1, s * 1.4) }}>
-        <div style={{ background: pal.white, border: `10px solid ${pal.ink}`, borderRadius: 48, padding: "26px 52px 30px", boxShadow: `0 16px 0 ${pal.ink}`, textAlign: "center", fontFamily }}>
-          <div style={{ fontWeight: 700, fontSize: 92, lineHeight: 1, color, letterSpacing: 1 }}>{term.label}</div>
+        <div style={{ background: pal.white, border: `${L.on ? Math.max(4, L.b(10) * 3) : 10}px solid ${pal.ink}`, borderRadius: L.on ? L.r(48) : 48, padding: "26px 52px 30px", boxShadow: L.on && L.id!.shape.shadow !== "paper" ? L.shadow("") : `0 16px 0 ${pal.ink}`, textAlign: "center", fontFamily: L.on ? L.display : L.body /* was always Fredoka: now the profile font */ }}>
+          <div style={{ fontWeight: L.dw(700), fontSize: 92, lineHeight: 1, color, letterSpacing: 1 }}>{term.label}</div>
           <svg width="500" height="30" viewBox="0 0 500 30" style={{ display: "block", margin: "6px auto 0" }}>
             <path d="M 8 14 Q 70 -4 130 14 T 252 14 T 372 14 T 492 14" fill="none" stroke={color} strokeWidth="9" strokeLinecap="round" {...underline} />
           </svg>
-          {term.sub && <div style={{ fontWeight: 600, fontSize: 46, color: pal.ink, marginTop: 4 }}>{term.sub}</div>}
+          {term.sub && <div style={{ fontWeight: L.bw(600), fontSize: 46, color: pal.ink, marginTop: 4, fontFamily: L.on ? L.body : undefined }}>{term.sub}</div>}
         </div>
       </div>
     </>

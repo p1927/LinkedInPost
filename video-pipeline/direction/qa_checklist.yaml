@@ -295,3 +295,26 @@ rules:
     description: When a scene has `intent` (one sentence, what the viewer should understand or feel after it) it must be at most 120 characters and must not just repeat the narration. The field is optional for now; the storyboard shows it and the animatic prints it.
     check: scene_intent
     threshold: 120
+
+  # ── Visual identity (information decides the look; STYLE-IDENTITY-PLAN.md) ──
+  - id: identity_present
+    enforced_by: lint
+    severity: warn
+    description: A new audience episode (status idea or scripted) has an `identity` (archetype, palette, fonts, shape, backdrop, motion, caption, term). Without it the look falls back to the shared audience profile, which is why every video looked the same.
+    check: identity_present
+  - id: identity_contrast
+    enforced_by: lint
+    severity: error
+    description: Every identity colour passes its WCAG floor against the background (ink 7:1 target and 4.5:1 minimum, accents 4.5:1), ink is readable on the card surface, and the fonts are catalog fonts.
+    check: identity_contrast
+  - id: identity_banned_default
+    enforced_by: lint
+    severity: warn
+    description: The look is not a known AI-default combination (cream background + serif + terracotta accent; near-black background + acid green).
+    check: identity_banned_default
+  - id: identity_variety
+    enforced_by: lint
+    severity: warn
+    description: The same (archetype, palette) pair was not used by any of the last 5 episodes that carry an identity.
+    check: identity_variety
+

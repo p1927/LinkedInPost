@@ -368,9 +368,23 @@ def narration_statements(c: dict, ep: dict) -> list:
     return out
 
 
+def with_date(llm):
+    """The verifier model does not know today's date, so figures from after its training cutoff read as 'future' and get flagged as fake
+    (seen on ep22: real 5 Oct 2026 NSE flows flagged `real-no-unverified-drama`). Prefix every prompt with the date and that rule."""
+    orig = llm.generate_json
+    note = (f"Context: today's date is {datetime.date.today().isoformat()}. Events and figures dated on or before today are real even if they are "
+            "after your training data; never call them future, fabricated or unverifiable for that reason. Judge claims only against the cited evidence text.\n\n")
+
+    def dated(prompt, *a, **k):
+        return orig(note + prompt, *a, **k)
+
+    llm.generate_json = dated
+    return llm
+
+
 def run(ep: dict, items: list | None = None, quiet: bool = False) -> dict:
     """Run all passes, write qa_report.json, return the report. `items` = fetched source items (for evidence); defaults to episodes/<id>/sources.json."""
-    llm = load_provider("llm_verify")
+    llm = with_date(load_provider("llm_verify"))
     if items is None:
         f = ROOT / "episodes" / ep["id"] / "sources.json"
         items = json.loads(f.read_text()) if f.exists() else []
@@ -388,7 +402,7 @@ def run(ep: dict, items: list | None = None, quiet: bool = False) -> dict:
             ok = phrase_in(b.get("quote"), narration + [" ".join(narration)])
             issues.append(["error" if ok else "warn", "analogy_misleads", f"analogy predicts '{b.get('analogy_predicts')}' but reality: {b.get('reality')}"
                            + ("" if ok else " [downgraded: no exact narration quote]")])
-    if not a.get("limitation_stated_in_script"):
+    if ep.get("analogy") and not a.get("limitation_stated_in_script"):  # only when the episode actually uses an analogy
         issues.append(["error", "limitation_in_script", "the narration never says where the analogy stops"])
     for m in a.get("misleading_claims", []):
         issues.append(["warn", "misleading_statement", str(m)[:200]])

@@ -8,6 +8,7 @@ import { OrbitScene } from "./OrbitScene";
 import { Captions } from "./Captions";
 import { BRIDGE, RENDERED_BRIDGES, pick, presentationByName, resolve, sfxByName } from "./profile";
 import { FreezeRewind, QuestionCard } from "./Bridges";
+import { IdentityProvider, identityPresentation } from "./identity";
 
 type R = ReturnType<typeof resolve>;
 
@@ -119,7 +120,8 @@ const Progress: React.FC<{ props: EpisodeProps }> = ({ props }) => {
   );
 };
 
-export const Episode: React.FC<EpisodeProps> = (props) => {
+export const Episode: React.FC<EpisodeProps> = (raw) => {
+  const props = raw.identity ? { ...raw, style: raw.identity.palette } : raw; // identity palette replaces the profile/episode palette
   const { durationInFrames, fps } = useVideoConfig();
   const prof = resolve(props.profile);
   const tr = props.transition;
@@ -153,7 +155,7 @@ export const Episode: React.FC<EpisodeProps> = (props) => {
       used[next.beat] = (used[next.beat] ?? -1) + 1;
       const name = names[(i + used[next.beat]) % names.length];
       out.push(
-        <TransitionSeries.Transition key={"t" + i} presentation={presentationByName(name)} timing={springTiming({ config: { damping: 200 }, durationInFrames: tr })}  /* eased, no bounce; research 09/10: never linear */ />,
+        <TransitionSeries.Transition key={"t" + i} presentation={props.identity ? identityPresentation(props.identity.motion.transition) : presentationByName(name)} timing={springTiming({ config: { damping: 200 }, durationInFrames: tr })}  /* eased, no bounce; research 09/10: never linear */ />,
       );
     }
   });
@@ -174,6 +176,7 @@ export const Episode: React.FC<EpisodeProps> = (props) => {
     : 1;
   const leadScene = co && leadOf(co.seam + 1) > 0 ? props.scenes[co.seam + 1] : null;
   return (
+    <IdentityProvider identity={props.identity}>
     <AbsoluteFill style={{ background: props.style.bg }}>
       <TransitionSeries>{out}</TransitionSeries>
       {prof.progress && <Progress props={props} />}
@@ -193,5 +196,6 @@ export const Episode: React.FC<EpisodeProps> = (props) => {
           volume={(f) => m.volume * duck(f) * drop(f) * interpolate(f, [0, 20, durationInFrames - 50, durationInFrames], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })} />
       )}
     </AbsoluteFill>
+    </IdentityProvider>
   );
 };

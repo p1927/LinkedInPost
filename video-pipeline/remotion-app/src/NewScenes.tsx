@@ -17,6 +17,7 @@ import { DEFAULT_SAFE, captionClearY, railRight } from "./profile";
 import { gradeCss, Vignette, TermSticker } from "./Scenes";
 import { Icon } from "./Icons";
 import { fontFor } from "./theme";
+import { Backdrop, onFill, useLook } from "./identity";
 
 // ── Diagram helpers ────────────────────────────────────────────────────────
 
@@ -135,8 +136,10 @@ const NodeView: React.FC<{
   isHighlighted: boolean; pal: Palette; ff: string;
   frame: number; fps: number; revealFrame: number;
 }> = ({ node, pos, isHighlighted, pal, ff, frame, fps, revealFrame }) => {
-  const s = spring({ frame: frame - revealFrame, fps, config: { damping: 14, stiffness: 150 }, from: 0, to: 1 });
+  const L = useLook(); // shape/motion tokens only (fonts come in as ff)
+  const s = L.enter(frame, revealFrame, fps, { damping: 14, stiffness: 150 });
   const pulse = isHighlighted ? 1 + 0.035 * Math.sin((frame / 6) * Math.PI) : 1;
+  const fx = L.fx(s, { transform: `scale(${Math.max(0, s) * pulse})`, opacity: Math.min(1, s * 1.6) });
 
   return (
     <div
@@ -146,13 +149,13 @@ const NodeView: React.FC<{
         top: pos.y - NODE_H / 2,
         width: NODE_W,
         height: NODE_H,
-        transform: `scale(${Math.max(0, s) * pulse})`,
+        ...fx,
+        ...(L.on ? { transform: `${fx.transform ?? ""} scale(${pulse})` } : {}),
         transformOrigin: "center center",
-        opacity: Math.min(1, s * 1.6),
         background: isHighlighted ? pal.sunny : pal.white,
-        border: `6px solid ${isHighlighted ? pal.coral : pal.ink}`,
-        borderRadius: 28,
-        boxShadow: isHighlighted
+        border: `${L.on ? Math.max(2, L.b(6) * 2) : 6}px solid ${isHighlighted ? pal.coral : pal.ink}`,
+        borderRadius: L.r(28),
+        boxShadow: L.on ? L.shadow("") : isHighlighted
           ? `0 8px 32px rgba(0,0,0,0.28), 0 0 0 4px ${pal.coral}44`
           : "0 4px 18px rgba(0,0,0,0.16)",
         display: "flex",
@@ -171,7 +174,7 @@ const NodeView: React.FC<{
           fontSize: 44,
           fontWeight: 700,
           lineHeight: 1.1,
-          color: pal.ink,
+          color: L.on && isHighlighted ? onFill(pal.sunny, pal.ink, pal.bg) : pal.ink,
           textAlign: "center",
           padding: "0 10px",
           wordBreak: "break-word",
@@ -220,13 +223,15 @@ export const DiagramScene: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const progress = Math.min(1, frame / Math.max(1, dur));
-  const ff = fontFor(font);
+  const L = useLook(font);
+  const ff = L.body;
 
   const positions = computePositions(visual.nodes, visual.layout, safe);
   const { visible, highlighted, caption } = getRevealState(visual.reveal ?? [], progress, visual.nodes);
 
   return (
     <AbsoluteFill style={{ background: pal.bg }}>
+      <Backdrop />
       {/* SVG layer: edges */}
       <svg
         viewBox="0 0 1080 1920"
@@ -238,7 +243,7 @@ export const DiagramScene: React.FC<{
             <path d="M 60 0 L 0 0 0 60" fill="none" stroke={pal.ink} strokeWidth="0.4" opacity="0.12" />
           </pattern>
         </defs>
-        <rect x="60" y="220" width="960" height="960" fill="url(#grid)" rx="0" />
+        {!L.on && <rect x="60" y="220" width="960" height="960" fill="url(#grid)" rx="0" />}
 
         {(visual.edges ?? []).map((edge, i) => {
           const srcPos = positions[edge.from];
@@ -256,7 +261,7 @@ export const DiagramScene: React.FC<{
           const evolved = evolvePath(edgeProgress, pathStr);
           const isHi = highlighted.has(edge.from) || highlighted.has(edge.to);
           const strokeColor = isHi ? pal.coral : pal.ink;
-          const sw = isHi ? 8 : 5;
+          const sw = L.sw(isHi ? 8 : 5);
 
           return (
             <g key={i}>
@@ -325,7 +330,7 @@ export const DiagramScene: React.FC<{
             style={{
               background: pal.ink,
               color: pal.white,
-              borderRadius: 18,
+              borderRadius: L.r(18),
               padding: "12px 32px",
               fontSize: 46,
               fontWeight: 600,
@@ -350,7 +355,9 @@ export const StepsScene: React.FC<{
 }> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const ff = fontFor(font);
+  const L = useLook(font);
+  const ff = L.body;
+  const accent = L.on ? pal.sunny : pal.coral; // identity: sunny = primary accent
   const n = visual.steps.length;
 
   // Current "active" step: advances through the scene
@@ -358,6 +365,7 @@ export const StepsScene: React.FC<{
 
   return (
     <AbsoluteFill style={{ background: pal.bg }}>
+    <Backdrop />
     <div
       style={{
         position: "absolute", left: safe.left + 20, right: Math.max(safe.right + 20, 1080 - railRight(safe)), top: safe.top, height: safe.height, // step rows sit below y 840: stop at the rail
@@ -370,18 +378,20 @@ export const StepsScene: React.FC<{
       <div
         style={{
           fontSize: 74,
-          fontWeight: 700,
+          fontWeight: L.dw(700),
           color: pal.ink,
-          fontFamily: ff,
+          fontFamily: L.display,
           lineHeight: 1.15,
           letterSpacing: -1,
+          ...L.caps,
+          ...L.fx(L.enter(frame, 0, fps, {}), {}),
         }}
       >
         {visual.title}
       </div>
 
       {/* Accent rule */}
-      <div style={{ width: 120, height: 8, background: pal.coral, borderRadius: 4, marginTop: 24, marginBottom: 48 }} />
+      <div style={{ width: 120, height: 8, background: accent, borderRadius: L.r(4), marginTop: 24, marginBottom: 48 }} />
 
       {/* Steps */}
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
@@ -389,8 +399,9 @@ export const StepsScene: React.FC<{
           const revealFrame = Math.round(dur * (i / n) * 0.9);
           const shown = frame >= revealFrame;
 
-          const s = !shown ? 0 : spring({ frame: frame - revealFrame, fps, config: { damping: 14, stiffness: 160 }, from: 0, to: 1 });
+          const s = !shown ? 0 : L.enter(frame, revealFrame, fps, { damping: 14, stiffness: 160 });
           const isCurrent = i === currentIdx;
+          const badgeBg = isCurrent ? accent : pal.ink;
 
           return (
             <div
@@ -399,8 +410,7 @@ export const StepsScene: React.FC<{
                 display: "flex",
                 alignItems: "center",
                 gap: 32,
-                transform: `translateX(${interpolate(s, [0, 1], [-40, 0])}px)`,
-                opacity: Math.min(1, s * 1.5),
+                ...L.fx(s, { transform: `translateX(${interpolate(s, [0, 1], [-40, 0])}px)`, opacity: Math.min(1, s * 1.5) }),
                 visibility: shown ? "visible" : "hidden",
               }}
             >
@@ -409,16 +419,16 @@ export const StepsScene: React.FC<{
                 style={{
                   minWidth: 88,
                   height: 88,
-                  borderRadius: "50%",
-                  background: isCurrent ? pal.coral : pal.ink,
-                  color: pal.white,
+                  borderRadius: L.on && L.r(24) < 12 ? L.r(24) : "50%",
+                  background: badgeBg,
+                  color: L.on ? onFill(badgeBg, pal.white, pal.bg) : pal.white,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 52,
                   fontWeight: 700,
-                  fontFamily: ff,
-                  boxShadow: isCurrent ? `0 6px 24px ${pal.coral}88` : "none",
+                  fontFamily: L.on ? L.mono : ff,
+                  boxShadow: isCurrent ? (L.on ? L.shadow("") : `0 6px 24px ${pal.coral}88`) : "none",
                   transform: isCurrent ? "scale(1.12)" : "scale(1)",
                   transition: "transform 0.3s",
                   flexShrink: 0,
@@ -431,11 +441,11 @@ export const StepsScene: React.FC<{
               <div
                 style={{
                   fontSize: 54,
-                  fontWeight: isCurrent ? 700 : 500,
-                  color: isCurrent ? pal.ink : `${pal.ink}99`,
+                  fontWeight: isCurrent ? 700 : L.bw(500),
+                  color: isCurrent ? pal.ink : L.on ? (L.id!.palette.muted ?? `${pal.ink}99`) : `${pal.ink}99`,
                   fontFamily: ff,
                   lineHeight: 1.25,
-                  borderLeft: isCurrent ? `6px solid ${pal.coral}` : "6px solid transparent",
+                  borderLeft: isCurrent ? `${L.sw(6)}px solid ${accent}` : `${L.sw(6)}px solid transparent`,
                   paddingLeft: 24,
                 }}
               >
@@ -470,7 +480,9 @@ export const NumberScene: React.FC<{
   pal: Palette; dur: number; font?: string; safe?: SafeZone;
 }> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
-  const ff = fontFor(font);
+  const L = useLook(font);
+  const ff = L.body;
+  const top = L.id?.layout === "hero-top"; // identity layout: number anchored top-left (newsroom) instead of centred
 
   // Numbers (or purely numeric strings like "12,000") count up; any other string renders as text.
   const raw = visual.value;
@@ -487,7 +499,7 @@ export const NumberScene: React.FC<{
       ? formatAnimatedNumber(targetNum * countProgress, targetNum)
       : formatAnimatedNumber(targetNum, targetNum);
   // Auto-shrink to fit the 920 px content width (approx. 0.6 em per glyph for bold sans).
-  const valueSize = Math.round(Math.max(72, Math.min(260, Math.min(920, 1080 - safe.left - safe.right - 20) / Math.max(1, displayStr.length * 0.6))));
+  const valueSize = Math.round(Math.max(72, Math.min(260, Math.min(920, 1080 - safe.left - safe.right - 20) / Math.max(1, displayStr.length * L.gw))));
   // Label / source sit below y 840 and are centred on x 540: keep them clear of the rail (default preset: 800 / 900 as before).
   const lowerW = 2 * (railRight(safe) - 540);
   const revealP = isNumber ? countProgress : textProgress;
@@ -496,32 +508,38 @@ export const NumberScene: React.FC<{
 
   // Entrance spring
   const { fps } = useVideoConfig();
-  const pop = spring({ frame, fps, config: { damping: 14, stiffness: 100 }, from: 0, to: 1 });
+  const pop = L.enter(frame, 0, fps, { damping: 14, stiffness: 100 });
+  // identity: hero colour carries meaning (minus = coral/negative, plus = mint/positive, else the primary accent); later lines stagger in
+  const valueColor = !L.on ? pal.coral : /^\s*[−-]/.test(displayStr) ? pal.coral : /^\s*\+/.test(displayStr) ? pal.mint : pal.sunny;
+  const later = (k: number, op: number): React.CSSProperties => (L.on ? { opacity: op, ...L.fx(L.enter(frame, k * L.stagger + 4, fps, {}), {}) } : { opacity: op });
 
   return (
     <AbsoluteFill style={{ background: pal.bg }}>
+    <Backdrop />
     <div
       style={{
         position: "absolute", left: safe.left, right: safe.right, top: safe.top, height: safe.height,
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
+        alignItems: top ? "flex-start" : "center",
+        justifyContent: top ? "flex-start" : "center",
+        paddingTop: top ? 90 : undefined, boxSizing: top ? "border-box" : undefined,
       }}
     >
+      {top && <div style={{ width: 120, height: Math.max(6, L.sw(8)), background: valueColor, borderRadius: L.r(4), marginBottom: 36 }} />}
       {/* Large number / value text */}
       <div
         style={{
           fontSize: valueSize,
           whiteSpace: "nowrap",
-          fontWeight: 700,
-          fontFamily: ff,
-          color: pal.coral,
+          fontWeight: L.dw(700),
+          fontFamily: L.display,
+          color: valueColor,
           lineHeight: 1,
           letterSpacing: valueSize > 160 ? -4 : -1,
-          transform: `scale(${0.7 + 0.3 * pop})`,
-          opacity: pop,
-          textAlign: "center",
+          ...L.fx(pop, { transform: `scale(${0.7 + 0.3 * pop})`, opacity: pop }),
+          transformOrigin: top ? "left center" : undefined,
+          textAlign: top ? "left" : "center",
         }}
       >
         {displayStr}
@@ -536,8 +554,8 @@ export const NumberScene: React.FC<{
             fontFamily: ff,
             color: pal.ink,
             marginTop: isNumber ? -12 : 16,
-            textAlign: "center",
-            opacity: revealP,
+            textAlign: top ? "left" : "center",
+            ...later(1, revealP),
           }}
         >
           {visual.unit}
@@ -551,7 +569,7 @@ export const NumberScene: React.FC<{
             width: 760,
             height: 40,
             background: `${pal.ink}22`,
-            borderRadius: 20,
+            borderRadius: L.r(20),
             marginTop: 40,
             overflow: "hidden",
           }}
@@ -560,8 +578,8 @@ export const NumberScene: React.FC<{
             style={{
               width: `${barFill}%`,
               height: "100%",
-              background: pal.coral,
-              borderRadius: 20,
+              background: valueColor,
+              borderRadius: L.r(20),
             }}
           />
         </div>
@@ -571,14 +589,14 @@ export const NumberScene: React.FC<{
       <div
         style={{
           fontSize: 68,
-          fontWeight: 600,
+          fontWeight: L.bw(600),
           fontFamily: ff,
           color: pal.ink,
           marginTop: 32,
-          textAlign: "center",
-          maxWidth: Math.min(800, lowerW),
+          textAlign: top ? "left" : "center",
+          maxWidth: top ? railRight(safe) - safe.left - 20 : Math.min(800, lowerW),
           lineHeight: 1.2,
-          opacity: revealP,
+          ...later(2, revealP),
         }}
       >
         {visual.label}
@@ -588,13 +606,13 @@ export const NumberScene: React.FC<{
       {visual.source && (
         <div
           style={{
-            fontSize: 38,
+            fontSize: L.on ? 32 : 38,
             fontWeight: 500,
-            fontFamily: ff,
-            color: `${pal.ink}66`,
+            fontFamily: L.on ? L.mono : ff,
+            color: L.on ? (L.id!.palette.muted ?? `${pal.ink}99`) : `${pal.ink}66`,
             marginTop: 24,
-            maxWidth: Math.min(900, lowerW),
-            textAlign: "center",
+            maxWidth: top ? railRight(safe) - safe.left - 20 : Math.min(900, lowerW),
+            textAlign: top ? "left" : "center",
             opacity: revealP > 0.6 ? 1 : 0,
           }}
         >
@@ -614,11 +632,14 @@ export const CompareScene: React.FC<{
 }> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const ff = fontFor(font);
+  const L = useLook(font);
+  const ff = L.body;
   const n = visual.rows.length;
+  const rule = L.id?.palette.rule ?? `${pal.ink}22`;
+  const edge = L.on && L.id!.shape.border > 0 ? `${L.b(4)}px solid ${rule}` : undefined; // identity border on cells/headers
 
   // Column header entrance
-  const headS = spring({ frame, fps, config: { damping: 14, stiffness: 120 }, from: 0, to: 1 });
+  const headS = L.enter(frame, 0, fps, { damping: 14, stiffness: 120 });
 
   // Winner revealed at 90% of dur
   const winnerVisible = frame >= dur * 0.88;
@@ -634,13 +655,14 @@ export const CompareScene: React.FC<{
       style={{
         width: colW,
         background: winnerVisible && win ? pal.mint : `${pal.ink}11`,
-        borderRadius: 24,
+        borderRadius: L.r(24),
         padding: "20px 32px",
-        fontSize: 64,
-        fontWeight: 700,
-        color: pal.ink,
+        fontSize: L.on ? 56 : 64,
+        fontWeight: L.dw(700),
+        fontFamily: L.on ? L.display : undefined, // no caps here: upper-casing mangles acronyms like "FIIs"
+        color: L.on && winnerVisible && win ? onFill(pal.mint, pal.ink, pal.bg) : pal.ink,
         textAlign: "center",
-        border: winnerVisible && win ? `4px solid ${pal.mint}` : "4px solid transparent",
+        border: winnerVisible && win ? `${L.on ? L.b(4) || 4 : 4}px solid ${pal.mint}` : edge ?? "4px solid transparent",
         boxSizing: "border-box",
       }}
     >
@@ -650,28 +672,64 @@ export const CompareScene: React.FC<{
       )}
     </div>
   );
-  const cell = (text: string) => (
+  const cell = (text: string, fx?: React.CSSProperties, wide?: boolean) => (
     <div
       style={{
-        width: colW,
+        width: wide ? "100%" : colW,
         background: pal.white,
-        borderRadius: 18,
-        padding: "22px 28px",
-        fontSize: 52,
-        fontWeight: 500,
+        borderRadius: L.r(18),
+        padding: wide ? "14px 24px" : L.on ? "18px 24px" : "22px 28px",
+        fontSize: wide ? 44 : L.on ? 46 : 52,
+        fontWeight: L.bw(500),
         color: pal.ink,
-        textAlign: "center",
-        boxShadow: "0 3px 12px rgba(0,0,0,0.09)",
+        textAlign: wide ? "left" : "center",
+        boxShadow: L.shadow("0 3px 12px rgba(0,0,0,0.09)"),
+        border: edge,
         lineHeight: 1.2,
         boxSizing: "border-box",
+        ...fx,
       }}
     >
       {text}
     </div>
   );
 
+  // identity layout "hero-top": stack A above B (full-width rows) when it fits above the caption band; otherwise the columns below
+  const W = railRight(safe) - safe.left, lines = (t: string) => Math.ceil((t.length * 25) / (W - 60));
+  const blockH = (k: "a" | "b") => 96 + visual.rows.reduce((h, row) => h + lines(row[k]) * 53 + 40, 0);
+  const stack = L.id?.layout === "hero-top" && blockH("a") + blockH("b") + 40 <= Math.min(safe.top + safe.height, captionClearY(safe)) - safe.top;
+  const rowP = (i: number, k: number) => {
+    const start = Math.round(dur * (i / n) * 0.88) + k * L.stagger;
+    return { shown: frame >= start, p: frame >= start ? L.enter(frame, start, fps, { damping: 14, stiffness: 150 }) : 0 };
+  };
+  if (stack) {
+    const block = (label: string, win: boolean, k: "a" | "b", tint: string) => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ ...L.fx(L.enter(frame, k === "a" ? 0 : L.stagger, fps, {}), {}), fontFamily: L.display, fontWeight: L.dw(700), fontSize: 54, color: pal.ink, lineHeight: 1.1,
+          borderLeft: `${L.sw(10)}px solid ${winnerVisible && win ? pal.mint : tint}`, paddingLeft: 22 }}>
+          {label}{winnerVisible && win ? "  ✓" : ""}
+        </div>
+        {visual.rows.map((row, i) => {
+          const { shown, p } = rowP(i, k === "a" ? 0 : 1);
+          return <div key={i} style={{ visibility: shown ? "visible" : "hidden" }}>{cell(row[k], L.fx(p, {}), true)}</div>;
+        })}
+      </div>
+    );
+    return (
+      <AbsoluteFill style={{ background: pal.bg, fontFamily: ff }}>
+        <Backdrop />
+        <div style={{ position: "absolute", left: safe.left, width: W, top: safe.top, height: Math.min(safe.top + safe.height, captionClearY(safe)) - safe.top,
+          display: "flex", flexDirection: "column", justifyContent: "center", gap: 40 }}>
+          {block(visual.colA, isWinnerA, "a", pal.sky)}
+          {block(visual.colB, isWinnerB, "b", pal.sunny)}
+        </div>
+      </AbsoluteFill>
+    );
+  }
+
   return (
     <AbsoluteFill style={{ background: pal.bg, fontFamily: ff }}>
+      <Backdrop />
       {/* Content block centred vertically in the safe band; hidden rows keep their space so nothing jumps */}
       <div
         style={{
@@ -681,11 +739,11 @@ export const CompareScene: React.FC<{
       >
         <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 28 }}>
           {/* VS divider line */}
-          <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 4, background: `${pal.ink}22`, transform: "translateX(-2px)" }} />
+          <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: L.sw(4), background: rule, transform: `translateX(-${L.sw(4) / 2}px)` }} />
           <div
             style={{
               display: "flex", justifyContent: "space-between", marginBottom: 20,
-              transform: `translateY(${interpolate(headS, [0, 1], [-30, 0])}px)`, opacity: headS,
+              ...L.fx(headS, { transform: `translateY(${interpolate(headS, [0, 1], [-30, 0])}px)`, opacity: headS }),
             }}
           >
             {header(visual.colA, isWinnerA)}
@@ -694,18 +752,18 @@ export const CompareScene: React.FC<{
           {visual.rows.map((row, i) => {
             const revealFrame = Math.round(dur * (i / n) * 0.88);
             const shown = frame >= revealFrame;
-            const s = !shown ? 0 : spring({ frame: frame - revealFrame, fps, config: { damping: 14, stiffness: 150 }, from: 0, to: 1 });
+            const s = !shown ? 0 : L.enter(frame, revealFrame, fps, { damping: 14, stiffness: 150 });
             return (
               <div
                 key={i}
                 style={{
                   display: "flex", justifyContent: "space-between", gap: 20,
-                  opacity: Math.min(1, s * 1.4), transform: `scale(${0.92 + 0.08 * s})`,
+                  ...(L.on ? {} : { opacity: Math.min(1, s * 1.4), transform: `scale(${0.92 + 0.08 * s})` }),
                   visibility: shown ? "visible" : "hidden",
                 }}
               >
-                {cell(row.a)}
-                {cell(row.b)}
+                {cell(row.a, L.on ? L.fx(s, {}) : undefined)}
+                {cell(row.b, L.on ? L.fx(rowP(i, 1).p, {}) : undefined)}
               </div>
             );
           })}

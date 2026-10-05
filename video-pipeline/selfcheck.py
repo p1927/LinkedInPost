@@ -129,6 +129,39 @@ def check_live() -> list:
     return out
 
 
+def check_identity() -> list:
+    """The identity catalog stays valid: contrast holds at every accent rotation, picks never repeat inside the window, and catalog fonts are loadable by the renderer."""
+    import identity
+    out = []
+    cat = identity.catalog()
+    for name, a in cat["archetypes"].items():
+        for pid, base in a["palettes"].items():
+            for rot in range(0, 360, 60):
+                pal = identity.build_palette(base, rot)
+                idn = {"id": name, "archetype": name, "palette": pal, "fonts": {"display": a["fonts"]["display"][0], "body": a["fonts"]["body"][0], "mono": a["fonts"]["mono"][0]}}
+                bad = [m for s, r, m in identity.validate(idn) if s == "error"]
+                if bad:
+                    out.append(f"identity {name} palette {pid} rotation {rot}: {bad[0]}")
+                    break
+    hist, seen = [], []
+    for i in range(10):
+        ep = {"id": f"ep9{i}-selfcheck", "audience": "curious_adult", "title": "interest rates and the stock market", "scenes": [], "claims": []}
+        idn = identity.pick(ep, hist=hist)
+        key = (idn["archetype"], idn["variant"]["palette"], int(identity._hue(idn["palette"]["sunny"]) // 60))
+        if key in seen[-identity.WINDOW:]:
+            out.append(f"identity.pick repeated {key} inside the {identity.WINDOW}-episode window")
+        seen.append(key)
+        hist = ([{"id": ep["id"], "archetype": idn["archetype"], "palette": idn["variant"]["palette"], "accent_hue": identity._hue(idn["palette"]["sunny"])}] + hist)[:identity.WINDOW]
+    reg = ROOT / "remotion-app" / "src" / "identity.tsx"
+    if reg.exists():  # fonts the catalog can pick must exist in the renderer's font registry
+        src = reg.read_text()
+        fonts = {f for a in cat["archetypes"].values() for role in ("display", "body", "mono") for f in a["fonts"][role]}
+        miss = sorted(f for f in fonts if f not in src)
+        if miss:
+            out.append(f"catalog fonts missing from remotion-app/src/identity.tsx: {miss}")
+    return out
+
+
 def check_checklist() -> list:
     out = []
     rules = yaml.safe_load((ROOT / "direction" / "qa_checklist.yaml").read_text())["rules"]
@@ -176,7 +209,7 @@ def main() -> int:
         print(f"       {i}")
     for i in snotes:
         print(f"       (draft, not gating) {i}")
-    for name, fn in (("safe zones", check_safe_zones), ("storyboard", check_storyboard), ("skill copies", check_skill_copies), ("news web", check_news_web), ("live runs", check_live), ("checklist", check_checklist), ("doc refs", check_doc_refs)):
+    for name, fn in (("safe zones", check_safe_zones), ("storyboard", check_storyboard), ("skill copies", check_skill_copies), ("news web", check_news_web), ("live runs", check_live), ("identity", check_identity), ("checklist", check_checklist), ("doc refs", check_doc_refs)):
         issues = fn()
         bad += bool(issues)
         print(f"{'FAIL' if issues else 'ok  '} {name}")

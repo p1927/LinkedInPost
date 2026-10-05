@@ -703,6 +703,19 @@ def _segment_checks(ep, d, segs, env, mode, co, shots, long_form, dur, clip_s, s
     return res
 
 
+IDENTITY_RULES = ("identity_present", "identity_contrast", "identity_banned_default", "identity_variety")  # emitted below / by identity.py
+
+
+def _identity_checks(ep: dict) -> list:
+    """Per-episode visual identity: required for new audience episodes, contrast-checked, never a repeat of a recent look."""
+    import identity
+    if not ep.get("identity"):
+        if ep.get("audience") and registry.status_of(ep) in ("idea", "scripted"):
+            return [(sev("identity_present", "warn"), "identity_present", "no `identity`: the look would fall back to the shared audience profile. Run `run.py identity pick <episode>` (information decides the look)")]
+        return []
+    return [(sev(r, s), r, m) for s, r, m in identity.validate(ep["identity"]) + identity.variety_issues(ep)]
+
+
 def _apply_waivers(ep: dict, issues: list) -> list:
     """A waiver (episode.waivers[{rule, reason}]) downgrades one rule's issues to 'waived' for that episode only: still printed, never blocking."""
     waived = {w["rule"]: w["reason"] for w in ep.get("waivers") or []}
@@ -821,6 +834,7 @@ def run(ep: dict) -> list:
         issues.append(("warn", "on_frame_ai_text", "episode has an on-frame disclosure; owner preference is none (use platform AI labels at upload)"))
     section("checklist", lambda: _checklist_checks(ep, out))
     section("direction", lambda: _direction_checks(ep))
+    section("identity", lambda: _identity_checks(ep))
     return _apply_waivers(ep, issues)
 
 

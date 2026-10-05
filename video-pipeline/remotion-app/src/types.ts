@@ -113,6 +113,23 @@ export type EpisodeProps = {
   scenes: SceneData[]; totalFrames: number; transition: number; fps: number; width: number; height: number;
   profile?: Profile;
   coldOpen?: ColdOpen | null;
+  identity?: Identity;   // per-episode look (STYLE-IDENTITY-PLAN); absent = the profile look, unchanged
+};
+
+// ── Per-episode visual identity (docs/plans/youtube-automation/STYLE-IDENTITY-PLAN.md), produced by the Python side, read via identity.tsx ──
+// palette maps onto the 8 Palette keys: sunny = primary accent, coral = warning/negative, sky = secondary accent, mint = positive,
+// grape = tertiary, white = card surface; muted/surface/rule are optional extras.
+export type Identity = {
+  id: string;
+  palette: Palette & { muted?: string; surface?: string; rule?: string };
+  fonts: { display: string; body: string; mono: string; displayWeight?: number; bodyWeight?: number; caps?: boolean }; // Google Fonts family names
+  shape: { radius: number; border: number; shadow: "none" | "soft" | "paper"; stroke: number };
+  backdrop: "flat" | "paper" | "grid" | "blueprint" | "ruled" | "starfield" | "grain";
+  motion: { spring: { damping: number; stiffness?: number; mass?: number }; ease: "linear" | "out-cubic" | "in-out" | "expo-out"; entrance: "rise" | "pop" | "slide" | "draw" | "type"; stagger: number; transition: "slide" | "fade" | "wipe" | "zoom" | "cut" };
+  caption: "sticker" | "clean" | "mono-bar" | "serif-lower";
+  term: "sticker" | "card" | "tag" | "stamp";
+  layout?: "hero-top" | "hero-center" | "split";
+  seed: number;
 };
 
 // ── Cold-open bridge (direction.cold_open, resolved by run.py bridge_plan; DESIGN_SYSTEM section 11, modes.yaml mode-bridge-*) ──

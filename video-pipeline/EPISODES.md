@@ -15,3 +15,9 @@
 | ep14-crew13-reached-space | Why you can't just speed up to catch the space station | scripted | news_explainer | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
 | ep15-crew13-reached-space | The counterintuitive way spacecraft catch the space station | scripted | why_is_x | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
 | ep16-leaves-change-color | Why Do Leaves Change Color in Autumn? | scripted | what_if | Big Questions, Tiny Words | - |
+| ep17-crew13-reached-space | Why you can't catch the space station by speeding up | scripted | experiment | Big Questions, Tiny Words | - |
+| ep18-fii-dii-flows | Who actually controls the Indian stock market? | scripted | myth_busting | Big Questions, Tiny Words | - |
+| ep19-moon-change-shape | Why does the Moon change shape? | scripted | why_is_x | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
+| ep20-fii-dii-positions | Who actually moves the Indian market? | scripted | character_series | Big Questions, Tiny Words | - |
+| ep22-indian-market-crashes | Who actually moves the Indian market when FIIs sell? | scripted | case_study | Big Questions, Tiny Words | - |
+| ep23-india-market-crash-recovery | Why India's market crashed in March, then jumped in April | rendered | why_is_x | Big Questions, Tiny Words | - |

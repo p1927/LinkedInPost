@@ -1,0 +1,195 @@
+# Visual identity catalog: INFORMATION decides the look; the audience only sets constraints (readability, tone, motion intensity).
+# Source: docs/research (explainer archetypes pass, 2026-10-05) + docs/plans/youtube-automation/STYLE-IDENTITY-PLAN.md.
+# Evidence honesty: Ledger/Tape/Flat Cosmos/Chalk Proof/Paper Atlas draw on sourced design guides (FT Visual Vocabulary, Economist chart style (secondary),
+# Kurzgesagt's own description, Manim defaults, Datawrapper font guidance); Archive Ink, Blueprint, ISO Systems, Clinical Clear and Data Poster are
+# design judgement. Names are ours; no channel branding is copied. Fonts are Google Fonts under SIL OFL; they must also exist in the renderer's font registry
+# (remotion-app/src/identity.tsx; `run.py selfcheck` verifies).
+#
+# Palette roles (identity.py maps them onto the renderer's 8 keys and enforces contrast with coloraide):
+#   bg -> bg, ink -> ink, accent -> sunny (primary accent, the story), accent2 -> sky (second accent), warn -> coral (decline/danger),
+#   good -> mint (positive), tert -> grape, surface -> white (cards). Only accent/accent2 (and tert) rotate in hue between episodes;
+#   warn/good keep their meaning. 2 palettes per archetype (A, B).
+
+info_types:   # dominant relationship in the data -> default and alternate archetype; keywords feed the classifier (owner can always override)
+  money:       {default: ledger, alternate: tape, extra: data-poster, keywords: [inflation, rate, rates, bond, yield, fed, rbi, bank, gdp, price, prices, economy, nifty, sensex, stock, stocks, market, invest, fii, dii, fpi, rupee, dollar, budget, tax, debt, loan, mutual fund]}
+  markets-fast: {default: tape, alternate: ledger, extra: data-poster, keywords: [crypto, bitcoin, intraday, trading, options, futures, derivative, volatility, ticker, today, session, crash, rally]}
+  science-scale: {default: flat-cosmos, alternate: clinical-clear, extra: iso-systems, keywords: [space, planet, orbit, star, galaxy, physics, energy, climate, atom, cell, scale, light, gravity, sun, moon, earth, universe, evolution, ocean]}
+  math:        {default: chalk-proof, alternate: flat-cosmos, extra: blueprint, keywords: [probability, proof, math, paradox, algorithm, statistics, geometry, prime, infinity, random, odds, equation]}
+  geography:   {default: paper-atlas, alternate: archive-ink, extra: data-poster, keywords: [country, border, trade route, war, sanction, policy, election, treaty, map, region, migration, oil, strait, geopolitics]}
+  history:     {default: archive-ink, alternate: paper-atlas, extra: ledger, keywords: [history, empire, century, ancient, origin, invented, revolution, dynasty, medieval, colonial, timeline, founded]}
+  engineering: {default: blueprint, alternate: iso-systems, extra: chalk-proof, keywords: [engine, bridge, rocket, battery, reactor, turbine, circuit, machine, infrastructure, fails, failure, built, grid, chip, manufacturing]}
+  software:    {default: iso-systems, alternate: blueprint, extra: tape, keywords: [software, app, internet, network, server, cloud, ai model, algorithm, api, protocol, database, click, browser, encryption, supply chain, pipeline]}
+  health:      {default: clinical-clear, alternate: flat-cosmos, extra: iso-systems, keywords: [health, body, brain, heart, sleep, disease, vaccine, nutrition, diet, immune, medicine, symptom, cancer, stress, habit]}
+  rankings:    {default: data-poster, alternate: ledger, extra: tape, keywords: [top, ranking, most, biggest, richest, countries, population, demographics, comparison, versus, percent of, survey, ranked]}
+
+archetypes:
+  ledger:
+    name: Ledger (newsroom finance chart)
+    suits: [money, rankings]
+    audience_fit: [curious_adult, older_adult, techie]
+    palettes:
+      A: {bg: "#F6F1E7", ink: "#1A1A1A", accent: "#006BA2", accent2: "#3EBCD2", warn: "#B3261E", good: "#2E7D4F", tert: "#8C6D1F"}
+      B: {bg: "#FFF8EE", ink: "#222222", accent: "#0B5D4B", accent2: "#A8461A", warn: "#B3261E", good: "#2F7D4F", tert: "#6B4E9B"}
+    fonts: {display: ["Source Serif 4", "Newsreader"], body: ["Source Sans 3", "IBM Plex Sans"], mono: ["IBM Plex Mono"], displayWeight: 700, bodyWeight: 500, caps: false}
+    shape: {radius: 2, border: 1, shadow: none, stroke: 4}
+    backdrop: [paper]
+    motion: {spring: {damping: 26}, ease: out-cubic, entrance: rise, stagger: 6, transition: [cut, wipe]}
+    caption: [clean, serif-lower]
+    term: [tag]
+    layout: [hero-top, split]
+    elements: ["line chart with direct labels", "bar chart from baseline", "slope chart", "annotation callout with leader line", "source footer"]
+    illustration_style: "newsroom data graphic, warm paper background, one blue series line, thin grey gridlines, serif headline, direct labels, no 3D, no gradients, no text in the image"
+    avoid: ["3D charts", "legends", "rainbow series", "drop shadows", "gradient fills", "icons instead of numbers"]
+  tape:
+    name: Tape (market-desk terminal)
+    suits: [markets-fast, money]
+    audience_fit: [curious_adult, techie]
+    palettes:
+      A: {bg: "#0B0F14", ink: "#E6EDF3", accent: "#FFB000", accent2: "#4FD1C5", warn: "#FF5C5C", good: "#3DDC84", tert: "#8AB4F8"}
+      B: {bg: "#10131A", ink: "#E8EAF0", accent: "#4FD1C5", accent2: "#FFB000", warn: "#FF8A5B", good: "#6FE3A0", tert: "#B8A1FF"}
+    fonts: {display: ["Barlow Condensed", "IBM Plex Sans"], body: ["IBM Plex Sans"], mono: ["JetBrains Mono", "IBM Plex Mono"], displayWeight: 600, bodyWeight: 500, caps: true}
+    shape: {radius: 0, border: 1, shadow: none, stroke: 2}
+    backdrop: [grid]
+    motion: {spring: {damping: 40}, ease: linear, entrance: type, stagger: 3, transition: [cut]}
+    caption: [mono-bar]
+    term: [tag]
+    layout: [split, hero-top]
+    elements: ["ticker strip", "sparkline", "candlesticks", "monospace table", "delta chips", "panel borders"]
+    illustration_style: "dark trading-desk screen, thin 1px grid, amber and teal monospace data marks, no logos, no text in the image"
+    avoid: ["neon purple-blue gradients", "glassmorphism", "matrix rain", "real brand logos", "financial advice phrasing"]
+  flat-cosmos:
+    name: Flat Cosmos (saturated flat-vector science)
+    suits: [science-scale, math, health]
+    audience_fit: [kids, curious_adult, techie]
+    palettes:
+      A: {bg: "#1B1340", ink: "#FFFFFF", accent: "#FFD166", accent2: "#5EE6C8", warn: "#FF6B8B", good: "#8BE04E", tert: "#C99BFF"}
+      B: {bg: "#0F2A3F", ink: "#FFFFFF", accent: "#FF9F43", accent2: "#8BE04E", warn: "#FF6B6B", good: "#5EE6C8", tert: "#C99BFF"}
+    fonts: {display: ["Nunito", "Rubik"], body: ["Nunito"], mono: ["JetBrains Mono"], displayWeight: 800, bodyWeight: 600, caps: false}
+    shape: {radius: 28, border: 0, shadow: soft, stroke: 6}
+    backdrop: [starfield]
+    motion: {spring: {damping: 12}, ease: expo-out, entrance: pop, stagger: 5, transition: [zoom, slide]}
+    caption: [sticker]
+    term: [sticker]
+    layout: [hero-center, hero-top]
+    elements: ["planets and circles as primitives", "scale-comparison rows", "orbit paths", "radial burst", "star-dot field", "metaphor objects from 3-5 shapes"]
+    illustration_style: "flat vector illustration on deep indigo, saturated flat shapes with a two-tone shade, soft glow, star dots, no outlines, no text in the image"
+    avoid: ["realistic photo textures", "thin outlines", "many tiny labels", "stock icon sets", "default blue-purple gradient"]
+  chalk-proof:
+    name: Chalk Proof (dark-canvas math and logic)
+    suits: [math]
+    audience_fit: [curious_adult, techie]
+    palettes:
+      A: {bg: "#1C1C1C", ink: "#EDEDED", accent: "#58C4DD", accent2: "#F7D96F", warn: "#FC6255", good: "#83C167", tert: "#C59DFF"}
+      B: {bg: "#14201A", ink: "#EDEDED", accent: "#83C167", accent2: "#F7D96F", warn: "#FC6255", good: "#58C4DD", tert: "#E5A8FF"}
+    fonts: {display: ["Source Serif 4"], body: ["Source Sans 3", "Inter"], mono: ["JetBrains Mono"], displayWeight: 600, bodyWeight: 500, caps: false}
+    shape: {radius: 6, border: 0, shadow: none, stroke: 4}
+    backdrop: [grid]
+    motion: {spring: {damping: 30}, ease: in-out, entrance: draw, stagger: 8, transition: [fade]}
+    caption: [clean, serif-lower]
+    term: [card]
+    layout: [hero-center]
+    elements: ["number line", "coordinate grid", "vectors", "shapes that morph", "dot arrays", "colour-coded terms"]
+    illustration_style: "dark chalkboard canvas, thin bright geometric linework, colour tied to concept, sparse, no text in the image"
+    avoid: ["dense formulas", "photos", "decorative backgrounds", "every term a different colour"]
+  paper-atlas:
+    name: Paper Atlas (map and collage)
+    suits: [geography, history]
+    audience_fit: [curious_adult, older_adult]
+    palettes:
+      A: {bg: "#EFE6D2", ink: "#1F1F1F", accent: "#B3322B", accent2: "#1F4E79", warn: "#B3322B", good: "#2F5D50", tert: "#7A5C1E"}
+      B: {bg: "#E9E2D0", ink: "#202020", accent: "#9A3B00", accent2: "#2F5D50", warn: "#B3322B", good: "#2F5D50", tert: "#3A4F7A"}
+    fonts: {display: ["Bricolage Grotesque", "Oswald"], body: ["Source Sans 3"], mono: ["Courier Prime"], displayWeight: 800, bodyWeight: 500, caps: false}
+    shape: {radius: 4, border: 0, shadow: paper, stroke: 5}
+    backdrop: [paper]
+    motion: {spring: {damping: 18}, ease: out-cubic, entrance: slide, stagger: 7, transition: [slide]}
+    caption: [clean]
+    term: [stamp]
+    layout: [hero-top, split]
+    elements: ["simplified country shapes", "route lines that draw", "pins", "highlighter over text", "torn-paper cards", "document callouts"]
+    illustration_style: "paper collage map, warm paper, torn edges with soft paper shadow, one hot marker-red highlight, muted land tints, no text in the image"
+    avoid: ["Google-Maps look", "purposeless 3D globe", "false certainty on disputed borders", "six region colours"]
+  archive-ink:
+    name: Archive Ink (history and timeline)
+    suits: [history, geography]
+    audience_fit: [curious_adult, older_adult]
+    palettes:
+      A: {bg: "#E8DCC0", ink: "#2B2118", accent: "#8B2E1F", accent2: "#2C4A6B", warn: "#8B2E1F", good: "#3F5E3A", tert: "#6B4B2A"}
+      B: {bg: "#D9CDB0", ink: "#1E1E24", accent: "#2C4A6B", accent2: "#8B2E1F", warn: "#8B2E1F", good: "#3F5E3A", tert: "#6B4B2A"}
+    fonts: {display: ["Libre Caslon Text", "Playfair Display", "Cormorant Garamond"], body: ["Source Serif 4"], mono: ["Courier Prime"], displayWeight: 700, bodyWeight: 400, caps: false}
+    shape: {radius: 2, border: 1, shadow: paper, stroke: 3}
+    backdrop: [paper, ruled]
+    motion: {spring: {damping: 34}, ease: in-out, entrance: rise, stagger: 10, transition: [fade]}
+    caption: [serif-lower]
+    term: [stamp]
+    layout: [split, hero-top]
+    elements: ["timeline spine with year ticks", "big year numeral", "seals and stamps", "ruled ledger lines", "quote plates"]
+    illustration_style: "aged parchment, sepia ink linework, engraving-style spot illustration, oxblood seal accent, paper grain, no text in the image"
+    avoid: ["neon", "emoji", "flat-icon people", "aging filters that hurt legibility", "generated images presented as real archives"]
+  blueprint:
+    name: Blueprint (technical drawing)
+    suits: [engineering, software]
+    audience_fit: [curious_adult, techie]
+    palettes:
+      A: {bg: "#0B3A6B", ink: "#FFFFFF", accent: "#FFD54A", accent2: "#BFE3FF", warn: "#FF8A65", good: "#9FE3B5", tert: "#D1B3FF"}
+      B: {bg: "#13322B", ink: "#F2FFF8", accent: "#FFB86B", accent2: "#BFEFD6", warn: "#FF8A65", good: "#9FE3B5", tert: "#FFD54A"}
+    fonts: {display: ["Barlow Condensed", "Oswald"], body: ["IBM Plex Sans"], mono: ["IBM Plex Mono"], displayWeight: 600, bodyWeight: 500, caps: true}
+    shape: {radius: 0, border: 2, shadow: none, stroke: 2}
+    backdrop: [blueprint]
+    motion: {spring: {damping: 40}, ease: linear, entrance: draw, stagger: 5, transition: [wipe]}
+    caption: [mono-bar]
+    term: [tag]
+    layout: [hero-center, split]
+    elements: ["grid paper", "orthographic outlines", "dimension lines", "numbered callouts", "exploded views", "amber flow arrows", "title block"]
+    illustration_style: "cyanotype blueprint, white and light-blue linework on deep blue, dimension lines, one amber highlight, no photorealism, no text in the image"
+    avoid: ["photoreal renders", "glossy 3D", "handwriting fonts", "decorative gradients", "invented precise figures"]
+  iso-systems:
+    name: ISO Systems (isometric how-it-works)
+    suits: [software, engineering]
+    audience_fit: [kids, curious_adult, techie]
+    palettes:
+      A: {bg: "#F4F6FA", ink: "#14213D", accent: "#4F46E5", accent2: "#C2410C", warn: "#C2410C", good: "#0F766E", tert: "#B4235A"}
+      B: {bg: "#EEF5F0", ink: "#12261F", accent: "#0F766E", accent2: "#B4235A", warn: "#C2410C", good: "#0F766E", tert: "#4F46E5"}
+    fonts: {display: ["Space Grotesk", "Plus Jakarta Sans"], body: ["Plus Jakarta Sans", "IBM Plex Sans"], mono: ["IBM Plex Mono"], displayWeight: 700, bodyWeight: 500, caps: false}
+    shape: {radius: 10, border: 0, shadow: soft, stroke: 4}
+    backdrop: [flat, grid]
+    motion: {spring: {damping: 20}, ease: out-cubic, entrance: rise, stagger: 6, transition: [slide]}
+    caption: [clean]
+    term: [card]
+    layout: [hero-top, split]
+    elements: ["isometric blocks as services", "stacked layers", "connector pipes", "moving packets", "numbered steps", "code chips"]
+    illustration_style: "clean isometric illustration, light cool-grey background, blocks with three flat tints, one hot accent for data, no logos, no text in the image"
+    avoid: ["generic cloud/lock/gear icon spam", "purple-blue gradient background", "logo soup", "tiny text on blocks"]
+  clinical-clear:
+    name: Clinical Clear (health and body)
+    suits: [health, science-scale]
+    audience_fit: [curious_adult, older_adult, kids]
+    palettes:
+      A: {bg: "#FFFFFF", ink: "#16324F", accent: "#0B7285", accent2: "#5C7CFA", warn: "#C92A2A", good: "#2B8A3E", tert: "#862E9C"}
+      B: {bg: "#FFF6F0", ink: "#3B1F2B", accent: "#A61E4D", accent2: "#1B6B55", warn: "#A61E4D", good: "#1B6B55", tert: "#5F3DC4"}
+    fonts: {display: ["Fraunces", "DM Serif Display"], body: ["Atkinson Hyperlegible", "Source Sans 3"], mono: ["IBM Plex Mono"], displayWeight: 600, bodyWeight: 400, caps: false}
+    shape: {radius: 18, border: 0, shadow: soft, stroke: 4}
+    backdrop: [flat]
+    motion: {spring: {damping: 30}, ease: in-out, entrance: rise, stagger: 8, transition: [fade]}
+    caption: [clean]
+    term: [card]
+    layout: [hero-center, hero-top]
+    elements: ["organ silhouettes", "cross-section with magnified insert", "cause-effect pathway arrows", "dose bars", "single highlighted region"]
+    illustration_style: "calm medical illustration, white background, simplified organ silhouettes, teal system colour with one warm red for the issue, no gore, no text in the image"
+    avoid: ["gore", "red-on-black fear aesthetics", "stock stethoscope clip-art", "unsourced stats", "diagnostic claims"]
+  data-poster:
+    name: Data Poster (rankings and magnitude)
+    suits: [rankings, money]
+    audience_fit: [kids, curious_adult, techie]
+    palettes:
+      A: {bg: "#101826", ink: "#FFFFFF", accent: "#F5C518", accent2: "#2EC4B6", warn: "#FF6B6B", good: "#7BD389", tert: "#C77DFF"}
+      B: {bg: "#FFFFFF", ink: "#111111", accent: "#D7263D", accent2: "#1D4ED8", warn: "#D7263D", good: "#15803D", tert: "#7E22CE"}
+    fonts: {display: ["Big Shoulders Display", "Oswald"], body: ["Lato", "Inter"], mono: ["JetBrains Mono"], displayWeight: 800, bodyWeight: 600, caps: true}
+    shape: {radius: 8, border: 0, shadow: none, stroke: 6}
+    backdrop: [flat, grain]
+    motion: {spring: {damping: 22}, ease: expo-out, entrance: slide, stagger: 4, transition: [wipe, slide]}
+    caption: [mono-bar, sticker]
+    term: [tag]
+    layout: [hero-top, hero-center]
+    elements: ["sorted horizontal bars", "treemap", "waffle chart", "ranked list", "big headline number with delta"]
+    illustration_style: "bold flat infographic poster, strong flat background, sorted bars and big numerals, one saturated focal colour, no text in the image"
+    avoid: ["pie charts with more than 4 slices", "stat cards on every scene", "truncated axes", "all bars the same colour and all different"]
