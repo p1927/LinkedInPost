@@ -5,12 +5,27 @@ import type { Palette, Word } from "./types";
 import { fontFor } from "./theme";
 
 // Word-timed, few-words-per-page captions (official @remotion/captions), sticker-style outline.
-export const Captions: React.FC<{ words: Word[]; pal: Palette; bottom?: number; variant?: "sticker" | "clean"; size?: number; font?: string }> = ({ words, pal, bottom = 300, variant = "sticker", size, font }) => {
+export const Captions: React.FC<{ words: Word[]; pal: Palette; bottom?: number; variant?: "sticker" | "clean"; size?: number; font?: string; inset?: number }> = ({ words, pal, bottom = 300, variant = "sticker", size, font, inset }) => {
   const { fps } = useVideoConfig();
   const captions: Caption[] = words.map((w, i) => ({
     text: (i ? " " : "") + w.w, startMs: w.s * 1000, endMs: w.e * 1000, timestampMs: ((w.s + w.e) / 2) * 1000, confidence: 1,
   }));
-  const { pages } = createTikTokStyleCaptions({ captions, combineTokensWithinMilliseconds: 900 });
+  const { pages: grouped } = createTikTokStyleCaptions({ captions, combineTokensWithinMilliseconds: 900 });
+  // Large type (older-adult profile, size >= 72) wraps to 3 lines in the safe caption lane at 5+ words and would cover scene text:
+  // split such pages into pages of at most MAX_LARGE_PAGE_WORDS words (timing taken from the tokens). Smaller sizes are unchanged.
+  const MAX_LARGE_PAGE_WORDS = 4;
+  const pages: typeof grouped = (size ?? 0) >= 72
+    ? grouped.flatMap((pg) => {
+        if (pg.tokens.length <= MAX_LARGE_PAGE_WORDS) return [pg];
+        const out: typeof grouped = [];
+        for (let k = 0; k < pg.tokens.length; k += MAX_LARGE_PAGE_WORDS) {
+          const toks = pg.tokens.slice(k, k + MAX_LARGE_PAGE_WORDS);
+          const startMs = toks[0].fromMs;
+          out.push({ ...pg, tokens: toks, text: toks.map((x) => x.text).join(""), startMs, durationMs: Math.max(toks[toks.length - 1].toMs - startMs, 1) });
+        }
+        return out;
+      })
+    : grouped;
   return (
     <>
       {pages.map((page, i) => {
@@ -19,7 +34,7 @@ export const Captions: React.FC<{ words: Word[]; pal: Palette; bottom?: number; 
         const end = next ? Math.round((next.startMs / 1000) * fps) : from + Math.round((page.durationMs / 1000) * fps) + 12;
         return (
           <Sequence key={i} from={from} durationInFrames={Math.max(1, end - from)} layout="none">
-            <Page page={page} pal={pal} bottom={bottom} variant={variant} size={size} font={font} />
+            <Page page={page} pal={pal} bottom={bottom} variant={variant} size={size} font={font} inset={inset} />
           </Sequence>
         );
       })}
@@ -27,7 +42,7 @@ export const Captions: React.FC<{ words: Word[]; pal: Palette; bottom?: number; 
   );
 };
 
-const Page: React.FC<{ page: any; pal: Palette; bottom: number; variant: "sticker" | "clean"; size?: number; font?: string }> = ({ page, pal, bottom, variant, size, font }) => {
+const Page: React.FC<{ page: any; pal: Palette; bottom: number; variant: "sticker" | "clean"; size?: number; font?: string; inset?: number }> = ({ page, pal, bottom, variant, size, font, inset }) => {
   const fontFamily = fontFor(font);
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -37,7 +52,7 @@ const Page: React.FC<{ page: any; pal: Palette; bottom: number; variant: "sticke
     // Calm adult-friendly style: sentence-case, soft shadow, active word gets an accent highlight bar (no outline/tilt).
     const fs = size ?? 64;
     return (
-      <div style={{ position: "absolute", left: 70, right: 70, bottom, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "6px 18px",
+      <div style={{ position: "absolute", left: inset ?? 70, right: inset ?? 70, bottom, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "6px 18px",
         opacity: interpolate(pop, [0, 1], [0, 1]), transform: `translateY(${interpolate(pop, [0, 1], [14, 0])}px)` }}>
         {page.tokens.map((t: any, i: number) => {
           const active = nowMs >= t.fromMs && nowMs < t.toMs + 60;
@@ -52,7 +67,7 @@ const Page: React.FC<{ page: any; pal: Palette; bottom: number; variant: "sticke
     );
   }
   return (
-    <div style={{ position: "absolute", left: 50, right: 50, bottom, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "2px 26px",
+    <div style={{ position: "absolute", left: inset ?? 50, right: inset ?? 50, bottom, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "2px 26px",
       transform: `scale(${interpolate(pop, [0, 1], [0.85, 1])})`, opacity: interpolate(pop, [0, 1], [0.3, 1]) }}>
       {page.tokens.map((t: any, i: number) => {
         const active = nowMs >= t.fromMs && nowMs < t.toMs + 60;

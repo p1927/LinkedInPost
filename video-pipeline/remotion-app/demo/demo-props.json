@@ -1,0 +1,163 @@
+{
+  "title": "How Things Work — Scene Type Demo",
+  "style": {
+    "bg": "#F7F8FA",
+    "ink": "#1A2332",
+    "sunny": "#1DB8A0",
+    "coral": "#E85B45",
+    "sky": "#2986CC",
+    "mint": "#1DB8A0",
+    "grape": "#5A4FCF",
+    "white": "#FFFFFF"
+  },
+  "profile": {
+    "font": "inter",
+    "captions": { "style": "clean", "size": 60, "bottom": 460 },
+    "sparkles": { "default": 0 },
+    "transitions": { "default": ["fade"] },
+    "musicDuck": 0.25,
+    "progress": true
+  },
+  "disclosure": null,
+  "music": null,
+  "transition": 9,
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "totalFrames": 1080,
+  "scenes": [
+    {
+      "id": "s_diagram",
+      "beat": "story_hook",
+      "from": 0,
+      "frames": 180,
+      "audio": "ep01-interest-rates-v2/s1.mp3",
+      "words": [],
+      "visual": {
+        "type": "diagram",
+        "layout": "row",
+        "nodes": [
+          { "id": "phone",  "label": "Phone",   "icon": "phone",   "x": 180, "y": 860 },
+          { "id": "tower",  "label": "Tower",   "icon": "antenna", "x": 540, "y": 760 },
+          { "id": "server", "label": "Server",  "icon": "server",  "x": 900, "y": 860 }
+        ],
+        "edges": [
+          { "from": "phone",  "to": "tower",  "label": "signal",  "flow": true },
+          { "from": "tower",  "to": "server", "label": "data",    "flow": true }
+        ],
+        "reveal": [
+          { "at": 0.0,  "show": ["phone"],           "caption": "Your phone sends a signal" },
+          { "at": 0.35, "show": ["tower"],            "caption": "Tower relays it" },
+          { "at": 0.65, "show": ["server"],           "caption": "Server responds" },
+          { "at": 0.85, "highlight": ["phone", "server"], "caption": "End-to-end connected" }
+        ],
+        "captions": false
+      }
+    },
+    {
+      "id": "s_steps",
+      "beat": "analogy",
+      "from": 171,
+      "frames": 180,
+      "audio": "ep01-interest-rates-v2/s2.mp3",
+      "words": [],
+      "visual": {
+        "type": "steps",
+        "title": "How WiFi reaches you",
+        "steps": [
+          "Router gets internet signal",
+          "Broadcasts radio waves",
+          "Your phone picks it up",
+          "You browse the web"
+        ],
+        "captions": false
+      }
+    },
+    {
+      "id": "s_number",
+      "beat": "term",
+      "from": 342,
+      "frames": 180,
+      "audio": "ep01-interest-rates-v2/s3.mp3",
+      "words": [],
+      "visual": {
+        "type": "number",
+        "value": 6000000000,
+        "unit": "devices",
+        "label": "Connected to the internet",
+        "source": "Source: GSMA 2024",
+        "animation": "countup",
+        "captions": false
+      }
+    },
+    {
+      "id": "s_compare",
+      "beat": "analogy",
+      "from": 513,
+      "frames": 180,
+      "audio": "ep01-interest-rates-v2/s4.mp3",
+      "words": [],
+      "visual": {
+        "type": "compare",
+        "colA": "HTTP",
+        "colB": "HTTPS",
+        "rows": [
+          { "a": "No encryption", "b": "Encrypted" },
+          { "a": "Anyone can read", "b": "Only you & server" },
+          { "a": "Port 80", "b": "Port 443" }
+        ],
+        "winner": "B",
+        "captions": false
+      }
+    },
+    {
+      "id": "s_photo",
+      "beat": "story_payoff",
+      "from": 684,
+      "frames": 180,
+      "audio": "ep01-interest-rates-v2/s5.mp3",
+      "words": [],
+      "visual": {
+        "type": "photo",
+        "still": "ep01-interest-rates-v2/s2.png",
+        "label": "Inside a phone charger",
+        "lowerThird": "Photo: ep01 illustration",
+        "zoom": [1.04, 1.10],
+        "captions": false
+      }
+    },
+    {
+      "id": "s_orbit",
+      "beat": "analogy",
+      "from": 855,
+      "frames": 225,
+      "audio": "ep01-interest-rates-v2/s6.mp3",
+      "words": [],
+      "visual": {
+        "type": "orbit",
+        "mode": "orbit",
+        "rings": [
+          { "id": "iss",  "r": 0.60, "dashed": true },
+          { "id": "high", "r": 0.82, "dashed": true }
+        ],
+        "bodies": [
+          { "id": "chaser", "ring": "iss",  "label": "Chaser", "color": "#E85B45", "startAngle": 45,  "period": 0.72, "trail": true },
+          { "id": "target", "ring": "high", "label": "Target", "color": "#2986CC", "startAngle": 85,  "period": 1.0,  "trail": false }
+        ],
+        "gap": { "body1": "chaser", "body2": "target" },
+        "reveal": [
+          { "at": 0.0,  "show": ["target"],                          "caption": "Target in high orbit" },
+          { "at": 0.25, "show": ["chaser"],                          "caption": "Chaser launches to lower orbit" },
+          { "at": 0.65, "highlight": ["chaser"],
+            "burn": { "body": "chaser" },
+            "move": { "body": "chaser", "toRing": "high", "over": 30 },
+            "caption": "Burn! Rise to intercept",
+            "readout": { "label": "Gap closing", "value": "12°" }
+          },
+          { "at": 0.88, "highlight": ["chaser", "target"],           "caption": "Rendezvous!" }
+        ],
+        "captions": false
+      }
+    }
+  ]
+}

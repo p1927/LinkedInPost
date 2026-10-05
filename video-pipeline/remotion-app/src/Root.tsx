@@ -2,6 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { Episode } from "./Episode";
 import { CarouselSlide } from "./Carousel";
+import { SafeProbeEpisode } from "./SafeProbe";
 import { ThumbYT, ThumbCover, THUMB_DEFAULT } from "./Thumbnail";
 import type { EpisodeProps, ThumbnailProps } from "./types";
 
@@ -14,6 +15,14 @@ export const Root: React.FC = () => (
   <>
     <Composition
       id="Episode" component={Episode as React.FC<any>} defaultProps={defaults}
+      width={1080} height={1920} fps={30} durationInFrames={150}
+      calculateMetadata={({ props: raw }) => { const props = raw as unknown as EpisodeProps; return {
+        durationInFrames: Math.max(30, props.totalFrames), fps: props.fps, width: props.width, height: props.height,
+      }; }}
+    />
+    {/* Same as Episode plus a DOM text-box probe (tools/check_safe_zones.py); never used for the real render */}
+    <Composition
+      id="SafeProbe" component={SafeProbeEpisode as React.FC<any>} defaultProps={defaults}
       width={1080} height={1920} fps={30} durationInFrames={150}
       calculateMetadata={({ props: raw }) => { const props = raw as unknown as EpisodeProps; return {
         durationInFrames: Math.max(30, props.totalFrames), fps: props.fps, width: props.width, height: props.height,

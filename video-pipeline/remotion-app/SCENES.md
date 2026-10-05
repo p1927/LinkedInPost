@@ -325,6 +325,25 @@ npx remotion still src/index.ts ThumbCover out/thumb-cover.png --props=props.jso
 
 ---
 
+## Cold-open bridges (`props.coldOpen`)
+
+Declared in `episode.json` as `direction.cold_open: {bridge, scene_ids, question?, bridge_frames?}`; `run.py` (`bridge_plan` in `stage_props`) resolves it into `props.coldOpen` and already adds the bridge's frames to every later `scene.from` and to `totalFrames`, so the renderer never does timeline math. The seam is between the last `scene_ids` scene and the next scene.
+
+```json
+"coldOpen": { "bridge": "freeze-rewind", "sceneIds": ["s1"], "seam": 0, "frames": 18, "lead": 11, "hold": 7, "question": "…", "sfx": null }
+```
+
+| Bridge | What the renderer does (`Episode.tsx`, `Bridges.tsx`) | `bridge_frames` (30 fps) |
+|---|---|---|
+| `freeze-rewind` | Hard cut into a segment that holds the last cold-open frame while it desaturates (8 f), then scrubs it back to its first frame with `<Freeze>` time remapping (inOutCubic); hard cut to the explainer. The first explainer narration enters on the scrub (`lead` = scrub frames). Rewind sound only if `assets/sfx/rewind.wav|mp3` exists, else silent. | segment 12-24, default 18 (hold 40%) |
+| `j-cut` | Profile transition kept; the first explainer scene's narration starts `lead` frames before its picture, over the cold-open tail. Its captions are shifted by the same lead; the music duck follows the moved narration. If the cold open's own line would overlap, `run.py` lengthens the last cold-open scene. | lead 6-36, default 15 |
+| `question-card` | Hard cut to a full-frame card (profile `bg`, `ink` text, one `sunny` rule, profile font, >= 92 px, centred in the safe content band clear of the right rail) holding `question`; music drops to silence under it (6 f down, 10 f up); no boundary SFX. | hold 24-45, default 42 (schema max 36) |
+| `match-cut`, `pull-back`, `narrator-step-in` | Built from scene content (shot design); no renderer segment. `coldOpen` is passed through with `frames: 0`. | - |
+
+Motion and sound tokens live in `profile.ts` (`BRIDGE`, `RENDERED_BRIDGES`). Lint: `dir_bridge_renderable`, `dir_bridge_params` (question-card needs `question`).
+
+---
+
 ## Profiles
 
 | File | Audience | Font | Background | Captions |

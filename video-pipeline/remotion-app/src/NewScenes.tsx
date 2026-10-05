@@ -2,10 +2,9 @@
  * NewScenes.tsx — mechanism explainer scene components
  * Types: DiagramScene | StepsScene | NumberScene | CompareScene | PhotoScene
  *
- * Safe zone (1080×1920 canvas):
- *   x : 60 – 1020   (960 px wide)
- *   y : 220 – 1500
- * Diagram content is kept inside x:80-1000, y:240-1180 to leave room for captions.
+ * Safe zone: from props.profile.safe (config/safe_zones.yaml preset; DEFAULT_SAFE = the original x 60-1020, y 220-1460).
+ * Text below y 840 stops at the right-rail notch (railRight); diagram nodes end above a 2-line reveal caption, which ends above
+ * a 2-line word-caption page (captionClearY). Checked at render time by tools/check_safe_zones.py.
  */
 
 import React from "react";
@@ -13,7 +12,8 @@ import {
   AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig,
 } from "remotion";
 import { evolvePath } from "@remotion/paths";
-import type { DiagramEdge, DiagramNode, DiagramRevealStep, Palette, SceneVisual } from "./types";
+import type { DiagramEdge, DiagramNode, DiagramRevealStep, Palette, SafeZone, SceneVisual } from "./types";
+import { DEFAULT_SAFE, captionClearY, railRight } from "./profile";
 import { gradeCss, Vignette, TermSticker } from "./Scenes";
 import { Icon } from "./Icons";
 import { fontFor } from "./theme";
@@ -23,19 +23,25 @@ import { fontFor } from "./theme";
 const NODE_W = 220;
 const NODE_H = 120;
 
-// Vertical content band for text scenes: safe area top, ending well above the word captions (~y 1480+).
-const SAFE_TOP = 220;
-const SAFE_H = 1240;
+// Content band for text scenes comes from the profile's safe zone (DEFAULT_SAFE = y 220-1460, sides 60), ending well above the word captions.
+
+/** Diagram reveal caption: CSS bottom (above a 2-line word-caption page) and the top edge of a 2-line reveal caption (46 px, ~140 px tall). */
+const revealBottom = (safe: SafeZone) => Math.max(520, 1920 - captionClearY(safe));
+const REVEAL_TWO_LINE = 140;
 
 function computePositions(
   nodes: DiagramNode[],
-  layout?: "row" | "column" | "cycle",
+  layout: "row" | "column" | "cycle" | undefined,
+  safe: SafeZone,
 ): Record<string, { x: number; y: number }> {
   const positions: Record<string, { x: number; y: number }> = {};
   const n = nodes.length;
+  // Lowest node centre: a node box (+20 px air) must end above a 2-line reveal caption. Default preset: 1120 as before.
+  const maxY = Math.min(1120, 1920 - revealBottom(safe) - REVEAL_TWO_LINE - 20 - NODE_H / 2);
+  const sideL = safe.left + NODE_W / 2, sideR = 1080 - safe.right - NODE_W / 2;
 
   nodes.forEach((node, i) => {
-    // Explicit coordinates override layout
+    // Explicit coordinates override layout (not clamped: tools/check_safe_zones.py reports them if they leave the safe zone)
     if (node.x !== undefined && node.y !== undefined) {
       positions[node.id] = { x: node.x, y: node.y };
       return;
@@ -43,13 +49,15 @@ function computePositions(
 
     switch (layout) {
       case "row": {
-        const leftX = 180, rightX = 900;
+        // With a rail notch the row moves up out of it (rail from y 840) instead of shrinking; default preset: y 860, x 180-900.
+        const y = safe.railFromY !== undefined ? Math.min(860, safe.railFromY - NODE_H / 2 - 20) : 860;
+        const leftX = Math.max(180, sideL), rightX = Math.min(900, sideR);
         const x = n <= 1 ? 540 : leftX + (rightX - leftX) * (i / (n - 1));
-        positions[node.id] = { x, y: 860 };
+        positions[node.id] = { x, y };
         break;
       }
       case "column": {
-        const topY = 360, botY = 1120;
+        const topY = Math.max(360, safe.top + NODE_H / 2 + 20), botY = maxY;
         const y = n <= 1 ? 730 : topY + (botY - topY) * (i / (n - 1));
         positions[node.id] = { x: 540, y };
         break;
@@ -65,14 +73,18 @@ function computePositions(
       }
       default: {
         // Auto-grid fallback
+        // Columns span the safe sides, stopping at the rail (rows reach below y 840); rows squeeze to end above the reveal caption.
         const cols = Math.ceil(Math.sqrt(n));
         const colCount = Math.min(n, cols);
+        const rows = Math.ceil(n / cols);
         const col = i % cols, row = Math.floor(i / cols);
-        const gapX = colCount <= 1 ? 0 : 760 / (colCount - 1);
-        const gapY = 280;
+        const x0 = Math.max(160, sideL), x1 = Math.min(920, railRight(safe) - NODE_W / 2);
+        const gapX = colCount <= 1 ? 0 : (x1 - x0) / (colCount - 1);
+        const y0 = Math.max(380, safe.top + NODE_H / 2 + 20);
+        const gapY = rows <= 1 ? 0 : Math.min(280, (maxY - y0) / (rows - 1));
         positions[node.id] = {
-          x: 160 + col * gapX,
-          y: 380 + row * gapY,
+          x: x0 + col * gapX,
+          y: y0 + row * gapY,
         };
       }
     }
@@ -203,14 +215,14 @@ const Arrowhead: React.FC<{
 
 export const DiagramScene: React.FC<{
   visual: Extract<SceneVisual, { type: "diagram" }>;
-  pal: Palette; dur: number; font?: string;
-}> = ({ visual, pal, dur, font }) => {
+  pal: Palette; dur: number; font?: string; safe?: SafeZone;
+}> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const progress = Math.min(1, frame / Math.max(1, dur));
   const ff = fontFor(font);
 
-  const positions = computePositions(visual.nodes, visual.layout);
+  const positions = computePositions(visual.nodes, visual.layout, safe);
   const { visible, highlighted, caption } = getRevealState(visual.reveal ?? [], progress, visual.nodes);
 
   return (
@@ -303,8 +315,8 @@ export const DiagramScene: React.FC<{
         <div
           style={{
             position: "absolute",
-            left: 80, right: 80,
-            bottom: 520,
+            left: safe.left + 20, right: Math.max(safe.right + 20, 1080 - railRight(safe)), // right edge stops at the rail
+            bottom: revealBottom(safe), // stays above a 2-line word-caption page
             display: "flex",
             justifyContent: "center",
           }}
@@ -334,8 +346,8 @@ export const DiagramScene: React.FC<{
 
 export const StepsScene: React.FC<{
   visual: Extract<SceneVisual, { type: "steps" }>;
-  pal: Palette; dur: number; font?: string;
-}> = ({ visual, pal, dur, font }) => {
+  pal: Palette; dur: number; font?: string; safe?: SafeZone;
+}> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ff = fontFor(font);
@@ -348,7 +360,7 @@ export const StepsScene: React.FC<{
     <AbsoluteFill style={{ background: pal.bg }}>
     <div
       style={{
-        position: "absolute", left: 80, right: 80, top: SAFE_TOP, height: SAFE_H,
+        position: "absolute", left: safe.left + 20, right: Math.max(safe.right + 20, 1080 - railRight(safe)), top: safe.top, height: safe.height, // step rows sit below y 840: stop at the rail
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -455,8 +467,8 @@ function formatAnimatedNumber(current: number, target: number): string {
 
 export const NumberScene: React.FC<{
   visual: Extract<SceneVisual, { type: "number" }>;
-  pal: Palette; dur: number; font?: string;
-}> = ({ visual, pal, dur, font }) => {
+  pal: Palette; dur: number; font?: string; safe?: SafeZone;
+}> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const ff = fontFor(font);
 
@@ -475,7 +487,9 @@ export const NumberScene: React.FC<{
       ? formatAnimatedNumber(targetNum * countProgress, targetNum)
       : formatAnimatedNumber(targetNum, targetNum);
   // Auto-shrink to fit the 920 px content width (approx. 0.6 em per glyph for bold sans).
-  const valueSize = Math.round(Math.max(72, Math.min(260, 920 / Math.max(1, displayStr.length * 0.6))));
+  const valueSize = Math.round(Math.max(72, Math.min(260, Math.min(920, 1080 - safe.left - safe.right - 20) / Math.max(1, displayStr.length * 0.6))));
+  // Label / source sit below y 840 and are centred on x 540: keep them clear of the rail (default preset: 800 / 900 as before).
+  const lowerW = 2 * (railRight(safe) - 540);
   const revealP = isNumber ? countProgress : textProgress;
 
   const barFill = visual.animation === "bar" ? Math.min(100, countProgress * 100) : 0;
@@ -488,7 +502,7 @@ export const NumberScene: React.FC<{
     <AbsoluteFill style={{ background: pal.bg }}>
     <div
       style={{
-        position: "absolute", left: 60, right: 60, top: SAFE_TOP, height: SAFE_H,
+        position: "absolute", left: safe.left, right: safe.right, top: safe.top, height: safe.height,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -562,7 +576,7 @@ export const NumberScene: React.FC<{
           color: pal.ink,
           marginTop: 32,
           textAlign: "center",
-          maxWidth: 800,
+          maxWidth: Math.min(800, lowerW),
           lineHeight: 1.2,
           opacity: revealP,
         }}
@@ -579,7 +593,7 @@ export const NumberScene: React.FC<{
             fontFamily: ff,
             color: `${pal.ink}66`,
             marginTop: 24,
-            maxWidth: 900,
+            maxWidth: Math.min(900, lowerW),
             textAlign: "center",
             opacity: revealP > 0.6 ? 1 : 0,
           }}
@@ -596,8 +610,8 @@ export const NumberScene: React.FC<{
 
 export const CompareScene: React.FC<{
   visual: Extract<SceneVisual, { type: "compare" }>;
-  pal: Palette; dur: number; font?: string;
-}> = ({ visual, pal, dur, font }) => {
+  pal: Palette; dur: number; font?: string; safe?: SafeZone;
+}> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ff = fontFor(font);
@@ -609,7 +623,9 @@ export const CompareScene: React.FC<{
   // Winner revealed at 90% of dur
   const winnerVisible = frame >= dur * 0.88;
 
-  const colW = 420;
+  // Block right edge stops at the action rail when the preset has one (cards sit below y 840); default = original 420 px columns.
+  const rightInset = 1080 - railRight(safe);
+  const colW = Math.min(420, (1080 - safe.left - rightInset - 20) / 2);
   const isWinnerA = visual.winner === "A";
   const isWinnerB = visual.winner === "B";
 
@@ -659,7 +675,7 @@ export const CompareScene: React.FC<{
       {/* Content block centred vertically in the safe band; hidden rows keep their space so nothing jumps */}
       <div
         style={{
-          position: "absolute", left: 60, right: 60, top: SAFE_TOP, height: SAFE_H,
+          position: "absolute", left: safe.left, right: rightInset, top: safe.top, height: safe.height,
           display: "flex", flexDirection: "column", justifyContent: "center",
         }}
       >
@@ -704,8 +720,8 @@ export const CompareScene: React.FC<{
 export const PhotoScene: React.FC<{
   visual: Extract<SceneVisual, { type: "photo" }>;
   pal: Palette; dur: number; index: number; font?: string;
-  grade?: { saturate?: number; contrast?: number; vignette?: number };
-}> = ({ visual, pal, dur, index, font, grade }) => {
+  grade?: { saturate?: number; contrast?: number; vignette?: number }; safe?: SafeZone;
+}> = ({ visual, pal, dur, index, font, grade, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ff = fontFor(font);
@@ -737,8 +753,8 @@ export const PhotoScene: React.FC<{
         <div
           style={{
             position: "absolute",
-            top: 248,
-            left: 72,
+            top: safe.top + 28,
+            left: safe.left + 12,
             opacity: labelFade,
             background: "rgba(0,0,0,0.72)",
             backdropFilter: "blur(8px)",
@@ -760,8 +776,8 @@ export const PhotoScene: React.FC<{
           style={{
             position: "absolute",
             bottom: 560,
-            left: 72,
-            right: 72,
+            left: safe.left + 12,
+            right: Math.max(safe.right + 12, 1080 - railRight(safe)), // lower third is below y 840: stop at the rail
             opacity: labelFade,
             color: "rgba(255,255,255,0.72)",
             fontSize: 38,
@@ -775,8 +791,35 @@ export const PhotoScene: React.FC<{
 
       {/* Optional term sticker */}
       {visual.term && (
-        <TermSticker term={visual.term} pal={pal} delay={Math.round(dur * 0.22)} font={font} />
+        <TermSticker term={visual.term} pal={pal} delay={Math.round(dur * 0.22)} font={font} top={safe.top} />
       )}
+    </AbsoluteFill>
+  );
+};
+
+/** Animatic stand-in for a scene whose paid media does not exist yet: shows what will be made, in the episode's own palette and safe zone. */
+export const PlaceholderScene: React.FC<{
+  scene: { id: string; beat: string };
+  visual: Extract<SceneVisual, { type: "placeholder" }>;
+  pal: Palette; font?: string; safe?: SafeZone;
+}> = ({ scene, visual, pal, font, safe = DEFAULT_SAFE }) => {
+  const ff = fontFor(font);
+  const line = (label: string, text: string) => (
+    <div style={{ marginTop: 22 }}>
+      <div style={{ fontSize: 30, letterSpacing: 2, textTransform: "uppercase", opacity: 0.6 }}>{label}</div>
+      <div style={{ fontSize: 40, lineHeight: 1.25 }}>{text}</div>
+    </div>
+  );
+  return (
+    <AbsoluteFill style={{ background: pal.bg, color: pal.ink, fontFamily: ff }}>
+      <div style={{ position: "absolute", left: safe.left, right: safe.right, top: safe.top, height: safe.height, border: `4px dashed ${pal.ink}55`, borderRadius: 28, padding: 40, boxSizing: "border-box", overflow: "hidden" }}>
+        <div style={{ fontSize: 54, fontWeight: 700 }}>{scene.id} · {scene.beat}</div>
+        <div style={{ fontSize: 34, opacity: 0.7, marginTop: 6 }}>{visual.of.toUpperCase()} placeholder · {visual.est ? "~" : ""}{visual.seconds.toFixed(1)}s{visual.est ? " (estimated)" : ""} · {visual.generation}</div>
+        {visual.intent ? line("intent", visual.intent) : null}
+        {line("will show", visual.summary)}
+        {visual.shot ? line("shot", visual.shot) : null}
+        {line("narration", visual.narration)}
+      </div>
     </AbsoluteFill>
   );
 };

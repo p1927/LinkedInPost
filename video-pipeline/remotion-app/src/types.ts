@@ -51,6 +51,9 @@ export type VisualOrbit = {
   captions?: boolean;
 };
 
+// Animatic only (animatic.py): stands in for a scene whose paid media is not generated yet. Never written by the real build.
+export type VisualPlaceholder = { type: "placeholder"; of: string; narration: string; summary: string; generation: string; intent?: string; shot?: string; seconds: number; est: boolean; captions?: boolean };
+
 // ── Scene visual discriminated union ──────────────────────────────────────
 export type SceneVisual =
   // Existing types — unchanged so old episodes keep rendering
@@ -62,6 +65,7 @@ export type SceneVisual =
   | { type: "number";   value: number | string; unit?: string; label: string; source?: string; animation?: "countup" | "bar"; captions?: boolean }
   | { type: "compare";  colA: string; colB: string; rows: Array<{ a: string; b: string }>; winner?: "A" | "B"; captions?: boolean }
   | { type: "photo";    still: string; label?: string; lowerThird?: string; zoom?: [number, number]; term?: Term; captions?: boolean }
+  | VisualPlaceholder
   | VisualOrbit;
 
 export type SceneData = { id: string; beat: string; from: number; frames: number; audio: string; words: Word[]; visual: SceneVisual };
@@ -80,6 +84,11 @@ export type ThumbnailProps = {
 
 // ── Style profile ──────────────────────────────────────────────────────────
 export type BeatMap<T> = { default: T } & Record<string, T>;
+// Content band + progress bar placement, resolved by run.py from config/safe_zones.yaml (profile.safeZone names the preset). Insets are CSS px on the canvas.
+export type SafeZone = { top: number; height: number; left: number; right: number; progressTop: number;
+  captionBottom?: number; captionInset?: number;  // optional: minimum caption CSS bottom + caption side inset (keeps captions off the right rail)
+  railX?: number; railFromY?: number };          // optional: right action rail, no text / key subject at x > railX below railFromY
+
 export type Profile = {
   name?: string;
   font?: "fredoka" | "poppins" | "inter" | "jetbrains";
@@ -90,13 +99,32 @@ export type Profile = {
   captions?: { style: "sticker" | "clean"; size?: number; bottom?: number };
   termStyle?: "sticker" | "card";
   grade?: { saturate?: number; contrast?: number; vignette?: number };
+  direction?: { look: string; dialects: string[] }; // read by Python (brain.style_envelope); the renderer ignores it
+  transitionFrames?: number;                  // cut length in frames (run.py uses it for timeline math; Episode.tsx eases it)
   progress?: boolean;
   sfx?: { boundary?: Record<string, string | null>; term?: string | null };
   musicDuck?: number;
+  safeZone?: string;                          // preset name in config/safe_zones.yaml (read by Python)
+  safe?: SafeZone;                            // resolved numbers (written into props by run.py); defaults reproduce the original layout
 };
 
 export type EpisodeProps = {
   title: string; style: Palette; disclosure?: string | null; music?: { src: string; volume: number } | null;
   scenes: SceneData[]; totalFrames: number; transition: number; fps: number; width: number; height: number;
   profile?: Profile;
+  coldOpen?: ColdOpen | null;
+};
+
+// ── Cold-open bridge (direction.cold_open, resolved by run.py bridge_plan; DESIGN_SYSTEM section 11, modes.yaml mode-bridge-*) ──
+// run.py owns the timeline math: scene `from`/`totalFrames` already include `frames`; the renderer only draws what is declared here.
+export type BridgeName = "freeze-rewind" | "j-cut" | "question-card" | "match-cut" | "pull-back" | "narrator-step-in";
+export type ColdOpen = {
+  bridge: BridgeName | string;
+  sceneIds: string[];
+  seam: number;          // index of the last cold-open scene; the bridge sits between scenes[seam] and scenes[seam + 1]
+  frames: number;        // bridge segment length inserted at the seam (freeze-rewind, question-card); 0 = no segment (j-cut, scene-built bridges)
+  lead: number;          // frames scenes[seam + 1]'s narration starts BEFORE its picture (j-cut lead; freeze-rewind: VO enters on the scrub)
+  hold?: number;         // freeze-rewind: frames the last frame is held (desaturating) before the scrub-back
+  question?: string;     // question-card text (direction.cold_open.question)
+  sfx?: string | null;   // optional rewind sound (public/ path), only when an asset exists; else silent
 };

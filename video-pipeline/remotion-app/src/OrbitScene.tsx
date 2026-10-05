@@ -6,14 +6,21 @@
  *   "cannon"      Newton's cannon: three shots integrated under inverse-square gravity
  *   "groundtrack" equirectangular strip: successive ground-track laps drift west, launch window over the pad
  *
- * Canvas 1080x1920, safe zone x 60-1020, y 220-1500 (word captions sit around y 1500-1600).
+ * Canvas 1080x1920. All text follows the profile safe zone (props.profile.safe, config/safe_zones.yaml): headline / readout / note /
+ * cannon legend, and the collision-placed body labels + gap badge (clamped to the safe sides/top and the rail notch). Ring geometry
+ * is art (scaled to clear the caption band, not clamped); the ground-track map is fitted into safe.left..railRight.
+ * Checked at render time by tools/check_safe_zones.py (DOM text boxes vs safe_zones.violations).
  * Angles: degrees, counter-clockwise, 0 = right, 90 = top. Colours come from the profile palette.
  */
 
-import React, { useMemo } from "react";
+import React, { createContext, useContext, useMemo } from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { fontFor } from "./theme";
-import type { Palette, VisualOrbit, OrbitBody, OrbitRevealStep, OrbitShot } from "./types";
+import type { Palette, SafeZone, VisualOrbit, OrbitBody, OrbitRevealStep, OrbitShot } from "./types";
+import { DEFAULT_SAFE, captionClearY, railRight } from "./profile";
+
+// Safe zone for the HTML text overlays (DEFAULT_SAFE reproduces the original top 232 / sides 60).
+const SafeCtx = createContext<SafeZone>(DEFAULT_SAFE);
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -73,12 +80,13 @@ function monotone(xs: number[], ys: number[], x: number): number {
 
 /** Scene headline at the top of the safe area; text before a colon is coloured as a kicker. */
 const Headline: React.FC<{ text?: string; startFrame: number; frame: number; pal: Palette; ff: string }> = ({ text, startFrame, frame, pal, ff }) => {
+  const safe = useContext(SafeCtx);
   if (!text) return null;
   const p = easeOut(clamp01((frame - startFrame) / 9));
   const fs = Math.max(42, Math.min(58, 930 / Math.max(1, text.length * 0.56)));
   const i = text.indexOf(":");
   return (
-    <div style={{ position: "absolute", top: 232, left: 60, right: 60, display: "flex", justifyContent: "center",
+    <div style={{ position: "absolute", top: safe.top + 12, left: safe.left, right: safe.right, display: "flex", justifyContent: "center",
       opacity: p, transform: `translateY(${(1 - p) * 12}px)` }}>
       <div style={{ fontFamily: ff, fontSize: fs, fontWeight: 700, color: pal.ink, textAlign: "center", lineHeight: 1.15, letterSpacing: -0.5 }}>
         {i > 0 ? (<><span style={{ color: pal.coral }}>{text.slice(0, i + 1)}</span>{text.slice(i + 1)}</>) : text}
@@ -88,12 +96,14 @@ const Headline: React.FC<{ text?: string; startFrame: number; frame: number; pal
 };
 
 const Readout: React.FC<{ label?: string; value?: string; top: number; startFrame: number; frame: number; pal: Palette; ff: string }> = ({ label, value, top, startFrame, frame, pal, ff }) => {
+  const safe = useContext(SafeCtx);
+  const inset = Math.max(safe.left, safe.right, 1080 - railRight(safe)); // readouts sit below y 840: symmetric, clear of the rail
   if (!value) return null;
   const p = easeOut(clamp01((frame - startFrame) / 9));
   const long = value.length > 22;
   return (
-    <div style={{ position: "absolute", top, left: 60, right: 60, display: "flex", justifyContent: "center", opacity: p, transform: `scale(${0.94 + 0.06 * p})` }}>
-      <div style={{ maxWidth: 940, background: pal.white, border: `2px solid ${withAlpha(pal.ink, 0.12)}`, borderRadius: 24,
+    <div style={{ position: "absolute", top, left: inset, right: inset, display: "flex", justifyContent: "center", opacity: p, transform: `scale(${0.94 + 0.06 * p})` }}>
+      <div style={{ maxWidth: 1080 - 2 * inset - 20, background: pal.white, border: `2px solid ${withAlpha(pal.ink, 0.12)}`, borderRadius: 24,
         boxShadow: "0 6px 24px rgba(0,0,0,0.08)", padding: "14px 36px", display: "flex", flexDirection: "column", alignItems: "center", fontFamily: ff }}>
         {label && <div style={{ fontSize: 30, fontWeight: 600, color: withAlpha(pal.ink, 0.6), lineHeight: 1.2 }}>{label}</div>}
         <div style={{ fontSize: long ? 40 : 54, fontWeight: 700, color: pal.ink, lineHeight: 1.15, textAlign: "center" }}>{value}</div>
@@ -102,11 +112,14 @@ const Readout: React.FC<{ label?: string; value?: string; top: number; startFram
   );
 };
 
-const Note: React.FC<{ text?: string | false; top: number; pal: Palette; ff: string }> = ({ text, top, pal, ff }) =>
-  text ? (
-    <div style={{ position: "absolute", top, left: 60, right: 60, textAlign: "center", fontFamily: ff, fontSize: 28, fontWeight: 500,
+const Note: React.FC<{ text?: string | false; top: number; pal: Palette; ff: string }> = ({ text, top, pal, ff }) => {
+  const safe = useContext(SafeCtx);
+  const inset = Math.max(safe.left, safe.right, 1080 - railRight(safe));
+  return text ? (
+    <div style={{ position: "absolute", top, left: inset, right: inset, textAlign: "center", fontFamily: ff, fontSize: 28, fontWeight: 500,
       color: withAlpha(pal.ink, 0.5), fontStyle: "italic" }}>{text}</div>
   ) : null;
+};
 
 // ── Orbit (top-down) mode ───────────────────────────────────────────────────
 
@@ -161,17 +174,26 @@ function buildTracks(visual: VisualOrbit, dur: number, fps: number): Record<stri
   return out;
 }
 
-const labelBox = (label: string, a: number, r: number, side: "out" | "in"): Box => {
+/** Where SVG text may go, in the diagram's own (pre-transform) coordinates: sides x0..x1, top y0, and right edge rx for boxes
+ *  reaching below ry (the action rail). NO_LIM = the original 70..1010 clamp. Built from `safe` in OrbitTopDown. */
+type Lim = { x0: number; x1: number; y0: number; rx: number; ry: number };
+const NO_LIM: Lim = { x0: 70, x1: 1010, y0: -Infinity, rx: 1010, ry: Infinity };
+const clampBox = (b: Box, lim: Lim): Box => {
+  const y = Math.max(lim.y0 + b.h / 2, b.y);
+  const right = y + b.h / 2 > lim.ry ? Math.min(lim.x1, lim.rx) : lim.x1;
+  return { ...b, x: Math.max(lim.x0 + b.w / 2, Math.min(right - b.w / 2, b.x)), y };
+};
+
+const labelBox = (label: string, a: number, r: number, side: "out" | "in", lim: Lim = NO_LIM): Box => {
   const w = textW(label, LABEL_FS) + 8, h = LABEL_FS + 4;
   const u = unit(a);
   const ext = Math.abs(u.x) * (w / 2) + Math.abs(u.y) * (h / 2);
   const d = side === "out" ? r + DOT_R + 12 + ext : r - DOT_R - 12 - ext;
-  const x = Math.max(70 + w / 2, Math.min(1010 - w / 2, CX + d * u.x));
-  return { x, y: CY + d * u.y, w, h };
+  return clampBox({ x: CX + d * u.x, y: CY + d * u.y, w, h }, lim);
 };
 
 /** Decide once per scene which labels go inward so that labels never collide (no frame-to-frame popping). */
-function chooseSides(bodies: OrbitBody[], tracks: Record<string, Track>, dur: number): Record<string, "out" | "in"> {
+function chooseSides(bodies: OrbitBody[], tracks: Record<string, Track>, dur: number, lim: Lim = NO_LIM): Record<string, "out" | "in"> {
   const side: Record<string, "out" | "in"> = {};
   for (const b of bodies) side[b.id] = b.labelSide === "in" ? "in" : "out";
   for (let i = 0; i < bodies.length; i++) {
@@ -181,7 +203,7 @@ function chooseSides(bodies: OrbitBody[], tracks: Record<string, Track>, dur: nu
       const ta = tracks[A.id], tb = tracks[B.id];
       let hit = false, rA = 0, rB = 0, aA = 0, aB = 0;
       for (let f = Math.max(ta.show, tb.show); f <= dur; f += 2) {
-        const ba = labelBox(A.label, ta.a[f], ta.r[f], "out"), bb = labelBox(B.label, tb.a[f], tb.r[f], "out");
+        const ba = labelBox(A.label, ta.a[f], ta.r[f], "out", lim), bb = labelBox(B.label, tb.a[f], tb.r[f], "out", lim);
         if (overlaps(ba, bb, 30)) { hit = true; rA += ta.r[f]; rB += tb.r[f]; aA += ta.a[f]; aB += tb.a[f]; }
       }
       if (!hit) continue;
@@ -198,7 +220,25 @@ const OrbitTopDown: React.FC<{ visual: VisualOrbit; pal: Palette; dur: number; f
   const bodies = visual.bodies ?? [];
   const reveal = visual.reveal ?? [];
   const tracks = useMemo(() => buildTracks(visual, dur, fps), [visual, dur, fps]);
-  const sides = useMemo(() => chooseSides(bodies, tracks, dur), [bodies, tracks, dur]);
+  const safe = useContext(SafeCtx);
+  const maxR = useMemo(() => Math.max(0, ...rings.map((g) => ringPx(g.r)), ...Object.values(tracks).map((t) => Math.max(0, ...t.r))), [rings, tracks]);
+
+  // Vertical layout: with a caption band (safe.captionBottom) the note and readout move up to clear a 2-line caption page,
+  // and the diagram is scaled about (CX, safe.top + 170) just enough to end above the readout. Without one: original 1205 / 1362, k = 1.
+  const clearY = captionClearY(safe);
+  const noteTop = Math.min(1362, clearY - 34);
+  const readoutTop = Math.min(1205, noteTop - 8 - 130);
+  const diagBottom = CY + maxR + DOT_R + 20;
+  const anchorY = safe.top + 170;
+  const kD = Math.max(0.7, Math.min(1, (readoutTop - 14 - anchorY) / Math.max(1, diagBottom - anchorY)));
+  const diagT = kD === 1 ? undefined : `translate(${CX * (1 - kD)} ${anchorY * (1 - kD)}) scale(${kD})`;
+  // Body labels + gap badge: safe sides/top and the rail notch, mapped back through the diagram scale (default preset = old 70..1010 clamp).
+  const lim = useMemo<Lim>(() => {
+    const ix = (x: number) => CX + (x - CX) / kD, iy = (y: number) => anchorY + (y - anchorY) / kD;
+    return { x0: Math.max(NO_LIM.x0, ix(safe.left)), x1: Math.min(NO_LIM.x1, ix(1080 - safe.right)), y0: iy(safe.top),
+      rx: Math.min(NO_LIM.x1, ix(railRight(safe))), ry: safe.railFromY !== undefined ? iy(safe.railFromY) : Infinity };
+  }, [safe, kD, anchorY]);
+  const sides = useMemo(() => chooseSides(bodies, tracks, dur, lim), [bodies, tracks, dur, lim]);
   const f = Math.max(0, Math.min(dur, frame));
   const progress = f / Math.max(1, dur);
 
@@ -245,11 +285,10 @@ const OrbitTopDown: React.FC<{ visual: VisualOrbit; pal: Palette; dur: number; f
     const txt = `${Math.round(Math.abs(g))}°`;
     const bw = textW(txt, BADGE_FS) + 44, bh = BADGE_FS + 22;
     const ext = Math.abs(u.x) * (bw / 2) + Math.abs(u.y) * (bh / 2);
-    const outs = bodies.filter((b) => isVis(b.id) && sides[b.id] === "out").map((b) => labelBox(b.label, pos(b.id).a, pos(b.id).r, "out"));
+    const outs = bodies.filter((b) => isVis(b.id) && sides[b.id] === "out").map((b) => labelBox(b.label, pos(b.id).a, pos(b.id).r, "out", lim));
     let dist = rOut + 22 + ext, box: Box = { x: 0, y: 0, w: bw, h: bh };
     for (let k = 0; k < 40; k++) {
-      box = { x: CX + dist * u.x, y: CY + dist * u.y, w: bw, h: bh };
-      box.x = Math.max(70 + bw / 2, Math.min(1010 - bw / 2, box.x));
+      box = clampBox({ x: CX + dist * u.x, y: CY + dist * u.y, w: bw, h: bh }, lim);
       if (!outs.some((o) => overlaps(o, box, 8))) break;
       dist += 5;
     }
@@ -269,6 +308,7 @@ const OrbitTopDown: React.FC<{ visual: VisualOrbit; pal: Palette; dur: number; f
   return (
     <>
       <svg viewBox="0 0 1080 1920" style={{ position: "absolute", width: "100%", height: "100%" }}>
+        <g transform={diagT}>
         <defs>
           <radialGradient id="orbEarth" cx="38%" cy="34%" r="70%">
             <stop offset="0%" stopColor={pal.sky} />
@@ -363,7 +403,7 @@ const OrbitTopDown: React.FC<{ visual: VisualOrbit; pal: Palette; dur: number; f
         {/* Labels */}
         {bodies.map((b) => {
           if (!isVis(b.id)) return null;
-          const p = pos(b.id), box = labelBox(b.label, p.a, p.r, sides[b.id]);
+          const p = pos(b.id), box = labelBox(b.label, p.a, p.r, sides[b.id], lim);
           return (
             <text key={"lb" + b.id} x={box.x} y={box.y + LABEL_FS * 0.35} textAnchor="middle" fontFamily={ff} fontSize={LABEL_FS} fontWeight={700}
               fill={pal.ink} stroke={pal.bg} strokeWidth={10} paintOrder="stroke" strokeLinejoin="round" opacity={appear(b.id)}>
@@ -371,10 +411,11 @@ const OrbitTopDown: React.FC<{ visual: VisualOrbit; pal: Palette; dur: number; f
             </text>
           );
         })}
+        </g>
       </svg>
       <Headline text={capStep?.caption} startFrame={capStep ? Math.round(capStep.at * dur) : 0} frame={f} pal={pal} ff={ff} />
-      <Readout label={roStep?.readout?.label} value={roStep?.readout?.value} top={1205} startFrame={roStep ? Math.round(roStep.at * dur) : 0} frame={f} pal={pal} ff={ff} />
-      <Note text={noteText} top={1362} pal={pal} ff={ff} />
+      <Readout label={roStep?.readout?.label} value={roStep?.readout?.value} top={readoutTop} startFrame={roStep ? Math.round(roStep.at * dur) : 0} frame={f} pal={pal} ff={ff} />
+      <Note text={noteText} top={noteTop} pal={pal} ff={ff} />
     </>
   );
 };
@@ -417,6 +458,7 @@ const DEFAULT_SHOTS: OrbitShot[] = [
 ];
 
 const CannonMode: React.FC<{ visual: VisualOrbit; pal: Palette; ff: string; frame: number; dur: number }> = ({ visual, pal, ff, frame, dur }) => {
+  const safe = useContext(SafeCtx);
   const shots = visual.shots ?? DEFAULT_SHOTS;
   const sims = useMemo(() => shots.map((s) => simulateShot(s.speed)), [shots]);
   const reveal = visual.reveal ?? [];
@@ -477,13 +519,14 @@ const CannonMode: React.FC<{ visual: VisualOrbit; pal: Palette; ff: string; fram
       </svg>
       <Headline text={capStep?.caption} startFrame={capStep ? Math.round(capStep.at * dur) : 0} frame={frame} pal={pal} ff={ff} />
       {/* Legend: one row per shot, appearing with its shot */}
-      <div style={{ position: "absolute", top: 1206, left: 60, right: 60, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+      {/* Legend sits below y 840: its block stops at the rail (default preset: 60..1020, rows 760 wide as before) */}
+      <div style={{ position: "absolute", top: Math.min(1206, captionClearY(safe) - (shots.length * 46 + (shots.length - 1) * 10)), left: safe.left, right: 1080 - railRight(safe), display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
         {shots.map((s, i) => {
           const start = Math.round((s.at ?? 0.08 + i * 0.17) * dur);
           const p = easeOut(clamp01((frame - start) / 9));
           const col = palColor(pal, s.color, pal.coral);
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 20, opacity: p, transform: `translateY(${(1 - p) * 10}px)`, width: 760 }}>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 20, opacity: p, transform: `translateY(${(1 - p) * 10}px)`, width: Math.min(760, railRight(safe) - safe.left - 20) }}>
               <div style={{ width: 46, height: 46, borderRadius: 23, background: col, color: pal.white, fontFamily: ff, fontWeight: 700, fontSize: 28,
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</div>
               <div style={{ fontFamily: ff, fontSize: 44, fontWeight: 600, color: pal.ink, whiteSpace: "nowrap" }}>{s.label}</div>
@@ -617,9 +660,17 @@ const GroundTrackMode: React.FC<{ visual: VisualOrbit; pal: Palette; ff: string;
   const ax1 = lonX(descLon(laps[0].pts)), ax2 = lonX(descLon(laps[nLaps - 1].pts)), ay = latY(arrowLat);
   const arrowA = nLaps > 1 ? easeOut(clamp01((progress - slots[1][0]) / 0.05)) : 0;
 
+  // Map fit: the whole map (it sits mostly below y 840) is scaled into x safe.left .. railRight(safe), top edge fixed at GT.y.
+  // Default safe zone (60 / 1020) gives k = 1 and no transform. Font sizes are divided by k so labels keep their size.
+  const safe = useContext(SafeCtx);
+  const kM = Math.min(1, (railRight(safe) - safe.left) / GT.w);
+  const mapT = kM === 1 ? undefined : `translate(${safe.left - GT.x * kM} ${GT.y * (1 - kM)}) scale(${kM})`;
+  const fs = (n: number) => n / kM;
+
   return (
     <>
       <svg viewBox="0 0 1080 1920" style={{ position: "absolute", width: "100%", height: "100%" }}>
+        <g transform={mapT}>
         <defs>
           <clipPath id={clipId}><rect x={GT.x} y={GT.y} width={GT.w} height={GH} rx={20} /></clipPath>
         </defs>
@@ -651,16 +702,16 @@ const GroundTrackMode: React.FC<{ visual: VisualOrbit; pal: Palette; ff: string;
         <rect x={GT.x} y={GT.y} width={GT.w} height={GH} rx={20} fill="none" stroke={pal.ink} strokeOpacity={0.25} strokeWidth={2} />
 
         {/* Lat labels */}
-        <text x={GT.x + 16} y={latY(0) - 12} fontFamily={ff} fontSize={28} fontWeight={600} fill={pal.ink} opacity={0.6}>Equator</text>
-        <text x={GT.x + GT.w - 16} y={latY(inc) - 12} textAnchor="end" fontFamily={ff} fontSize={28} fontWeight={600} fill={pal.coral}>51.6° N</text>
-        <text x={GT.x + GT.w - 16} y={latY(-inc) + 34} textAnchor="end" fontFamily={ff} fontSize={28} fontWeight={600} fill={pal.coral}>51.6° S</text>
+        <text x={GT.x + 16} y={latY(0) - 12} fontFamily={ff} fontSize={fs(28)} fontWeight={600} fill={pal.ink} opacity={0.6}>Equator</text>
+        <text x={GT.x + GT.w - 16} y={latY(inc) - 12} textAnchor="end" fontFamily={ff} fontSize={fs(28)} fontWeight={600} fill={pal.coral}>51.6° N</text>
+        <text x={GT.x + GT.w - 16} y={latY(-inc) + 34} textAnchor="end" fontFamily={ff} fontSize={fs(28)} fontWeight={600} fill={pal.coral}>51.6° S</text>
 
         {/* Lap tags at the ascending node */}
         {laps.map((lap, i) => {
           const a = easeOut(clamp01((progress - slots[i][0]) / 0.04));
           if (i > active || lonX(lap.node) < GT.x + 40) return null;
           return (
-            <text key={"lt" + i} x={lonX(lap.node) + 14} y={latY(0) + 40} fontFamily={ff} fontSize={30} fontWeight={700}
+            <text key={"lt" + i} x={lonX(lap.node) + 14} y={latY(0) + 40} fontFamily={ff} fontSize={fs(30)} fontWeight={700}
               fill={i === nLaps - 1 && crossed ? pal.coral : pal.ink} opacity={a * (i === active || (i === nLaps - 1 && crossed) ? 1 : 0.55)}
               stroke={pal.bg} strokeWidth={7} paintOrder="stroke">Lap {i + 1}</text>
           );
@@ -671,7 +722,7 @@ const GroundTrackMode: React.FC<{ visual: VisualOrbit; pal: Palette; ff: string;
           <g opacity={arrowA}>
             <line x1={ax1 - 14} y1={ay} x2={ax2 + 24} y2={ay} stroke={pal.ink} strokeWidth={4} strokeOpacity={0.75} />
             <polygon points={`${ax2 + 8},${ay} ${ax2 + 30},${ay - 12} ${ax2 + 30},${ay + 12}`} fill={pal.ink} fillOpacity={0.75} />
-            <text x={(ax1 + ax2) / 2} y={ay + 44} textAnchor="middle" fontFamily={ff} fontSize={32} fontWeight={700} fill={pal.ink}
+            <text x={(ax1 + ax2) / 2} y={ay + 44} textAnchor="middle" fontFamily={ff} fontSize={fs(32)} fontWeight={700} fill={pal.ink}
               stroke={pal.bg} strokeWidth={8} paintOrder="stroke">each lap ≈ 23° farther west</text>
           </g>
         )}
@@ -679,9 +730,9 @@ const GroundTrackMode: React.FC<{ visual: VisualOrbit; pal: Palette; ff: string;
         {/* Launch pad */}
         {crossed && <circle cx={sx} cy={sy} r={18 + 40 * clamp01((frame - crossFrame) / 18)} fill="none" stroke={pal.mint} strokeWidth={5} opacity={1 - clamp01((frame - crossFrame) / 18)} />}
         <circle cx={sx} cy={sy} r={14} fill={crossed ? pal.mint : pal.ink} stroke={pal.white} strokeWidth={4} />
-        <text x={sx + 26} y={sy - 18} fontFamily={ff} fontSize={34} fontWeight={700} fill={pal.ink} stroke={pal.bg} strokeWidth={8} paintOrder="stroke">{site.label ?? "Launch pad"}</text>
+        <text x={sx + 26} y={sy - 18} fontFamily={ff} fontSize={fs(34)} fontWeight={700} fill={pal.ink} stroke={pal.bg} strokeWidth={8} paintOrder="stroke">{site.label ?? "Launch pad"}</text>
         {crossed && (
-          <text x={sx} y={GT.y + 44} textAnchor="middle" fontFamily={ff} fontSize={32} fontWeight={700} fill={pal.mint} opacity={windowA}
+          <text x={sx} y={GT.y + 44} textAnchor="middle" fontFamily={ff} fontSize={fs(32)} fontWeight={700} fill={pal.mint} opacity={windowA}
             stroke={pal.bg} strokeWidth={8} paintOrder="stroke">Launch window</text>
         )}
 
@@ -690,25 +741,28 @@ const GroundTrackMode: React.FC<{ visual: VisualOrbit; pal: Palette; ff: string;
           const lat = latAtLon(laps[active].pts, headLon);
           return <circle cx={lonX(headLon)} cy={latY(lat)} r={16} fill={pal.sky} stroke={pal.white} strokeWidth={4} />;
         })()}
+        </g>
       </svg>
       <Headline text={capStep?.caption} startFrame={capStep ? Math.round(capStep.at * dur) : 0} frame={frame} pal={pal} ff={ff} />
-      <Readout label={roStep?.readout?.label} value={roStep?.readout?.value} top={GT.y + GH + 26} startFrame={roStep ? Math.round(roStep.at * dur) : 0} frame={frame} pal={pal} ff={ff} />
+      <Readout label={roStep?.readout?.label} value={roStep?.readout?.value} top={GT.y + GH * kM + 26} startFrame={roStep ? Math.round(roStep.at * dur) : 0} frame={frame} pal={pal} ff={ff} />
     </>
   );
 };
 
 // ── Main OrbitScene ───────────────────────────────────────────────────────
 
-export const OrbitScene: React.FC<{ visual: VisualOrbit; pal: Palette; dur: number; font?: string }> = ({ visual, pal, dur, font }) => {
+export const OrbitScene: React.FC<{ visual: VisualOrbit; pal: Palette; dur: number; font?: string; safe?: SafeZone }> = ({ visual, pal, dur, font, safe = DEFAULT_SAFE }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const ff = fontFor(font);
   const mode = visual.mode ?? "orbit";
   return (
+    <SafeCtx.Provider value={safe}>
     <AbsoluteFill style={{ background: pal.bg }}>
       {mode === "cannon" && <CannonMode visual={visual} pal={pal} ff={ff} frame={frame} dur={dur} />}
       {mode === "groundtrack" && <GroundTrackMode visual={visual} pal={pal} ff={ff} frame={frame} dur={dur} />}
       {mode === "orbit" && <OrbitTopDown visual={visual} pal={pal} dur={dur} ff={ff} frame={frame} fps={fps} />}
     </AbsoluteFill>
+    </SafeCtx.Provider>
   );
 };
