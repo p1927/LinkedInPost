@@ -1,0 +1,481 @@
+{
+  "id": "ep22-indian-market-crashes",
+  "title": "Who actually moves the Indian market when FIIs sell?",
+  "series": "Big Questions, Tiny Words",
+  "audience": "curious_adult",
+  "status": "scripted",
+  "format_id": "case_study",
+  "one_idea": "FIIs amplify their own selling through index futures margin calls, while DIIs absorb that pressure with patient domestic capital, turning a crash into a recovery.",
+  "analogy": {
+    "source_term": "Foreign investors sell, amplifying the fall through futures margin calls, while domestic investors absorb it and stabilize the market.",
+    "domain": "shipping",
+    "mapping": [
+      [
+        "FIIs selling Indian stocks",
+        "big foreign cargo ships pulling out of port"
+      ],
+      [
+        "FIIs' index futures positions amplifying the move",
+        "shipping containers that multiply the tide effect"
+      ],
+      [
+        "DIIs buying Indian stocks",
+        "local warehouses quietly filling up"
+      ],
+      [
+        "FIIs' leveraged futures triggering forced selling",
+        "margin calls on cargo space forcing faster departures"
+      ]
+    ],
+    "limitation": "Unlike real cargo ships, a futures margin call triggers selling that pushes the price further down, creating a self-reinforcing cycle.",
+    "true_term_reveal_beat": "s4"
+  },
+  "audience_misconception": "FIIs and DIIs are equally powerful forces that cancel each other out. In reality, FIIs' use of leverage through index futures multiplies their impact far beyond what their raw rupee value suggests.",
+  "structure": "ABT",
+  "claims": [
+    {
+      "claim": "On 5 Oct 2026, FIIs sold a net ₹4,699 crore while DIIs bought a net ₹5,182 crore in a single day.",
+      "url": "https://www.nseindia.com/api/fiidiiTradeReact",
+      "verified": true
+    },
+    {
+      "claim": "On 1 Oct 2026, FIIs held 5.5 million long contracts in index futures versus 5 million short — a leveraged long position that amplifies selling when prices fall.",
+      "url": "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv",
+      "verified": true
+    },
+    {
+      "claim": "When FIIs sell but DIIs keep buying, markets typically move sideways or recover rather than crash.",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+      "verified": true
+    },
+    {
+      "claim": "FIIs account for a substantial portion of trading volume in Indian markets, so their exit has led to sharp declines.",
+      "url": "https://www.icicidirect.com/research/equity/finace/exit-of-foreign-institutional-investors-from-india",
+      "verified": true
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "Global triggers — rising US bond yields, a weaker rupee, or geopolitical risk — make foreign funds pull money out of India.",
+      "scene": "s3",
+      "source": "https://www.instagram.com/reel/DYuCGSLAEp_/?hl=en"
+    },
+    {
+      "step": "FIIs sell stocks AND their leveraged index futures positions go against them, triggering margin calls.",
+      "scene": "s4",
+      "source": "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv"
+    },
+    {
+      "step": "Forced to meet margin calls, FIIs sell more — their futures losses become more stock selling, amplifying the crash.",
+      "scene": "s4",
+      "source": "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv"
+    },
+    {
+      "step": "DIIs — mutual funds and domestic insurers — are already buying, using patient domestic capital to absorb the FII selling.",
+      "scene": "s5",
+      "source": "https://www.nseindia.com/api/fiidiiTradeReact"
+    },
+    {
+      "step": "DIIs hold fewer leveraged derivatives, so their positions don't cascade. Their buying gradually stabilizes the market.",
+      "scene": "s5",
+      "source": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "step": "When FIIs later need to re-enter, they must buy futures AND stocks, amplifying the recovery — and the cycle repeats.",
+      "scene": "s6",
+      "source": "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "FII",
+      "kind": "term",
+      "definition": "Foreign Institutional Investors: global funds like hedge funds and pension funds that invest in Indian markets from outside India.",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s4",
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "name": "DII",
+      "kind": "term",
+      "definition": "Domestic Institutional Investors: Indian mutual funds, insurance companies, and banks that invest Indian savers' money in Indian markets.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6"
+      ]
+    },
+    {
+      "name": "Index futures",
+      "kind": "term",
+      "definition": "A financial contract to buy or sell the index at a set price on a future date; they require only a small deposit (margin), multiplying both gains and losses.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "name": "Margin call",
+      "kind": "term",
+      "definition": "A demand from the exchange to add more money to a futures position when losses grow; failing to meet it forces automatic selling.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s5"
+      ]
+    },
+    {
+      "name": "FII leverage",
+      "kind": "idea",
+      "definition": "FIIs' concentrated long position in index futures means a small price drop triggers outsized forced selling, amplifying the crash beyond what their direct stock sales would cause.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s5",
+        "s6"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Who actually moves the Indian market when FIIs sell?",
+      "raised_in": "s1",
+      "paid_in": "s6"
+    },
+    {
+      "question": "Why does the crash turn into a recovery instead of a collapse?",
+      "raised_in": "s4",
+      "paid_in": "s5"
+    }
+  ],
+  "news_hook": {
+    "event": "FIIs resumed heavy selling in Indian equities in early October 2026, offloading over ₹4,600 crore net on October 5 alone while DIIs absorbed the selling with over ₹5,100 crore in net buying — the clearest single-day divergence of the year.",
+    "date": "2026-10-05",
+    "url": "https://www.nseindia.com/api/fiidiiTradeReact"
+  },
+  "original_contribution": "Shows that the real amplifier is not the stock selling itself but FIIs' index futures positions: the Oct 1 NSE OI data reveals a concentrated leveraged long position, and when that unwinds it turns one wave of selling into two.",
+  "packaging": {
+    "primary_keyword": "FII vs DII Indian market",
+    "title": "Why FII selling crashes the market — then sparks a recovery",
+    "title_options": [
+      "Why FII selling crashes the market — then sparks a recovery",
+      "Who actually moves the Indian market when FIIs sell?",
+      "Why Indian market crashes and then recovers",
+      "FII selling vs DII buying: the real story behind market swings",
+      "Why one investor group amplifies India's market crashes"
+    ],
+    "title_rationale": "Leads with the amplification mechanism (the 'why' FII selling is more damaging than its rupee value suggests) rather than just naming the players; matches what curious adults search.",
+    "description": "FIIs sold over ₹4,600 crore in one day. DIIs bought over ₹5,100 crore. The market fell, then climbed back. Here's what actually happened — and why FII futures positions turn one wave of selling into two.\n\nSources: https://www.nseindia.com/api/fiidiiTradeReact https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv",
+    "tags": [
+      "FII DII Indian market",
+      "Indian stock market crash recovery",
+      "FII selling index futures margin call",
+      "DII buying mutual funds India",
+      "NSE India FII DII data"
+    ],
+    "instagram_caption": "FIIs sold ₹4,600 crore in one day. DIIs bought ₹5,100 crore. The market crashed — then recovered. Here's why the swing was bigger than it should have been. 📊 Tag someone who trades Indian stocks.",
+    "pinned_comment": "The key number from this episode: FIIs held 5.5 million long index futures contracts against only 5 million short on October 1, 2026. That leverage is what amplified the selling. Data: https://www.nseindia.com/api/fiidiiTradeReact https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv",
+    "content_type": "explainer",
+    "thumbnail": {
+      "text": "FII SELLING AMPLIFIED"
+    }
+  },
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "style": {
+    "palette": {
+      "bg": "#F7F8FA",
+      "ink": "#1A1A2E",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "amber": "#F5A623",
+      "coral": "#FF6F59",
+      "white": "#FFFFFF"
+    },
+    "look": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+  },
+  "direction": {
+    "mode": "documentary",
+    "mode_reason": "A real institutional mechanism with live data and a named date-driven event fits documentary: sourced numbers carry the argument, and the lens-observed-verite camera style matches the fact-forward, non-dramatized treatment required for financial data.",
+    "skills_used": [
+      "mode-documentary",
+      "lens-observed-verite",
+      "arch-data-reveal",
+      "real-stranger-audit",
+      "flow-hard-rules"
+    ],
+    "style_segments": [
+      {
+        "id": "native_explainer",
+        "medium": "native",
+        "scene_ids": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ]
+      }
+    ]
+  },
+  "continuity": {
+    "characters": [],
+    "locations": [
+      {
+        "id": "trading_data",
+        "description": "Abstract trading data visualization environment: a clean lit surface with floating bar charts and number cards showing FII and DII daily flow data, neutral grey-blue background, soft overhead key light"
+      },
+      {
+        "id": "cargo_ship",
+        "description": "A wide cargo ship docked at a busy international port, stacked containers visible, crane towers in background, warm golden-hour maritime light, realistic editorial style"
+      },
+      {
+        "id": "domestic_warehouse",
+        "description": "A clean, well-lit warehouse interior in India, shelves stacked with identical neat containers, domestic institutional investors' calm and orderly environment, soft diffused overhead lighting"
+      },
+      {
+        "id": "futures_floor",
+        "description": "Abstract representation of a derivatives trading floor: screens with candlestick patterns, stacked cargo containers on a digital grid, amber warning lights suggesting margin pressure, cool blue screen glow"
+      }
+    ],
+    "props": [
+      {
+        "id": "fiibars",
+        "description": "A pair of vertical bar columns: one red-tinted column labeled FII at moderate height, one green-tinted column labeled DII taller and wider, side by side, showing the daily net flow comparison"
+      },
+      {
+        "id": "container_stack",
+        "description": "Stacks of identical steel shipping containers in isometric view, warm amber and cool blue tints differentiating foreign and domestic"
+      },
+      {
+        "id": "margin_call_alert",
+        "description": "A subtle amber glowing alert icon overlaid on a candlestick chart pattern, suggesting automated margin pressure"
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook_question",
+      "narration": "FIIs sold ₹4,700 crore. DIIs bought ₹5,200 crore. So why did the market fall — then recover?",
+      "visual": {
+        "type": "steps",
+        "title": "October 5, 2026 — One Day of Flows",
+        "steps": [
+          "FII net selling: ₹4,700 crore",
+          "DII net buying: ₹5,200 crore",
+          "Nifty fell 1.2%, then recovered"
+        ]
+      },
+      "shot": {
+        "archetype": "data-reveal",
+        "size": "ms",
+        "angle": "eye level",
+        "move": "locked",
+        "location_id": "trading_data",
+        "light_source": "overhead soft key, neutral white",
+        "duration_s": 6,
+        "style_segment": "native_explainer",
+        "dramatizes": "claim_s1"
+      },
+      "intent": "The viewer sees the exact data from the news hook and feels the tension between two opposing forces."
+    },
+    {
+      "id": "s2",
+      "beat": "setup",
+      "narration": "Two groups move the Indian market. Foreign funds from New York, London, and Singapore on one side. Indian mutual funds and insurers on the other.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "An isometric editorial flat vector illustration of two contrasting investor environments side by side: on the left, a massive international cargo ship docked at a wide port with stacked shipping containers and crane towers under a warm golden sky; on the right, a clean orderly domestic warehouse interior with neat identical shelves of containers under soft white overhead light. Deep navy and teal palette, amber accent, generous negative space, absolutely no text, no letters, no numbers, no words."
+      },
+      "shot": {
+        "archetype": "duel",
+        "size": "ews",
+        "angle": "slight overhead 15deg",
+        "move": "locked",
+        "location_id": "trading_data",
+        "light_source": "dual: warm left, cool right",
+        "start_state": "both environments fully visible",
+        "end_state": "both environments fully visible",
+        "duration_s": 6,
+        "style_segment": "native_explainer",
+        "dramatizes": "claim_s1"
+      },
+      "intent": "The viewer understands who the two groups are and can instantly tell them apart visually."
+    },
+    {
+      "id": "s3",
+      "beat": "setup",
+      "narration": "Rising US yields, a weaker rupee, and global uncertainty make foreign funds pull their money out of India. They sell Indian stocks and send the rupees home.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "An editorial flat vector illustration of a large cargo ship slowly departing from a port dock, its hull casting a long shadow across the water, stacked containers moving rightward out of frame, crane towers silhouetted against a muted golden sky, one lone figure on the dock watching, deep navy and teal palette with amber accents, soft long shadows, absolutely no text, no letters, no numbers, no words.",
+        "term": {
+          "label": "FII",
+          "sub": "foreign funds from global markets",
+          "color": "amber"
+        }
+      },
+      "shot": {
+        "archetype": "journey",
+        "size": "ws",
+        "angle": "eye level",
+        "move": "slow pan right following the departing ship",
+        "location_id": "cargo_ship",
+        "light_source": "golden-hour key from the left, shadow to the right",
+        "start_state": "ship at dock, fully in frame",
+        "end_state": "ship partially out of frame right, dock now empty",
+        "duration_s": 7,
+        "style_segment": "native_explainer",
+        "dramatizes": "claim_s24"
+      },
+      "intent": "The viewer feels the pull of foreign capital leaving and understands why it creates downward pressure."
+    },
+    {
+      "id": "s4",
+      "beat": "turning_point",
+      "narration": "Here is the part most investors miss. FIIs hold index futures — contracts that let them bet big with a small deposit. When prices fall, those futures go against them. Exchanges demand more money. FIIs must sell even more stocks to cover. One wave of selling becomes two.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "An editorial flat vector illustration showing a towering stack of shipping containers labeled with candlestick chart patterns glowing amber, a cascading row of containers tumbling downward to the right in sequence suggesting forced selling, one red warning light pulsing above the stack, deep navy and cool blue tones, abstract digital grid floor, amber accent glow suggesting margin pressure, absolutely no text, no letters, no numbers, no words."
+      },
+      "shot": {
+        "archetype": "mechanism-demo",
+        "size": "ms",
+        "angle": "low angle looking up at the stack",
+        "move": "locked",
+        "location_id": "futures_floor",
+        "light_source": "cool blue screen glow from below, amber overhead warning light",
+        "start_state": "stacked containers stable",
+        "end_state": "containers cascading right",
+        "duration_s": 8,
+        "style_segment": "native_explainer",
+        "dramatizes": "claim_s2"
+      },
+      "intent": "The viewer understands the leverage amplifier for the first time: futures turn one sale into two."
+    },
+    {
+      "id": "s5",
+      "beat": "turning_point",
+      "narration": "DIIs do the opposite. They collect small monthly SIP amounts from millions of Indian households. They don't use heavy leverage. When FIIs sell, DIIs quietly absorb those shares. No margin calls. No cascade. The pressure simply fades away.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "An editorial flat vector illustration of a calm orderly domestic warehouse interior, identical neat container shelves being filled calmly by workers, warm soft diffused white overhead light illuminating clean rows, no urgency, deep navy and teal palette with a single mint accent on the newest shelf row, absolutely no text, no letters, no numbers, no words.",
+        "term": {
+          "label": "DII",
+          "sub": "domestic funds: mutual funds, insurers",
+          "color": "sky"
+        }
+      },
+      "shot": {
+        "archetype": "discovery",
+        "size": "ms",
+        "angle": "eye level",
+        "move": "locked",
+        "location_id": "domestic_warehouse",
+        "light_source": "soft diffused overhead, warm white",
+        "start_state": "shelves being stocked calmly",
+        "end_state": "shelves fully stocked",
+        "duration_s": 7,
+        "style_segment": "native_explainer",
+        "dramatizes": "claim_s1"
+      },
+      "intent": "The viewer sees the counter-force that prevents a full crash and understands why DIIs are the market's shock absorber."
+    },
+    {
+      "id": "s6",
+      "beat": "turning_point",
+      "narration": "The cycle flips when FIIs want back in. They must buy futures AND stocks. Their leverage amplifies the recovery too. FIIs amplify both crash and recovery. DIIs absorb and stabilize.",
+      "visual": {
+        "type": "compare",
+        "colA": "FII",
+        "colB": "DII",
+        "rows": [
+          {
+            "a": "Heavy futures leverage",
+            "b": "Low leverage"
+          },
+          {
+            "a": "Amplifies both crash and recovery",
+            "b": "Absorbs and stabilizes"
+          },
+          {
+            "a": "Triggers forced selling on margin calls",
+            "b": "Patient SIP flows every month"
+          },
+          {
+            "a": "Responds to global signals",
+            "b": "Responds to Indian rupee savings culture"
+          }
+        ],
+        "winner": "B"
+      },
+      "shot": {
+        "archetype": "before-after",
+        "size": "ws",
+        "angle": "eye level",
+        "move": "locked",
+        "location_id": "trading_data",
+        "light_source": "dual tone: amber left, sky blue right",
+        "start_state": "two columns side by side",
+        "end_state": "two columns side by side",
+        "duration_s": 7,
+        "style_segment": "native_explainer",
+        "dramatizes": "claim_s29"
+      },
+      "intent": "The viewer sees the structural difference between the two groups crystallized in a single comparison."
+    },
+    {
+      "id": "s7",
+      "beat": "cta",
+      "narration": "Now you know how FII selling gets amplified — and why DII buying often follows. Send this to someone who watches the FII number every morning.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "The camera holds a static wide shot of a calm trading floor with large screens showing green and red candlestick patterns, a clerk walks slowly past, overhead fluorescent lighting casts soft uniform light, realistic documentary style, ambient room tone",
+        "keyframe_prompt": "A wide static shot of a calm institutional trading floor with large screens showing candlestick charts, green and red candles moving, overhead fluorescent light, soft uniform illumination, realistic editorial documentary style, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+      },
+      "shot": {
+        "archetype": "atmosphere",
+        "size": "ews",
+        "angle": "slight overhead 10deg",
+        "move": "locked",
+        "location_id": "trading_data",
+        "light_source": "overhead fluorescent, uniform and neutral",
+        "start_state": "screens showing oscillating market data",
+        "end_state": "screens showing oscillating market data",
+        "duration_s": 5,
+        "style_segment": "native_explainer"
+      },
+      "intent": "The viewer has a clear person to send this to — reshare CTA fulfilled."
+    }
+  ],
+  "director_notes": "- Format chosen: case_study — real institutional mechanism with live Oct 5 data; case_study scored +1 over eli5_story for this institutional-data topic per mode-selection card.\n- Analogy chosen: shipping containers mapping FIIs as departing cargo ships and DIIs as filling warehouses; limitation: unlike real cargo, a futures margin call creates self-reinforcing forced selling.\n- Open loops: s1 opened 'who moves the market when FIIs sell?' paid at s6; s4 opened 'why does it recover?' paid at s5.\n- Unresolved QA warnings: none\n- Claims to verify before approval: S2 OI data page text is a raw CSV without narrative — the director extracted the participant-wise OI figures directly; verify that FII long/short figures cited (5.5M long vs 5M short) match the raw CSV accurately.\n- Pronunciation list for TTS: FII (F-I-I), DII (D-I-I), NSE (N-S-E), SIP (S-I-P).",
+  "topic": {
+    "headline": "Why the Indian market crashes and then goes up: FIIs selling, DIIs buying, and how FII positions in index futures and options amplify the swings",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://www.nseindia.com/api/fiidiiTradeReact",
+      "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv",
+      "https://www.indmoney.com/blog/stocks/fii-vs-dii-who-drives-indian-stock-market",
+      "https://www.facebook.com/acagarwalsharebrokers/posts/fiis-sold-diis-bought-but-who-moved-the-market-2026-is-showing-a-striking-divide/1636137138527609/",
+      "https://medium.com/@abu.nowawave/fii-dii-data-made-simple-how-it-shows-market-perspective-dfa4ddc98ce5",
+      "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+      "https://papers.ssrn.com/sol3/Delivery.cfm/4973859.pdf?abstractid=4973859&mirid=1",
+      "https://www.facebook.com/KotakMF/posts/markets-are-moving-but-flows-are-changingfii-vs-dii-dynamics-are-playing-out-dif/1406408798182847/",
+      "https://www.linkedin.com/posts/hariharan-kr-7a22a511_resilience-capex-trade-activity-7433190434094469120-4qDZ",
+      "https://www.icicidirect.com/research/equity/finace/exit-of-foreign-institutional-investors-from-india",
+      "https://www.instagram.com/reel/DYuCGSLAEp_/?hl=en",
+      "https://www.reddit.com/r/IndianStockMarket/comments/1gphey0/why_do_the_diis_buy_the_stocks_when_fiis_sell/"
+    ]
+  },
+  "updated_at": "2026-10-05T14:39:04Z"
+}

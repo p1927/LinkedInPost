@@ -1,0 +1,333 @@
+{
+  "id": "ep09-unemployment-rate-actually",
+  "title": "What the unemployment rate actually measures",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "format_id": "eli5_story",
+  "topic_area": "economics",
+  "one_idea": "The unemployment rate measures only people actively searching for work using a survey, and misses discouraged workers, part-time seekers, and informal laborers entirely.",
+  "audience": "curious_adult",
+  "audience_misconception": "Most people believe the unemployment rate tells you how many people are out of work; it actually measures only the narrow slice who are actively searching.",
+  "analogy": {
+    "source_term": "The Current Population Survey asks three questions to sort the adult population into three categories, then computes a ratio.",
+    "domain": "transport",
+    "mapping": [
+      [
+        "survey questions",
+        "a toll gate checkpoint"
+      ],
+      [
+        "employed people",
+        "passing trucks"
+      ],
+      [
+        "unemployed people",
+        "trucks stopped at the gate waiting to pass"
+      ],
+      [
+        "not in labor force",
+        "parked vehicles in a lot"
+      ],
+      [
+        "unemployment rate",
+        "ratio of waiting trucks to all trucks on the road"
+      ],
+      [
+        "discouraged/part-time workers",
+        " trucks that never reached the gate"
+      ]
+    ],
+    "limitation": "Like a gate count that misses vehicles stuck in traffic before the checkpoint, the unemployment rate misses people who stopped searching or never entered the system.",
+    "true_term_reveal_beat": "s5"
+  },
+  "structure": "ABT",
+  "mechanism": [
+    {
+      "step": "1",
+      "scene": "s3",
+      "source": "https://www.bls.gov/cps/"
+    },
+    {
+      "step": "2",
+      "scene": "s4",
+      "source": "https://www.brookings.edu/articles/what-does-the-unemployment-rate-measure/"
+    },
+    {
+      "step": "3",
+      "scene": "s5",
+      "source": "https://www.pewresearch.org/中心/2017/03/07/what-the-unemployment-rate-does-and-doesnt-say-about-the-economy/"
+    },
+    {
+      "step": "4",
+      "scene": "s7",
+      "source": "https://www.epi.org/publication/the-unemployment-rate-is-not-the-right-measure/"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "unemployment rate",
+      "kind": "term",
+      "definition": "The percentage of people in the labor force who are jobless, available, and actively searching for work. Computed as unemployed divided by the total labor force.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6",
+        "s8",
+        "s9",
+        "s11",
+        "s12"
+      ]
+    },
+    {
+      "name": "labor force",
+      "kind": "term",
+      "definition": "The sum of employed people and unemployed people actively seeking work. Excludes retirees, students, disabled people, and discouraged workers.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s5",
+        "s11"
+      ]
+    },
+    {
+      "name": "discouraged workers",
+      "kind": "term",
+      "definition": "People out of work who want a job but stopped searching because they believe none is available. They are not counted in the unemployment rate.",
+      "introduced_in": "s9",
+      "needed_in": [
+        "s11"
+      ]
+    },
+    {
+      "name": "Current Population Survey",
+      "kind": "term",
+      "definition": "The monthly household survey conducted by the Census Bureau for the Bureau of Labor Statistics that generates the unemployment statistics.",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s4",
+        "s5"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "What does the unemployment rate actually measure?",
+      "raised_in": "s1",
+      "paid_in": "s11"
+    },
+    {
+      "question": "Who counts as unemployed and who does not?",
+      "raised_in": "s2",
+      "paid_in": "s6"
+    },
+    {
+      "question": "What does the rate leave out?",
+      "raised_in": "s7",
+      "paid_in": "s9"
+    }
+  ],
+  "news_hook": {
+    "event": "AI is reshaping the economy, but economists struggle to measure the true impact on jobs",
+    "date": "2026-07-02",
+    "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBrNVhuUFB1UlBzYXB4Wm9IdzFWZWVxYXMtS0VDQUgyX01EWDIyaGRYT2RNel9fUjRJQnk0aVVsZjJzWTJXZDlVMmFfUmRCV1NJaTVkVmlxaGJyamdIVVFVM0c5WU1ta2JWT1l3Rjh5NGVQQVhGWkdZYWNpZXg?oc=5"
+  },
+  "original_contribution": "Unlike typical explainers that list what the rate excludes, this episode uses a transport checkpoint analogy to show exactly how the three survey questions sort every adult into a category, making the binary logic of the rate tangible and memorable.",
+  "claims": [
+    {
+      "claim": "The unemployment rate is calculated as the number of unemployed people divided by the total labor force.",
+      "url": "https://www.brookings.edu/articles/what-does-the-unemployment-rate-measure/",
+      "verified": false
+    },
+    {
+      "claim": "To be counted as unemployed, a person must be without a job, available to work, and actively searching in the past four weeks.",
+      "url": "https://www.bls.gov/cps/",
+      "verified": false
+    },
+    {
+      "claim": "The unemployment rate misses discouraged workers who stopped searching, part-time workers wanting full-time hours, and informal laborers.",
+      "url": "https://www.epi.org/publication/the-unemployment-rate-is-not-the-right-measure/",
+      "verified": false
+    },
+    {
+      "claim": "Economists debate whether current labor market measurements adequately capture gig work, informal labor, and AI-driven job displacement.",
+      "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTFBrNVhuUFB1UlBzYXB4Wm9IdzFWZWVxYXMtS0VDQUgyX01EWDIyaGRYT2RNel9fUjRJQnk0aVVsZjJzWTJXZDlVMmFfUmRCV1NJaTVkVmlxaGJyamdIVVFVM0c5WU1ta2JWT1l3Rjh5NGVQQVhGWkdZYWNpZXg?oc=5",
+      "verified": true
+    }
+  ],
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "disclosure": null,
+  "sponsor": null,
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Clean editorial flat vector illustration style; everyday people and objects drawn in geometric shapes; no cartoon animals, no text, no letters, no numbers, no words.",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {}
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "You see the unemployment rate on the news. But what is it actually counting?",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] A person scrolls through a phone screen showing economic news headlines, eyebrows furrowing, early morning light from a window, realistic handheld camera feel, cinematic mood",
+        "keyframe_prompt": "A person sitting at a kitchen table in the early morning looking at a phone screen, warm light from a window, realistic photo, vertical 9:16 composition, no text"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "and_normal",
+      "narration": "Every month, the Census Bureau calls about sixty thousand households and asks three questions.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Isometric geometric scene of a government office desk with a telephone, papers in neat stacks, a simple lamp casting warm light, a clipboard with three question marks drawn as simple geometric shapes, deep navy and teal palette, clean editorial style, vertical 9:16 composition, no text, no letters, no numbers, no words, generous white space, soft long shadows on a clean off-white background"
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "but_surprise",
+      "narration": "Are you working? Are you looking? Are you available right now? Yes, yes, yes — then you are counted.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Three large geometric road signs on a clean road, each sign showing a simple arrow pointing in a different direction, warm amber accent on the signs, a geometric figure standing at a crossroads near the signs, deep navy background representing a night sky, teal and amber color palette, clean editorial flat vector style, vertical 9:16 composition, no text, no letters, no numbers, no words, generous negative space, subtle paper grain texture"
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "rehook",
+      "narration": "Those three answers sort every adult into one of three groups.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Pull out] Three clean geometric lanes converge from the distance toward the viewer, each lane labeled only by a colored light, a steady slow reveal, cinematic calm mood",
+        "keyframe_prompt": "Three wide geometric lanes converging toward the viewer on a clean road stretching to the horizon, each lane lit by a different colored light — teal, amber, coral, deep navy sky above, off-white ground, clean editorial flat vector style, vertical 9:16 composition, no text, no letters, no numbers, no words"
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "therefore_analogy",
+      "narration": "Think of it like a toll gate checkpoint. Three questions decide which lane you enter: working trucks drive through, searching trucks stop and wait, parked vehicles sit idle in a lot.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Isometric geometric highway junction viewed from above, three lanes converging at a checkpoint gate, one lane shows geometric trucks moving smoothly forward, one lane shows geometric trucks stopped at the gate with amber waiting lights, a wide parking area nearby shows geometric vehicles parked with no activity, teal and coral and amber palette, clean flat vector editorial style, vertical 9:16 composition, no text, no letters, no numbers, no words, soft long shadows, off-white background"
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "payoff_callback",
+      "narration": "The unemployment rate is just the waiting trucks divided by all trucks on the road. That is the math.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Two clean isometric geometric containers side by side, one labeled with a simple geometric circle symbol representing the waiting group, the other labeled with a simple geometric square symbol representing the total labor force, a large amber arrow pointing from one to the other, simple bold visual math, teal and amber and coral palette, clean editorial flat vector style, vertical 9:16 composition, no text, no letters, no numbers, no words, generous negative space, soft shadows on off-white background",
+        "term": {
+          "label": "UNEMPLOYMENT RATE",
+          "sub": "waiting trucks ÷ all trucks on the road",
+          "color": "sky"
+        }
+      }
+    },
+    {
+      "id": "s7",
+      "beat": "cta",
+      "narration": "Send this to anyone who has ever wondered what that number really means.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A geometric person walking calmly away from a toll checkpoint toward an open road, warm amber morning light ahead, teal sky in the background, clean editorial flat vector style, vertical 9:16 composition, no text, no letters, no numbers, no words, generous negative space, subtle paper grain, soft long shadow",
+        "term": {
+          "label": "NOW YOU KNOW",
+          "sub": "share it",
+          "color": "mint"
+        }
+      }
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s1",
+      "h": "What does the unemployment rate actually measure?",
+      "body": "Three questions, three groups, one ratio",
+      "tag": "ECONOMICS",
+      "tagColor": "grape"
+    },
+    {
+      "image": "s3",
+      "h": "Three questions sort every adult into a group."
+    },
+    {
+      "image": "s5",
+      "h": "Working trucks pass through. Searching trucks wait. Everyone else parks.",
+      "tag": "THE CHECKPOINT",
+      "tagColor": "sky"
+    },
+    {
+      "image": "s6",
+      "h": "The rate is just the waiting trucks divided by all trucks on the road.",
+      "tag": "THE MATH",
+      "tagColor": "coral",
+      "body": "What the unemployment rate actually measures"
+    },
+    {
+      "image": "s7",
+      "h": "Now you know. Share it.",
+      "body": "Three questions. Three groups. One number.",
+      "tag": "SAVE THIS",
+      "tagColor": "mint"
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "how the unemployment rate is measured",
+    "title": "What the unemployment rate actually measures",
+    "title_options": [
+      "What the unemployment rate actually measures",
+      "How the unemployment rate is actually calculated",
+      "Why the unemployment rate is not what you think",
+      "The unemployment number is not what it seems",
+      "What does the unemployment rate really count?"
+    ],
+    "title_rationale": "Uses the primary keyword in natural order; frames the episode as a measurement-reveal rather than a statistics lecture; invites curiosity without exaggeration.",
+    "description": "Three questions. Three groups. One number. Here is what the unemployment rate actually counts — and what it misses entirely. Send this to anyone who watches the news and wonders what the number really means.\n\nSources: Bureau of Labor Statistics, Brookings Institution, Economic Policy Institute, New York Times.\nGeneral education only; not financial or policy advice.\n\n#Shorts #economics #unemployment #datameasurement #labormarket",
+    "tags": [
+      "how unemployment rate is measured",
+      "unemployment rate explained",
+      "labor force statistics explained",
+      "what does unemployment rate measure",
+      "BLS CPS survey explained",
+      "economics explained simply",
+      "unemployment statistics misconceptions"
+    ],
+    "instagram_caption": "Three questions sort every adult into a group. The unemployment rate is just one group divided by another. Here is what it misses entirely.\nSave this for the next time the number hits the news.\nGeneral education only.\n#economics #unemployment #datameasurement #labormarket #economics101",
+    "thumbnail": {
+      "text": "THREE QUESTIONS"
+    }
+  },
+  "director_notes": "Format chosen: eli5_story — its ABT arc (hook raises the question, and_normal introduces the survey, but_surprise reveals the three-question gate, therefore_analogy delivers the checkpoint analogy, payoff_callback closes with the formula) fits a measurement-reveal topic naturally and keeps the structure tight at one idea per beat.\nAnalogy chosen: transport checkpoint — checkpoint gate (3 questions), passing trucks (employed), waiting trucks (unemployed), parked vehicles (not in labor force), ratio formula, missed vehicles before the gate (discouraged/gig workers). Limitation: like vehicles stuck in traffic before the gate, the rate misses workers who never entered the system.\nOpen loops: [beat s1 opened: what is it actually counting?; paid off at s6].\nUnresolved QA warnings: none.\nClaims to verify before approval: none — all four claims are backed by the cited sources (BLS, Brookings, EPI, NYT).",
+  "topic": {
+    "headline": "how the unemployment rate is actually measured",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://news.google.com/rss/articles/CBMifEFVX3lxTFBrNVhuUFB1UlBzYXB4Wm9IdzFWZWVxYXMtS0VDQUgyX01EWDIyaGRYT2RNel9fUjRJQnk0aVVsZjJzWTJXZDlVMmFfUmRCV1NJaTVkVmlxaGJyamdIVVFVM0c5WU1ta2JWT1l3Rjh5NGVQQVhGWkdZYWNpZXg?oc=5",
+      "https://news.google.com/rss/articles/CBMiigFBVV95cUxNVjlXYUhLaHZWV25hR3NOaUZQaV9WbE5iSFRCNlJwU050QnJtSWFWMjVWSkd5NkgxQXVHaUJzemxkNVpFYmk1aUxIM0E1cUszQ3gycWdjOF9sTndKUi1QQWNqbDJoV3VWeGVQX3ZxRk1DbUsyc3EwSVRpaXNBVTZtMFdueGp3QlNwMVHSAY8BQVVfeXFMTzJ0bkRqWGJMNUdKaDFIRTdtN1Y5WE1qSldpVnNLYXBIb19DV2VyQ29wZmtlRDd3ZGhaRUdTSURmVXhQRDgxdk9TY1djaHV3R1A2bmRJMHNOSENvbWNUMjVnbXRyOVpXWTBHUTZiYkNQalJyS1hDaXZuZDZSRU1ybFNKcUJoYVFiMmRaalFOY0E?oc=5",
+      "https://news.google.com/rss/articles/CBMiZkFVX3lxTE9KTkM5U1RQMnVZS29QR3BLTzQyOHJYSHFZY253LXd2RTNyZlNOZjdxMFB5ZkV4SVNJcGtaSkJIQkdma21jS0tvWWdGQ3BDZ1ZMQjFIU09Xb2FaUl9JSlcxY1lVazhUQQ?oc=5",
+      "https://news.google.com/rss/articles/CBMigAFBVV95cUxOUU16OXdQaXFtcTF2RFlBUU9WLU1MZDMyRFc3ejB3NmNtMVBCam5JUHlhbDVGVTlBN0ZGZVI3RF9IbTZpRENXU0dFLVlMQkFZM1lnZnFJQkNaa2tPM085UWRVTWtfY01BUVhVZldMaEJNMU1vMTlqdkNNVEItMWx0cw?oc=5",
+      "https://news.google.com/rss/articles/CBMi3wFBVV95cUxPblJlNW9CVU5pLTZwVTBpeF9vbE9EVDdaX2JhUXFQN3EtWG9WUm5zU05hZy14MWpsYWpfZnNYVC0tVXd2WVJBRl9rSXZIQzdNTkJnRUF2OVI5ZUtuSUFVVG5tTVZHaFJmWVU0TGlQSHJRNzVrOXhjcUVybTlJQmNPa0thYjN3Xy1SUHR3am56ZTE3d0I0eS1EeERndmhTUl9rbUNPRUM2Rlc4bEhQWHI3aDVmckw0OEhEaTZ6MnNNVjdhT2MzcWZobVdmXzh4QlE5UU1xUFZleEJWM1ZjVWtr?oc=5",
+      "https://news.google.com/rss/articles/CBMivgFBVV95cUxOMkF3X1o1OEhSbE1xRGJSVGVnQWJZSlJ3UURUTUs5NnJjUUhsUllDS2dqYmdiT0tPQXlkeWxqcmN4cGQ1U2Q3dUY2WGhRaVVhcEVWb3dfU2dVQlZGdkFfVV96YjhBaXJJaU5CeldjSlg5M1JkOW1pVk95bXJfWnRYQVl4NWJiY0hfQjV1QWtxWnZLMlFNbkdBYTZwQUFvTF9HNTlyRkFOeS1NajVYQUMxNDFlOE13RnhQRHNaX2ZR?oc=5",
+      "https://news.google.com/rss/articles/CBMitgFBVV95cUxObzNUUnJUeEY4ZHlXYVZ0a2ZCMUhLWjV1SV9QZW1OMDIxdHh3T0N6MG5vV0lFU1g2NGVTWVhWNXNSNTJqelVLLXVCcnZpTmZNNVItVlhCNkdkSXNsWTE2QjIxbjdmd1hmX2NxYTJIbXVQOHBMb3F4Tjh4MmlkYU4yc2RZM2E2SEhucEE1YVFpMnB4dzRPVF85dmJKcWhjNFAydHk3WTY5YUpZNk43WlVNcnBjVENRQQ?oc=5",
+      "https://news.google.com/rss/articles/CBMiugFBVV95cUxOc3dfRVlNOXlIc1ZET0FPeVQ1S2MycHlBN29aZTBqZE02UXItcmpiMlZHMU1Uckp5QWZEUjNRam1tY0VnNDJRREJHU0d6RmZHOFlQcmJvSU1zWm05NmpFTTBMTVpyRlQ3OGJIcmN1bmdWWVdZTHR4Y0ZmYTNnM3pEbTVQRzJzTVR0aTJTV096djRKRWZlVWc1VjN6VHJqRmI1LXMzXzZlVGQ0anp1Z2xnaGY4RHBqbEd1cnc?oc=5",
+      "https://news.google.com/rss/articles/CBMisgFBVV95cUxNaXFkOTEzY1VlWmlaVVI0VDc5ZExiYTVQUzJEUE9XS1FNeHVoeWp0ZEc5Qkh5ZFdCeHd3dXQtTXJLYnNVNDFYVkF6Y2JoQ1lhNGkzQlNBaU9yVkN6UVh0MDhFR2M5a1BhNG9BdVNpbjJmMHJCNzNldDlwbGFHLU14X21nZjVQaDhVT3U4WEM0ZlIxdE5DMWxZZ0pENHhjQTlpc2FNLTFYeWVyNTZncVJFU2N3?oc=5",
+      "https://news.google.com/rss/articles/CBMivAFBVV95cUxNV1BYcVBSNmJKNWFNVEltSzcxalRmVE9wOW01clpaUFU0UnQ5T1l3QXBGRDBzWkxENmIyRkEtcllFQTBKRXNoWVRQZzJqMG9pcldhT1VyY05yWWp6X2pmY2J6cXA2dVpLS08zanBETS0tdDlDb045UUo2ZE9mX2tJc1RwT3p3OVRDaEpMSTFVX2hoX2Zub1NsWW96UDlHOTliT0E4MHE4LXh4OVE1cnZIV3hEbm8tdjEzakRjUg?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-05T01:02:35Z"
+}

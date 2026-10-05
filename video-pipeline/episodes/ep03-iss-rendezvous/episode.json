@@ -4,6 +4,12 @@
   "series": "How It Actually Works",
   "audience": "curious_adult",
   "status": "rendered",
+  "waivers": [
+    {
+      "rule": "min_clip_scenes",
+      "reason": "Mechanism-diagram episode (orbit/number/compare scenes); no live-action footage is needed. Rendered before the clip rule was added (owner requirement 2026-10-05)."
+    }
+  ],
   "topic_area": "technology",
   "format_id": "why_is_x",
   "format": {

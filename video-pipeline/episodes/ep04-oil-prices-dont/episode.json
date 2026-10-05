@@ -1,0 +1,272 @@
+{
+  "id": "ep04-oil-prices-dont",
+  "title": "Why Oil Prices Don't Always Crash in Chaos",
+  "series": "Big Questions, Tiny Words",
+  "format_id": "news_explainer",
+  "topic_area": "economics",
+  "audience": "kids",
+  "one_idea": "OPEC actively regulates the global oil supply like a thermostat to keep prices stable during political conflict.",
+  "audience_misconception": "People think oil prices react purely to news headlines, not realizing a central cartel actively regulates supply to counter panic.",
+  "structure": "ABT",
+  "analogy": {
+    "source_term": "OPEC acts like a home thermostat, adjusting the flow of oil to keep global prices stable.",
+    "domain": "playground",
+    "mapping": [
+      [
+        "OPEC",
+        "Barnaby the beaver"
+      ],
+      [
+        "oil flow",
+        "juice flow"
+      ],
+      [
+        "global prices",
+        "juice prices"
+      ]
+    ],
+    "limitation": "Unlike real oil, Barnaby's juice doesn't take millions of years to make.",
+    "true_term_reveal_beat": "s7"
+  },
+  "claims": [
+    {
+      "claim": "OPEC and its allies decided to keep oil output steady on October 4, 2026, despite escalating Middle East tensions.",
+      "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOYmFlX3pxTllubHhKWkgycEVOdlZ3c2F3TzA5OUU4RmFmWmQ2dWlaY3B1TlFfek85dHhZakt3aFJHZjlEUEJ2Zk9MVldfeTdUVkxoUzN1MU9wUWlUdGhFd3M4T3dNamMxbGprT1A3R3g4UGI0Q2RyU3hrczI0WExYWlpNa3N4RjlNRzFGN0U5d1NPN3p4VlN2R2MzRkc4WXlyV3Z4Z21ZZHVtY3FzYmc?oc=5",
+      "verified": true
+    }
+  ],
+  "sponsor": null,
+  "disclosure": null,
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Maya, a woman in her late 20s, shoulder-length black hair, mustard-yellow jacket, warm brown skin, expressive face",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "barnaby": "Barnaby, a friendly round brown beaver wearing a tiny blue helper's hat",
+      "kids": "happy little animal kids: a bunny in a red shirt and a squirrel with a tiny green backpack"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "Why do oil prices stay steady even when the world gets messy?",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] A close-up of a toy globe spinning on a wooden classroom desk, surrounded by messy toy blocks, warm soft lighting."
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "one_line_context",
+      "narration": "A big club of countries regulates the global oil flow.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Pan right] A group of cute cartoon animal leaders sitting around a circular wooden table in a cozy treehouse, looking at a colorful map on the table, warm friendly atmosphere."
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "one_line_context",
+      "narration": "They kept output steady on October fourth, twenty twenty-six.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Zoom out] A group of cute cartoon animal leaders smiling and shaking hands inside a cozy wooden treehouse room, warm lighting."
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "stakes",
+      "narration": "Imagine a playground juice pump. Barnaby the beaver turns the dial.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{barnaby} stands proudly next to a giant wooden juice dispenser on a green grassy playground, looking at the camera with a warm smile, vertical 9:16 composition, absolutely no text, no letters, no numbers"
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "stakes",
+      "narration": "When kids run wild, Barnaby adjusts the flow. This keeps the juice prices stable.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{barnaby} gently turns a round wooden dial on the juice dispenser, while {kids} play happily in the background under sunny skies, vertical 9:16 composition, absolutely no text, no letters, no numbers"
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "stakes",
+      "narration": "But Barnaby cannot make juice from thin air.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{barnaby} looks in surprise at an empty wooden bucket next to the juice dispenser, scratching his head, soft warm lighting, vertical 9:16 composition, absolutely no text, no letters, no numbers"
+      }
+    },
+    {
+      "id": "s7",
+      "beat": "stakes",
+      "narration": "Grown-ups call this real pump OPEC.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A close-up of {barnaby} smiling happily while holding a small wooden cup of sweet juice, bright cheerful background, vertical 9:16 composition, absolutely no text, no letters, no numbers",
+        "term": {
+          "label": "OPEC",
+          "sub": "The big oil club",
+          "color": "sky"
+        }
+      }
+    },
+    {
+      "id": "s8",
+      "beat": "cta",
+      "narration": "Ask a grown-up how they keep our fuel prices safe! Share this with a friend.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{barnaby} and {kids} waving happily at the camera together on the sunny playground, colorful flowers, bright celebratory mood, vertical 9:16 composition, absolutely no text, no letters, no numbers"
+      }
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s1",
+      "h": "Why do oil prices stay steady?",
+      "body": "Even when the world gets messy",
+      "tag": "BIG QUESTIONS",
+      "tagColor": "grape"
+    },
+    {
+      "image": "s4",
+      "h": "Imagine a playground juice pump.",
+      "body": "Barnaby the beaver controls the flow."
+    },
+    {
+      "image": "s5",
+      "h": "When kids run wild, Barnaby adjusts.",
+      "body": "This keeps the juice prices stable."
+    },
+    {
+      "image": "s7",
+      "h": "Grown-ups call this OPEC.",
+      "tag": "OPEC",
+      "tagColor": "sky",
+      "body": "The big oil club"
+    },
+    {
+      "image": "s8",
+      "h": "Ask a grown-up!",
+      "body": "Share this with a friend.",
+      "tag": "SHARE",
+      "tagColor": "mint"
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "why oil prices stay steady",
+    "title": "Why Oil Prices Don't Always Crash in Chaos",
+    "title_options": [
+      "Why Oil Prices Don't Always Crash in Chaos",
+      "The Playground Pump: How OPEC Controls Oil Prices",
+      "Why Oil Prices Stay Steady When the World is Messy"
+    ],
+    "title_rationale": "Focuses on the core curiosity gap using simple words suitable for kids and curious adults, avoiding dry financial jargon.",
+    "description": "How does a giant playground juice pump explain global oil prices? Learn how OPEC acts like a thermostat to keep things steady even when the world gets messy.\n\nSource: Wall Street Journal (OPEC Allies Hold Oil Output Steady, Oct 4, 2026).\n\n#Shorts #OPEC #oilprices #explainlikeimfive",
+    "tags": [
+      "oil prices explained",
+      "what is opec",
+      "economics for kids",
+      "why oil prices stay steady"
+    ],
+    "instagram_caption": "Why do oil prices stay steady when the world gets messy? 🌍 Think of a giant playground juice pump! Learn how OPEC acts like a thermostat to keep things stable.\n\nShare this with a friend who loves big questions!\n\n#economics #explainlikeimfive #opec #moneybasics #kidslearning",
+    "thumbnail": {
+      "text": "The Oil Pump"
+    }
+  },
+  "mechanism": [
+    {
+      "step": "OPEC decides the rate of oil production globally.",
+      "scene": "s2",
+      "source": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOYmFlX3pxTllubHhKWkgycEVOdlZ3c2F3TzA5OUU4RmFmWmQ2dWlaY3B1TlFfek85dHhZakt3aFJHZjlEUEJ2Zk9MVldfeTdUVkxoUzN1MU9wUWlUdGhFd3M4T3dNamMxbGprT1A3R3g4UGI0Q2RyU3hrczI0WExYWlpNa3N4RjlNRzFGN0U5d1NPN3p4VlN2R2MzRkc4WXlyV3Z4Z21ZZHVtY3FzYmc?oc=5"
+    },
+    {
+      "step": "They keep output steady during geopolitical tensions to prevent price volatility.",
+      "scene": "s3",
+      "source": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOYmFlX3pxTllubHhKWkgycEVOdlZ3c2F3TzA5OUU4RmFmWmQ2dWlaY3B1TlFfek85dHhZakt3aFJHZjlEUEJ2Zk9MVldfeTdUVkxoUzN1MU9wUWlUdGhFd3M4T3dNamMxbGprT1A3R3g4UGI0Q2RyU3hrczI0WExYWlpNa3N4RjlNRzFGN0U5d1NPN3p4VlN2R2MzRkc4WXlyV3Z4Z21ZZHVtY3FzYmc?oc=5"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "OPEC",
+      "kind": "term",
+      "definition": "A big club of countries that regulates the oil flow to keep prices stable.",
+      "introduced_in": "s7",
+      "needed_in": [
+        "s7"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Why do oil prices stay steady even when the world gets messy?",
+      "raised_in": "s1",
+      "paid_in": "s7"
+    }
+  ],
+  "news_hook": {
+    "event": "OPEC and allies decided to keep oil output steady despite escalating Middle East tensions.",
+    "date": "2026-10-04",
+    "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxOYmFlX3pxTllubHhKWkgycEVOdlZ3c2F3TzA5OUU4RmFmWmQ2dWlaY3B1TlFfek85dHhZakt3aFJHZjlEUEJ2Zk9MVldfeTdUVkxoUzN1MU9wUWlUdGhFd3M4T3dNamMxbGprT1A3R3g4UGI0Q2RyU3hrczI0WExYWlpNa3N4RjlNRzFGN0U5d1NPN3p4VlN2R2MzRkc4WXlyV3Z4Z21ZZHVtY3FzYmc?oc=5"
+  },
+  "original_contribution": "Using a friendly playground juice dispenser analogy to explain active supply control to young children.",
+  "publish": {
+    "youtube": {
+      "title": "Why Oil Prices Don't Always Crash in Chaos #Shorts",
+      "description": "How does a giant playground juice pump explain global oil prices? Learn how OPEC acts like a thermostat to keep things steady even when the world gets messy.\n\nSource: Wall Street Journal (OPEC Allies Hold Oil Output Steady, Oct 4, 2026).\n\n#Shorts #OPEC #oilprices #explainlikeimfive",
+      "tags": [
+        "oil prices explained",
+        "what is opec",
+        "economics for kids",
+        "why oil prices stay steady"
+      ]
+    },
+    "instagram": {
+      "caption": "Why do oil prices stay steady when the world gets messy? 🌍 Think of a giant playground juice pump! Learn how OPEC acts like a thermostat to keep things stable.\n\nShare this with a friend who loves big questions!\n\n#economics #explainlikeimfive #opec #moneybasics #kidslearning"
+    }
+  },
+  "posts": [
+    {
+      "platform": "youtube_shorts",
+      "scheduled": null
+    },
+    {
+      "platform": "instagram_reels",
+      "scheduled": null
+    },
+    {
+      "platform": "tiktok",
+      "scheduled": null
+    }
+  ],
+  "status": "scripted",
+  "topic": {
+    "headline": "Why oil prices don't always crash when the world is in chaos",
+    "angle": "Explain how OPEC acts like a giant home thermostat, adjusting the flow of oil to keep global prices stable even when political tensions flare up.",
+    "why_now": "OPEC and its allies decided to keep oil output steady despite escalating Middle East tensions on October 4, 2026.",
+    "source_urls": [
+      "https://news.google.com/rss/articles/CBMirgFBVV95cUxOYmFlX3pxTllubHhKWkgycEVOdlZ3c2F3TzA5OUU4RmFmWmQ2dWlaY3B1TlFfek85dHhZakt3aFJHZjlEUEJ2Zk9MVldfeTdUVkxoUzN1MU9wUWlUdGhFd3M4T3dNamMxbGprT1A3R3g4UGI0Q2RyU3hrczI0WExYWlpNa3N4RjlNRzFGN0U5d1NPN3p4VlN2R2MzRkc4WXlyV3Z4Z21ZZHVtY3FzYmc?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-04T22:11:53Z"
+}

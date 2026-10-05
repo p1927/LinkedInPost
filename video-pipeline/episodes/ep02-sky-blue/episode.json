@@ -2,7 +2,7 @@
   "id": "ep02-sky-blue",
   "title": "Why is the sky blue? (it's not the ocean)",
   "series": "Big Questions, Tiny Words",
-  "status": "rendered",
+  "status": "scripted",
   "topic_area": "science",
   "format_id": "myth_busting",
   "format": {
@@ -18,11 +18,11 @@
   },
   "analogy": {
     "domain": "playground / bouncy balls",
-    "mapping": {
-      "sunlight colors": "rainbow bouncy balls",
-      "air molecules": "playground bumpers",
-      "scattering": "bouncing"
-    },
+    "mapping": [
+      ["sunlight colors", "rainbow bouncy balls"],
+      ["air molecules", "playground bumpers"],
+      ["scattering", "bouncing"]
+    ],
     "limitation": "Light is not really a ball; it is a wave, and blue waves are shorter.",
     "true_term_beat": "s5"
   },
@@ -207,6 +207,6 @@
       "tagColor": "mint"
     }
   ],
-  "updated_at": "2026-10-04T21:27:24Z",
+  "updated_at": "2026-10-04T22:24:48Z",
   "notes": "needs_rework: see docs/plans/youtube-automation/GAPS-AND-IMPROVEMENT-PLAN.md (open loop, analogy mismaps physics, slideshow look). Do not post."
 }

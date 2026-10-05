@@ -4,4 +4,14 @@
 |---|---|---|---|---|---|
 | ep01-interest-rates | Why banks raise interest rates to fight inflation | rendered | eli5_story | Economics, explained simply | - |
 | ep01-interest-rates-v2 | Why do prices go up? (explained like you're 5) | posted | eli5_story | Big Questions, Tiny Words | [youtube](https://youtube.com/shorts/DdE0emxvE-g), [instagram](https://www.instagram.com/reel/DeFofksgkDO/) |
-| ep02-sky-blue | Why is the sky blue? (it's not the ocean) | rendered | myth_busting | Big Questions, Tiny Words | - |
+| ep02-sky-blue | Why is the sky blue? (it's not the ocean) | scripted | myth_busting | Big Questions, Tiny Words | - |
+| ep03-iss-rendezvous | How Crew-13 reached the space station in under 8 hours | rendered | why_is_x | How It Actually Works | - |
+| ep04-oil-prices-dont | Why Oil Prices Don't Always Crash in Chaos | scripted | news_explainer | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
+| ep05-high-bond-yields | Why Safe Bonds Make the Stock Market Sweat | scripted | history_timeline | Big Questions, Tiny Words | - |
+| ep06-banks-survive-financial | What is a Bank 'Stress Test'? (Not what you think!) | scripted | food_science | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
+| ep07-digital-dollars-fed | Why digital dollars need a real bank safe | scripted | why_is_x | Big Questions, Tiny Words | - |
+| ep08-stablecoins-gift-card | How a stablecoin actually keeps its dollar value (most of the time) | scripted | versus | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
+| ep09-unemployment-rate-actually | What the unemployment rate actually measures | scripted | eli5_story | Big Questions, Tiny Words | - |
+| ep14-crew13-reached-space | Why you can't just speed up to catch the space station | scripted | news_explainer | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
+| ep15-crew13-reached-space | The counterintuitive way spacecraft catch the space station | scripted | why_is_x | Big Questions, Tiny Words | youtube_shorts, instagram_reels, tiktok |
+| ep16-leaves-change-color | Why Do Leaves Change Color in Autumn? | scripted | what_if | Big Questions, Tiny Words | - |

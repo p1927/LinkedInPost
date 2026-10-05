@@ -1,0 +1,314 @@
+{
+  "id": "ep08-stablecoins-gift-card",
+  "title": "How a stablecoin actually keeps its dollar value (most of the time)",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "format_id": "versus",
+  "topic_area": "economics",
+  "audience": "curious_adult",
+  "one_idea": "A stablecoin is a prepaid digital contract — you pay dollars upfront and the issuer holds assets in reserve, but unlike a prepaid contract, reserves may be fractional, the peg can break, and redemption is not guaranteed.",
+  "analogy": {
+    "source_term": "stablecoin = prepaid contract (one-beat metaphor only, then walked back)",
+    "domain": "prepaid_contract",
+    "mapping": [
+      [
+        "you pay money upfront to the issuer",
+        "you pay money upfront to a vendor"
+      ],
+      [
+        "you receive a digital token redeemable for $1",
+        "you receive a prepaid voucher or stored balance"
+      ]
+    ],
+    "limitation": "Unlike a prepaid contract, a stablecoin's reserves may be fractional, the peg can break, and redemption is not guaranteed.",
+    "true_term_reveal_beat": "s5"
+  },
+  "audience_misconception": "Most viewers think stablecoins hold a guaranteed $1 value like a bank account, but the peg depends on market trust and reserves may be incomplete.",
+  "structure": "ABT",
+  "claims": [
+    {
+      "claim": "The Federal Reserve opened a public comment period on a regulatory framework for stablecoin issuers under the GENIUS Act in September 2026",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm",
+      "verified": true
+    },
+    {
+      "claim": "The Fed framework requires stablecoin issuers to fully back tokens with permissible assets",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm",
+      "verified": true
+    }
+  ],
+  "sponsor": null,
+  "disclosure": null,
+  "posts": [
+    {
+      "platform": "youtube_shorts",
+      "scheduled": null
+    },
+    {
+      "platform": "instagram_reels",
+      "scheduled": null
+    },
+    {
+      "platform": "tiktok",
+      "scheduled": null
+    }
+  ],
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "realistic flat editorial style, objects devices and places as the cast, geometric shapes, no cartoon animals",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "prepaid_contract": "a realistic prepaid contract document on a matte surface, geometric design, teal and amber accents, flat editorial style",
+      "phone_token": "a modern smartphone screen showing a glowing digital token symbol, clean minimal device design, flat editorial style",
+      "side_by_side": "a prepaid contract document beside a smartphone displaying a token, geometric composition, isometric flat style",
+      "vault_balance": "a glass-sided geometric vault containing neat stacks of dollar bills, small golden coins scattered at the vault base, warm amber light glowing through the glass walls, deep navy and teal tones, clean isometric flat style, spacious composition, soft long shadows",
+      "vault_partial": "a glass-sided geometric vault partially filled with stacks of dollar bills, some empty shelf space visible, warm amber light glowing through the glass walls, deep navy and teal tones, clean isometric flat style, spacious composition, soft long shadows",
+      "transfer_phone": "a smartphone with a glowing token visible on screen, floating geometric token shapes around it, flat editorial style",
+      "fed_building": "a grand federal building facade, geometric architectural shapes, deep navy and teal tones, flat editorial style",
+      "broken_peg": "a glowing token symbol beside a cracked or tilted dollar sign, warm amber glow fading to gray on one side, deep navy and teal tones, flat editorial style, clean minimal composition"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "What if your dollars lived inside a digital contract? That is a stablecoin.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "A close-up of a realistic prepaid contract document on the left and a smartphone displaying a glowing digital token symbol on the right, geometric flat editorial style, deep navy and teal tones, clean matte surface, soft long shadows, vertical 9:16 composition",
+        "motion_prompt": "[Push in] The prepaid contract and phone slide slowly into frame together, the token symbol gently pulsing with a warm amber glow, soft camera movement, cinematic mood"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "analogy",
+      "narration": "Think of a prepaid contract. You pay fifty dollars and get a token worth fifty. A stablecoin does the same thing, but with one dollar.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A prepaid contract document on the left beside a smartphone displaying a glowing token symbol on the right, both centered on a clean matte surface, geometric flat editorial style, deep navy teal tones, isometric composition, generous negative space"
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "criterion_1",
+      "narration": "Here is where the analogy breaks. A prepaid contract holds your money until you spend it. A stablecoin issuer should hold assets equal to every token. Many hold only a fraction — some in risky assets.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A glass-sided geometric vault partially filled with stacks of dollar bills, some empty shelf space visible, warm amber light glowing through the glass walls, deep navy and teal tones, clean isometric flat style, spacious composition, soft long shadows",
+        "term": {
+          "label": "RESERVE BACKING",
+          "sub": "assets equal to tokens in circulation, made of permissible assets",
+          "color": "sky"
+        }
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "criterion_2",
+      "narration": "Both systems move value on a ledger. When you transfer, the company updates its books. Stablecoins do the same. The Fed wants standards for that ledger.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Two smartphones side by side on a clean matte surface, a glowing token symbol floating between them mid-transfer, soft amber light trails, geometric flat editorial style, deep navy and teal tones, soft long shadows, vertical 9:16 composition",
+        "motion_prompt": "[Push in] A glowing token symbol floats gently from the left phone screen to the right phone screen, soft amber light trails follow the transfer, subtle camera push toward the receiving phone, clean cinematic movement"
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "A stablecoin is a prepaid dollar contract, in one way. You pay a dollar, you get a token. But the token may not always be worth one dollar. The peg depends on market trust. Redemption is not guaranteed. The Fed is writing rules to fix that.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "A clean glowing digital token symbol centered with a subtle geometric ring around it, soft warm amber glow, deep navy and teal tones, flat editorial style, minimal composition, soft ambient glow, vertical 9:16 composition",
+        "motion_prompt": "[Pull out] The geometric vault door opens partially, warm amber light spills out alongside darker shadows, a glowing token symbol floats forward with a slight wobble, the dollar sign beside it tilts subtly, soft cinematic camera drift",
+        "term": {
+          "label": "STABLECOIN",
+          "sub": "a digital token designed to stay worth $1",
+          "color": "mint"
+        }
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "verdict_cta",
+      "narration": "A stablecoin borrows the prepaid contract idea: pay upfront, move on a ledger. But the peg can break. Reserves may be fractional. Redemption is not guaranteed. The Fed is writing rules to fix that. Send this to anyone who thinks all crypto is magic internet money.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A glowing digital token symbol beside a geometric prepaid contract document with a dollar sign, warm amber glow and teal accents on a clean navy background, flat editorial style, minimal and spacious, soft shadow"
+      }
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s2",
+      "h": "A prepaid contract locks in a rate. A stablecoin does too. Mostly.",
+      "tag": "STABLECOIN",
+      "tagColor": "sky"
+    },
+    {
+      "image": "s3",
+      "h": "Your dollars are backed by reserves equal to every token in circulation. In theory.",
+      "tag": "RESERVE BACKING",
+      "tagColor": "sky",
+      "body": "How stablecoins hold their value (most of the time)"
+    },
+    {
+      "image": "s4",
+      "h": "Tokens transfer without new money moving. The Fed wants standards for that."
+    },
+    {
+      "image": "s5",
+      "h": "A prepaid dollar contract. But the peg can break.",
+      "tag": "PEG",
+      "tagColor": "coral"
+    },
+    {
+      "image": "s6",
+      "h": "Send this to anyone who thinks all crypto is magic internet money.",
+      "body": "A stablecoin borrows the prepaid contract idea — but with real-world risks.",
+      "tag": "SAVE THIS",
+      "tagColor": "mint"
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "how stablecoins work",
+    "title": "How a stablecoin actually keeps its dollar value (most of the time)",
+    "title_options": [
+      "How a stablecoin actually keeps its dollar value (most of the time)",
+      "A prepaid contract locked to a dollar. That's a stablecoin. Mostly.",
+      "The Fed is regulating 'prepaid dollar contracts.' Here's why they can fail.",
+      "What happens when a stablecoin loses its peg",
+      "Stablecoins explained: prepaid contract with real risks"
+    ],
+    "title_rationale": "Leads with the concrete prepaid contract idea but adds the critical qualifier that sets this apart from misleading analogies",
+    "description": "A stablecoin is a prepaid digital contract that holds your dollars at approximately one dollar. Think of it like a prepaid contract — you pay upfront, the issuer holds reserves, you get a token. But unlike a prepaid contract, the peg can break, reserves may be fractional, and redemption is not guaranteed. The Fed just opened public comment on rules for who gets to issue them.\n\nSources: Federal Reserve press release, September 2026 — https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm\n\n#Shorts #stablecoins #crypto #federalreserve #money #economics",
+    "tags": [
+      "how stablecoins work",
+      "stablecoin explained",
+      "what is a stablecoin",
+      "federal reserve stablecoin regulation",
+      "GENIUS Act stablecoins",
+      "crypto basics",
+      "dollar stablecoin"
+    ],
+    "instagram_caption": "A prepaid contract locked to a dollar value. That's a stablecoin — mostly. I explain where the analogy breaks and why the Fed is now writing rules.\nSave this for the next time stablecoins are in the news.\n\nSources: Federal Reserve press release, September 2026 — https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm\n#stablecoins #crypto #federalreserve #money #economics #finance",
+    "thumbnail": {
+      "text": "PREPAID ≠ GUARANTEED"
+    }
+  },
+  "mechanism": [
+    {
+      "step": "1",
+      "scene": "s2",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    },
+    {
+      "step": "2",
+      "scene": "s3",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    },
+    {
+      "step": "3",
+      "scene": "s4",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    },
+    {
+      "step": "4",
+      "scene": "s5",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "stablecoin",
+      "kind": "term",
+      "definition": "a cryptocurrency designed to maintain an approximately $1 price by holding dollar-equivalent assets in reserve, though reserves may be fractional and the peg is market-dependent rather than guaranteed",
+      "introduced_in": "s1",
+      "needed_in": [
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "name": "reserve backing",
+      "kind": "term",
+      "definition": "permissible assets held by the stablecoin issuer meant to equal the value of tokens in circulation, though many stablecoins hold only fractional reserves",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s4",
+        "s5"
+      ]
+    },
+    {
+      "name": "prepaid contract",
+      "kind": "idea",
+      "definition": "money paid upfront that guarantees a fixed rate or service; the funds sit in reserve until the contract is fulfilled",
+      "introduced_in": "s2",
+      "needed_in": [
+        "s3",
+        "s4",
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "name": "peg",
+      "kind": "idea",
+      "definition": "the target exchange rate of a stablecoin to the dollar; maintained by market trust and reserve quality rather than guaranteed contract",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "What is a stablecoin and how does it try to stay worth one dollar?",
+      "raised_in": "s1",
+      "paid_in": "s5"
+    },
+    {
+      "question": "Where does the prepaid contract analogy break down for stablecoins?",
+      "raised_in": "s2",
+      "paid_in": "s3"
+    },
+    {
+      "question": "Why is the Federal Reserve writing rules for stablecoin issuers?",
+      "raised_in": "s4",
+      "paid_in": "s5"
+    }
+  ],
+  "news_hook": {
+    "event": "The Federal Reserve opened a public comment period on a regulatory framework for stablecoin issuers under the GENIUS Act",
+    "date": "2026-09-24",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+  },
+  "original_contribution": "Explains stablecoins through the prepaid contract metaphor as one beat only, then shows exactly where the analogy misleads: fractional reserves, peg instability, and no guaranteed redemption — connecting these real risks to the Fed's new framework.",
+  "director_notes": "Format chosen: versus — reason: comparing prepaid contracts to stablecoins maps onto the vs structure, but the key revelation is where the analogy fails.\nAnalogy approach: prepaid contract used as ONE-BEAT metaphor in s2 only; limitation spoken in s3 and reinforced in s5 and s6.\nFix applied: removed the STABLECOIN visual term from s2 (it was the first illustration scene and the analogy beat, which violates term_after_picture). Moved the STABLECOIN on-screen term reveal to s5 (beat: term), with keyframe reframed to a clean token so the label matches the visual. PEG demoted from term to idea (still explained in narration and shown by the tilted dollar in the s5 motion) to stay within the audience's 3-term jargon budget (RESERVE BACKING + STABLECOIN = 2 visual terms).\nOpen loops: [What is a stablecoin opened at s1; paid at s5 / Where does the analogy break opened at s2; paid at s3 / Why is the Fed writing rules opened at s4; paid at s5]\nUnresolved QA warnings: scene durations warn at 8s ceiling (audience scene_len_sec vs length_sec conflict; 6 scenes at 2.6 wps yields 72s, exceeding 8s/scene). Total sits comfortably inside the 25-90s error band.\nClaims to verify before approval: None — claims match exactly what the Fed press release supports. Fractional-reserve and peg-break risks are stated as general market conditions, not sourced claims.",
+  "topic": {
+    "headline": "Stablecoins: A Gift Card That's Pretending to Be a Dollar",
+    "angle": "Explain a stablecoin as a 'digital gift card locked to a dollar's value' — and why the Fed is now writing rules for who gets to print them",
+    "why_now": "The Fed just opened a public comment period on a regulatory framework for stablecoin issuers under the GENIUS Act",
+    "source_urls": [
+      "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    ]
+  },
+  "updated_at": "2026-10-05T00:31:31Z"
+}

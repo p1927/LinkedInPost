@@ -1,0 +1,303 @@
+{
+  "id": "ep05-high-bond-yields",
+  "title": "Why Safe Bonds Make the Stock Market Sweat",
+  "series": "Big Questions, Tiny Words",
+  "audience": "curious_adult",
+  "format_id": "history_timeline",
+  "topic_area": "economics",
+  "one_idea": "Rising government bond yields draw investor cash away from risky stocks, causing stock prices to drop.",
+  "audience_misconception": "Many people assume stock prices only drop when companies are performing poorly, not realizing that safer, high-yielding alternatives can actively draw investors away.",
+  "structure": "ABT",
+  "analogy": {
+    "source_term": "Government bonds compete with stocks for investor cash.",
+    "domain": "cooking",
+    "mapping": [
+      [
+        "government bonds",
+        "boring canned soup"
+      ],
+      [
+        "stocks",
+        "risky soufflé"
+      ],
+      [
+        "bond yields",
+        "soup portion size"
+      ]
+    ],
+    "limitation": "Unlike real soup, bonds pay out in cash instead of calories.",
+    "true_term_reveal_beat": "s4a"
+  },
+  "mechanism": [
+    {
+      "step": "Stocks represent ownership in companies and carry market risk with potential for high returns.",
+      "scene": "s2b",
+      "source": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5"
+    },
+    {
+      "step": "Government bonds are debt securities backed by the government, offering guaranteed but historically lower returns.",
+      "scene": "s2c",
+      "source": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5"
+    },
+    {
+      "step": "When government bond yields rise, the guaranteed rate of return on safe assets increases.",
+      "scene": "s3b",
+      "source": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5"
+    },
+    {
+      "step": "Investors reallocate their capital from risky stocks to locked-in, high-yielding safe bonds, causing stock demand and prices to drop.",
+      "scene": "s4b",
+      "source": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5"
+    }
+  ],
+  "news_hook": {
+    "event": "Bloomberg reports soaring bond yields are raising risks for Wall Street's AI stock rally.",
+    "date": "2026-10-04",
+    "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5"
+  },
+  "original_contribution": "Explains the macroeconomic competition between bonds and stocks using a highly intuitive kitchen-based cooking analogy for the curious non-financial adult.",
+  "loops": [
+    {
+      "question": "Why does boring government debt make Wall Street sweat?",
+      "raised_in": "s1",
+      "paid_in": "s4a"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "Government Bond",
+      "kind": "term",
+      "definition": "A loan made by an investor to a government, which pays a fixed interest rate.",
+      "introduced_in": "s2a",
+      "needed_in": [
+        "s2b",
+        "s2c",
+        "s3b"
+      ]
+    },
+    {
+      "name": "Yield",
+      "kind": "term",
+      "definition": "The annual rate of return on an investment, expressed as a percentage.",
+      "introduced_in": "s4a",
+      "needed_in": [
+        "s4b",
+        "s5"
+      ]
+    }
+  ],
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "sponsor": null,
+  "disclosure": null,
+  "sources": [
+    {
+      "claim": "Soaring bond yields are raising risks for Wall Street's AI stock rally.",
+      "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "Soaring bond yields are raising risks for Wall Street's AI stock rally.",
+      "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5",
+      "verified": true
+    }
+  ],
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Maya, a woman in her late 20s, shoulder-length black hair, mustard-yellow jacket, warm brown skin, expressive face",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "chef": "Chef Pierre, a friendly round cartoon chef with a tall white hat and a French mustache",
+      "trader": "an anxious cartoon Wall Street trader in a dark blue suit with a red tie, looking stressed"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook_end_state",
+      "narration": "Why does boring government debt make Wall Street sweat?",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] {trader} looking at a wall of glowing red graphical lines on dark screens, soft cinematic lighting, shallow depth of field, no text"
+      }
+    },
+    {
+      "id": "s2a",
+      "beat": "analogy",
+      "narration": "Step back to 1917, when the government created Liberty Bonds, the ultimate safe financial recipe.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Tilt down] An old-fashioned wooden kitchen table with an open vintage cooking journal with blank empty pages, warm nostalgic lighting, no text",
+        "keyframe_prompt": "An old-fashioned wooden kitchen table with an open vintage cooking journal with blank empty pages, warm nostalgic lighting, no text"
+      }
+    },
+    {
+      "id": "s2b",
+      "beat": "analogy",
+      "narration": "Investing in stocks is like baking a risky soufflé; it might rise beautifully or collapse completely.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A cozy kitchen counter with a perfectly baked, tall, delicate chocolate soufflé on the left, warm soft gouache texture, bright cheerful colors, no text, no letters"
+      }
+    },
+    {
+      "id": "s2c",
+      "beat": "analogy",
+      "narration": "Bonds are like canned soup: boring, but guaranteed to feed you every single time.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A simple, sturdy unlabeled metal tin container on a rustic kitchen shelf, clean composition, warm sunny light, no text, no letters"
+      }
+    },
+    {
+      "id": "s3a",
+      "beat": "analogy",
+      "narration": "By early 2026, tech stocks were sizzling hot. Everyone ignored boring canned soup for rising soufflés.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Pan right] {chef} eagerly serving glowing golden soufflés to a crowd of happy guests, warm sunny light, rounded cute shapes, no text",
+        "keyframe_prompt": "{chef} serving glowing golden soufflés to a crowd of happy guests, warm sunny light, rounded cute shapes, no text"
+      }
+    },
+    {
+      "id": "s3b",
+      "beat": "analogy",
+      "narration": "But then, the government started offering a much higher return on those safe bond recipes.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A massive, shiny metal soup pot bubbling on a stove with sparkling gold coins floating inside, bright cheerful kitchen, no text, no letters"
+      }
+    },
+    {
+      "id": "s3c",
+      "beat": "analogy",
+      "narration": "Suddenly, that guaranteed canned soup started looking a lot more appetizing to big investors.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Tilt up] Guests turning their heads to look with wide curious eyes toward the bubbling soup pot, warm lighting, no text",
+        "keyframe_prompt": "Guests turning their heads to look with wide curious eyes toward the bubbling soup pot, warm lighting, no text"
+      }
+    },
+    {
+      "id": "s4a",
+      "beat": "term",
+      "narration": "On October fourth, 2026, treasury yields soared. When safe bonds pay high yields, risk looks foolish.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] A giant, shiny open unlabeled metal tin container pouring out a river of sparkling gold coins onto a clean table, warm cheerful colors, simple background, no text",
+        "keyframe_prompt": "A giant, shiny open unlabeled metal tin container pouring out a river of sparkling gold coins onto a clean table, warm cheerful colors, simple background, no text",
+        "term": {
+          "label": "BOND YIELD",
+          "sub": "guaranteed return on safe bonds",
+          "color": "sky"
+        }
+      }
+    },
+    {
+      "id": "s4b",
+      "beat": "story_payoff",
+      "narration": "Investors pull cash out of stocks to lock in guaranteed returns, draining the stock market’s fuel.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "The delicate soufflé slowly collapsing on its plate as investors walk away holding bowls of golden soup, soft dramatic lighting, no text, no letters"
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "callback_cta",
+      "narration": "That is why high yields make stocks sweat. Share this with a friend who wonders where market money goes!",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{chef} smiling warmly and waving happily at the viewer while holding a shiny gold coin, bright celebratory mood, sparkles, no text, no letters",
+        "term": {
+          "label": "SHARE THIS!",
+          "sub": "send to a curious friend",
+          "color": "mint"
+        }
+      }
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s5",
+      "h": "Why Safe Bonds Make Stocks Sweat",
+      "body": "Explained simply for curious adults",
+      "tag": "MARKET SECRETS",
+      "tagColor": "grape"
+    },
+    {
+      "image": "s2b",
+      "h": "Stocks are like a risky soufflé."
+    },
+    {
+      "image": "s2c",
+      "h": "Bonds are like guaranteed canned soup."
+    },
+    {
+      "image": "s3b",
+      "h": "When bond yields rise, soup gets better.",
+      "tag": "BOND YIELDS",
+      "tagColor": "sky"
+    },
+    {
+      "image": "s4b",
+      "h": "Investors flee stocks for safety.",
+      "tag": "THE COLLAPSE",
+      "tagColor": "coral"
+    },
+    {
+      "image": "s5",
+      "h": "Now you know!",
+      "body": "Follow for more clear financial insights.",
+      "tag": "SAVE THIS",
+      "tagColor": "mint"
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "why high bond yields hurt stocks",
+    "title": "Why Safe Bonds Make the Stock Market Sweat",
+    "title_options": [
+      "Why Safe Bonds Make the Stock Market Sweat",
+      "Why High Bond Yields Hurt Stocks",
+      "Why Wall Street Fears Government Bonds",
+      "The Cooking Secret Behind the Stock Market Drop"
+    ],
+    "title_rationale": "Uses the primary concept of bonds competing with stocks, keeps it highly visual with 'sweat', and avoids dry jargon.",
+    "description": "Wall Street's tech party is sweating, and the culprit is boring government bonds. Here is how bonds and stocks compete for your cash using a simple cooking analogy.\n\nSource: https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5\n\n#Shorts #finance #economics #stocks #investing",
+    "tags": [
+      "bond yields",
+      "stock market crash",
+      "why stocks are dropping",
+      "investing basics",
+      "economics explained"
+    ],
+    "instagram_caption": "Why does a boring government bond make Wall Street sweat? 📈 Here is the simple cooking analogy explaining how bonds and stocks fight for your cash.\n\nSave this to understand the next market drop!\n\n#investing #stocks #bonds #economics #finance101",
+    "thumbnail": {
+      "text": "Bonds vs Stocks"
+    }
+  },
+  "status": "scripted",
+  "topic": {
+    "headline": "Why High Bond Yields Make the Stock Market Sweat",
+    "angle": "Explain how government bonds and stocks compete for investor money using a theme park analogy.",
+    "why_now": "A Bloomberg report on October 4, 2026, highlighted how soaring bond yields are raising risks for Wall Street's AI stock rally.",
+    "source_urls": [
+      "https://news.google.com/rss/articles/CBMitAFBVV95cUxNbzQxSFhvb0lYekZDUDA4UlhCc2lJdDZNWFNUV0pVMTVXSW5QX2NQSXc4M01wc25mRlY0dDNuU21Kb1ZaVVJoWDRPUUJsbjk0NnAwd2duc2ZTZ1Y2cU5udUlHMEtGSkZ6QjdRZkRHWmNWTGNXa2VvdXhROFhVb1QtQmhKMUwzMXdsLTRwWXhDdHdYUm4xOUlvelJtWTA5blQwdS1JdEh3aHI2ZmdtWG9WWE1lSHY?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-04T22:16:33Z"
+}

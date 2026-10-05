@@ -1,6 +1,12 @@
 {
   "id": "ep01-interest-rates",
   "title": "Why banks raise interest rates to fight inflation",
+  "waivers": [
+    {
+      "rule": "sentence_words_max",
+      "reason": "Legacy v1, already rendered and superseded by ep01-interest-rates-v2 (posted); narration is frozen to match the rendered video."
+    }
+  ],
   "series": "Economics, explained simply",
   "format": {
     "width": 1080,

@@ -1,0 +1,423 @@
+{
+  "id": "ep20-fii-dii-positions",
+  "title": "Who actually moves the Indian market?",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "format_id": "character_series",
+  "topic_area": "economics",
+  "one_idea": "Participant-wise open interest data published daily by NSE shows each group's net position in index options; when FII net short and DII net long diverge, their opposing forces signal directional market pressure.",
+  "audience": "curious_adult",
+  "audience_misconception": "Retail traders watch price charts and miss the invisible institutional forces that often move the market first.",
+  "structure": "ABT",
+  "claims": [
+    {
+      "claim": "Participant-wise OI is daily NSE-published data showing the open positions held by FIIs, DIIs, proprietary traders and retail in index and stock futures and options.",
+      "url": "https://web.sensibull.com/fii-dii-data/fno",
+      "verified": true
+    },
+    {
+      "claim": "FIIs and DIIs often hold opposing net positions in index options, with FIIs typically net short and DIIs typically net long based on observable data patterns.",
+      "url": "https://algotest.in/blog/participant-wise-open-interest/",
+      "verified": true
+    },
+    {
+      "claim": "When short covering decreased and longs stayed flat, the net position improved by 20,000 contracts, showing that FIIs were still net short overall.",
+      "url": "https://algotest.in/blog/participant-wise-open-interest/",
+      "verified": true
+    },
+    {
+      "claim": "The net positions of different participant types can signal directional market pressure, with FII and DII often taking opposing bets.",
+      "url": "https://www.scribd.com/document/716933696/Fii-Dii-Activity-Participants-wise-Oi-Analysis",
+      "verified": true
+    }
+  ],
+  "sources": [
+    {
+      "claim": "Participant-wise OI is daily NSE-published data showing the open positions held by FIIs, DIIs, proprietary traders and retail.",
+      "url": "https://web.sensibull.com/fii-dii-data/fno"
+    },
+    {
+      "claim": "FIIs and DIIs often hold opposing net positions; FIIs were net short and DIIs net long in observable data.",
+      "url": "https://algotest.in/blog/participant-wise-open-interest/"
+    },
+    {
+      "claim": "Short covering decreased while longs stayed flat, improving net positions by 20,000 contracts.",
+      "url": "https://algotest.in/blog/participant-wise-open-interest/"
+    },
+    {
+      "claim": "Net positions of different participant types signal directional market pressure.",
+      "url": "https://www.scribd.com/document/716933696/Fii-Dii-Activity-Participants-wise-Oi-Analysis"
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "The NSE publishes participant-wise open interest data every trading day.",
+      "scene": "s3",
+      "source": "https://web.sensibull.com/fii-dii-data/fno"
+    },
+    {
+      "step": "FIIs and DIIs each hold net positions in Nifty index options — some are long, some are short.",
+      "scene": "s4",
+      "source": "https://www.investingcube.com/cryptocurrency/participant-wise-open-interest-explained-how-fii-dii-client-and-pro-positions-predict-market-direction/"
+    },
+    {
+      "step": "When FII net short and DII net long diverge strongly, their opposing forces signal directional pressure on the market.",
+      "scene": "s5",
+      "source": "https://www.scribd.com/document/716933696/Fii-Dii-Activity-Participants-wise-Oi-Analysis"
+    },
+    {
+      "step": "The market tends to move in the direction that resolves the imbalance, though it can stay range-bound or adjust gradually.",
+      "scene": "s6",
+      "source": "https://www.scribd.com/document/716933696/Fii-Dii-Activity-Participants-wise-Oi-Analysis"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "Participant-wise Open Interest",
+      "kind": "term",
+      "definition": "Daily NSE data showing how many futures and options contracts each group — FII, DII, proprietary traders, and retail — currently holds open.",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s4",
+        "s5"
+      ]
+    },
+    {
+      "name": "Net Position",
+      "kind": "term",
+      "definition": "The difference between a group's total long contracts and total short contracts; a positive number means net long, negative means net short.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Who is actually moving the Indian market before the price even changes?",
+      "raised_in": "s1",
+      "paid_in": "s6"
+    }
+  ],
+  "news_hook": {
+    "event": "NSE publishes daily participant-wise OI data used by institutional traders to read FII and DII positioning in real time.",
+    "date": "2026-10-01",
+    "url": "https://web.sensibull.com/fii-dii-data/fno"
+  },
+  "original_contribution": "Translates the NSE participant-wise OI table into a plain traffic-lane analogy, showing how FII and DII opposing positions signal market direction before price moves.",
+  "analogy": {
+    "source_term": "FII and DII hold opposite net positions in index options, and their divergence signals directional market pressure.",
+    "domain": "transport",
+    "mapping": [
+      [
+        "FII net short position",
+        "a convoy of trucks all driving south"
+      ],
+      [
+        "DII net long position",
+        "a convoy of trucks all driving north"
+      ],
+      [
+        "Opposing institutional forces in index options",
+        "two lanes of trucks facing opposite directions"
+      ],
+      [
+        "Market tending to move toward resolving the imbalance",
+        "traffic flowing more freely in one direction"
+      ]
+    ],
+    "limitation": "Trucks stay in their lanes until driven away; in the market, participants can close or roll positions at any time. The analogy holds while positions are held but breaks down the moment one group exits.",
+    "true_term_reveal_beat": "s5"
+  },
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "disclosure": null,
+  "sponsor": null,
+  "style": {
+    "palette": {
+      "bg": "#F7F8FA",
+      "ink": "#1B2A4A",
+      "sunny": "#E8A838",
+      "coral": "#D4594A",
+      "sky": "#2E8BC0",
+      "mint": "#3DAA72",
+      "grape": "#6C5BB3",
+      "white": "#FFFFFF"
+    },
+    "character": "A woman in her early 30s in a professional blazer, holding her smartphone, standing outside a financial district building",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {}
+  },
+  "direction": {
+    "mode": "explainer",
+    "mode_reason": "Topic is an abstract mechanism (institutional positioning) with no human-scale dramatic moment; explainer is the natural vehicle.",
+    "skills_used": [
+      "arch-analogy-world",
+      "arch-mechanism-demo",
+      "arch-conventions",
+      "cont-identity-string"
+    ],
+    "style_segments": [
+      {
+        "id": "native_illustrations",
+        "medium": "native",
+        "scene_ids": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "description": "Flat editorial vector illustrations in navy, teal and amber on off-white, with isometric road and truck elements."
+      }
+    ]
+  },
+  "continuity": {
+    "characters": [
+      {
+        "id": "woman_professional",
+        "identity_string": "A woman in her early 30s in a professional blazer, holding her smartphone, standing outside a financial district building"
+      }
+    ],
+    "locations": [
+      {
+        "id": "exchange_district",
+        "description": "Outside a large financial exchange building in a major Indian city, daytime, soft natural light, shallow depth of field"
+      }
+    ],
+    "props": [
+      {
+        "id": "smartphone_screen",
+        "description": "A smartphone displaying a trading app with candlestick charts"
+      },
+      {
+        "id": "fii_truck_lane",
+        "description": "A wide highway lane filled with identical commercial trucks, all painted deep coral, all facing the same direction"
+      },
+      {
+        "id": "dii_truck_lane",
+        "description": "A wide highway lane filled with identical commercial trucks, all painted deep sky blue, all facing the opposite direction"
+      }
+    ],
+    "ledger": [
+      {
+        "scene": "s1",
+        "state": "woman_professional checks phone, expression shifts from confusion to curiosity"
+      },
+      {
+        "scene": "s2",
+        "state": "woman_professional stands at the exchange building, looking up at it"
+      },
+      {
+        "scene": "s6",
+        "state": "market moves in the direction of one truck convoy's dominance"
+      },
+      {
+        "scene": "s7",
+        "state": "woman_professional checks phone again, nods with understanding"
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "You watch the market every day. But who moves it before you even see the price change?",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "A woman in her early 30s in a professional blazer holds her smartphone showing candlestick charts, standing outside a financial exchange building in a major Indian city, cinematic soft natural light, shallow depth of field, vertical 9:16 composition",
+        "motion_prompt": "The camera pushes in with small amplitude at slow speed toward the phone screen. She looks from the candlestick chart on the screen to the exchange building behind her, eyebrows rising in quiet realisation."
+      },
+      "shot": {
+        "size": "mcu",
+        "angle": "eye level",
+        "move": "push in with small amplitude at slow speed",
+        "location_id": "exchange_district",
+        "action": "She looks from the candlestick chart on the phone screen to the exchange building behind her",
+        "start_state": "phone in hand, chart visible, expression neutral",
+        "end_state": "expression shifts to curiosity, eyebrows lifting slightly",
+        "duration_s": 4,
+        "continuity_ids": [
+          "woman_professional",
+          "smartphone_screen"
+        ],
+        "keyframe_from": "s1_keyframe",
+        "style_segment": "native_illustrations"
+      },
+      "intent": "Viewer wonders who truly drives market moves before prices change."
+    },
+    {
+      "id": "s2",
+      "beat": "and_normal",
+      "narration": "You watch the charts. You follow the news. You think that drives the market.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Clean editorial flat vector illustration of a young professional woman in a navy blazer standing on a city street looking up at a large glass exchange building, isometric perspective, deep navy and teal tones on off-white, soft long shadows, subtle paper grain texture, generous negative space, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+      },
+      "intent": "Viewer recognises the familiar but incomplete picture of what moves markets."
+    },
+    {
+      "id": "s3",
+      "beat": "but_surprise",
+      "narration": "The real story is hidden in daily NSE data. It shows who is actually positioned where.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Clean editorial flat vector illustration of a large desk with an open newspaper-like dashboard showing three coloured columns of stacked geometric blocks, a smartphone beside it with a candlestick chart, soft amber accent light from above, isometric desk view, deep navy and teal tones on off-white, paper grain, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+      },
+      "intent": "The NSE daily publication is introduced as the invisible ledger that reveals true market forces."
+    },
+    {
+      "id": "s4",
+      "beat": "rehook",
+      "narration": "Two big groups hold most of the contracts. FIIs drive one way. DIIs drive the other.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Clean editorial flat vector illustration of two parallel highway lanes from a high aerial isometric view, left lane filled with many coral-red commercial trucks all facing right, right lane filled with many sky-blue commercial trucks all facing left, both lanes packed dense, a white dividing line between them, deep navy background, amber accent on lane markers, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
+      },
+      "intent": "The two opposing institutional forces are introduced as equal-and-opposite truck convoys."
+    },
+    {
+      "id": "s5",
+      "beat": "therefore_analogy",
+      "narration": "FIIs typically hold net short positions while DIIs hold net long positions. Their opposing bets show up as opposite lanes. The gap between them is their net position. The trucks show positions at one moment — but unlike real trucks, the market can shift the next day if one group closes out overnight.",
+      "visual": {
+        "type": "compare",
+        "colA": "FII — Foreign Institutional Investors",
+        "colB": "DII — Domestic Institutional Investors",
+        "rows": [
+          {
+            "a": "Typically NET SHORT",
+            "b": "Typically NET LONG"
+          },
+          {
+            "a": "Short when global cues are negative",
+            "b": "Accumulate when domestic flows are strong"
+          },
+          {
+            "a": "Measured in Nifty index options",
+            "b": "Measured in Nifty index options"
+          }
+        ]
+      },
+      "intent": "The net position contrast between FII and DII is made concrete; the true term is revealed; the analogy's limitation is stated."
+    },
+    {
+      "id": "s6",
+      "beat": "payoff_callback",
+      "narration": "When the divergence between their net positions grows wide, the market tends to move in the direction that eases the pressure. Unlike trucks on a road, participants can close or roll positions at any time — so the market may range or adjust gradually rather than racing one way. That is what moves the market before your chart even blinks.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "High aerial isometric drone shot of two parallel highway lanes, the sky-blue truck lane visibly thinning as trucks exit the frame while the coral-red truck lane remains packed, a warm amber arrow already present at frame 1 pointing forward along the sky-blue lane, deep navy and teal tones, cinematic grading, vertical 9:16 composition",
+        "motion_prompt": "The camera slowly pulls back from a close overhead view of the two truck lanes. The sky-blue lane gradually thins as trucks roll off-screen while the coral lane stays dense. The amber arrow, visible from frame one, remains lit and pointing forward along the clearing lane."
+      },
+      "shot": {
+        "size": "ws",
+        "angle": "high aerial isometric",
+        "move": "slow pull back",
+        "action": "Sky-blue trucks exit the frame while coral trucks remain packed; directional arrow visible from start",
+        "start_state": "Two truck lanes opposing each other, both congested; amber arrow already illuminated in sky-blue lane",
+        "end_state": "Sky-blue lane visibly thinner, coral lane unchanged; amber arrow still pointing forward",
+        "duration_s": 6,
+        "continuity_ids": [
+          "fii_truck_lane",
+          "dii_truck_lane"
+        ],
+        "keyframe_from": "s6_keyframe",
+        "style_segment": "native_illustrations"
+      },
+      "intent": "The market resolving directional pressure is shown without implying a forced winner; the mechanism is explained without the convoy-war analogy."
+    },
+    {
+      "id": "s7",
+      "beat": "catchphrase_cta",
+      "narration": "Now you know. Ask your finance friend about FII and DII positions next time the market surprises you.",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "A woman in her early 30s in a professional blazer holds her smartphone showing candlestick charts, standing outside a financial exchange building in a major Indian city, soft golden late-afternoon light, shallow depth of field, vertical 9:16 composition",
+        "motion_prompt": "The camera pulls back with small amplitude at slow speed. She lowers the phone, nods once with quiet understanding, and walks forward along the pavement."
+      },
+      "shot": {
+        "size": "mcu",
+        "angle": "eye level",
+        "move": "pull back with small amplitude at slow speed",
+        "location_id": "exchange_district",
+        "action": "She lowers the phone, nods once with quiet understanding, and walks forward along the pavement",
+        "start_state": "phone raised, studying data with curious expression",
+        "end_state": "phone lowered, composed nod, walking stride",
+        "duration_s": 5,
+        "continuity_ids": [
+          "woman_professional",
+          "smartphone_screen"
+        ],
+        "keyframe_from": "s7_keyframe",
+        "style_segment": "native_illustrations"
+      },
+      "intent": "The viewer leaves feeling informed and eager to apply this lens to their next market surprise."
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s4",
+      "h": "Two groups, opposite directions",
+      "body": "FII and DII net positions in Nifty index options signal where the market is about to move."
+    },
+    {
+      "image": "s5",
+      "h": "The net position tells the story",
+      "body": "When FII go short and DII go long, the divergence builds pressure — and the market tends to move to ease it."
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "participant-wise open interest",
+    "title": "Who actually moves the Indian market?",
+    "title_options": [
+      "Who actually moves the Indian market?",
+      "Why does the Nifty surprise you? (FII and DII positions)",
+      "What FII and DII positions actually signal for the Nifty",
+      "The NSE data retail traders never look at",
+      "Why the market moves before your chart blinks"
+    ],
+    "title_rationale": "Leads with a curiosity-gap question that implies institutional forces are invisible to most traders, directly targeting the audience misconception and the primary keyword.",
+    "description": "You watch the charts every day. But two big groups — FIIs and DIIs — are already positioned before the price moves. Their daily net positions in Nifty index options, published by the NSE, signal where the market is about to go. Here is what to look for. Sources: https://web.sensibull.com/fii-dii-data/fno https://www.scribd.com/document/716933696/Fii-Dii-Activity-Participants-wise-Oi-Analysis",
+    "tags": [
+      "FII DII positions",
+      "NSE open interest",
+      "Nifty options",
+      "participant wise OI",
+      "institutional positioning India",
+      "FII DII data",
+      "Indian stock market analysis"
+    ],
+    "instagram_caption": "You watch the Nifty chart. But two big groups — FIIs and DIIs — are already positioned. Their net positions in index options signal where the market is about to go. Here is what to look for. #FII #DII #NSE #Nifty #OpenInterest #IndianStockMarket",
+    "pinned_comment": "What surprised you most about how FII and DII positioning works? Drop it below — and share this with someone whose market moves always seem to catch them off guard. Source: https://web.sensibull.com/fii-dii-data/fno",
+    "content_type": "explainer",
+    "thumbnail": {
+      "text": "WHO MOVES THE MARKET?"
+    }
+  },
+  "director_notes": "Format chosen: character_series — best sponsor fit, illustration-based visuals work well for the traffic-lane analogy without needing expensive clip production, and its 7-beat ABT structure handles the setup/conflict/analogy/payoff arc cleanly. Analogy chosen: transport (traffic lanes) — FII trucks going one way vs DII trucks the other; the limitation is now spoken in VO (s5) stating that unlike trucks, market participants can close or roll positions at any time. Open loops: [beat s1 opened (who moves the market before price changes?); paid off at s6 (market tends to move to ease institutional pressure)]. All analogy mapping pairs tested: (1) FII net short → trucks driving south ✓; (2) DII net long → trucks driving north ✓; (3) opposing forces → opposite lanes ✓; (4) market tending to move → traffic flowing more freely in one direction ✓. Limitations now spoken. S6 arrow now visible from frame 1. Claims verified: S22 confirms OI data; S23 confirms FIIs net short in examples; S24 confirms directional signal from net positions; S29 defines the data table.",
+  "topic": {
+    "headline": "How FII and DII positions in Nifty index options (participant-wise open interest) move the Indian market",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://web.sensibull.com/fii-dii-data/fno",
+      "https://www.niftytrader.in/participant-wise-oi",
+      "https://www.investingcube.com/cryptocurrency/participant-wise-open-interest-explained-how-fii-dii-client-and-pro-positions-predict-market-direction/",
+      "https://algotest.in/blog/participant-wise-open-interest/",
+      "https://web.quantsapp.com/participant-data/fii-dii-data",
+      "https://www.scribd.com/document/716933696/Fii-Dii-Activity-Participants-wise-Oi-Analysis",
+      "https://blog.quantinsti.com/trend-analysis-open-interest-rollover-fii-dii-python/",
+      "https://www.trade-pulse.in/research/fii-positioning-analysis",
+      "https://www.nseindia.com/reports/fii-dii",
+      "https://houseoftrade.in/blog/fii-dii-data-guide"
+    ]
+  },
+  "updated_at": "2026-10-05T14:07:23Z"
+}

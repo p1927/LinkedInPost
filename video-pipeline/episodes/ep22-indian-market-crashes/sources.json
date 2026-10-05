@@ -1,0 +1,275 @@
+[
+ {
+  "title": "https://www.nseindia.com/api/fiidiiTradeReact",
+  "url": "https://www.nseindia.com/api/fiidiiTradeReact",
+  "published": "",
+  "source": "nseindia.com",
+  "source_url": "https://nseindia.com",
+  "summary": "[{\"buyValue\":\"20492.93\",\"category\":\"DII\",\"date\":\"05-Oct-2026\",\"netValue\":\"5181.62\",\"sellValue\":\"15311.31\"},{\"buyValue\":\"15674.61\",\"category\":\"FII/FPI\",\"date\":\"05-Oct-2026\",\"netValue\":\"-4699.14\",\"sellValue\":\"20373.75\"}]",
+  "text": "[{\"buyValue\":\"20492.93\",\"category\":\"DII\",\"date\":\"05-Oct-2026\",\"netValue\":\"5181.62\",\"sellValue\":\"15311.31\"},{\"buyValue\":\"15674.61\",\"category\":\"FII/FPI\",\"date\":\"05-Oct-2026\",\"netValue\":\"-4699.14\",\"sellValue\":\"20373.75\"}]",
+  "forced": true,
+  "readable": true
+ },
+ {
+  "title": "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv",
+  "url": "https://nsearchives.nseindia.com/content/nsccl/fao_participant_oi_01102026.csv",
+  "published": "",
+  "source": "nsearchives.nseindia.com",
+  "source_url": "https://nsearchives.nseindia.com",
+  "summary": "\"\"Participant wise Open Interest (no. of contracts) in Equity Derivatives as on Oct 01, 2026\"\",,,,,,,,,,,,,, Client Type,Future Index Long,Future Index Short,Future Stock Long,Future Stock Short ,Option Index Call Long,Option Index Put Long,Option Index Call Short,Option Index Put Short,Option Stock",
+  "text": "\"\"Participant wise Open Interest (no. of contracts) in Equity Derivatives as on Oct 01, 2026\"\",,,,,,,,,,,,,, Client Type,Future Index Long,Future Index Short,Future Stock Long,Future Stock Short ,Option Index Call Long,Option Index Put Long,Option Index Call Short,Option Index Put Short,Option Stock Call Long,Option Stock Put Long,Option Stock Call Short,Option Stock Put Short,Total Long Contracts ,Total Short Contracts Client,306566,56754,3422680,155072,3743798,2363022,3448314,3206170,1566739,571650,883971,875714,11974455,8625995 DII,48119,14862,264333,4574585,8533,40402,3557,876,9411,43501,204308,22745,414299,4820933 FII,29605,339779,3393649,2858568,670483,1114773,1101948,448195,112470,227850,206962,90579,5548830,5046031 Pro,51101,23996,817937,310374,1337674,958371,1206669,821327,669169,831768,1062548,685731,4666020,4110645 TOTAL,435391,435391,7898599,7898599,5760488,4476568,5760488,4476568,2357789,1674769,2357789,1674769,22603604,22603604",
+  "forced": true,
+  "readable": true
+ },
+ {
+  "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/orders20261002a.htm",
+  "published": "2026-10-02",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+ },
+ {
+  "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20261002a.htm",
+  "published": "2026-10-02",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+ },
+ {
+  "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc.",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20261002a.htm",
+  "published": "2026-10-02",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+ },
+ {
+  "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requirements",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm",
+  "published": "2026-09-30",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requirements"
+ },
+ {
+  "title": "Agencies publish resolution plan feedback letters for 15 banking organizations",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260929a.htm",
+  "published": "2026-09-29",
+  "source": "Federal Reserve",
+  "summary": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+ },
+ {
+  "title": "Federal Reserve Board announces approval of application by Peoples Bancorp Inc.",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/orders20260925a.htm",
+  "published": "2026-09-25",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board announces approval of application by Peoples Bancorp Inc."
+ },
+ {
+  "title": "Federal Reserve Board requests public comment on two proposals related to establishing a regulatory framework for Board-supervised payment stablecoin issuers under the GENIUS Act",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm",
+  "published": "2026-09-24",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board requests public comment on two proposals related to establishing a regulatory framework for Board-supervised payment stablecoin issuers under the GENIUS Act"
+ },
+ {
+  "title": "Federal Reserve Board issues enforcement action with former employee of Sandy Spring Bank",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20260924a.htm",
+  "published": "2026-09-24",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board issues enforcement action with former employee of Sandy Spring Bank"
+ },
+ {
+  "title": "Federal Reserve Board announces approval of application by BancFirst Corporation",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/orders20260922a.htm",
+  "published": "2026-09-22",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board announces approval of application by BancFirst Corporation"
+ },
+ {
+  "title": "Federal Reserve Board issues enforcement actions with former employee of Northstar Bank, former employee of American Express Travel Related Services Company, Inc., and former employee of Regions Bank",
+  "url": "https://www.federalreserve.gov/newsevents/pressreleases/enforcement20260918a.htm",
+  "published": "2026-09-18",
+  "source": "Federal Reserve",
+  "summary": "Federal Reserve Board issues enforcement actions with former employee of Northstar Bank, former employee of American Express Travel Related Services Company, Inc., and former employee of Regions Bank"
+ },
+ {
+  "title": "Major Economic Indicators Latest Numbers",
+  "url": "https://www.bls.gov/bls/",
+  "published": "2026-10-02",
+  "source": "BLS",
+  "summary": "<p>Consumer Price Index (CPI):\t\t\t\t\t\t\t\t<br>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<strong><span title=\"All items, U.S. city average, all urban consumers, 1982-84=100, 1-month percent change, seasonally adjusted\" class=\"data\">+0.4%  in Aug 2026</span></strong><br>\t\t\t\t\t\t\t\t\t\t\t\t\t<a href=\"https://www.bls.gov/news.release/"
+ },
+ {
+  "title": "Why airfares could rise even more, but airline profits won't - CNBC",
+  "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBCdk9VdlZ3eW03QTFVU1lGMldwdmE3Z0JiWV9UcUpjblJYOUE3WGNFTDZQNC04S1FHV0NLelVLdmN0eVg3bXB0UU1JbmhQUENOUkF4U3FqZUFjeFZsSVpQbjd4OUVLZlkxUnRWb1A4Z0MzZ1lucFHSAXtBVV95cUxQdWdmTFNYVjRhN2JZQU11a1FOZHJBOFdXdTRrV1d3YmdvUEo5ckVodzk1TkRnQlhkWGo4MUFCX1hMejhUc1RDQ3FtaDlTMTEwakVMZWF3Vk9TdnI5UWpoZlgyVWRIajFyUGNvTG5UUWV5QS1tUDlMZzR0cVk?oc=5",
+  "published": "2026-10-05",
+  "source": "CNBC",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMidkFVX3lxTFBCdk9VdlZ3eW03QTFVU1lGMldwdmE3Z0JiWV9UcUpjblJYOUE3WGNFTDZQNC04S1FHV0NLelVLdmN0eVg3bXB0UU1JbmhQUENOUkF4U3FqZUFjeFZsSVpQbjd4OUVLZlkxUnRWb1A4Z0MzZ1lucFHSAXtBVV95cUxQdWdmTFNYVjRhN2JZQU11a1FOZHJBOFdXdTRrV1d3YmdvUEo5ckVodzk1TkRnQlhkWGo4MU",
+  "source_url": "https://www.cnbc.com"
+ },
+ {
+  "title": "The Only Billionaires Making Money This Year Are In Tech - bloomberg.com",
+  "url": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxNNkhqbno2VFg1MWRSblRiTUJFdXo4bDJvU0djZHhqRGFFSVlOVnRNcmhWc3dSNFgtRFFLWHhDQUtPT1BMeXRzSDRyZC1WYjdGcGhiZHcxa3ZxMFlvXy10NnZIYmgwald6Y2U3OFFGWGJ0N3JhU3ZXaGtKdkZuZGVnVXYwMV8wSlFCVC05V3ZRWEwtM2VRdUd2Yy1FeXpZbnRuNHB5YUR5bTQtMDkwN3NDNXQ5bDNwNmlQWlpFVEcxeFl6U1ZNZVN2Qw?oc=5",
+  "published": "2026-10-05",
+  "source": "bloomberg.com",
+  "summary": "<a href=\"https://news.google.com/rss/articles/CBMiyAFBVV95cUxNNkhqbno2VFg1MWRSblRiTUJFdXo4bDJvU0djZHhqRGFFSVlOVnRNcmhWc3dSNFgtRFFLWHhDQUtPT1BMeXRzSDRyZC1WYjdGcGhiZHcxa3ZxMFlvXy10NnZIYmgwald6Y2U3OFFGWGJ0N3JhU3ZXaGtKdkZuZGVnVXYwMV8wSlFCVC05V3ZRWEwtM2VRdUd2Yy1FeXpZbnRuNHB5YUR5bTQtMDkwN3NDNXQ5bDNwNmlQWl",
+  "source_url": "https://www.bloomberg.com"
+ },
+ {
+  "title": "Accept ‘bad things’ in return for benefits of AI, says Sam Altman - The Guardian",
+  "url": "https://news.google.com/rss/articles/CBMilwFBVV95cUxPdllLLU13dGI0Z1I5Q3dod3JORXF1b1JfVTJ4TnBYNFpLT0RHNDU0b1hTWUZzbEdueWN4YXphb3B4OVlxQmw5MEFuVkZQa3FHcDhtU25ZVTM3YlFjVHFSRUk3bFZqblBhM0E5WjU1ZHdYVHRpWV9ZRk96bmxkMG9BNWxCZVVlWjNIV0ZGZ0lCQUg4clozcVlV?oc=5",
+  "published": "2026-10-05",
+  "source": "The Guardian",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMilwFBVV95cUxPdllLLU13dGI0Z1I5Q3dod3JORXF1b1JfVTJ4TnBYNFpLT0RHNDU0b1hTWUZzbEdueWN4YXphb3B4OVlxQmw5MEFuVkZQa3FHcDhtU25ZVTM3YlFjVHFSRUk3bFZqblBhM0E5WjU1ZHdYVHRpWV9ZRk96bmxkMG9BNWxCZVVlWjNIV0ZGZ0lCQUg4clozcVlV?oc=5\" target=\"_blank\">Accept ‘bad thi",
+  "source_url": "https://www.theguardian.com"
+ },
+ {
+  "title": "Asian stocks rise as weak U.S. jobs data eases Fed hike bets; Japan surges - Investing.com",
+  "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxPWHhaMUcxbkFGeXpsakg4SWI2UTJQaFhiR0g1eUx1RktVbTRrTGlWMU9WdkwtZ0o5QW92UjZaQUNjb2xZeExGb1FzdHF5VXIwSEN3VTJTZnZSUllKQWc2aW9iMmVFR3BCMFZyMk5fQ2Q0TmtPLUpJSGlDc3pGLVFab2htaHNnWWVXMm54NkJSVUNBb0Q1RDR2Szl3QmFyem5Ua0s3eGwwZ0V0RUppM09HbXhOZFB0VzNaVG1OcnJmeVhBWEVGUW1R?oc=5",
+  "published": "2026-10-05",
+  "source": "Investing.com",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMixwFBVV95cUxPWHhaMUcxbkFGeXpsakg4SWI2UTJQaFhiR0g1eUx1RktVbTRrTGlWMU9WdkwtZ0o5QW92UjZaQUNjb2xZeExGb1FzdHF5VXIwSEN3VTJTZnZSUllKQWc2aW9iMmVFR3BCMFZyMk5fQ2Q0TmtPLUpJSGlDc3pGLVFab2htaHNnWWVXMm54NkJSVUNBb0Q1RDR2Szl3QmFyem5Ua0s3eGwwZ0V0RUppM09HbXhOZF",
+  "source_url": "https://www.investing.com"
+ },
+ {
+  "title": "Euro hits 17-month low on French debt fears and Spanish turmoil - Euronews.com",
+  "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxPT0ROZVE2cng4cWdtZUhidFFDYk8wWkV4alg1ZEVPMlRMR0pGeHhodTRpTmxEdVdzLVV0cWxLUzhnUDlKdUEwa1FzcmVOS2VZOWhMY3RINVgtQlpJd2tiRWYzV25HLXQyYUNJYU9saEFLVzhIdFkxMDJxWnFpcE1QNEZxYnd3Nms3OVVMS0J1dFkwbzlzTVkzX2RtRjhCOFF1eWl3MnJnMFJCLURMYTNnODNjVC1wQzJ3V0Vv?oc=5",
+  "published": "2026-10-05",
+  "source": "Euronews.com",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMiuwFBVV95cUxPT0ROZVE2cng4cWdtZUhidFFDYk8wWkV4alg1ZEVPMlRMR0pGeHhodTRpTmxEdVdzLVV0cWxLUzhnUDlKdUEwa1FzcmVOS2VZOWhMY3RINVgtQlpJd2tiRWYzV25HLXQyYUNJYU9saEFLVzhIdFkxMDJxWnFpcE1QNEZxYnd3Nms3OVVMS0J1dFkwbzlzTVkzX2RtRjhCOFF1eWl3MnJnMFJCLURMYTNnODNjVC",
+  "source_url": "https://www.euronews.com"
+ },
+ {
+  "title": "Nvidia’s Valuations Show AI Rally Isn’t a Bubble, DBS Says - bloomberg.com",
+  "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNMTFROVdldzRQOElVR0dxRXh6S2ZLNnZHdHFxS09pci00ZWtQSzhiLWQ0ZlFRcVpQdW9rNzlaTlZVLUJ0ekxDdEhxclNRUGI0RVhNYlpoYXNXWFQtdzZDTzgwYnByaDV3eFV2Q083SlZFd1c0eER0VXRGRnpWUURycnhYV2hOQm5sR2wzMFh2MHBtYlhPVzdpQWhkREI0N21ZTllVQmhvZVZ4eENz?oc=5",
+  "published": "2026-10-05",
+  "source": "bloomberg.com",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMirAFBVV95cUxNMTFROVdldzRQOElVR0dxRXh6S2ZLNnZHdHFxS09pci00ZWtQSzhiLWQ0ZlFRcVpQdW9rNzlaTlZVLUJ0ekxDdEhxclNRUGI0RVhNYlpoYXNXWFQtdzZDTzgwYnByaDV3eFV2Q083SlZFd1c0eER0VXRGRnpWUURycnhYV2hOQm5sR2wzMFh2MHBtYlhPVzdpQWhkREI0N21ZTllVQmhvZVZ4eENz?oc=5\" tar",
+  "source_url": "https://www.bloomberg.com"
+ },
+ {
+  "title": "Intel Stock Drops as Elon Musk Signals Setback for the Chip Maker - Barron's",
+  "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPRWdaazlPODkxRjNvR2VMdWlxbmMtNW1PWllVYjlLZXpNcW50UVJ5UlNFYmI3Nzd4MW1aN0pidWVWODR2UklXT0diSkx3RUtrOGp5MmdvTEhQT2Q0Z2tIY1FCdkNUcTY0ZnlCUC12U2pjOHBZVFZlM0VWQlhGd2hzNjJmOA?oc=5",
+  "published": "2026-10-05",
+  "source": "Barron's",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMigwFBVV95cUxPRWdaazlPODkxRjNvR2VMdWlxbmMtNW1PWllVYjlLZXpNcW50UVJ5UlNFYmI3Nzd4MW1aN0pidWVWODR2UklXT0diSkx3RUtrOGp5MmdvTEhQT2Q0Z2tIY1FCdkNUcTY0ZnlCUC12U2pjOHBZVFZlM0VWQlhGd2hzNjJmOA?oc=5\" target=\"_blank\">Intel Stock Drops as Elon Musk Signals Se",
+  "source_url": "https://www.barrons.com"
+ },
+ {
+  "title": "What’s really going on with AI token price deflation? - Financial Times",
+  "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPdDUwY2VMeS1FV0hlQmpFTUlOYVhoWnZKcTEtdkpVZ2JWdXNxMjdkT1BmRHM1bm5ROUlPNHhKN2xVTUtlUlhpZkxfSmw5c0xJMjlvOGJrYm15RzlxYW9HdGtTekE5Tld3Qk5xZVhPaHZ3VEhaakYwQ2NTUTVVaGdaM1dZQ0Y?oc=5",
+  "published": "2026-10-05",
+  "source": "Financial Times",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMihAFBVV95cUxPdDUwY2VMeS1FV0hlQmpFTUlOYVhoWnZKcTEtdkpVZ2JWdXNxMjdkT1BmRHM1bm5ROUlPNHhKN2xVTUtlUlhpZkxfSmw5c0xJMjlvOGJrYm15RzlxYW9HdGtTekE5Tld3Qk5xZVhPaHZ3VEhaakYwQ2NTUTVVaGdaM1dZQ0Y?oc=5\" target=\"_blank\">What’s really going on with AI token pri",
+  "source_url": "https://www.ft.com"
+ },
+ {
+  "title": "OpenAI safety employee quits, says 'time for trial and error is over' - Reuters",
+  "url": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPanBnbDA2SnluX0swT1ZpQ212VUNKRHh1T3d2Tmt0VDBieEtFVmh6blFFZEVCZlFLbjd4TnNYRnhacmtoSEdRTTFsbVdQN3RjRW5BTVd2NkJwdkdmcHNBa2czV3BZc19MYnJ1dkFvTkh1YXZQQkw1Zmtma2Y4Qm10RzlIUlhJS1ZSUHJnVVdTNlk1djVnNndqNXJBZ29hcEVJUmdkZTNWcklGWEF4TGtuZw?oc=5",
+  "published": "2026-10-03",
+  "source": "Reuters",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMisAFBVV95cUxPanBnbDA2SnluX0swT1ZpQ212VUNKRHh1T3d2Tmt0VDBieEtFVmh6blFFZEVCZlFLbjd4TnNYRnhacmtoSEdRTTFsbVdQN3RjRW5BTVd2NkJwdkdmcHNBa2czV3BZc19MYnJ1dkFvTkh1YXZQQkw1Zmtma2Y4Qm10RzlIUlhJS1ZSUHJnVVdTNlk1djVnNndqNXJBZ29hcEVJUmdkZTNWcklGWEF4TGtuZw?oc=",
+  "source_url": "https://www.reuters.com"
+ },
+ {
+  "title": "Schneider Electric to Buy Software Maker PTC for $22.6 Billion - WSJ",
+  "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQTW90UWZMU2VUcHRXb2NZa3NpbTdqZUVfTXFTcGdFa2dYZkpRS0l0UXVzT25DTU53Z25aSUo5V250VzBTVGNLS01WZUprRGU3emdQNlhaRUN6VHVqLWZtYktRc3M4YnBPUlVVa002MkRLanVvY2gtODQ0UmRtbDRzTmFXTVQyY3VSdktYeWQyT3dBQlJvVVBMd3VYNnQtcTNvRF90S0RTN18?oc=5",
+  "published": "2026-10-05",
+  "source": "WSJ",
+  "summary": "<ol><li><a href=\"https://news.google.com/rss/articles/CBMiqAFBVV95cUxQTW90UWZMU2VUcHRXb2NZa3NpbTdqZUVfTXFTcGdFa2dYZkpRS0l0UXVzT25DTU53Z25aSUo5V250VzBTVGNLS01WZUprRGU3emdQNlhaRUN6VHVqLWZtYktRc3M4YnBPUlVVa002MkRLanVvY2gtODQ0UmRtbDRzTmFXTVQyY3VSdktYeWQyT3dBQlJvVVBMd3VYNnQtcTNvRF90S0RTN18?oc=5\" target=\"",
+  "source_url": "https://www.wsj.com"
+ },
+ {
+  "title": "Why are FIIs or Foreign Institutional Investors Exiting India?",
+  "url": "https://www.icicidirect.com/research/equity/finace/exit-of-foreign-institutional-investors-from-india",
+  "published": "",
+  "source": "icicidirect.com",
+  "source_url": "https://icicidirect.com",
+  "summary": "Increased Volatility: FIIs account for a substantial portion of trading volume in Indian markets, so their exit has led to sharp declines in ...",
+  "via": "minimax_web_search"
+ },
+ {
+  "title": "FII DII Data Made Simple: How It Shows Market Perspective",
+  "url": "https://medium.com/@abu.nowawave/fii-dii-data-made-simple-how-it-shows-market-perspective-dfa4ddc98ce5",
+  "published": "",
+  "source": "medium.com",
+  "source_url": "https://medium.com",
+  "summary": "During market crashes, such as in 2020, FIIs sold heavily due to global uncertainty, but DIIs stepped in to support the market and limit losses.",
+  "via": "minimax_web_search"
+ },
+ {
+  "title": "Why do the DIIs buy the stocks when FIIs sell?",
+  "url": "https://www.reddit.com/r/IndianStockMarket/comments/1gphey0/why_do_the_diis_buy_the_stocks_when_fiis_sell/",
+  "published": "",
+  "source": "reddit.com",
+  "source_url": "https://reddit.com",
+  "summary": "I know it's a noob question, I searched for it but couldn't get a satisfactory answer.\n\nCouldn't DIIs just wait it out to get a better stock price?",
+  "via": "minimax_web_search"
+ },
+ {
+  "title": "FIIs Are Selling While DIIs Are Buying: Who Really Drives ...",
+  "url": "https://www.indmoney.com/blog/stocks/fii-vs-dii-who-drives-indian-stock-market",
+  "published": "",
+  "source": "indmoney.com",
+  "source_url": "https://indmoney.com",
+  "summary": "FII vs DII explained: See why foreign investors are selling, why domestic institutions are buying and who really drives India's stock market ...",
+  "via": "minimax_web_search"
+ },
+ {
+  "title": "FII Selling: What Does It Really Mean? These three words",
+  "url": "https://www.instagram.com/reel/DYuCGSLAEp_/?hl=en",
+  "published": "",
+  "source": "instagram.com",
+  "source_url": "https://instagram.com",
+  "summary": "High US bond yields, a weaker rupee, elevated crude prices and continued foreign selling are creating a challenging backdrop for Indian equities ...",
+  "via": "minimax_web_search"
+ },
+ {
+  "title": "FII vs DII Flows Drive Stock Market Trends",
+  "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+  "published": "",
+  "source": "venturasecurities.com",
+  "source_url": "https://venturasecurities.com",
+  "summary": "When FIIs buy, and DIIs also support the move, the markets trend strongly upward. If FIIs sell but DIIs keep buying, the market usually moves ...",
+  "via": "minimax_web_search",
+  "text": "FII vs DII Flows Drive Stock Market Trends | Ventura News Skip to content Stay alert, beware of scamsters - know more Become a partner Refer and earn Support Accessibility Settings &times; Font Adjust font size and spacing Font Size: 100% Resize text for better readability Text Spacing: 100% Adjust text spacing for readability Contrast Makes easier to read text and enhances color Monochrome Convert to black and white colors Low Saturation Decreases the intensity of colors High Saturation Increases the intensity of colors Low Contrast Softer colors, less difference Medium Contrast Balanced and clear High Contrast Bold and easy to see Reading Tools Support tools for easier reading Text to Speech Read page content aloud Reading Mask Focus on a single line of content Highlight Links Make links easier to identify Highlight Headings Emphasize page headings Reset All Accessibility Settings Stoc"
+ },
+ {
+  "title": "FII selling vs DII buying in India 2026",
+  "url": "https://www.facebook.com/acagarwalsharebrokers/posts/fiis-sold-diis-bought-but-who-moved-the-market-2026-is-showing-a-striking-divide/1636137138527609/",
+  "published": "",
+  "source": "facebook.com",
+  "source_url": "https://facebook.com",
+  "summary": "FIIs sold. DIIs bought. But who moved the market? 2026 is showing a striking divide between foreign and domestic institutional flows.",
+  "via": "minimax_web_search",
+  "text": "AC Agarwal - FIIs sold. DIIs bought. But who moved the..."
+ },
+ {
+  "title": "Markets are moving, but flows are changing. FII vs DII dynamics ...",
+  "url": "https://www.facebook.com/KotakMF/posts/markets-are-moving-but-flows-are-changingfii-vs-dii-dynamics-are-playing-out-dif/1406408798182847/",
+  "published": "",
+  "source": "facebook.com",
+  "source_url": "https://facebook.com",
+  "summary": "An interesting trend in the market is that FIIs and DIIs have reversed their roles: FIIs have turned buyers and DIIs have turned sellers in ...",
+  "via": "minimax_web_search",
+  "text": "Markets are moving, but flows are changing. FII vs DII dynamics are playing out differently. What does it really signal for investors? Catch Mr Nilesh Shah live on 8th June at 4 PM for the June Market Outlook: visit.kotakmf.com/4ixdX1 #MarketOutlook #FII #DII #EquityMarkets #InvestSmart | Kotak Mutual Fund"
+ },
+ {
+  "title": "FII Impact on Indian Markets: A Contrasting View",
+  "url": "https://www.linkedin.com/posts/hariharan-kr-7a22a511_resilience-capex-trade-activity-7433190434094469120-4qDZ",
+  "published": "",
+  "source": "linkedin.com",
+  "source_url": "https://linkedin.com",
+  "summary": "FIIs can bring large pools of global capital. We feel the pain when they sell. When they sell, markets correct. 67 out of 205 months when the ...",
+  "via": "minimax_web_search",
+  "text": "à¤¹à¤¾à¤ à¤à¤¨à¥à¤¹à¥à¤ à¤²à¥à¤à¥à¤ à¤¸à¥ à¤¦à¥à¤¨à¤¿à¤¯à¤¾ à¤®à¥à¤ à¤¶à¤¿à¤à¤¾à¤¯à¤¤ à¤¹à¥ à¤¹à¤®à¥à¤ à¤¹à¤¾à¤ à¤µà¤¹à¥ à¤²à¥à¤ à¤à¥ | LinkedIn 0 aviseringar HARIHARAN KRs inlÃ¤gg InlÃ¤gg i flÃ¶de HARIHARAN KR 27 feb. à¤¹à¤¾à¤ à¤à¤¨à¥à¤¹à¥à¤ à¤²à¥à¤à¥à¤ à¤¸à¥ à¤¦à¥à¤¨à¤¿à¤¯à¤¾ à¤®à¥à¤ à¤¶à¤¿à¤à¤¾à¤¯à¤¤ à¤¹à¥ à¤¹à¤®à¥à¤ à¤¹à¤¾à¤ à¤µà¤¹à¥ à¤²à¥à¤ à¤à¥ à¤ à¤à¥à¤¸à¤° à¤¹à¤®à¥à¤ à¤¯à¤¾à¤¦ à¤à¤ à¤¹à¥à¤ Who am i referring to in this post? .... it is the FIIs (Foreign institutional investors). We complain about FIIs because they sellâ¦but they are also the same investors whose money we eagerly wait for. Why am I talking about them? Over the last few years, we have been talking about how DIIs and our MF Investors have become the backbone of the Indian stock markets. We have been talking about the #resilience of the markets even in the wake o"
+ },
+ {
+  "title": "Role of FIIs in Indian Stock Market Crashes",
+  "url": "https://papers.ssrn.com/sol3/Delivery.cfm/4973859.pdf?abstractid=4973859&mirid=1",
+  "published": "",
+  "source": "papers.ssrn.com",
+  "source_url": "https://papers.ssrn.com",
+  "summary": "Another interesting outcome of our research is that Indian markets are not well correlated with FII activity when it moves up. The correlation between FIIs ...",
+  "via": "minimax_web_search"
+ }
+]

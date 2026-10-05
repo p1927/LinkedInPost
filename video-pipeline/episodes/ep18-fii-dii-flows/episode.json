@@ -1,0 +1,463 @@
+{
+  "id": "ep18-fii-dii-flows",
+  "title": "Who actually controls the Indian stock market?",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "format_id": "myth_busting",
+  "topic_area": "economics",
+  "one_idea": "Foreign investors sell and domestic investors buy, and their opposing forces cancel out to stabilize the Nifty, not FIIs alone.",
+  "audience_misconception": "Most retail investors believe FIIs alone drive the Indian market, ignoring the offsetting role of DIIs.",
+  "analogy": {
+    "source_term": "FII selling meets DII buying, and their opposite forces cancel, keeping Nifty roughly stable.",
+    "domain": "transport",
+    "mapping": [
+      [
+        "FII selling pressure",
+        "cars pushing into an intersection from one road"
+      ],
+      [
+        "DII buying pressure",
+        "cars pushing into the same intersection from the opposite road"
+      ],
+      [
+        "Nifty staying stable",
+        "the intersection holding steady as forces cancel out"
+      ]
+    ],
+    "limitation": "Unlike cars in an intersection, real markets have feedback loops, and options amplify moves beyond simple supply and demand.",
+    "true_term_reveal_beat": "s7"
+  },
+  "direction": {
+    "mode": "explainer",
+    "mode_reason": "The topic is an abstract mechanism (who moves the Nifty) with no dated timeline and no visible moment of consequence: pure explainer.",
+    "lens": "lens-procedural-precision",
+    "skills_used": [
+      "arch-mechanism-demo",
+      "arch-analogy-world",
+      "mode-explainer",
+      "real-analogy-world"
+    ],
+    "style_segments": [
+      {
+        "id": "explain-flow",
+        "medium": "native",
+        "scene_ids": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8",
+          "s9"
+        ]
+      }
+    ]
+  },
+  "continuity": {
+    "characters": [],
+    "locations": [],
+    "props": [],
+    "ledger": []
+  },
+  "claims": [
+    {
+      "claim": "FIIs are large foreign institutions that trade Indian equities; DIIs are domestic mutual funds and insurance companies that trade the same markets.",
+      "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQNmcwV1doeDZjd2ZmelVkSExhOEF4X2ZBUm54dWVuOHg1dmhscEdKWU9hN3phdGJibE8ySTVyX3ZHdFRkTkNJWVBoREFFQ2tzMUVzZnI5ZEF2Yy1FSEozSDA3Sm4wU21seVZyQmFUWXhkMnc4a2RKX0JndVVzZ3lxSjlJdWJ3UEd3aXF3RWZ6ODQtU1lNNUt0Y1BPZGVLdnAzWVVxVy1US29Jczg?oc=5",
+      "verified": true
+    },
+    {
+      "claim": "Foreign investors sold heavily in September, causing Nifty to fall 6.1%, but domestic investors bought the dip.",
+      "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5",
+      "verified": true
+    }
+  ],
+  "sources": [
+    {
+      "claim": "FIIs are large foreign institutions that trade Indian equities; DIIs are domestic mutual funds and insurance companies.",
+      "url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQNmcwV1doeDZjd2ZmelVkSExhOEF4X2ZBUm54dWVuOHg1dmhscEdKWU9hN3phdGJibE8ySTVyX3ZHdFRkTkNJWVBoREFFQ2tzMUVzZnI5ZEF2Yy1FSEozSDA3Sm4wU21seVZyQmFUWXhkMnc4a2RKX0JndVVzZ3lxSjlJdWJ3UEd3aXF3RWZ6ODQtU1lNNUt0Y1BPZGVLdnAzWVVxVy1US29Jczg?oc=5"
+    },
+    {
+      "claim": "Nifty fell 6.1% in September as foreign investors pulled billions from Indian equities.",
+      "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5"
+    },
+    {
+      "claim": "FII and DII activity data shows daily net buying and selling positions in Indian equities.",
+      "url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE0yMEFHcjAwa2tSVEhiTDY4VUdWamh1UGtVS0txdmtJTzJMeTk4SE1kdFRCeUpjMlF1bXJxRTlZSkJTMTFmM0xpWVRMcDViaC1YY3RiRA?oc=5"
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "FIIs are large foreign funds that sell Indian stocks when global conditions turn risky.",
+      "scene": "s5",
+      "source": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQNmcwV1doeDZjd2ZmelVkSExhOEF4X2ZBUm54dWVuOHg1dmhscEdKWU9hN3phdGJibE8ySTVyX3ZHdFRkTkNJWVBoREFFQ2tzMUVzZnI5ZEF2Yy1FSEozSDA3Sm4wU21seVZyQmFUWXhkMnc4a2RKX0JndVVzZ3lxSjlJdWJ3UEd3aXF3RWZ6ODQtU1lNNUt0Y1BPZGVLdnAzWVVxVy1US29Jczg?oc=5"
+    },
+    {
+      "step": "DIIs are domestic mutual funds and insurers that buy Indian stocks, especially when prices fall.",
+      "scene": "s6",
+      "source": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQNmcwV1doeDZjd2ZmelVkSExhOEF4X2ZBUm54dWVuOHg1dmhscEdKWU9hN3phdGJibE8ySTVyX3ZHdFRkTkNJWVBoREFFQ2tzMUVzZnI5ZEF2Yy1FSEozSDA3Sm4wU21seVZyQmFUWXhkMnc4a2RKX0JndVVzZ3lxSjlJdWJ3UEd3aXF3RWZ6ODQtU1lNNUt0Y1BPZGVLdnAzWVVxVy1US29Jczg?oc=5"
+    },
+    {
+      "step": "When FIIs sell and DIIs buy, their opposite forces cancel out and the Nifty holds relatively steady.",
+      "scene": "s8",
+      "source": "https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5"
+    },
+    {
+      "step": "When one side dominates, the Nifty moves sharply in that direction.",
+      "scene": "s7",
+      "source": "https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "FII",
+      "kind": "term",
+      "definition": "Foreign Institutional Investor — large funds based outside India that buy and sell Indian stocks.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s5",
+        "s8"
+      ]
+    },
+    {
+      "name": "DII",
+      "kind": "term",
+      "definition": "Domestic Institutional Investor — Indian mutual funds, insurers, and pension funds that invest in Indian stocks.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s6",
+        "s8"
+      ]
+    },
+    {
+      "name": "Nifty",
+      "kind": "term",
+      "definition": "The benchmark index of India's top 50 companies, used to measure the overall market's health.",
+      "introduced_in": "s2",
+      "needed_in": [
+        "s7",
+        "s8",
+        "s9"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Who actually moves the Indian stock market?",
+      "raised_in": "s1",
+      "paid_in": "s7"
+    }
+  ],
+  "news_hook": {
+    "event": "Nifty fell 6.1% in September 2026 as foreign investors pulled billions from Indian equities, while analysts tracked whether domestic investors would absorb the selling pressure.",
+    "date": "2026-10-02",
+    "url": "https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5"
+  },
+  "original_contribution": "Explains the FII-DII counterbalance mechanism in plain language, showing why domestic institutional buying prevents foreign outflows from crashing the Indian market outright.",
+  "packaging": {
+    "primary_keyword": "FII DII flows",
+    "title": "Who actually controls the Indian stock market?",
+    "title_options": [
+      "Why Foreign Investors Don't Control the Indian Market",
+      "Who actually controls the Indian stock market?",
+      "How FII and DII flows move the Nifty",
+      "The real force behind India's stock market moves",
+      "Why your Nifty fund holds up when FIIs sell"
+    ],
+    "title_rationale": "Uses a direct question that challenges a common assumption; the answer (DIIs) lands as a genuine insight.",
+    "description": "Most people think foreign investors alone move the Indian market. Here's the truth: when FIIs sell, domestic funds buy — and that counterbalance is what keeps the Nifty from crashing. Sources: https://news.google.com/rss/articles/CBMiqwFBVV95cUxQNmcwV1doeDZjd2ZmelVkSExhOEF4X2ZBUm54dWVuOHg1dmhscEdKWU9hN3phdGJibE8ySTVyX3ZHdFRkTkNJWVBoREFFQ2tzMUVzZnI5ZEF2Yy1FSEozSDA3Sm4wU21seVZyQmFUWXhkMnc4a2RKX0JndVVzZ3lxSjlJdWJ3UEd3aXF3RWZ6ODQtU1lNNUt0Y1BPZGVLdnAzWVVxVy1US29Jczg?oc=5, https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5.",
+    "tags": [
+      "FII DII flows",
+      "Nifty explained",
+      "Indian stock market",
+      "how market moves",
+      "FII outflows",
+      "DII buying",
+      "investing basics",
+      "stock market explained"
+    ],
+    "instagram_caption": "You always hear about FIIs selling. But who catches what they throw? The answer changes how you see every market move. 📊\n.\n.\n#FII #DII #Nifty #StockMarket #Investing #IndianMarket #FinanceExplained",
+    "pinned_comment": "Which investor type do you track most closely — foreign or domestic? Drop your answer below. Sources: https://news.google.com/rss/articles/CBMiqwFBVV95cUxQNmcwV1doeDZjd2ZmelVkSExhOEF4X2ZBUm54dWVuOHg1dmhscEdKWU9hN3phdGJibE8ySTVyX3ZHdFRkTkNJWVBoREFFQ2tzMUVzZnI5ZEF2Yy1FSEozSDA3Sm4wU21seVZyQmFUWXhkMnc4a2RKX0JndVVzZ3lxSjlJdWJ3UEd3aXF3RWZ6ODQtU1lNNUt0Y1BPZGVLdnAzWVVxVy1US29Jczg?oc=5, https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5.",
+    "content_type": "explainer",
+    "thumbnail": {
+      "text": "WHO CONTROLS NIFTY?"
+    }
+  },
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "curious adult professional, late 20s-40s, clean modern office attire, reading financial charts on a tablet in a bright modern workspace",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {}
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "Most people think foreign investors alone move the Indian market. They don't.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Pull out] A wide aerial view of a bustling Indian stock exchange trading floor, traders in suits moving with urgency, the energy is tense and fast-paced, slow speed",
+        "keyframe_prompt": "A bustling Indian stock exchange trading floor seen from above, traders in suits moving quickly between desks, large digital screens showing green and red price tickers, warm overhead fluorescent lighting, shallow depth of field, realistic, vertical 9:16 composition"
+      },
+      "shot": {
+        "archetype": "arch-awe-scale",
+        "size": "ews",
+        "angle": "high_angle",
+        "move": "Pull out at slow speed",
+        "duration_s": 6,
+        "style_segment": "explain-flow",
+        "dramatizes": "FII outflows creating market tension"
+      },
+      "intent": "The viewer should feel the scale and pressure of the Indian market and want to know who really controls it."
+    },
+    {
+      "id": "s2",
+      "beat": "analogy",
+      "narration": "Imagine two opposing traffic flows pushing into the same intersection from opposite roads.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A top-down view of a wide intersection on a clean geometric city street, one road has many red arrows flowing in from the left, the other road has many blue arrows flowing in from the right, both arrows meet at the center and cancel out, the intersection stays balanced and calm, isometric flat vector illustration, deep navy and teal arrows, off-white background, no text, no letters, no numbers, no words, subtle paper grain, generous negative space"
+      },
+      "shot": {
+        "archetype": "arch-analogy-world",
+        "size": "ews",
+        "duration_s": 6,
+        "style_segment": "explain-flow"
+      },
+      "intent": "The viewer should picture two forces meeting and canceling out before the real terms are named."
+    },
+    {
+      "id": "s3",
+      "beat": "analogy",
+      "narration": "That intersection holding steady is your Nifty. Foreign money pushes one way. Domestic money pushes the other.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "The same isometric intersection scene now labelled with two clean icons above the roads, a globe icon above the red arrows and a small building icon above the blue arrows, the center intersection glowing with a warm amber light, teal and deep navy dominate, off-white background, no text, no letters, no numbers, no words, subtle paper grain, soft long shadows",
+        "term": {
+          "label": "NIFTY",
+          "sub": "the intersection holding steady",
+          "color": "sunny"
+        }
+      },
+      "shot": {
+        "archetype": "arch-analogy-world",
+        "size": "ews",
+        "duration_s": 6,
+        "style_segment": "explain-flow"
+      },
+      "intent": "The analogy maps to the real market: the intersection is the Nifty, and both forces are real institutional players."
+    },
+    {
+      "id": "s4",
+      "beat": "analogy",
+      "narration": "Unlike traffic, real markets have feedback loops. Options make these flows bigger and faster.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "The isometric intersection now shows additional flow lines looping back and merging, red and blue arrows intensifying near the center with small circular motion arrows, a faint geometric grid of connections surrounding the roads, teal and deep navy with one warm amber glow at the intersection center, off-white background, no text, no letters, no numbers, no words, subtle paper grain",
+        "term": {
+          "label": "OPTIONS",
+          "sub": "amplify the flows",
+          "color": "coral"
+        }
+      },
+      "shot": {
+        "archetype": "arch-analogy-world",
+        "size": "ws",
+        "duration_s": 5,
+        "style_segment": "explain-flow"
+      },
+      "intent": "The viewer should see where the analogy breaks: markets amplify flows through feedback and options."
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "FIIs are large foreign funds. When global markets get risky, they sell Indian stocks fast.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A wide isometric city scene, a large stylized foreign flag unfurling at the edge of the frame, heavy red arrows sweeping across the scene from the flag direction toward a tall stack of geometric buildings representing Indian stocks, the arrows leave a subtle motion trail, deep navy buildings, red arrows, off-white background, no text, no letters, no numbers, no words, subtle paper grain, generous negative space",
+        "term": {
+          "label": "FII",
+          "sub": "Foreign Institutional Investor",
+          "color": "coral"
+        }
+      },
+      "shot": {
+        "archetype": "arch-mechanism-demo",
+        "size": "ws",
+        "duration_s": 6,
+        "style_segment": "explain-flow",
+        "dramatizes": "FII selling creating downward pressure"
+      },
+      "intent": "The viewer should connect the red arrows in the analogy to the real FII force in the Indian market."
+    },
+    {
+      "id": "s6",
+      "beat": "term",
+      "narration": "DIIs are Indian mutual funds and insurers. When prices fall, they buy — they see value.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A wide isometric city scene, a small building icon labeled with a subtle geometric pattern at the edge of the frame, strong blue arrows rising upward from the building toward the same stack of geometric buildings, the blue arrows glow softly with a teal accent, deep navy buildings, blue arrows, off-white background, no text, no letters, no numbers, no words, subtle paper grain, soft long shadows",
+        "term": {
+          "label": "DII",
+          "sub": "Domestic Institutional Investor",
+          "color": "sky"
+        }
+      },
+      "shot": {
+        "archetype": "arch-mechanism-demo",
+        "size": "ws",
+        "duration_s": 6,
+        "style_segment": "explain-flow",
+        "dramatizes": "DII buying creating upward support"
+      },
+      "intent": "The viewer should see DII as a real, distinct force in the market and understand why they buy on dips."
+    },
+    {
+      "id": "s7",
+      "beat": "term",
+      "narration": "FIIs sold heavily in September. DIIs bought the dip. The Nifty fell, but not as sharply as it could have.",
+      "visual": {
+        "type": "steps",
+        "title": "How the forces meet",
+        "steps": [
+          "FIIs sell Indian stocks → price pressure down",
+          "DIIs buy the dip → price support up",
+          "Forces roughly cancel → Nifty holds"
+        ]
+      },
+      "shot": {
+        "archetype": "arch-mechanism-demo",
+        "size": "ms",
+        "duration_s": 8,
+        "style_segment": "explain-flow"
+      },
+      "intent": "The viewer should understand the three-step sequence that creates the counterbalance."
+    },
+    {
+      "id": "s8",
+      "beat": "actually_reveal",
+      "narration": "When FIIs pushed out, DIIs pushed in. The opposing forces cancelled out. That is why your Nifty fund holds.",
+      "visual": {
+        "type": "compare",
+        "colA": "FII selling",
+        "colB": "DII buying",
+        "rows": [
+          {
+            "a": "Large outflows",
+            "b": "Large inflows"
+          },
+          {
+            "a": "Driven by global risk",
+            "b": "Driven by local value"
+          },
+          {
+            "a": "Pushes Nifty down",
+            "b": "Pushes Nifty up"
+          },
+          {
+            "a": "Falls when world gets risky",
+            "b": "Rises when prices drop"
+          }
+        ],
+        "winner": "B"
+      },
+      "shot": {
+        "archetype": "arch-before-after",
+        "size": "ws",
+        "duration_s": 8,
+        "style_segment": "explain-flow"
+      },
+      "intent": "The viewer should see the direct comparison between the two forces and understand that DIIs provide the stability."
+    },
+    {
+      "id": "s9",
+      "beat": "evidence",
+      "narration": "In September, FIIs pulled billions from India. DIIs bought over 20,000 crores. That cushion is real.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A wide isometric city scene split visually, the left side bathed in deep navy with red arrows flowing out toward the frame edge, the right side glowing with teal and blue arrows flowing in from a building icon, in the center a large glowing amber geometric building representing the Nifty stands tall and unbroken, the two forces meet around it and cancel, warm amber accent, off-white background, no text, no letters, no numbers, no words, subtle paper grain, soft long shadows, clean composition"
+      },
+      "shot": {
+        "archetype": "arch-data-reveal",
+        "size": "ews",
+        "duration_s": 6,
+        "style_segment": "explain-flow",
+        "dramatizes": "DIIs absorbing FII outflows"
+      },
+      "intent": "The viewer should see real scale: both forces are massive, and the Nifty survives because they cancel."
+    },
+    {
+      "id": "s10",
+      "beat": "story_payoff",
+      "narration": "The next time someone says foreign money controls India, remember: every time FIIs push out, domestic money pushes back in.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] A trader in a modern office stands calmly, looks directly at the screen showing balanced market data, gives a small confident nod and walks away, slow speed, realistic",
+        "keyframe_prompt": "A confident trader in a modern Indian financial office, standing in front of a large screen showing balanced green and red market charts, warm natural light from a large window, looking at the screen with a calm expression, realistic, shallow depth of field, vertical 9:16 composition"
+      },
+      "shot": {
+        "archetype": "arch-reveal",
+        "size": "ms",
+        "move": "Push in at slow speed",
+        "duration_s": 6,
+        "style_segment": "explain-flow"
+      },
+      "intent": "The viewer should feel the satisfaction of knowing the real mechanism and want to share it."
+    },
+    {
+      "id": "s11",
+      "beat": "cta",
+      "narration": "Now you know who actually stabilizes your Nifty. Send this to someone who thinks FIIs run the show.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A calm modern workspace, a geometric Nifty index icon glowing warmly in amber at the center of a clean desk, a small globe icon on the left with a red arrow pointing away and a small building icon on the right with a blue arrow pointing in, both arrows meeting at the Nifty icon and cancelling, teal and deep navy with warm amber center, off-white background, no text, no letters, no numbers, no words, subtle paper grain, generous negative space",
+        "term": {
+          "label": "NOW YOU KNOW!",
+          "sub": "send this to someone who thinks FIIs run the show",
+          "color": "mint"
+        }
+      },
+      "shot": {
+        "archetype": "arch-reveal",
+        "size": "ms",
+        "duration_s": 5,
+        "style_segment": "explain-flow"
+      },
+      "intent": "The viewer should feel confident enough to reshare with someone who holds the common misconception."
+    }
+  ],
+  "sponsor": null,
+  "disclosure": null,
+  "director_notes": "ASSUME: None — all required inputs were supplied. Format chosen: myth_busting — reason: the primary misconception (FIIs alone control the market) is well-suited to the state_myth / actually_reveal / evidence structure. Analogy chosen: transport mapping FII selling to red arrows and DII buying to blue arrows at an intersection; limitation: unlike cars, markets amplify via feedback and options. Open loops: [s1 opened 'Who moves the Indian market?'; paid off at s7 and s9]. Unresolved QA warnings: none. Claims to verify before approval: [S22's 6.1% Nifty fall in September is confirmed; S23's 'over 20,000 crores' DII buying claim is sourced but should be confirmed with the live source for exact figure; S26 is the primary source for FII/DII definitions].",
+  "audience": "curious_adult",
+  "topic": {
+    "headline": "How FII and DII flows in options trading move the Indian Nifty market",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://news.google.com/rss/articles/CBMiowFBVV95cUxPVnM1RGQ4dXhreVZManhlUFR0cGlkZkllSHNpbVE2RTVYT09pMWhLcy1fd1ZpelhQeDZ3d090SHR1ZHVRcDJXNnJoeEFVb3JrREpnRTZPWVhGZy0tRndmaE1seWNvUUE5a0pLZGM3Q0FRdVdWbmtxSjh5djVpZnNwWW51SzFkVlhxX3psODMxeDgxM1hHNlJoLXJqSFRaNmx2UEZR?oc=5",
+      "https://news.google.com/rss/articles/CBMickFVX3lxTE1FN1B0aFZaZHlPRHRyQjU5dXRKYU5wQzFsaXY5MmlPY3pyVFBXZVVEU2VuZ0dXbm1yNXRVQ2Z6c2hxcXI5NncyNFFBS085aWRNb3RRcUF0T1lqdkk4eVYzczRJa2o0dzhONmpGb2J4MXBCQQ?oc=5",
+      "https://news.google.com/rss/articles/CBMiVEFVX3lxTE0yMEFHcjAwa2tSVEhiTDY4VUdWamh1UGtVS0txdmtJTzJMeTk4SE1kdFRCeUpjMlF1bXJxRTlZSkJTMTFmM0xpWVRMcDViaC1YY3RiRA?oc=5",
+      "https://news.google.com/rss/articles/CBMigwFBVV95cUxPdXhjakZfWkthaG52Yk5GTmNrVW4tdkxvQzV4R0JZVV9aQjdrQ1Ayenlod2gzcldvOXNsTm5OeU1Rb2hhM3k2WEZPQVNRRHlTdDhPYkpkSjM5OGJPdFFwTU9Ed2dGd3RINldQN3B3aEtJLWVkQkFSSjFwcEZ2ejdJMEFwdw?oc=5",
+      "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQNmcwV1doeDZjd2ZmelVkSExhOEF4X2ZBUm54dWVuOHg1dmhscEdKWU9hN3phdGJibE8ySTVyX3ZHdFRkTkNJWVBoREFFQ2tzMUVzZnI5ZEF2Yy1FSEozSDA3Sm4wU21seVZyQmFUWXhkMnc4a2RKX0JndVVzZ3lxSjlJdWJ3UEd3aXF3RWZ6ODQtU1lNNUt0Y1BPZGVLdnAzWVVxVy1US29Jczg?oc=5",
+      "https://news.google.com/rss/articles/CBMiggFBVV95cUxNX0xVMkRUUUdkMjRvaDREQU5OOEctazFMbmwxXzk5emstQ1U1R2xJOGR5NDlJTzBzQU9CU1A1T3kwWEJKeVpxLXdNdmNEYU0yUGxwTFR2VDBwTmt3aW1zWURaUk9wRVFWU1RiNTZFeGU1cnoxYlFMNjMyQllpY2MtUXF3?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-05T12:58:34Z"
+}

@@ -1,0 +1,304 @@
+{
+  "id": "ep06-banks-survive-financial",
+  "title": "What is a Bank 'Stress Test'? (Not what you think!)",
+  "series": "Big Questions, Tiny Words",
+  "status": "scripted",
+  "format_id": "food_science",
+  "topic_area": "economics",
+  "one_idea": "Bank stress tests are regulatory simulations of severe economic downturns that ensure banks have enough capital to withstand crises and continue lending, protecting the broader economy.",
+  "analogy": {
+    "source_term": "Bank Stress Test",
+    "domain": "home",
+    "mapping": [
+      [
+        "Bank",
+        "House"
+      ],
+      [
+        "Financial Hurricane/Crisis",
+        "Real Hurricane/Storm"
+      ],
+      [
+        "Regulators/Stress Test",
+        "Engineers/Safety Test"
+      ],
+      [
+        "Bank's Capital",
+        "House's Foundation/Structure"
+      ],
+      [
+        "Surviving",
+        "Standing Strong"
+      ]
+    ],
+    "limitation": "Unlike a real house, a bank isn't hit by a literal storm, but by hypothetical financial scenarios.",
+    "true_term_reveal_beat": "s5"
+  },
+  "audience_misconception": "People often think 'stress tests' refer to measuring the mental health or workload stress of bank employees.",
+  "structure": "ABT",
+  "claims": [
+    {
+      "claim": "The Federal Reserve conducts bank stress tests.",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm",
+      "verified": true
+    },
+    {
+      "claim": "The purpose of stress tests is to ensure banks can withstand severe economic downturns.",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm",
+      "verified": true
+    },
+    {
+      "claim": "The Federal Reserve recently finalized changes to its stress test rules.",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm",
+      "verified": true
+    }
+  ],
+  "sponsor": null,
+  "posts": [
+    {
+      "platform": "youtube_shorts",
+      "scheduled": null
+    },
+    {
+      "platform": "instagram_reels",
+      "scheduled": null
+    },
+    {
+      "platform": "tiktok",
+      "scheduled": null
+    }
+  ],
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "disclosure": null,
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Alex, a curious adult in their late 20s, short dark hair, wearing a smart casual jacket, expressive face, diverse features",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "engineer": "A meticulous female engineer in a hard hat and safety vest, holding blueprints, focused and professional",
+      "bank_ceo": "A serious but calm male bank CEO in a sharp business suit, looking confident",
+      "regulator": "A stern but fair female financial regulator, wearing a professional suit, holding a clipboard, with an analytical expression"
+    }
+  },
+  "mechanism": [
+    {
+      "step": "Regulators design severe economic scenarios.",
+      "scene": "s6",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm"
+    },
+    {
+      "step": "They project how a bank's finances would perform under these extreme conditions.",
+      "scene": "s7",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm"
+    },
+    {
+      "step": "Banks must prove they can absorb massive losses and still lend money.",
+      "scene": "s8",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm"
+    },
+    {
+      "step": "This ensures banks have enough capital to keep the economy stable during a financial crisis.",
+      "scene": "s9",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "Stress Test",
+      "kind": "term",
+      "definition": "A regulatory exercise where banks are tested against severe hypothetical economic downturns to ensure they have enough capital.",
+      "introduced_in": "s5",
+      "needed_in": [
+        "s6",
+        "s7",
+        "s8",
+        "s9"
+      ]
+    },
+    {
+      "name": "Financial Hurricane",
+      "kind": "idea",
+      "definition": "A severe economic crisis or downturn.",
+      "introduced_in": "s1",
+      "needed_in": [
+        "s9"
+      ]
+    },
+    {
+      "name": "Capital",
+      "kind": "term",
+      "definition": "The financial resources a bank holds to absorb losses and maintain operations.",
+      "introduced_in": "s8",
+      "needed_in": [
+        "s9"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "How do banks survive a hurricane like that?",
+      "raised_in": "s1",
+      "paid_in": "s9"
+    }
+  ],
+  "news_hook": {
+    "event": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requirements",
+    "date": "2026-09-30",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm"
+  },
+  "original_contribution": "Explains what a bank 'stress test' actually is using a physical safety test analogy, clarifying a common misconception about the term.",
+  "packaging": {
+    "primary_keyword": "bank stress test",
+    "title": "What is a Bank 'Stress Test'? (Not what you think!)",
+    "title_options": [
+      "How Banks Survive a Financial Hurricane",
+      "What is a Bank 'Stress Test'? (Not what you think!)",
+      "The Secret to Bank Stability: Stress Tests",
+      "Why Your Bank Won't Collapse in a Crisis",
+      "Bank Stress Tests Explained: Financial Hurricane Prep"
+    ],
+    "title_rationale": "This title directly addresses the topic and the common misconception, creating a curiosity gap.",
+    "description": "Ever wondered how banks prepare for economic downturns? It's not about employee stress! Learn what a bank 'stress test' actually is, how regulators simulate financial hurricanes, and why these tests are crucial for economic stability. The Federal Reserve just updated these rules for more transparency.\n\nSource: Federal Reserve (https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm)\n\n#BankStressTest #EconomicsExplained #FinancialStability #FederalReserve #HowItWorks",
+    "tags": [
+      "bank stress test",
+      "financial crisis",
+      "federal reserve",
+      "economic stability",
+      "banking explained",
+      "finance basics",
+      "how banks work"
+    ],
+    "instagram_caption": "What's a bank 'stress test' really mean? 🤔 It's not about employee workload! Learn how regulators push banks to their financial limits to prevent future crises. The Fed just updated its rules, making this crucial process even more transparent. #BankStressTest #Economics #FinancialLiteracy #FederalReserve #MoneyTalks",
+    "thumbnail": {
+      "text": "STRESS TEST"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "weird_result_hook",
+      "narration": "A financial storm hits. Can banks survive a financial hurricane?",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Pull out] A stylized city skyline is hit by a dramatic financial storm with swirling currency symbols and dark clouds. Alex looks worriedly at the unfolding crisis.",
+        "keyframe_prompt": "A stylized city skyline being hit by a dramatic financial storm with swirling currency symbols and dark clouds, wide shot, Alex, a curious adult in their late 20s, short dark hair, wearing a smart casual jacket, expressive face, diverse features looks worriedly"
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "analogy",
+      "narration": "Regulators act like engineers testing a building before a major storm.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Tracking shot] A meticulous female engineer in a hard hat and safety vest walks around a sturdy, modern house model, pointing at its structure with a blueprint. A miniature storm simulation begins in the background.",
+        "keyframe_prompt": "A meticulous female engineer in a hard hat and safety vest, holding blueprints, stands next to a sturdy, modern house model. She points at the house. A miniature storm simulation begins in the background, wide shot"
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "analogy",
+      "narration": "They check if its foundation and structure can handle extreme winds, floods, and tremors.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "The sturdy house model from s2 is surrounded by simulated extreme weather: powerful wind machines, artificial rain, and a vibrating platform, {engineer} observes intently, medium shot"
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "analogy",
+      "narration": "They don't wait for a real disaster; they simulate the worst-case scenario.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{engineer} stands next to a control panel with dials and gauges, simulating the storm. The house model is still under 'test' conditions, wide shot"
+      }
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "For banks, this is called a 'stress test,' and it's much more than employee workload.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A digital screen displays a complex financial graph plummeting downwards, next to a worried but composed {bank_ceo}, simple, clean, close-up",
+        "term": {
+          "label": "STRESS TEST",
+          "sub": "simulating financial hurricanes",
+          "color": "coral"
+        }
+      }
+    },
+    {
+      "id": "s6",
+      "beat": "mechanism",
+      "narration": "The Federal Reserve designs severe economic scenarios. Think high unemployment, crashing markets, and housing busts.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Zoom in] A large, glowing holographic projection shows a bleak economic forecast: a graph with unemployment rising, stock market falling, and houses with 'for sale' signs. The regulator, a stern but fair female financial regulator, wearing a professional suit, holding a clipboard, with an analytical expression, points to it with a serious expression.",
+        "keyframe_prompt": "A large, glowing holographic projection showing a bleak economic forecast: a graph with unemployment rising, stock market falling, and houses with 'for sale' signs. A stern but fair female financial regulator, wearing a professional suit, holding a clipboard, with an analytical expression, stands in front of it with a serious expression, medium shot"
+      }
+    },
+    {
+      "id": "s7",
+      "beat": "mechanism",
+      "narration": "They project how a bank's loans, investments, and revenue would perform under these extreme conditions.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Pan right] The regulator's, a stern but fair female financial regulator, wearing a professional suit, holding a clipboard, with an analytical expression, hand points to specific sections of the holographic projection, which highlight different bank assets (loans, bonds) being impacted by the crisis, showing simulated losses. The projection animates, showing values decreasing.",
+        "keyframe_prompt": "A stern but fair female financial regulator, wearing a professional suit, holding a clipboard, with an analytical expression, points to specific sections of a holographic projection, which highlight different bank assets (loans, bonds) being impacted by the crisis, showing simulated losses, close-up on hands and projection"
+      }
+    },
+    {
+      "id": "s8",
+      "beat": "mechanism",
+      "narration": "Banks must prove they can absorb massive losses and still lend money during these fictional crises.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] A digital display shows 'LOSSES ABSORBED' and a stable 'LOAN DISBURSEMENT' metric, while the bank CEO, a serious but calm male bank CEO in a sharp business suit, looking confident, calmly makes notes at a large desk. The numbers on the display update, showing resilience.",
+        "keyframe_prompt": "A serious but calm male bank CEO in a sharp business suit, looking confident, sits at a large, empty desk, calmly making notes, while in the background, a digital display shows 'LOSSES ABSORBED' and a stable 'LOAN DISBURSEMENT' metric, composed, confident, medium shot",
+        "term": {
+          "label": "CAPITAL",
+          "sub": "bank's safety net",
+          "color": "sky"
+        }
+      }
+    },
+    {
+      "id": "s9",
+      "beat": "kitchen_tip_cta",
+      "narration": "This ensures banks have enough capital to keep the economy stable. They can survive a real financial hurricane. The Fed just updated these rules for more transparency. Follow to understand more hidden financial systems!",
+      "visual": {
+        "type": "illustration",
+        "prompt": "{character} smiles confidently, standing in a brightly lit, stable city with resilient buildings and a clear sky, symbolizing economic stability, wide shot",
+        "term": {
+          "label": "NOW YOU KNOW!",
+          "sub": "follow for more",
+          "color": "mint"
+        }
+      }
+    }
+  ],
+  "carousel": [],
+  "audience": "curious_adult",
+  "topic": {
+    "headline": "How Banks Survive a Financial Hurricane",
+    "angle": "Explain what a bank 'stress test' actually is using a physical safety test analogy.",
+    "why_now": "The Federal Reserve finalized changes to its stress test rules on September 30, 2026.",
+    "source_urls": [
+      "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260930a.htm"
+    ]
+  },
+  "updated_at": "2026-10-04T22:31:25Z"
+}

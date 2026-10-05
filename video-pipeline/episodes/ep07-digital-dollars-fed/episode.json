@@ -1,0 +1,233 @@
+{
+  "id": "ep07-digital-dollars-fed",
+  "title": "Why digital dollars need a real bank safe",
+  "series": "Big Questions, Tiny Words",
+  "audience": "kids",
+  "format_id": "why_is_x",
+  "topic_area": "economics",
+  "one_idea": "Stablecoins only work when backed dollar-for-dollar by real reserves supervised by regulators.",
+  "audience_misconception": "People might think all cryptocurrencies are the same, or that stablecoins are entirely unregulated, not understanding their unique peg to traditional currency or why financial regulators would be interested in them.",
+  "structure": "ABT",
+  "analogy": {
+    "source_term": "A payment stablecoin backed one-to-one by dollar reserves",
+    "domain": "food",
+    "mapping": [
+      [
+        "stablecoin",
+        "snack card"
+      ],
+      [
+        "dollar reserves",
+        "muffins in a safe"
+      ],
+      [
+        "Federal Reserve regulators",
+        "owl referee checking the safe"
+      ]
+    ],
+    "limitation": "Unlike physical bakery snacks, digital coins live on computer networks and cannot be eaten.",
+    "true_term_reveal_beat": "s1"
+  },
+  "news_hook": {
+    "event": "The Federal Reserve Board requested public comment on proposals to establish a regulatory framework for Board-supervised payment stablecoin issuers under the GENIUS Act.",
+    "date": "2026-09-24",
+    "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+  },
+  "original_contribution": "Explains the complex concept of stablecoin reserve backing through an intuitive bakery snack-card analogy tailored for early elementary school learners.",
+  "mechanism": [
+    {
+      "step": "A company sells digital tokens called stablecoins that promise to match real dollars.",
+      "scene": "s1",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    },
+    {
+      "step": "The company promises to keep one real dollar locked away for every token sold.",
+      "scene": "s2",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    },
+    {
+      "step": "Regulators at the Fed check the safe to ensure all backing dollars are really there.",
+      "scene": "s3",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    },
+    {
+      "step": "Clear rules make sure token holders can always trade back for real cash safely.",
+      "scene": "s4",
+      "source": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "stablecoin",
+      "kind": "term",
+      "definition": "A digital coin designed to always equal exactly one dollar.",
+      "introduced_in": "s1",
+      "needed_in": [
+        "s2",
+        "s3",
+        "s4"
+      ]
+    },
+    {
+      "name": "dollar backing",
+      "kind": "idea",
+      "definition": "Keeping real money locked in a safe to back up promises.",
+      "introduced_in": "s2",
+      "needed_in": [
+        "s3",
+        "s4"
+      ]
+    },
+    {
+      "name": "bank referee",
+      "kind": "idea",
+      "definition": "Rules that check that promised money is truly safe.",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s4"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Why does the Fed care about digital dollar tokens?",
+      "raised_in": "s1",
+      "paid_in": "s4"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "The Federal Reserve Board requested public comment on two proposals related to establishing a regulatory framework for Board-supervised payment stablecoin issuers under the GENIUS Act.",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm",
+      "verified": true
+    },
+    {
+      "claim": "The regulatory proposals establish supervisory standards to ensure Board-supervised stablecoin issuers maintain safe and sound operations.",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm",
+      "verified": true
+    }
+  ],
+  "packaging": {
+    "primary_keyword": "digital dollars",
+    "title": "Why digital dollars need a real bank safe",
+    "title_options": [
+      "Why digital dollars need a real bank safe",
+      "Why the Fed cares about stablecoins",
+      "Why digital coins need real money in the bank",
+      "What makes a stablecoin actually safe?",
+      "Why digital dollars promise to equal one dollar"
+    ],
+    "title_rationale": "Kid-friendly question connecting digital money to a familiar physical safe, keeping the primary keyword front and center without confusing finance jargon.",
+    "description": "Why do digital dollars need real money in a bank safe? We explain stablecoins and why the Fed checks them using a fun snack bakery! Simple words for curious minds.\n\nSource: https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm\n\n#Shorts #digitaldollars #economics #explainlikeimfive #money",
+    "tags": [
+      "digital dollars",
+      "stablecoins explained",
+      "federal reserve for kids",
+      "what is a stablecoin",
+      "how digital money works",
+      "economics for kids"
+    ],
+    "instagram_caption": "Why do digital dollars need real money in a bank safe? A fun snack bakery explains stablecoins and Fed rules in 45 seconds! Ask a grown-up about digital money.\n\n#digitaldollars #stablecoin #economicsforkids #explainlikeimfive",
+    "thumbnail": {
+      "text": "DIGITAL DOLLARS"
+    }
+  },
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "sponsor": null,
+  "disclosure": null,
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Maya, a woman in her late 20s, shoulder-length black hair, mustard-yellow jacket, warm brown skin, expressive face",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters",
+    "cast": {
+      "baker_penny": "Penny, a friendly young baker wearing green overalls and a white apron",
+      "owl_referee": "Oliver, a wise little owl wearing a blue referee whistle and round glasses"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "Imagine a magic ticket for snacks. It is called a stablecoin.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Wide establishing shot of a sunny storybook bakery street. Penny, a friendly young baker wearing green overalls and a white apron stands outside a colorful pastry shop holding up a cheerful golden token. A clean cobblestone path, blooming flower boxes, bright candy colors, absolutely no text, no letters."
+      }
+    },
+    {
+      "id": "s2",
+      "beat": "cause_link_1",
+      "narration": "The baker gives you a snack card. She promises it always equals one muffin. So she puts one muffin into a safe. Your card is safe because the snack exists.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Medium shot inside the warm bakery kitchen. Penny, a friendly young baker wearing green overalls and a white apron smiles gently as she carefully places a freshly baked golden muffin into a small green metal safe box. Clean background, soft warm lighting, absolutely no text, no letters."
+      }
+    },
+    {
+      "id": "s3",
+      "beat": "cause_link_2",
+      "narration": "Digital dollars work the very same way. Companies make digital coins for computers. The Fed checks their vaults like a referee. They make sure real cash backs every coin.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "[Push in] An animated step-by-step mechanism diagram in storybook style. An icon of a golden coin slides beside a fresh muffin inside a vault, demonstrating one-to-one backing. Oliver, a wise little owl wearing a blue referee whistle and round glasses inspects the vault with a magnifying glass. Cheerful motion graphic, absolutely no text, no letters."
+      }
+    },
+    {
+      "id": "s4",
+      "beat": "twist_payoff_cta",
+      "narration": "Unlike real snacks, digital coins travel through computers. Rules keep your digital dollars safe and trustworthy. Ask a grown-up how digital money works today!",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Medium shot of Penny, a friendly young baker wearing green overalls and a white apron and Oliver, a wise little owl wearing a blue referee whistle and round glasses standing side by side waving cheerfully at the viewer, surrounded by floating sparkles and pastry drawings. Warm sunny celebration, absolutely no text, no letters."
+      }
+    }
+  ],
+  "carousel": [
+    {
+      "image": "s1",
+      "h": "Magic snack tickets",
+      "body": "What is a stablecoin?",
+      "tag": "BIG QUESTIONS",
+      "tagColor": "coral"
+    },
+    {
+      "image": "s2",
+      "h": "Backing every card",
+      "body": "A real muffin in the safe for every ticket.",
+      "tag": "HOW IT WORKS",
+      "tagColor": "sunny"
+    },
+    {
+      "image": "s4",
+      "h": "Safe and sound",
+      "body": "Ask a grown-up how digital money works!",
+      "tag": "ASK A GROWN-UP",
+      "tagColor": "mint"
+    }
+  ],
+  "director_notes": "## Director Notes\n- Format chosen: why_is_x — reason: Matches the curiosity angle of why regulators inspect digital dollar tokens, fitting the 4-beat structure cleanly.\n- Analogy chosen: food (bakery snack cards backed by muffins in a safe) — limitation: Unlike real bakery snacks, digital coins move across computer networks and cannot be eaten.\n- Open loops: [beat hook opened why digital dollar tokens need backing; paid off at beat twist_payoff_cta]\n- Unresolved QA warnings: [scene_duration_max_sec: scene durations reflect format word budgets within overall 41s runtime]\n- Claims to verify before approval: [none; both claims cited from official Federal Reserve press release]",
+  "status": "scripted",
+  "topic": {
+    "headline": "Digital Dollars: Why the Fed Cares About Stablecoins.",
+    "angle": "Stablecoins are like digital gift cards that promise to always be worth one dollar. The government, through the Fed, wants to regulate them to make sure the company issuing them actually has enough real dollars in the bank to back up those gift cards, so your digital money is always safe and trustworthy, just like you expect a physical gift card to always hold its promised value.",
+    "why_now": "The Federal Reserve Board recently requested public comment on proposals to establish a regulatory framework for Board-supervised payment stablecoin issuers under the GENIUS Act, signaling increased government attention to these digital assets.",
+    "source_urls": [
+      "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm"
+    ]
+  },
+  "updated_at": "2026-10-04T22:58:25Z"
+}
