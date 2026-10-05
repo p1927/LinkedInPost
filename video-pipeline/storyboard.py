@@ -33,7 +33,8 @@ def _duration(ep: dict, sc: dict) -> tuple:
     a = ROOT / "out" / ep["id"] / "audio" / f"{sc['id']}.json"
     if a.exists():
         return json.loads(a.read_text())["duration"], "tts"
-    return len(sc["narration"].split()) / (WPS * (ep.get("voice_override") or {}).get("speed", 1.0)), "est"
+    import lint
+    return lint.est_seconds(sc["narration"], (ep.get("voice_override") or {}).get("speed", 1.0)), "est"
 
 
 def _elements(v: dict, start: float, dur: float) -> list:
@@ -47,6 +48,17 @@ def _elements(v: dict, start: float, dur: float) -> list:
         out.append(f"number: {v.get('value')} {v.get('unit', '')} - {v.get('label')}".replace("  ", " "))
     elif t == "compare":
         out.append(f"compare: {v.get('colA')} vs {v.get('colB')} ({len(v.get('rows', []))} rows, winner {v.get('winner', 'none')})")
+    elif t == "chart":
+        for se in v.get("series", []):
+            pts = se.get("points", [])
+            out.append(f"{v.get('kind', 'chart')} chart, series '{se.get('label')}': {len(pts)} points ({pts[0]['x']} to {pts[-1]['x']})" if pts else f"chart series '{se.get('label')}'")
+        if v.get("highlight"):
+            out.append(f"highlight at {v['highlight'].get('x')}: {v['highlight'].get('label')}")
+    elif t == "timeline":
+        out += [f"{e.get('when')}: {e.get('label')}" + (" (emphasis)" if e.get("emphasis") else "") for e in v.get("events", [])]
+    elif t == "forces":
+        l, r, c = v.get("left", {}), v.get("right", {}), v.get("center", {})
+        out.append(f"{l.get('label')} {l.get('value')} {l.get('unit', '')} pushes against {r.get('label')} {r.get('value')} {r.get('unit', '')} -> {c.get('label')} {c.get('outcome', '')}".replace("  ", " "))
     elif t in ("diagram", "orbit"):
         n = len(v.get("nodes") or v.get("bodies") or [])
         if n:
@@ -69,7 +81,7 @@ def build(ep: dict, ep_dir=None) -> dict:
         dur, src = _duration(ep, sc)
         words = len(sc["narration"].split())
         beat = struct.get(sc["beat"])
-        prompt = v.get("prompt") or v.get("keyframe_prompt") or v.get("motion_prompt") or v.get("title") or v.get("label") or f"({v['type']} scene built from its own fields, no prompt)"
+        prompt = v.get("prompt") or v.get("keyframe_prompt") or v.get("motion_prompt") or v.get("title") or v.get("label") or (v.get("center") or {}).get("label") or f"({v['type']} scene built from its own fields, no prompt)"
         scenes.append({
             "id": sid, "beat": sc["beat"], "start_s": round(t0, 1), "duration_s": round(dur, 1), "timing": src,
             "narration": sc["narration"], "words": words, "word_budget": beat["word_budget"] if beat else None,

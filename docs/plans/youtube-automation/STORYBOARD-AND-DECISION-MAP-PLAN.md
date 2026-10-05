@@ -99,3 +99,14 @@ Evidence (all from the repo):
 - Gates measured the wrong things: lint and verify check structure, sources and an LLM reading the script text (comprehension 5/5). No check exists for story order, concepts defined before use, numbers per scene or per video, brief coverage, or visual variety. The animatic review looked at stills for layout, not at the story.
 - No variety: 12 of 16 episodes use audience curious_adult with the single profile explainer-clean; the second look is the kids one. More palettes are TODO rows in DESIGN_SYSTEM.md; the Director's variety() rotates format, analogy domain and mode, not the look. Widening the Director to number/compare/steps (this session) made text tiles the easiest scene to write.
 Proposed fixes (not built): record the owner's questions as `brief` and require each to be answered in a scene; lint concept-before-use, declared chronology, at most one headline figure per scene and a cap per video; native-tile share cap with at least one mechanism diagram for explainers; warn when an audience episode has no `direction`; add explainer looks and rotate them; storyboard approval by the owner before any build.
+
+## 12. Pipeline fixes after the ep23 review (2026-10-05)
+Built (all in Python/schema; checked by `run.py selfcheck`):
+- `brief` (owner questions) with `answered_in`, `chronology` and per-scene `when` in the schema; Director flag `--brief` (repeatable), story rules and brief block in the writer prompt.
+- Lint story gates: `story_brief_answered`, `story_term_before_definition`, `story_time_jumps`, `story_chronology`, `story_figures` (8 spoken, 3 on screen), `story_tile_share` (warn above 40%, error above 60%), `direction_present`. Full severity for new work, warnings for approved/rendered episodes. ep23 treated as new work trips tile share (92%), unanswered brief, figures, time jump, no direction.
+- Verify story editor pass: reads the storyboard as text; errors for an unanswered or merely touched brief question, a high-severity order problem naming real scenes, explanation score below 4, or a data dump.
+- Duration estimate: 2.5 words/s plus 1.2 s per figure (ep23's old estimate was 15 s short); curious_adult card pace 2.4.
+- New scene types in the schema and Director prompt: chart, timeline, forces (renderer in progress). The prompt no longer says mechanism beats are tiles; it maps relationship to scene type.
+- `selfcheck` guard: a data-dump fixture must trip five gates and a well-formed fixture none.
+Still open: renderer for the three new scene types; map and isometric/blueprint primitives; ep23 redo through the Director.
+

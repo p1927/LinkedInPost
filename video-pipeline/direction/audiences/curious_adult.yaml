@@ -1,7 +1,7 @@
 id: curious_adult
 name: "Curious adult"
 who: "Adults who use technology and money daily but never learned how it works; smart, time-poor, allergic to condescension."
-pace_wps: 2.6
+pace_wps: 2.4  # measured: ep03 2.6, ep23 2.3 words/s at speed 1.0 (figures slow the voice); was 2.6
 sentence_words_max: 18
 sentence_words_avg: 12
 jargon_budget: 3

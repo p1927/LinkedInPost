@@ -326,7 +326,7 @@ def _checklist_checks(ep: dict, out: Path) -> list:
         a = out / "audio" / f"{s['id']}.json"
         if a.exists():
             return json.loads(a.read_text())["duration"]
-        return len(s["narration"].split()) / (2.5 * (ep.get("voice_override") or {}).get("speed", 1.0))
+        return est_seconds(s["narration"], (ep.get("voice_override") or {}).get("speed", 1.0))
 
     total_words = sum(len(s["narration"].split()) for s in sc)
     total_sec = sum(secs(s) for s in sc)
@@ -703,6 +703,105 @@ def _segment_checks(ep, d, segs, env, mode, co, shots, long_form, dur, clip_s, s
     return res
 
 
+_NUM = re.compile(r"\d[\d,\.]*")
+_YEAR = re.compile(r"^(19|20)\d\d$")
+
+
+def figures(text: str) -> list:
+    """Numeric tokens that are figures (years excluded): what the voice must read out and the viewer must absorb."""
+    return [t.rstrip(".,") for t in _NUM.findall(text) if not _YEAR.match(t.rstrip(".,"))]
+
+
+def est_seconds(text: str, speed: float = 1.0) -> float:
+    """Planning estimate of spoken time: 2.5 words/s plus about 1.2 s per figure (calibrated on ep23, where the old pure word count was 15 s short)."""
+    return (len(text.split()) / 2.5 + 1.2 * len(_NUM.findall(text))) / speed
+
+
+STORY_RULES = ("story_brief_answered", "story_term_before_definition", "story_time_jumps", "story_chronology", "story_figures", "story_tile_share", "direction_present")
+TILES = {"number", "compare", "steps"}
+_MONTHS = {m: i for i, names in enumerate([("january", "jan"), ("february", "feb"), ("march", "mar"), ("april", "apr"), ("may",), ("june", "jun"), ("july", "jul"),
+                                           ("august", "aug"), ("sep", "sept", "september"), ("october", "oct"), ("november", "nov"), ("december", "dec")], 1) for m in names}
+_MONTH_RE = re.compile(r"\b(" + "|".join(sorted(_MONTHS, key=len, reverse=True)) + r")\b", re.I)
+
+
+def _when_key(w: str):
+    m = re.match(r"^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$", (w or "").strip())
+    return (int(m.group(1)), int(m.group(2) or 0), int(m.group(3) or 0)) if m else None
+
+
+def _story_checks(ep: dict) -> list:
+    """Story-level gates that lint, verify and the animatic could not see (ep23 passed everything and was still a data dump).
+    Full severity for new work (idea/scripted); warnings for episodes already approved or rendered."""
+    if not ep.get("audience"):
+        return []
+    new = registry.status_of(ep) in ("idea", "scripted")
+
+    def s_(rid, base):
+        return sev(rid, base) if new else "warn"
+    sc, out = ep["scenes"], []
+    ids = [s["id"] for s in sc]
+    for b in ep.get("brief") or []:
+        if b.get("answered_in") not in ids:
+            out.append((s_("story_brief_answered", "error"), "story_brief_answered", f"brief question not answered by any scene (set brief[].answered_in): {b['question'][:90]}"))
+    idx = {s["id"]: i for i, s in enumerate(sc)}
+    for c in ep.get("concepts") or []:
+        i0 = idx.get(c.get("introduced_in"))
+        if i0 is None or c.get("kind", "term") != "term":
+            continue
+        pat = re.compile(r"\b" + re.escape(c["name"]) + r"\b")
+        early = next((s["id"] for s in sc[:i0] if pat.search(s["narration"])), None)
+        if early:
+            out.append((s_("story_term_before_definition", "error"), "story_term_before_definition", f"'{c['name']}' is used in {early} before it is introduced in {c['introduced_in']}: define a term before the viewer needs it"))
+    # time order: the story must not jump back and forth
+    if ep.get("chronology") != "none":
+        seq = [(s["id"], _MONTHS[m.lower()]) for s in sc[1:] for m in _MONTH_RE.findall(s["narration"])]  # the hook (first scene) may tease the whole arc
+        peak, peak_id = 0, None
+        for sid, mo in seq:
+            if mo < peak and sid != peak_id:
+                out.append((s_("story_time_jumps", "warn"), "story_time_jumps", f"narration moves backwards in time: {sid} mentions an earlier month than {peak_id} did; tell the story in one direction or set chronology: none"))
+                break
+            if mo > peak:
+                peak, peak_id = mo, sid
+    if ep.get("chronology") == "forward":
+        keys = [(s["id"], _when_key(s.get("when"))) for s in sc if s.get("when")]
+        if len(keys) < max(3, len(sc) // 2):
+            out.append((s_("story_chronology", "error"), "story_chronology", "chronology is forward but fewer than half the scenes carry `when`"))
+        prev = None
+        for sid, k in keys:
+            if k is None:
+                out.append((s_("story_chronology", "error"), "story_chronology", f"{sid}: `when` must be YYYY, YYYY-MM or YYYY-MM-DD"))
+            elif prev and k < prev[1]:
+                out.append((s_("story_chronology", "error"), "story_chronology", f"{sid} happens before {prev[0]}: scenes go backwards in time"))
+            prev = (sid, k) if k else prev
+    # figure density: a viewer absorbs a few numbers, not a table
+    spoken = sum(len(figures(s["narration"])) for s in sc)
+    if spoken > 8:
+        out.append((s_("story_figures", "warn"), "story_figures", f"{spoken} figures are spoken (max 8): say fewer, show the rest, and cut numbers before cutting explanation"))
+    for s in sc:
+        shown = {f for f in figures(" ".join(str(v) for v in _flat(s["visual"])))}
+        if len(shown) > 3:
+            out.append((s_("story_figures", "warn"), "story_figures", f"{s['id']} shows {len(shown)} different figures at once (max 3)"))
+    tiles = sum(1 for s in sc if s["visual"]["type"] in TILES)
+    share = tiles / max(len(sc), 1)
+    if share > 0.4:
+        out.append((s_("story_tile_share", "error") if share > 0.6 else "warn", "story_tile_share",
+                    f"{tiles} of {len(sc)} scenes are text/number tiles ({share:.0%}; max 40%, error above 60%): show the information in its natural form (chart, timeline, forces, diagram, illustration, clip)"))
+    if registry.status_of(ep) in ("idea", "scripted") and not ep.get("direction"):
+        out.append((sev("direction_present", "warn"), "direction_present", "no `direction` (mode, lens, skills_used): the craft cards were not applied; use the Director or set it (run.py direction ...)"))
+    return out
+
+
+def _flat(v):
+    if isinstance(v, dict):
+        for x in v.values():
+            yield from _flat(x)
+    elif isinstance(v, list):
+        for x in v:
+            yield from _flat(x)
+    else:
+        yield v
+
+
 IDENTITY_RULES = ("identity_present", "identity_contrast", "identity_banned_default", "identity_variety")  # emitted below / by identity.py
 
 
@@ -743,7 +842,7 @@ def _core_checks(ep: dict, out: Path) -> list:
             total_sec += json.loads(a.read_text())["duration"]
         else:
             have_audio = False
-            total_sec += n / (2.5 * (ep.get('voice_override') or {}).get('speed', 1.0))
+            total_sec += est_seconds(s["narration"], (ep.get("voice_override") or {}).get("speed", 1.0))
     dlo, dhi = thr("total_duration_range", "threshold_min", 25), thr("total_duration_range", "threshold_max", 90)
     if not (dlo <= total_sec <= dhi):
         add(sev("total_duration_range", "error"), "total_duration_range", f"~{total_sec:.0f}s{'' if have_audio else ' (estimated)'} (target {dlo}-{dhi}s)")
@@ -835,6 +934,7 @@ def run(ep: dict) -> list:
     section("checklist", lambda: _checklist_checks(ep, out))
     section("direction", lambda: _direction_checks(ep))
     section("identity", lambda: _identity_checks(ep))
+    section("story", lambda: _story_checks(ep))
     return _apply_waivers(ep, issues)
 
 

@@ -318,3 +318,40 @@ rules:
     description: The same (archetype, palette) pair was not used by any of the last 5 episodes that carry an identity.
     check: identity_variety
 
+  # ── Story gates (added after ep23: passed every check and was still a data dump; STORYBOARD plan section 11) ──
+  - id: story_brief_answered
+    enforced_by: lint
+    severity: error
+    description: Every owner question in `brief` names the scene that answers it (brief[].answered_in). The story reviewer in verify checks the answer is real. New work only; warning on approved/rendered episodes.
+    check: story_brief_answered
+  - id: story_term_before_definition
+    enforced_by: lint
+    severity: error
+    description: A term (concept kind term) is not used in any scene before the scene that introduces it. Define before use.
+    check: story_term_before_definition
+  - id: story_time_jumps
+    enforced_by: lint
+    severity: warn
+    description: Month names in the narration do not move backwards in time (March, April, then March again). Set chronology none for a story that is not told in time order.
+    check: story_time_jumps
+  - id: story_chronology
+    enforced_by: lint
+    severity: error
+    description: With chronology forward, scenes carry `when` (YYYY, YYYY-MM or YYYY-MM-DD) and the values never decrease.
+    check: story_chronology
+  - id: story_figures
+    enforced_by: lint
+    severity: warn
+    description: At most 8 spoken figures per video (years excluded) and at most 3 different figures on screen in one scene. Figures are read slowly; cut numbers before cutting explanation.
+    check: story_figures
+  - id: story_tile_share
+    enforced_by: lint
+    severity: error
+    description: Text/number tiles (number, compare, steps scenes) are at most 40% of the scenes (warn), and above 60% an error for new work. Information should appear in its natural form (chart, timeline, forces, diagram, illustration or clip).
+    check: story_tile_share
+  - id: direction_present
+    enforced_by: lint
+    severity: warn
+    description: A new audience episode carries `direction` (mode, lens, skills_used) so the craft cards were actually applied. The Director sets it; hand-written episodes must too.
+    check: direction_present
+

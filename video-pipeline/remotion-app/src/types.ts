@@ -54,6 +54,17 @@ export type VisualOrbit = {
 // Animatic only (animatic.py): stands in for a scene whose paid media is not generated yet. Never written by the real build.
 export type VisualPlaceholder = { type: "placeholder"; of: string; narration: string; summary: string; generation: string; intent?: string; shot?: string; seconds: number; est: boolean; captions?: boolean };
 
+// ── Data visuals (DataScenes.tsx; STYLE-IDENTITY-PLAN S2) ─────────────────
+export type Tone = "accent" | "accent2" | "warn" | "good";            // palette roles: accent=sunny, accent2=sky, warn=coral, good=mint
+export type VisualChart = { type: "chart"; kind: "line" | "bar"; title?: string; unit?: string; source?: string; zero?: boolean;
+  series: Array<{ label: string; tone?: Tone; points: Array<{ x: string; y: number }> }>;
+  highlight?: { x: string; label: string; series?: string }; captions?: boolean };
+export type VisualTimeline = { type: "timeline"; title?: string; source?: string;
+  events: Array<{ when: string; label: string; detail?: string; tone?: Tone; emphasis?: boolean }>; captions?: boolean };
+export type VisualForces = { type: "forces"; title?: string; source?: string;
+  left: { label: string; value: number; unit?: string; tone?: Tone }; right: { label: string; value: number; unit?: string; tone?: Tone };
+  center: { label: string; outcome?: string; direction?: "up" | "down" | "flat" }; captions?: boolean };
+
 // ── Scene visual discriminated union ──────────────────────────────────────
 export type SceneVisual =
   // Existing types — unchanged so old episodes keep rendering
@@ -66,7 +77,10 @@ export type SceneVisual =
   | { type: "compare";  colA: string; colB: string; rows: Array<{ a: string; b: string }>; winner?: "A" | "B"; captions?: boolean }
   | { type: "photo";    still: string; label?: string; lowerThird?: string; zoom?: [number, number]; term?: Term; captions?: boolean }
   | VisualPlaceholder
-  | VisualOrbit;
+  | VisualOrbit
+  | VisualChart
+  | VisualTimeline
+  | VisualForces;
 
 export type SceneData = { id: string; beat: string; from: number; frames: number; audio: string; words: Word[]; visual: SceneVisual };
 

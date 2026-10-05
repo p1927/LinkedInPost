@@ -363,7 +363,11 @@ VISUAL_FIELDS = {
     "number": ["value", "unit", "label", "source", "animation"],
     "compare": ["colA", "colB", "rows", "winner"],
     "orbit": ["mode", "rings", "bodies", "gap", "reveal", "lapSec", "note", "shots", "site", "inclination", "laps", "lapShift"],
+    "chart": ["kind", "series", "title", "unit", "zero", "highlight", "source"],
+    "timeline": ["events", "title", "source"],
+    "forces": ["left", "right", "center", "title", "source"],
 }
+NATURAL_FORMS = ("chart", "timeline", "forces")  # information in its natural form: change over time, sequence, push against push
 HAND_AUTHORED = ("diagram", "photo", "remotion")  # need hand data (node layouts, licensed stills, templates): never written by the director
 SPACE_WORDS = {"space", "orbit", "orbital", "orbits", "station", "iss", "satellite", "rocket", "launch", "planet", "moon", "mars", "nasa", "astronaut",
                "astronauts", "spacecraft", "capsule", "rendezvous", "docking", "comet", "asteroid", "galaxy", "telescope", "spacex", "dragon", "crew"}
@@ -457,11 +461,13 @@ def shape_skeleton(env: dict | None = None, space: bool = False) -> str:
     sk = ", ".join(f"{k}{'' if k in sreq else '?'}: {'<one visual variant below>' if k == 'visual' else ('<shot below>' if k == 'shot' else _shape(v, f'scene.{k}'))}"
                    for k, v in sprops.items())
     lines.append(f"scenes[]: {{{sk}}}  (term lives inside visual, never on the scene)")
-    lines.append("visual variants (paid: clip; FREE Remotion: " + ", ".join(t for t in ("steps", "number", "compare") + (("orbit",) if space else ())) + "; illustration = one generated still):")
+    lines.append("visual variants (paid: clip; FREE Remotion: " + ", ".join(t for t in NATURAL_FORMS + ("steps", "number", "compare") + (("orbit",) if space else ())) + "; illustration = one generated still):")
     lines += visual_variants(space)
     lines.append(f"- never emit visual.type {' / '.join(HAND_AUTHORED + (() if space else ('orbit',)))} (hand-authored; the director's check rejects them).")
-    lines.append("- Mechanism beats (things moving along lines, arrows, counts, before/after, A vs B) are FREE scenes: steps, compare, number"
-                 + (", orbit" if space else "") + ". Spend a paid clip only on real-world footage a camera could record, never on animated dots or diagrams.")
+    lines.append("- Choose each scene's visual by the RELATIONSHIP it shows, not by habit: change over time -> chart (kind line or bar, direct labels, one highlight); a sequence of dated events -> timeline (in time order, 6 events at most); "
+                 "one force pushing against another -> forces (left vs right with a centre outcome); ONE headline figure -> number; two things defined side by side -> compare; a short process -> steps; "
+                 "a metaphor or real object -> illustration; real-world footage a camera could record -> clip" + ("; orbits -> orbit" if space else "") + ". "
+                 "Text and number tiles (number, compare, steps) may be at most 40% of the scenes: lint fails a draft above 60%. Spend a paid clip only on real footage, never on animated dots or diagrams.")
     for key in ("direction", "continuity"):
         if key in props:
             lines.append(f"{key}: {_shape(props[key], key, enums=enums)}")
@@ -864,7 +870,23 @@ def claim_key() -> str:
     return next((f for k, f in _url_fields() if k == "claims"), "url")
 
 
-def write_episode(llm, topic: dict, items: list, var: dict, ep_id: str, eps: list, budget: "Budget | None" = None) -> dict:
+STORY_RULES_TEXT = """STORY RULES (lint and the story reviewer enforce these):
+- Tell the story in ONE time direction. For a time story set chronology "forward" and `when` (YYYY, YYYY-MM or YYYY-MM-DD) on the scenes; otherwise set chronology "none". Never go March, April, March again.
+- Define every term before the viewer needs it (introduce it in a scene, list it in concepts); do not use FII, SIP, put, etc. earlier than the scene that explains it.
+- Explain WHY and HOW before quoting numbers; a figure only supports a point already made. At most 3 figures on screen in a scene and 8 spoken figures in the video (the voice reads figures slowly).
+- Stay on the owner's questions: give each its own scene, in order, and do not add side topics (no extra derivatives, history or statistics nobody asked for).
+- If the video is too long, cut figures and side points, never the explanation of what things are and why they happen."""
+
+
+def brief_block(brief: list) -> str:
+    if not brief:
+        return ""
+    qs = "\n".join(f"{i + 1}. {q}" for i, q in enumerate(brief))
+    return (f"OWNER'S BRIEF: the video exists to answer these questions, in this order, each by a scene that explains it directly (not just a number):\n{qs}\n"
+            "Set brief = [{question: <the question exactly as given>, answered_in: <the scene id that answers it>}, ...] covering every question.\n")
+
+
+def write_episode(llm, topic: dict, items: list, var: dict, ep_id: str, eps: list, budget: "Budget | None" = None, brief: list | None = None) -> dict:
     by_url = {i["url"]: i for i in items}
     cited = [by_url[u] for u in topic["source_urls"] if u in by_url]
     rest = [i for i in items if i["url"] not in {c["url"] for c in cited}][:15]
@@ -893,11 +915,16 @@ Set style.illustration_style EXACTLY to the audience card's illustration_style (
 Follow "Episode contract" in director_prompt.md (mechanism, concepts, loops, news_hook, original_contribution, packaging). Visual types and their exact fields: the "visual variants" in SHAPES (system prompt); never emit {', '.join(HAND_AUTHORED + (() if var.get('space') else ('orbit',)))}. Do not set `music`, `profile`, `status` (the pipeline sets them). Output ONLY the JSON object; put the Director Notes block as a string in `director_notes`.
 Direction: set `direction` (mode '{var.get('mode') or 'explainer'}'), `continuity` and per-scene `shot` exactly in the SHAPES given in the system prompt{'; the REQUIRED cold-open fields are mandatory' if var.get('mode') in brain.DRAMA_MODES else ''}.
 Scenes: exactly the beats of the chosen format; narration within the format's word budgets; every illustration prompt contains no text/numbers.
+{brief_block(brief or [])}{STORY_RULES_TEXT}
 {precheck_block(var.get("precheck") or {})}
 {COLD_OPEN_NARRATION_RULE if var.get('mode') in brain.DRAMA_MODES else ''}
 WORKED EXAMPLE (script shape and quality bar; it predates `direction`; source ids are its own; do not copy its content): {example}"""
     system = system_prompt(var)
     ep = (budget or Budget()).call(llm, "writer", prompt, system=system, expect_out=9000)
+    if brief:  # the owner's exact words win; keep the writer's answered_in only when it names a real scene
+        scene_ids = {s.get("id") for s in (ep.get("scenes") or []) if isinstance(s, dict)}
+        got = {i: b for i, b in enumerate(ep.get("brief") or []) if isinstance(b, dict)}
+        ep["brief"] = [{"question": q, "answered_in": (got.get(i, {}).get("answered_in") if got.get(i, {}).get("answered_in") in scene_ids else "")} for i, q in enumerate(brief)]
     ep, unknown = from_ids(ep, ids)
     if unknown:
         print(f"writer cited unknown source ids {sorted(set(unknown))} (left as is; provenance will flag them)")
@@ -1678,9 +1705,9 @@ def finish(ep: dict, ep_id: str, var: dict, topic: dict, items: list, issues: li
 
 # ---------------------------------------------------------------- CLI
 
-_VALUE_FLAGS = {"--topic", "--audience", "--format", "--mode", "--candidates", "--choose", "--repair", "--repairs", "--source"}
+_VALUE_FLAGS = {"--topic", "--audience", "--format", "--mode", "--candidates", "--choose", "--repair", "--repairs", "--source", "--brief"}
 _BOOL_FLAGS = {"--pick", "--dry", "--force-mode", "--no-analogy-check"}
-_REPEATABLE = {"--source"}
+_REPEATABLE = {"--source", "--brief"}
 
 
 def check_args(argv: list) -> None:
@@ -1697,7 +1724,7 @@ def check_args(argv: list) -> None:
             if i + 1 >= len(argv) or argv[i + 1] in _VALUE_FLAGS | _BOOL_FLAGS:
                 raise SystemExit(f"{tok} needs a value; see --help")
             if tok in seen and tok not in _REPEATABLE:
-                raise SystemExit(f"{tok} given twice; only --source may repeat")
+                raise SystemExit(f"{tok} given twice; only --source and --brief may repeat")
             seen.add(tok)
             i += 2
         else:
@@ -1713,6 +1740,7 @@ def main(argv: list) -> None:
     check_args(argv)
     opt = lambda k: argv[argv.index(k) + 1] if k in argv else None  # noqa: E731
     forced_urls = [argv[j + 1] for j, t in enumerate(argv) if t == "--source"]
+    brief_qs = [q.strip() for j, t in enumerate(argv) if t == "--brief" for q in argv[j + 1].split("|") if q.strip()]  # repeatable; "|" also separates
     if opt("--repair"):
         n = int(opt("--repairs") or MAX_MECH_REPAIRS)
         return repair(opt("--repair"), n, force="--force-mode" in argv, max_semantic=int(opt("--repairs") or MAX_SEMANTIC_REPAIRS))
@@ -1777,7 +1805,7 @@ def main(argv: list) -> None:
             if var["precheck"]:
                 (DATA / "out" / ep_id).mkdir(parents=True, exist_ok=True)
                 (DATA / "out" / ep_id / "analogy_precheck.json").write_text(json.dumps(var["precheck"], indent=1, ensure_ascii=False))
-        ep = write_episode(llm_w, topic, items, var, ep_id, eps, budget)
+        ep = write_episode(llm_w, topic, items, var, ep_id, eps, budget, brief=brief_qs)
     except BudgetExceeded as e:
         save_state(ep_id, budget, 0, 0, "crashed", str(e), MAX_MECH_REPAIRS, MAX_SEMANTIC_REPAIRS)
         raise SystemExit(f"budget: {e}")

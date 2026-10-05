@@ -39,6 +39,8 @@ def fingerprint(ep: dict) -> str:
              ep.get("concepts"), ep.get("loops"), ep.get("one_idea"), ep.get("audience")]
     if ep.get("direction"):  # directed episodes: the shot plan is part of what the realism pass judged
         parts += [ep["direction"], ep.get("continuity"), [(s.get("shot"), s["visual"]) for s in ep["scenes"]]]
+    if ep.get("brief"):  # the story pass judges the brief and the visual order; episodes without a brief keep their old fingerprint
+        parts += [ep["brief"], ep.get("chronology"), [(s["id"], s["visual"]["type"], s.get("when")) for s in ep["scenes"]]]
     return cache.key(*parts)
 
 
@@ -368,6 +370,43 @@ def narration_statements(c: dict, ep: dict) -> list:
     return out
 
 
+MIN_EXPLAINS = 4  # 1-5: could a viewer who knew nothing now say what it is, why it happens and how it works?
+
+
+def _scene_view(s: dict) -> dict:
+    """What a viewer gets from one scene, as plain text for the story reviewer: the line, plus the visual's own words and figures (not its styling)."""
+    v = s["visual"]
+    keep = {k: v[k] for k in ("type", "title", "label", "value", "unit", "prompt", "keyframe_prompt", "colA", "colB", "rows", "steps", "kind", "series", "events", "left", "right", "center") if k in v}
+    return {"id": s["id"], "beat": s["beat"], "when": s.get("when"), "narration": s["narration"], "visual": json.dumps(keep, ensure_ascii=False)[:420]}
+
+
+def story_review(llm, ep: dict) -> dict:
+    """The viewer's-eye pass lint cannot do: does the video answer the owner's questions, in an order that makes sense, explaining before it
+    quotes numbers? (ep23 passed every other check and was a data dump.) Reads the storyboard as text, not the finished video."""
+    card = {}
+    try:
+        import yaml
+        card = yaml.safe_load((ROOT / "direction" / "audiences" / f"{ep['audience']}.yaml").read_text())
+    except Exception:  # noqa: BLE001
+        pass
+    brief = [b["question"] for b in ep.get("brief") or []]
+    prompt = f"""You are a story editor watching a short explainer video as a first-time viewer. Judge ONLY what the storyboard below shows; do not use outside knowledge to fill gaps.
+VIEWER: {card.get('who', 'a curious adult')} They know: {', '.join(card.get('assumed_knowledge', []))}. Nothing else.
+THE OWNER'S QUESTIONS (the video must answer each directly): {json.dumps(brief or ['(none given: infer the 2-3 questions the title promises)'], ensure_ascii=False)}
+DECLARED chronology: {ep.get('chronology', 'not declared')}. Title: {ep.get('title')}
+STORYBOARD (scenes in order): {json.dumps([_scene_view(s) for s in ep['scenes']], ensure_ascii=False)}
+Answer as JSON with exactly these keys:
+- "questions": list of {{"question": str, "answered_in": scene id or null, "direct": true/false (a direct explanation, not just a number or a mention), "note": str}}
+- "order_problems": list of {{"scenes": [scene ids], "severity": "high"|"low", "what": str}} for jumps back and forth in time or topic, a conclusion shown before its setup, or two timelines interleaved
+- "terms_before_defined": list of {{"term": str, "first_scene": id, "defined_in": id or null}}
+- "explains_concept": integer 1-5: after this video, could the viewer say WHAT the main thing is, WHY it happens and HOW it works? 5 = clearly yes
+- "data_dump": "high"|"low": high if figures and comparisons dominate and causes are barely explained
+- "repetition": list of {{"scenes": [ids], "what": str}} where 3 or more scenes in a row look and work the same
+- "summary": one sentence on what the viewer would remember
+Be strict; quote scene ids exactly."""
+    return llm.generate_json(prompt, temperature=JUDGE_TEMPERATURE) or {}
+
+
 def with_date(llm):
     """The verifier model does not know today's date, so figures from after its training cutoff read as 'future' and get flagged as fake
     (seen on ep22: real 5 Oct 2026 NSE flows flagged `real-no-unverified-drama`). Prefix every prompt with the date and that rule."""
@@ -392,6 +431,7 @@ def run(ep: dict, items: list | None = None, quiet: bool = False) -> dict:
     a = analogy_attack(llm, ep, ev)
     c = claim_support(llm, ep, items, ev)
     k = comprehension(llm, llm, ep)
+    st = story_review(llm, ep) if ep.get("audience") else {}
     r = realism(llm, ep) if (ep.get("direction") or {}).get("mode", "explainer") != "explainer" or any(s.get("shot") for s in ep["scenes"]) else None
     issues = []
     if int(a.get("analogy_count") or 0) > 1:
@@ -432,6 +472,25 @@ def run(ep: dict, items: list | None = None, quiet: bool = False) -> dict:
                 issues.append([level, ck.get("id", "realism"), f"{','.join(ck.get('scenes', []))}: {str(ck.get('evidence'))[:140]} -> fix: {str(ck.get('fix'))[:100]}{note}"])
         for f in r.get("viewer_would_call_fake", []):
             issues.append(["warn", "viewer_would_call_fake", f"{f.get('scene')}: {str(f.get('why'))[:160]}"])
+    ids = {s["id"] for s in ep["scenes"]}
+    for q in st.get("questions", []) or []:  # the owner's questions: each needs a real scene and a direct answer
+        if q.get("answered_in") not in ids:
+            issues.append(["error", "story_brief_unanswered", f"no scene answers: {str(q.get('question'))[:110]}"])
+        elif not q.get("direct"):
+            issues.append(["error", "story_brief_unanswered", f"{q.get('answered_in')} touches but does not explain: {str(q.get('question'))[:90]} ({str(q.get('note'))[:90]})"])
+    for o in st.get("order_problems", []) or []:
+        named = [x for x in (o.get("scenes") or []) if x in ids]
+        if named:  # quote rule: a finding must name real scenes to count as a blocker
+            issues.append(["error" if o.get("severity") == "high" else "warn", "story_order", f"{','.join(named)}: {str(o.get('what'))[:170]}"])
+    for t_ in st.get("terms_before_defined", []) or []:
+        issues.append(["warn", "story_term_before_definition", f"'{t_.get('term')}' appears in {t_.get('first_scene')} before it is explained ({t_.get('defined_in') or 'never defined'})"])
+    for rp in st.get("repetition", []) or []:
+        issues.append(["warn", "story_visual_repetition", f"{','.join(rp.get('scenes') or [])}: {str(rp.get('what'))[:140]}"])
+    if st:
+        if float(st.get("explains_concept") or 0) < MIN_EXPLAINS:
+            issues.append(["error", "story_explains", f"story editor scored the explanation {st.get('explains_concept')}/5 (needs {MIN_EXPLAINS}): {str(st.get('summary'))[:160]}"])
+        if st.get("data_dump") == "high":
+            issues.append(["error", "story_data_dump", "figures and comparisons dominate and causes are barely explained: add the why before the numbers"])
     g = k["grade"]
     if float(g.get("score", 0)) < MIN_COMPREHENSION:
         issues.append(["error", "comprehension", f"simulated viewer scored {g.get('score')}/5; missed: {g.get('missed_steps')}; misunderstood: {g.get('misunderstood')}"])
@@ -439,7 +498,7 @@ def run(ep: dict, items: list | None = None, quiet: bool = False) -> dict:
         issues.append(["warn", "viewer_confused_by", str(w)[:120]])
     report = {"episode": ep["id"], "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
               "fingerprint": fingerprint(ep), "passed": not any(i[0] == "error" for i in issues), "issues": issues,
-              "analogy": a, "claims": c, "comprehension": k, **({"realism": r} if r else {}),
+              "analogy": a, "claims": c, "comprehension": k, **({"story": st} if st else {}), **({"realism": r} if r else {}),
               "judge": {"models": list(getattr(llm, "models", []) or []), "temperature": JUDGE_TEMPERATURE, "seed": None}}
     p = report_path(ep)
     p.parent.mkdir(parents=True, exist_ok=True)

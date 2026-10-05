@@ -5,6 +5,7 @@ import type { EpisodeProps, SceneData } from "./types";
 import { ClipScene, IllustrationScene } from "./Scenes";
 import { DiagramScene, StepsScene, NumberScene, CompareScene, PhotoScene, PlaceholderScene } from "./NewScenes";
 import { OrbitScene } from "./OrbitScene";
+import { ChartScene, TimelineScene, ForcesScene } from "./DataScenes";
 import { Captions } from "./Captions";
 import { BRIDGE, RENDERED_BRIDGES, pick, presentationByName, resolve, sfxByName } from "./profile";
 import { FreezeRewind, QuestionCard } from "./Bridges";
@@ -77,6 +78,15 @@ const SceneView: React.FC<{ sc: SceneData; props: EpisodeProps; index: number; p
 
       case "orbit":
         return <OrbitScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} safe={prof.safe} />;
+
+      case "chart":
+        return <ChartScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} safe={prof.safe} />;
+
+      case "timeline":
+        return <TimelineScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} safe={prof.safe} />;
+
+      case "forces":
+        return <ForcesScene visual={v} pal={props.style} dur={sc.frames} font={prof.font} safe={prof.safe} />;
 
       case "placeholder":
         return <PlaceholderScene scene={sc} visual={v} pal={props.style} font={prof.font} safe={prof.safe} />;

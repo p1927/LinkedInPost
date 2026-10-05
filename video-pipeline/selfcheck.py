@@ -162,6 +162,37 @@ def check_identity() -> list:
     return out
 
 
+def check_story() -> list:
+    """The story gates must flag a data-dump fixture (the ep23 failure) and stay quiet on a well-formed one."""
+    import lint
+    out = []
+
+    def sc(i, beat, narr, v, when=None):
+        return {"id": f"s{i}", "beat": beat, "narration": narr, "visual": v, **({"when": when} if when else {})}
+    num = lambda x: {"type": "number", "value": x, "label": "l"}  # noqa: E731
+    bad = {"id": "ep90-fixture", "audience": "curious_adult", "status": "scripted", "format": {}, "brief": [{"question": "What happened on 1 October and why?", "answered_in": ""}],
+           "concepts": [{"name": "FII", "kind": "term", "introduced_in": "s4"}],
+           "scenes": [sc(1, "story_hook", "Why did it crash in March?", num("1")), sc(2, "setup", "In April the FII selling hit 5 crore, 6 crore, 7 crore, 8 crore and 9 crore.", num("2")),
+                      sc(3, "explain", "Then in March it fell 9 percent.", {"type": "compare", "colA": "a", "colB": "b", "rows": [{"a": "1", "b": "2"}]}),
+                      sc(4, "explain", "FIIs are foreign funds.", {"type": "steps", "title": "t", "steps": ["a"]}), sc(5, "payoff", "It ended at 8 crore.", num("3")),
+                      sc(6, "cta", "Send this on to 3 friends and 4 more.", {"type": "steps", "title": "t", "steps": ["a"]})]}
+    got = {r for _, r, _ in lint._story_checks(bad)}
+    for rule in ("story_brief_answered", "story_term_before_definition", "story_time_jumps", "story_tile_share", "story_figures"):
+        if rule not in got:
+            out.append(f"story gate {rule} did not flag the data-dump fixture")
+    good = {"id": "ep91-fixture", "audience": "curious_adult", "status": "scripted", "format": {}, "chronology": "forward", "direction": {"mode": "explainer"},
+            "brief": [{"question": "What are FIIs?", "answered_in": "s2"}], "concepts": [{"name": "FII", "kind": "term", "introduced_in": "s2"}],
+            "scenes": [sc(1, "story_hook", "Why did the market fall?", {"type": "clip", "keyframe_prompt": "a", "motion_prompt": "b"}, "2026-03"),
+                       sc(2, "explain", "FIIs are foreign funds.", {"type": "illustration", "prompt": "p"}, "2026-03"),
+                       sc(3, "explain", "They sold in March.", {"type": "chart", "kind": "bar", "series": [{"label": "x", "points": [{"x": "a", "y": 1}, {"x": "b", "y": 2}]}]}, "2026-03"),
+                       sc(4, "payoff", "Then the market recovered in April.", {"type": "timeline", "events": [{"when": "Mar", "label": "a"}, {"when": "Apr", "label": "b"}]}, "2026-04"),
+                       sc(5, "cta", "Send this on.", {"type": "forces", "left": {"label": "a", "value": 1}, "right": {"label": "b", "value": 2}, "center": {"label": "c"}}, "2026-04")]}
+    noise = [(s, r) for s, r, _ in lint._story_checks(good) if s == "error"]
+    if noise:
+        out.append(f"story gates raised errors on the well-formed fixture: {noise}")
+    return out
+
+
 def check_checklist() -> list:
     out = []
     rules = yaml.safe_load((ROOT / "direction" / "qa_checklist.yaml").read_text())["rules"]
@@ -209,7 +240,7 @@ def main() -> int:
         print(f"       {i}")
     for i in snotes:
         print(f"       (draft, not gating) {i}")
-    for name, fn in (("safe zones", check_safe_zones), ("storyboard", check_storyboard), ("skill copies", check_skill_copies), ("news web", check_news_web), ("live runs", check_live), ("identity", check_identity), ("checklist", check_checklist), ("doc refs", check_doc_refs)):
+    for name, fn in (("safe zones", check_safe_zones), ("storyboard", check_storyboard), ("skill copies", check_skill_copies), ("news web", check_news_web), ("live runs", check_live), ("identity", check_identity), ("story gates", check_story), ("checklist", check_checklist), ("doc refs", check_doc_refs)):
         issues = fn()
         bad += bool(issues)
         print(f"{'FAIL' if issues else 'ok  '} {name}")

@@ -190,7 +190,10 @@
                   "orbit",
                   "number",
                   "compare",
-                  "photo"
+                  "photo",
+                  "chart",
+                  "timeline",
+                  "forces"
                 ]
               },
               "prompt": {
@@ -380,6 +383,183 @@
               },
               "props": {
                 "type": "object"
+              },
+              "kind": {
+                "enum": [
+                  "line",
+                  "bar"
+                ]
+              },
+              "zero": {
+                "type": "boolean"
+              },
+              "series": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "label",
+                    "points"
+                  ],
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "tone": {
+                      "enum": [
+                        "accent",
+                        "accent2",
+                        "warn",
+                        "good"
+                      ]
+                    },
+                    "points": {
+                      "type": "array",
+                      "minItems": 2,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "x",
+                          "y"
+                        ],
+                        "properties": {
+                          "x": {
+                            "type": "string"
+                          },
+                          "y": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "highlight": {
+                "type": "object",
+                "required": [
+                  "x",
+                  "label"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "series": {
+                    "type": "string"
+                  }
+                }
+              },
+              "events": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 8,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "when",
+                    "label"
+                  ],
+                  "properties": {
+                    "when": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "tone": {
+                      "enum": [
+                        "accent",
+                        "accent2",
+                        "warn",
+                        "good"
+                      ]
+                    },
+                    "emphasis": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "left": {
+                "type": "object",
+                "required": [
+                  "label",
+                  "value"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "tone": {
+                    "enum": [
+                      "accent",
+                      "accent2",
+                      "warn",
+                      "good"
+                    ]
+                  }
+                }
+              },
+              "right": {
+                "type": "object",
+                "required": [
+                  "label",
+                  "value"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "tone": {
+                    "enum": [
+                      "accent",
+                      "accent2",
+                      "warn",
+                      "good"
+                    ]
+                  }
+                }
+              },
+              "center": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "outcome": {
+                    "type": "string"
+                  },
+                  "direction": {
+                    "enum": [
+                      "up",
+                      "down",
+                      "flat"
+                    ]
+                  }
+                }
               }
             },
             "allOf": [
@@ -522,6 +702,60 @@
                     "template"
                   ]
                 }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "chart"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "kind",
+                    "series"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "timeline"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "events"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "forces"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "left",
+                    "right",
+                    "center"
+                  ]
+                }
               }
             ],
             "additionalProperties": false,
@@ -617,6 +851,10 @@
             "minLength": 10,
             "maxLength": 120,
             "description": "One sentence: what the viewer should understand or feel after this scene (why the scene exists). Not a restatement of the narration; lint checks length and overlap."
+          },
+          "when": {
+            "type": "string",
+            "description": "When this scene's story beat happens (YYYY, YYYY-MM or YYYY-MM-DD). With episode.chronology = forward, lint requires non-decreasing values."
           }
         },
         "additionalProperties": false,
@@ -1408,6 +1646,32 @@
         },
         "rationale": {
           "type": "string"
+        }
+      }
+    },
+    "chronology": {
+      "enum": [
+        "forward",
+        "none"
+      ],
+      "description": "forward = the story is told in time order (lint checks scene `when`); none = not a time story."
+    },
+    "brief": {
+      "type": "array",
+      "description": "The owner's questions for this video. Each must be answered by a named scene (lint brief_answered; the story reviewer checks the answer is real).",
+      "items": {
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 5
+          },
+          "answered_in": {
+            "type": "string"
+          }
         }
       }
     }

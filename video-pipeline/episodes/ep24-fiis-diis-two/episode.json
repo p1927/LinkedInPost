@@ -1,0 +1,586 @@
+{
+  "id": "ep24-fiis-diis-two",
+  "title": "Why India's Market Crashes Then Recover",
+  "series": "Big Questions, Tiny Words",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "audience": "curious_adult",
+  "sponsor": null,
+  "disclosure": null,
+  "direction": {
+    "mode": "explainer",
+    "mode_reason": "Topic is an abstract mechanism of two opposing institutional forces with no human-scale dramatic moment; explainer is the only mode that can show both forces clearly through the cooking analogy",
+    "skills_used": [
+      "arch-analogy-world",
+      "arch-mechanism-demo",
+      "real-stranger-audit"
+    ]
+  },
+  "continuity": {
+    "characters": [
+      {
+        "id": "foreign_chef",
+        "identity_string": "A sharp-featured older man in a white chef coat and black toque, holding a jar of bold red chili flakes, standing on the left side of an Indian kitchen counter"
+      },
+      {
+        "id": "home_chef",
+        "identity_string": "A warm-faced woman in a simple colorful saree, standing on the right side of an Indian kitchen counter, holding a bowl of fragrant turmeric and curry leaves"
+      }
+    ],
+    "locations": [
+      {
+        "id": "indian_kitchen",
+        "description": "A bright modern Indian kitchen with copper pots on the wall, a marble counter in the center, warm morning light through a window"
+      }
+    ],
+    "props": [
+      {
+        "id": "cooking_pot",
+        "description": "One large stainless steel cooking pot sitting on the counter between the two chefs"
+      }
+    ],
+    "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+  },
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "Maya, a woman in her late 20s, shoulder-length black hair, mustard-yellow jacket, warm brown skin, expressive face",
+    "look": "Paper Clean; allowed segment dialects: native, cinematic; cinematic segments grade toward profile with saturate/contrast/vignette at 0.95/1.04/0.25 and tint 10-15% toward bg #F7F8FA",
+    "illustration_style": "newsroom data graphic, warm paper background, one blue series line, thin grey gridlines, serif headline, direct labels, no 3D, no gradients, no text in the image",
+    "cast": {
+      "foreign_chef": "A sharp-featured older man in a white chef coat and black toque, holding a jar of bold red chili flakes, standing on the left side of an Indian kitchen counter",
+      "home_chef": "A warm-faced woman in a simple colorful saree, standing on the right side of an Indian kitchen counter, holding a bowl of fragrant turmeric and curry leaves"
+    }
+  },
+  "sources": [
+    {
+      "claim": "FIIs and DIIs largely determine the direction of benchmark indices such as the Nifty 50",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "claim": "FIIs are also the fastest to exit; rising US bond yields, a strengthening dollar, or global uncertainty can trigger selling",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "claim": "FIIs therefore control the pace of market trends; bull runs accelerate when they buy aggressively, and corrections deepen when they withdraw liquidity",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "claim": "DIIs typically accumulate during declines because falling markets improve valuations",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "claim": "05-Oct-2026: FII/FPI netValue -4699.14, DII netValue 5181.62",
+      "url": "https://www.nseindia.com/api/fiidiiTradeReact"
+    }
+  ],
+  "claims": [
+    {
+      "claim": "FIIs and DIIs largely determine the direction of the Nifty market",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+      "verified": true
+    },
+    {
+      "claim": "FIIs are foreign capital that responds to global cues and exits fastest",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+      "verified": true
+    },
+    {
+      "claim": "FIIs control the pace of market trends, accelerating bull runs and deepening corrections",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+      "verified": true
+    },
+    {
+      "claim": "DIIs accumulate when markets fall because lower prices improve valuations",
+      "url": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+      "verified": true
+    },
+    {
+      "claim": "On 05-Oct-2026, FIIs were net sellers while DIIs were net buyers",
+      "url": "https://www.nseindia.com/api/fiidiiTradeReact",
+      "verified": true
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "FIIs and DIIs dominate the direction of the Nifty through their daily buying and selling",
+      "scene": "s6",
+      "source": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "step": "FIIs are foreign capital that responds to global cues and exits fastest when conditions change",
+      "scene": "s6",
+      "source": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "step": "DIIs accumulate when markets fall because lower prices improve valuations",
+      "scene": "s7",
+      "source": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    },
+    {
+      "step": "On 05-Oct-2026, foreign investors sold ₹4,700 crore while domestic investors bought ₹5,200 crore",
+      "scene": "s5",
+      "source": "https://www.nseindia.com/api/fiidiiTradeReact"
+    },
+    {
+      "step": "FII selling creates the crash; DII buying creates the recovery",
+      "scene": "s7",
+      "source": "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "FII",
+      "kind": "term",
+      "definition": "Foreign Institutional Investor — overseas organizations that invest in Indian markets, responding to global cues and exiting when conditions change elsewhere",
+      "introduced_in": "s6",
+      "needed_in": [
+        "s7",
+        "s8"
+      ]
+    },
+    {
+      "name": "DII",
+      "kind": "term",
+      "definition": "Domestic Institutional Investor — Indian institutions including mutual funds and insurance companies with long-term mandates that accumulate when prices fall",
+      "introduced_in": "s6",
+      "needed_in": [
+        "s7",
+        "s8"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "What are FIIs and DIIs?",
+      "raised_in": "s1",
+      "paid_in": "s6"
+    },
+    {
+      "question": "What happened in the Indian market on 5 October and why?",
+      "raised_in": "s1",
+      "paid_in": "s5"
+    },
+    {
+      "question": "Why did DIIs jump in when FIIs sold?",
+      "raised_in": "s1",
+      "paid_in": "s7"
+    }
+  ],
+  "news_hook": {
+    "event": "On October 5, 2026, FIIs sold ₹4,699 crore while DIIs bought ₹5,182 crore in a single trading day",
+    "date": "2026-10-05",
+    "url": "https://www.nseindia.com/api/fiidiiTradeReact"
+  },
+  "original_contribution": "Maps the specific two-force mechanism to the October 5 event and explains why FIIs and DIIs move in opposite directions rather than simply listing what they are",
+  "brief": [
+    {
+      "question": "What are FIIs and what are DIIs?",
+      "answered_in": "s6"
+    },
+    {
+      "question": "What happened in the Indian market on 5 October and what was the reason?",
+      "answered_in": "s5"
+    },
+    {
+      "question": "Why did DIIs jump in when FIIs sold?",
+      "answered_in": "s7"
+    }
+  ],
+  "analogy": {
+    "source_term": "Two institutional groups with different time horizons, objectives and market impact",
+    "domain": "cooking",
+    "mapping": [
+      [
+        "FIIs",
+        "foreign chef"
+      ],
+      [
+        "DIIs",
+        "home chef"
+      ],
+      [
+        "Daily opposing forces",
+        "two chefs pulling one dish in opposite directions"
+      ],
+      [
+        "Crash and partial recovery",
+        "foreign chef oversalts or leaves, home chef rescues the dish"
+      ]
+    ],
+    "limitation": "The two-chef picture implies FIIs and DIIs are deliberately working against each other, but they are actually independent capital pools with different motivations and no shared end goal",
+    "true_term_reveal_beat": "s6"
+  },
+  "packaging": {
+    "primary_keyword": "FII DII market",
+    "title": "Why India's Market Crashes Then Recover",
+    "title_options": [
+      "Why India's Market Crashes Then Recover",
+      "Who Actually Moves the Indian Market?",
+      "The Two Forces Behind Every Indian Market Move",
+      "Why FIIs Sell and DIIs Buy at the Same Time",
+      "The Daily Tug-of-War That Moves India's Market"
+    ],
+    "title_rationale": "The title names the crash-and-recovery pattern as the central phenomenon, directly answering the hook without giving away the two-force mechanism",
+    "description": "Two groups move India's stock market every single day. One group sells when the world sneezes. The other buys when prices fall. Here's why they move in opposite directions — and why that creates both the crash and the recovery. Sources: NSE India https://www.nseindia.com/api/fiidiiTradeReact, Venture Securities https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+    "tags": [
+      "FII DII India",
+      "Indian stock market",
+      "Nifty trading",
+      "institutional investors",
+      "market crash recovery"
+    ],
+    "instagram_caption": "Two groups move India's market in opposite directions every day. Here's why that creates both crashes and recoveries. #FII #DII #IndianMarket #StockMarketExplained",
+    "pinned_comment": "What's harder to predict: when FIIs start selling, or when DIIs will step in to buy? Share your view. Source: NSE India https://www.nseindia.com/api/fiidiiTradeReact",
+    "content_type": "explainer",
+    "thumbnail": {
+      "text": "TWO FORCES"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "Who actually moves India's market? Two chefs. Same kitchen, different recipes.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A wide shot of a bright modern Indian kitchen with copper pots on the wall, a marble counter in the center. On the left, an older foreign chef in a white coat and black toque reaches toward a pot with a jar of bold red chili flakes. On the right, an Indian woman in a colorful saree reaches toward the same pot with a bowl of turmeric. Both look toward the viewer with focused intent. Morning light floods the frame through a window behind them. Wide establishing shot."
+      },
+      "shot": {
+        "archetype": "awe-scale",
+        "size": "ews",
+        "angle": "eye level",
+        "move": "static",
+        "duration_s": 4,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should feel the tension of two opposing forces in one shared space"
+    },
+    {
+      "id": "s2",
+      "beat": "analogy",
+      "narration": "The foreign chef follows a recipe from another kitchen. When conditions change there, he can walk away mid-recipe.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Medium close-up of the older foreign chef in the Indian kitchen. His hand enters the frame from the left holding a jar of bold red chili flakes. The jar tilts over the stainless steel cooking pot, red spice falling off-screen to the right. His expression is decisive. Camera is at his shoulder level, slightly below his gaze. Medium shot, warm kitchen light."
+      },
+      "shot": {
+        "archetype": "mechanism-demo",
+        "size": "mcu",
+        "angle": "slight low angle",
+        "move": "static",
+        "duration_s": 5,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "hand enters frame with jar",
+        "end_state": "jar tilted, spice falling off-screen",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should see FII behavior through the foreign chef"
+    },
+    {
+      "id": "s3",
+      "beat": "analogy",
+      "narration": "The home chef has a steady job in this kitchen. When ingredients become cheaper, she adds more.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Medium close-up of the Indian woman chef in the colorful saree in the same Indian kitchen. She lifts a wooden spoon from the cooking pot, takes a deliberate slow taste, and nods thoughtfully. She holds a small bowl of fragrant curry leaves and turmeric in her other hand, ready to add. Warm approving light on her face. Camera at her shoulder level. Medium shot, warm kitchen light."
+      },
+      "shot": {
+        "archetype": "mechanism-demo",
+        "size": "mcu",
+        "angle": "eye level",
+        "move": "static",
+        "duration_s": 5,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "tastes from spoon, nods",
+        "end_state": "chef holding spices, ready to add",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should see DII behavior through the home chef"
+    },
+    {
+      "id": "s4",
+      "beat": "and",
+      "narration": "On any given day, both chefs may act independently. One may add, one may step away. Their moves are separate, not coordinated.",
+      "visual": {
+        "type": "compare",
+        "colA": "Foreign Chef",
+        "colB": "Home Chef",
+        "rows": [
+          {
+            "a": "Follows global cues",
+            "b": "Follows domestic savings"
+          },
+          {
+            "a": "Can exit fast",
+            "b": "Buys when prices fall"
+          },
+          {
+            "a": "Exits on global triggers",
+            "b": "Long-term mandates"
+          }
+        ],
+        "winner": "both"
+      },
+      "shot": {
+        "archetype": "duel",
+        "size": "ms",
+        "angle": "eye level",
+        "move": "static",
+        "duration_s": 5,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "foreign chef turns to window, home chef leans toward pot",
+        "end_state": "two chefs in independent poses",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should see that FIIs and DIIs act independently, not deliberately against each other"
+    },
+    {
+      "id": "s5",
+      "beat": "term",
+      "narration": "On October 5th, 2026, the foreign chef stepped away. Global markets had turned. He answered that call.",
+      "visual": {
+        "type": "clip",
+        "motion_prompt": "Wide shot of an Indian kitchen. A foreign chef in a white coat walks away from a cooking counter, leaving his spice jar behind. An Indian woman chef remains, leaning forward over the pot. The camera slowly pushes toward the pot as he departs. Cinematic lighting, film grain, dramatic tension.",
+        "keyframe_prompt": "Wide shot of Indian kitchen, foreign chef departing left frame with spice jar, Indian woman chef remaining at counter, cooking pot between them, scattered red spice visible",
+        "last_frame_prompt": "Wide shot of Indian kitchen, foreign chef at frame edge walking away, Indian woman chef at counter leaning toward pot, pot shows scattered spice"
+      },
+      "shot": {
+        "archetype": "impact",
+        "size": "ws",
+        "angle": "eye level",
+        "move": "push in",
+        "duration_s": 5,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "foreign chef walks away from counter",
+        "end_state": "foreign chef at frame edge, departing",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should understand the specific event: foreign investors sold heavily on October 5, 2026"
+    },
+    {
+      "id": "s5b",
+      "beat": "term",
+      "narration": "On October 5th, 2026, foreign investors sold four thousand seven hundred crore. Domestic investors bought five thousand two hundred crore the same day.",
+      "visual": {
+        "type": "number",
+        "value": "₹4,700 crore vs ₹5,200 crore",
+        "label": "Foreign selling vs domestic buying on Oct 5, 2026",
+        "unit": "crore INR",
+        "source": "NSE India",
+        "animation": "countup"
+      },
+      "shot": {
+        "archetype": "data-reveal",
+        "size": "ms",
+        "angle": "eye level",
+        "move": "static",
+        "duration_s": 5,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should see the actual data showing the opposing forces on October 5, 2026"
+    },
+    {
+      "id": "s6",
+      "beat": "term",
+      "narration": "The foreign chef answers to global markets. The home chef answers to domestic savings. This kitchen picture helps — but it stops here. FIIs and DIIs are not fighting. They are two independent groups doing different jobs. One exits fast on global cues. One buys more when prices fall.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Two-shot of both chefs in the Indian kitchen. The foreign chef on the left is labeled with a simple icon of a globe above his head. The Indian woman chef on the right is labeled with a simple icon of a house above her head. Both icons are rendered as part of the illustration style, not text. They face each other across the cooking pot, calm and resolved. Medium shot, balanced warm lighting.",
+        "term": {
+          "label": "FII AND DII",
+          "sub": "Foreign Institutional Investor and Domestic Institutional Investor",
+          "color": "sky"
+        }
+      },
+      "shot": {
+        "archetype": "mechanism-demo",
+        "size": "ms",
+        "angle": "eye level",
+        "move": "static",
+        "duration_s": 6,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "both chefs face each other calmly",
+        "end_state": "resolved two-shot across pot",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should know what FII and DII stand for, understand their fundamental differences, and hear the analogy stop"
+    },
+    {
+      "id": "s7",
+      "beat": "and",
+      "narration": "When foreign investors sell, prices fall. Lower prices mean better value. Domestic investors, always in the market, see that opportunity. They buy the dip. That is why the market does not fall as far.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "Close-up of the Indian woman chef in the colorful saree adding ingredients into the cooking pot. Her expression is calm and purposeful. The pot shows a rich golden swirl mixing with the existing red spice. Warm approving light on her hands and the pot. Close shot focused on the pot and her hands.",
+        "term": {
+          "label": "DII ABSORBING",
+          "sub": "buying the dip when prices fall",
+          "color": "mint"
+        }
+      },
+      "shot": {
+        "archetype": "mechanism-demo",
+        "size": "cu",
+        "angle": "overhead",
+        "move": "static",
+        "duration_s": 5,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "ingredients enter frame over pot",
+        "end_state": "golden turmeric swirling in pot",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should understand WHY DIIs buy when FIIs sell: lower prices mean better value"
+    },
+    {
+      "id": "s8",
+      "beat": "story_payoff",
+      "narration": "Foreign investors sell fast on global cues. Domestic investors buy on dips with long-term money. FII selling creates the crash. DII absorbing creates the recovery. Domestic buying cushions India.",
+      "visual": {
+        "type": "steps",
+        "title": "Two Forces, One Market",
+        "steps": [
+          "Foreign investors (FIIs) sell fast on global cues",
+          "Domestic investors (DIIs) buy on dips with long-term money",
+          "FII selling creates the crash",
+          "DII absorbing creates the recovery"
+        ]
+      },
+      "shot": {
+        "archetype": "reveal",
+        "size": "ms",
+        "angle": "eye level",
+        "move": "static",
+        "duration_s": 5,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "both chefs stand resolved on either side of pot",
+        "end_state": "calm balanced composition",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should understand the complete mechanism: opposing forces create both volatility and stability"
+    },
+    {
+      "id": "s9",
+      "beat": "cta",
+      "narration": "Now you know. Send this to anyone who watches the Indian market move.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "The Indian woman chef waves warmly at the camera from the kitchen, a friendly smile on her face, the cooking pot gently steaming behind her. Bright warm light fills the frame. The foreign chef is a soft silhouette in the background on the left, at peace. Sparkles around the edges suggest completion. Medium shot, celebratory warm tone.",
+        "term": {
+          "label": "NOW YOU KNOW!",
+          "sub": "share with someone who asks",
+          "color": "mint"
+        }
+      },
+      "shot": {
+        "archetype": "intimate-dialogue",
+        "size": "ms",
+        "angle": "slight low angle",
+        "move": "static",
+        "duration_s": 4,
+        "location_id": "indian_kitchen",
+        "light_source": "warm morning window light, natural",
+        "action": "home chef waves at camera, smiling",
+        "end_state": "warm farewell pose",
+        "action_line": "pot is center; foreign_chef holds screen-left, home_chef holds screen-right"
+      },
+      "intent": "The viewer should feel satisfied and want to share this explanation"
+    }
+  ],
+  "topic_area": "economics",
+  "format_id": "food_science",
+  "one_idea": "Two independent institutional forces — foreign investors who exit fast on global cues and domestic investors who accumulate on dips — create both the crash and the recovery in India's Nifty market",
+  "status": "scripted",
+  "topic": {
+    "headline": "FIIs and DIIs: the two opposing forces that move the Indian Nifty market, and why it crashes then recovers",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://www.nseindia.com/api/fiidiiTradeReact",
+      "https://papers.ssrn.com/sol3/Delivery.cfm/4973859.pdf?abstractid=4973859&mirid=1",
+      "https://ideas.repec.org/a/spr/futbus/v6y2020i1d10.1186_s43093-020-00029-6.html",
+      "https://www.venturasecurities.com/news/economy/fiis-and-diis-how-institutional-money-flows-move-the-stock-market/",
+      "https://www.tatamutualfund.com/blogs/what-are-fii-and-dii-what-their-role-indian-stock-market",
+      "https://moneyvesta.com/fii-vs-dii-investment-trends-india/",
+      "https://www.linkedin.com/posts/munshot_fii-nifty-indianmarkets-activity-7508864952699559937-C5y2",
+      "https://www.instagram.com/p/DcL1Q1vCPAV/",
+      "https://www.valueresearchonline.com/learn/equity-funds/five-factors-equity-index-volatility-india-nifty/",
+      "https://www.quora.com/Why-do-FII-and-DII-flows-move-in-opposite-directions-and-does-it-actually-matter-for-the-market"
+    ]
+  },
+  "identity": {
+    "id": "ledger",
+    "archetype": "ledger",
+    "info_type": "money",
+    "variant": {
+      "palette": "B",
+      "layout": "split",
+      "accent_rotation": 180
+    },
+    "palette": {
+      "bg": "#FFF8EE",
+      "ink": "#222222",
+      "sunny": "#703C53",
+      "sky": "#00748F",
+      "coral": "#B3261E",
+      "mint": "#2F7D4F",
+      "grape": "#5A6900",
+      "white": "#FFFDF9",
+      "muted": "#726F6C",
+      "rule": "#DCD6CE"
+    },
+    "fonts": {
+      "display": "Newsreader",
+      "body": "Source Sans 3",
+      "mono": "IBM Plex Mono",
+      "displayWeight": 700,
+      "bodyWeight": 500,
+      "caps": false
+    },
+    "shape": {
+      "radius": 2,
+      "border": 1,
+      "shadow": "none",
+      "stroke": 4
+    },
+    "backdrop": "paper",
+    "motion": {
+      "spring": {
+        "damping": 26
+      },
+      "ease": "out-cubic",
+      "entrance": "rise",
+      "stagger": 6,
+      "transition": "wipe"
+    },
+    "caption": "serif-lower",
+    "term": "tag",
+    "layout": "split",
+    "illustration_style": "newsroom data graphic, warm paper background, one blue series line, thin grey gridlines, serif headline, direct labels, no 3D, no gradients, no text in the image",
+    "seed": 86703,
+    "rationale": "information type 'money' -> ledger (default) / tape (alternate)"
+  },
+  "updated_at": "2026-10-05T18:17:26Z"
+}

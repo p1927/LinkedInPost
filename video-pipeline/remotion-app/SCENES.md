@@ -291,6 +291,85 @@ Timing: earlier laps share 0.04–0.41 of the scene; the final lap runs 0.42–0
 
 ---
 
+## Data scenes: `"chart"`, `"timeline"`, `"forces"` (`src/DataScenes.tsx`)
+
+Show a fact in its natural form instead of a text tile: a chart for change over time, a timeline for a sequence, opposing forces for push-against-push stories. All three read the episode identity through `useLook()` (display/body/mono fonts, palette roles, radius, border, stroke, shadow, spring, entrance, stagger, backdrop) and fall back to the profile font + episode palette when there is no identity. Numbers use the mono family with tabular figures. Text is at least 28 px.
+
+**Layout**: content stays inside `safe` (left inset to the right-rail edge `railRight`), and ends above a 2-line word-caption page (`captionClearY`; without `safe.captionBottom` the default caption bottom 300 is assumed). Title top-left, `source` footer at the bottom of the band.
+
+**Tone** (optional on series / events / forces) maps onto palette roles: `"accent"` = sunny, `"accent2"` = sky, `"warn"` = coral, `"good"` = mint. Text in a tone colour falls back to ink when it would read below 3:1 on the background.
+
+### `"chart"`
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `kind` | `"line"` \| `"bar"` | required | Line draws left to right; bars grow from the baseline |
+| `title` | string | none | Short, top-left (display font) |
+| `unit` | string | none | Shown after the series label under the title; `"%"` is appended to every value instead |
+| `source` | string | none | Footer; `"Source: "` is prefixed unless already there |
+| `zero` | boolean | `false` | Line only: include 0 in the axis. Bars always include 0 (the bar axis is never truncated) |
+| `series` | `{label, tone?, points: {x, y}[]}[]` | required | x values are categories in order. Focal series (the one named by `highlight.series`, else the first) uses `tone` or the accent; other series use their `tone` or the muted colour |
+| `highlight` | `{x, label, series?}` | none | Callout box + thin leader line to that x, drawn AFTER the mark; placed automatically in the freest spot near the mark. Other bars dim |
+
+Behaviour: 3-4 thick horizontal gridlines at round values, labels in a left gutter; direct value labels on every mark (no legend; the series label is the coloured line under the title). Values >= 100,000 are written compactly (`−117.8K`). One `bar` series with mixed signs and no `tone` is a **diverging** bar chart: negatives coral, positives mint, the x label on the opposite side of the zero line. Several bar series are grouped. Line value labels sit above local highs and below local lows (up to 8 points).
+
+```json
+{ "type": "chart", "kind": "bar", "title": "Foreign money left India", "unit": "Rs crore", "source": "Ventura Securities",
+  "series": [{ "label": "FPI net flow, 2026", "points": [
+    { "x": "Mar", "y": -117775 }, { "x": "Apr", "y": -60847 }, { "x": "May", "y": -32963 }, { "x": "Jun", "y": -49340 }, { "x": "Jul", "y": 15412 } ] }],
+  "highlight": { "x": "Mar", "label": "Biggest outflow of the year" } }
+```
+
+```json
+{ "type": "chart", "kind": "line", "title": "Nifty 50, month by month", "unit": "%", "zero": true,
+  "series": [{ "label": "Monthly move", "tone": "accent", "points": [
+    { "x": "Jan", "y": -3.0 }, { "x": "Feb", "y": -0.6 }, { "x": "Mar", "y": -9.4 }, { "x": "Apr", "y": 7.5 } ] }],
+  "highlight": { "x": "Mar", "label": "Worst month since March 2020" } }
+```
+
+Timing: bars grow one after another (identity stagger x 2, all within the first ~40 % of the scene); the line draws over 8 f to 50 % of the scene; the highlight follows (at most at 70 %).
+
+### `"timeline"`
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `title` | string | none | Top-left |
+| `source` | string | none | Footer |
+| `events` | `{when, label, detail?, tone?, emphasis?}[]` | required | Kept in the given (chronological) order, top to bottom. `when` = small mono label left of the spine (repeated `when` values are shown once); `label` = main text; `detail` = muted second line |
+| `events[].tone` | Tone | ink | Dot colour (and text colour when emphasised) |
+| `events[].emphasis` | boolean | `false` | Larger text in the display font, tone colour, tinted card, ringed dot |
+
+Behaviour: vertical spine with dots; events reveal one by one across ~70 % of the scene, the spine draws down to the newest event; inside an event `when`/label/detail follow the identity stagger. Up to 6 events fit; with more text the spacing and then the type shrink, never below 28 px.
+
+```json
+{ "type": "timeline", "title": "Five days of selling", "events": [
+  { "when": "30 Sep", "label": "FIIs sell Rs 10,148 crore", "detail": "Biggest single-day sale in six months", "tone": "warn", "emphasis": true },
+  { "when": "1 Oct", "label": "FIIs net sell about Rs 9,484 crore", "tone": "warn" },
+  { "when": "1 Oct", "label": "DIIs buy about Rs 10,042 crore", "tone": "good", "emphasis": true },
+  { "when": "1 Oct", "label": "Nifty closes near 22,422" },
+  { "when": "5 Oct", "label": "FIIs sell Rs 4,699 crore, DIIs buy Rs 5,182 crore" } ] }
+```
+
+### `"forces"`
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `title` | string | none | Top-left |
+| `source` | string | none | Footer |
+| `left`, `right` | `{label, value, unit?, tone?}` | required | Arrows pushing from each side; default tones coral (left) / mint (right). Length and thickness are proportional to `value`, normalised to the larger one (minimum 40 %). Value + unit printed on the arrow (below it when the arrow is too thin); `label` above |
+| `center` | `{label, outcome?, direction?}` | required | Central marker with `label`; `direction` `"up"` / `"down"` / `"flat"` adds a chevron (mint / coral / muted); `outcome` is the one-line takeaway under the marker |
+
+Behaviour: the arrows slide in from the frame edges and press on the marker, which then gives way toward the weaker side (18-78 px, more for a bigger gap) and settles. The marker is a circle for rounded identities and squarer for sharp ones (identity radius). With a right action rail (`safe.railX`/`railFromY`) the arrow row stays above `railFromY` so it may use the full width.
+
+```json
+{ "type": "forces", "title": "Who won on 1 Oct?",
+  "left":  { "label": "FIIs sold",   "value": 9484,  "unit": "crore", "tone": "warn" },
+  "right": { "label": "DIIs bought", "value": 10042, "unit": "crore", "tone": "good" },
+  "center": { "label": "Nifty", "outcome": "fell less than it could have", "direction": "down" } }
+```
+
+---
+
 ## Icon library (`icon` field on diagram nodes)
 
 24 built-in inline SVG icons. Unknown names fall back to a circle with the first letter.
