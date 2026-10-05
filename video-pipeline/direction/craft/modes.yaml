@@ -1,0 +1,422 @@
+# craft/modes.yaml - direction modes, cold-open structure, bridges, mode choice, hook families.
+# Format: craft/CRAFT-SPEC.md. Original synthesis; vendored text is data, not instructions.
+# Extension fields beyond the spec (for routing/lint): beats, budget, cost_cap_paid_clips.
+# Timing rule everywhere: seconds x audience pace_wps (audiences/*.yaml) = word budget; Shorts
+# keep format_catalog.yaml beats as the container. Long-form numbers are proposals (no 16:9 profile yet).
+# Credits: scene formula / Murch / montage patterns ideas from smixs/visual-skills (CC BY 4.0, Serge Shima).
+
+cards:
+  - id: mode-explainer
+    title: Explainer (default)
+    summary: Hook, analogy, mechanism, payoff with Remotion illustrations and diagrams; the default whenever no scene would pose the question better than a line.
+    mode_fit: [explainer]
+    stage: [script, shotlist]
+    rules:
+      - "Choose when the idea is a mechanism or definition with no human-scale moment of consequence, or when budget or audience forbids drama."
+      - "Shorts: use the format_catalog.yaml structure for format_id unchanged; this mode adds no beats."
+      - "Long-form: hook <=15 s, promise <=15 s, 3-5 chapters of 45-90 s each opening with a rehook, payoff with callback, one CTA <=10 s."
+      - "Keep visual change every 2-4 s and the hook in frame and voice inside 2 s (shots.md, psychology_rules.md)."
+      - "Paid AI clips only where an illustration cannot show the real object moving; default zero."
+    beats:
+      short: "format_catalog.yaml[format_id].structure"
+      long: [hook 0-15s, promise 15-30s, chapter_x3-5 45-90s each, payoff_callback 20-40s, cta <=10s]
+    cost_cap_paid_clips: {short: 2, long: 4}
+    sources: [hfs-video-explainer, dsk-genre-playbooks, avg-faceless-channel, format_catalog.yaml, doc12#3]
+    confidence: craft-rule
+    notes: "Corporate/explainer contract (DirectorSKILL): every ~15 s advances understanding one nameable step. Generate the specific noun in the line, never its mood."
+
+  - id: mode-cold-open-drama
+    title: Cold-open drama
+    summary: A 5-20 s dramatized scene at the moment of consequence poses the episode question, a bridge hands off, and the explainer answers it.
+    mode_fit: [cold-open-drama]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    audience_fit: [kids, curious_adult, older_adult, techie]
+    rules:
+      - "Choose when a real visible moment embodies the stakes (bank queue, capsule metres from a station, price jump at a till)."
+      - "Short: 5-8 s (max 10), 2-4 shots, one question, at most one in-scene line, no narration before the bridge."
+      - "Long-form: 10-20 s, up to 6 shots, one short dialogue line allowed."
+      - "Take cold-open seconds from the hook beat, then the next beat; cut that beat's words by borrowed seconds x pace_wps."
+      - "Open at peak consequence, never on setup; cut before resolution."
+      - "First narration after the bridge restates the question with the same object noun."
+      - "Drama obeys the episode claims (era, technology, units, geography); simplifications go in claims."
+      - "Pass mode-scene-engine-gate, follow mode-cold-open-beats, use one bridge (mode-bridge-rules); audience limits via arch-router."
+    avoid: ["atmosphere-only openings", "logo or title first", "drama contradicting the explainer's facts"]
+    beats:
+      short: [cold_open 5-8s, bridge 0.5-1.5s, format beats resume]
+      long: [cold_open 10-20s, bridge 1-2s, mode-explainer chapters]
+    cost_cap_paid_clips: {short: 4, long: 6}
+    check: {type: mechanical, how: "lint: cold_open.duration_s in budget; bridge in enum; post-bridge line shares a hook noun; paid clips <= cap"}
+    sources: [doc12#1.3, doc12#1.4, ddr-archetype-router, hf-scene-engine, audit:afs-short-drama-production]
+    confidence: proposal
+    notes: "Budgets are doc12 proposals, untested. Drama needs more paid clips than an explainer; cap enforced by mode-selection."
+
+  - id: mode-hybrid
+    title: Hybrid (drama at hook and payoff)
+    summary: Cold-open drama plus a return to the same scene at the payoff, so the Final Image answers the Opening Image; for flagship episodes.
+    mode_fit: [hybrid]
+    stage: [script, shotlist, edit]
+    audience_fit: [curious_adult, older_adult, techie, kids]
+    rules:
+      - "Structure: cold open, bridge, explainer, return bridge, 3-6 s return scene showing the answered question, callback, CTA."
+      - "Return scene reuses the cold open's location, identity strings and keyframes; only the state changes."
+      - "Return bridge mirrors the first: rewind becomes play, pull-back becomes push-in, question card becomes answer card."
+      - "Budget the return scene from payoff_callback words; the callback line still lands on the hook's object noun."
+      - "At most one hybrid in any five consecutive episodes (variety and cost)."
+    beats:
+      short: [cold_open 5-8s, bridge, explainer beats, return_scene 3-6s, callback_cta 4-8s]
+      long: [cold_open 10-20s, bridge, chapters, return_scene 8-15s, callback_cta]
+    cost_cap_paid_clips: {short: 6, long: 8}
+    sources: [doc11#2, doc12#1.4, mode-loop-image]
+    confidence: proposal
+
+  - id: mode-montage
+    title: Montage
+    summary: Pattern-driven cut sequences carry an advancing change (dates, growth, accumulation) under continuous narration; for timelines and "history of" topics.
+    mode_fit: [montage]
+    stage: [script, shotlist, edit]
+    rules:
+      - "Choose when the topic has 3+ dated steps, a process over time, or an accumulation the viewer can watch grow."
+      - "Each montage run tracks ONE advancing variable the viewer can read: light, pile height, date, distance."
+      - "Hold composition fixed on the first and last shot of a run so change is measured against the same frame."
+      - "Run one continuous music bed or ambience across a run; restarting it turns the run into a list."
+      - "Shorts: history_timeline beats; each dated beat is one run of 3-5 shots at 2-4 s (older_adult >=3 s)."
+      - "Build from stills with Remotion moves first; paid clips only for the run's held final shot."
+    beats:
+      short: "format_catalog.yaml[history_timeline|data_chart_story].structure; one run per dated beat"
+      long: [hook_end_state 10-15s, era_runs_x3-6 30-60s each, callback 15-30s]
+    cost_cap_paid_clips: {short: 3, long: 5}
+    avoid: ["slideshow: shots with no shared variable", "prompting a whole montage inside one clip (models degrade on montage)"]
+    sources: [vsk-patterns-genres, dsk-editing-assembly, doc12#3, format_catalog.yaml]
+    confidence: craft-rule
+
+  - id: mode-documentary
+    title: Documentary
+    summary: "Observational, sourced treatment for news and real places: maps, charts, labelled reconstructions, restrained camera; truth claims stay honest."
+    mode_fit: [documentary]
+    stage: [script, shotlist, clip-prompt, qa]
+    rules:
+      - "Choose for news_explainer, case_study, place_explainer, or any real named event, place or institution."
+      - "Never generate footage that could pass as real footage of a real event or person; label reconstructions on screen."
+      - "Carry facts with Remotion maps, timelines, charts and sourced numbers; AI imagery shows generic context only."
+      - "Camera: static or slow push, eye level, ASL 4-8 s; holds run past the line's end."
+      - "Observational imperfection (late reframe, uncorrected mixed light) only for generic b-roll, never to fake authenticity of an event."
+      - "Every on-screen figure cites its source on screen (data_chart_story rule)."
+    beats:
+      short: "format_catalog.yaml[news_explainer|case_study|place_explainer].structure"
+      long: [event_hook 10-20s, context 30-60s, chapters_x3-5, what_to_watch 20-40s]
+    cost_cap_paid_clips: {short: 2, long: 4}
+    sources: [dsk-genre-playbooks, format_catalog.yaml, psychology_rules.md]
+    confidence: craft-rule
+    notes: "DirectorSKILL documentary playbook says prompt operator error so clips feel unstaged; we restrict that to non-event b-roll because faking verite of real events misleads."
+
+  - id: mode-cold-open-beats
+    title: Cold-open beat contract
+    summary: Seven observable beats (hook, want, obstacle, strategy_shift, power_turn, cost, cliffhanger) compressed into a 5-20 s scene.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [script, shotlist]
+    rules:
+      - "Write each beat as something a camera can photograph or a mic can hear; 'tension rises' is not a beat."
+      - "hook (0-1.5 s): frame 1 already in motion; anomaly or consequence visible."
+      - "want (by 2 s): the subject's goal readable from action or blocking."
+      - "obstacle (by 3-4 s): the threat in frame, with its scale."
+      - "strategy_shift and power_turn: optional under 10 s; required from 12 s, one each."
+      - "cost: one insert shows what will be lost (a number on a Remotion display, an emptying shelf)."
+      - "cliffhanger: last frame at peak, before resolution; it is the episode question."
+      - "5-8 s plan: shot1 hook+want, shot2 obstacle, shot3 cost insert, shot4 cliffhanger."
+      - "Record beats in direction.cold_open.beats with the shot id that shows each."
+    example: "Fed rate cold open: shot1 a buyer signs at a desk (want); shot2 a wall rate board ticks up (obstacle); shot3 insert monthly payment jumps, Remotion digits (cost); shot4 pen stops above the line (cliffhanger)."
+    sources: [audit:afs-short-drama-production, dsk-tpl-beat-sheet, hf-scene-engine]
+    confidence: proposal
+    notes: "Schema from the ai-film-skills audit (not vendored; repo is a malware lure copy). DirectorSKILL beat rule merged: state in must differ from state out, each change names its agent."
+
+  - id: mode-scene-engine-gate
+    title: Scene-engine gate (before any paid clip)
+    summary: Text-only audit of goal, obstacle, tactic, reversal, value shift; a drama that cannot name them is not worth rendering.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [script, qa]
+    rules:
+      - "Goal: one line; removing the scene must break the episode's causal chain."
+      - "Obstacle: name what it jeopardises and its scale (local stage or whole goal)."
+      - "Tactic: forced by the obstacle, plausible on what the subject knows; a failed tactic must reveal information."
+      - "Reversal and value shift may be deferred: the cold open stays unresolved; the explainer payoff supplies them."
+      - "Value shift = the audience_misconception flipping; name before-verdict and after-verdict in director_notes."
+      - "A reversal with no nameable verdict change is inert: fix it first."
+      - "On failure: fix only the weakest element, else rewrite cleanly, else fall back to mode-explainer."
+    check: {type: judgment, how: "verify.py: five named elements with before/after verdict, separate reviewer lane"}
+    sources: [hf-scene-engine, vsk-dramaturgy, doc12#4]
+    supersedes: [hf-scene-engine]
+    confidence: craft-rule
+    notes: "visual-skills scene formula (desire, obstacle, space geometry, controlled gaze, rhythm) is checked per shot in archetypes; this gate is the story level."
+
+  - id: mode-loop-image
+    title: Opening Image / Final Image loop
+    summary: The last frame visually rhymes with the first so the episode closes its loop and Shorts can replay seamlessly.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, edit, qa]
+    rules:
+      - "Final image repeats the opening object at the same screen position and size class; its state shows what was learned."
+      - "Final line names the hook's object noun (hooks.md callback close)."
+      - "For a seamless loop, final motion direction continues into frame 1; check the last-to-first frame pair."
+      - "Plan both frames together at keyframe stage, not after the edit."
+      - "Audio hand-off: the last VO beat flows into the first line; no trailing breath, sign-off or dead air after the final word."
+      - "Question loop: the final line makes the opening line land differently on replay; it must still be true on first watch."
+      - "Cliff loop (a closing tease the opening answers) only when the opening truly pays it; never a fake tease, never for kids."
+    check: {type: mechanical, how: "lint: final scene shares a visual id/object noun with scene 1; audio ends <= 0.3 s after the last word; contact sheet first vs last frame"}
+    sources: [doc11#2, hooks.md, avg-viral-hook, vsk-dramaturgy, vcs-shorts-retention, vcs-sf-retention]
+    confidence: craft-rule
+    notes: "Save the Cat contributes only this pair; its other 13 beats do not fit 5-90 s."
+
+  - id: mode-story-circle
+    title: Story Circle mapping
+    summary: Maps the eight Story Circle steps onto cold open, bridge and explainer so drama and lesson share one arc.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [script]
+    rules:
+      - "You + need + go = cold open: subject in an ordinary moment, a want, crossing into the problem."
+      - "Bridge sits at the threshold (go)."
+      - "Search + find = mechanism beats; find is the true-term reveal beat."
+      - "Take = the cost: the analogy limitation line or trade-off."
+      - "Return + change = return scene or Final Image plus callback."
+    sources: [doc11#2]
+    confidence: proposal
+    notes: "Mapping is ours, not a source claim; untested. Use as a check that the explainer pays the cold open, not as extra beats."
+
+  - id: mode-bridge-rules
+    title: Bridge rules (cold open to explainer)
+    summary: One deliberate seam that changes style while an anchor (sound, object or motion) carries the viewer across.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Exactly one bridge per transition; record it in direction.cold_open.bridge."
+      - "Change style on purpose (cinematic grade to explainer palette) but never style AND location without an anchor."
+      - "Anchor = one carrier: sound, object, or motion vector."
+      - "First explainer line answers or restates the cold-open question within 3 s of the bridge."
+      - "J/L cuts and freezes are done in Remotion/ffmpeg; multi-shot video models execute them poorly."
+      - "Pick by archetype: pursuit/countdown/impact -> freeze-rewind or question-card; reveal/discovery -> match-cut or pull-back; dialogue -> j-cut."
+    check: {type: judgment, how: "realism editing.bridge_quality: intentional seam and answered question"}
+    sources: [doc12#1.4, doc12#4, dsk-editing-assembly]
+    confidence: craft-rule
+
+  - id: mode-bridge-freeze-rewind
+    title: "Bridge: freeze-rewind"
+    summary: Last drama frame freezes, drains colour and scrubs back; narrator says how we got here.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [edit]
+    rules:
+      - "Hold the last frame 0.3-0.5 s, desaturate over 6-10 frames, then a Remotion scrub-back of 0.5-1 s."
+      - "VO enters on the freeze: 'To see why, rewind ...' naming the cold-open object."
+      - "Freeze on a frame with no motion blur and a readable subject."
+    ai_safe: ["needs no extra generation; pure edit"]
+    sources: [doc12#1.4]
+    confidence: craft-rule
+
+  - id: mode-bridge-j-cut
+    title: "Bridge: J-cut / L-cut sound bridge"
+    summary: Explainer audio leads under the last drama shot (J) or drama ambience trails under the first explainer shot (L).
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [edit]
+    rules:
+      - "J: narration or explainer music starts 0.5-1 s before the picture cut."
+      - "L: drama room tone trails 0.5-1 s under the first explainer shot, ducked 10-15 dB."
+      - "Done as Remotion audio offsets; never ask the video model for a J/L cut."
+    sources: [doc12#1.4, dsk-sound-dialogue, dsk-editing-assembly]
+    confidence: craft-rule
+
+  - id: mode-bridge-match-cut
+    title: "Bridge: match cut"
+    summary: One shared carrier (shape, motion, colour or sound) links the last drama frame to the first explainer visual.
+    mode_fit: [cold-open-drama, hybrid, montage]
+    stage: [shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Use exactly one carrier; two carriers read as coincidence."
+      - "Shape carrier: same 20-40% of frame area at the same screen position in both frames."
+      - "Design both frames as a pair at keyframe stage; overlay at 50% to check before generating."
+      - "Generate the drama clip toward its last frame (end-frame conditioning where available)."
+    example: "Spinning coin on a counter -> explainer planet orbit diagram, both centred discs at 30% area."
+    sources: [dsk-editing-assembly, doc12#1.4]
+    confidence: craft-rule
+
+  - id: mode-bridge-question-card
+    title: "Bridge: question card"
+    summary: Hard cut to a Remotion card carrying the hook question over silence or a sub-drop.
+    mode_fit: [cold-open-drama, hybrid, explainer]
+    stage: [edit]
+    rules:
+      - "Card text <= 8 words, same words the first VO line speaks; inside caption safe zone."
+      - "0.5-1 s of silence or a music drop under the card."
+      - "Cheapest bridge; default when no other anchor exists."
+    sources: [doc12#1.4, doc12#1.2]
+    confidence: craft-rule
+
+  - id: mode-bridge-pull-back
+    title: "Bridge: pull-back reveal"
+    summary: The drama turns out to be on a screen, diorama or map the narrator is looking at; the pull-out resets to explainer style.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [shotlist, edit]
+    rules:
+      - "One pull-out move, done in Remotion by scaling the drama clip into the explainer frame."
+      - "The containing object must exist in the explainer world (tablet, globe, model, window)."
+      - "Keep the drama's light source consistent with the container's screen glow."
+    sources: [doc12#1.4]
+    confidence: craft-rule
+
+  - id: mode-bridge-narrator-step-in
+    title: "Bridge: narrator step-in"
+    summary: The series narrator or mascot enters the drama frame in the same light and slows it down.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [shotlist, clip-prompt, edit]
+    rules:
+      - "Only for series with an established narrator/mascot identity string."
+      - "Narrator enters from frame edge in the drama's key-light direction; line: slow it down, name the object."
+      - "Composite the narrator in Remotion over a held frame rather than generating both in one clip."
+    sources: [doc12#1.4, dsk-continuity-bible]
+    confidence: proposal
+
+  - id: mode-selection
+    title: Mode selection procedure
+    summary: Deterministic-ish scoring from topic stakes, audience card, format, recent modes and cost cap; owner override wins.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script]
+    rules:
+      - "0. If owner passed --mode, use it; still run gates and report failures, never switch silently."
+      - "1. All modes eligible for all audiences; kids drama only via a kids_variant archetype, else drop drama modes."
+      - "2. Score +2 cold-open-drama if a visible moment of consequence exists; +2 montage if 3+ dated steps."
+      - "3. Score +2 documentary if a real named event/place drives it; +2 explainer if purely abstract; +1 hybrid if flagship."
+      - "4. Format fit +1: history_timeline->montage; news_explainer/case_study/place_explainer->documentary; what_if/experiment/myth_busting/versus->cold-open-drama."
+      - "5. visual_math -> explainer only; data_chart_story -> explainer or montage."
+      - "6. Variety: -2 if same as previous episode; -1 per repeat in last five; drama modes max 2 of last 5."
+      - "7. Drop any mode whose estimated paid clips exceed cost_cap_paid_clips or remaining budget."
+      - "8. Drama modes must pass mode-scene-engine-gate; else next best."
+      - "9. Ties: cheaper mode wins, then explainer."
+      - "Log scores, inputs and winner in director_notes; set direction.mode."
+    check: {type: mechanical, how: "director: recompute from episode.json + registry history; lint warns on mismatch"}
+    sources: [docs/plans/youtube-automation/DIRECTION-BRAIN-PLAN.md#3, doc12#3, hf-prompt-mcsla]
+    confidence: proposal
+    notes: "Weights and caps are untested starting values; tune once clip costs and retention are logged. Order mirrors higgsfield: explicit direction > archetype > default."
+
+  # ---- Hook openings: cross-reference to hooks.md (do not duplicate its 12 templates) ----
+  - id: mode-hook-map
+    title: Hook map (hooks.md patterns -> family -> mode -> archetype)
+    summary: Routes each hooks.md pattern to its attention family, the modes that stage it best and a scene archetype.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script]
+    rules:
+      - "question, kid-question -> curiosity-gap; explainer; arch-analogy-world."
+      - "contradiction, you-were-told-wrong -> pattern-interrupt or rug pull; explainer, cold-open-drama; arch-before-after."
+      - "stakes, second-person-scenario -> scene lift; cold-open-drama, hybrid; arch-countdown, arch-pursuit, arch-journey."
+      - "mystery -> enigma; cold-open-drama, documentary; arch-mystery, arch-discovery."
+      - "visual-shock, smallest-to-biggest -> pattern-interrupt (scale warp); any mode; arch-awe-scale."
+      - "challenge -> curiosity-gap (predict); explainer; arch-duel, arch-mechanism-demo."
+      - "cold-open-result -> reaction-before-action; cold-open-drama; arch-reveal, arch-impact."
+      - "number-with-a-face -> data reveal; explainer, documentary; arch-data-reveal."
+      - "Pick one primary pattern; anti-clickbait rules in hooks.md apply unchanged."
+    sources: [hooks.md, avg-viral-hook, avg-faceless-channel, doc12#1.2, doc11#1C]
+    confidence: craft-rule
+    supersedes: [vcs-hook-archetypes]
+
+  - id: mode-hook-three-layer
+    title: Three-layer hook
+    summary: Scene 1 carries a visual, a verbal and an on-screen text layer that all name the same object, pressure-tested before any spend.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, qa]
+    rules:
+      - "Visual: frame 1 composed as if paused mid-action, hook object in frame and moving within 1 s; no logo, title or fade-in."
+      - "Verbal: hook line spoken by 2 s and echoing the title's promise; in cold-open-drama diegetic sound fills it and VO lands at the bridge."
+      - "Text: <=5-word Remotion keyword that compresses or sharpens the line (the stake, the number), never the sentence repeated."
+      - "All three layers name the same object noun; write the verbal line first, design the visual to land before it, text last."
+      - "Tests: mute (frame plus text carry it), eyes-away (voice alone pulls back), glance (text reads in 0.5 s), alignment (one idea, not three)."
+      - "Odd specific numbers beat round ones only when true; never invent precision."
+    check: {type: mechanical, how: "lint: scene 1 has visual, narration (or bridge VO <=3 s after), and on_screen_text <=5 words not a substring of the narration; verify: four tests logged"}
+    sources: [vcs-three-layer-hook, vcs-three-layer-worksheet, doc11#1C, doc11#2, psychology_rules.md, hooks.md]
+    confidence: craft-rule
+    supersedes: [vcs-three-layer-hook, vcs-three-layer-worksheet, vcs-hooks-skill]
+    notes: "content-skills is now vendored (vendor/content-skills). CONFLICT: other content-skills pages want burned-in verbatim captions; Mayer's redundancy rule (psychology_rules.md) wins, so the text layer compresses and stays <=5 words. Vendor says 3-7 words; we keep 5. Its fourth (audio) layer is edit-audio-hit-map's hook pattern. Its retention and mute-share percentages are vendor claims [weak] and are never thresholds."
+
+  - id: mode-hook-retention-shapes
+    title: Retention failure shapes (diagnostic vocabulary)
+    summary: Three named shapes of a falling retention curve, each mapped to the beat to rewrite; a way to read analytics and critique drafts, never a lint threshold.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, qa]
+    rules:
+      - "Cliff in the first 3 s: weak first frame, slow first line, logo, or hook not matching title/thumbnail; rewrite the whole opening."
+      - "Slow bleed through the middle: no escalation; add a turn or stakes raise (Shorts: about 5-8 s in) instead of more facts."
+      - "Late cliff before the payoff: payoff buried; move it, or a taste of it, earlier and compress the setup."
+      - "Join beats with 'but' or 'therefore', never 'and then'; an 'and then' beat is cut or rewritten."
+      - "Put the second-strongest moment near the top, the strongest at the payoff; open loops follow psychology_rules (max 2, each paid)."
+      - "Hook anti-patterns: channel intro, logo sting, brand first, subscribe before value, 'stop scrolling', slow build, cleverness needing decoding."
+      - "Write the hook before the script; if three honest hook angles will not come, the idea is not ready."
+      - "Diagnose a posted episode by shape first, then rewrite only the implicated beat."
+    check: {type: judgment, how: "script review names the shape a draft risks and the fixing beat; post-publish notes record the observed shape"}
+    sources: [vcs-shorts-retention, vcs-sf-retention, vcs-hook-anti-patterns, "content-skills/viral-youtube-shorts/assets/shorts-vvsa-checklist.md", psychology_rules.md, hooks.md]
+    confidence: proposal
+    supersedes: [vcs-shorts-retention, vcs-sf-retention, vcs-hook-anti-patterns, vcs-shorts-vvsa-checklist]
+    notes: "Shapes and fixes are vendor practitioner lore; every percentage (80 percent at 3 s, 65/50/40 percent viewed gates, 70 percent muted) is unsourced and stays out of lint. Not carried: 're-upload as a new Short', length sweet spots, trending audio, watermark cropping. Pattern resets every 2-4 s are already DESIGN_SYSTEM principle 4. The loop variants live in mode-loop-image."
+
+  - id: mode-hook-pattern-interrupt
+    title: "Hook family: pattern interrupt"
+    summary: Show a normal expectation for under a second, then break it in a way that IS the topic.
+    mode_fit: [explainer, cold-open-drama, hybrid]
+    stage: [script, shotlist, clip-prompt]
+    rules:
+      - "Timing: 0-0.8 s normal state, 0.8-2 s the break, narration names it by 2.5 s."
+      - "Variants: physics break, scale warp (with a human scale reference), colour shift from grey to one hue."
+      - "The break must be a true fact or an explicit what-if; never a fake phenomenon."
+    avoid: ["strobe or rapid flashes (photosensitivity; older_adult avoid list)", "subliminal 2-3 frame flashes"]
+    sources: [avg-viral-hook, avg-faceless-channel, hooks.md]
+    confidence: craft-rule
+
+  - id: mode-hook-curiosity-gap
+    title: "Hook family: curiosity gap"
+    summary: Withhold one piece of a visible situation so the viewer stays for it.
+    mode_fit: [explainer, cold-open-drama, hybrid, documentary]
+    stage: [script, shotlist]
+    rules:
+      - "Variants: obscured subject, reaction before action (Kuleshov: face, then the cause later), countdown."
+      - "Withhold the cause, never the subject's identity for more than one beat."
+      - "Countdown digits come from Remotion, never the video model."
+      - "Pay off in the same video with the same words (hooks.md mystery rule)."
+    sources: [avg-viral-hook, doc12#2.1, hooks.md]
+    confidence: craft-rule
+
+  - id: mode-hook-sensory
+    title: "Hook family: sensory reward"
+    summary: An instantly satisfying image (macro process, before/after flash, kinetic keyword) earns the first two seconds.
+    mode_fit: [explainer, montage, cold-open-drama]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Macro processes (pour, crystallise, slice) are strong AI territory; keep one object, one motion."
+      - "Before/after flash: 0.8 s each state, same framing; see arch-before-after."
+      - "Kinetic keyword: 3-5 words, beat-synced, as the text layer only."
+      - "The satisfying image must show the mechanism, not decoration (coherence principle)."
+    sources: [avg-viral-hook, avg-before-after, psychology_rules.md]
+    confidence: craft-rule
+
+  - id: mode-hook-primal
+    title: "Hook family: primal attention"
+    summary: Eye contact, sudden movement or silence-then-sound grab attention before meaning arrives.
+    mode_fit: [cold-open-drama, hybrid, explainer]
+    stage: [shotlist, edit]
+    audience_fit: [curious_adult, techie, older_adult]
+    rules:
+      - "Eye contact: use a mascot or animal, not a photoreal face (identity drift, uncanny)."
+      - "Sudden movement: static 1 s, then an object enters from the edge; nothing lunges at camera."
+      - "Silence-then-sound: <=1.5 s audio silence while picture still moves (shots.md hook rule)."
+    avoid: ["jump scares", "kids: lunges, sudden loud hits, threatening stares"]
+    sources: [avg-viral-hook]
+    confidence: craft-rule
+    notes: "Excluded for kids (fear framing); gentle silence-then-chime variant is fine for kids under mode-hook-sensory."
+
+  - id: mode-hook-trailer-openings
+    title: "Hook family: trailer-editor openings"
+    summary: Six cold-open types mapped to our modes; each must contain a question that begs an answer.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary]
+    stage: [script]
+    rules:
+      - "Scene lift (in medias res): default for cold-open-drama."
+      - "Flashback montage: mode-montage, history topics."
+      - "Rug pull: myth_busting only, when the reveal is the topic."
+      - "Name reveal: documentary or case_study, withhold who/what until the bridge."
+      - "Enigma: arch-mystery; must pay off."
+      - "Thumbstopper (best-images flash to title): long-form teaser only; weak in 9:16."
+    sources: [doc12#1.2]
+    confidence: craft-rule

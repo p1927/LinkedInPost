@@ -1,0 +1,27 @@
+DirectorSKILL:
+- Mode router (A-J) that loads only the one section needed; response-size discipline against over-production.
+- 'Identity-string contract + continuity bible: copy the exact character/wardrobe/prop string verbatim into every prompt.'
+- Style lens modules each with 'what this lens is NOT' disambiguation + a control scene run through 8 lenses.
+- Failure taxonomy F1-F19 with 60-second triage tree, cost ladder and three-strike rule for regen vs fix-in-edit.
+- 'Source-not-mood lighting rule and image-to-video prompt anatomy: start state, one camera move, one action, end state, invariant clause, targeted negatives.'
+ai-video-generator-claude:
+- Hook arsenal taxonomy (Pattern Interrupt, Curiosity Gap, Dopamine Trigger, Primal Attention) with timed prompt templates, e.g. 0.8s normal expectation then break at 0.8-2s.
+- 'Timestamped sound-visual sync: every audio hit (bass, whoosh, silence) pinned to a visual beat.'
+- Platform-specific 9:16 tuning notes for TikTok/Reels/Shorts and a 0-2s / 2-5s / 5-15s attention structure.
+- Faceless channel 'three laws' and hook table; reusable for explainers with no actors.
+- Before/after transition and contrast techniques for reveal beats.
+drama-director-skill:
+- 'Nine-panel comic page as a visual-DNA reference for image-to-video: panels lock character/costume/palette, and the motion prompt describes the real scene, never ''camera over a comic page''.'
+- Scene Archetype Router (Impact, Duel, Pursuit, Journey, Atmosphere, Reveal, Confrontation, Interrogation, Negotiation) each with camera focus and spatial change.
+- 'Dual-contrast cutting: every cut must change both shot scale and camera character; adjacent cuts never repeat camera type; 0.3-0.5s causal insert shots.'
+- Three-part motion prompt (Style & Mood / Dynamic Description with 'Hard cut to' / Static Description) plus engine hard constraints (physical micro-expression not emotion labels, track at most 3 characters,
+  no mirror/glass reflections, no off-screen references).
+- Antislop banned-word list and function-word substitution (figure/character) to dodge model filters.
+higgsfield-ai-prompt-skill: []
+higgsfield-skills: []
+visual-skills:
+- 'Scene formula: desire + obstacle + space geometry + controlled gaze + editing rhythm; a shot without all five is ''wallpaper''. Plus Details Law and Murch Rule of Six.'
+- Three-layer storyboard and 14-field shot card, rhythm ladder, one-anchor principle, and a dramaturgy check before any prompt is sent.
+- Story-arc chooser (causal chain, kishotenketsu, one peak moment, conflict beat sheet, hook-and-open-end) and montage patterns (Escalation, Anxiety, Discovery, Catastrophe).
+- 'Faceless kinetic storytelling: caption systems and shot families that carry story without faces (race-and-speed), suited to explainers without actors.'
+- 'De-slop discipline: escalate deviations from default AI look in two places, ban booster adjectives, use a capture pipeline (camera/lens/film) instead of adjectives.'

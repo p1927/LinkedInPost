@@ -1,0 +1,52 @@
+# Load Map: which craft cards each pipeline stage loads. Entries are card ids; `prefix*` loads every card with that prefix.
+# Rule (from the higgsfield dispatcher): load no more than the row names. Stage packs are cumulative: always + by_mode[mode] (+ the chosen archetype / lens added by brain.pack).
+# Anything not named here is still reachable by `run.py direction find|card`, but the director should not browse.
+# dialect per provider key in config/providers.yaml (file under direction/craft/dialects/)
+packs:
+  script:
+    always: [mode-selection, mode-hook-map, mode-hook-three-layer, mode-scene-engine-gate, arch-router, real-dramatization-fidelity, real-no-unverified-drama, flow-hard-rules, flow-assumptions, plan-hook-faceless, mode-hook-retention-shapes, real-stranger-audit,
+      flow-reuse-before-generate]
+    by_mode:
+      explainer: [mode-explainer, arch-mechanism-demo, arch-analogy-world, real-analogy-world]
+      cold-open-drama: [mode-cold-open-drama, mode-cold-open-beats, mode-loop-image, mode-bridge-rules, mode-hook-trailer-openings, plan-story-arc, plan-beat-sheet, plan-scene-formula, plan-director-book]
+      hybrid: [mode-hybrid, mode-cold-open-beats, mode-loop-image, mode-bridge-rules, plan-story-arc, plan-beat-sheet, plan-scene-formula, plan-director-book]
+      montage: [mode-montage, arch-montage, arch-data-reveal]
+      documentary: [mode-documentary, arch-before-after]
+  shotlist:
+    always: [arch-conventions, arch-ai-safe, cont-identity-string, cont-one-action, cont-axis-eyelines, cont-style-lock, edit-dual-contrast-cut, edit-anti-slideshow, lens-apply, plan-shot-fields, plan-coverage-check, gram-shot-size, gram-camera-moves,
+      gram-camera-motivation, gram-vertical-frame, gram-coverage, flow-lint-before-spend, prompt-leakage-sweep]
+    by_mode:
+      explainer: [arch-mechanism-demo, arch-before-after, gram-genre-explainer]
+      cold-open-drama: [cont-bible-schema, cont-master-keyframe, cont-canon-frame, cont-one-variable-setups, cont-style-bridge, edit-hook-bridge, edit-jl-sound-bridges, edit-murch-rubric, plan-shot-fields-extra, plan-shot-risk, plan-clip-envelope, plan-density-ladder,
+        gram-light-setups, gram-staging-patterns, gram-depth-eyeline, gram-performance, gram-lens-picker, gram-genre-trailer, cont-drift-audit]
+      hybrid: [cont-bible-schema, cont-master-keyframe, cont-style-bridge, edit-hook-bridge, edit-murch-rubric, plan-shot-fields-extra, plan-shot-risk, plan-clip-envelope, plan-density-ladder, gram-light-setups, gram-staging-patterns, gram-depth-eyeline,
+        gram-performance, gram-lens-picker, gram-genre-trailer, cont-drift-audit]
+      montage: [edit-pacing-math, edit-cut-motivation, edit-audio-hit-map, plan-montage-patterns, gram-genre-social-vertical]
+      documentary: [real-period-tech, real-geography, lens-observed-verite, gram-genre-documentary]
+  clip-prompt:
+    always: [prompt*, fail-describe-dont-negate, cont-identity-string, cont-style-lock, edit-antislop-words, plan-keyframe-card, plan-still-as-motion, plan-emotion-without-faces, plan-reference-assets, gram-light-setups, gram-camera-moves]
+    by_mode: {}
+  edit:
+    always: [edit-pacing-math, edit-clip-seams, edit-handles-harvest, edit-sound-brief, edit-silence, edit-color-grade, edit-text-overlay-cadence, edit-deslop-review, plan-edit-timeline, flow-picture-lock, gram-sound-perspective, edit-reaction-insert]
+    by_mode:
+      cold-open-drama: [edit-hook-bridge, edit-jl-sound-bridges, edit-audio-hit-map, mode-bridge-freeze-rewind, mode-bridge-j-cut, mode-bridge-match-cut, mode-bridge-question-card, mode-bridge-pull-back, mode-bridge-narrator-step-in]
+      hybrid: [edit-hook-bridge, edit-jl-sound-bridges, mode-bridge-match-cut, mode-bridge-pull-back]
+  qa:
+    always: [real*, fail-take-verdicts, fail-triage-tree, fail-cost-ladder, fail-three-strike, flow-take-review, flow-fixes-skeletons, fail-prompt-catalogue, fail-limit-claims, fail-repair-or-regenerate, flow-lint-before-spend, cont-drift-audit]
+    by_mode: {}
+# Keys: the providers.yaml model id (exact, then lower-case) or the adapter module name (adapters.video_minimax -> video_minimax / minimax); see brain.dialect_name.
+dialects:
+  video: {MiniMax-H3: hailuo, MiniMax-H3-Max: hailuo, MiniMax-Hailuo-2.3: hailuo, MiniMax-Hailuo-02: hailuo, minimax: hailuo, minimax_hailuo: hailuo, hailuo: hailuo, kling: kling, veo: veo,
+    seedance: seedance, runway: runway, wan: wan}
+  image: {image-01: keyframe-image, minimax: keyframe-image, minimax_image: keyframe-image, default: keyframe-image}
+# Dialect sections director.py injects into the writer's clip-prompt guidance (camera + prompt rules only; API/cost tables stay out).
+dialect_sections:
+  hailuo: ["0b", "9", "12.4", "12.5", "12.6"]
+# One house line per dialect, printed above its sections (resolves the card shorthand vs dialect conflict, DIRECTION-AB D7).
+dialect_house_rule:
+  hailuo: "House default on MiniMax-H3: write the camera move as one natural English sentence (type + optional amplitude + speed) before the subject action, e.g. 'The camera pushes in with small amplitude at slow speed toward the jar.' Craft cards write moves as bracket tokens ([Push in], [Static shot]) as shorthand for the move; bracket tokens remain permitted in clip prompts (the 2.3 form, open A/B in section 12.6), never both forms in one prompt, at most 2 moves per clip. qa_checklist camera_command_syntax (warn) still expects a bracket until that A/B; a natural sentence is correct."
+# Cinematic-dialect words (camera optics and live-action grading), curated from craft/lenses.yaml anchor_prompt/params and the
+# dialect files. director.py adds every '<N>mm' focal length named in lenses.yaml. A native-dialect scene (kids, older_adult,
+# or a declared native segment) that uses them gets director_native_cinematic_words (warn) with a rewrite hint.
+cinematic_vocabulary: [cinematic, shallow depth of field, depth of field, bokeh, rack focus, lens flare, anamorphic, film grain, rim light,
+  volumetric light, light haze, photorealistic, photographic, realistic, live-action, color grade, colour grade, dolly-in, handheld, telephoto, wide-angle lens]

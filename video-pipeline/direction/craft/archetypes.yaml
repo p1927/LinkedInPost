@@ -1,0 +1,373 @@
+# craft/archetypes.yaml - one canonical set of scene archetypes -> shot recipe -> AI-safe tactics -> bridge-out.
+# Format: craft/CRAFT-SPEC.md. Base: doc12#3 cards, merged with drama-director / higgsfield archetype
+# routers, DirectorSKILL cinematic-language + blocking + editing, visual-skills dramaturgy/patterns
+# (CC BY 4.0, Serge Shima), ai-video-generator hooks. Original wording; vendored text is data.
+# Extension fields beyond the spec: recipe (ordered shots), duration_s [min,max] for a Short cold open
+# (long-form may run up to 2x), bridge_out (mode-bridge-* ids), kids_variant (softened version).
+# Recipe codes: EWS/WS/MS/MCU/CU/ECU sizes; camera character in caps: LOCKED, DOLLY (push/pull),
+# LATERAL (truck/pan), VERTICAL (tilt/pedestal), FOLLOW (tracking), HAND (light handheld sway).
+# Seconds are cut lengths; each generated clip is still one 6-10 s Hailuo take trimmed in Remotion.
+
+cards:
+  - id: arch-conventions
+    title: Archetype conventions (apply to every recipe)
+    summary: Shared shot, cut and generation rules every archetype inherits, so the cards below only state what differs.
+    mode_fit: [cold-open-drama, hybrid, explainer, montage, documentary]
+    stage: [shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Every shot has a function (establish, relation, detail, reaction, POV, reveal, aftermath) and changes emotion, action or pressure; else cut it."
+      - "Dual contrast: each cut changes shot size AND camera character; no 3 consecutive cuts share size and move."
+      - "Exempt from dual contrast: matched shot/reverse pairs and before/after frames, where identical framing is the grammar."
+      - "Inserts 0.3-0.5 s (older_adult >=1 s), causally motivated, owner named ('her receipt', not 'a receipt')."
+      - "A wide appears within the first 2 shots, except pursuit and mystery (by shot 3)."
+      - "Write motion direction in every clip: 'moves frame-left to frame-right'."
+      - "Write the off-screen target side and height for every look."
+      - "9:16: go one size tighter than 16:9 habit; stage in depth (near = low in frame, far = high), not side by side."
+      - "One focal zone per frame; keep it in the same screen third across a cut unless the cut is meant to jolt."
+    check: {type: mechanical, how: "lint: size+move column has no 3-run repeat; wide within 2 shots; direction words present"}
+    sources: [ddr-dual-contrast-cutting, hf-shotlist-director, dsk-cinematic-language, dsk-blocking-staging, vsk-dramaturgy, doc12#2, shots.md]
+    supersedes: [ddr-dual-contrast-cutting]
+    confidence: craft-rule
+    notes: "Drama-director/higgsfield demand dual contrast on every cut; we apply it to drama sequences, while explainer illustration scenes follow shots.md cadence."
+
+  - id: arch-ai-safe
+    title: AI-safe generation rules (apply to every recipe)
+    summary: Generation tactics that keep each archetype's clips coherent with each other and with real life.
+    mode_fit: [cold-open-drama, hybrid, explainer, montage, documentary]
+    stage: [clip-prompt, edit, qa]
+    rules:
+      - "One subject action and one camera move per clip; split anything more into two clips."
+      - "Start each clip from an approved keyframe (I2V); the prompt describes only the change."
+      - "Paste identity, wardrobe and light lines verbatim into every clip of the scene."
+      - "Hide a continuity mismatch with a 0.8-1.5 s static insert from the same location."
+      - "Cut before contact: reaches, handoffs and impacts end before touch; the next clip shows the result."
+      - "Cost is generations, not cuts: a 0.4 s insert still costs one take; plan inserts as harvestable trims."
+    avoid: ["reflections in mirrors/glass/water as story shots", "exit and re-entry in one clip", "referencing off-screen state changes", "emotion labels instead of physical micro-actions"]
+    check: {type: mechanical, how: "lint: one camera token per clip prompt; identity string present verbatim"}
+    sources: [ddr-engine-constraints, hf-prompt-mcsla, dsk-editing-assembly, dsk-blocking-staging, doc12#2.5, shots.md]
+    confidence: craft-rule
+
+  - id: arch-router
+    title: Archetype router
+    summary: Pick the archetype from the topic's emotional question, then filter by audience.
+    mode_fit: [cold-open-drama, hybrid, explainer, montage, documentary]
+    stage: [script, shotlist]
+    rules:
+      - "Stakes rising against time -> countdown; distance closing -> pursuit; two forces trading advantage -> duel."
+      - "Hidden mechanism or clue -> mystery or discovery; size/power -> awe-scale; hidden then shown -> reveal."
+      - "Misunderstanding between people -> confrontation; feeling between two -> intimate-dialogue."
+      - "Movement through space or time -> journey; accumulation -> montage; one decisive moment -> impact; mood only -> atmosphere."
+      - "Explainer bodies: how it works -> mechanism-demo; analogy -> analogy-world; change -> before-after; number -> data-reveal."
+      - "Kids: peril archetypes only through kids_variant; confrontation excluded."
+      - "older_adult: cuts >=2.5 s, inserts >=1 s, no HAND/whip/flashes; prefer reveal, journey, awe-scale, explainer bodies."
+      - "Name the archetype per scene in shot.archetype; one archetype per cold open."
+    sources: [ddr-archetype-router, hf-prompt-mcsla, doc12#3, vsk-patterns-genres, audiences/kids.yaml, audiences/older_adult.yaml]
+    supersedes: [ddr-archetype-router]
+    confidence: craft-rule
+    notes: "Higgsfield defaults (Duel for action, Atmosphere for general) are dropped: for explainers an empty default hides a missing question; default is mode-explainer instead."
+
+  - id: arch-duel
+    title: Duel / standoff
+    summary: Two opposed forces trade advantage; stakes and anticipation before or during the clash.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [shotlist, clip-prompt]
+    recipe: ["WS LOCKED 1.5s A low-near vs B high-far, axis set", "MCU A DOLLY slow push 1.5s looks frame-right", "ECU insert A's detail LOCKED 0.5s", "MCU B HAND 1.5s looks frame-left", "WS LATERAL 1.5s the beat before contact"]
+    duration_s: [6, 10]
+    bridge_out: [mode-bridge-freeze-rewind, mode-bridge-question-card]
+    rules:
+      - "Axis: A always looks frame-right, B frame-left; cross only via a neutral head-on ECU."
+      - "Advantage alternates: neither side dominates more than one consecutive beat; camera sits lower on the side ahead."
+      - "Cut on the beat before contact; the explainer starts from the cause."
+      - "9:16: depth staging (A near-bottom, B far-top) or alternating singles; never two slivers side by side."
+    kids_variant: "Friendly contest: two marbles racing down ramps, tug-of-war rope between cartoon forces; no faces glaring, no weapons."
+    ai_safe: ["long lens, shallow depth, strong silhouettes", "hands off weapons/props; sound and cut rhythm carry the clash"]
+    avoid: ["contact physics in close view", "joint-angle choreography", "both fighters moving on separate paths in one clip"]
+    sources: [doc12#3, ddr-archetype-router, hf-prompt-mcsla, dsk-blocking-staging]
+    confidence: craft-rule
+
+  - id: arch-pursuit
+    title: Pursuit / race
+    summary: Distance between chaser and chased opens or closes; urgency and momentum.
+    mode_fit: [cold-open-drama, hybrid, montage]
+    stage: [shotlist, clip-prompt]
+    recipe: ["MS FOLLOW 1.5s pursued moving frame-right", "ECU insert wheel/feet LOCKED 0.4s", "MS DOLLY 1.5s pursuer behind, also frame-right", "POV HAND 1s obstacle ahead", "WS VERTICAL 1.5s geography: the gap", "MCU LOCKED 1s pursued glances back frame-left"]
+    duration_s: [6, 10]
+    bridge_out: [mode-bridge-freeze-rewind, mode-bridge-j-cut]
+    rules:
+      - "Both move frame-right; reverse only after a visible turn or a neutral insert."
+      - "Gap must be readable by shot 3; make the path narrow or open as the stakes change."
+      - "9:16: run toward or away from camera down a vertical path (road, corridor), long lens compressing the gap."
+    kids_variant: "Playful chase: puppy after a rolling ball, paper boat racing a leaf; no threat, nobody is caught."
+    ai_safe: ["foreground parallax objects sell speed", "subject from behind or profile; tracking", "imply collisions by cut and sound"]
+    avoid: ["crowds", "on-screen collisions", "direction flips between clips", "foot sliding in long gait clips (keep 3-4 s)"]
+    sources: [doc12#3, ddr-archetype-router, hf-prompt-mcsla, vsk-race-speed, dsk-cinematic-language]
+    confidence: craft-rule
+
+  - id: arch-reveal
+    title: Reveal
+    summary: The camera controls when something hidden becomes visible; surprise, scale, "so that's what it is".
+    mode_fit: [cold-open-drama, hybrid, explainer, documentary]
+    stage: [shotlist, clip-prompt]
+    recipe: ["CU LOCKED 1.5s observer reacts, looks off-frame up-left", "MS HAND 1s partial occluded view of the target", "WS DOLLY pull-out or VERTICAL tilt up 2.5s full target with human scale"]
+    duration_s: [5, 8]
+    bridge_out: [mode-bridge-pull-back, mode-bridge-match-cut]
+    rules:
+      - "Eyeline: observer's look direction and height match where the target sits in the next shot."
+      - "Hide by occlusion (door, fog, corner), never by blur alone; the reveal is one move in one clip."
+      - "The revealed thing must not have been visible earlier in frame."
+      - "9:16: vertical tilt/pedestal reveal suits tall targets."
+    ai_safe: ["keep the person small or from behind during the reveal move", "include a door, person or car for scale"]
+    avoid: ["morphing during the pull-out", "revealed object at implausible scale"]
+    sources: [doc12#3, hf-prompt-mcsla, ddr-archetype-router, avg-viral-hook, dsk-cinematic-language]
+    confidence: craft-rule
+
+  - id: arch-discovery
+    title: Discovery
+    summary: Someone notices a clue or object and the meaning of the scene shifts; curiosity without an opponent.
+    mode_fit: [cold-open-drama, hybrid, explainer, documentary]
+    stage: [shotlist, clip-prompt]
+    recipe: ["WS LOCKED 2s subject in environment", "MS LATERAL 1.5s subject stops, 3/4 from behind", "ECU insert DOLLY slow push 1s the object", "MCU LOCKED 1.5s face neutral to wonder"]
+    duration_s: [6, 10]
+    bridge_out: [mode-bridge-match-cut, mode-bridge-narrator-step-in]
+    rules:
+      - "Subject looks the same screen direction in shots 2 and 4; the object sits on that side."
+      - "Plant the object in the wide before the insert, or the insert reads as random b-roll."
+      - "Signal discovery with a light change (glint, beam) rather than hands touching."
+      - "The object insert becomes the first explainer visual."
+    ai_safe: ["object inserts are the most reliable AI shots", "Kuleshov: neutral face + insert creates wonder without acting"]
+    avoid: ["hands handling the object", "object changing type between insert and wide"]
+    sources: [doc12#3, vsk-patterns-genres, dsk-cinematic-language]
+    confidence: craft-rule
+
+  - id: arch-confrontation
+    title: Confrontation (incl. interrogation, negotiation)
+    summary: Two people push against each other in words; power geometry carries the conflict.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [shotlist, clip-prompt]
+    audience_fit: [curious_adult, older_adult, techie]
+    recipe: ["WS or two-shot LOCKED 2s positions set", "OTS A->B DOLLY slow push 2s", "OTS B->A LOCKED 2s mirrored", "CU listener reaction HAND 1.5s", "MS two-shot LATERAL 1.5s release or escalation"]
+    duration_s: [8, 12]
+    bridge_out: [mode-bridge-j-cut, mode-bridge-question-card]
+    rules:
+      - "Variants: confrontation (power trades per exchange), interrogation (camera low on questioner, push on silence), negotiation (symmetric sizes)."
+      - "Shoulders mirror: A's shoulder lower-left in every shot of B; cross the axis only on the power shift."
+      - "Eyeline heights match the standing/seated geometry."
+      - "Keep the power-shift line plus one before and one after; turn other lines into behaviour."
+      - "9:16: OTS with foreground shoulder in a bottom corner; singles over two-shots."
+    ai_safe: ["one speaker per clip, cut on line ends", "build both OTS keyframes from one two-shot keyframe"]
+    avoid: ["two lip-synced speakers in one clip", "more than 2 characters", "same-height singles for mismatched heights"]
+    sources: [doc12#3, ddr-archetype-router, hf-prompt-mcsla, dsk-cinematic-language, dsk-blocking-staging]
+    confidence: craft-rule
+    notes: "Interrogation and negotiation merged here: identical coverage machinery, only power geometry differs, and spoken drama is rare in our explainers. Kids excluded (person-vs-person conflict)."
+
+  - id: arch-journey
+    title: Journey / transit
+    summary: Movement through space or time shows distance, effort or progress.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    recipe: ["WS LOCKED 2s traveller small, moving frame-right", "MS FOLLOW from behind 1.5s same direction", "ECU insert wheel/compass LOCKED 0.5s", "EWS aerial VERTICAL or pull-out 2s distance covered"]
+    duration_s: [6, 12]
+    bridge_out: [mode-bridge-match-cut, mode-bridge-j-cut]
+    rules:
+      - "Outbound always frame-right; return reverses to frame-left to read as coming back."
+      - "Time of day progresses only forward, via a dissolve; sun side stays consistent within a leg."
+      - "9:16: road, river or trail receding vertically; top-down aerial for routes."
+    kids_variant: "Same recipe; make the goal friendly (delivering a letter, a seed carried by wind)."
+    ai_safe: ["far landscapes and vehicles are strong", "chain clips last frame -> first frame inside one leg"]
+    avoid: ["landscape geography that contradicts the real route", "lighting jumps between clips"]
+    sources: [doc12#3, hf-prompt-mcsla, ddr-archetype-router]
+    confidence: craft-rule
+
+  - id: arch-countdown
+    title: Countdown / ticking clock
+    summary: A visible deadline compresses time; cuts shorten as zero nears.
+    mode_fit: [cold-open-drama, hybrid, explainer]
+    stage: [shotlist, clip-prompt, edit]
+    recipe: ["ECU display 1.5s (Remotion digits) LOCKED", "MCU face DOLLY slow push 1.5s", "MS environment reacts LATERAL 1s", "ECU display closer to zero LOCKED 0.7s", "black or CU 0.3s smash cut / drop to silence"]
+    duration_s: [5, 9]
+    bridge_out: [mode-bridge-question-card, mode-bridge-freeze-rewind]
+    rules:
+      - "Display holds the same screen position every time it returns."
+      - "Shot lengths step down (long, shorter, shorter, pause, impact); the pause before zero is mandatory."
+      - "Real deadline only: the clock must be a true time constraint of the topic."
+      - "9:16: display upper third, face below it."
+    kids_variant: "Friendly timer: oven timer as cookies bake, bus arriving as a child ties shoes; ends happily in the explainer."
+    ai_safe: ["never let the model draw digits; composite numbers in Remotion", "tick/heartbeat sound does the pressure"]
+    avoid: ["fake urgency (hooks.md)", "flashing digits for older_adult"]
+    sources: [doc12#3, vsk-dramaturgy, avg-viral-hook, dsk-style-nolan]
+    confidence: craft-rule
+
+  - id: arch-mystery
+    title: Mystery / enigma
+    summary: An anomaly is shown and the answer withheld; dread or curiosity, paid off by the explainer.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [shotlist, clip-prompt]
+    recipe: ["WS LOCKED or DOLLY slow push 2s strange space, one motivated source", "ECU insert anomaly LOCKED 1s", "MS from behind HAND 1.5s someone investigates", "POV DOLLY 1.5s partial view; hold, end before the answer"]
+    duration_s: [6, 10]
+    bridge_out: [mode-bridge-question-card, mode-bridge-narrator-step-in]
+    rules:
+      - "The mystery must be real and solved in the same video (hooks.md)."
+      - "Low key but one named light source; darkness never invents the light."
+      - "9:16: corridor, stairwell or doorway gives vertical depth."
+    kids_variant: "Daylight puzzle: puddle gone by noon, shadow that moves; wonder, no dread music."
+    ai_safe: ["fog, mist and low light hide artifacts", "avoid faces; silhouettes and backs"]
+    avoid: ["crushed blacks turning to noise", "unmotivated glow"]
+    sources: [doc12#3, doc12#1.2, vsk-patterns-genres, dsk-style-hitchcock]
+    confidence: craft-rule
+
+  - id: arch-awe-scale
+    title: Awe / scale
+    summary: Wonder at size or power, made legible by a recognisable scale reference.
+    mode_fit: [cold-open-drama, hybrid, explainer, documentary, montage]
+    stage: [shotlist, clip-prompt]
+    recipe: ["EWS VERTICAL tilt up 2.5s landscape with a person/vehicle for scale", "CU LOCKED 1s small face looking up", "EWS DOLLY pull-out or pedestal up 2.5s the large thing"]
+    duration_s: [5, 8]
+    bridge_out: [mode-bridge-match-cut, mode-bridge-pull-back]
+    rules:
+      - "Look-up direction matches where the object appears next."
+      - "Every scale shot contains a known-size reference (person, door, car, bus)."
+      - "9:16: vertical subjects (rocket, tower, waterfall, stacked coins); fill the bottom third with foreground."
+    ai_safe: ["wide-angle, one move, VFX nature/space are generally strong"]
+    avoid: ["miniature or tilt-shift look", "subject under ~1/4 frame height on phones"]
+    sources: [doc12#3, avg-viral-hook, dsk-style-villeneuve, dsk-cinematic-language]
+    confidence: craft-rule
+
+  - id: arch-intimate-dialogue
+    title: Intimate dialogue
+    summary: Quiet emotion between two people, or a person and the mascot; trust, worry, explanation in miniature.
+    mode_fit: [cold-open-drama, hybrid, explainer]
+    stage: [shotlist, clip-prompt]
+    recipe: ["MS two-shot LOCKED 2.5s who sits left/right", "CU A DOLLY slow push 2.5s speaking, looks frame-right", "CU B LOCKED 2s listening, looks frame-left", "ECU insert object (cup, letter) LOCKED 1s", "MS two-shot LATERAL 2s button"]
+    duration_s: [8, 14]
+    bridge_out: [mode-bridge-j-cut, mode-bridge-narrator-step-in]
+    rules:
+      - "Soft key from the window side, same side in every shot."
+      - "One short line per clip; reactions carry the meaning."
+      - "9:16: alternate singles; two-shot staged in depth."
+    ai_safe: ["shot/reverse as separate clips from keyframes", "keep room tone continuous across cuts in the edit"]
+    avoid: ["hands occluding faces", "pouring or drinking liquids in close view"]
+    sources: [doc12#3, dsk-cinematic-language, hf-shotlist-director]
+    confidence: craft-rule
+
+  - id: arch-montage
+    title: Montage run
+    summary: A short run of brief shots compresses time or process around one advancing variable.
+    mode_fit: [montage, cold-open-drama, explainer, documentary]
+    stage: [shotlist, edit]
+    recipe: ["head shot WS LOCKED 1.5s fixed frame", "3-5 shots CU/ECU/MS 1-2s each, mixed characters", "tail shot same frame as head 2s, variable advanced"]
+    duration_s: [5, 10]
+    bridge_out: [mode-bridge-match-cut, mode-bridge-j-cut]
+    rules:
+      - "Pick a pattern: escalation (wide to macro to reaction), discovery, anxiety, catastrophe (tiny failures)."
+      - "One advancing variable; hide the tail shot and the viewer can still predict it."
+      - "One continuous sound bed; rhythm accelerates then ends on a hold."
+      - "9:16: single centred subject per shot, same focal zone."
+    ai_safe: ["assemble clips in Remotion; never prompt a montage inside one clip", "stills plus Remotion moves are fine for most run shots"]
+    avoid: ["grade drift across the run", "older_adult: shots under 2.5 s"]
+    sources: [doc12#3, vsk-patterns-genres, dsk-editing-assembly]
+    confidence: craft-rule
+
+  - id: arch-impact
+    title: Impact / decisive moment
+    summary: "One decisive contact or failure: slow build, fast hit, slow aftermath."
+    mode_fit: [cold-open-drama, hybrid, explainer]
+    stage: [shotlist, clip-prompt, edit]
+    recipe: ["WS LOCKED 2s anticipation, object unstable", "MCU DOLLY slow push 1.5s reaction before", "ECU insert 0.3s the moment (or cut away on it)", "WS LATERAL 2s aftermath in stillness"]
+    duration_s: [5, 8]
+    bridge_out: [mode-bridge-freeze-rewind, mode-bridge-question-card]
+    rules:
+      - "Contact point centred; pause before the hit, silence or one sound on it."
+      - "Show cause and effect; reactions follow causes in the same scene."
+      - "9:16: contact point at centre of the safe column."
+    kids_variant: "Small catastrophe: domino line falls, souffle sinks, ice cube cracks; nobody hurt."
+    ai_safe: ["show force direction, not a destruction sequence", "cut on the impact to hide that nothing connects"]
+    avoid: ["objects passing through each other", "impact with no reaction", "injury or gore"]
+    sources: [ddr-archetype-router, hf-prompt-mcsla, vsk-patterns-genres, vsk-dramaturgy]
+    confidence: craft-rule
+
+  - id: arch-atmosphere
+    title: Atmosphere
+    summary: Mood is the content; a near-static frame where one micro-change carries the drama.
+    mode_fit: [cold-open-drama, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    recipe: ["WS LOCKED 3s environment with one pressure (rain on glass, flickering tube)", "MCU DOLLY slow push 2s the micro-change"]
+    duration_s: [4, 6]
+    bridge_out: [mode-bridge-j-cut, mode-bridge-question-card]
+    rules:
+      - "Use only as the first 2-3 s of another archetype or inside documentary; alone it poses no question."
+      - "Name one environmental pressure and one micro-change; nothing else moves."
+    ai_safe: ["minimal motion is the most reliable AI clip"]
+    avoid: ["wallpaper: a pretty frame with no change"]
+    sources: [ddr-archetype-router, hf-prompt-mcsla, vsk-dramaturgy]
+    confidence: craft-rule
+    notes: "Kept separate from impact: opposite tempo and purpose. Not a standalone cold open (doc12#1.3: atmosphere-only is a broken promise)."
+
+  # ---- explainer-native archetypes ----
+  - id: arch-mechanism-demo
+    title: Mechanism demo
+    summary: The real parts of a process shown step by step, cause before effect; the explainer's core scene.
+    mode_fit: [explainer, cold-open-drama, hybrid, documentary]
+    stage: [script, shotlist, qa]
+    recipe: ["WS diagram LOCKED 2s all parts visible", "MS DOLLY push 3s on part 1 acting", "insert 1s the effect", "MS VERTICAL 3s next part, same layout", "WS pull-out 2s whole system, final state"]
+    duration_s: [8, 20]
+    bridge_out: [mode-bridge-match-cut]
+    rules:
+      - "One step per scene, mechanism_steps from the audience card."
+      - "Same diagram layout across steps; parts keep position and colour."
+      - "Highlight each part when named (signaling); cause at top, effect below in 9:16."
+      - "Arrows/motion show real causality only; every claim in claims."
+    ai_safe: ["Remotion diagrams for the mechanism; AI clip only for the real object in motion"]
+    avoid: ["animation implying false causality", "hiding the real parts behind a metaphor (curious_adult principle)"]
+    sources: [hfs-video-explainer, audiences/curious_adult.yaml, psychology_rules.md, dsk-genre-playbooks]
+    confidence: craft-rule
+
+  - id: arch-analogy-world
+    title: Analogy world
+    summary: A familiar domain stages the mechanism, then the true term lands on the matching element.
+    mode_fit: [explainer, hybrid]
+    stage: [script, shotlist]
+    recipe: ["MS LOCKED 2s analogy world, character centred", "MCU DOLLY 2s the element that maps to the real part", "insert true-term card (Remotion) 1s", "MS 2s limitation shown"]
+    duration_s: [6, 15]
+    bridge_out: [mode-bridge-narrator-step-in, mode-bridge-match-cut]
+    rules:
+      - "Picture first, true term second; reveal the term on screen as it is spoken."
+      - "Map each element explicitly; show where the analogy breaks in one beat."
+      - "One analogy per video; one world, one look."
+    ai_safe: ["character identity string verbatim; illustrations over clips"]
+    avoid: ["analogy parts more memorable than the real ones", "mixing two analogy worlds"]
+    sources: [audience.yaml, psychology_rules.md, hfs-video-explainer-prompts]
+    confidence: craft-rule
+
+  - id: arch-before-after
+    title: Before / after
+    summary: The same frame in two states makes a change, myth correction or effect visible instantly.
+    mode_fit: [explainer, cold-open-drama, montage, documentary]
+    stage: [shotlist, edit]
+    recipe: ["MS LOCKED 1.5s before state", "transition 0.3-0.8s (hard cut, wipe or dissolve)", "MS LOCKED same frame 2s after state", "insert 1s the detail that changed"]
+    duration_s: [4, 8]
+    bridge_out: [mode-bridge-match-cut, mode-bridge-question-card]
+    rules:
+      - "Identical framing, lens and light in both states; only the variable changes."
+      - "Hard cut for large contrast, wipe for progress (bottom-to-top in 9:16), dissolve for slow change."
+      - "9:16: stack states top/bottom, not left/right."
+    ai_safe: ["generate both states from one keyframe with first/last frame pins, or two stills"]
+    avoid: ["implying an effect the evidence does not support", "morph that invents in-between states"]
+    sources: [avg-before-after, avg-viral-hook, dsk-editing-assembly]
+    confidence: craft-rule
+
+  - id: arch-data-reveal
+    title: Data reveal
+    summary: A number becomes a physical comparison (stack, height, area) built in Remotion.
+    mode_fit: [explainer, documentary, montage]
+    stage: [shotlist, qa]
+    recipe: ["MS LOCKED 1.5s familiar reference object", "VERTICAL tilt up 2.5s stack grows to the number", "hold 2s number + source on screen"]
+    duration_s: [4, 8]
+    bridge_out: [mode-bridge-match-cut]
+    rules:
+      - "Exact numbers and scales rendered in Remotion; source cited on screen."
+      - "Comparison must be arithmetically true; state the unit."
+      - "9:16: tall stacks and bars use the vertical frame; hold >=2 s to read."
+    ai_safe: ["AI image only for the reference object, never for digits or charts"]
+    avoid: ["truncated axes or misleading scales", "unsourced figures"]
+    sources: [hooks.md, format_catalog.yaml, avg-faceless-channel, psychology_rules.md]
+    confidence: craft-rule

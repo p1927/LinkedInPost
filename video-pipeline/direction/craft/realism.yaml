@@ -1,0 +1,472 @@
+# realism.yaml - coherence/realism QA checklist for AI-directed shots (prefix real-).
+# THE guard rail: directors may be as creative as they like; these checks keep every shot plausible
+# against real life and real film grammar. Format: CRAFT-SPEC.md, plus four keys this file needs:
+#   severity: blocker (regenerate/recompose before publish) | major (fix before publish, edit-side allowed) | minor (note)
+#   failure:  the AI-specific failure class addressed; F-codes = DirectorSKILL taxonomy (see triage.yaml fail-triage-tree)
+#   check.test: a yes/no question; "yes" = PASS. check.lint: the mechanical pre-check when the main check is judgment.
+#   ai_safe: the mitigation to write at prompt time.
+# Field paths: `scenes[].visual.{type,prompt,motion_prompt,keyframe_prompt}`, `style.*`, `claims`, `mechanism`, `analogy`
+# exist today. `direction.*`, `continuity.*`, `scenes[].shot.*` are PROPOSED (defined in continuity.yaml cont-bible-schema).
+# Already enforced elsewhere (not repeated): lint no_text_in_image_prompts, cast_descriptor_in_prompt, camera_command_present;
+# verify.py one_analogy / claim_support / comprehension; DESIGN_SYSTEM section 8 anti-slop stills review.
+cards:
+  - id: real-verifier-protocol
+    title: How the realism verifier runs
+    summary: Procedure, evidence and report shape for the realism pass; a separate agent lane that tries to break the shots, never the director grading itself.
+    severity: blocker
+    failure: [self-approval, unreviewed frames]
+    stage: [shotlist, qa]
+    rules:
+      - "Three gates: PRE on shot-list text before any paid call (free), CLIP per generated clip, SEQUENCE on the render."
+      - "Fresh prompt on the llm_verify model, no access to the director's reasoning; never the authoring context."
+      - "Evidence per real-measured-evidence; clip N last frame beside N+1 first frame; cite frame times."
+      - "Blocker cards on every clip; spatial/temporal/splice cards on every cut pair; factual cards on the whole plan."
+      - "PRE flags each risky shot with its fix and names the single HIGHEST-RISK shot and its fallback."
+      - "Per clip: issue severities, derived verdict (fail-take-verdicts), CLASS/EVIDENCE/CHANGE/KEEP (fail-repair-note); a blocker is never averaged away."
+      - "One report per shot per round, never overwritten, naming the clip hash judged; confidence drops when plan, prompt or canon frame is missing."
+      - "Judge only the shot's stated job; a human reviews the contact sheet and every flagged clip."
+      - "Close each scene with: would a viewer call this fake, at which frame? Answer a time or 'no'."
+    avoid:
+      - "Trusting LLM verdicts on frames as ground truth (eyeline/physics judging from stills is untested)"
+    check: {type: judgment, test: "Does the report cite frames per fail, come from a separate lane, and carry a human sign-off?", how: "propose out/<id>/realism_report.json, gated like verify.is_clear"}
+    sources: [doc12#4, dsk-tpl-qc-checklist, hf-troubleshoot, doc11#4, doc11#1A-7, shk-critic-skill, shk-qa-loop, afc-role-script-supervisor]
+    confidence: proposal
+    supersedes: [dsk-tpl-qc-checklist, shk-critic-skill, shk-qa-loop, afc-role-script-supervisor]
+    notes: "Gates from DirectorSKILL QC; per-round hashed verdicts and input-based confidence from shotkit (brand lock, schemas, validators dropped); veto + highest-risk line from ai-film-crew's script supervisor (feasibility = realism cards, unslop = edit-antislop-words); vision-proposes-human-confirms from higgsfield. 0-100 scoring dropped."
+
+  - id: real-axis-screen-direction
+    title: Axis and screen direction hold
+    summary: Subjects keep their screen side and travel direction across cuts within a scene unless a neutral shot or visible turn re-orients.
+    severity: blocker
+    failure: [geography flip, left/right swap between clips, F7]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Every scene with 2+ clips in one location declares an action line and which side each subject holds (cont-axis-eyelines)."
+      - "Write the travel direction ('moves screen-left to screen-right') in every clip prompt of the sequence, verbatim."
+      - "Cross the line only via a neutral head-on/POV/insert shot or a visible on-screen turn; mark that shot neutral."
+    ai_safe:
+      - "Prefer subjects seen from behind or in profile; three-quarter turns past 45 degrees invent geometry."
+    check: {type: judgment, test: "Across every cut pair in the scene, do subjects keep their declared side and travel direction (or is a neutral shot between)?", how: "compare last frame N vs first frame N+1 against continuity.locations[].orientation_rule", lint: "shot.axis_side and shot.travel_dir equal for consecutive shots with same shot.location_id unless shot.neutral is true"}
+    sources: [doc12#2.1, doc12#4, dsk-continuity-bible, doc11#1A-1]
+    confidence: craft-rule
+
+  - id: real-eyeline
+    title: Eyelines point at their targets
+    summary: A look must aim where the target appears in the next shot, at the right height; reverse shots look the opposite way.
+    severity: major
+    failure: [eyeline mismatch, gaze through the other person]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "State eyelines numerically: target id, horizontal side, degrees up or down (cont-axis-eyelines)."
+      - "In shot/reverse pairs, A looks screen-right means B looks screen-left; both on the same side of the line."
+    ai_safe:
+      - "Give the gaze as an observable: 'eyes fixed off-screen left, slightly up'; avoid 'looks at her'."
+      - "Kuleshov pairs (neutral face + cutaway) need only direction, not acting."
+    check: {type: judgment, test: "Does each look point toward where its target sits in the adjacent shot, at a plausible height?", how: "frame pair review", lint: "shot.eyeline present on any shot whose next shot is its target"}
+    sources: [doc12#2.1, doc12#4, dsk-continuity-bible, doc11#1A-1]
+    confidence: craft-rule
+
+  - id: real-geography
+    title: One physical map per scene, real places match reality
+    summary: Doors, horizons, landmarks and orbits stay where they were; a real place or machine looks like its real layout, climate and era.
+    severity: major
+    failure: [teleporting architecture, invented landmarks, wrong real-world layout]
+    stage: [shotlist, qa]
+    rules:
+      - "Lock a master wide per location before coverage; every other setup derives from it (cont-master-keyframe)."
+      - "For real places or machines, name verifiable features (station modules, launch pad shape) and check them against a reference image."
+    ai_safe:
+      - "Shallow focus and long lens hide background geography the model cannot hold."
+    check: {type: judgment, test: "Could every shot in the scene sit on one consistent map, and does any real place/machine match its real layout?", how: "contact sheet vs master keyframe and a real reference photo"}
+    sources: [doc12#4, dsk-continuity-bible, dsk-failure-modes]
+    confidence: craft-rule
+
+  - id: real-scale
+    title: Plausible scale and proportion
+    summary: Relative sizes of people, vehicles, buildings, planets read as real; no toy cities or giant hands.
+    severity: major
+    failure: [scale/proportion errors, miniature look]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Include one known-size reference (person, door, car) in any shot meant to show size."
+      - "Match lens to scale: wide for epic, never tilt-shift wording unless the pull-back bridge intends a diorama."
+    ai_safe:
+      - "State the size relation as a fact: 'the astronaut is smaller than one solar panel cell row'."
+    avoid:
+      - "'miniature', 'tilt-shift', 'diorama', 'toy-like' in a realistic shot"
+    check: {type: judgment, test: "Do relative sizes match real life (or the analogy world's stated sizes)?", how: "frame review", lint: "flag miniature/tilt-shift/diorama tokens in motion_prompt or keyframe_prompt unless direction.cold_open.bridge == pull-back"}
+    sources: [doc12#2.5, doc12#4]
+    confidence: craft-rule
+
+  - id: real-population
+    title: Frame population is declared and held
+    summary: Exactly the people/objects planned are in frame; no clones, intruders or melting crowd faces.
+    severity: blocker
+    failure: [extra people, duplicates, crowd face melt, character swap, F9]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Declare a count per shot; at most 2 identifiable faces and 3 tracked subjects per clip."
+      - "Crowds are backlit silhouettes, backs of heads or bokeh, held under 3 s."
+      - "After each cut, restate who is where and facing which way."
+      - "Set dressing has no faces: no framed photos, portraits, posters or screens showing people; use maps, shelves, tools, plants."
+    ai_safe:
+      - "Lead with the count: 'exactly one person in frame; behind her a blank wall'. Near, occluding backgrounds leave no depth to populate."
+    check: {type: judgment, test: "Is the on-screen count equal to shot.population for the whole clip, with no clones and no melting background faces?", how: "first/mid/last frames", lint: "shot.population present for clips with people; <=2 named faces"}
+    sources: [dsk-failure-modes, ddr-engine-constraints, doc12#4, hf-shared-negative-constraints, aif-ref-prompting]
+    confidence: craft-rule
+
+  - id: real-light-source
+    title: Motivated light, constant within a scene
+    summary: Every light has a plausible source; key side, colour temperature and time of day hold across clips of one scene.
+    severity: blocker
+    failure: [lighting drift, key flips on reverse angle, F12]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Name source, side, quality per location once; paste that line verbatim into keyframe and clip prompts of the scene."
+      - "Key stays on the same side of the room, not of the face, when a subject turns."
+      - "Prefer one stable source (sun, overcast, a window, a screen); avoid mixed candle-neon-moon setups across multi-clip scenes."
+    ai_safe:
+      - "A visible practical in the keyframe anchors light better than a described one; decide light in the still."
+    check: {type: judgment, test: "Do key side, colour temperature and practical states stay constant within each scene?", how: "frame pairs across cuts", lint: "continuity.locations[].key_light string appears verbatim in motion_prompt and keyframe_prompt of every shot with that location_id"}
+    sources: [doc12#2.2, doc12#4, dsk-failure-modes, dsk-continuity-bible, vsk-fixes-skeletons]
+    confidence: craft-rule
+
+  - id: real-time-weather
+    title: Time, weather and states progress, never reset
+    summary: Time of day, weather, wetness, damage move forward at most one step between adjacent shots.
+    severity: minor
+    failure: [state reset, time jump, sun swapping sides]
+    stage: [shotlist, qa]
+    rules:
+      - "Track progressive states in the state ledger (cont-state-ledger); adjacent shots move at most one band."
+      - "A dissolve or title is the only way to skip time; say so in the shot."
+    check: {type: mechanical, test: "Does every tracked state move forward by at most one band per adjacent shot?", how: "lint over continuity.ledger[] order vs scenes order"}
+    sources: [dsk-continuity-bible, doc12#4]
+    confidence: craft-rule
+
+  - id: real-identity
+    title: Same person, same wardrobe, same mascot
+    summary: Face, build, age, hair, wardrobe and any recurring mascot hold across every clip and against the canon frame.
+    severity: blocker
+    failure: [identity drift within and between clips, F1]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Paste the identity string verbatim in every prompt with that character (cont-identity-string); I2V from the canon frame (cont-canon-frame)."
+      - "Face clips 3-5 s; head turns under 45 degrees; face at least ~15% of frame height."
+    ai_safe:
+      - "Back, silhouette or three-quarter-away views carry identity cheaply; save frontal faces for the one shot that needs them."
+    check: {type: judgment, test: "Is the checkable landmark (scar side, garment detail) present and the face/wardrobe unchanged first to last frame and across clips?", how: "compare to canon frame", lint: "identity_string verbatim (exact substring) in motion_prompt/keyframe_prompt of every shot listing that character"}
+    sources: [dsk-failure-modes, dsk-continuity-bible, doc12#4, doc11#1A-2]
+    confidence: craft-rule
+
+  - id: real-hands-anatomy
+    title: Hands, teeth and eyes stay countable
+    summary: Visible hands have five fingers and plausible joints; precise hand work is never asked of the model.
+    severity: blocker
+    failure: [hands, extra fingers, fused limbs, F10]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Reassign precise hand work (writing, typing, tying, pouring, counting coins) to an insert of the result, or off-screen."
+      - "Hands that must appear stay closed, clasped, in pockets, or enter already in position for under 1.5 s."
+    ai_safe:
+      - "'Hands stay clasped at her waist' prevents more failures than any negative; shots.md rule 8 still applies."
+    check: {type: judgment, test: "Does every visible hand have plausible fingers and joints at 0.25x speed?", how: "scrub at quarter speed", lint: "flag precision-hand verbs (write, type, tie, thread, pour, count, button, shuffle) in clip motion_prompt"}
+    sources: [dsk-failure-modes, doc12#2.5, hailuo_cookbook]
+    confidence: craft-rule
+
+  - id: real-physics-contact
+    title: Weight, contact and causality read right
+    summary: Gravity, liquids, cloth, impacts behave plausibly; nothing floats, interpenetrates or opens by itself.
+    severity: major
+    failure: [physics, weightless motion, liquid jelly, contact interpenetration, F14]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Contact and impact fall on a cut: clip A shows anticipation, clip B the aftermath."
+      - "Space/microgravity scenes: objects drift in straight lines and keep spinning; no falling, no billowing hair-as-wind unless real."
+    ai_safe:
+      - "Describe the tip past balance or the flinch, not the shatter; sound sells the impact in Remotion."
+    avoid:
+      - "A full approach-contact-consequence event inside one clip"
+    check: {type: judgment, test: "Do motion and contact obey the physics of the setting (incl. microgravity) with causes before effects?", how: "frame scrub", lint: "flag impact/liquid verbs (shatter, crash, collide, splash, pour, explode) in a single clip motion_prompt"}
+    sources: [dsk-failure-modes, doc12#2.5, doc12#4, doc11#1A-4]
+    confidence: craft-rule
+
+  - id: real-morphing
+    title: No melt, mush or breathing background
+    summary: Geometry stays solid within a clip; one motion source at a time.
+    severity: blocker
+    failure: [morphing, warping, background breathing, F3]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Each clip moves the camera OR the subject, plus at most one ambient layer (dust, steam); never all three strongly."
+      - "No orbits or fast rotations; turns under 45 degrees over 2 s or more."
+    ai_safe:
+      - "Push in one shot size to cut the number of objects that can smear."
+    check: {type: judgment, test: "Do all shapes hold from first to last frame with no fusing or breathing?", how: "first/mid/last frames + 0.25x scrub", lint: "warn when motion_prompt has a camera command AND 2+ subject action verbs, or the word orbit/spin"}
+    sources: [dsk-failure-modes, doc12#4, hailuo_cookbook]
+    confidence: craft-rule
+
+  - id: real-object-permanence
+    title: Props persist and stay the same object
+    summary: A prop the story needs stays in frame, unoccluded, the same colour and shape, for the whole clip.
+    severity: blocker
+    failure: [object vanishes, re-emerges different, F19]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Name the prop with its 2-3 keyframe nouns every time; keep handled props in clips of 4 s or less."
+      - "Occlusion and re-reveal happen on a cut, never inside one generation."
+    ai_safe:
+      - "State persistence as a fact: 'the white capsule stays lower-right of frame for the whole shot'."
+    check: {type: judgment, test: "Is every story prop present and unchanged from first to last frame?", how: "first/last frame compare", lint: "shot.props_in_frame ids exist in continuity.props; handled props with shot.duration_s > 4 warn"}
+    sources: [dsk-failure-modes, doc12#4, vsk-fixes-skeletons]
+    confidence: craft-rule
+
+  - id: real-text-counts
+    title: No generated text, digits or exact counts
+    summary: Letters, numbers, logos, subtitles, watermarks and exact quantities never come from the model; Remotion renders them.
+    severity: blocker
+    failure: [garbled text, burned-in captions, watermark, unstable counts, F11]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Signage, screens, labels and dials are blank, out of focus or turned away; numbers live in Remotion overlays."
+      - "Quantities in picture are one, two or many; the exact number is said by VO or shown as a Remotion number scene."
+      - "Audit keyframes for text before animating them; text in a still spreads and degrades in motion."
+    check: {type: judgment, test: "Is the clip free of legible or pseudo text, logos, watermarks, and does no shot rely on a generated count?", how: "frame review", lint: "extend no_text_in_image_prompts to motion_prompt and keyframe_prompt; flag numerals and count words above 'two'"}
+    sources: [dsk-failure-modes, doc12#2.5, doc12#4, qa_checklist, DESIGN_SYSTEM]
+    confidence: craft-rule
+
+  - id: real-reflections-glass
+    title: Mirrors, water and glass
+    summary: Reflections must agree with their source; the model rarely manages it, so stage around them.
+    severity: major
+    failure: [reflections/glass break geometry]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Shoot either the subject or its reflection, never both matched in one frame."
+      - "Windows (cockpit, cupola, car): show the view through dark glass, no face reflected; or break the surface with rain, frost, condensation."
+    check: {type: judgment, test: "Is every reflection either absent, broken, or consistent with its source?", how: "frame review", lint: "flag mirror, reflection, reflected, puddle in motion_prompt"}
+    sources: [ddr-engine-constraints, dsk-failure-modes]
+    confidence: craft-rule
+
+  - id: real-reentry-offscreen
+    title: No re-entry, no off-screen causes
+    summary: Inside one clip nobody exits and re-enters, and the prompt never references events the camera cannot see.
+    severity: major
+    failure: [re-entry as a new object, off-screen references, unmotivated state change]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Exit and entry are separate clips; carry an off-screen line (exit side, last state) into the next prompt (cont-off-screen-line)."
+      - "Every state change a clip shows is caused in frame; off-screen causes are shown as their own shot or carried by sound."
+    check: {type: judgment, test: "Does no subject leave and re-enter within a clip, and is every visible change caused on screen or by sound?", how: "frame scrub", lint: "flag 'returns', 'comes back', 're-enters', 'off-screen', 'behind the camera' in a single motion_prompt"}
+    sources: [ddr-engine-constraints, hf-shotlist-director, dsk-failure-modes]
+    confidence: craft-rule
+    supersedes: [ddr-engine-constraints]
+    notes: "Engine constraints split across real-reentry-offscreen, real-reflections-glass, real-population (<=3 tracked), real-performance (physical micro-expression), real-physics-contact (force direction, not joint angles)."
+
+  - id: real-period-tech
+    title: Era and technology are correct
+    summary: Vehicles, devices, uniforms and light sources match the date and the real system the episode explains.
+    severity: major
+    failure: [anachronism, wrong spacecraft/device model, F8]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Name the real era and machine and 2-4 concrete period features; build era into the keyframe, not only the text."
+      - "Replace category bans with nameable materials ('no LED panels'), max four to six items, each truly anachronistic."
+    check: {type: judgment, test: "Would a knowledgeable viewer find every object and light source correct for the stated time and system?", how: "frame review against reference photos"}
+    sources: [dsk-failure-modes, doc12#4]
+    confidence: craft-rule
+
+  - id: real-action-end-state
+    title: The action happens once and ends
+    summary: Each clip asks for one observable body or object mechanic with a stated end pose, not a mental state.
+    severity: major
+    failure: [ignored action, clip ends mid-gesture, slideshow, F2, F4, F5]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Write the action as what a camera sees; 'realizes', 'decides', 'feels' become a jaw, a breath, a stop."
+      - "End every motion prompt with 'End with ...' naming the final pose or position."
+      - "Give two of three motion layers: body, cloth/hair, environment; a still plate with a zoom is a fail."
+    check: {type: mechanical, test: "Does every clip have one action verb, a start state and an end state?", how: "lint: shot.action single verb, shot.start_state and shot.end_state non-empty, motion_prompt contains an 'End' clause; flag mental-state verbs"}
+    sources: [dsk-failure-modes, doc11#1A-1, doc11#1A-3, shots.md]
+    confidence: craft-rule
+
+  - id: real-motion-quality
+    title: Speed and motion feel like life
+    summary: No jitter, slow-mo drift, speed ramps, foot-sliding or rubbery limbs; energy continuous across the cut.
+    severity: major
+    failure: [wrong speed, floaty walk, foot slide, ramp, F13]
+    stage: [clip-prompt, edit, qa]
+    rules:
+      - "Size clip duration to the action's real length plus a 0.5-1 s hold; a 2 s action in a 6 s clip goes slow-motion."
+      - "Give pace a referent: 'walking pace', 'constant speed, no ramp'."
+    ai_safe:
+      - "Retime 90-115% in Remotion before regenerating."
+    check: {type: judgment, test: "Does motion run at a believable speed with feet planted and no ramp or stutter?", how: "watch at 1x then 0.25x", lint: "warn when shot.duration_s exceeds 3x the declared action length (shot.action_s)"}
+    sources: [dsk-failure-modes, doc12#4, hf-seedance-failure-modes]
+    confidence: craft-rule
+
+  - id: real-camera-behavior
+    title: One camera behaviour, as asked
+    summary: Exactly one named move (or locked) per clip at a stated magnitude; no unrequested drift, zoom or reframe.
+    severity: major
+    failure: [camera chaos, unrequested push, F6]
+    stage: [clip-prompt, qa]
+    rules:
+      - "One bracket per Hailuo clip; a combined bracket counts as one move only if complementary (push+tilt), never opposing."
+      - "Two sequential brackets are two shots; split them. Say [Static shot] when only the subject should move."
+    check: {type: mechanical, test: "Does each clip prompt carry exactly one camera behaviour?", how: "lint: count bracket groups in motion_prompt == 1, no opposing pairs (push/pull, pan left/right, tilt up/down)"}
+    sources: [dsk-failure-modes, doc12#2.4, hailuo_cookbook, shots.md]
+    confidence: craft-rule
+    notes: "hailuo_cookbook example 8 uses two sequential brackets; this card overrides it for multi-clip scenes because two behaviours in one 6 s clip is a documented chaos cause (F6)."
+
+  - id: real-performance
+    title: Physical performance, motivated reactions
+    summary: Emotion is written as micro-physical behaviour and every reaction has a visible or audible cause.
+    severity: minor
+    failure: [frozen face, emotion-label acting, unmotivated reaction]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Replace emotion labels with physical tells: jaw tightens, nostrils flare, breath held, eyes drop."
+      - "One emotion per shot; let the cut (Kuleshov) do complex feeling."
+    check: {type: judgment, test: "Does each reaction follow a cause the viewer saw or heard, played physically?", how: "clip review"}
+    sources: [ddr-engine-constraints, doc12#2.1, doc12#4]
+    confidence: craft-rule
+
+  - id: real-framing-safe
+    title: Framing at delivery aspect, subject in the safe box
+    summary: Keyframes are made at 9:16 (or 16:9 for long-form), heads not cropped, focal subject inside the safe zone.
+    severity: minor
+    failure: [crop error, aspect mismatch, F17]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Generate keyframes at the delivery aspect; never crop a 16:9 still to 9:16."
+      - "State framing in frame terms: eyes on upper third, headroom ~10%, subject inside DESIGN_SYSTEM section 4 box."
+    check: {type: mechanical, test: "Do clip dimensions equal format width/height and does the focal subject sit inside the safe box?", how: "ffprobe size vs format.{width,height} (render_qa); safe box by human on contact sheet"}
+    sources: [dsk-failure-modes, DESIGN_SYSTEM, shots.md]
+    confidence: craft-rule
+
+  - id: real-splice-continuity
+    title: Clean splices and matched action
+    summary: End state of shot N equals start state of N+1; same-subject cuts change angle 30 degrees or a size step.
+    severity: major
+    failure: [jump cut, pose reset at join, continuity break across cut, F7, F18]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Record shot N's end state as shot N+1's start state before generating either."
+      - "Cut on action: end A mid-movement, start B at the same pose and velocity."
+      - "A mismatch you cannot fix gets a 0.5-1 s cutaway between the two shots."
+    check: {type: judgment, test: "At every splice do position, prop, hand and light match, with no jump cut?", how: "last/first frame pairs", lint: "shot[N].end_state == shot[N+1].start_state when same location_id; consecutive shots differ in shot.size or shot.angle"}
+    sources: [doc12#2.1, doc12#4, dsk-tpl-qc-checklist, hf-troubleshoot]
+    confidence: craft-rule
+
+  - id: real-look-drift
+    title: Look holds within a style segment
+    summary: Palette, grain, lens feel and grade stay constant inside each style segment; changes happen only at a declared bridge.
+    severity: major
+    failure: [style drift, one clip glossier or warmer, F16]
+    stage: [clip-prompt, edit, qa]
+    rules:
+      - "Every clip prompt in a segment starts with the segment's style prefix verbatim (cont-style-lock)."
+      - "Apply one grade/tint pass per segment in Remotion; DESIGN_SYSTEM section 2 tint rule for raster over flat art."
+    check: {type: judgment, test: "Within each style segment, do all clips share palette, contrast, grain and lens feel?", how: "contact sheet per segment", lint: "continuity.style_lock[segment].prefix substring at start of every motion_prompt with that shot.style_segment"}
+    sources: [dsk-failure-modes, hfs-video-explainer-prompts, hf-shotlist-director, DESIGN_SYSTEM]
+    confidence: craft-rule
+
+  - id: real-audio-picture
+    title: Sound agrees with picture
+    summary: VO, SFX and ambience match what is seen; no model-made speech, music or subtitles; room tone continuous across splices.
+    severity: major
+    failure: [lip-sync mismatch, model music/subtitles, tone change at cut, F15]
+    stage: [clip-prompt, edit, qa]
+    rules:
+      - "Narration is TTS over picture: on-screen mouths are closed, turned away or out of frame."
+      - "One ambience bed per scene laid in Remotion; generated audio, if any, is scratch only."
+      - "Every SFX hit lands on a visible cause within 1 frame."
+    check: {type: judgment, test: "Does every sound have a visible source or a clear narrative role, with no lips moving to unheard words?", how: "watch once sound-off, once sound-only (QC rule)"}
+    sources: [dsk-failure-modes, dsk-tpl-qc-checklist, doc12#4, DESIGN_SYSTEM]
+    confidence: craft-rule
+
+  - id: real-dramatization-fidelity
+    title: The drama does not misrepresent the facts
+    summary: Explainer-specific; every dramatized moment must be consistent with the episode's sourced claims and mechanism.
+    severity: blocker
+    failure: [dramatic license that teaches something false]
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [script, shotlist, qa]
+    rules:
+      - "Each dramatized shot lists the claim or mechanism step it depicts; a shot depicting nothing factual is labelled atmosphere."
+      - "Dramatized timing, distances, procedures and outcomes match the claims; any compression is stated in VO or a claim note."
+      - "The cold open's question is answered truthfully by the explainer; no rug-pull that leaves a false impression."
+    check: {type: judgment, test: "Would a subject expert say every dramatized shot is consistent with the claims and mechanism?", how: "verifier gets claims + mechanism + shot descriptions, returns contradictions; add as a 4th verify.py pass", lint: "shot.dramatizes[] ids exist in claims[]/mechanism[] or shot.atmosphere is true, for every shot with shot.style_segment == cold_open"}
+    sources: [doc12#4, doc12#1.3, hfs-video-explainer]
+    confidence: proposal
+
+  - id: real-analogy-world
+    title: The analogy world obeys its own rules
+    summary: Explainer-specific; visuals of the analogy keep its internal physics and never leak into the real-world shots, or vice versa.
+    severity: major
+    failure: [analogy predicts something false visually, mixed worlds in one frame]
+    mode_fit: [explainer, hybrid, cold-open-drama]
+    stage: [script, shotlist, qa]
+    rules:
+      - "Pick the analogy's world rules once (from analogy.mapping) and keep every analogy shot inside them."
+      - "Real-world and analogy elements share a frame only at the declared mapping beat, shown as a deliberate overlay or match cut."
+      - "Visuals never show the analogy doing what analogy.limitation says it cannot."
+    check: {type: judgment, test: "Does every analogy shot follow the mapping without depicting what the limitation rules out?", how: "extend verify.analogy_attack to read visual prompts as well as narration"}
+    sources: [verify.py, doc12#3]
+    confidence: proposal
+
+  - id: real-no-unverified-drama
+    title: Never dramatize an unverified claim or a real person
+    summary: Explainer-specific; only supported claims get dramatized, and reconstructions never pose as footage of real people or events.
+    severity: blocker
+    failure: [fabricated footage, impersonation, dramatizing hearsay]
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [script, shotlist, qa]
+    rules:
+      - "A claim verify.py marks unverifiable or unsupported may be narrated with hedging but never staged as a scene."
+      - "Real named people appear as anonymous figures (suit, back view, silhouette); no likeness, no invented quotes."
+      - "Reconstructions of real events read as illustration (style, framing, or a Remotion 'reconstruction' tag)."
+    check: {type: mechanical, test: "Is every dramatized claim verdict 'supported' and no prompt names a real person?", how: "join shot.dramatizes[] with qa_report claims verdicts; flag proper names from claims/news_hook in motion_prompt/keyframe_prompt"}
+    sources: [verify.py, hfs-video-explainer, hf-shared-negative-constraints]
+    confidence: proposal
+    notes: "Higgsfield explainer rule 'do not invent quotes, dates, numbers, events' extended from narration to picture; likeness rule also avoids provider filters."
+
+  - id: real-stranger-audit
+    title: Stranger audit, every needed fact is said
+    summary: A first-time viewer only has what is spoken or shown plainly; list the facts they need, pair each with the line that delivers it, and read the narration cold.
+    severity: major
+    failure: [viewer confusion, unspoken causal step, unexplained jump, uncounted resource]
+    stage: [script, shotlist, qa]
+    rules:
+      - "Write the causal chain as facts, each paired with the exact narration or dialogue phrase that states it; no phrase means a gap."
+      - "Read only the narration, top to bottom, as someone who never saw the plan; picture cannot carry a fact alone."
+      - "Name every lead (character, mascot, machine) aloud in the first third, before it matters."
+      - "If the story turns on a countable thing (seats, doses, minutes), say the count aloud where it matters and plant any exception earlier."
+      - "Mark every jump in time or place: a picture-only dip or a Remotion place/time label, plus the line that names it."
+      - "Viewer confusion is a script defect: find the unsaid fact; never answer it with regrade, retime or music."
+    check: {type: mechanical, test: "Does every causal fact have a phrase that appears in the narration, and is every lead named before its first beat?", how: "proposed direction.causal_chain[] {fact, line}; lint: each line is a substring of some scenes[].narration; verify comprehension pass reads narration alone", lint: "causal_chain present when mode != explainer or claims >= 3"}
+    sources: [aif-ref-story, aif-skill-core, verify.py, psychology_rules.md]
+    confidence: craft-rule
+    supersedes: [aif-ref-story]
+    notes: "From ai-film's stranger audit (measured on remakes with dialogue). Our TTS narration plays the role of its dialogue, so the audit runs on narration plus any spoken lines. Counts are spoken by VO and shown by Remotion, never generated (real-text-counts). Dips are picture-only: sound and narration carry through (editing.yaml owns transitions)."
+
+  - id: real-measured-evidence
+    title: Measure, never glance
+    summary: Evidence rules for the verifier lane; poses can be judged from stills, motion only from playback, and numbers beat impressions.
+    severity: major
+    failure: [false pass from one frame, motion misjudged from a still, mean hides outliers]
+    stage: [qa]
+    rules:
+      - "Sample first, 15%, 50%, 85% and last frame per clip; never pass or fail a clip from one frame."
+      - "Stills can verify size, composition, who is in frame, wardrobe, light direction; never actions, contact, weight, intent or timing."
+      - "Motion check: frame-pair PSNR every 0.2 s; above 45 dB frozen, 30-40 dB breathing only, 18-28 dB clear motion, under 15 cut."
+      - "Compare candidate takes at the same depth before choosing; a thumbnail-judged reject may be the usable take."
+      - "Use percentiles, not means, for colour or brightness checks; a mean hides the one wrong shot."
+      - "Transcribe the final mix with word timestamps: repeated words, false starts, late first word or prompt text spoken = fail."
+      - "Any probe that returns nothing or a constant for every clip has failed (flow-lint-before-spend)."
+    check: {type: mechanical, test: "Does each verdict cite sampled frames, and do motion verdicts cite playback or PSNR?", how: "verify CLIP lane writes frame times and PSNR curve per clip; dialects/hailuo.md has the PSNR procedure"}
+    sources: [aif-idea-verification-procedure, aif-skill-core, h3s-skill-workflow-and-qa, "dialects/hailuo.md"]
+    confidence: proposal
+    supersedes: [aif-idea-verification-procedure]
+    notes: "PSNR bands are h3-storyboard measurements on H3 [W, n=1, Chinese source]; treat as calibration, re-measure on our 768P clips. ai-film's three frames at 15/50/85 are extended with first/last for splice pairs (real-verifier-protocol). Face crops beside a reference photo apply to our generated canon frames only, never to photos of real people (real-no-unverified-drama)."

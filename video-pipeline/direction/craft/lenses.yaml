@@ -1,0 +1,344 @@
+# craft/lenses.yaml - director "looks" expressed as OBSERVABLE parameters (prefix lens-)
+# Original synthesis. Never put a director, film, studio or artist name into any prompt: paste `anchor_prompt`.
+# Extra per-card fields beyond CRAFT-SPEC: params (observable dials), is_not (disambiguation),
+# anchor_prompt (observable words only, [brackets] = fill per episode), translate_to_remotion (how the explainer
+# echoes the lens using profile fields: palette, grade{saturate,contrast,vignette}, zoom, transitions, sfx, springs),
+# palette_compat (DESIGN_SYSTEM.md section 2 looks). All Remotion numbers are proposals inside DESIGN_SYSTEM limits.
+cards:
+  - id: lens-apply
+    title: How to pick and apply a lens
+    summary: Pick at most one lens per episode, apply it fully to the cold open and only as an echo in the explainer.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    rules:
+      - "One lens per episode; record its id in direction.lens. Two lenses mixed produce incoherence, not fusion."
+      - "Choose by what the scene is about (secret, system, scale, mechanism under time, wonder, memory, place), never by taste."
+      - "Paste the lens anchor_prompt verbatim into every cold-open clip prompt, after the scene and before the lighting invariant."
+      - "Never write a director, film, studio or 'in the style of' phrase in any prompt or still; params only."
+      - "Lens params override shots.md defaults only for the fields they name; audience card and DESIGN_SYSTEM still win."
+      - "Explainer scenes take only the lens translate_to_remotion echo; diagrams and term cards keep the DESIGN_SYSTEM look."
+      - "Kids episodes use only lenses whose audience_fit lists kids; no withheld-threat, dread, handheld or neon lenses."
+      - "Rewrite width-dependent rules for 9:16 (lateral bands become stacked layers; horizon rules become tall negative space); never drop them."
+      - "Proof the lens took: the cold-open contact sheet differs from a neutral look on at least two params (lens, light ratio, palette, move)."
+    avoid:
+      - "Stacking a lens grade on top of the profile grade in explainer scenes."
+      - "Choosing a lens whose pacing fights the audience card (fast-cut lenses for older_adult)."
+    check: {type: judgment, how: "verify.py: direction.lens set; anchor_prompt present verbatim in cold-open clip prompts; no proper-noun style anchors (lint)"}
+    sources: [dsk-styles-readme, dsk-styles-comparisons, dsk-skill-router, "doc11#2 director style overlays", "DIRECTION-BRAIN-PLAN#4", "skills/README precedence"]
+    confidence: craft-rule
+    notes: "Vendor precedence is lens > genre > tone; ours is audience card > DESIGN_SYSTEM/psychology > craft lens (skills/README.md). The 'proof' rule adapts DirectorSKILL's 'if the output does not violate the other modules' parameters, no overlay took effect'."
+
+  - id: lens-suspense-withheld
+    title: Withheld suspense (audience knows first)
+    summary: Show the viewer the danger or secret first, then let the subject walk toward it; the waiting is the hook.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [shotlist, clip-prompt, edit]
+    audience_fit: [curious_adult, older_adult, techie]
+    rules:
+      - "Write one line 'the viewer knows X, the subject does not'; if you cannot, pick another lens."
+      - "Give the secret object one ECU on a long lens and reuse that exact size every time it returns."
+      - "Name the scene's clock sound in the sound plan; it carries time across every cut."
+    params:
+      palette: "neutral cool grey, off-white, natural wood; one saturated accent (red or deep green) only on the secret object"
+      colour_temp: "one temperature per scene: daylight interior or tungsten interior"
+      contrast: "hard key about 4:1, shadow side two stops under but holding detail; shadows are readable shapes (blind slats, banister, door gap)"
+      key_direction: "motivated practical, three-quarter front; the space stays bright and tidy"
+      lens_mm: "28 once as the room map; 50 neutral; 100-135 for the object and the threat"
+      camera: "locked frames held past comfort, slow push-in on a detail, eyeline-following pan; no handheld, orbit, whip or crash zoom"
+      shot_size: "ECU on the secret object, CU reactions, POV medium, one wide map"
+      pacing: "Short cold open: 3 shots of 2-3 s; inserts 0.5-1.5 s; long-form ASL 4-9 s"
+      sound: "one ticking 'clock' sound (drip, tick, footsteps) carries time; music short and repeating, only after the viewer knows; last 1-2 s keep the clock alone"
+      blocking: "look / what is seen / reaction triplets make up half the shots; the danger stays still at frame edge or behind foreground obstruction"
+    is_not: ["jump scare: the viewer must know before the subject does", "horror dark: bright clean rooms, not black voids", "detached surveillance: this camera is a watcher with a body"]
+    anchor_prompt: "Locked frame, 100mm lens, a clean bright room; the [secret object] sits sharp at the frame edge while the person, unaware, walks toward it; hard practical light, shadow side two stops under, the banister shadow lies across the wall; the [secret object] stays perfectly still."
+    translate_to_remotion: "Paper Clean or Ink & Signal; reserve one accent for the hooked object and reuse it on the term card; zoom 1.00 to 1.04 on held scenes; hard cuts or fade 6-8 f; one tick SFX under the bridge; 0.5-1 s quiet before the reveal card."
+    palette_compat: [Paper Clean, Ink & Signal]
+    ai_safe: ["One clip = subject approaches OR the threat moves, never both.", "Models add motion to a still threat; write 'stays perfectly still' and keep holds at 4 s or under."]
+    avoid: ["Showing the full violent or harmful action; use fragments and sound.", "A secret the explainer never pays off."]
+    example: "Hidden fee episode: ECU of the small print glowing under a desk lamp, then the shopper reaching for the pen, unaware."
+    sources: [dsk-style-hitchcock, dsk-styles-comparisons, "doc12#3 mystery_enigma"]
+    confidence: craft-rule
+    supersedes: [dsk-style-hitchcock]
+
+  - id: lens-procedural-precision
+    title: Procedural precision (long lens, watched)
+    summary: Isolate the subject on a long lens and watch from a position they do not know; tension from exact, readable detail.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [shotlist, clip-prompt, edit]
+    audience_fit: [curious_adult, techie]
+    rules:
+      - "Write camera height, distance and angle for every setup so each is exactly repeatable."
+      - "Name the practical light in every scene and keep shadows lifted enough to show texture."
+      - "Write pushes as a percentage of frame over the clip (about 4 percent), never as 'slow push'."
+    params:
+      palette: "teal-green shadows, charcoal, cold grey; amber practical is the only warm; low saturation"
+      colour_temp: "cool ambient against one warm practical, both held"
+      contrast: "4:1 to 6:1; blacks lifted with visible texture, never crushed"
+      key_direction: "a named practical (desk lamp, monitor, sodium window) visible or clearly implied"
+      lens_mm: "85-135 main, f/2-2.8 so the background becomes soft colour blocks; 35 once for geometry"
+      camera: "locked at exact eye level; imperceptible push 3-6 percent over the clip; slow mechanical pull-back; framing through glass or a door gap; zero shake"
+      shot_size: "MCU and CU, inserts on hands and documents, one wide only to establish geometry"
+      pacing: "ASL 4-9 s long-form; information inserts 0.5-1.5 s; end on a near-still hold of 2-3 s"
+      sound: "machine hum (fans, ballast, drives) pushed forward; a synth drone may vanish mid-scene; 2-3 s silence after the key fact"
+      blocking: "subject rarely faces lens; action is one professional micro-task (align, click, turn a page)"
+    is_not: ["one-point wide symmetry (see lens-geometric-order)", "fog and single hue (see lens-monumental-scale)", "handheld thriller: no shake, ever"]
+    anchor_prompt: "85mm lens, locked at eye level, seen through a glass partition; the [subject] works at a desk lit only by an amber desk lamp camera-left, shadow side two stops under with readable detail; background compressed into soft teal-grey blocks; the camera pushes in about four percent over the whole clip; clear dust-free air, fine grain."
+    translate_to_remotion: "Ink & Signal; grade saturate 0.85, contrast 1.05, vignette 0.3; spring smooth; zoom 1.00 to 1.04; fade 6-8 f or hard cut; JetBrains Mono numbers; amber #FFB703 is the single accent."
+    palette_compat: [Ink & Signal, Paper Clean]
+    ai_safe: ["Models return handheld drift, lens flare, crushed black or plastic CG; state 'locked frame, fine grain, shadows hold detail'."]
+    sources: [dsk-style-fincher, dsk-styles-comparisons, dsk-lighting-color]
+    confidence: craft-rule
+    supersedes: [dsk-style-fincher]
+
+  - id: lens-monumental-scale
+    title: Monumental scale (tiny human, one hue)
+    summary: Shrink a human to a sliver of the frame against a vast structure or landscape, one hue, soft backlight, slow constant motion.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [shotlist, clip-prompt, edit]
+    audience_fit: [curious_adult, older_adult, techie]
+    rules:
+      - "State the figure's share of frame height and include one known-size reference."
+      - "Pick one dominant hue per sequence and name the event that is allowed to change it."
+      - "Limit camera motion to locked, constant lateral track, or constant push; write the distance travelled."
+    params:
+      palette: "one low-saturation hue per sequence (ochre sand, teal fog, grey-white ice, copper) plus one small warm point (lamp, fire)"
+      colour_temp: "single, no split warm-cool grade"
+      contrast: "soft backlight 5:1 to 8:1, figure half-silhouetted, no hard-edged shadows"
+      key_direction: "the whole sky or a lit wall behind the subject"
+      lens_mm: "21 for scale, 40 for procedure, 75 for a tired face"
+      camera: "locked wide, constant-speed lateral track, constant-speed push to the vanishing point, slow tilt up a structure; no handheld, orbit or speed ramp"
+      shot_size: "EWS/WS with the human at 5-15 percent of frame height, overhead, then MCU"
+      pacing: "Short: 2 shots of 3-5 s; long-form ASL 8-18 s; 2 s before an entrance, 3 s after an exit, then an aftermath shot"
+      sound: "40-80 Hz rumble arrives 2-4 s before the image; wind, grit on fabric; a fifth to two fifths of the time without music"
+      blocking: "one figure crosses the space in one direction at constant speed; the moment it stops is the turn"
+      vertical_9x16: "small figure in the lower third, the structure rising past the top edge, tall negative space above"
+    is_not: ["crowded neon city with holograms", "symmetric neon ritual with hard colour blocks", "general blur: haze is a depth gradient, near sharp, far planes paler"]
+    anchor_prompt: "Extreme wide, 21mm lens, locked; a single figure about one tenth of frame height crosses a vast [material] plain left to right at walking pace; soft backlight from a bright overcast sky half-silhouettes the figure; haze begins thirty metres out, far planes two stops paler; one small warm lamp far in frame."
+    translate_to_remotion: "Deep Space (space topics) or Ink & Signal; grade saturate 0.8, contrast 1.02, vignette 0.2; zoom 1.00 to 1.03; fade 18 f; long holds at the top of the audience scene_len; labels small and low inside the safe box; low rumble SFX under the bridge."
+    palette_compat: [Deep Space, Ink & Signal, Paper Clean]
+    ai_safe: ["'Grand' renders as clutter; give materials and a known-size reference (person, door, truck) instead.", "Write haze as a depth gradient with distances."]
+    avoid: ["Kids: the dread rumble and tiny-lost-figure read as fear; use lens-wonder-reaction for awe."]
+    sources: [dsk-style-villeneuve, dsk-styles-comparisons, "doc12#3 awe_scale"]
+    confidence: craft-rule
+    supersedes: [dsk-style-villeneuve]
+
+  - id: lens-countdown-mechanism
+    title: Countdown mechanism (rule first, clock running)
+    summary: State the rule early, then cut real hardware and bodies against one countdown; the mechanism is the spectacle.
+    mode_fit: [cold-open-drama, hybrid, montage]
+    stage: [script, shotlist, clip-prompt, edit]
+    audience_fit: [curious_adult, techie]
+    rules:
+      - "State the rule in 25 words or fewer and show it within the first 2-3 s."
+      - "Every shot must change the viewer's grasp of the rule or the clock; cut the rest."
+      - "Name materials and sizes instead of 'huge' or 'futuristic'."
+    params:
+      palette: "concrete grey, steel blue, black, canvas khaki; accents only sodium amber and warning red"
+      colour_temp: "real daylight plus visible work lamps; at night one warm sodium point"
+      contrast: "3:1 to 4:1, naturalistic"
+      key_direction: "practical work lamps and daylight, motivated"
+      lens_mm: "14-35 close to bodies and machines (60-90 cm); 50 is the longest"
+      camera: "controlled follow, wide track alongside the action, slow push on a mechanism, locked instrument insert; no orbit, slow motion or drone flythrough"
+      shot_size: "MCU, wide tracking, EWS for scale, mechanism insert"
+      pacing: "ASL 2-5 s; cross-cut blocks shorten 12, 6, 3 s; Short: 3-4 shots of 1.5-2.5 s"
+      sound: "low pulse used as a clock, rising, unresolved; silence only 0.5-1.5 s before zero"
+      blocking: "everyone performs a timed task; movement is set by the mechanism, not emotion"
+    is_not: ["contemplative stillness (lens-monumental-scale)", "glowing hologram sci-fi UI", "spectacle that does not change the viewer's grasp of the rule"]
+    anchor_prompt: "24mm lens close to the hardware, controlled follow; the [mechanism] completes one step while a work lamp throws hard warm light across brushed steel and concrete, cool daylight elsewhere; materials and motion only, the display beside it soft and out of focus."
+    translate_to_remotion: "Ink & Signal with amber as the timer accent; countdown digits rendered in Remotion (JetBrains Mono, tabular), never in a clip; hard cut or slide from-right 14 f; spring snappy for numbers; bridge = smash cut to question card at zero."
+    palette_compat: [Ink & Signal, Deep Space]
+    ai_safe: ["Never let a model draw digits or timers; composite them.", "One mechanism fact per clip; parallel lines = separate clips cut together in the edit."]
+    example: "ISS rendezvous: hard-lit docking probe inching forward, cut to a controller's eyes, cut to Remotion range readout 3 m... 2 m."
+    sources: [dsk-style-nolan, "doc12#3 countdown_clock", dsk-editing-assembly]
+    confidence: craft-rule
+    supersedes: [dsk-style-nolan]
+
+  - id: lens-wonder-reaction
+    title: Wonder (face before the reveal)
+    summary: Show the face that sees before the thing that is seen; warm named light and slow push-ins make awe legible for every age.
+    mode_fit: [cold-open-drama, hybrid, explainer, documentary]
+    stage: [shotlist, clip-prompt, edit]
+    rules:
+      - "Split every reveal into a 1.5-3 s reaction clip followed by the reveal clip."
+      - "Name each light source and its visible shaft or rim in the prompt."
+      - "After the widest shot, cut to an object or hand insert to bring scale back to a person."
+    params:
+      palette: "amber and tungsten warm against grey-blue-green; one saturated red or white light point"
+      colour_temp: "warm key against cool ambient"
+      contrast: "3:1 in wonder beats; 8:1 only on an adult threat beat"
+      key_direction: "a named source with a visible shaft in light haze; rim light on hair"
+      lens_mm: "21/35 for three-plane depth, 50 neutral, 135 for a reaction from far away"
+      camera: "slow dolly-in to close-up, walking-pace follow, crane down to eye level; no dutch, unmotivated handheld, orbit or whip"
+      shot_size: "MCU reaction, three-plane wide, insert on the carried object, EWS for scale"
+      pacing: "reaction 1.5-3 s precedes every reveal; Short: reaction 1.5-2 s then reveal 3-4 s"
+      sound: "music motif enters 1-2 s before the turn; 1.5-3 s near-silence with one ambient element before the reveal"
+      blocking: "character sees, viewer sees the face, then the thing; camera at child eye height (1.0-1.3 m) for wonder beats; an exit visible in every wide"
+    is_not: ["spectacle-first: the reveal never comes before the reaction", "music-stacked sentiment", "low angle meaning 'hero'"]
+    anchor_prompt: "Medium close-up, 50mm lens, camera at child eye height; [character] looks up and off screen-right as a warm light shaft from [source] grows across the face; brows lift, lips part slightly, breath held; light haze makes the beam visible; a thin rim light on the hair."
+    translate_to_remotion: "Kids: storybook-v2 with Sunny Meadow or Twilight Story, zoom up to the profile story_hook range, iris on the reveal, soft whoosh; adults: Paper Clean, zoom 1.00 to 1.08, wipe from-bottom on the reveal; release the music duck on the reveal frame."
+    palette_compat: [Sunny Meadow, Twilight Story, Paper Clean, Deep Space]
+    ai_safe: ["Generate the reaction and the reveal as separate clips, reaction first.", "Write the expression as muscles; if the face drifts, shoot the reaction from behind as a silhouette looking up."]
+    example: "Why the sky is blue (kids): mascot squints up, warm light on its face, then the wide sky with sunbeams through haze."
+    sources: [dsk-style-spielberg, dsk-styles-comparisons, "doc12#3 reveal + awe_scale"]
+    confidence: craft-rule
+    supersedes: [dsk-style-spielberg]
+
+  - id: lens-geometric-order
+    title: Geometric order (one-point symmetry)
+    summary: Let architecture outrank the person; wide one-point perspective, bright even hard light, constant-speed moves along the axis.
+    mode_fit: [cold-open-drama, hybrid, montage]
+    stage: [shotlist, clip-prompt]
+    audience_fit: [curious_adult, techie]
+    rules:
+      - "Put the vanishing point and symmetry into the keyframe, not only the motion prompt."
+      - "Every camera move runs along the vanishing axis at constant speed."
+      - "Allow one saturated block per space and no other saturated colour."
+    params:
+      palette: "cold white, grey, black; one saturated block (red or gold) per space"
+      colour_temp: "single, cool-neutral"
+      contrast: "2:1, bright, nowhere to hide"
+      key_direction: "visible symmetric rows of hard fixtures; short shadows cancel out"
+      lens_mm: "18-25 one-point perspective; 35 for at most a fifth of shots"
+      camera: "locked symmetric frame; constant-speed dolly along the vanishing axis with no ease; overhead perpendicular insert; no handheld, orbit, reframing"
+      shot_size: "symmetric wide with a strong vanishing point, frontal medium on the axis, overhead insert"
+      pacing: "Short: one 4-6 s held push; long-form ASL 12-40 s with one composition returning 2-3 times"
+      sound: "one continuous piece that ignores the picture's beats; ventilation, footsteps echoing"
+      blocking: "subject rides the centre axis, moves forward or back only; may look into the lens"
+      vertical_9x16: "use naturally tall geometry (stairwell, shaft, corridor ceiling); vanishing point in the upper-middle third"
+    is_not: ["long-lens isolation (lens-procedural-precision)", "awe in haze (lens-monumental-scale)", "flat pastel dollhouse fronts (lens-frontal-diorama)"]
+    anchor_prompt: "18mm lens, locked, one-point perspective with the vanishing point at frame centre; a long symmetrical [corridor or hall] lit by rows of hard ceiling fixtures, bright and nearly shadowless; one figure on the centre axis; the camera dollies forward at constant speed with no ease-in, no ease-out, no reframing; one [red object] is the only saturated colour."
+    translate_to_remotion: "Centred, mirrored layouts and centre-axis diagrams; grade saturate 0.9, contrast 1.06, vignette 0; one accent block; Remotion moves keep DESIGN_SYSTEM easings (constant speed applies to AI clip cameras only)."
+    palette_compat: [Paper Clean, Ink & Signal]
+    ai_safe: ["Models add easing and reframe; write the constant-speed clause and bake symmetry into the keyframe, not only the motion text."]
+    sources: [dsk-style-kubrick, dsk-styles-comparisons]
+    confidence: craft-rule
+    supersedes: [dsk-style-kubrick]
+    notes: "DESIGN_SYSTEM forbids linear easing for rendered UI; this card confines constant speed to generated camera moves, so no contradiction."
+
+  - id: lens-frontal-diorama
+    title: Frontal diorama (flat, centred, cutaway)
+    summary: Flat frontal symmetric cutaway sets moved by lateral trucks and tilts; the most Remotion-native lens and the safe default for kids.
+    mode_fit: [explainer, hybrid, montage]
+    stage: [shotlist, clip-prompt, edit]
+    audience_fit: [kids, curious_adult, older_adult]
+    rules:
+      - "Keep every move parallel to the frame plane (truck, pan, pedestal); no depth moves."
+      - "Check each pose reads as a black silhouette before animating it."
+      - "Map the palette to the episode DESIGN_SYSTEM look; no new colours."
+    params:
+      palette: "limited flat fills mapped to the episode DESIGN_SYSTEM palette, one accent"
+      colour_temp: "even warm daylight"
+      contrast: "high-key 1:1 to 2:1 with one painted shadow shape"
+      key_direction: "soft frontal; no motivated drama"
+      lens_mm: "flat orthographic planes; 35-50 perspective at most; no depth of field"
+      camera: "locked frontal; lateral truck or pan at an even pace along the frame plane; tilt up or down through stacked floors of a cutaway"
+      shot_size: "frontal wide of a cross-section, frontal medium"
+      pacing: "2-6 s holds on key poses; anticipation, action, settle"
+      sound: "clean foley, one light motif; soft pop for stickers (kids only)"
+      blocking: "characters in profile or full front, motion parallel to the frame; silhouette reads first"
+      vertical_9x16: "stack floors or machine stages vertically and tilt between them"
+    is_not: ["deep one-point pressure (lens-geometric-order)", "live-action coverage with shallow depth of field"]
+    anchor_prompt: "Flat frontal view, centred and symmetrical, of a cutaway [building or machine] cross-section like a dollhouse; even soft daylight with one painted shadow shape; limited flat colour fills; the camera trucks right at an even pace along the frame plane while one character in profile walks the same direction; no depth of field."
+    translate_to_remotion: "Layered flat planes with lateral-only parallax (translateX), pedestal moves between stacked levels; kids: soft-pop springs, iris or clock-wipe; adults: smooth spring, wipe or slide from-right; Sunny Meadow or Paper Clean."
+    palette_compat: [Sunny Meadow, Twilight Story, Paper Clean]
+    ai_safe: ["Flat lateral moves avoid inventing unseen sides; avoid orbits and depth moves in illustrated styles."]
+    sources: [dsk-style-kubrick, dsk-genre-playbooks, hfs-video-explainer-prompts, "DESIGN_SYSTEM#5-6"]
+    confidence: proposal
+    notes: "Built from DirectorSKILL's 'flat dollhouse symmetry is a different lens' contrast and the animation-styled playbook; no named source by design."
+
+  - id: lens-elemental-weather
+    title: Elemental weather (forces acting on bodies)
+    summary: Weather and terrain act visibly on bodies and materials; long-lens compressed bands, long waits, one short burst.
+    mode_fit: [cold-open-drama, documentary, montage]
+    stage: [shotlist, clip-prompt, edit]
+    audience_fit: [curious_adult, older_adult, techie]
+    rules:
+      - "Write what the weather does to a body or material in both the still and the clip prompt."
+      - "Give waiting about half the sequence time; the burst stays under 1 s."
+      - "Keep screen direction constant for the whole sequence."
+    params:
+      palette: "earth ochre, mud brown, wet black, rain grey; saturated red, indigo or gold only on cloth and objects, never in the air"
+      colour_temp: "single natural"
+      contrast: "hard backlight 6:1 or more so rain, dust and breath read as bright lines"
+      key_direction: "sun behind the weather layer"
+      lens_mm: "50 for geography, 100 for bodies, 200-250 to compress groups into bands"
+      camera: "lateral track across the group, long-lens locked hold, one decisive push down the depth axis; no orbit, slow motion or crash zoom"
+      shot_size: "EWS with figures under a sixth of frame height, compressed band, CU wet face, insert of feet or wheels in mud"
+      pacing: "waiting holds fill half the sequence (6-10 s long-form, 3-4 s Short); the burst lasts 0.3-1 s, then 3-8 s still"
+      sound: "weather carries the story; after the burst the music stops and only wind or rain remains"
+      blocking: "materials change state (soaked cloth clings, branches bend, gait turns heavy); screen direction constant"
+      vertical_9x16: "stack the compressed bands up the frame, nearest band at the bottom"
+    is_not: ["CG rain layer over dry, upright people", "slow-motion heroics", "close wide-angle chaos"]
+    anchor_prompt: "Long lens about 200mm, locked; three bands of [subjects] compressed one behind another while wind drives rain sideways; backlight turns the rain into bright streaks; cloth soaked and clinging, feet sinking into mud; earth browns and wet black, one red banner the only saturated colour."
+    translate_to_remotion: "Paper Clean or Ink & Signal UI over earthy imagery; grade saturate 0.85, contrast 1.1; wipe 18 f between stages; a held quiet scene after the key event; no animated rain overlay."
+    palette_compat: [Paper Clean, Ink & Signal]
+    ai_safe: ["Name material states (soaked, clinging, sinking) in both keyframe and motion prompt.", "No-people version for nature topics: wind and rain acting on trees, roofs, water."]
+    avoid: ["Kids: storm peril; use a gentle wind variant inside lens-frontal-diorama instead."]
+    sources: [Dir-references-director-styles-04-kurosawa, "vsk-dramaturgy#9 environment plays"]
+    confidence: craft-rule
+    supersedes: [Dir-references-director-styles-04-kurosawa]
+
+  - id: lens-neon-memory
+    title: Neon memory (obstructed, close, late)
+    summary: Close, obstructed, slightly late camera in clashing practical colour; fragments and one stretched moment; for nostalgia and montage.
+    mode_fit: [montage, cold-open-drama, hybrid]
+    stage: [shotlist, clip-prompt, edit]
+    audience_fit: [curious_adult, techie]
+    rules:
+      - "Put a foreground obstruction in every frame and name what it is."
+      - "Name both light colours and which side each falls on."
+      - "Allow one stretched moment per sequence, made in the edit."
+    params:
+      palette: "neon green, deep red, tungsten amber; accents magenta, jade, gold; high saturation"
+      colour_temp: "two clashing temperatures on one face: tungsten on one cheek, neon on the neck"
+      contrast: "hard 6:1 to 10:1; steam or smoke makes beams visible"
+      key_direction: "bare bulbs and signs, practical only"
+      lens_mm: "18-25 too close; 85 across a street"
+      camera: "small handheld reframes (not shake), shot through foreground obstruction; one stretched moment per sequence"
+      shot_size: "MCU, CU of hands and objects, obstructed medium"
+      pacing: "ASL 1.5-4 s with one 3-6 s stretched hold"
+      sound: "one recurring melody as theme, rain, radio, dishes; rarely silent"
+      blocking: "never face to face; a foreground object crops the face; the action is a withdrawal, not a reach"
+    is_not: ["static symmetric neon blocks", "clean precise night", "smooth interpolated slow motion"]
+    anchor_prompt: "25mm lens at chest height through a stairwell railing that crops the frame edge; a bare tungsten bulb warms one cheek while green neon from outside rims the back of the neck; cooking steam makes the light beams visible; small handheld reframing, not shake; the person draws the [object] back toward their chest."
+    translate_to_remotion: "Ink & Signal (orange and cyan); hard cuts; the episode's one decorative effect may be a light leak here; stretched moment = frame-hold every second frame on one clip in Remotion, not a model request."
+    palette_compat: [Ink & Signal]
+    ai_safe: ["Models read handheld as shake and slow motion as smooth interpolation; do step-printing in the edit."]
+    avoid: ["older_adult and kids: flicker, handheld and fast fragments."]
+    sources: [Dir-references-director-styles-09-wong-kar-wai, dsk-styles-comparisons]
+    confidence: weak
+    supersedes: [Dir-references-director-styles-09-wong-kar-wai]
+    notes: "Weak for AI generation: handheld obstruction and two-temperature faces are the hardest things to hold across clips. Use mainly for short montages."
+
+  - id: lens-observed-verite
+    title: Observed verite (found, available, uncorrected)
+    summary: An operator-found or distant-witness camera in available, mixed light; imperfect information, real places and tasks; for news and documentary.
+    mode_fit: [documentary, hybrid, explainer]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    audience_fit: [curious_adult, older_adult, techie]
+    rules:
+      - "Prompt one operator imperfection per clip (late correction, focus breathing, foreground cross)."
+      - "Hold each shot past the end of its action."
+      - "Label reconstructions of real events as illustration; never present them as filmed."
+    params:
+      palette: "whatever the location has; grade only for consistency"
+      colour_temp: "mixed daylight and tungsten left uncorrected"
+      contrast: "available light, 2:1 to 10:1 as found"
+      key_direction: "window or practical, no added fill"
+      lens_mm: "24-70 handheld; or 50-100 from 6-12 m on a locked tripod for observation"
+      camera: "handheld with body weight that corrects late, or a locked distant witness; never a gimbal glide"
+      shot_size: "MS and WS, doorway-framed wides, inserts of real objects in use"
+      pacing: "ASL 4-12 s; hold past the end of the action"
+      sound: "room tone, wind, distant traffic; no music under the hardest fact"
+      blocking: "nothing staged: the subject drifts off-centre, a foreground shoulder crosses once"
+    is_not: ["a shake filter over a perfect frame", "lit corporate interview polish", "archival footage"]
+    anchor_prompt: "Handheld at shoulder height, 35mm lens, operator-found; [subject] does [real task] in [real kind of place], drifts slightly off-centre and the camera corrects late; mixed window daylight and warm tungsten left uncorrected; a foreground shoulder crosses frame once; the shot keeps running after the action ends."
+    translate_to_remotion: "Paper Clean; grade near neutral (saturate 0.95, contrast 1.0, vignette 0.1); hard cut or fade; source lower-thirds in JetBrains Mono; zoom 1.00 to 1.03."
+    palette_compat: [Paper Clean, Ink & Signal]
+    ai_safe: ["Generated footage is too clean and centred; prompt one operator imperfection per clip (late correction, focus breathing, foreground cross)."]
+    avoid: ["Presenting generated shots as real or archival footage of a real event.", "Real, identifiable people, logos or places presented as filmed."]
+    check: {type: judgment, how: "verify: any reconstruction of a real event is labelled as illustration in narration or caption and in the claims list"}
+    sources: [dsk-genre-playbooks, Dir-references-director-styles-16-hou-hsiao-hsien, dsk-style-mann, "doc12#4 factual.real_world_plausibility"]
+    confidence: craft-rule
+    supersedes: [Dir-references-director-styles-16-hou-hsiao-hsien]
+    notes: "Merges three sources: documentary playbook (handheld, late correction), the static distant-witness long take, and the uncorrected mixed municipal light of the night-city lens."

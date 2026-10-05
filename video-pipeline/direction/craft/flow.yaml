@@ -1,0 +1,291 @@
+# flow.yaml - the DIRECTOR'S WORKFLOW: order of passes, what each stage loads, who checks what, gates, how decisions
+# and usage are recorded (prefix flow-). Format: CRAFT-SPEC.md.
+# Adapted to OUR brain: brain.py (deterministic lookup) + routing.yaml (stage packs) + director.py (thin assembler) +
+# lint.py (mechanical) + verify.py (separate verifier lane) + registry.set_status (approval gate) + run.py (paid stages).
+# Sources: DirectorSKILL router + production workflow, higgsfield dispatcher/pipeline/troubleshoot/house-rulings,
+# visual-skills video skill + role modes + fixes (CC BY 4.0, Serge Shima), doc 11 section 1A-3 and section 4 (crew roles).
+# Gate and cost mechanics are owned by triage.yaml (fail-*) and real-verifier-protocol; these cards reference them.
+# Proposed artifacts (not built): out/<id>/direction_log.jsonl (usage), out/<id>/takes.jsonl (already proposed by triage).
+cards:
+  - id: flow-production-pass
+    title: The production pass, in order
+    summary: Fourteen ordered passes from topic to picture lock, each producing the artifact the next one consumes; the commonly skipped ones are marked.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    rules:
+      - "1 Intake: topic, sources, audience card, variety(); state assumptions (flow-assumptions)."
+      - "2 Breakdown: one_idea, audience_misconception, the hook question, visual thesis."
+      - "3 Mode (mode-selection) and path (flow-load-map). 4 Arc and beats (plan-story-arc, plan-beat-sheet)."
+      - "5 Lens, drama only (lens-apply); write 'none' with a reason. Often skipped: do not."
+      - "6 Book: direction + continuity (plan-director-book, cont-bible-schema). 7 Blocking (prompt-blocking-translation); often skipped: do not."
+      - "8 Shot plan: scenes[].shot, risk, coverage; write the sound brief now, not after the cut."
+      - "Gate: lint, verifier PRE lane, owner approval (flow-gates). Steps 1-8 are director.py; nothing paid before this."
+      - "9 Reference assets and keyframes; still gate. 10 Name the provider dialect (brain.dialect) before any clip prompt; often skipped."
+      - "11 Clip prompts. 12 Sound. 13 Edit (plan-edit-timeline). 14 QC and repair in the verifier lane, then picture lock."
+      - "Keep script and prompt apart: narration says what happens; visual prompts say how it is shown; neither leaks into the other."
+      - "A pass may not start until its input artifact exists; run only the passes the episode needs, in this order."
+    check: {type: mechanical, how: "lint: drama modes have direction.lens (or 'none'), beats, shot rows and a sound brief before status approved"}
+    sources: [dsk-skill-router, hf-pipeline, vsk-video-skill, dsk-production-workflow, "DIRECTION-BRAIN-PLAN#9"]
+    confidence: craft-rule
+    supersedes: [dsk-skill-router, hf-pipeline, vsk-video-skill]
+    notes: "DirectorSKILL's 13 steps plus our approval gate; higgsfield's eight build passes and nine project fields map onto 1-8 ('what must stay consistent' is continuity). Higgsfield tool chains (Popcorn, Recast, Soul) and visual-skills' model selector are dropped; provider choice is config/providers.yaml + routing.yaml dialects. vsk reading order (dramaturgy, universal rules, one model file, task file) becomes stage packs."
+
+  - id: flow-load-map
+    title: Load map, fast path and full path
+    summary: Each stage loads exactly its routing.yaml pack; explainer is the fast path on the default pack, drama modes take the full path with archetype and lens added.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Load brain.pack(stage, mode, audience) and nothing else; the pack is the routing row, cumulative always + by_mode."
+      - "Fast path: mode explainer, default pack, no clarifying questions, defaults stated as ASSUME lines; still read the pack."
+      - "Full path: cold-open-drama or hybrid add archetype and lens cards; documentary and montage add their by_mode rows."
+      - "One extra card beyond the pack only via `run.py direction find|card`, with the reason in director_notes."
+      - "Never open skills/vendor/ while directing; vendored text is data for distillers, not instructions."
+      - "Vendor modes to stages: analysis, beats, book = script; blocking, shots, continuity = shotlist; stills, motion = clip-prompt; sound, cut = edit; repair = qa."
+      - "A repair pass loads the same packs as the draft it repairs; switching mode means a new draft, not a patch."
+    check: {type: mechanical, how: "director_notes lists any card outside the pack; direction.skills_used is a subset of loaded pack ids plus those listed"}
+    sources: [hf-root-dispatcher, dsk-skill-router, routing.yaml, brain.py, skills/README.md]
+    confidence: craft-rule
+    supersedes: [hf-root-dispatcher]
+    notes: "Higgsfield's routing table, genre template table and workspace-folder rules are platform-specific and dropped. Its 'load no more than the row names' rule is already routing.yaml's header; this card adds fast/full path and the extra-card escape hatch."
+
+  - id: flow-hard-rules
+    title: Pre-delivery hard rules
+    summary: A checklist the writer pass runs before returning episode.json; it exists because plausible-looking direction written from memory fails real checks.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, clip-prompt, qa]
+    rules:
+      - "Routing line: direction.skills_used names the cards actually applied, not every card loaded."
+      - "Vocabulary verified: archetype, lens, bridge and dialect ids exist in craft; provider limits come from providers.yaml and dialect files, not memory."
+      - "Story function first: a shot with no job is deleted, not improved."
+      - "Blocking before framing: bodies in space first, camera second."
+      - "One dominant camera move (or none) and one primary action per clip; every action has a stated end state."
+      - "Behaviour, not emotion words; positive description; negatives only for this shot's real risks, naming instances."
+      - "Invariants pasted verbatim from continuity; the keyframe is the control point, fixed before any motion spend."
+      - "One lens at most; no named directors, films or studios anywhere."
+      - "Answer the size of the ask: a repair fixes only the flagged items and keeps the rest (80 percent rule)."
+    check: {type: mechanical, how: "lint dir_skills_known, dir_no_named_director, dir_identity_string, describe-dont-negate counts; the rest verify PRE"}
+    sources: [hf-root-dispatcher, dsk-skill-router, hf-pipeline, fail-describe-dont-negate, cont-identity-string]
+    confidence: craft-rule
+    notes: "Higgsfield HARD RULES 1-3 (routing line, read files, verify vocabulary) are the transferable core; its MCSLA, 200-word cap, aspect enums and CLI preflight are dialect matters (prompting.yaml, dialects/)."
+
+  - id: flow-assumptions
+    title: Assume, state, proceed
+    summary: The automated director never interrogates; it states assumptions, applies safe defaults, and asks the owner only when a wrong guess voids the episode.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist]
+    rules:
+      - "Missing input: proceed on an assumption written as an ASSUME line in director_notes."
+      - "Ask the owner only when a wrong guess makes the whole deliverable useless (wrong audience, wrong format); one question."
+      - "Defaults: aspect from format; clip about 6 s per providers.yaml; camera locked or one slow push when continuity is fragile."
+      - "Motion budget default: one subject action, one camera behaviour, one environmental motion per clip."
+      - "Register comes from the audience card; a lens can change look, never the card's limits."
+      - "Thin inputs get neutral production defaults, never invented facts, claims or meanings."
+    check: {type: mechanical, how: "director_notes contains ASSUME lines when topic.angle or format_id was not supplied"}
+    sources: [dsk-skill-router, hf-root-dispatcher, hf-shotlist-director]
+    confidence: craft-rule
+
+  - id: flow-roles
+    title: Crew roles mapped to our passes
+    summary: "Film-crew roles become duties inside two separate lanes: the writer pass (director.py) authors, and the verifier lane (verify.py) tries to break it; nobody approves their own work."
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Director (writer pass): mode, arc, beats, book, shot functions."
+      - "Production designer (writer pass): continuity locations, props, era anchors, reference assets."
+      - "Director of photography (writer pass): size, lens, move, composition, keyframe prompts."
+      - "Gaffer (checklist inside the DP duty): light_source invariants, ratios, practicals, what stays dark."
+      - "Editor (edit stage): durations, handles, bridge, timeline arithmetic. Sound (edit stage): five-layer brief, levels, silence."
+      - "Script supervisor (verifier lane): continuity and realism checks on a separate model and context (real-verifier-protocol)."
+      - "Modes: Plan = write_episode; Fix = repair loop changing only what is ranked wrong; Review = verify naming one failure class and one change."
+      - "Never self-approve: the writer pass cannot mark its own draft clear; only verify.py plus the owner can."
+    check: {type: mechanical, how: "qa_report.json comes from the verify lane with a different model/context than the draft; registry refuses approval otherwise"}
+    sources: [vsk-role-modes, vsk-video-skill, doc11#1A-3, doc11#4, "DIRECTION-BRAIN-PLAN#4", CLAUDE.md]
+    confidence: craft-rule
+    supersedes: [vsk-role-modes]
+    notes: "Gaffer and script supervisor as checklist items rather than agents is doc 11's judgment; FilmAgent supports several narrow critics over one generalist. vsk-role-modes' treatment and beat formats are absorbed by plan-director-book and plan-beat-sheet; its editor density table by plan-density-ladder; its director reference list is rejected (no named-director rule)."
+
+  - id: flow-gates
+    title: Approval gates and owner checkpoints
+    summary: Each gate is a yes/no question with a named place to return to; the paid and cost gates themselves live in triage and registry, referenced here.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [shotlist, clip-prompt, edit, qa]
+    rules:
+      - "G1 plan: every shot has a job, size, duration and continuity anchor; lint clean, verifier PRE pass; else back to the thin pass."
+      - "Owner approval: registry.set_status approved needs a fresh passed qa_report; no paid stage before it."
+      - "G2 still: no clip from an unapproved keyframe; exceptions are a labelled throwaway probe or a faceless plate."
+      - "Clip fails on identity, wardrobe, framing or light: go back to the still, never rewrite the motion prompt."
+      - "G3 clip: one verdict per take (fail-take-verdicts), cost ladder first (fail-cost-ladder), declared cap (fail-budget-gate)."
+      - "G4 cut: plays end to end over a sound bed, no placeholder standing in for an unproven shot."
+      - "G5 review: a viewer who has not seen the plan states the hook question after one viewing; else back to G1."
+      - "Owner checkpoints, three only: script and shot plan as text (no images), keyframe contact sheet, first cut."
+      - "Between checkpoints send the open-issues list, not progress clips."
+    check: {type: mechanical, how: "registry.set_status gate; run.py refuses clips whose keyframe lacks an approval row (proposed); mode cost caps via lint dir_paid_clip_cap"}
+    sources: [dsk-production-workflow, real-verifier-protocol, fail-budget-gate, fail-cost-ladder, registry.py, director.py]
+    confidence: craft-rule
+    supersedes: [dsk-production-workflow]
+    notes: "With flow-sequencing, flow-picture-lock and flow-take-review this absorbs production-workflow (its risk rubric is plan-shot-risk). Its tool motion-budget crosswalk and wall-clock tables are omitted: one provider, one clip per shot."
+
+  - id: flow-sequencing
+    title: Order of work, batch or serial
+    summary: Prove the shot the episode depends on first, lock references before coverage, and choose batch or serial takes by what is being learned.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Probe the hardest shot first as a labelled throwaway, with owner-approved spend; if it cannot work, replan on day one."
+      - "Lock the canon frame, then the location plate, then coverage derived from them."
+      - "Generate progressive-state shots (wet, damaged, docked) in story order."
+      - "Batch easy plates and inserts while a hard shot is being judged, not first."
+      - "Never assemble around an unproven shot; cut a version that works without it."
+      - "Batch identical takes only when the prompt is right and failures look random; serial, one variable each, when the cause is unknown."
+      - "Red shots and chained shots are always serial; two legitimate options are siblings v03a and v03b, not iterations."
+      - "Parallel work: draft later prompts and review earlier ones while a generation runs; refine shot details only after structure is locked."
+    check: {type: mechanical, how: "takes.jsonl: hardest-risk scene has the earliest take; no batch rows on Red shots"}
+    sources: [dsk-production-workflow, hf-pipeline, fail-retry-ladder, plan-shot-risk]
+    confidence: craft-rule
+
+  - id: flow-picture-lock
+    title: Five edit stages to picture lock, and the lock package
+    summary: The edit of a generated episode is a loop with a declared exit; after lock there are no new generations, and the lock package lets a stranger rebuild it.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [edit, qa]
+    rules:
+      - "Assembly: all scenes in order, no rhythm work; find sags and coverage holes."
+      - "Rough cut: rhythm, trims, reorders; the regeneration list forms here."
+      - "Generation supervision: the one declared window to regenerate broken shots and remove slop, before the fine cut."
+      - "Fine cut: exact fitting, then a cold viewing. Picture lock: status reviewed with reviewed_sha256; no new generations after."
+      - "Post-lock fix only by rolling status back with a note; colour and sound then redo against the new picture."
+      - "Grade is unification first: bring adjacent generated shots to one look before any stylistic grade."
+      - "Lock package in out/<id>/: shot plan, continuity, approved stills with rejects kept, clips with versions, prompt log, sound brief, open issues."
+      - "The open-issues list states what is still wrong, what was accepted, and what would fix it."
+    check: {type: mechanical, how: "registry: no takes.jsonl rows dated after the reviewed timestamp without a rollback note"}
+    sources: [hf-pipeline, dsk-production-workflow, edit-color-grade, registry.py]
+    confidence: proposal
+    notes: "Mapping lock to status reviewed is our proposal; registry today hashes the reviewed render but does not block new generations."
+
+  - id: flow-conflict-order
+    title: Conflict order and how decisions are recorded
+    summary: When two rules disagree, a fixed precedence decides; non-obvious resolutions are written down once so the verifier and the next episode can see them.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Precedence: owner instruction, then audience card, then psychology_rules, DESIGN_SYSTEM and qa_checklist, then craft cards, then vendor text."
+      - "Inside craft: explicit episode direction beats archetype, archetype beats lens, lens beats default."
+      - "Realism blocker cards are never traded for style; a lens that needs a blocker waived is the wrong lens."
+      - "Record each non-obvious resolution as one RULING line: conflict, choice, reason, card ids."
+      - "direction.skills_used: craft ids applied; a ledger id only when a vendor file was opened, with the reason."
+      - "A deliberate lint exemption goes in waivers {rule, reason}; never silence a rule by editing the episode around it."
+    check: {type: mechanical, how: "lint dir_skills_known; waivers carry a reason; verifier reads RULING lines"}
+    example: "RULING: arch-conventions wide-first vs arch-mystery withheld subject -> first wide at shot 3 because the mystery card allows it (arch-conventions, arch-mystery)."
+    sources: [hf-root-dispatcher, dsk-skill-router, skills/README.md, "DIRECTION-BRAIN-PLAN#4", lens-apply, lint.py]
+    confidence: craft-rule
+    notes: "Vendor precedence (lens > genre > tone) is replaced by audience-first, per lens-apply and skills/README.md."
+
+  - id: flow-house-rulings
+    title: House rulings registry
+    summary: Contested questions are settled once, labelled SCOPE, OPEN or FIXED, with both sides and a settling probe, instead of being silently re-decided per episode.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, clip-prompt, qa]
+    rules:
+      - "SCOPE: both rules are right in different regimes; each card states its regime and cites the other."
+      - "OPEN: same regime, unmeasured; give a default only when one failure is clearly cheaper, and name the probe that settles it."
+      - "FIXED: a plain error; list where it was fixed."
+      - "Current rulings live in card notes: master keyframe vs chaining (cont-master-keyframe), different flaws means split (fail-retry-ladder)."
+      - "Also: dual contrast vs one-variable setups (cont-one-variable-setups), photoreal cold opens vs DESIGN_SYSTEM, OPEN (cont-style-bridge)."
+      - "Stop rules compose: the earliest tripwire wins; later numbers are ceilings, never quotas; benchmarks never license spend."
+      - "A recurring RULING line in director_notes across episodes becomes a house ruling in the owning card's notes."
+    check: {type: none}
+    sources: [hf-shared-house-rulings, hf-troubleshoot, cont-master-keyframe, fail-retry-ladder, cont-style-bridge]
+    confidence: proposal
+    supersedes: [hf-shared-house-rulings]
+    notes: "Proposal: if rulings outgrow card notes, a craft/rulings.yaml index (not created here). Higgsfield's individual rulings concern Seedance, Soul and voice and do not transfer; the method and the stop-rule composition do."
+
+  - id: flow-usage-log
+    title: Usage and outcome logging
+    summary: Log which cards each run loaded and applied and what the checks said, so unused cards get pruned and cards that keep failing get revised.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, qa]
+    rules:
+      - "Per run, one row: episode, stage, mode, pack ids loaded, skills_used, lint ids fired, verify verdict, model ids."
+      - "Per take, one row in takes.jsonl, successes included; the denominator is what makes take budgets real."
+      - "Ask at most one question when the owner reports a take (keep or reject, and why), then write the row."
+      - "Prune: a card loaded in many episodes and never applied is demoted from its pack."
+      - "Revise: a card applied whose rules keep failing verify gets a note and a re-test."
+      - "A fix that worked becomes a cookbook or card note with its evidence, not a memory."
+    check: {type: mechanical, how: "proposed out/<id>/direction_log.jsonl written by director.py; a coverage report reads it"}
+    sources: [hf-root-dispatcher, hf-troubleshoot, "DIRECTION-BRAIN-PLAN#9", doc11#4]
+    confidence: proposal
+
+  - id: flow-take-review
+    title: Take review additions (continuations and evidence)
+    summary: "What triage.yaml lacks: the continuation failure atlas, the review note, keeping failures, and vision that proposes while a human confirms."
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Next shot opens from the delivered take's real end state, not the planned one; the source carries state, the prompt carries the change."
+      - "Action restarts: state the completed beat as done. A later beat appears early: strip future beats from this prompt."
+      - "Motion dies at a handoff: carry speed and direction in words; a frame cannot carry them."
+      - "Prop contradicts the last clip: add one prop-state line (holder, hand, place, condition)."
+      - "Review note per take: WORKED, BROKE with axis and timestamp, NEXT with exactly one change."
+      - "Keep failures, renamed with the failed axis; the folder then reads as a diagnosis."
+      - "A vision model may propose a failure code from frames; a human confirms before it is logged."
+    check: {type: mechanical, how: "takes.jsonl rows carry worked/broke/next; proposed vision_code beside the confirmed code"}
+    sources: [hf-troubleshoot, dsk-production-workflow, fail-take-verdicts, fail-triage-tree, cont-state-ledger]
+    confidence: craft-rule
+    supersedes: [hf-troubleshoot]
+    notes: "Higgsfield's verdicts, ladders and attempt budget are already in triage.yaml; its per-product fixes (Soul ID, motion presets, Cinema Studio, lip-sync) do not apply."
+
+  - id: flow-fixes-skeletons
+    title: Prompt fixes and audit form
+    summary: Fixes and a six-part audit for a weak clip prompt that the continuity and triage cards do not already state.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Object vanishes mid-scene: write its state path in one sentence ('in hand, on the tray, in the slot')."
+      - "Camera instruction ignored: move the camera clause to the front of the prompt."
+      - "Plastic AI faces: drop hype words; name lens, natural skin texture and a motivated source."
+      - "Two people blend into twins: give each distinct clothing colour, hair and timing; nobody moves in sync."
+      - "Prompt too long: cut in order meta-commentary, extra adjectives, references; keep continuity, action, timing, light, camera."
+      - "Audit form: what works, what breaks generation, missing direction, continuity risks, dialect mismatches, stronger version."
+      - "Before release, name the final image of every clip explicitly."
+    check: {type: judgment, test: "Does the audit name one mechanism per break and keep what worked?", how: "verify lane on repaired prompts"}
+    sources: [vsk-fixes-skeletons, fail-describe-dont-negate, cont-state-ledger, prompt-shot-sentence]
+    confidence: craft-rule
+    supersedes: [vsk-fixes-skeletons]
+    notes: "Its continuity checklist is covered by realism cards; cross-model skeletons by dialects/; default negatives by fail-describe-dont-negate; 'one continuous take' and Veo dialogue fixes do not apply to one-shot Hailuo clips without speech."
+
+  - id: flow-lint-before-spend
+    title: Lint before spend, and silent checks fail
+    summary: Every free check runs, and is read, before the first paid call; a check that could not measure anything blocks like a failure.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Order: lint.py, verifier PRE lane, owner approval, then the first paid call; flow-hard-rules is the writer's own checklist before lint."
+      - "A measurement that cannot be computed is a failure, not a pass: empty parse, no frames, -1, missing field all block."
+      - "Exit code 0 is not evidence; read the report and confirm each check saw the shots it claims."
+      - "After a prompt patch, confirm the prompt as sent contains the new text; a patch that did not land wastes a paid take."
+      - "Pre-spend lint targets (proposed): unspoken causal facts (real-stranger-audit), headcount on multi-person shots, sequences inside one clip, prompt over dialect length cap."
+      - "A free re-runnable stage (edit, grade, captions, mix) never triggers a regeneration; keep paid and free stages separate."
+    check: {type: mechanical, how: "lint/verify: a rule that evaluated zero items when items exist reports error, not ok; run.py compares submitted prompt hash with episode.json prompt hash"}
+    sources: [aif-idea-lint-before-spend, aif-skill-core, aif-idea-verification-procedure, flow-hard-rules, lint.py]
+    confidence: proposal
+    supersedes: [aif-idea-lint-before-spend, aif-skill-core]
+    notes: "ai-film's check_script.py itself is not carried over (code, stripped); its music ban and 15k prompt cap are dialect matters (H3 adapter cuts text at 7000 chars, dialects/hailuo.md). Existing lint ids already cover text in prompts, camera command, identity strings and named directors; this card adds the zero-items-is-error rule and the targets above."
+
+  - id: flow-reuse-before-generate
+    title: Does this shot need generating at all
+    summary: Before writing a clip prompt, look for footage already approved that can carry the beat; the cheapest generation is the one not made.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [shotlist, edit]
+    rules:
+      - "Per shot, ask first: can an approved clip's tail, middle or trim carry this beat? Mark reuse in the shot plan, not after the cut."
+      - "Reusable: a listener's neutral reaction, an unchanged insert object, a repeated action meant to look identical."
+      - "A donor segment appears once per scene; two shots never show the same frames within one scene."
+      - "Cross-cut two continuous clips (A/B/A/B) to get four shots from two generations; each block continues, never replays."
+      - "A late or too-smooth reaction is fixed by an insert cut, not a new take (fail-cost-ladder)."
+      - "Mechanism, numbers and diagrams go to Remotion-native scenes, not generation (fail-switch-mode-model)."
+    check: {type: mechanical, how: "proposed scenes[].shot.reuse {from_scene, in_s, out_s}; run.py skips generation for reuse shots and never overwrites their source; lint: same donor span twice in one scene = warn"}
+    sources: [h3s-skill-workflow-and-qa, h3s-skill-audio-edit-post, edit-handles-harvest, fail-cost-ladder]
+    confidence: proposal
+    supersedes: [h3s-skill-workflow-and-qa]
+    notes: "h3-storyboard (H3, n=1): a 2.5 s shot failed eight generations and was solved by trimming the previous clip's tail. Its A/B/A/B cross-cut note is marked by the author as observed in external footage, untested, so treat it as proposal."

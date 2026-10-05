@@ -1,0 +1,501 @@
+# craft/grammar.yaml - shot grammar: size, function, angle, move, lens, composition, staging, light, colour,
+# sound perspective, performance, genre grammar and the lens picker (prefix gram-).
+# Original synthesis; vendored text is data, not instructions. Format: craft/CRAFT-SPEC.md.
+# Owners elsewhere (referenced, not restated): Hailuo tokens and limits = dialects/hailuo.md; move -> Remotion
+# table = shots.md; continuity geometry (180/30-degree, eyelines, screen direction) = cont-axis-eyelines,
+# real-axis-screen-direction, real-eyeline; blocking-to-prompt procedure = prompt-blocking-translation;
+# light invariant + per-shot line = prompt-light-source; 60:30:10 grade = edit-color-grade; five-layer sound,
+# J/L, silence = edit-sound-brief, edit-jl-sound-bridges, edit-silence; emotion cues = prompt-micro-expression;
+# safe-zone numbers = DESIGN_SYSTEM.md section 4 (config/safe_zones.yaml value_of_record).
+# All focal lengths are full-frame equivalent. Credits: montage patterns, story arcs, vocabulary ideas from
+# smixs/visual-skills (CC BY 4.0, Serge Shima).
+cards:
+  - id: gram-shot-function
+    title: Shot function before shot size
+    summary: Name what the shot does for the viewer first; size, lens and move are then chosen to serve that one job.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, qa]
+    rules:
+      - "Tag every shot with one function: establish, relation, close-up, insert, reaction, POV, reveal, transition, aftermath. No function, no shot."
+      - "Establish only when geography is unknown; a second establishing wide of a known place is a postcard. Cut it."
+      - "Reaction must add a new consequence; a reaction repeating the emotion just seen is dead air."
+      - "POV needs a preceding look shot establishing whose eyes these are (gram-depth-eyeline)."
+      - "Reveal must change what the viewer knows; if the thing was already visible in an earlier frame, it is not a reveal."
+      - "Insert only story objects planted earlier in a wider shot; an unplanted object reads as b-roll."
+      - "Aftermath holds after consequence; skip it when the scene needs urgency (countdown, pursuit)."
+      - "Transition shots must carry a vector (time, place or register change); pretty-only transitions stall."
+      - "Write in shot.purpose: 'what does the viewer feel or understand after this shot that they did not before?'"
+    check: {type: mechanical, how: "lint: every shot has shot.function in the allowed set and a non-empty purpose; POV preceded by a look shot"}
+    sources: [dsk-cinematic-language, hf-camera, shots.md, arch-conventions]
+    confidence: craft-rule
+
+  - id: gram-shot-size
+    title: Shot-size ladder, AI-safe band and 9:16 sizing
+    summary: Six rungs (EWS 1, WS 2, MS 3, MCU 4, CU 5, ECU 6) define every 'two rungs' rule; spend risky extremes deliberately.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Use only six rungs: EWS (figure <=1/8 height), WS (full body), MS (waist up), MCU (chest up), CU (head and shoulders), ECU (detail)."
+      - "Count every 'two rungs' cut rule (edit-dual-contrast-cut) on this ladder only; insert = ECU of an object."
+      - "Default AI faces to the MS-CU band; EWS invents extra people and mangles distant faces, ECU melts eyes, teeth and fingers."
+      - "Make EWS faceless (backs, silhouettes) and ECU objects or hands-out-of-frame; generate either as a still and animate minimally."
+      - "9:16: go one rung tighter than 16:9 habit (wide becomes MS, MS becomes MCU); never ECU by reflex, it loses geography."
+      - "9:16 wides only for genuinely tall subjects (stairwell, tower, rocket, shaft), a bottom-third foreground layer, a tilt reveal, or a high angle."
+      - "Write size as a crop in the prompt ('framed from the chest up'), not only an acronym (dialects/hailuo.md section 9)."
+      - "CU only after the character has decided; before the decision a close-up shows a blank face."
+      - "Kids and older_adult: favour MS and MCU; one EWS per scene at most, held at least 2.5 s."
+    avoid: ["MCU as the default for every shot; the scene flattens into television", "Three same-rung shots in a row (edit-dual-contrast-cut)"]
+    check: {type: mechanical, how: "lint shot.size in {EWS,WS,MS,MCU,CU,ECU,INSERT}; flag faces at EWS/ECU without a still-first note"}
+    sources: [dsk-cinematic-language, hf-camera, hf-vocab, vsk-camera-lighting-vocab, shots.md, "dialects/hailuo.md#9"]
+    confidence: craft-rule
+    supersedes: [dsk-cinematic-language]
+    notes: "dsk-cinematic-language is covered across gram-shot-function, gram-shot-size, gram-angle-height, gram-camera-moves, gram-lens-dof, gram-composition, gram-vertical-frame and gram-coverage; its continuity geometry (180-degree, 30-degree, screen direction, eyeline, enter/exit) is owned by cont-axis-eyelines, real-axis-screen-direction and real-eyeline. Its frame-rate/shutter table is omitted: we cannot set fps or shutter on Hailuo (24 fps fixed), only describe motion."
+
+  - id: gram-angle-height
+    title: Camera height first, angle second
+    summary: Set the lens height relative to the subject's eyes; keep the axis level unless the angle itself is the statement.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Choose height relative to the subject's eyes: floor (world looms), waist (monumental), chest (slight status gain), eye (peer), above eye (assessed), overhead (system)."
+      - "Keep the lens axis level by default; a tilted low angle on a subject without real power reads as parody."
+      - "Low angle = authority or threat; high angle = vulnerability or judgement; overhead = layout, ritual, fate; profile = withholding, mid-decision."
+      - "Dutch angle at most twice per episode, only on instability; never as decoration."
+      - "Shot-reverse-shot: put the camera at the OFF-screen character's eye height, so the seated one is seen from standing height and vice versa."
+      - "Write height as visible consequence, not metres: 'camera near the floor, table edge across the bottom, ceiling visible behind him'."
+      - "Overhead suits explainer layouts (map, board, circuit, docking geometry); never for a face beat."
+      - "Kids: camera at child eye height (1.0-1.3 m) for wonder; no dutch, no floor-level threat, no looming low angle on adults."
+    avoid: ["Parking every shot at neutral eye level so the scene has no status geometry", "Low angle meaning 'hero' on an ordinary person"]
+    sources: [dsk-cinematic-language, hf-camera, hf-vocab, vsk-camera-lighting-vocab, lens-wonder-reaction]
+    confidence: craft-rule
+
+  - id: gram-camera-moves
+    title: Camera-move vocabulary, effect and how we implement it
+    summary: Each move has one meaning and one failure; pick it by what changes in the scene, then use our Hailuo token or Remotion move.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Locked = control, dread, ritual, calm explanation: [Static shot] / no Remotion move; fails without internal motion, so add breath or one environment motion."
+      - "Slow push = pressure, realisation, 'this matters': [Push in] / scale 1.0 to 1.08; fails if the performance or diagram does not change during it."
+      - "Pull back = isolation, aftermath, context: [Pull out] / scale 1.1 to 1.0; start only after the beat resolves."
+      - "Pan = scan, link two ideas: [Pan left]/[Pan right] / translateX; travel under half a frame width per 6 s clip or it strobes."
+      - "Tilt = vertical scale, authority, threat above or below: [Tilt up]/[Tilt down] / translateY; fails if the wide already showed it."
+      - "Truck = neutral parallel observation: [Truck left]/[Truck right]; pedestal = rise or reveal above: [Pedestal up]/[Pedestal down]."
+      - "Follow = journey, pursuit: [Tracking shot]; camera speed must match subject speed and direction, stated in the prompt."
+      - "[Zoom in]/[Zoom out] only for flat optical emphasis on illustrated plates; physical approaches use [Push in]."
+      - "Not tokens (hailuo.md section 2): orbit = two static setups at arc start and end; crane = [Pedestal up] alone; whip = faked in edit."
+      - "Dolly zoom: do not attempt in a clip; at most once per episode, and only if a tested method exists."
+      - "Handheld: no token; [Shake] is whole-frame jitter for <=1 s impact only; documentary looseness is written as 'small late reframes'."
+      - "Rare terms: name term + target subject + visible change + foreground/background relation + direction or speed."
+    avoid: ["Two independent moves per clip (real-camera-behavior)", "Kids and older_adult: [Shake], fast pans, any handheld wording"]
+    check: {type: mechanical, how: "lint: shot.move in the token set or 'remotion:<move>'; non-token names (orbit, crane, whip, dolly zoom, handheld) flagged unless substituted"}
+    sources: [dsk-cinematic-language, hf-camera, hf-vocab, vsk-camera-lighting-vocab, shots.md, "dialects/hailuo.md#2", real-camera-behavior]
+    confidence: craft-rule
+    supersedes: [vsk-camera-lighting-vocab]
+    notes: "vsk-camera-lighting-vocab is covered across this card, gram-lens-dof, gram-light-setups, gram-colour, gram-staging-patterns and edit-*; its director-named palettes are rejected (CRAFT-SPEC), its Veo/Seedance sound syntax lives in dialects/. Effects agree with shots.md; shots.md's 'tilt up = power' is kept, adding 'fails if the wide already showed it'."
+
+  - id: gram-camera-motivation
+    title: Move magnitude and camera-emotion sync
+    summary: The camera moves with the focal subject's state, by a stated distance, and the move must be able to reach the stated end frame.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "State travel and time for slow moves: 'pushes in about 15 cm over the whole clip' or 'about 5 percent of frame'."
+      - "Check the move against the end frame: a slow push cannot end on ECU from a wide; enlarge the move or shrink the framing change."
+      - "Say whether the camera pans from a fixed position or glides through space; they read as chosen viewpoint vs untethered."
+      - "Anchor speed to a physical referent or a quantity ('the pace of a clock's minute hand', 'a quarter turn across the clip'), not 'slow'."
+      - "Shock or realisation: hold still, then the slowest push; nothing else moves for 0.5-2 s after the beat."
+      - "Breakdown or grief: slow pull back from MCU to wide ('leave them alone'), started after the peak."
+      - "Verdict or final beat: a still overhead or locked wide held 1-2 s."
+      - "Agitation: express by tighter framing, off-centre placement and shorter shots, not camera shake (models render shake as jitter)."
+      - "Calm and explanation: locked or one constant slow move; a jittery camera on a calm scene reads wrong."
+      - "If emotion changes inside a clip, split the clip; do not ask one 6 s clip to change camera character."
+    avoid: ["Writing 'zoom' for a physical move", "Kids: no agitation camera at all; older_adult: no move faster than 'steady'"]
+    check: {type: judgment, how: "verify: each moving shot states magnitude; end framing reachable from start framing by the stated move"}
+    sources: [hf-camera, hf-vocab, dsk-cinematic-language, prompt-i2v-anatomy, "dialects/hailuo.md#9"]
+    confidence: craft-rule
+    supersedes: [hf-camera]
+    notes: "hf-camera prescribes jittery handheld for anger; rejected for our models and audiences, replaced by framing and cut length. Its named Higgsfield presets (Super Dolly, Snorricam, Bullet Time, FPV, @Video camera transfer) are platform features we do not have; its genre camera table is folded into the gram-genre-* cards; its per-type shot durations conflict with edit-pacing-math and audience floors and are not adopted."
+
+  - id: gram-lens-dof
+    title: Lens and depth-of-field language
+    summary: Choose focal length by story intent, remember distance not mm makes compression, and describe focus as optical cause plus visible result.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "With them, not judging: 35-40mm. Sympathy, private thought: 85mm. Trapped by circumstance: 100-200mm with a solid wall a few metres behind."
+      - "Inside panic: 18-24mm close. Room dominates person: 14-24mm, subject small, ceiling visible, camera not low. Being watched: 135-200mm from cover."
+      - "Together: 28-40mm two-shot, one focal plane. Irreconcilably apart: 85-135mm singles, no two-shot. Order and ritual: 24-35mm centred."
+      - "Wide plus subject large = agency; wide plus subject small = insignificance. Compression comes from distance; say the distance."
+      - "Pair mm with distance and visible result: '85mm from 1.5 m, eyelashes sharp, shelf 4 m behind dissolves into soft vertical shapes'."
+      - "Never write 'bokeh'; write 'no circular highlights'. Deep focus: name what stays legible in foreground, mid and background."
+      - "Lens, depth of field and perspective live in the keyframe prompt; Hailuo I2V inherits them and will not invent defocus later."
+      - "Rack focus only as a timed event with start and end targets; expect retries; prefer a cut on Hailuo."
+      - "Inserts and tight close-ups: 'focus stays on [object] the whole clip, no focus drift'. Wide glass: 'straight lines, no fisheye warp'."
+      - "Illustrated looks (storybook, flat vector) have no lens: express focal feel by perspective and convergence, never depth of field."
+    avoid: ["'Cinematic lens, shallow depth of field' with no distance or target", "f/1.4 on a moving face; use f/2.8-4 or step back"]
+    sources: [dsk-cinematic-language, hf-camera, hf-vocab, vsk-camera-lighting-vocab, prompt-keyframe-nine-slot, lens-frontal-diorama]
+    confidence: craft-rule
+
+  - id: gram-composition
+    title: Composition patterns and framing power
+    summary: Frame patterns carry meaning; power in a two-person frame is set by five variables, and empty space must be declared.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Pick one pattern per shot and name it: negative space, frame within frame, symmetry, thirds, off-centre, foreground obstruction, layered depth, leading lines."
+      - "Power = more frame area, higher in frame, sharper focus, more lookroom, fewer obstructions. Change one to nudge, three to flip a scene."
+      - "Lookroom: frontal = centred; three-quarter = about 60/40 toward the gaze; full profile = two-thirds in front of the nose."
+      - "Pressing a face against the edge it looks toward is legitimate only if the scene already established that pressure."
+      - "Leading lines must end on the subject; negative space must have texture (wall grain, sky gradient) or it reads underfilled."
+      - "Declare zones with rules: 'upper third: empty pale sky, nothing moves; lower third: the counter, all action here'."
+      - "Place key subjects with paired anchors: 'right third, about 70 percent across, filling a quarter of the frame'."
+      - "Explainer frames: one focal element, the term or diagram part in the accent colour, everything else muted (DESIGN_SYSTEM)."
+    avoid: ["Reflexive thirds with no attitude", "Foreground obstruction covering the beat itself"]
+    check: {type: judgment, how: "contact sheet: one named pattern per shot; in two-person frames the stated power holder wins at least 3 of the 5 variables"}
+    sources: [dsk-cinematic-language, dsk-blocking-staging, hf-vocab, "DESIGN_SYSTEM#4", shots.md]
+    confidence: craft-rule
+
+  - id: gram-vertical-frame
+    title: 9:16 composition and safe zones
+    summary: Vertical maps the long axis to depth; compose native 9:16 inside our safe box, with captions and platform UI kept off the subject.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Safe box at 1080x1920: x 90-990, y 130-1560 (DESIGN_SYSTEM section 4); faces and focal subjects inside it."
+      - "Bottom 360 px belong to captions and platform UI; never place a face, hand-off or key object there."
+      - "Eyes at 35-40 percent from the top; headroom 8-10 percent at MS; at CU let the skull top leave frame."
+      - "Two people: stage in depth, near one low in frame, far one higher; camera slightly above eye level so the floor shows the distance."
+      - "Never two figures side by side at the same size in 9:16; it reads as a mistake."
+      - "Centred composition is correct in 9:16 for single subjects, direct address and ritual; off-centre needs a reason."
+      - "Generate keyframes native 9:16 with 10-15 percent spare margin for push-ins (shots.md); never crop a 16:9 still."
+      - "Lens rules written for wide frames are restated, not dropped: lateral ranks become stacked layers; distance smallness becomes depth down a tall subject."
+      - "Keep stickers and icons in the upper third beside the subject, clear of the right-hand button column."
+    check: {type: mechanical, how: "render_qa: clip size = format size; contact sheet: focal bbox inside safe box; caption band empty of faces"}
+    sources: [dsk-cinematic-language, dsk-genre-playbooks, dsk-styles-readme, "DESIGN_SYSTEM#4", "config/safe_zones.yaml", shots.md, real-framing-safe]
+    confidence: craft-rule
+    notes: "safe_zones.yaml holds three conflicting sets (spec, renderer, third-party union); this card uses value_of_record as DESIGN_SYSTEM directs. Reconciliation is open item S1 in FIX-PLAN.md. DirectorSKILL's 'middle 60 percent of height' and higgsfield's '12 percent top / 20 percent bottom' are both looser than ours."
+
+  - id: gram-proxemics-power
+    title: Proxemics and power geometry in prompt language
+    summary: Distance in metres is subtext; who moves, who holds height and who owns the exit decide the scene before any line.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [script, shotlist, clip-prompt]
+    rules:
+      - "Write distance in metres: intimate under 0.45, personal 0.45-1.2, social 1.2-3.6, public over 3.6."
+      - "Write zone changes as 'from 2.4 m to 0.8 m over 4 s'; never 'moves closer'."
+      - "Closing a zone escalates; opening one withdraws or refuses. Eyeline and pace decide desire vs threat."
+      - "Crossing two zones in one move is a violence-level event; at most once per scene, never for kids."
+      - "Whoever moves needs something; whoever holds position and gaze holds power. Write the hold as a sentence."
+      - "Height: standing over seated is mild dominance, over floor-sitting is surrender; a level break (sit, kneel, stand) is the beat."
+      - "Exit control: the body between the other and the door can end the scene; state who stands nearer the door."
+      - "Boxed by architecture: a doorframe or column within about 0.2 m of the silhouette reads as already caught."
+      - "Turning away mid-line reads as refusal; back to camera withholds; both are faceless and AI-cheap."
+    avoid: ["Intimate-zone threat and pinning for kids", "Mood words ('tense standoff') in place of distances"]
+    sources: [dsk-blocking-staging, hf-vocab, prompt-blocking-translation]
+    confidence: craft-rule
+
+  - id: gram-staging-patterns
+    title: AI-graded staging patterns
+    summary: A shortlist of two-body geometries with their read and AI reliability; prefer patterns where one body holds and nothing occludes.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "High reliability: table opposition (seated, over-shoulder 25-35 degrees off axis), opaque barrier, threshold (nobody crosses the sill), the wall (back to camera)."
+      - "High reliability: the ladder (bodies at about 1.2, 3 and 6 m; nearest is loudest; background figure as a back or silhouette)."
+      - "Medium: approach (one mover, under 0.9 m per clip, the other holds), retreat (cheaper: bodies end apart), pass-through wipe, 90-degree reveal-by-turn."
+      - "Medium: shrinking two-shot (locked frame built for the start distance; keep at least 0.3 m visible gap at the end)."
+      - "Low, substitute: orbit -> two static angles; parallel walk -> locked 90-degree cross; glass barrier -> keep the glass dark."
+      - "Lock the camera during any body rotation; two rotations fight and read as an error."
+      - "State the crossing rule: 'she stays in the left half, he in the right; neither crosses the centre line'."
+      - "Write every blocking line with six inputs: who moves, start, end, object touched, where they look, what the body shows."
+      - "9:16: ladder and threshold suit vertical best; table opposition becomes near shoulder low, far face high."
+    sources: [dsk-blocking-staging, vsk-camera-lighting-vocab, hf-vocab, prompt-blocking-translation]
+    confidence: craft-rule
+    supersedes: [dsk-blocking-staging]
+    notes: "dsk-blocking-staging is covered across this card, gram-proxemics-power, gram-depth-eyeline and prompt-blocking-translation (reliability tables, start/action/end procedure). Its plan-view notation is not adopted; our shot schema fields (axis_side, eyeline, continuity_ids) carry the same information."
+
+  - id: gram-depth-eyeline
+    title: Depth staging, entrances, exits and eyeline as instruction
+    summary: Depth change is the only edit inside one clip; exits are cheap and entrances expensive; a look tells the viewer where to look next.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [shotlist, clip-prompt, edit]
+    rules:
+      - "Foreground filter 0.3-0.8 m from the lens, soft; name what it says (eavesdropping, barred, protected)."
+      - "Edit inside a clip by depth: foreground head lowers 20 degrees and the background figure, already visible, becomes the subject."
+      - "Exits are AI-safe: lateral at constant scale first, then away into depth; past-the-lens exits are a free seam but hold the most face."
+      - "Entrances: start with a sliver already in frame (shoulder, shadow, hand, reflection), or a new clip whose keyframe shows the body mid-stride."
+      - "Empty-frame hold 1.5-4 s after an exit, with one ambient motion (steam, curtain, dust); it costs one cheap plate."
+      - "Look-then-reveal: shot 1 a face near the edge looking off-frame; shot 2 the thing, framed from the looker's height. Two clips, no two-subject frame."
+      - "False eyeline (looking at nothing) at most once per episode; hold 1.5-3 s; pay it off or the viewer stops trusting looks."
+      - "Fix an off-screen gaze with a practical light or object in that direction; models miss precise gaze targets."
+    sources: [dsk-blocking-staging, dsk-cinematic-language, cont-axis-eyelines, edit-clip-seams]
+    confidence: craft-rule
+
+  - id: gram-coverage
+    title: Coverage for generated scenes
+    summary: Plan setups as a small set derived from one world state, bank cheap inserts, and keep slow motion and blur out of the model.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage]
+    stage: [shotlist, clip-prompt, edit]
+    rules:
+      - "Two-person beat: plan wide, two singles, one two-shot, two inserts; expect to cut with four."
+      - "Derive every single and over-shoulder from one approved two-shot or master keyframe (prompt-first-last-chaining)."
+      - "Generate 3-5 inserts per scene as insurance: faceless, small, no gait; they rescue any edit."
+      - "Walk-and-talk is the worst AI case; shorten to 3-4 s, profile or frontal MS, cut on footfalls."
+      - "A continuous take becomes a chain of clips with seams hidden on a body wipe, dark passage or empty frame."
+      - "Slow motion only when you can name whose perception stretches; generate at normal speed and retime in Remotion."
+      - "Ask for blur locally ('blur on the sweeping hand, background sharp'); keep fast motion near frame centre and short."
+    sources: [dsk-cinematic-language, hf-vocab, edit-handles-harvest, prompt-first-last-chaining]
+    confidence: craft-rule
+
+  - id: gram-light-setups
+    title: Lighting setups by named source, ratio and key direction
+    summary: Name roles, ratio in words and key direction relative to camera; choose single-source naturalism unless a face must repeat dozens of times.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Default single-source naturalism (one motivated source plus bounce); three-point only for presenter or interview faces that must repeat."
+      - "Always name a rim or back light on dark backgrounds and an eye light on faces; models drop both, giving muddy frames and dead eyes."
+      - "Ratio in words: 1:1 even, nothing hidden; 2:1 ordinary; 4:1 an interior not fully shown; 8:1 withholding; 16:1 barely present."
+      - "Restate the ratio on every close-up; generators drift back to a mild 2:1 as the source leaves frame."
+      - "Key direction: frontal = open, deceivable; 45-degree = narrative default; 90-degree split = undecided; three-quarter back = withheld; top = judged."
+      - "Write faces by camera side ('the camera-left cheek'), never anatomical left."
+      - "Under-light reads wrong on sight: once per episode at most, never for kids."
+      - "Falloff decides refuge: near a small source a step back hides the face; under overcast or a window wall there is nowhere to hide."
+      - "Two faces share one key direction; only the ratio differs. A practical between them (lamp, screen, fire) is the most reliable two-hander light."
+      - "Explainer illustrated scenes: soft frontal or one painted shadow shape (lens-frontal-diorama); no motivated drama."
+    avoid: ["Separate keys per actor: two people in different weather", "'Dramatic lighting'; see prompt-light-source for the invariant clause"]
+    check: {type: judgment, how: "verify: every scene names source, ratio phrase and key side; darker face stays darker across reverses"}
+    sources: [dsk-lighting-color, hf-style, hf-vocab, vsk-camera-lighting-vocab, prompt-light-source, real-light-source]
+    confidence: craft-rule
+    supersedes: [dsk-lighting-color]
+    notes: "dsk-lighting-color is covered across this card, gram-light-schemes-time, gram-colour, prompt-light-source (invariant clause, per-shot line, flicker, practicals era, golden-hour constraint, flip-repair ladder) and edit-color-grade (teal-orange alternatives, two-descriptor limit). Rembrandt/butterfly names from hf-style are allowed only with their visible result ('a lit triangle under the shadow-side eye')."
+
+  - id: gram-light-schemes-time
+    title: Contrast schemes, night and time of day
+    summary: Specify schemes by stop difference and background material, night by its practicals, and the time window by direction plus an AI correction.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "High-key 1:1-2:1 reads as advertising; break it with one deliberately dark object."
+      - "Low-key 8:1 or steeper needs one named practical; 'moody' gives generic murk."
+      - "Silhouette: subject four stops under a bright, ugly background (doorway, screen, fog bank), not a sunset hill."
+      - "Night: light only from named practicals, black between pools, 'no ambient fill'; unnamed night returns as blue-tinted day."
+      - "A cool-warm split at night is legal only when practicals in frame motivate both sides."
+      - "Pre-dawn: 'no sun, sky glow only'. Dawn and dusk: state the sun or glow band's side relative to camera."
+      - "Midday: 'sun overhead, short hard shadows, dark eye sockets', checked against latitude and month."
+      - "Overcast and mid-morning are the most continuity-safe exteriors; blue hour with practicals on is the safest night."
+      - "Storm: write the flat base and each flash as a separate event with a direction."
+      - "Never prompt strobe or pulsing light; older_adult and kids cards forbid flashing, and models pump whole-frame exposure."
+    sources: [dsk-lighting-color, hf-vocab, hf-style, prompt-light-source, "audiences/older_adult.yaml"]
+    confidence: craft-rule
+
+  - id: gram-colour
+    title: Palette, temperature and mapping to our profile grade
+    summary: Pick one palette system and one saturation strategy per episode, name colour by source and material, and land it inside the profile grade.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, shotlist, clip-prompt, edit]
+    rules:
+      - "Choose one system: monochrome, analogous, complementary, split-complementary or triadic; triadic needs strong value separation."
+      - "Temperature reads by convention: tungsten warm = home, safe; fluorescent green-white = institution; overcast blue-grey = procedure, grief."
+      - "Name colour by source or material ('sodium-vapour amber', 'bottle-green enamel'), never hex or bare 'warm/cool' in image prompts."
+      - "Pick one saturation strategy and hold it: one saturated object per frame, saturation tracking emotion per scene, or saturation as period marker."
+      - "Colour script: log palette, saturation and ratio per beat; shift only at story turns (edit-color-grade)."
+      - "Give recurring characters one hue and material; change what surrounds the hue, never the costume colour (reads as identity change)."
+      - "Reserve the episode accent for the hook's story object; reuse it on the term card and bridge."
+      - "Remotion grade bounds: explainer-clean saturate 0.95/contrast 1.04/vignette 0.25; explainer-bold 1.1/1.08/0.4; explainer-large 1.0/1.1/0.15."
+      - "Cold-open clips may carry a lens grade; first explainer scene returns to the profile grade (edit-hook-bridge)."
+      - "Kids storybook-v2 has no grade block: keep 'bright cheerful candy colors, warm sunny light' from illustration_style; no desaturation, no night dread."
+    avoid: ["Mood grade recipes ('cold thriller teal and orange') as prompt text", "Director-named palettes"]
+    sources: [dsk-lighting-color, hf-style, hf-vocab, vsk-camera-lighting-vocab, edit-color-grade, "DESIGN_SYSTEM#2", "config/profiles/*.json", "audiences/kids.yaml"]
+    confidence: proposal
+    notes: "Profile numbers are read from config/profiles today; the colour-psychology lines are film convention, not experimental findings."
+
+  - id: gram-register-texture
+    title: Style register, materials and period
+    summary: Decide the register pole first, anchor style with that register's vocabulary, and write period and CGI look as materials.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, clip-prompt]
+    rules:
+      - "Pick one register: photoreal film, observational video, illustrated (storybook, flat vector), cel, stop-motion. Never mix anchors across registers."
+      - "Declare what the look is and is not in one line: 'flat editorial vector, not 3D, not a photo'."
+      - "Illustrated registers anchor on medium and line ('gouache, thick friendly outlines'); photoreal anchors on capture medium and lens."
+      - "Stop-motion or stepped looks: atmosphere moves smoothly while figures step; state both or the model smooths everything."
+      - "Write period by materials and light ('tungsten bulbs, wood panelling, rotary phone'), never by decade alone."
+      - "CGI or product surfaces get 2-4 material properties: base, roughness, imperfection, edge ('satin steel, fine scratches, rounded rim')."
+      - "One style anchor plus one or two supporting tokens (prompt-style-lock); 'cinematic' adds nothing."
+    avoid: ["Film-stock or brand names as anchors", "Anamorphic or 2.35:1 wording on 9:16 output; aspect is a spec, not a style"]
+    sources: [hf-style, hf-vocab, prompt-style-lock, edit-deslop-review]
+    confidence: craft-rule
+    supersedes: [hf-style]
+    notes: "hf-style named platform styles (VHS, Super 8, Abstract), Kodak/Fuji stock names and its eight Higgsfield recipes are platform-specific or brand anchors and are not carried over. Its 'one saturated accent reserved for the story' is in edit-color-grade and gram-colour."
+
+  - id: gram-sound-perspective
+    title: Sound perspective, diegesis and the sound question
+    summary: Decide what the viewer hears that the subject does not, place each sound at its distance, and cross the diegetic boundary at most once.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, shotlist, edit]
+    rules:
+      - "Before shotlisting, write one sound question: what the viewer hears that the subject does not (suspense) or the reverse (dread)."
+      - "Per-shot log: SND id | SPACE (size, off-room sources) | RT | AMB | FOL | SFX | MUS | SIL; write 'none', never blank."
+      - "Through a wall or door: -12 to -18 dB, low-pass 600-900 Hz, far-room tail only."
+      - "Outside heard from inside: -10 to -16 dB, low-pass 1.5-2.5 kHz, near-room tail added."
+      - "Off-screen in the same room: -3 to -6 dB and about half again more reverb tail."
+      - "Score revealed as an in-room radio deflates; a source sound carried over a cut becomes a theme; ducking the world to one breath goes subjective."
+      - "Cross a diegetic boundary at most once per scene."
+      - "Pick music by tempo, density and shape, never by liking the song; log BPM and shape, not the title."
+      - "Kids: no heartbeat or dread drones; older_adult: keep narration-band clarity, no low-pass on lines the viewer must understand."
+    sources: [dsk-sound-dialogue, hf-vocab, vsk-camera-lighting-vocab, edit-sound-brief, edit-jl-sound-bridges, edit-silence]
+    confidence: craft-rule
+    supersedes: [dsk-sound-dialogue]
+    notes: "dsk-sound-dialogue is covered across this card, gram-performance (dialogue ladder, listening shots), prompt-narration-direction (VO entry/exit, 12-word limit) and edit-sound-brief / edit-jl-sound-bridges / edit-silence / edit-audio-hit-map (layers, levels, glue bed, mute model audio, J/L, silence, music function, BPM grid). Its Chinese syllable rates and lip-sync line-writing advice are not adopted: we never lip-sync in clips."
+
+  - id: gram-performance
+    title: Performance vocabulary and the dialogue ladder
+    summary: Direct behaviour through channels and named end-expressions written as cues, and push speech off camera before it reaches a clip.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [script, shotlist, clip-prompt, qa]
+    rules:
+      - "Decompose emotion into channels: breath, eye behaviour, jaw, loss of focus, scanning, delayed recovery, control attempt, residue after the peak."
+      - "Write endpoint expressions as cues (prompt-micro-expression): frozen shock = mouth slightly open, eyes fixed, body still."
+      - "Quiet devastation = eyes glassy, jaw tight, slow swallow; suppressed smile = one mouth corner twitches, held down."
+      - "Cold calculation = eyes scanning left to right, face still; fierce focus = locked gaze, no blink for the clip."
+      - "Add movement quality and speed separately: 'hesitant, at the pace of a slow exhale'."
+      - "Name posture: weight forward or back, shoulders squared or collapsed, arms crossed or at sides."
+      - "Name four motion layers, one each at most: subject, internal (breath, hair), camera, environment."
+      - "Dialogue ladder: a look instead; else off-screen line over a listening shot (<=12 words); else VO over inserts; else reaction only."
+      - "Generate listening shots long (6 s, or 10 s faceless-safe) as flex; overlaps and interruptions are built in the edit by J-cut."
+      - "Kids mascots: whole-body poses that read as silhouettes; older_adult: hold expressions 2 s or more."
+    avoid: ["Emotion labels in prompts", "On-camera lip-sync (prompt-narration-direction)"]
+    sources: [hf-vocab, hf-camera, dsk-sound-dialogue, dsk-blocking-staging, prompt-micro-expression, real-performance]
+    confidence: craft-rule
+    supersedes: [hf-vocab]
+    notes: "hf-vocab is covered across this card, gram-camera-moves, gram-camera-motivation, gram-lens-dof, gram-composition (zoning, coordinates, crossing), gram-light-schemes-time (night register), gram-register-texture and edit-* (double contrast, J/L, match cut, micro-slice harvest). Not kept: Higgsfield platform features, @Image slot conventions, [0-Ns] timeline syntax (H3/Seedance only per dialects/hailuo.md), strobe recipe (flashing), film-stock names, mood grade table."
+
+  - id: gram-genre-documentary
+    title: Documentary grammar
+    summary: The viewer is owed nothing staged; grammar comes from a chosen position, available light and holds past the end.
+    mode_fit: [documentary, hybrid]
+    stage: [script, shotlist, clip-prompt, edit]
+    audience_fit: [curious_adult, older_adult, techie]
+    rules:
+      - "Engine: what happens while the camera is present; choose a position, never a staging."
+      - "Camera at eye level, 24-70mm worked like one zoom range; or a locked distant witness at 50-100mm."
+      - "Light available and uncorrected (mixed daylight and tungsten); grade for consistency only, never toward a look."
+      - "Hold every shot past the end of its action or line; the truth arrives after the subject stops performing."
+      - "No music under the hardest fact; production-style room tone and wind carry it."
+      - "Operator imperfection (late reframe, focus breathing, foreground cross) only on generic b-roll (mode-documentary)."
+      - "Shot list and lens: lens-observed-verite; beats and cost cap: mode-documentary."
+    avoid: ["Shake added to a perfectly lit, centred frame; verite is imperfect information, not imperfect stabilisation", "Generated footage presented as real footage of a real event"]
+    sources: [dsk-genre-playbooks, mode-documentary, lens-observed-verite]
+    confidence: craft-rule
+
+  - id: gram-genre-explainer
+    title: Explainer and corporate grammar
+    summary: Every 15 s advances understanding by one nameable step, shown with the specific noun, a still or barely moving camera and a voice spine.
+    mode_fit: [explainer, hybrid, documentary]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Contract: name the step each 15 s block adds; a visible change marks every idea boundary."
+      - "Generate the specific noun in the narration line ('a pick-and-pack station'), never its mood ('logistics')."
+      - "Camera locked or one push of 5-10 percent across a long beat; diagrams move, the camera does not wander."
+      - "Presenter or interview faces: 50-85mm, eye level, slightly off-axis, soft key at 3:1, background separated by one accent light."
+      - "Keep skin natural; a tinted face reads amateur at once."
+      - "B-roll ASL 3-6 s, inside the audience card scene length and DESIGN_SYSTEM change every 2-4 s."
+      - "Voice is the spine: bed 15-20 dB under and high-passed; check the mix once at low volume on a phone speaker."
+      - "Hands visible, one gesture per point; show the thing described, not people typing."
+    avoid: ["Stock abstraction: handshakes, glowing networks, rotating globes, floating icons"]
+    check: {type: mechanical, how: "lint stills prompts for stock-abstraction nouns (handshake, glowing network, globe, hologram); verify each scene's image noun appears in its narration line"}
+    sources: [dsk-genre-playbooks, mode-explainer, "DESIGN_SYSTEM#1", "DESIGN_SYSTEM#7", psychology_rules.md]
+    confidence: craft-rule
+
+  - id: gram-genre-social-vertical
+    title: Social vertical grammar (Shorts)
+    summary: A question in the first second, a visible change by 3 s, a payoff before the thumb moves, all born vertical and legible on a phone.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Structural, never dropped: hook inside 1 s, visible change by 3 s, another by about 7 s, a reason to rewatch at the loop point."
+      - "Craft items a lens may override (log it): burned-in text hook, high saturation, front light; then pay the hook in picture."
+      - "Wide-and-near beats far-and-long: 24-35mm close; subject moves toward camera; action in the centre safe column."
+      - "Shortest shot 0.7 s (format floor); the target ASL comes from the mode, lens and audience card (edit-pacing-math)."
+      - "Any camera move must read on a phone: complete at least a 5 percent scale or clear direction change within the clip."
+      - "Front-biased light about 2:1 for small screens outdoors, unless a lens sets the ratio."
+      - "Born vertical: never shoot or generate 16:9 and crop."
+      - "Keep generated clips short (one beat each) so a drift costs one beat."
+    avoid: ["Vendor feed ASL of 0.7-2 s as a target (edit-pacing-math)", "Saturation pushed past the adult DESIGN_SYSTEM palette"]
+    check: {type: mechanical, how: "lint: first visual event <=1 s, a scene or move change by 3 s; render_qa aspect"}
+    sources: [dsk-genre-playbooks, hf-camera, vsk-patterns-genres, edit-pacing-math, mode-loop-image, "DESIGN_SYSTEM#4"]
+    confidence: craft-rule
+    notes: "The vendor's 'slow moves die, use snap or whip' conflicts with our slow push-ins; resolved by requiring a move to complete visibly, not to be fast."
+
+  - id: gram-genre-trailer
+    title: Trailer grammar (teasers and long-form cold opens)
+    summary: Promise escalates in three acts and denies the ending; one silence before the barrage gives it scale.
+    mode_fit: [cold-open-drama, hybrid, montage]
+    stage: [script, shotlist, edit]
+    audience_fit: [curious_adult, techie]
+    rules:
+      - "Shape: premise 0-35 percent, escalation 35-80, barrage plus button 80-100."
+      - "ASL: act one 3-6 s, act two 1.5-3 s, act three 0.4-1 s, button 3-5 s."
+      - "One large move per act; more reads as desperation."
+      - "One full stop of silence (0.5-1 s) before the last act."
+      - "Never show the answer: the explainer is the third act, the cold open withholds it."
+      - "Bias one size tighter than the scene would use; never let the subject fall below a quarter of frame height."
+      - "Lock one hero look and identity string; adjacent trailer shots expose drift fastest."
+    avoid: ["older_adult and kids: barrage cuts under 2 s; use mode-cold-open-beats at audience pace instead", "A montage with no silence in it"]
+    sources: [dsk-genre-playbooks, mode-hook-trailer-openings, edit-pacing-math, cont-identity-string]
+    confidence: craft-rule
+
+  - id: gram-genre-dials
+    title: Genre as a configuration of seven dials
+    summary: Format owns the container, lens owns the craft dials, genre owns engine and contract; moving three dials changes genre.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, shotlist]
+    rules:
+      - "Seven craft dials: camera, movement, lighting, palette, pacing, sound, blocking. Genre adds engine and audience contract."
+      - "Precedence: owner and audience card > format (aspect, safe zones, clip length, ASL floor, beat container) > lens > genre."
+      - "Log deviations as 'genre default X -> chosen Y because Z' in director_notes; more than three moved dials means a different genre."
+      - "Hybrid: assign each dial to one parent genre; pacing is never shared."
+      - "Subvert exactly one dial against an otherwise correct genre; two broken dials read as incompetence."
+      - "Domestic tragedy module: an ordinary object treated with grave seriousness (empty fridge, shrinking coin); kids-safe catastrophe."
+      - "Psychological pressure module: locked frames, long close-ups, reflections, obstruction, quiet sound; adults only."
+      - "Action module: geography first, wides between close-ups, constant screen direction; spatial clarity over speed."
+    sources: [dsk-genre-playbooks, vsk-patterns-genres, lens-apply, arch-impact]
+    confidence: craft-rule
+    supersedes: [dsk-genre-playbooks, vsk-patterns-genres]
+    notes: "Kept: documentary, corporate/explainer, social vertical, trailer (gram-genre-* cards), the dial method and hybrid rules. Intentionally omitted: horror, thriller, noir, drama, romance, comedy, action (beyond the module line), sci-fi, fantasy, period, war, music video, commercial/product, fashion, animation-styled; these do not match our explainer and cold-open use, and the useful animation rules live in lens-frontal-diorama. vsk-patterns-genres: its arcs are owned by plan-story-arc, montage sequences by plan-montage-patterns, genre modules (domestic tragedy, psychological, action) here; music video, fashion, race and UGC modules and 5 s timecoded clip splits are dropped (one beat per 6 s Hailuo clip)."
+
+  - id: gram-lens-picker
+    title: Lens picker and difference matrix
+    summary: Pick the lenses.yaml lens from where the scene's meaning sits, check what it must change versus neutral, and keep one lens per episode.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, shotlist]
+    rules:
+      - "Write one line 'the meaning sits in ___'; then pick: what the viewer knows first -> lens-suspense-withheld; exact detail, information -> lens-procedural-precision."
+      - "Architecture or system outranking a person -> lens-geometric-order; human smallness against scale -> lens-monumental-scale."
+      - "A rule plus a running clock -> lens-countdown-mechanism; face before the thing, broad emotional legibility -> lens-wonder-reaction."
+      - "Forces acting on bodies and materials -> lens-elemental-weather; the gap, the unsaid, memory -> lens-neon-memory (weak for AI)."
+      - "Duration, real places, imperfect information -> lens-observed-verite; cross-sections and layouts, kids default -> lens-frontal-diorama."
+      - "Competence alone in a night city: lens-procedural-precision, swapping lens to 18-25mm with horizon at eye level and figure small via a tall depth subject."
+      - "That variant also takes two or more uncorrected municipal practicals (sodium, mercury, LED) and one shot per procedural step, cut on each step's completion."
+      - "Matrix check: the lens differs from neutral on two or more of shot count, ASL, mm, camera, key ratio, palette, subject size, sound lead."
+      - "Two lenses fit: keep the one serving the dramatic core; note in director_notes what the other would have changed."
+      - "Filter by audience_fit first; kids get only lens-wonder-reaction or lens-frontal-diorama."
+    check: {type: mechanical, how: "direction.lens is a lenses.yaml id with audience_fit including the episode audience; director_notes has the 'meaning sits in' line"}
+    sources: [dsk-styles-comparisons, dsk-styles-readme, dsk-style-mann, lens-apply, lenses.yaml]
+    confidence: craft-rule
+    supersedes: [dsk-styles-comparisons, dsk-styles-readme, dsk-style-mann]
+    notes: "The vendor picker names directors; this card maps the same 'scene is about' rows to our observable lens ids. Interior-weather, dream-memory, colour-mass, ornate-cruelty, social-ladder and deadpan-fate rows have no lens card and are intentionally not offered (poor fit for explainers or weak for AI). The night-city competence look is kept as a parameter swap on lens-procedural-precision rather than a new lens, since lenses.yaml is owned elsewhere; its 9:16 restatement (depth down a tall subject, not lateral distance) is in gram-vertical-frame."
+
+# Dialect vocabulary (read by lint.py dir_dialect_mismatch; not a card). A prompt in a `native` style segment (or a native-only
+# audience envelope) that uses `cinematic` words, or a cinematic segment that uses `native` words, is written in the wrong dialect
+# (DESIGN_SYSTEM section 11; gram-lens "illustrated looks have no lens", gram-register "pick one register"). Lowercase phrases,
+# matched on word boundaries; a trailing * matches any word ending.
+dialect_vocabulary:
+  cinematic: ["shallow depth of field", "depth of field", "bokeh", "anamorphic", "rack focus", "film grain", "volumetric*",
+              "photoreal*", "photographic", "realistic", "hyperreal*", "cinematic", "lens flare", "35mm", "50mm", "85mm", "24mm",
+              "f/1.4", "f/2.8", "telephoto", "wide-angle lens", "dslr", "film stock", "color grade*", "colour grade*"]
+  native: ["flat vector", "vector style", "storybook", "gouache", "watercolor", "watercolour", "cartoon", "cel-shaded", "cel shaded",
+           "thick friendly outlines", "thick outlines", "flat colour", "flat color", "paper cut*", "children's book", "picture book",
+           "crayon", "hand-drawn", "chibi", "kawaii"]

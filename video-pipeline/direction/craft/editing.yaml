@@ -1,0 +1,326 @@
+# craft/editing.yaml - cut, rhythm, seam, sound, grade and overlay rules (prefix edit-)
+# Original synthesis. DESIGN_SYSTEM.md owns colour, type, motion tokens, transitions, safe zones and mix levels:
+# these cards reference it and only add what it does not cover (cut logic for generated clips, sound design, grade discipline).
+# Frame counts assume our 30 fps Remotion timeline unless stated; vendor numbers were 24 fps and are converted.
+cards:
+  - id: edit-murch-rubric
+    title: Murch Rule of Six as the cut rubric
+    summary: Judge every cut, and above all the drama-to-explainer seam, against six criteria in priority order.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [edit, qa]
+    rules:
+      - "Score each cut in order: emotion, story, rhythm, eye-trace, screen plane (2-D direction), 3-D space."
+      - "A cut that fails emotion or story is re-timed or removed, whatever it scores on the other four."
+      - "A cut failing only screen plane or 3-D space may stay if emotion and story land; hide it with an insert or sound."
+      - "Eye-trace: the next focal point sits within about 15 percent of frame width of the last, unless the jump is the point."
+      - "Pace alone never justifies a cut; it is criterion three, not one."
+      - "Score the cold-open-to-explainer seam explicitly; it most often fails story (the question is not the one answered)."
+    check: {type: judgment, how: "verify.py per-cut table: six pass/fail columns, cite the frame pair; fail on any emotion/story fail"}
+    sources: [vsk-dramaturgy, "doc11#2 Murch", "DIRECTION-BRAIN-PLAN#5"]
+    confidence: craft-rule
+    notes: "Murch's 51/23/10/7/5/4 weights are his informal estimate; use the order, not the numbers."
+
+  - id: edit-dual-contrast-cut
+    title: Dual-contrast cutting
+    summary: Every cut changes both scale and camera behaviour so adjacent generated clips never read as a stutter.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Cold opens: each cut changes shot size AND camera behaviour (static, push, track, pan, crane) versus the previous shot."
+      - "Size change is two rungs on the same axis (WS to MCU), or one rung plus an angle change of at least 30 degrees."
+      - "Never put two same-size, same-angle, same-move shots side by side, except a deliberate rule-of-three run."
+      - "Rule of three: three shots, same size, angle and length, one element escalating; break size and length on the fourth."
+      - "Causal inserts: 0.3-0.5 s in a cold open, 0.8-1.5 s in the explainer; name whose hand or object and why it follows."
+      - "Explainer (Remotion) scene cuts change scale (whole diagram vs one part) OR motion direction; static cameras are allowed there."
+      - "Within shots.md's wide-to-medium-to-close progression, jump rungs; do not step WS to MS to MCU at the same angle."
+    check: {type: mechanical, how: "lint adjacent shot.size + shot.move pairs; flag same/same; flag one-rung change without angle change"}
+    sources: [ddr-dual-contrast-cutting, dsk-editing-assembly, "doc12#2.1 30-degree rule", shots.md]
+    confidence: craft-rule
+    supersedes: [ddr-dual-contrast-cutting]
+    notes: "drama-director requires camera type never repeat; DirectorSKILL accepts size OR angle. We require both for cold opens (generated clips drift, contrast hides it) and one of them for Remotion scenes."
+
+  - id: edit-cut-motivation
+    title: Cut-motivation taxonomy
+    summary: Every cut names one motivation; an unmotivated cut is what makes a sequence feel like a slideshow.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Tag each cut: action, look, sound, idea, emptiness, impact or juxtaposition. No tag, no cut."
+      - "Action: cut about a third into the move; B resumes after removing a sixth of the move (clamp 3-10 f)."
+      - "Look: cut the frame after the eyeline settles; the next shot shows what is seen (a faceless POV is the cheapest clip)."
+      - "Sound: picture cuts 5-15 f after the new sound starts."
+      - "Idea: cut where the narration's thought completes; it is the only motivation that survives a total visual mismatch."
+      - "Emptiness: cut as soon as a generated clip stops inventing, usually earlier than its end."
+      - "Impact: cut on the hit or 1-2 f before it; hiding that nothing visibly connects is legitimate."
+      - "Juxtaposition (cross-cut): each line identifiable from its first shot, blocks shorten 3/3, 2/2, 1/1, convergence named in advance."
+      - "Explainer cuts land on sentence or clause boundaries with the visual 100-200 ms ahead of its word (shots.md)."
+    check: {type: mechanical, how: "lint: every shot after the first has cut.motivation in the allowed set"}
+    sources: [dsk-editing-assembly, vsk-dramaturgy, shots.md]
+    confidence: craft-rule
+
+  - id: edit-clip-seams
+    title: Seams between separately generated clips
+    summary: Design last and first frames as a pair, match five things and break one, and repair mismatches cheapest-first.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary]
+    stage: [shotlist, clip-prompt, edit, qa]
+    rules:
+      - "Plan clip A's last frame and clip B's first frame together, before generating either."
+      - "Match five: subject screen position (within 15 percent of width), travel direction, light side and level, object state, eyeline side."
+      - "Break one: shot size (see edit-dual-contrast-cut)."
+      - "Match cut: one carrier only (shape, motion vector, sound or colour); a shape fills the same 20-40 percent area at the same position."
+      - "Repair ladder: insert 0.8-1.5 s, then empty-frame bridge (subject exits, next clip enters), then dissolve 8-12 f, then regenerate."
+      - "Never dissolve shots continuous in time; dissolves over 15 f read as time passing."
+      - "Fake whip: directional blur ramps up over A's last 8-12 f and down over B's first, same axis and direction."
+      - "Regenerate only for identity errors, defects through more than half the clip, or a physics break the eye locks onto."
+    sources: [dsk-editing-assembly, "doc12#2.1 match on action", "doc12#4 editing.match_on_action"]
+    confidence: craft-rule
+
+  - id: edit-reaction-insert
+    title: Reaction inserts fix late or over-smooth performances
+    summary: When a generated face reacts late or changes feeling too smoothly, cut around it with an insert instead of re-prompting.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Late reaction: hold the calm face as the stimulus appears, cut to an insert of the stimulus, return with the face already reacting."
+      - "Over-smooth turn: keep the tense peak, cut to a short insert (about 1 s), return on the released state; drop the gradual middle."
+      - "The insert shows the stimulus, the held object or the eyeline target, so the cut stays motivated (edit-cut-motivation look or impact)."
+      - "Insert lengths follow edit-dual-contrast-cut: 0.3-0.5 s in a cold open, 0.8-1.5 s in the explainer."
+      - "Plan it at shotlist: generate both ends of the feeling in full and bank faceless inserts (gram-coverage)."
+      - "Mark reusable spans (a listener's neutral middle, an unchanged object insert); never use the same span twice in one scene."
+      - "Try one cut before a second prompt revision; a trim costs nothing, a regeneration costs a take."
+    check: {type: judgment, how: "verify: a face reaction is never seen starting more than 0.5 s after its cause; tense and released states not joined by a visible morph"}
+    example: "Calm face as the rate board flips (0.8 s) -> insert: the digits land (0.6 s) -> back on her, jaw already set."
+    sources: [h3s-skill-audio-edit-post, h3s-skill-workflow-and-qa, "doc12#2.1 Kuleshov", gram-coverage, edit-handles-harvest]
+    confidence: craft-rule
+    notes: "Standard reaction-shot editing; h3s gives the H3 reason: the model arrives at timestamped states smoothly, so the 0.2 s anticipation and the abrupt turn real actors make are missing. Its example: two shots failed four prompt revisions, both fixed by one cut each [W]. Referenced by triage/flow cards."
+
+  - id: edit-pacing-math
+    title: Pacing math for Shorts and long-form
+    summary: Size shot counts from an average shot length, skew the distribution, and keep cold-open and explainer pacing separate.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, shotlist, edit, qa]
+    rules:
+      - "Shot count N = duration / ASL; reserve one anchor at 2-3x ASL and one shortest at 0.25-0.5x; keep the median below the mean."
+      - "Short cold open (5-10 s): 2-4 shots, ASL 1.5-3 s, anchor 3-4 s on the reveal or last shot."
+      - "Long-form cold open (10-20 s): up to 6 shots, ASL 2.5-4 s, shortening toward the turn, one full stop before the button."
+      - "Explainer scenes follow the audience card scene_len_sec with a visual change every 2-4 s inside each scene (DESIGN_SYSTEM)."
+      - "No three consecutive cut lengths within 0.3 s of each other; metronome cutting reads as a template."
+      - "Accelerating run: each shot about 0.7x the last, then a mandatory 2.5-4 s release; Shorts release 1-1.5 s."
+      - "Hold a beat (0.5-1 s still or quiet) before the biggest cut; speed without a pause is noise."
+      - "Cold-open VO is at most one line of 12 words or fewer; the explainer then returns to the audience pace."
+      - "older_adult: no cuts under 2 s and no accelerating runs; kids: cold open 6 s or less, no cut under 1 s."
+      - "Energy curve: fast hook, apex about two-thirds in, quick release; end on the payoff or loop, never a trailing outro."
+    check: {type: mechanical, how: "lint cold_open.duration_s and per-shot durations; three-equal rule; audience floors"}
+    avoid:
+      - "Vendor 'feed vertical' ASL of 0.7-2 s: each cut costs a paid take plus handle, and it fights comprehension."
+    sources: [dsk-editing-assembly, vsk-dramaturgy, shk-timing-rules, vcs-sf-retention, "doc12#1.2-1.3", "DESIGN_SYSTEM#1", "audiences/*.yaml", dsk-genre-playbooks]
+    confidence: proposal
+    supersedes: [shk-timing-rules]
+    notes: "Cold-open budgets come from doc 12 (untested proposals). Long-form shape borrows the trailer act structure. shk-timing-rules: its content-type shot baselines (1-6 s) lose to audience scene_len_sec and these ASLs; hook 0-2 s is mode-hook-three-layer; read-twice text is edit-text-overlay-cadence; its timeline-sum validation is a lint task."
+
+  - id: edit-handles-harvest
+    title: Handles, blind trims and harvesting
+    summary: Generated clips are longer than their cuts; budget handles, trim the unstable ends, and harvest several cuts from one clip.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, edit]
+    rules:
+      - "Generated seconds >= cut seconds + 1.5 s per kept take (2.5 s for a face or performance)."
+      - "Our MiniMax H3 clips are 6 s (providers.yaml): plan at most 4.5 s usable per clip, 3.5 s if a face carries the shot."
+      - "Blind-trim every clip before judging: drop about 10 f at the head (ramp-in) and 15 f at the tail (drift-out)."
+      - "First/last-frame pairs are the one exception: inspect both ends; if an end drifted off its still, regenerate."
+      - "Harvest 2-3 non-adjacent fragments from one clip for fast cutting; identity, light and grade then match for free."
+      - "Cut mid-motion near peak velocity, never on a static frame."
+      - "Retime 90-110 percent invisibly; past 15 percent it reads as a style choice."
+      - "Fix in the edit first (trim, punch-in up to 10 percent, grade, retime, insert) before paying for a regeneration."
+    check: {type: mechanical, how: "sum(cut_s) + 1.5 x kept_takes <= sum(generated_s); per-clip used span inside trimmed window"}
+    sources: [dsk-editing-assembly, dsk-failure-modes, afc-role-editor, nfd-editing-grammar, "config/providers.yaml", "doc12#2.5"]
+    confidence: craft-rule
+    supersedes: [afc-role-editor, nfd-editing-grammar]
+    notes: "nfd trims about 4 f per end at 24 fps; we keep 10/15 f at 30 fps because MiniMax ramp-in is longer in our clips (judgment). nfd's cut-hide, J/L and colour-match items live in edit-cut-motivation, edit-jl-sound-bridges and edit-color-grade; its paid plug-ins and NLE picks are not carried. afc's 1.5-3 s Shorts shot length loses to edit-pacing-math. Punch-in capped at 10 percent (vendor allows 20) because our 768P clips are already upscaled to 1080x1920 (judgment)."
+
+  - id: edit-hook-bridge
+    title: Cold open to explainer bridge (edit execution)
+    summary: Execute the one chosen bridge with exact timing so the cold-open question visibly hands over to the explanation.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [script, edit, qa]
+    rules:
+      - "Exactly one bridge per episode (freeze-rewind, J-cut, match cut, question card, pull-back, narrator step-in); modes.yaml chooses it."
+      - "The first explainer line names the cold open's object or question within 1 s after the bridge."
+      - "J-cut: narration or explainer music starts 0.5-1 s under the last drama shot; picture follows."
+      - "Question card: hard cut to a Remotion card, 0.5-1 s quiet or a sub-drop; the card holds at least 1 s after settling."
+      - "Freeze-rewind: freeze 8-12 f, desaturate over 6-9 f, scrub back 12-18 f; narration starts on the scrub."
+      - "Match cut: build the first explainer graphic to the last drama frame's silhouette, position and size."
+      - "Change style on purpose at the bridge (lens grade to audience palette) but never style and location together without one carrying anchor."
+      - "Optional loop: the final frame rhymes with the cold open's first frame (same object, screen position, size)."
+    check: {type: mechanical, how: "lint: direction.cold_open.bridge set; first explainer narration shares a key noun with the hook. verify: editing.bridge_quality"}
+    sources: ["doc12#1.4", "doc12#4 editing.bridge_quality", "doc11#2 Opening/Final Image", avg-before-after, dsk-editing-assembly]
+    confidence: proposal
+
+  - id: edit-jl-sound-bridges
+    title: J/L cuts and sound bridges in the editor
+    summary: All audio-led transitions are built in Remotion audio sequences, never requested from the video model.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [edit]
+    rules:
+      - "Build J/L cuts and pre-laps by offsetting Remotion audio Sequences; video models execute them unreliably."
+      - "Mute model-generated audio on import; it restarts at every clip seam."
+      - "J-cut lead 10-30 f (pre-lap 0.3-1.0 s, 0.5 s default); L-cut tail 0.5-2 s."
+      - "Sound bridge: one element spans the cut by at least 1 s on each side."
+      - "Swapping the ambience at a cut can replace an establishing shot: crossfade 15-30 f for a hard location change."
+      - "Hard silence of 4-12 f at a cut helps where the visual match is weak."
+      - "To hide a weak seam, cut picture mid-sentence so narration carries across it, not on a narration pause."
+    sources: [dsk-sound-dialogue, "doc12#1.4 CutCraft note", dsk-editing-assembly]
+    confidence: craft-rule
+
+  - id: edit-sound-brief
+    title: Five-layer sound brief
+    summary: Brief room tone, ambience, foley, spot effects and music per sequence, naming the absent layer and the music's function.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Brief five layers per sequence: room tone, ambience, foley, spot SFX, music; write 'none' for a deliberately absent layer."
+      - "Lay one unbroken room-tone and ambience region under the whole cold open; never re-trigger it at a cut."
+      - "Levels relative to narration at 0 dB: room tone -40 to -30, ambience -28 to -18, foley -22 to -14, SFX -16 to -6."
+      - "Music bed, ducking, loudness and peaks follow DESIGN_SYSTEM section 7 (-14 LUFS, true peak -1.5 dBTP, bed 18-20 dB under)."
+      - "Brief music by function (pressure, withhold, release, glue, clock, permission) and always fill a must_not line."
+      - "Music gets one entrance; skip it where the world's own sound must establish the scene, or the picture has a pulse."
+      - "No music under a 'what will happen' beat; it answers before the picture does."
+      - "Closer shot: foley 3-6 dB up and drier; the bed stays put."
+      - "Explainer SFX: at most one per transition, 200-500 ms, starting 0-1 f early (DESIGN_SYSTEM)."
+    avoid: ["Meme sounds; lyrics under narration (audience.yaml); a whoosh on every cut."]
+    check: {type: mechanical, how: "sound plan has five layer entries per sequence and a must_not per music cue; render_qa loudness"}
+    sources: [dsk-sound-dialogue, dsk-tpl-sound-plan, avg-viral-hook, "DESIGN_SYSTEM#7", audience.yaml]
+    confidence: craft-rule
+
+  - id: edit-silence
+    title: Silence engineering
+    summary: Use quiet as the default dial and true silence as a short authored event placed before what matters.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [edit, qa]
+    rules:
+      - "Quiet (room tone plus one ambience) is the default; true silence is an authored event."
+      - "True digital silence: 4-12 f as punctuation, 0.5-1.0 s for impact, never longer than 1 s."
+      - "Beyond 1 s hold a room-tone floor about 15 dB under the bed, never zero."
+      - "Place silence before the line or reveal that matters, and on the reaction, not on the action."
+      - "After a shock or reveal hold a breath shot with ambience only: 2.5-4 s long-form, 1-1.5 s in Shorts."
+      - "Silence only while the picture does something (a held stare, a stopped motion)."
+      - "Kids: no true silence over 0.5 s. older_adult: no sudden loud return after quiet (cap the jump at 6 dB)."
+    sources: [dsk-sound-dialogue, vsk-dramaturgy, dsk-editing-assembly, "doc12#1.2 drop to silence"]
+    confidence: craft-rule
+    notes: "Audience-specific limits are judgment, not sourced."
+
+  - id: edit-audio-hit-map
+    title: Timestamped audio hits pinned to visual beats
+    summary: Keep a frame-accurate list of every hit, entry and silence, each tied to the visual event it serves.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Keep hits[]: every SFX, bass hit, music entry, duck and silence has a frame and the visual event it serves."
+      - "A hit without a visual event (cut, impact, reveal, term on screen) is deleted."
+      - "SFX start 0-1 f before the visual (DESIGN_SYSTEM); a bass hit lands on the cut frame."
+      - "Mark 2-3 emphasis words per scene; each gets one visual event on that word (push completes, accent, term card)."
+      - "Visuals lead the narrated word they show by 100-200 ms (shots.md, temporal contiguity)."
+      - "Hook pattern: about 1-1.5 s near-silence, one hit on the first cut, music enters on the next beat."
+      - "With beat-driven music, cut on bar lines (128 BPM: bar = 1.88 s); off-grid cuts read as stumbles."
+      - "Explainer sections: no more than one hit per 1.5 s."
+    check: {type: mechanical, how: "each hits[] entry has frame + visual_ref; verify the referenced visual starts within 1 f"}
+    sources: [avg-viral-hook, avg-podcast-visual, dsk-sound-dialogue, "DESIGN_SYSTEM#7", shots.md, psychology_rules.md]
+    confidence: craft-rule
+
+  - id: edit-color-grade
+    title: Colour grade discipline (60:30:10)
+    summary: State each sequence's colour as dominant, secondary and accent tied to sources, with one accent per frame and few grade words.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, edit, qa]
+    rules:
+      - "State the grade as 60:30:10 (dominant, secondary, accent), each tied to a light source or surface, not a colour list."
+      - "One accent colour per frame (DESIGN_SYSTEM); reserve it for the story object the hook names."
+      - "At most two grading descriptors per prompt or grade (for example fine grain + lifted blacks); three collapse to mush."
+      - "Avoid the default teal-orange; use amber against deep green, warm-neutral against desaturated blue-grey, or monochrome plus one accent."
+      - "Neutralise AI clips, then tint 10-15 percent toward the episode background so they sit with flat art (DESIGN_SYSTEM)."
+      - "Cold-open clips may carry the lens grade; explainer scenes return to the profile grade block."
+      - "Change palette only at a story turn, one hue shift per turn, logged in the shot list."
+      - "Match neighbouring clips within half a stop before cutting; grading is cheaper than regenerating."
+    avoid: ["Cream plus terracotta AI default for adults (DESIGN_SYSTEM)", "Gradient text", "A different look per clip"]
+    sources: [hf-seedance-production-patterns, hf-style, dsk-lighting-color, "DESIGN_SYSTEM#2"]
+    confidence: craft-rule
+
+  - id: edit-anti-slideshow
+    title: Anti-slideshow rules
+    summary: Eight edit-stage rules that stop a sequence of generated clips or stills from reading as a slideshow.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [edit, qa]
+    rules:
+      - "Something moves in A's last 15 f and in B's first 15 f, roughly the same direction."
+      - "Change size two rungs (or one rung plus 30 degrees) at every cut."
+      - "Never open two consecutive shots on a static frame; give A a moving exit if B must start still."
+      - "One continuous audio bed under each sequence."
+      - "Start a movement in A and finish it in B where possible (hand reaches, object already held)."
+      - "Vary shot lengths: no three within 0.3 s."
+      - "Change axis or travel direction at least once every four shots, inside the 180-degree rule."
+      - "Montage needs one advancing variable (light, level, distance) under an unbroken bed; hide the last shot and it stays predictable."
+      - "Remotion stills: no frame static over 90 f (DESIGN_SYSTEM); a Ken Burns drift alone is not a change after 4 s."
+    check: {type: mechanical, how: "lint durations, sizes, axis changes; render_qa static-frame detector"}
+    sources: [dsk-editing-assembly, "DESIGN_SYSTEM#8", shots.md]
+    confidence: craft-rule
+    supersedes: [dsk-editing-assembly]
+    notes: "dsk-editing-assembly is fully covered across edit-cut-motivation, edit-clip-seams, edit-pacing-math, edit-handles-harvest and this card."
+
+  - id: edit-text-overlay-cadence
+    title: Text overlay timing and cadence
+    summary: Captions and on-screen words are keyword groups timed to speech, held long enough to read, rendered only by Remotion.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [edit, qa]
+    rules:
+      - "Captions are keyword word-groups timed to speech, never full-sentence transcripts (psychology_rules redundancy effect)."
+      - "A group appears on its first spoken syllable and holds at least 1 s after it settles (DESIGN_SYSTEM)."
+      - "Sizes, lines and positions come from the profile and DESIGN_SYSTEM sections 3-4; never invent sizes per episode."
+      - "Accent one emphasis word per group at most; never two accented words on screen."
+      - "A term appears on screen at the moment narration names it (audience.yaml analogy step 6)."
+      - "Static overlays (terms, numbers, pull-quotes) stay at least twice the reading time: 1 short word 1.2 s, 6 words 2.4 s, 14 words 4.8 s."
+      - "If the shot is shorter, carry the overlay across the cut, shorten the copy or lengthen the shot; never under-time it."
+      - "Text earns its place (term, number, stake, bridge question) and sharpens the spoken line; it never repeats it or decorates."
+      - "Cold open: no captions in the first 1-2 s when the image is the hook; a text card only if it is the bridge question."
+      - "Mute test: sound off, a viewer gets the hook within 5 s from picture plus captions."
+      - "All text is Remotion text; clips and stills carry none (shots.md rule 6)."
+    check: {type: mechanical, how: "caption timing vs TTS word timestamps; hold >= 30 f; overlay on-screen s >= 2 x read time (0.6 s word, 1.2 s <=6 words, 2.4 s <=14, 4.0 s <=25); word count per group"}
+    sources: [avg-podcast-visual, shk-on-screen-text, shk-timing-rules, psychology_rules.md, "DESIGN_SYSTEM#3-4", audience.yaml, shots.md]
+    confidence: craft-rule
+    supersedes: [shk-on-screen-text]
+    notes: "Read-twice (shotkit) is a floor for static overlays; DESIGN_SYSTEM principle 4 (rest >= 1 s after settling) still applies and is met by it. Speech-synced captions follow TTS timing. Overlay room is reserved at keyframe time (prompt-faceless-narrated); shk sizes and animations defer to DESIGN_SYSTEM."
+
+  - id: edit-deslop-review
+    title: De-slop review of stills and clips
+    summary: Before approval, check each frame against the model's beautifying default and push photoreal frames back toward real capture.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Compare each frame with the model's default: idealised faces, poreless skin, tidy saturated backgrounds, invented props or signage."
+      - "Photoreal prompts name a capture medium (handheld frame grab, 35mm scan, phone photo) instead of 'realistic'."
+      - "Each photoreal subject carries at least two imperfections with a stated place (crease at the elbow, scuffed baseboard)."
+      - "Photoreal: no glow family (HDR, bloom, luminous skin, glossy hair, perfectly even background)."
+      - "Illustrated looks are exempt from imperfections; check one dialect per episode and line, fill and texture consistency."
+      - "Too clean, centred and well exposed reads fake; documentary lenses add one operator imperfection per clip."
+      - "State any deviation from the default (age, body, ordinary casting) twice: in the description and as a constraint line."
+    sources: [vsk-de-slop, dsk-genre-playbooks, "DESIGN_SYSTEM#8"]
+    confidence: craft-rule
+    supersedes: [vsk-de-slop]
+
+  - id: edit-antislop-words
+    title: Antislop word list for prompts
+    summary: Low-yield words banned from still and clip prompts, with what to write instead.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Never in a prompt: cinematic, masterpiece, stunning, breathtaking, epic, amazing, beautiful, award-winning, professional, high quality."
+      - "Never in a prompt: 4K, 8K, best quality, ultra-detailed, hyper-detailed, hyper-realistic, photorealistic render, sharp focus, crisp, intricate detail."
+      - "Never in a prompt: flawless, perfect, seamlessly, a symphony of, groundbreaking, dynamic, energetic, moody, dramatic, intense, ethereal."
+      - "Replace each with a lens, a named light source, a material, a scale referent or a body action (prompt-adjective-replacements)."
+      - "No emotion labels without a body (he is sad, she is scared)."
+      - "Present tense, active voice."
+      - "Narration, captions and packaging use the packaging.md flagged-word list; do not duplicate it here."
+    check: {type: mechanical, how: "lint regex over shots[].image_prompt and clip prompts"}
+    sources: [ddr-antislop-compliance, afc-ref-unslop, vsk-de-slop, vsk-universal-rules, dsk-prompt-lexicon, hf-prompt-mcsla, packaging.md]
+    confidence: craft-rule
+    supersedes: [ddr-antislop-compliance, afc-ref-unslop]
+    notes: "afc-ref-unslop's symptom table is spread over prompt-adjective-replacements, edit-deslop-review and prompt-positive-phrasing (locked camera); its named film-stock looks are brand names and are rejected (prompt-style-lock). drama-director also bans age words (boy, girl, child) as a Seedance filter workaround. Not adopted: kids episodes describe child characters plainly; switch to 'figure' only if a provider filter rejects a prompt."

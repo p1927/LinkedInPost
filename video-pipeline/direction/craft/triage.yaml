@@ -1,0 +1,235 @@
+# triage.yaml - what to do when a generated still or clip is wrong (prefix fail-).
+# Format: CRAFT-SPEC.md. Failure codes F1-F19 are the DirectorSKILL taxonomy, mapped to our realism.yaml cards below.
+# Money rule: every regeneration is a paid call and stays behind the owner approval gate; triage decides WHAT to ask for, never spends silently.
+# Proposed log: out/<id>/takes.jsonl, one row per take {scene, take, input_hash, changed, verdict, codes[], rung, cost}.
+cards:
+  - id: fail-take-verdicts
+    title: Take verdicts ACCEPT / REVISE / REGENERATE
+    summary: Every delivered take gets exactly one verdict before anything re-fires; most flawed takes are edit problems, not generation problems.
+    stage: [qa, edit]
+    rules:
+      - "Grade each failed check: minor = soft fail or R1/R2-fixable; major = hard fail with a named fix; blocker = no fix path or unusable."
+      - "Verdict is derived, never chosen: only minor = ACCEPT with edit notes; 1-2 major, all edit-fixable = REVISE."
+      - "1-2 major needing a generation = REGENERATE; any blocker or 3+ major = REGENERATE(replan) and tell the owner."
+      - "REGENERATE(reroll): prompt was followed, sample is bad (generator failure); same prompt once, unchanged."
+      - "REGENERATE(rewrite): instruction missing, ignored or misread, or same flaw twice (prompt failure); change one variable (fail-retry-ladder)."
+      - "REGENERATE(replan): two+ codes in one clip, three strikes, or an irreducible shot; redesign the shot (fail-three-strike)."
+      - "Write the shot's 'good enough' bar before take one, or the bar silently becomes perfect."
+    check: {type: mechanical, how: "realism report: verdict recomputed from issue severities and must match; takes.jsonl rows carry verdict + codes + severities; approve refuses any clip without ACCEPT/REVISE"}
+    sources: [hf-troubleshoot, dsk-tpl-qc-checklist, doc11#1A-7, doc12#4, shk-critique-rubric, shk-critic-skill, shk-qa-loop]
+    confidence: craft-rule
+    supersedes: [shk-critique-rubric]
+    notes: "ONE scheme: our severity words (realism.yaml) and three verdicts. Shotkit minor/major/blocking map 1:1; its REVISE (re-prompt) = our REGENERATE, its REJECT (no fix path) = REGENERATE(replan); our extra REVISE tier exists because the editor is free. Its six layers are our realism cards. Higgsfield's five verdicts and DirectorSKILL's 80/65 bands collapse into the same three."
+
+  - id: fail-triage-tree
+    title: 60-second triage
+    summary: Turn a complaint into one code per symptom, then read fixes; never fix symptoms one at a time when they share a root.
+    stage: [qa]
+    rules:
+      - "Count symptoms first; one triage pass per symptom; count mechanisms, not sentences."
+      - "Translate moods: 'fake' = weight/contact, speed, light drift; 'looks AI' = melt, hands, rubber speed; 'cheap' = speed, flat light; 'boring' = replan, not regen."
+      - "Watch once at 1x, once at 0.25x; take the first matching branch below."
+      - "Nothing moves or only a zoom: F2. Ignores action: F4. Ends mid-action: F5. Floats/no weight: F14. Wrong speed: F13. Camera drift: F6."
+      - "Different person/garment: F1. Melt/fuse/breathing: F3. Hands/teeth/eyes: F10. Look changes: F16."
+      - "Intruder or duplicate: F9. Text/logo/watermark: F11. Anachronism: F8. Light changes: F12. Prop vanishes/changes: F19. Crop/aspect: F17."
+      - "Mismatch only against neighbours: F7 (state) or F18 (seam). Picture fine, sound wrong: F15."
+      - "Failure time tells cause: wrong from frame 1 = keyframe/prompt; after ~60-70% of the clip = length; at a join = seam."
+      - "Two codes in one clip: go straight to replan. Three: it is three shots."
+    example: "Code to card: F1 real-identity, F2/F4/F5 real-action-end-state, F3 real-morphing, F6 real-camera-behavior, F7/F18 real-splice-continuity, F8 real-period-tech, F9 real-population, F10 real-hands-anatomy, F11 real-text-counts, F12 real-light-source, F13 real-motion-quality, F14 real-physics-contact, F15 real-audio-picture, F16 real-look-drift, F17 real-framing-safe, F19 real-object-permanence"
+    check: {type: none}
+    sources: [dsk-failure-modes, dsk-tpl-qc-checklist, hf-troubleshoot]
+    confidence: craft-rule
+    supersedes: [dsk-failure-modes]
+    notes: "Per-code fixes live in the realism cards' ai_safe lines; the ladder and three-strike rule in this file. Their Chinese labels and before/after prompt pairs are not carried over."
+
+  - id: fail-cost-ladder
+    title: Cost ladder, edit before regenerate
+    summary: For a clip already in hand, try the free edit-side fixes in Remotion first; spend a generation only when the defect is in the action itself.
+    stage: [edit, qa]
+    rules:
+      - "R1 Remotion, free: trim past the melt, retime 90-115%, crop/reframe, grade/tint, freeze frame, add the Remotion text the model mangled."
+      - "R2 Remotion, free: cover with a 0.5-1 s cutaway, insert, or swap the beat to a Remotion-native scene (diagram, orbit, number)."
+      - "Performance nearly right but late or too smooth: cut, do not re-prompt; a stimulus insert hides a late reaction (edit-reaction-insert)."
+      - "R3 one paid gen: prompt edit, one variable (fail-retry-ladder)."
+      - "R4 paid: shorter duration or a rebuilt keyframe (image + video cost)."
+      - "R5 paid, planning first: replan the shot (shorter, closer, simpler, split)."
+      - "R6 free: cut the shot; verify the beat survives in narration or another scene."
+      - "Defect localised within trim handles, under 8 frames, or grade-only: R1/R2 immediately, regardless of other rungs."
+      - "Skip to R5 when two+ codes, precise hand contact over 1.5 s, failure after second 5 of a long clip, or three gens spent."
+    check: {type: mechanical, how: "takes.jsonl rung field; flag a REGENERATE row whose codes are all in the R1-fixable set (F12 small drift, F13, F16, F17, F18, late F3)"}
+    sources: [dsk-failure-modes, hf-troubleshoot, hf-seedance-failure-modes, h3s-skill-audio-edit-post]
+    confidence: craft-rule
+    notes: "h3-storyboard (H3, n=1): two cuts fixed shots that four prompt rewrites each had not; the reaction-insert recipe itself lives in editing.yaml. DirectorSKILL orders rungs by work discarded and puts fix-in-edit at L6 but says edit-side triage outranks it once a clip exists. We put edit first because our editor (Remotion) is free and every regen is a gated paid call. Their L4.5 video-to-video pass is omitted: Hailuo has no v2v relight/regrade today."
+
+  - id: fail-three-strike
+    title: Three-strike rule and shot redesign moves
+    summary: After three failed generations of one shot design, change the shot, not the prompt; pick exactly one redesign move.
+    stage: [shotlist, qa]
+    rules:
+      - "Count gens per shot design; at three, stop rewording; the fourth edit is usually the second again."
+      - "Same failure twice = the prompt: stop rolling, fix it. Different failures each time = the shot is too ambitious: simplify or split."
+      - "Moves, pick one: shorten 40-50%; push in one size (two if anatomical); simplify to one motion; split into two clips."
+      - "More moves: first+last frame stills; substitute a reaction or insert; move the action off-screen and show the consequence."
+      - "Strike count resets when the design changes; the per-shot money cap does not (fail-budget-gate)."
+    example: "Docking shot melts at second 4 three times: split into (a) capsule approaching, locked, 3 s and (b) insert of the latch closing, 2 s; contact falls on the cut."
+    check: {type: mechanical, how: "takes.jsonl: >=3 REGENERATE rows with the same design hash and no replan row = warn"}
+    sources: [dsk-failure-modes, hf-troubleshoot, doc11#1A-3, afc-ref-reroll-review]
+    confidence: craft-rule
+    notes: "Dice-vs-prompt rule from ai-film-crew replaces the older 'failing differently = one more roll'; it agrees with the split ruling in fail-retry-ladder. Three strikes changes the SHOT; it never licenses a 'model cannot' claim (fail-limit-claims)."
+
+  - id: fail-retry-ladder
+    title: Retry ladder, one variable at a time
+    summary: Each retry changes exactly one thing and logs it, so the log shows what fixed it.
+    stage: [clip-prompt, qa]
+    rules:
+      - "Change one: a prompt clause, OR duration, OR the keyframe, OR the mode (T2V/I2V/first-last), OR the model."
+      - "Order: reroll once if the prompt is sound; second failure = over-packed, split beats; then switch model for that shot; stop at three paid."
+      - "Rewrite from what the delivered take shows, not from the plan; state completed beats as done."
+      - "Log the changed variable in the take row; a fix that works becomes a cookbook note, not luck."
+    avoid:
+      - "Rewording the whole prompt and changing duration in the same retry"
+    check: {type: mechanical, how: "takes.jsonl: consecutive rows for one scene differ in exactly one of {prompt_hash, duration, keyframe_hash, mode, model}"}
+    sources: [hf-troubleshoot, hf-discipline, doc11#1A-1, doc11#1A-3]
+    confidence: craft-rule
+    notes: "Higgsfield records 'different flaws on two takes: stochastic (batch) vs over-packed (split)' as OPEN. We default to split for our 6 s clips: a split costs the same as a batch and also shortens the clip, which helps F1/F3/F19."
+
+  - id: fail-describe-dont-negate
+    title: Describe, do not negate
+    summary: Models execute descriptions and fill every gap; write the positive state you want, ban only what the model would do anyway.
+    stage: [clip-prompt]
+    rules:
+      - "Replace 'no crowd' with what is there: 'exactly one person; behind her a blank wall'."
+      - "Allocate rather than forbid: 'yellow exists only inside the lamp bulb'."
+      - "A ban is legitimate only when the untouched default is already the failure (text, subtitles, music, duplicates); keep it short, after the positive line."
+      - "Never write 'nothing changes' or 'stays still' as the whole instruction; name the still camera and the one thing that moves."
+      - "MiniMax H3 (and Hailuo 2.3) has no negative field: no freestanding 'NO ...' lists in motion_prompt."
+    avoid:
+      - "Bare quality pleas ('film grain', 'soft focus', 'imperfect') that degrade the whole frame; put imperfection in the subject"
+    check: {type: mechanical, how: "lint: flag motion_prompt with >2 negations (no/not/never/without/avoid), or 'nothing changes'; allow the text lock tail qa_checklist already expects"}
+    sources: [hf-shared-negative-constraints, doc11#1A-4, doc11#1A-5, vsk-fixes-skeletons, doc12#5]
+    confidence: craft-rule
+    supersedes: [hf-shared-negative-constraints]
+    notes: "Consistent with qa_checklist no_text_in_image_prompts, whose 'no text' exception passes the legitimate-ban test."
+
+  - id: fail-switch-mode-model
+    title: When to switch mode, model, or medium
+    summary: Switch the control mode or model for one shot only after the ladder says the prompt is not the problem; the cheapest switch is to no model at all.
+    stage: [clip-prompt, qa]
+    rules:
+      - "Soft, small or warped input still: rebuild the keyframe (I2V asset failure); no prompt fixes it."
+      - "Missing end state or prop must survive: on MiniMax H3 add a last_frame still (first+last frame); Hailuo 2.3 has none."
+      - "first/last frame and reference images cannot share one H3 request: choose frame control or reference identity per shot."
+      - "Same shot fails three times on one engine: try one other configured provider for that shot only, with owner approval."
+      - "Mechanism, numbers, maps, orbits: switch the scene to a Remotion-native visual; AI clips are for atmosphere and stakes."
+      - "Irreducible shot (fail-irreducible): do not switch models; change the shot."
+    check: {type: none}
+    sources: [dsk-failure-modes, hf-troubleshoot, doc12#2.5, providers.yaml, "dialects/hailuo.md#0", adapters/video_minimax.py]
+    confidence: proposal
+    notes: "VERIFIED 2026-10-05 (MiniMax video-generation-v2 docs, dialects/hailuo.md): H3 takes content items with role first_frame and last_frame, at most one each, not combinable with reference_image/video/audio. Hailuo-2.3 (v1 fallback) has no last-frame slot; Hailuo-02 had FL2V. adapters/video_minimax.py accepts last_frame=, but run.py does not pass one yet, so the card stays proposal until it does."
+
+  - id: fail-irreducible
+    title: Shots not worth generating
+    summary: Shot types current models fail regardless of prompt craft; plan around them at shot-list time instead of spending generations.
+    stage: [script, shotlist]
+    rules:
+      - "Precise hand work over 1.5 s; hands operating a branded product: intent, cut, result insert."
+      - "Contact between two bodies (handshake, hug, fight, handoff): two singles, contact on the cut."
+      - "Readable text, exact counts, dial readings: Remotion overlay or VO."
+      - "Matched reflections; individuated crowd faces; prop occluded and re-revealed in one clip."
+      - "Re-test this list per model version; until re-tested, treat it as standing."
+    check: {type: mechanical, how: "PRE gate: shot descriptions matching these patterns need a recorded workaround in director_notes"}
+    sources: [dsk-failure-modes, ddr-engine-constraints, doc12#2.5]
+    confidence: craft-rule
+
+  - id: fail-budget-gate
+    title: Declared budget and stop rules
+    summary: Before take one, declare a take budget and a good-enough bar; stop and present options instead of looping.
+    stage: [shotlist, qa]
+    rules:
+      - "Per shot: default 3 paid attempts; a hero shot may declare more in director_notes, with owner approval."
+      - "Half the declared budget with no progress on the same flaw: change strategy (split, mode, medium)."
+      - "Any one shot above ~8% of the episode's generation budget: cut or replace it."
+      - "At the cap present named options: accept best take, re-scope, swap to Remotion scene, or ship a placeholder note. Never omit silently."
+      - "Batch identical takes only for a shot whose prompt and keyframe already passed review."
+    check: {type: mechanical, how: "takes.jsonl count per scene vs direction.take_budget (proposed); run.py refuses further gens past cap without --approve"}
+    sources: [hf-troubleshoot, dsk-failure-modes, doc11#1A-6, doc11#4]
+    confidence: proposal
+
+  - id: fail-salvage
+    title: Salvage before discard
+    summary: A failed clip often holds 1-3 usable seconds; review frame by frame and bank them before regenerating.
+    stage: [edit, qa]
+    rules:
+      - "Scrub every clip frame by frame; one bad frame rejects that section, not necessarily the clip."
+      - "Mark in/out of the clean span; a 2 s clean opening can be the shot, an insert or a reaction elsewhere."
+      - "Late-onset failure (after ~60%) in a clip whose start is clean: trim, not regen."
+    check: {type: none}
+    sources: [hf-seedance-failure-modes, dsk-failure-modes]
+    confidence: craft-rule
+
+  - id: fail-repair-note
+    title: Repair note and prevention map
+    summary: Every failed shot gets a one-block note; a code that repeats three times in a project is a process bug at an earlier stage.
+    stage: [qa]
+    rules:
+      - "Four lines, in order: CLASS (F-code, generator or prompt failure), EVIDENCE (takes and frame times), CHANGE (exactly one), KEEP."
+      - "KEEP lists what already works and must survive the change (keyframe, light line, identity string, duration)."
+      - "Then log: scene, take n, severity per issue, verdict, rung used, prevention."
+      - "Multiple codes: name the single upstream decision (duration, size, over-scoped action) and fix that first."
+      - "Repeat code x3: fix the stage, not the prompt: F1/F7/F11/F19 keyframe stage, F2/F4/F5/F9/F14 blocking, F3/F6/F10/F13 shot list, F12/F16 style lock."
+    example: "CLASS F5, prompt failure. EVIDENCE takes 1-2 stop at 4.1 s, capsule still moving. CHANGE add 'End with the capsule nose 1 m from the port, motion stopped'. KEEP keyframe, light line, 6 s. Rung R3; prevention: shot.end_state was empty."
+    check: {type: mechanical, how: "takes.jsonl rows require class, evidence, exactly one change and keep when verdict is REGENERATE"}
+    sources: [dsk-failure-modes, dsk-tpl-qc-checklist, hf-troubleshoot, afc-ref-reroll-review, shk-critic-skill]
+    confidence: craft-rule
+    supersedes: [afc-ref-reroll-review]
+    notes: "Report format from ai-film-crew reroll-review; its failure-class table maps onto fail-triage-tree codes and its decide rules onto fail-three-strike. Shotkit's 'distinguish prompt failure from generator failure' is the CLASS suffix."
+
+  - id: fail-prompt-catalogue
+    title: Prompt-shaped failures and their rewrites
+    summary: Symptoms whose cause is how the prompt was written, not the dice; each fix changes the description, never adds a ban.
+    stage: [clip-prompt, qa]
+    rules:
+      - "Damage comes back mild: it was written as an event; write it as a state already true in frame one, shown in the keyframe."
+      - "Dark mush where a sequence was asked ('a series of framings, then...'): one generation is one image; one sustained image, one move, split the rest."
+      - "Duplicate prop appears: it was placed by frame position; define it by whose hands hold it ('exactly one wrench, the one in her right hand')."
+      - "Something that passed before now fails after the prompt grew: added text weakens existing text; re-verify every passed item, restate wardrobe and props in-shot."
+      - "Strangers' faces on walls: framed photos, portraits or posters were set dressing; dress walls with faceless things (maps, shelves, tools, plants)."
+      - "People in a plate meant to be empty: a cast line is still in the prompt; delete it and describe the empty place positively."
+    check: {type: mechanical, how: "lint (proposed): flag event verbs for destruction (smash, wreck, burn) without 'already'; 'series of', 'then cuts to' in one motion_prompt; photo/portrait/poster tokens; prompt length up >30% vs last take without a re-verify row"}
+    sources: [aif-ref-prompting, aif-skill-core, fail-describe-dont-negate, prompt-motion-fill]
+    confidence: craft-rule
+    supersedes: [aif-ref-prompting, shk-failure-modes]
+    notes: "From ai-film's failure catalogue and non-negotiables 10, 12, 13 (Pika/Seedance-measured, not yet re-tested on H3). provider_timeout lives in fail-limit-claims. Other catalogue rows are owned elsewhere: wardrobe/accessory bleed (continuity.yaml), music ban and silent cards (real-audio-picture), legible threat (archetypes)."
+
+  - id: fail-limit-claims
+    title: Exhaust before declaring a model limit
+    summary: A 'the model cannot do X' note rewrites the workflow, so it needs more evidence than a fix does; scope every limit to the configuration tried.
+    stage: [qa, clip-prompt]
+    rules:
+      - "Iterating: change one variable at a time (fail-retry-ladder). Concluding 'impossible': vary several first."
+      - "Before a limit claim: three variations, then one change each of duration, first frame and phrasing; H3 exposes no seed, so variations replace seeds."
+      - "Write 'fails under this configuration (tried a, b, c)' and 'ran up to N', never 'the model cannot' or 'limit N'."
+      - "Check the evidence is clean (same input, no queue or load time in a timing) before inferring a limit."
+      - "Infrastructure errors (provider timeout, queue failure, 5xx) are not content failures: retry unchanged, no strike; simplify only after two."
+      - "Exhausting is capped by fail-budget-gate: at the cap, log 'untested beyond a, b, c' and change the shot instead."
+    check: {type: mechanical, how: "lint over cookbook and card notes: flag 'cannot', 'limit', 'max' claims about a model without a 'tried' list; takes.jsonl rows with error class infra do not count as strikes"}
+    sources: [h3s-skill-workflow-and-qa, aif-skill-core, aif-ref-prompting, shk-failure-modes, fail-irreducible]
+    confidence: craft-rule
+    notes: "h3-storyboard (H3, each n=1): an insert, a micro-expression and a duration 'limit' were all wrongly declared impossible and later worked with a new seed or shorter length. Shotkit's '5+ rerolls = the model cannot' is rejected in favour of configuration-scoped wording. ai-film measured provider_timeout as a ~20 min queue ceiling on its provider; ours may differ, the rule is the same."
+
+  - id: fail-repair-or-regenerate
+    title: Repair or regenerate
+    summary: Repair a take whose identity and geometry are intact and whose defect is local; regenerate early when identity or structure has gone, before later shots get matched to it.
+    stage: [qa, edit]
+    rules:
+      - "Repair (R1/R2) when the subject is still recognisably the same and the defect is local in space or time."
+      - "A few bad frames: cut or cover that window only; leave the clean rest untouched (fail-salvage)."
+      - "Flicker across frames that each look fine is temporal: frame-by-frame fixes worsen it; trim or regenerate."
+      - "Different person, changed geometry or a missing landmark (scar side, garment detail): regenerate from the canon frame."
+      - "Reject any fix that looks sharper but less like the canon frame."
+      - "Decide before matching neighbours to it: a wrong take accepted early multiplies into several regenerations."
+    check: {type: judgment, test: "Is the repaired take still the canon identity at playback speed, not only in single frames?", how: "repaired clip beside canon frame, 1x then 0.25x"}
+    sources: [ccs-repair, ccs-skill, fail-cost-ladder, real-identity]
+    confidence: craft-rule
+    supersedes: [ccs-repair]
+    notes: "character-continuity's face-restoration pipeline (CodeFormer/GFPGAN settings, masked restoration, upscaling) is not in our stack and is not carried over; the decision rule and the 'sharper but less recognisable' reject are."

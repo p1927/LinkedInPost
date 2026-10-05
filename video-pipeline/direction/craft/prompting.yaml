@@ -1,0 +1,475 @@
+# craft/prompting.yaml - model-independent clip and still prompt craft (prefix prompt-)
+# Original synthesis. Model dialects (Hailuo bracket syntax, limits) live in dialects/ (hailuo.md supersedes hailuo_cookbook.md);
+# shot vocabulary and storyboard rules live in shots.md. These cards fill the dialect, they do not replace it.
+# Supersessions of existing text are listed in prompt-reconcile-existing.
+cards:
+  - id: prompt-shot-sentence
+    title: Shot-sentence method
+    summary: Write each clip so the subject's beat triggers the camera, and the last clause shows a new situation.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Tie the camera to the subject: name the beat that starts the move and the beat that stops it."
+      - "If nothing changes, lock the camera; every move answers 'what changed?'."
+      - "Each clip does one job: change emotion, advance action, or raise pressure. A clip with none is cut."
+      - "End on a photographable new situation that differs from the first frame (state, position or reveal)."
+      - "One subject, one action, one camera behaviour per clip (shots.md rule 7, hailuo_cookbook)."
+      - "Keep the camera in its own clause (shots.md rule 5); only its timing refers to the action."
+      - "Describe the consequence, not only the act: the lid unscrews, dust puffs out of the seam."
+      - "Give each shot three concrete details: one environmental pressure, one physical micro-action, one sound or visual motif."
+    example: "[Push in] The gloved hand closes on the docking handle; the push-in ends as the small lamp beside it turns green and the hum drops."
+    check: {type: judgment, how: "verify: each clip has a named trigger for any move and an end state different from its start"}
+    sources: [vsk-dramaturgy, vsk-universal-rules, dsk-tpl-video-prompt, shots.md, hailuo_cookbook.md]
+    confidence: craft-rule
+    supersedes: [vsk-universal-rules]
+
+  - id: prompt-i2v-anatomy
+    title: Image-to-video prompt anatomy
+    summary: Seven slots in a fixed order and a word budget, describing only change because the keyframe already proves the rest.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt]
+    rules:
+      - "Slot order: camera (one move + speed, or locked); start state; one paced, directed action; one environment response; end state."
+      - "Close with one invariant clause, then up to three exclusions (prompt-positive-phrasing)."
+      - "40-80 words for image-to-video, 60-120 for text-to-video; our H3 adapter cuts text at 7000 characters."
+      - "Lead with subject and action, style last; never re-describe the keyframe: identity, set, light and style become one invariant clause."
+      - "Put pace inside the action ('lowers to her side over about two seconds'); never a floating 'slow motion'."
+      - "Express duration as a complete action with visible endpoints, not seconds, unless the model supports timestamps."
+      - "Speed words are ordinal: almost imperceptible, very slow, slow, steady, brisk, fast. Above brisk, keep faces out."
+      - "Cut when too long: style words, re-described image, extra environment motion, extra exclusions, extra camera detail. Never the action, direction or end state."
+      - "Text-to-video only for faceless plates and inserts; any recurring face starts from an approved keyframe."
+      - "Extensions restate the observed last frame as a still, then 'do not restart, do not reset the pose, do not cut'."
+    example: "[Push in] The paper boat rests at the stream edge. A gust pushes it into the current; it turns once and drifts left out of the reeds. Ripples spread behind it. End with the boat mid-stream, centred. Same boat, same gouache texture, same morning light."
+    check: {type: mechanical, how: "lint word count per prompt type; one camera token; end-state clause present ('End with' / 'ends')"}
+    sources: [dsk-tpl-video-prompt, dsk-prompt-lexicon, hf-prompt-mcsla, vsk-universal-rules, "doc12#5 cross-model rules", hailuo_cookbook.md]
+    confidence: craft-rule
+    supersedes: [dsk-tpl-video-prompt]
+    notes: "dsk multi-shot timestamp and dialogue templates not adopted: one clip per shot, no clip speech."
+
+  - id: prompt-five-line-template
+    title: Five-line clip template
+    summary: Author every clip as STYLE REFERENCE / SCENE / MOTION / AUDIO / NEGATIVE, then flatten to the model dialect.
+    mode_fit: [explainer, hybrid, montage, cold-open-drama, documentary]
+    stage: [clip-prompt]
+    rules:
+      - "STYLE REFERENCE: 'Match the attached keyframe exactly' plus the episode STYLE descriptor, verbatim."
+      - "SCENE: one scene and one action matching that block's narration line."
+      - "MOTION: one camera behaviour plus the animation behaviour (drift, settle, scale change)."
+      - "AUDIO: omit for MiniMax H3 (Remotion mutes clip audio); for other sound models, ambience or SFX only, never voice."
+      - "NEGATIVE: only bans that pass the default test (prompt-positive-phrasing): style drift, captions, on-screen text, logos."
+      - "One narration line maps to one clip; a clip never serves two lines."
+      - "For MiniMax, flatten to the dialects/hailuo.md order: [camera] subject + action. scene. style; keep the five labels in episode.json."
+    example: "STYLE REFERENCE: match the keyframe; soft gouache and coloured pencil, thick friendly outlines. SCENE: the snail climbs onto a leaf. MOTION: [Pedestal up] slow. AUDIO: none. NEGATIVE: captions, on-screen text."
+    sources: [hfs-video-explainer-prompts, hfs-video-explainer, hailuo_cookbook.md]
+    confidence: craft-rule
+    supersedes: [hfs-video-explainer-prompts, hfs-video-explainer]
+    notes: "hfs-video-explainer's CLI, preset, paid-model and server-assembly steps are vendor tooling and are not carried over. Its 10 s block idea maps to our scene-per-narration-line structure."
+
+  - id: prompt-style-lock
+    title: Style lock
+    summary: One style descriptor and one style key per episode, pasted verbatim, with lens words added only to cold-open clips.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Paste one STYLE descriptor verbatim into every still and clip prompt: the audience card illustration_style, unchanged."
+      - "Make one style key (abstract swatch or mascot sheet) and derive every keyframe from it."
+      - "Illustrated looks end with non-photoreal tokens ('illustrated, not a photo, no live action'); photoreal shots name a capture medium."
+      - "One style anchor plus one or two supporting tokens; 'cinematic' adds nothing."
+      - "Cold-open clips add the chosen lens anchor_prompt (lenses.yaml); explainer clips do not."
+      - "Never use a director, artist, studio, film or brand name as a style anchor."
+      - "One visual dialect per episode (DESIGN_SYSTEM); a photoreal cold open resets to the audience look at the bridge."
+      - "Recurring characters and props use the continuity identity strings verbatim (cont- cards)."
+      - "Style donor images give look only; never their people, text or objects."
+    avoid: ["Paraphrasing the style string between clips", "Vendor advice to anchor on a named director or studio look"]
+    check: {type: mechanical, how: "lint: illustration_style substring present in every image prompt; proper-noun style anchors flagged"}
+    sources: [hfs-video-explainer-prompts, hf-style, vsk-golden-rules, hf-prompt-mcsla, "DESIGN_SYSTEM#1", "audiences/*.yaml", hailuo_cookbook.md]
+    confidence: craft-rule
+    supersedes: [vsk-golden-rules]
+    notes: "vsk-golden-rules 'genre anchors' and hf-prompt-mcsla 'named referent: a director' are rejected under CRAFT-SPEC's no-named-director rule; lens params replace them."
+
+  - id: prompt-verb-banks
+    title: Verb banks and the conversion procedure
+    summary: Turn every abstraction into one body part or object with a verb, direction, magnitude and duration.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt]
+    rules:
+      - "Convert: name the abstraction, picture 3 s of silent camera, pick ONE body part or object, give verb + direction + magnitude, delete the abstraction."
+      - "Pick verbs from the banks below; every one changes pixels."
+      - "One dominant environmental element per shot; a second only if the first causes it (wind lifts the hem)."
+      - "Add slow breathing to held character clips; it stops them reading as stills."
+      - "One degree adverb per action (gently, deliberately, abruptly)."
+    banks:
+      locomotion: "strides, shuffles, halts mid-stride, pivots, backs away, edges forward, crouches, rises"
+      hand: "reaches, grips, releases, presses the palm flat, sets down, turns it over, lets the arm hang"
+      head_gaze: "turns the head, lowers the head, lifts the chin, glances, holds the gaze, looks past the lens"
+      torso: "straightens, slumps, leans in, squares the shoulders, shifts weight, stiffens"
+      breath: "inhales sharply, exhales slowly, holds the breath, the chest rises and falls"
+      garment_hair: "the hem lifts, the coat flares, a strand falls across the face, the fabric darkens as it soaks"
+      environment: "rain streaks the glass; steam curls off; dust motes turn in the shaft; a shadow crosses; leaves shiver"
+    sources: [dsk-prompt-lexicon, hf-prompt-mcsla, vsk-universal-rules]
+    confidence: craft-rule
+    supersedes: [dsk-prompt-lexicon]
+    notes: "dsk-prompt-lexicon is covered across this card, prompt-adjective-replacements, prompt-positive-phrasing and prompt-i2v-anatomy; its Chinese term tables and period noun banks are not needed for our English pipeline."
+
+  - id: prompt-adjective-replacements
+    title: Adjective-soup replacements
+    summary: Replace each low-yield adjective with an observable lens, light, material, scale referent or body action.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Replace before sending; if no physical replacement exists, the shot is not designed yet."
+      - "cinematic -> lens + frame + light ('40mm, eye level, single hard source camera-left')."
+      - "epic -> a scale referent ('the figure is one twelfth of frame height against the wall')."
+      - "dramatic -> name the contrast ('lit on one side, the other falls to black')."
+      - "moody -> named source + ratio; atmospheric -> the airborne medium ('mist between the trunks')."
+      - "mysterious -> what is hidden ('the face stays in shadow below the brow')."
+      - "tension builds -> one named move while nobody moves; chaos -> three named events or three shots."
+      - "somber -> slow every motion and remove secondary motion; gracefully -> continuous, decelerating to a stop."
+      - "detailed face -> frame closer; masterpiece, 8K, stunning, professional -> delete."
+    check: {type: mechanical, how: "lint against edit-antislop-words list"}
+    sources: [dsk-prompt-lexicon, hf-prompt-mcsla, vsk-universal-rules]
+    confidence: craft-rule
+
+  - id: prompt-micro-expression
+    title: Physical micro-expression instead of emotion labels
+    summary: Write feelings as 2-4 observable cues in physiological order, one beat per short clip, on a face big enough to show it.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Never name an emotion; write 2-4 cues from brow, eyes, mouth, breath, throat, hands; pick the variant first (light surprise, shock, disbelief)."
+      - "Order cues brow, then eyes, then mouth; a felt smile starts in the eyes, a mouth-only smile reads polite."
+      - "One expression beat per 2-3 s of clip; split longer arcs into separate clips; expression never goes in the identity string."
+      - "A specified face beat needs the face at least a third of frame height; wides get whole-body action, not faces."
+      - "Hide an A-to-B face change behind an occlusion (blink, head dips, hand passes, cut); otherwise the face morphs like rubber."
+      - "Write the closed eye as a shape ('each eye a single smooth curved line'), not 'the eyelids lower'."
+      - "Before a release, one counter-beat: tighten first (chin pulls in, lips press), then let go; put the trigger in the same or the adjacent shot."
+      - "When faces drift, use the Kuleshov pairing: a neutral low-motion face cut against the cutaway that gives it meaning."
+      - "Kids mascots use broad readable poses (whole-body lean, ears, arms), still described physically."
+      - "Two faces never react in sync: the listener lands 0.3-0.5 s after the cause. Underlying feelings go in breath or a hand."
+    example: "Light surprise: brows lift, lips part about a centimetre, one slow inhale through the nose; shoulders and hands hold where they were."
+    sources: [vsk-universal-rules, hf-prompt-mcsla, dsk-prompt-lexicon, ddr-engine-constraints, h3s-skill-acting, h3s-skill-beats-and-framing, "doc11#1A item 5 one beat per shot", "doc12#2.1 Kuleshov", dsk-blocking-staging, hf-seedance-hell-grind]
+    confidence: craft-rule
+    notes: "Beat, occlusion, counter-beat and face-size rules come from phileiny's H3 tests (our model now), one project each [W]. Held-shot micro-life moved to prompt-expression-additive."
+
+  - id: prompt-expression-additive
+    title: Additive expression, motivated retraction, idle life
+    summary: Expression components add up and the model completes the set, so write one component with a hold list, retract by action, and keep the body alive all clip.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Write ONE expression component plus a hold list naming every part that stays as before; the model otherwise adds the rest of the expression."
+      - "Hold lists are positive facts: 'cheeks stay down, eyes open and smooth, brows level, chin and shoulders where they were'."
+      - "Retract as a motivated action ('called back, he faces her; the mouth returns level'), never 'the smile fades'; fading reads as stopping."
+      - "Leave at least 1.5 s after a retraction starts before the clip end or the cut."
+      - "State the check inside the prompt: 'the last frame's face matches the first frame's'; verify by comparing those two frames."
+      - "Open with one idle-life sentence covering the whole clip: steady breath, small eye movements, settling weight, two blinks; 'no frame is frozen'."
+      - "Fill a held face with countable small events (blink, glance to the prop, exhale, glance back); empty holds get compressed."
+      - "Never 'completely still' or 'nothing changes' for a person: it freezes the clip. Never 'lips parted as if to speak': write 'lips pressed, one swallow'."
+    example: "Throughout, he breathes slowly and his weight settles. One mouth corner lifts a few millimetres; cheeks stay down, eyes smooth, brows level. Called back by her question, he faces her and the mouth returns level; the last frame's face matches the first."
+    check: {type: judgment, how: "verify first vs last frame of retraction clips; lint flags 'completely still', 'nothing changes', 'as if about to speak', 'fades'"}
+    sources: [h3s-skill-acting, h3s-skill-leakage-and-stale-text, prompt-blocking-translation, prompt-micro-expression]
+    confidence: proposal
+    supersedes: [h3s-skill-acting]
+    notes: "h3s SKILL ~1177-1243, measured on H3 [W, n=1 each]: five stacked components read frivolous, one plus a don't-move list read right; retraction worked with 1.7 s left, failed with 0.46 s; a 3.2 s empty hold rendered 1.8 s. Its 'not happy, not smug' negations become positive holds. Its timestamps are [W] on our API: use ordered clauses."
+
+  - id: prompt-light-source
+    title: Physical light-source language
+    summary: Name the source, not the mood; one world-space lighting invariant per scene plus a per-shot camera-relative line.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Name source, position, height, hard or soft, colour and ratio; never 'moody' or 'dramatic lighting'."
+      - "Write one world-space lighting invariant per scene and paste it verbatim into every prompt of that scene."
+      - "Add a per-shot line in camera terms plus one visible consequence ('key from camera-left; nose shadow on the camera-right cheek')."
+      - "Write ratios in words: 'shadow side two stops under, still holding detail' rather than a bare 4:1."
+      - "Default to single-source naturalism; safest for AI: overcast, mid-morning sun, blue hour with practicals on."
+      - "Constrain golden hour: 'low sun, long hard shadows, cool sky fill, no orange haze'."
+      - "Hard light: describe the shadow; soft light: 'shadow edges indistinct'; dark background: name a rim or back light."
+      - "Localise flicker: 'the flame wavers and the wall light moves slightly; overall exposure stays constant'."
+      - "Close-ups: restate the off-screen source and its consequence; models revert to flat frontal light."
+      - "Practicals date a shot (sodium streets about 1960-2015, blue-white LED headlights 2000 on); match the topic's era."
+      - "Night exteriors get beautified: name each source with its own colour and side, state the ground (dry matte asphalt), ask for grain in deep shadow, say which area may stay unreadable."
+    example: "Lighting: one bare tungsten bulb above the workbench, hard, shadow side two stops under, background falls to black within two metres. This shot: key from camera-right; the wrench throws a sharp shadow toward camera-left."
+    sources: [dsk-lighting-color, "doc12#2.2", hf-style, vsk-camera-lighting-vocab, dsk-video-tool-adapters]
+    confidence: craft-rule
+    notes: "Replaces the cookbook's short mood-style lighting cue ('warm amber light') for multi-clip scenes; one-clip illustrated scenes may keep a short cue."
+
+  - id: prompt-positive-phrasing
+    title: Positive phrasing and targeted exclusions
+    summary: Describe the wanted state; keep a ban only when the model's untouched default is already the failure.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "State what is true: 'the street stays empty', 'the door stays closed', 'camera locked'."
+      - "Default test: keep 'no X' only if the model does X unprompted (extra people, music bed, slow motion, captions, face change)."
+      - "Write a surviving ban after the positive statement and name instances, never categories ('no rubber soles', not 'no modern objects')."
+      - "At most three inline exclusions per clip; MiniMax H3 has no negative field. Where a field exists, at most six there."
+      - "Allocate colour instead of banning it: 'yellow exists only in the lamp bulb and a palm-sized halo under it'."
+      - "Override a reference as a world fact: 'the window glowing in the image is switched off'."
+      - "A locked camera is one stated sentence ('[Static shot]', static on a tripod, no camera movement); unstated, generators drift into a slow push-in."
+      - "Never stack camera bans (no push, no zoom, no pan): on H3 the list itself drifted the cut and added movement."
+      - "Fix a failed clip by changing the description or the keyframe, never by stacking more 'no' lines."
+    check: {type: mechanical, how: "lint: count 'no |avoid |without ' clauses per clip prompt <= 3; flag category nouns (modern objects, artifacts)"}
+    sources: [nfd-shot-grammar, h3s-skill-leakage-and-stale-text, aif-rule-describe-dont-negate, hf-shared-negative-constraints, vsk-golden-rules, dsk-prompt-lexicon, dsk-tpl-video-prompt, "doc11#4 point 5 describe do not negate", "doc12#5 Hailuo negative unsupported"]
+    confidence: craft-rule
+    supersedes: [aif-rule-describe-dont-negate]
+    notes: "Camera: nfd says state static and add 'no push, no zoom' negatives; h3s found that list backfired on H3 (n=2, not isolated) while one static sentence held. We run H3, so one sentence wins. DirectorSKILL appends 'Avoid:' lists; higgsfield forbids negatives; KeWang's catalogue says models fill gaps and ignore negations. Resolution: positive first, then up to three bans that pass the default test."
+
+  - id: prompt-blocking-translation
+    title: Blocking-to-prompt translation
+    summary: Turn staging into start, action and end compositions with one mover, explicit holds and distances.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Split the beat into three drawable stills (start, midpoint proof, end); if the midpoint cannot be drawn, split the clip."
+      - "Elect one mover; every other body gets a hold sentence ('he does not rise; his hands stay on his knees')."
+      - "Write start and end as compositions: left/centre/right, foreground/background, facing, distance in metres, object between."
+      - "Movement = verb + direction + distance + duration ('steps half a metre toward the window over two seconds')."
+      - "State eyeline at start and end; write screen direction ('walking left to right') in every clip of a sequence."
+      - "Reliable: breathing, head turn up to 45 degrees, head lower or lift, arm raise without contact, one step under a metre, slow frontal walk."
+      - "Substitute: handoffs and fine hand work become reach + held-object cut; stairs become top and bottom clips; re-entry becomes exit only."
+      - "Substitute: a full turn becomes 90 degrees or a first/last pair; a fall becomes tipping point then aftermath."
+      - "Track at most two characters per clip, restating who is where; this end state is the next shot's start state."
+    sources: [dsk-blocking-staging, ddr-engine-constraints, "doc12#2.1 screen direction", "doc12#2.5", hailuo_cookbook.md, shots.md]
+    confidence: craft-rule
+
+  - id: prompt-keyframe-nine-slot
+    title: Keyframe nine-slot anatomy
+    summary: Build stills in a fixed slot order so framing, identity and light lock before style, then gate them before any clip spend.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Slots 1-5: shot id; size, angle, lens; identity string; pose implying action; wardrobe and props."
+      - "Slots 6-9 then constraints: location and era; light source and direction; composition; texture and medium; constraints."
+      - "No emotion or attractiveness words in the identity slot; expression goes physically into the pose slot."
+      - "Freeze a moment that implies the next action (half-risen, weight forward), not a portrait."
+      - "Generate native 9:16 (or 16:9 for long-form) with 10-15 percent spare margin for push-ins (shots.md)."
+      - "Key subject in the upper-middle third and out of the caption band (DESIGN_SYSTEM section 4)."
+      - "No text, letters, numbers or signage in any still (audience card suffix); blank or blur real signs."
+      - "Constraints name instances: 'vertical 9:16, no text, no watermark, no extra people'."
+      - "Gate before animating: identity verbatim, props present, light side matches, perspective fits lens, eyeline and direction right, hands correct, native aspect."
+      - "Fix a failed still in the still, never in the motion prompt."
+    check: {type: judgment, how: "keyframe QC sheet per still; lint no-text suffix present"}
+    sources: [dsk-image-model-adapters, hailuo_cookbook.md, shots.md, "DESIGN_SYSTEM#4"]
+    confidence: craft-rule
+
+  - id: prompt-first-last-chaining
+    title: First/last-frame pairs and chaining
+    summary: Derive end frames from approved starts, chain continuous action, and re-anchor revisited setups to one master keyframe.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Approve the first frame, then derive the last frame from it by instruction edit or low-strength image-to-image; never prompt it fresh."
+      - "Pair scope: only one of {one body part, one object, one light} may differ between the frames; otherwise make two shots."
+      - "A pair prompt is shorter than a single-frame one: describe only the bridging action and camera."
+      - "Continuous action across cuts: next clip's first frame = previous clip's observed last frame (match on action)."
+      - "Coverage that returns to a setup (reaction inserts, revisited location): derive each from one master keyframe; do not chain."
+      - "Chain at most three clips before re-anchoring to the master or canon frame."
+      - "Use pairs for the riskiest shot in a sequence and for designed match cuts."
+      - "H3 last_frame is verified (not combinable with reference images; Hailuo 2.3 has none); run.py passes it from scenes[].visual.last_frame_prompt (end keyframe made by image-01 from text, since no edit endpoint is wired; lint last_frame_exclusive blocks pairing it with reference images)."
+    sources: [dsk-image-model-adapters, dsk-tpl-video-prompt, ccs-drift, "doc12#2.5", "doc11#4 point 3", "dialects/hailuo.md#4", "config/providers.yaml"]
+    confidence: proposal
+    notes: "Doc 11 left master-keyframe vs chaining unresolved; this card picks by scene type. Chaining ratchets drift, so audit against the canon (cont-drift-audit). Untested on H3; compare drift on the first cold-open episode."
+
+  - id: prompt-thumbnail-protocol
+    title: Thumbnail and cover protocol
+    summary: A truthful information gap chosen from five or more concepts, rendered as a clean image with deterministic text on top.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, qa]
+    rules:
+      - "Write the truthful promise first; the image may exaggerate scale but never invents outcomes, people, quotes or numbers."
+      - "Brainstorm at least five concepts across three or more frameworks (before/after, size difference, repetition, posed action, diagram, map, landscape)."
+      - "Pick the strongest information gap: one focal subject, 40-60 percent of frame on a power third, readable at 120-160 px wide."
+      - "Render text-free; add up to four words as a Remotion/canvas overlay (packaging.md) that adds curiosity, never repeats the title or covers a face."
+      - "Keep the audience look: kids storybook palette; adults DESIGN_SYSTEM palette, sentence case, no gradient text."
+      - "At most four variants, one prompt per concept; reference thumbnails inform structure only, never identity or exact composition."
+    avoid: ["All-caps gradient stroke 'feed' text and glossy over-saturated grades for adult episodes", "Split screens unless the concept is before/after"]
+    check: {type: judgment, how: "verify: claim in thumbnail text appears in the script's claims; text <= 4 words; overlay rendered, not generated"}
+    sources: [hfs-thumbnail, hfs-thumbnail-frameworks, hfs-thumbnail-text-overlay, packaging.md, "DESIGN_SYSTEM#2-3"]
+    confidence: craft-rule
+    supersedes: [hfs-thumbnail, hfs-thumbnail-frameworks, hfs-thumbnail-text-overlay]
+    notes: "Vendor overlay presets and vivid grade conflict with DESIGN_SYSTEM for adults; only the deterministic-overlay principle is kept."
+
+  - id: prompt-narration-direction
+    title: Narration rules that matter for direction
+    summary: One narration line per visual block, sized from the audience pace, spelled for TTS, timed so pictures lead words.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [script, edit, qa]
+    rules:
+      - "One narration line per scene or clip block; block N narration plays over block N visual."
+      - "Size lines from the audience card: words = pace_wps x seconds x 0.9; 10 s at 2.3-2.6 wps is 20-24 words."
+      - "Spell numbers out for TTS ('one point two million'); exact figures appear on screen in Remotion."
+      - "No stage directions, emotion cues, timecodes or parentheses in TTS text."
+      - "Cold-open VO: one line of 12 words or fewer, entering 0.8-1.5 s after the first cut, ending 1 s before the bridge."
+      - "End sentences on the stressed noun so the picture can arrive 100-200 ms before it."
+      - "No on-camera lip-sync; cold-open dialogue is off-screen over a listening shot, 12 words or fewer; hard terms follow audience.yaml ear rules."
+      - "Anchor each timed visual beat twice: by the narration word that triggers it and by seconds; if they disagree, the word wins."
+      - "Leave 2-3 s of picture after the trigger word before the next cut; check the line fits its window."
+    check: {type: mechanical, how: "existing qa_checklist words_per_second + sentence checks; lint digits in narration; cold-open VO word count"}
+    sources: [hfs-video-explainer, hfs-video-explainer-prompts, dsk-sound-dialogue, audience.yaml, psychology_rules.md, qa_checklist.yaml, hig-skills-higgsfield-seedance-vfx-references-dialogue-timing]
+    supersedes: [hig-skills-higgsfield-seedance-vfx-references-dialogue-timing]
+    confidence: craft-rule
+    notes: "Vendor 20-24 words per 10 s (2.0-2.4 wps) loses to audience-card pace_wps. Hook wording rules live in hooks.md."
+
+  - id: prompt-layer-order
+    title: Layer order and weight (model-independent MCSLA)
+    summary: Every clip or still prompt covers subject, action, camera, look and constraints, in an order that puts the load-bearing element first.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt]
+    rules:
+      - "Layers: subject, action, (setting), camera, look, constraints; omit a layer only when the keyframe or a UI control already owns it."
+      - "Subject and action land in the first 20-30 words; early tokens weigh most; style and constraints go last."
+      - "Lead with the single load-bearing element: the subject when the shot lives on it, the move when it lives on the camera."
+      - "Camera sits in its own clause, after subject and action (shots.md rule 5); never first when it competes with identity."
+      - "Identity block (static facts, verbatim) and motion block (action, camera, timing) stay separate; never re-describe appearance inside the action."
+      - "An instruction lives in one place: if a parameter, slider or reference carries it, delete the words."
+      - "Aspect, duration and resolution are request parameters, never prose."
+      - "If you cannot say the shot in one sentence a stranger would picture, it is not designed yet."
+    check: {type: judgment, how: "verify: subject+action within first 30 words; no appearance words in the action clause of an I2V prompt"}
+    sources: [hf-prompt-mcsla, hf-seedance, dsk-video-tool-adapters, avg-course-promo, nfd-shot-grammar, shk-prompt-anatomy, "dialects/README.md cross-model rules"]
+    confidence: craft-rule
+    supersedes: [hf-prompt-mcsla, nfd-shot-grammar, shk-prompt-anatomy]
+    notes: "nfd's eight points and shk's five layers (brand lock = cont-style-lock, series lock = continuity bible, text never in prompt, adapter = dialect) map here; nfd's audio is muted for us. MCSLA's model layer is the dialect file; its named-director referent is rejected; its iteration and diagnostics live in triage.yaml."
+
+  - id: prompt-measurable-language
+    title: Measurable words and the homograph check
+    summary: Replace speed, size, haze, colour and force words with numbers or body referents, and reject verbs that can look like two things.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Never write 'fast'; give the physics of speed (stride at full extension, gravel sprays) or km/h; one element carries speed at most."
+      - "Scale by comparison with a human in frame ('as tall as four people stacked; the worker reaches its ankle') and name what a failed scale looks like."
+      - "Atmosphere as visibility or percent (haze visible at 15 m, fog 40 percent), stepped across shots, never 'misty'."
+      - "Left and right are always camera left and right; travel direction carries 'locked' ('screen-left to screen-right, locked')."
+      - "Open each clip with one lens phrase (focal length equivalent) and repeat it in every clip of that setup; a lens change is a cut."
+      - "White balance in Kelvin, fixed within a scene (3200K tungsten, 5600K daylight)."
+      - "Objects never move by themselves: every prop event names its visible cause and order ('the cup tips only when the sleeve touches it')."
+      - "Detail scale follows shot size: micro-detail in close-ups, broad arcs in wides; never a finger twitch in a wide."
+      - "Homograph check before sending: if a verb can look like two things (tearing, bolt, draw, wave, charge, strike, snap, drop), rephrase so only one fits."
+      - "Optical imperfection is content: attach it to a named element and moment (one focus hunt before lock), never a trailing quality plea."
+      - "Frame fractions and cm distances were ignored on H3: add a crop relation ('a hand's width above the head') or an in-frame ruler."
+    example: "35mm equivalent, locked. The courier crosses screen-left to screen-right, locked, at walking pace, 2 m from camera; the street haze is visible at about 20 m."
+    sources: [hf-seedance, hf-seedance-hell-grind, hf-seedance-production-patterns, hf-seedance-2-5-vfx-pipeline, avg-viral-hook, avg-luxury-aesthetic]
+    confidence: craft-rule
+    notes: "Vendor sources are Seedance-tested; h3s reports H3 ignoring fractions and unit distances [W, n=1], so keep numbers but pair each with a visible referent. The vendor's FOV-in-degrees bank is Seedance-specific (dialects/seedance.md)."
+
+  - id: prompt-motion-fill
+    title: Spend the whole clip in one direction
+    summary: Short actions finish early and the model fills the rest by reversing them; give motion and camera a destination and a held completion.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "A there-and-back (lean in, pull away) is two clips, never one prompt; models reverse an action that ends early."
+      - "Fill the clip with one continuous same-direction movement (walks to the window, stops at the sill) or size the clip to the action plus a hold."
+      - "Every camera move names what the frame shows when it ends ('push in, ending on her hands around the cup')."
+      - "Plan settle time: on a 6 s clip the move ends by about 4 s, leaving a clean held tail to cut on."
+      - "Name the completion state as a visible fact and let it hold ('the lid seats flush and stays'); else open the next clip on the result already true."
+      - "The opening frame is never empty or idle: the subject is already in motion, framing asymmetric (in medias res)."
+      - "Complex actions start already in progress ('already mid-swing'); the approach is its own clip."
+      - "Physical manipulation as a causal chain: initial state, what holds it, where force goes, how the material responds, finished state; or cut around it."
+      - "Split by job: one clip proves physics (mass, contact), another proves performance (eyes, breath); never both."
+    check: {type: judgment, how: "verify: no reversing verb pairs in one motion_prompt; camera clause has an end frame; end state present"}
+    sources: [hf-seedance-failure-modes, hf-seedance, hf-seedance-production-patterns, hf-seedance-hell-grind, hf-seedance-2-5, avg-luxury-aesthetic, dsk-video-tool-adapters]
+    confidence: craft-rule
+    supersedes: [hf-seedance-failure-modes]
+    notes: "Conflict with cont-one-action: the vendor chains 2-3 actions over 15 s; on our 6 s clips one continuous same-vector movement is one action. Seedance-only failures live in dialects/seedance.md; salvage in edit-handles-harvest / fail-salvage; NSFW rephrasing is not carried."
+
+  - id: prompt-motion-budget
+    title: Motion budget score
+    summary: Subject, camera and environment motion draw on one pool per clip; score it before generating and split clips that exceed the ceiling.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Score 0-3 each: subject (0 none, 1 breath/head turn, 2 walk/reach, 3 run/fall/full turn), camera (0 locked to 3 orbit/multi-axis), environment (0 still to 3 fire+smoke+crowd)."
+      - "Multiply by duration: x1.0 up to 5 s, x1.3 for 6-10 s (our 6 s clips), x1.6 beyond."
+      - "Add +1 per extra independently acting person, +1 if a face fills over a third of frame, +1 for fine hand work, +1 per extra bound reference."
+      - "Ceilings: 4 close character work, 6 medium or wide with people, 8 no legible face."
+      - "Over the ceiling: split at the pivot (moment of commitment); clip A ends at it in motion, clip B starts just after, at least 30 degrees or two sizes away."
+      - "Spend camera motion where no face is legible; keep faces under a locked or one-axis camera."
+      - "Never negate what the keyframe already prevents; reserve exclusions for temporal failures (identity change, extra limbs, cuts)."
+    example: "Run down a rainy alley with orbit and crane, 10 s: (3+3+3) x1.3 +1 face = 12.7 vs 6. Split: locked medium stop and look back (4), then wide run away from camera with one-axis push (5)."
+    check: {type: mechanical, how: "lint: shot.motion_score computed from shot.move, shot.action class, shot.atmosphere, duration; warn above ceiling for shot.size"}
+    sources: [dsk-video-tool-adapters, realism.yaml real-morphing, "doc12#2.5"]
+    confidence: proposal
+    supersedes: [dsk-video-tool-adapters]
+    notes: "Budget numbers are DirectorSKILL planning guidance, not measured on MiniMax. Per-tool blocks live in dialects/*.md; S1-S3 shapes are prompt-i2v-anatomy / five-line-template / first-last-chaining; S4 multi-shot is dialect-only."
+
+  - id: prompt-edit-hold-change
+    title: Edits describe the change and name what holds
+    summary: Image-to-image, instruction edits and repairs say exactly what changes and list nameable holds, so the model edits instead of re-rolling.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Describe the change, never re-describe the input ('turn the lamp off; the room darkens to moonlight'), not the whole scene again."
+      - "Template: Keep identical: <named objects, face, framing, light, grain>. Change only: <one thing>. Do not change background, composition or light."
+      - "Holds are a list of nameable objects, never 'same everything'."
+      - "Repair brief first (what works, the exact problem, change only, what tends to drift), then send only the short hold-plus-change prompt."
+      - "Verify it edited: flip between before and after; if a background object moved, it re-rendered, so you have no pair."
+      - "Chain at most 2-3 edits from one master, then return to the master, never edit the edit."
+      - "Never run an approved still through a model twice in full; composite the changed region back onto the original with a mask."
+      - "Adding a figure into a plate: state the light on them, their contact (feet on the floor, shadow side) and what they occlude."
+      - "If the clip needs something the keyframe lacks, say where it enters from ('the photo rises into frame from below')."
+      - "Accept identity drift only when the head is under about 10 percent of frame height or on screen under 1.5 s; otherwise fix or restage."
+    example: "Keep identical: the boy's face, yellow raincoat, red bucket, the beach, framing, soft overcast light. Change only: the bucket is now full of water. Do not change the background or the light."
+    sources: [hfs-generate-prompt-engineering, dsk-image-model-adapters, hf-seedance, hf-seedance-hell-grind, hf-seedance-failure-modes, hf-seedance-2-5-playbooks, hf-seedance-vfx]
+    confidence: craft-rule
+    supersedes: [hfs-generate-prompt-engineering, dsk-image-model-adapters]
+    notes: "dsk-image-model-adapters is spread over prompt-keyframe-nine-slot, prompt-first-last-chaining, prompt-light-source, real-period-tech, cont-canon-frame and dialects/keyframe-image.md. image-01 has no instruction-edit endpoint wired; the mask composite needs a wiring-pass tool step."
+
+  - id: prompt-leakage-sweep
+    title: Leakage, literal misreads and the stale-text sweep
+    summary: Every word in a prompt can summon or freeze something, and old text keeps executing after an edit; scope rules tightly and sweep the whole prompt before resending.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "Naming a thing anywhere summons it, including metaphors ('phone-shaped'); bound shapes by the frame edges instead."
+      - "Shared blocks (style prefix, wardrobe, light) hold only what is true in every shot; people, props and fixtures go only where they appear."
+      - "Scope universal rules ('everyone faces the stage') so they exclude whoever must not obey them, and state that exception."
+      - "For every suppressing sentence ask what else it blocks; write wanted irregularity separately ('traffic in clumps, lanes out of step')."
+      - "Before changing any spec, search the whole prompt and shared blocks for every phrasing of it (hand/arm, left/right, face/turn, frame/edge); make all agree."
+      - "When shot size changes, reread every sentence: text harmless at a tight crop goes live when the frame loosens."
+      - "After lengthening a prompt, re-verify what already passed; additions dilute earlier constraints. Load-bearing locks go early."
+      - "Framing is set by what must be in frame, attached references included: to go tighter, move props out and drop their reference."
+      - "Literal misreads: spreading liquid needs a boundary ('as far as the plate edge'); 'motion blur' becomes its cause; one pace word per episode."
+    check: {type: mechanical, how: "lint (proposal): on a prompt edit, diff against the last sent version; flag 'motion blur', and 'spreading'/'widening' without 'as far as'"}
+    example: "Moved his hand to her far shoulder: also delete 'right hand on her upper arm throughout' from the summary."
+    sources: [h3s-skill-leakage-and-stale-text, h3s-skill-references-and-camera, aif-ref-prompting, aif-skill-core, shk-prompt-anatomy, prompt-positive-phrasing, prompt-light-source]
+    confidence: craft-rule
+    supersedes: [h3s-skill-leakage-and-stale-text]
+    notes: "Light conflict: prompt-light-source names fixtures, but a fixture in a shared block put a lamp in every shot (h3s [W]); name fixtures only in shots that show them. Prop state follows the reference image, not the text (h3s, partly verified). Dialogue misreads do not apply (no clip speech)."
+
+  - id: prompt-faceless-narrated
+    title: Faceless, narration-led visuals
+    summary: Picture rules for TTS-driven explainers where narration, not on-camera people, carries the story.
+    mode_fit: [explainer, montage, documentary, hybrid]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Never show the same place from the same angle twice in one video."
+      - "Every number the narration says also appears on screen (Remotion number scene or overlay)."
+      - "Pick the 2-3 weightiest words per minute and make each a visual event (a push-in ends, light shifts, a label lands) at its TTS timestamp."
+      - "Hold the frame through a narration pause; pair each motion with a moment of stillness."
+      - "After a move reaches its subject, linger about 2 s before the next beat."
+      - "Show people through objects and traces (an empty chair, a lit window) when faces add risk or nothing."
+      - "Leave 40-60 percent of the frame calm on purpose; that is the overlay room."
+      - "Mute test: with sound off, the point lands within 5 s of the hook."
+    check: {type: judgment, how: "verify: no repeated location+angle; every numeral in narration has an on-screen scene; emphasis words mapped to beats"}
+    sources: [avg-faceless-channel, avg-podcast-visual, avg-luxury-aesthetic, avg-before-after, DESIGN_SYSTEM.md, psychology_rules.md]
+    confidence: craft-rule
+    supersedes: [avg-faceless-channel, avg-podcast-visual]
+    notes: "Retention and safe-zone percentages in these vendor files are unsourced and contradict each other; DESIGN_SYSTEM safe zones win. Music levels and J-cut timing are owned by edit-jl-sound-bridges and edit-sound-brief."
+
+  - id: prompt-reconcile-existing
+    title: How these cards relate to shots.md and the Hailuo/MiniMax dialect
+    summary: Where the prompt cards refine lines in our existing direction files; everything else there stands.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [clip-prompt, qa]
+    rules:
+      - "dialects/hailuo.md supersedes hailuo_cookbook.md (its closing difference list is authoritative); prompt-i2v-anatomy fills that dialect."
+      - "Cookbook mood cues ('calm watercolor mood', 'hopeful') are superseded by named light and physical cues."
+      - "shots.md bracket combinations (up to 3 commands) only for one compound path (push in + tilt up); never two independent behaviours."
+      - "shots.md and cookbook [Shake]: only on an impact frame of 1 s or less; models render it as whole-frame jitter."
+      - "shots.md 'first shot is the widest' stays the default; archetype exceptions (pursuit) are owned by archetypes.yaml."
+      - "shots.md storyboard rules 4, 6, 7 and 8 (verbatim descriptors, no text, one action, hide hands) still apply."
+    sources: [shots.md, hailuo_cookbook.md, "dialects/hailuo.md", "doc12#5 hailuo_minimax pitfalls"]
+    confidence: craft-rule
+    notes: "Trimmed 2026-10-05: cookbook example 8 and chaining refinements now live in dialects/hailuo.md section 'differences'."

@@ -1,0 +1,295 @@
+# continuity.yaml - the planning contracts that keep AI clips agreeing with each other (prefix cont-).
+# realism.yaml checks the result; these cards define what the director writes BEFORE generation so the checks can pass.
+# Format: CRAFT-SPEC.md. Field names under `continuity.*`, `direction.*`, `scenes[].shot.*`, `style.*` beyond today's schema
+# are PROPOSALS for the schema/wiring pass (episode.schema.json is not edited here). Existing: style.cast, style.illustration_style,
+# scenes[].visual.{motion_prompt,keyframe_prompt}, lint cast_descriptor_in_prompt (warn).
+cards:
+  - id: cont-bible-schema
+    title: Continuity bible (episode.json block)
+    summary: One block holding every string that is pasted into prompts and every state that is checked on review; if a field is never pasted or checked, drop it.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Fill continuity before writing any clip prompt; prompts copy from it, never retype."
+      - "Every recurring character, location and prop gets a stable id used in shot.continuity_ids."
+      - "Permanent facts (garment, cut) live apart from transient states (wet, held_by), which only the ledger changes."
+    example: |
+      continuity:
+        characters: [{id: char_tech, identity_string: "...", canon_frame: assets/char_tech_canon.png, must_keep: [...]}]
+        locations:  [{id: loc_pad, geography: "...", orientation_rule: "...", key_light: "...", time_of_day: "06:40", master_keyframe: assets/loc_pad_master.png}]
+        props:      [{id: prop_capsule, description: "...", held_by: null, hand: null}]
+        ledger:     [{scene: s1, changes: "...", carries: "...", verify_next: "..."}]
+        style_lock: {cold_open: {prefix: "...", key_image: ..., negative_tail: "..."}, explainer: {...}}
+      scenes[].shot: {size, angle, move, lens_mm, location_id, axis_side, travel_dir, eyeline, light_source, action, action_s,
+                      start_state, end_state, duration_s, population, props_in_frame[], continuity_ids[], keyframe_from,
+                      style_segment, neutral, dramatizes[], atmosphere, offscreen[]}
+    check: {type: mechanical, how: "lint: every id in shot.continuity_ids/props_in_frame/location_id resolves in continuity.*"}
+    sources: [dsk-continuity-bible, doc11#1A-1, doc11#1A-2, doc11#1A-6, DIRECTION-BRAIN-PLAN#5]
+    confidence: proposal
+    supersedes: [dsk-continuity-bible]
+    notes: "Sub-fields for plan section 5. Omitted from DirectorSKILL: asset naming (out/<id>/ owns paths), seed registry (MiniMax exposes no seed), per-layer wardrobe schema."
+
+  - id: cont-identity-string
+    title: Identity-string contract (FULL and TIGHT variants)
+    summary: Two frozen noun phrases per character or mascot, FULL for wide and medium shots and TIGHT for close-ups; each shot pastes exactly one, verbatim.
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "FULL, 30-50 words, present-tense noun phrase: one age number, 2-3 face/shape facts, one checkable landmark, hair, one wardrobe anchor last."
+      - "Freeze TIGHT at the same time, 10-25 words: only what a close-up shows (landmark, brows, skin, hair edge, collar or cuff, hands)."
+      - "Each shot pastes exactly one frozen variant: FULL for WS/MS/MCU, TIGHT for CU/ECU/inserts; never improvise a third, merge or paraphrase."
+      - "Distant figures cannot hold a face: bind action by screen side, then silhouette (short and broad), then garment category; end with a countable fact."
+      - "Never in either: mood adjectives, camera/lens/light words, lookalike comparisons, age ranges, transient states, a second character."
+      - "Mascots and identity objects (a spacecraft livery) get both variants; for I2V, delete text that contradicts the canon image."
+    avoid:
+      - "'same as reference, do not change her face': the model has no memory; positive description works, negation does not"
+      - "A whole-person string in an ECU of hands: it drags the body and set into frame"
+    check: {type: mechanical, how: "upgrade lint cast_descriptor_in_prompt to error for clip scenes: exact substring of identity_string or identity_tight; tight required when shot.size in CU/ECU/insert; word counts 30-50 / 10-25"}
+    example: "FULL: VEGA, 41, a broad-shouldered woman with a square jaw, heavy straight brows, a thin pale scar through her left eyebrow, short dark hair pushed back, in a white flight coverall with a blue patch on the right shoulder. TIGHT: heavy straight brows, thin pale scar through the left eyebrow, short dark hair pushed back, white coverall collar."
+    sources: [dsk-continuity-bible, afc-role-production-designer, shk-consistency-locks, h3s-skill-references-and-camera, ccs-drift, doc11#1A-2, shots.md, "dialects/hailuo.md", hf-troubleshoot]
+    confidence: craft-rule
+    supersedes: [afc-role-production-designer, shk-consistency-locks]
+    notes: "CONFLICT resolved: the old 'never shorten for close-ups' rule banned ad-hoc shortening; a TIGHT string frozen beside FULL is still verbatim, and framing follows what the prompt asks to show (h3s). Distant-figure binding: h3s n=1 on H3 [W]. One age number kept (ccs prefers a 4-year range; both stop youth drift). shk seed lock does not exist on MiniMax; afc prop states live in cont-state-ledger."
+
+  - id: cont-canon-frame
+    title: Canon frame and character sheet, never regenerated
+    summary: Each recurring character or mascot has one approved canon still and a sheet built from it; drift is judged against the canon, re-anchoring starts from it.
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Approve one canon frame per character before any clip; store its path in continuity.characters[].canon_frame."
+      - "Never regenerate or touch up the canon; a new canon is a new character version with a new id."
+      - "Order: canon, character sheet, approved scene still per setup, then video; never animate a sheet."
+      - "Default sheet: full-body front, three-quarter, side profile, back; one character, plain light-grey ground, even light, neutral lens."
+      - "Optional rows: clearly different expressions (calm, joy, doubt, frustration, surprise) with at least two open-mouth; hand poses; prop callouts."
+      - "Photoreal sheet: the same person photographed repeatedly; keep asymmetry, age cues, skin texture; soft documentary light; no retouch, no heroic pose."
+      - "Feed references as single panels cropped from the sheet, never the composite (cont-reference-roles)."
+      - "Wardrobe change: edit the sheet holding face, build and hair; change only the garment; record it as a new wardrobe id."
+      - "Re-anchor drifted chains from the canon, never from a frame of the drifted clip; series mascots keep one canon across episodes."
+    check: {type: mechanical, how: "lint: canon_frame exists and its hash matches the recorded approval hash; sheet panels listed per character"}
+    sources: [doc11#1A-2, dsk-continuity-bible, vps-character-sheets, vps-skill-router, ccs-skill, ccs-prompt-blocks, hf-troubleshoot, "dialects/hailuo.md#7"]
+    confidence: craft-rule
+    supersedes: [vps-character-sheets, ccs-skill]
+    notes: "CONFLICT: we used to say 'single images, not composite sheets'. Resolution: generate the sheet in one pass (panels made together agree), then crop panels, because a composite fed as a reference leaks its layout and extra bodies. Photoreal sheets only inside a declared photoreal segment (cont-style-bridge) and never of a real, identifiable person. Open-mouth expressions serve stills only; clips never lip-sync. 'Invariance beats fidelity' (Nagacash): a slightly imperfect canon used everywhere beats a better face that changes."
+
+  - id: cont-master-keyframe
+    title: Lock geography, derive setups from the master
+    summary: Every location gets a master wide keyframe first; each setup's still is derived from it, approved, then animated.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Order: lock geography, shot list, master wide still, setup stills derived from master, approve stills, animate one action each, assemble."
+      - "Derive setups by reference/edit/crop of the master, so light, layout and palette are inherited."
+      - "Last-frame chaining is allowed only for a continuous move inside one setup (match on action), max 2 links."
+      - "A rejected still costs one image; never animate a still you have not approved."
+      - "A single inside a group gets its own plate from the master geography, camera on the listener's eyeline; never crop in from the group frame."
+      - "Group frames only establish who stands where; every line or reaction is a single, cut as shot-reverse-shot."
+    check: {type: mechanical, how: "lint: every clip shot has shot.keyframe_from = a location master or an approved setup still; chain depth <= 2"}
+    sources: [doc11#1A-1, doc11#4, dsk-image-model-adapters, hf-troubleshoot, doc12#2.5, nfd-skill, nfd-coverage-protocol, h3s-skill-references-and-camera]
+    confidence: proposal
+    supersedes: [nfd-skill, nfd-coverage-protocol]
+    notes: "Group singles: h3s found crops from a group board keep the group's space, so H3 puts bystanders behind the lead (one project, three review rounds) [W]. nfd's seven-step sequence and five rules are this card plus cont-axis-eyelines, cont-one-action, cont-one-variable-setups; its 5-8 s clip length becomes our 6 s plus the beat budget. Doc 11 left master-keyframe vs last-frame chaining unresolved. Default = master, because chaining inherits each clip's artifacts (chain-depth drift) and couples retries; chaining kept only where motion must continue across the cut."
+
+  - id: cont-one-action
+    title: One action, one beat, one clip
+    summary: Each generated clip carries a start state, one camera behaviour, one observable action and an end state, sized to our 6 s MiniMax clips.
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Clip anatomy: start state, one camera behaviour, one action, end state, invariant line (identity, light), short targeted lock tail."
+      - "One expression or action beat per 2-3 s; a 6 s clip holds at most two beats of the same action."
+      - "Two actions means two clips joined on a cut; never 'locked, then push'."
+      - "Size duration to the action, then add the hold; do not fill 6 s with one 2 s gesture."
+    check: {type: mechanical, how: "lint: shot.action is one verb phrase; motion_prompt has one bracket group; shot.start_state/end_state set"}
+    sources: [doc11#1A-1, doc11#1A-3, doc11#1A-5, dsk-failure-modes, shots.md, hf-prompt-mcsla]
+    confidence: craft-rule
+    notes: "Extends shots.md rule 7 with the beat budget (phileiny, measured on MiniMax H3, which we now call: dialects/hailuo.md section 0). Keep 2-3 s as a starting value until our own H3 renders confirm it."
+
+  - id: cont-one-variable-setups
+    title: Change one variable between setups
+    summary: Adjacent setups in a scene differ from the master in one controlled way, so any mismatch has one cause.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [shotlist]
+    rules:
+      - "From the master, change camera position OR shot size OR subject action per setup, not two at once."
+      - "Keep lens family, light line and palette identical inside a scene; a lens jump is a decision you write down."
+      - "Exception: dual-contrast cuts (size and camera character both change) are allowed between, not within, setups derived from one master."
+    check: {type: mechanical, how: "lint: within one location_id, consecutive shots change <= 1 of {size, angle, action} relative to keyframe_from, unless flagged dual_contrast"}
+    sources: [doc11#1A-1, dsk-continuity-bible, ddr-engine-constraints]
+    confidence: proposal
+    notes: "Conflict: drama-director wants every cut to change scale AND camera character. Resolution: that rule is about the edit rhythm; this one is about what the still generator changes, so both hold if the master is the shared anchor."
+
+  - id: cont-axis-eyelines
+    title: Action line and numeric eyelines
+    summary: Per location, one written axis rule; per shot, which side subjects hold and where eyes point in degrees.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Write orientation_rule as a sentence a stranger could obey: 'camera stays south of the pad; the rocket is always screen-right'."
+      - "Per shot: axis_side for each subject, travel_dir, eyeline {target, side, deg_up_down}."
+      - "Compute eyeline height from both eye heights and separation, not from height alone."
+      - "Crossing requires a shot marked neutral (head-on, POV, insert) or a visible turn."
+      - "Keep the focal subject in the same screen third across a cut (eye-trace)."
+      - "Eyeline bands off the lens: 5-15 degrees in close-ups, 15-30 in mediums, 25-40 for singles in a group; 0 only for deliberate address."
+      - "In shot-reverse-shot, each looks toward the other's screen side; both looking the same side reads as watching one off-screen thing."
+    check: {type: mechanical, how: "lint fields present for multi-clip scenes; consistency per real-axis-screen-direction and real-eyeline"}
+    example: "eyeline: {target: char_vega, side: screen-left, deg: +8}"
+    sources: [doc11#1A-1, dsk-continuity-bible, doc12#2.1, doc11#2, nfd-screen-direction, h3s-skill-references-and-camera]
+    confidence: craft-rule
+    supersedes: [nfd-screen-direction]
+    notes: "nfd's 30-degree rule is owned by edit-dual-contrast-cut; its reverse-angle trap by cont-spatial-layout; its shot-reverse-shot field block maps to shot.axis_side/eyeline. h3s: under about 15 degrees a single reads as looking at the viewer [W, n=1]."
+
+  - id: cont-state-ledger
+    title: State-change ledger
+    summary: One row per shot, written before generation, saying what changes, what carries forward, and what the next shot must show.
+    stage: [shotlist, qa]
+    rules:
+      - "Every tracked state (wet, damaged, lit, held_by, hand, fuel, light level) moves at most one band per adjacent shot."
+      - "Update held_by and hand at a handoff before writing the next prompt; restate it as a positive fact."
+      - "A scene's exit state is the next scene's entry state; write that last row."
+      - "Split a handoff across a cut: offer in A, completed in B; never two hands closing on one object in one clip."
+    check: {type: mechanical, how: "lint: ledger row per clip shot; real-time-weather band check; held_by changes only at rows that say so"}
+    sources: [dsk-continuity-bible, hf-troubleshoot, vsk-fixes-skeletons]
+    confidence: craft-rule
+
+  - id: cont-drift-audit
+    title: Drift audit and story-day ladder
+    summary: Chaining ratchets drift, so audit accepted shots against the canon on a cadence and track progressive states by story day, not by the last render.
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Chain for adjacency, audit against the canon frame only; each chained link inherits the last link's error."
+      - "Every 8-10 accepted shots and before the edit, contact-sheet them beside the canon: landmark, wardrobe anchor, age, build, hair."
+      - "Never judge a shot against its neighbour; a drifted neighbour hides the drift."
+      - "Diagnose in order: did the reference change, did the wording change, did light or lens change; only then blame the model."
+      - "A new lighting scheme needs a fresh approved still of the character in that light before any clip."
+      - "Progressive states (wound, dirt, wet, damage, stubble, prop wear) get a story-day ladder: past, current, next, with direction of travel."
+      - "Each prop row records owner, hand, screen side, orientation, full/open state and the shot where that state last changed."
+      - "Shots are generated out of story order: read the ladder, never the previous render, before writing each prompt."
+    check: {type: mechanical, how: "lint (proposal): continuity.audits[] entry per <=10 accepted clip shots and one per episode; progressive ledger states carry a trend field; props carry last_changed"}
+    example: "palm_cut: s3 opens, bleeding -> s4 unbandaged, dry (current) -> s6 bandaged, clean -> s9 bandage grubby"
+    sources: [ccs-drift, ccs-continuity-sheet, ccs-skill, ccs-worked-example, cont-state-ledger]
+    confidence: craft-rule
+    supersedes: [ccs-drift, ccs-continuity-sheet]
+    notes: "Shorts carry 2-6 clips, so audit once per episode and at every re-anchor; long-form uses the 8-10 cadence. ccs's seven drift causes map to cont-identity-string (rewording, wardrobe, age), prompt-light-source + rule 5 (light), cont-canon-frame (angle, averaging) and cont-one-variable-setups (compound change). Its 5-10 s clip claim is replaced by our 6 s and the beat budget; repair-vs-regenerate belongs to triage."
+
+  - id: cont-off-screen-line
+    title: Off-screen line for departed subjects
+    summary: When someone just left frame, the next prompt carries their exit side and last state so re-entry is legal.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [clip-prompt]
+    rules:
+      - "Add 'Off-screen: <id> exited screen-<side>, still <state>' to the next prompt; drop after two absent prompts."
+      - "Re-entry comes from the side implied by the exit and the axis."
+    check: {type: mechanical, how: "lint: shot.offscreen[] populated when a continuity id present in shot N is absent in N+1"}
+    sources: [hf-shotlist-director, ddr-engine-constraints]
+    confidence: craft-rule
+
+  - id: cont-style-lock
+    title: Style lock (prefix, key image, negative tail)
+    summary: Each style segment has one style prefix pasted first in every prompt, one style key image fed to every generation, and one short lock tail.
+    stage: [shotlist, clip-prompt, edit]
+    rules:
+      - "Style prefix = medium, palette (named colours), line/fill behaviour, texture, light doctrine; written once, edited once, pasted first."
+      - "One style key image per segment (abstract swatch or mascot key), made before scene stills and used as reference for all of them."
+      - "Illustrated segments end the prefix with a non-photoreal tail: 'illustrated, non-photorealistic, not live action'."
+      - "Explainer segment prefix = the audience card's illustration_style verbatim; do not invent a second one."
+      - "Per-scene override changes one line (usually light) of the prefix and is recorded, never a silent rewrite."
+    avoid:
+      - "Mood adjectives as style ('cinematic', 'moody'): convert to lens, palette, contrast, grain, key quality"
+    check: {type: mechanical, how: "lint: continuity.style_lock[seg].prefix is a prefix of every keyframe_prompt/motion_prompt with shot.style_segment == seg; key_image exists"}
+    sources: [hfs-video-explainer-prompts, hfs-video-explainer, hf-shotlist-director, hig-templates-seedance-global-style-prefix, dsk-failure-modes, "audiences/*.yaml"]
+    confidence: craft-rule
+    supersedes: [hfs-video-explainer-prompts, hig-templates-seedance-global-style-prefix]
+
+  - id: cont-style-bridge
+    title: Bridging a cinematic cold open into the illustrated explainer
+    summary: How to move between a dramatized cold open and our flat explainer look without a jarring jump, and when the jump itself is the point.
+    mode_fit: [cold-open-drama, hybrid]
+    stage: [script, shotlist, edit, qa]
+    rules:
+      - "Declare direction.style_segments and one bridge type; one style change in, at most one back (hybrid return)."
+      - "Default: cold open in the explainer medium with cinematic grammar (lens, motivated light, axis, cutting). Kids always."
+      - "Painterly-real or photoreal cold opens only when stakes need it, and only via a declared bridge."
+      - "Carry one anchor across the seam (hero object, silhouette, screen position, motion vector or sound) and one shared accent hue."
+      - "Never change style and location without that anchor; never switch style mid-scene; build the seam in Remotion, not a clip."
+      - "Intentional jump = pull-back reveal or question card with 0.5-1 s silence; write 'the jump is the reveal' in director_notes."
+    ai_safe:
+      - "Draw the anchor object in explainer style first, then generate the cold-open still matching its silhouette and screen position."
+    avoid:
+      - "Photoreal cold open into flat vector with no shared anchor (reads as two videos); a third style neither segment uses"
+    check: {type: judgment, test: "At the seam, is one anchor and accent hue carried, and does a first-time viewer read it as one video?", how: "human + verifier on the 2 s around the bridge", lint: "direction.style_segments set; direction.cold_open.bridge in plan's bridge enum; <=1 style change per side"}
+    sources: [doc12#1.4, DESIGN_SYSTEM, hfs-video-explainer, hf-shotlist-director, doc11#2]
+    confidence: proposal
+    notes: "Untested visually. RESOLVED 2026-10-05: DESIGN_SYSTEM principle 2, section 8 and new section 11 now allow one dialect per declared segment joined by a declared bridge, but only inside the style envelope (profile direction.dialects AND audience card direction.dialects; kids and older adults stay native). Enforced by lint dir_style_segment / dir_style_bridge."
+
+  - id: cont-reference-roles
+    title: Every reference gets one role and one exclusion
+    summary: When a still, sheet or plate is fed as a reference, the prompt says what to take from it, how much, and what to leave behind.
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "One sentence per reference: role plus exclusion ('the sheet gives her face and coat only; not its grey backdrop, panels or flat light')."
+      - "State fidelity: full (as is), partial (named parts survive), attribute (named trait onto a named target), loose (palette or mood only)."
+      - "Several views of one subject: say they are one subject and the output holds exactly one."
+      - "Location references give space and texture only, never their composition, angle or grade; frame-one images are the exception."
+      - "Identity comes from its own canon, never from a figure visible in an environment plate."
+      - "Never name a referenced character or prop in a shot where it is absent; the model forces it into frame."
+      - "State critical small details in words (badge colour, which button) even when the reference shows them."
+      - "A storyboard or diagram is DNA, not the subject: never 'the camera pans across the board'; never describe its drawing style."
+      - "Canon sheets stay boring: plain light-grey, flat light, one readable face (crop heads from full-body panels), one view with a strong expression."
+    check: {type: mechanical, how: "lint (proposal): each shot.references[] entry has role and exclude; continuity ids named in a prompt appear in shot.continuity_ids"}
+    sources: [hf-seedance-2-5, hf-seedance, hf-seedance-production-patterns, hf-seedance-hell-grind, hf-seedance-2-5-vfx-pipeline, hig-templates-seedance-omni-reference-2-5, ddr-motion-prompt-structure, dsk-image-model-adapters]
+    confidence: craft-rule
+    supersedes: [hf-seedance-2-5-vfx-pipeline]
+    notes: "Applies today to image-01 subject_reference and keyframe derivation, and to any multi-reference model later. Whether matching identity text should ride beside an identity reference is OPEN in the vendor (minimal vs full); we keep the identity string (cont-identity-string) and never let it contradict the image. The VFX pipeline's per-asset model routing and credit tables are vendor-specific and not carried."
+
+  - id: cont-spatial-layout
+    title: Coordinate blocking and the scene map
+    summary: One per-scene map of landmarks and camera side, plus a per-shot anchor block for each subject, pasted unchanged so nobody teleports.
+    mode_fit: [cold-open-drama, hybrid, documentary, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Scene map (no people; sketch top-down in director_notes, send prose only): landmarks left/right, distances, camera side, the uncrossed line, light direction."
+      - "Paste the scene map verbatim into every shot of that scene; it is continuity.locations[].geography."
+      - "Per subject: screen third plus x/y percent, frame occupancy, depth layer, facing, contact point, gaze."
+      - "Two or more subjects: add distance, eyeline between them, who occludes whom, and that nobody crosses the centre axis."
+      - "Tie every position to an anchor object ('at the lamp, facing the door'); a static scene gets a corner, not the whole room."
+      - "Percentages are intent, not geometry: fix drift with a contact clause (feet on the floor mark), not a harder number."
+      - "Door entries, hallway directions and paths around furniture state the camera start position, the obstacle and the travel direction."
+      - "Before any reverse angle, write what lies behind each character, plus one wrong-side tell: 'if the whiteboard shows, the camera crossed'."
+    example: "Scene map: dock edge runs frame-bottom; bollard frame-right at 3 m; sodium lamp camera-left; camera stays on the land side. Worker: right third, x70 y55, 20 percent of frame, midground, facing left, boots on wet planks, eyes on the water."
+    check: {type: mechanical, how: "lint (proposal): multi-subject clip shots carry per-subject position+facing; location geography substring present in each prompt of that location"}
+    sources: [nfd-screen-direction, ccs-continuity-sheet, h3s-skill-references-and-camera, hf-seedance, hf-seedance-production-patterns, hf-seedance-hell-grind, hf-seedance-failure-modes, hig-templates-seedance-multi-character-anchor, hig-templates-seedance-single-character-position, hig-templates-seedance-top-down-map, hig-templates-seedance-staging-reference, hig-templates-seedance-worked-example-two-character]
+    confidence: craft-rule
+    supersedes: [hf-seedance-production-patterns, hig-templates-seedance-multi-character-anchor, hig-templates-seedance-single-character-position, hig-templates-seedance-top-down-map, hig-templates-seedance-staging-reference, hig-templates-seedance-worked-example-two-character]
+    notes: "Reverse rule: an undefined reverse exposes a room the model invents (nfd, ccs environment sheet: 'what lies off-screen each way'); the wrong-side tell is h3s's background disproof object, turning 'feels off' into 'found / not found' [W]. Extends cont-axis-eyelines (axis rule) and cont-master-keyframe (geography). Attached outline staging drawings did not reliably move blocking in the vendor's own test (6/12), so prose blocking stays load-bearing and we do not attach maps. Production-pattern items placed elsewhere: opening frame and imperfection in prompt-motion-fill / prompt-measurable-language; screen content in real-text-counts; 60:30:10 in edit-color-grade; reference vocabulary in cont-reference-roles; video-composite tricks are Seedance-only."
+
+  - id: cont-positive-locks
+    title: Standing locks against the model's helpful instincts
+    summary: Short positive facts that stop the drifts models add on their own (invented set, equalised heights, shrinking scale, duplicate people and props).
+    stage: [clip-prompt, qa]
+    rules:
+      - "Set lock: 'the room contains only what the keyframe shows', plus named absences that matter ('the table top is bare')."
+      - "Count header first: 'exactly two people: Vega and the technician'; count repeated props ('one cup, two chairs')."
+      - "Two or more characters: write real heights in every prompt ('she is 165 cm, he is 180 cm')."
+      - "Wides: 'the climber stays human-sized against the wall', with the scale referent in frame."
+      - "Adjacent-object invariant: 'the magnet stays on the fridge; only the photo moves'."
+      - "Hand close-ups: 'two hands, both hers, left from the left sleeve, right from the right'."
+      - "Groups: fix left-to-right order and who sits beside whom; at most two characters do hand action."
+      - "Locks are positive facts placed after the action; duplication is a model default, so a counted ban ('never a second cup') is allowed (prompt-positive-phrasing)."
+    check: {type: judgment, how: "verify against shot.population and props_in_frame; lint: count header present when population >= 2"}
+    sources: [hf-seedance, hf-seedance-hell-grind, hf-seedance-failure-modes, hf-seedance-engine-rules, realism.yaml real-population]
+    confidence: craft-rule
+    supersedes: [hf-seedance-hell-grind]
+    notes: "Hell Grind items placed elsewhere: asset-first and canon sheets in cont-canon-frame / cont-reference-roles; GEO map in cont-spatial-layout; mask point edits in prompt-edit-hold-change; micro-life and layered emotion in prompt-micro-expression; iteration log and simplify-the-shot in triage.yaml. Its voice lock and dialogue construction do not apply (TTS, no clip speech); its age-word ban is a content-filter rationale and is not adopted."
+
+  - id: cont-context-isolation
+    title: Each generation is a blank slate
+    summary: Prompts never refer to other prompts; anything two clips must share is written into both as the same absolute words.
+    stage: [clip-prompt]
+    rules:
+      - "No 'as above', 'same as shot 9', scene numbers, script headings or prior-scene summaries in a prompt."
+      - "Shared values are absolutes pasted into both prompts ('camera tracks alongside at walking pace, 2 m away'), never a cross-reference."
+      - "After every cut, restate who stands where and which way each faces."
+      - "Continuation clip: one sentence of the prior last frame, the identity string verbatim, one phrase naming what just happened, then the next beat."
+      - "Never re-describe the previous action in a continuation; 'start immediately after; do not restage the earlier beat'."
+      - "Write the planning brief (A ends with, B begins with, missing beat, must keep, must not) in director_notes; send only the short prompt."
+    check: {type: mechanical, how: "lint: flag 'as above', 'same as', 'shot [0-9]', 'previous shot', 'scene [0-9]' in keyframe_prompt/motion_prompt"}
+    sources: [hf-seedance, hf-seedance-failure-modes, hf-seedance-2-5-playbooks]
+    confidence: craft-rule

@@ -1,0 +1,406 @@
+# plan.yaml - the PLANNING ARTIFACTS a director writes before any paid generation (prefix plan-).
+# Format: CRAFT-SPEC.md. These cards adapt DirectorSKILL's templates (beat sheet, director's book, shot plan, keyframe
+# forms, edit timeline), visual-skills dramaturgy/animatic method (CC BY 4.0, Serge Shima, github.com/smixs/visual-skills),
+# the higgsfield shotlist-director pattern and the ai-video-generator hook/faceless skills to OUR episode.json:
+#   scenes[].beat / narration / visual.*      the script and the prompts (existing)
+#   scenes[].shot.*                           one row of the shot plan per scene (existing keys, schema `shot`)
+#   direction.*                               the director's book, recorded once per episode (mode, lens, cold_open, style_segments, take_budget)
+#   continuity.*                              invariants pasted into prompts (characters[].identity, locations, props, ledger, style_lock)
+#   director_notes                            assumptions, rulings, deviations (string)
+# Keys marked PROPOSED are not in episode.schema.json yet; `shot`, `direction` and `continuity` allow extra properties,
+# so they validate today but nothing reads them until the wiring pass adds lint/verify. The full list is in plan-artifact-map.
+# Unit rule: one scene with a `clip` or `illustration` visual = one shot row. A multi-cut cold open is several scenes
+# (direction.cold_open.scene_ids). Remotion-native scenes (diagram, steps, number, compare, orbit) get a shot row only
+# for size/function/transition; they carry no generation risk.
+cards:
+  - id: plan-artifact-map
+    title: Where each planning artifact lives in episode.json
+    summary: Map of every director planning document onto existing and proposed episode.json keys, so nothing is planned in a file the pipeline never reads.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist]
+    rules:
+      - "Beat sheet: scenes[].beat (format beats); drama rows in direction.cold_open.beats; full table in PROPOSED direction.beat_sheet."
+      - "Director's book: direction.mode, mode_reason, lens, style_segments, take_budget, plus PROPOSED direction.book; invariants live in continuity, never in book."
+      - "Shot plan: scenes[].shot, one object per scene; field meanings in plan-shot-fields and plan-shot-fields-extra."
+      - "Keyframe card: visual.keyframe_prompt (clip) or visual.prompt (illustration), written from the shot row; nothing new stored."
+      - "Edit timeline: derived at render from TTS durations; record only shot.duration_s, PROPOSED shot.transition_in and shot.trim."
+      - "Assumptions, rulings, deviations and workarounds: director_notes, one line each, prefixed ASSUME/RULING/DEVIATE/WORKAROUND."
+      - "Order: beats before book, book before shot rows, shot rows before any prompt; an empty upstream field is invented downstream."
+      - "Explainer mode may stop at beats + style lock + shot.size/function; drama modes fill every row."
+    check: {type: mechanical, how: "lint: drama mode requires shot on every cold-open scene; director_notes lines use the four prefixes"}
+    sources: [dsk-tpl-shot-plan, dsk-tpl-beat-sheet, dsk-tpl-director-book, dsk-tpl-edit-timeline, hf-shotlist-director, "DIRECTION-BRAIN-PLAN#5", episode.schema.json]
+    confidence: proposal
+    notes: "PROPOSED keys (all optional): shot.{function, risk, transition_in, trim, gen_note, move_reason, eye_trace, sound, details}; direction.{beat_sheet, book, arc}; continuity assets[].fidelity. continuity.style_lock is a string in the schema while cont-bible-schema shows an object; until wiring decides, paste the explainer prefix there and keep segment prefixes in direction.style_segments[].medium."
+
+  - id: plan-shot-fields
+    title: Shot plan field dictionary (existing shot keys)
+    summary: What each existing scenes[].shot key must contain, with the test that separates a usable value from a mood.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist, qa]
+    rules:
+      - "size: one rung (ews..ecu, insert, pov, ots). angle: named height plus degrees; camera height in cm or m, never bare mm."
+      - "lens_mm: full-frame equivalent; reason in gen_note when not obvious. move: one named move with distance and seconds, or 'locked'."
+      - "location_id: a continuity.locations id plus which setup ('loc_pad / gantry side, low')."
+      - "start_state, action, end_state: three photographable states; the end is a pose a generator can be held to."
+      - "light_source: world-space source from continuity plus one camera-relative line for this setup; what changed since the last shot."
+      - "axis_side, travel_dir, eyeline: screen sides and degrees per cont-axis-eyelines; neutral: true for a legal line cross."
+      - "continuity_ids: named items that must match neighbours, copied from continuity, never invented per row."
+      - "duration_s: kept seconds after trim, reconciling with narration timing and the beat row."
+      - "keyframe_from: the master or approved still this setup derives from; dramatizes: the claim id the shot depicts."
+    avoid:
+      - "'about six seconds', 'medium-ish', 'slight push with drift', 'moody side light', 'same character and setting'"
+    check: {type: mechanical, how: "lint: drama-mode clip shots have size, move, start_state, end_state, duration_s; move names one verb or 'locked'"}
+    example: "s2.shot: {size: mcu, angle: 'eye level, camera 1.5 m', lens_mm: 50, move: 'locked', start_state: 'hand flat on the hatch wheel', action: 'turns the wheel a quarter turn', end_state: 'hand still, wheel stopped, latch bar visible down', duration_s: 3.5}"
+    sources: [dsk-tpl-shot-plan, dsk-cinematic-language, cont-bible-schema, episode.schema.json]
+    confidence: craft-rule
+    supersedes: [dsk-tpl-shot-plan]
+    notes: "With plan-shot-fields-extra, plan-shot-risk and plan-coverage-check this absorbs the DirectorSKILL shot table. Its compact three-column variant is dropped: our shot object is already that compact form."
+
+  - id: plan-shot-fields-extra
+    title: Proposed shot keys and the 14-field shot card
+    summary: The few extra shot keys a drama shot needs (function, risk, transition, gen note, camera reason, eye trace, sound, three details) and the rule that an empty field means drop the shot.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage]
+    stage: [shotlist, qa]
+    rules:
+      - "function: one job tag: establish, power, pressure, detail, reveal, reaction, shift, impact, aftermath, exit, pov, demonstrate, bridge."
+      - "move_reason: what changed that earned the move (decision, new information, pressure, a look); none means 'locked'."
+      - "eye_trace: where the eye lands in the first 0.3 s, and its screen third; keep it across the cut unless jolting."
+      - "transition_in: notation from plan-edit-timeline, plus the frame it cuts on ('hard cut as latch drops')."
+      - "risk: band and six scores from plan-shot-risk, e.g. 'Amber 7 (2/1/0/1/2/1)'."
+      - "gen_note: the one thing the model will get wrong, the line that prevents it, and the split if it still fails."
+      - "sound: what is heard under the shot, including deliberate silence; details: {pressure, micro_action, motif} per plan-scene-formula."
+      - "Before writing a prompt, the row answers: who is in shot, where is the camera, what happens, what is seen first, what must stay visible."
+      - "Any field you cannot fill means the shot has no direction yet: fill it or delete the shot."
+    check: {type: mechanical, how: "lint (after wiring): function in enum; Red risk rows must carry a split gen_note; move != locked requires move_reason"}
+    sources: [vsk-dramaturgy, vsk-role-modes, dsk-tpl-shot-plan, hf-pipeline, dsk-cinematic-language]
+    confidence: proposal
+    notes: "Function list: visual-skills job tags (they name what a shot does) plus pov, demonstrate (explainer mechanism step) and bridge. DirectorSKILL's list mixes sizes ('close-up') with jobs, so it is not used; its 'relation' maps to power. arch-conventions' shorter list remains valid prose; this enum is what goes in the field."
+
+  - id: plan-shot-risk
+    title: Shot risk rubric (six dimensions, three bands)
+    summary: Score each generated shot on paper before any prompt exists; the band sets attempts, first/last pairs and whether to split now.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist]
+    rules:
+      - "Score 0-3 in order Action / People / Camera / Duration / Interaction / Continuity; sum 0-18."
+      - "Action: 0 ambient, 1 one whole-body act, 2 two chained or one fine-motor act, 3 precise act with a required outcome."
+      - "People: bodies in frame incl. partial hands. Camera: 0 locked, 1 one slow move, 2 fast or compound, 3 move plus reframe."
+      - "Duration at kept length: 0 <=3 s, 1 4-5 s, 2 6-8 s, 3 >8 s."
+      - "Interaction: 0 none, 1 touches set, 2 handles a prop, 3 body contact or a prop entering a fixed feature (slot, port)."
+      - "Continuity: 0 standalone, 1 matches one shot, 2 both neighbours, 3 locked face plus a progressive state."
+      - "Override: Interaction 3 plus any other 3 is Red whatever the total."
+      - "Green 0-5: generate directly. Amber 6-11: approved keyframe, simplify one dimension, serial takes. Red 12+: split or restage on paper now."
+      - "More than one Red per five shots is a wish; lower the ambition at the beat sheet."
+    check: {type: mechanical, how: "lint: risk string parses, six scores sum to the stated total, no unsplit Red; band feeds direction.take_budget"}
+    example: "Docking latch: action 3, people 1, camera 0, duration 1, interaction 3, continuity 2 = 10 but override fires: Red. Split: approach (Green 3) and latch insert (Amber 7)."
+    sources: [dsk-production-workflow, dsk-tpl-shot-plan, fail-irreducible, fail-budget-gate]
+    confidence: craft-rule
+    notes: "Attempt counts per band are not restated here: fail-budget-gate owns the per-shot cap (default 3 paid). DirectorSKILL's second scale (motion budget per tool) is omitted: one Hailuo clip per shot and cont-one-action already cap movement. Remotion-native scenes score 0 and need no row."
+
+  - id: plan-coverage-check
+    title: Coverage check (read the plan by column)
+    summary: Read each column of the shot plan top to bottom before reading rows; each pass catches a class of error no per-shot review sees.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage]
+    stage: [shotlist, qa]
+    rules:
+      - "Every beat has at least one shot; only the turn beat may have the most shots."
+      - "Read keyframe frame content alone: it must tell the story; five variations of one picture are angles, not coverage."
+      - "Read blocking alone: each end_state is the next start_state, or name the shot or cut that covers the gap."
+      - "Count shots with a move against direction.book move budget; over budget means the moves stopped meaning anything."
+      - "Track screen direction down the page; the first reversal owes a neutral shot or visible turn."
+      - "Scan light_source down the page; any flip inside one moment without a changed source is a continuity error now."
+      - "The scene needs an entry the viewer can orient in and an exit they can leave on; insert-to-insert has no geography."
+      - "Seconds reconcile three ways: beat sheet, shot rows, narration timing; fix the wrong document, not the arithmetic."
+    check: {type: judgment, test: "Does each column read as one coherent sequence and do the three time sums agree?", how: "verify.py PRE gate on the shot plan text (real-verifier-protocol)"}
+    sources: [dsk-tpl-shot-plan, hf-shotlist-director, arch-conventions, edit-pacing-math]
+    confidence: craft-rule
+    notes: "The monotony audit (no three cuts sharing size and move) is owned by arch-conventions/lint dir_size_variety and not repeated."
+
+  - id: plan-beat-sheet
+    title: Beat sheet with pressure notation
+    summary: A beat is a change in the balance of pressure (or, in an explainer, of what the viewer knows or wonders), with a named agent; rows that change nothing are merged.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [script, qa]
+    rules:
+      - "State in differs from state out, and the delta names its agent: a body, another person, an object, a sound, a deadline. Never 'the mood'."
+      - "A camera idea is not a beat; a location change is a beat only if arriving changes the pressure."
+      - "One turn per row; three flat rows in a row are one beat of activity."
+      - "Score tension 0-10 for the point-of-view subject; split 'him / us' when the viewer knows more. Delta 0 deletes the row."
+      - "The curve must be arithmetic: start value plus each delta equals each state out."
+      - "Drama: the largest single rise lands at or after 60 percent of the scene; the last beat is what the viewer carries out."
+      - "Explainer rows: state in = what the viewer believes or asks; agent = the visual or line that changes it; restating rows merge."
+      - "Count: beats about seconds / 5 (floor 2), widening toward 7 s per beat from 40 s; above 60 s split into scenes."
+      - "A beat under 2 s is a shot; over 10 s hides a second turn. Seconds sum to target within 15 percent."
+    check: {type: mechanical, how: "lint on direction.beat_sheet: non-zero deltas, running sum matches, seconds within 15 percent; judgment: agents named without mood words"}
+    example: "Cold open, 8 s: B1 crew calm at 2, +2 (proximity alarm) -> 4; B2 +3 (closing-rate readout keeps climbing, us only) -> 4 him / 7 us; B3 +2 (hand stops above the abort switch) -> 9: cliffhanger."
+    sources: [dsk-tpl-beat-sheet, vsk-dramaturgy, mode-cold-open-beats, dsk-skill-router]
+    confidence: craft-rule
+    supersedes: [dsk-tpl-beat-sheet]
+    notes: "PROPOSED direction.beat_sheet rows {id, scene_ids, function, state_in, delta, agent, state_out, family, sec}; cold-open rows may instead live in direction.cold_open.beats (mode-cold-open-beats). Beat ids are the join key; never renumber once shots cite them. Explainer variant is ours: DirectorSKILL says non-narrative beats are format blocks; we keep the agent rule because it is what makes mechanism scenes land."
+
+  - id: plan-director-book
+    title: Director's book as a constraint record
+    summary: The per-episode rules that make later shot and prompt choices non-arbitrary, stored once in direction and continuity and quoted, never re-decided per shot.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [script, shotlist, qa]
+    rules:
+      - "Test: two writers who never met, given only the book, would produce shots that cut together."
+      - "Prefer a number, a named source or a forbidden list to an adjective; every policy carries a never line."
+      - "Record visual_thesis: one photographable rule ('the capsule grows, the station's window shrinks to one lit square')."
+      - "Record lens kit (2-4 mm values with jobs), allowed moves and move budget, key source and ratio, palette dominant/accent/forbidden."
+      - "Record performance register (largest permitted gesture), target ASL with shot count and duration, allowed transitions."
+      - "Invariant strings go in continuity (identity, location, light, style lock) in world space; camera-relative words live only in shot rows."
+      - "Do not restate delivery: aspect, safe zones, captions and loudness belong to format, audience card and DESIGN_SYSTEM."
+      - "Explainer: book = style lock + visual thesis + never list; the full book is for drama style segments."
+      - "Log any deviation from a lens or genre default with its reason as DEVIATE in director_notes."
+    avoid:
+      - "A section that would fit another episode unchanged; palette given as a mood; an empty never line; category negatives ('nothing modern')"
+    check: {type: judgment, test: "Could a second writer fill shots 3-5 from the book alone and match shots 1-2?", how: "verify.py reads direction.book + continuity; lint: never[] non-empty in drama modes"}
+    sources: [dsk-tpl-director-book, dsk-skill-router, vsk-role-modes, lens-apply, prompt-light-source, real-period-tech]
+    confidence: craft-rule
+    supersedes: [dsk-tpl-director-book]
+    notes: "PROPOSED direction.book {visual_thesis, kit_mm[], moves[], move_budget, key, ratio, palette{dominant, accent, forbidden}, performance, asl_s, transitions[], anchors{} (plan-scene-formula), never[]}. Precedence differs from the vendor: audience card and DESIGN_SYSTEM outrank the lens (flow-conflict-order)."
+
+  - id: plan-scene-formula
+    title: Scene formula, Details Law and five anchors
+    summary: A drama scene exists only when desire, obstacle, geometry, controlled gaze and rhythm can each be named; every shot then owns three physical details.
+    mode_fit: [cold-open-drama, hybrid, documentary]
+    stage: [script, shotlist, clip-prompt, qa]
+    audience_fit: [kids, curious_adult, older_adult, techie]
+    rules:
+      - "Name one sentence each: the want this second, what blocks it, who holds power, where the eye is forced, how long shots live."
+      - "Spatial sentence before any fast cutting: where the subject is, where the threat is, which way is escape."
+      - "Each shot owns one environmental pressure, one physical micro-action on a body or object, one sound or visual motif."
+      - "Zero details is filler, one is thin; strong shots carry all three, written as nouns and verbs, never feeling names."
+      - "Every shot changes emotion, advances action or raises pressure (arch-conventions); a pretty frame is not a job."
+      - "Every camera move answers 'what changed?'; if nothing, lock the camera."
+      - "Commit to exactly five anchors per piece: one emotion, one motif, one anchor object, one break, one final image."
+      - "The final image carries the motif; in hybrid mode it rhymes with the opening image (mode-loop-image)."
+    avoid:
+      - "'cinematic', 'intense moment', 'he is afraid': each marks a missing detail"
+    check: {type: judgment, test: "Are the five formula elements and five anchors nameable, and does every shot list three details?", how: "verify.py PRE on shot.details and direction.book.anchors"}
+    example: "Anchors for an ISS cold open: emotion dread; motif a closing-rate readout; object the docking probe; break the hand leaving the abort switch; final image the probe tip filling the window."
+    sources: [vsk-dramaturgy, vsk-patterns-genres, mode-scene-engine-gate, edit-murch-rubric]
+    confidence: craft-rule
+    supersedes: [vsk-dramaturgy]
+    notes: "vsk-dramaturgy is absorbed across this card, plan-density-ladder (rhythm ladder), plan-shot-fields-extra (14-field card, shot functions), mode-scene-engine-gate (story level), edit-murch-rubric (Rule of Six) and prompt-blocking-translation (blocking). Its Fincher/Spielberg/Kurosawa attributions are dropped (no named-director rule)."
+
+  - id: plan-edit-timeline
+    title: Edit timeline and duration arithmetic
+    summary: Frames are the unit; every transition is a subtraction from running time, so the cut is planned as arithmetic before Remotion assembles it.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist, edit, qa]
+    rules:
+      - "Work in frames at format.fps (30); frames = seconds x fps; out-points are exclusive."
+      - "Scene length comes from TTS duration plus pads; clip scenes also record the kept span inside the generated clip (PROPOSED shot.trim)."
+      - "Program total = sum of durations minus overlaps; dissolve, whip, seam blend overlap N frames; hard, match, J, L cuts overlap 0."
+      - "A dip to black either overlaps (minus N) or holds black (plus N); write which."
+      - "Notation: 'hard cut', 'match on <element>', 'dissolve Nf', 'dip Nf overlap|hold', 'J Nf', 'L Nf', 'seam blend Nf'."
+      - "Seam blend (4-8 f) is a repair logged as F18, never a style choice, and never fixes a wrong action."
+      - "Assembly order: bed first, all hard cuts at planned length, watch once, trim, move cuts to action completion, then transitions, foley, music, one grade."
+      - "If Remotion's total disagrees, check mixed frame rates, inclusive out-points, then centred versus trailing dissolves."
+      - "Cold open sum must equal direction.cold_open.duration_s; ASL = cold-open seconds / shots, checked against direction.book."
+    check: {type: mechanical, how: "render report: total frames = sum(scene frames) - overlaps; cold_open.duration_s within 1 frame; ASL in book range"}
+    sources: [dsk-tpl-edit-timeline, dsk-editing-assembly, edit-handles-harvest, edit-jl-sound-bridges, DESIGN_SYSTEM]
+    confidence: craft-rule
+    supersedes: [dsk-tpl-edit-timeline]
+    notes: "Export block becomes the render report; loudness, captions and aspect are declared once by DESIGN_SYSTEM/profile, not here. Handles and blind trims are owned by edit-handles-harvest. PROPOSED shot.transition_in and shot.trim [in_s, out_s]."
+
+  - id: plan-keyframe-card
+    title: Keyframe card for a still that must carry a beat
+    summary: Before writing any still prompt, fill a card naming the beat, job, one focal subject, three depth layers, the implied move, the emotion carried by an object, and the frozen motion cue.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Each still carries one readable beat, one function tag, one emotion and one implied motion; missing any one, drop or redesign it."
+      - "A panel does one of five jobs: motion about to begin, motion just completed, a reveal, a power relation, a clue."
+      - "Name the single focal subject the eye lands on in 0.3 s and put it on a strong line in the safe zone."
+      - "Write three depth clauses with jobs: foreground frames or obstructs, midground is the act, background is the stake or context."
+      - "Name the implied camera: the move this still is the first frame of; for clips it must equal shot.move."
+      - "Name the motion-as-still cue (plan-still-as-motion) and the emotion-via-object (plan-emotion-without-faces)."
+      - "Fill a sound line even for an illustration: what plays under it and where the cut bites."
+      - "Slot order and the pre-animation gate stay in prompt-keyframe-nine-slot; this card is what feeds the slots."
+    check: {type: judgment, test: "Can the still be captioned with one beat and one job, and does it imply its next frame?", how: "keyframe QC on the contact sheet before any clip spend"}
+    sources: [vsk-animatic-keyframes, dsk-tpl-keyframe-prompt, dsk-image-model-adapters, prompt-keyframe-nine-slot]
+    confidence: craft-rule
+    supersedes: [vsk-animatic-keyframes]
+    notes: "vsk-animatic-keyframes is absorbed with plan-density-ladder, plan-still-as-motion and plan-emotion-without-faces. Its race-spot palette rules (amber ban, cold palette) are brief-specific and dropped; our palette comes from the audience card or direction.book."
+
+  - id: plan-density-ladder
+    title: Density ladder and rhythm presets per beat
+    summary: Loudness in the sound plan sets panel and cut count per beat; quiet beats get one held frame, impacts get a short burst, and a held pause precedes the biggest cut.
+    mode_fit: [cold-open-drama, hybrid, montage, documentary, explainer]
+    stage: [shotlist, edit]
+    rules:
+      - "Quiet or ritual beat: one held frame, 1.5-2.5 s, most negative space; never subdivide it."
+      - "Pressure climbing: escalating singles, each tighter and shorter than the last."
+      - "Impact: a 3-panel micro-burst at 8 f down to 4 f, cut from harvested fragments or stills, never extra paid clips."
+      - "Never put two bursts back to back; one held quiet frame separates every burst."
+      - "Aftermath: one held frame of about 2 s on the consequence, not an explanation."
+      - "Presets (s): slow burn 4,4,3,2,1,pause,2; anxiety 2,1,1,0.5,0.5,pause,1; impact pause,0.2 flash,2 stillness."
+      - "Explainer scenes keep one visual change every 2-4 s (DESIGN_SYSTEM); the ladder governs cold opens and montage runs."
+      - "Read the board on mute: it should feel like it accelerates toward the turn, then stops."
+    avoid:
+      - "older_adult: cuts under 2 s and bursts; kids: cuts under 1 s (edit-pacing-math floors)"
+    check: {type: mechanical, how: "lint on shot.duration_s: no two sub-1 s runs adjacent; a >=0.5 s hold precedes the shortest cut; audience floors"}
+    sources: [vsk-animatic-keyframes, vsk-dramaturgy, vsk-role-modes, edit-pacing-math, edit-handles-harvest]
+    confidence: craft-rule
+    notes: "Vendor board of 18-26 panels per 30 s assumes cheap stills; at our cost a burst is harvested from one clip. Editor density '6-9 beats per 5 s' is not adopted for generation (cont-one-action caps a 6 s clip at two beats); it applies only to cut fragments."
+
+  - id: plan-still-as-motion
+    title: A still that reads as motion
+    summary: A still cannot move, so prompt the physical residue motion leaves behind; this is what keeps illustration scenes and keyframes from reading as a slideshow.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [clip-prompt, shotlist, qa]
+    rules:
+      - "Pick one frozen cue: directional smear, one element partly blurred, streak frame, pose vector, sharp subject on soft field, or deliberate dead stillness."
+      - "Write the cue as a physical fact: 'weight on the back foot, front heel lifted', 'cup 10 cm above the table, not yet tipped'."
+      - "Other fragments: garment lagging behind travel, gaze just outside the frame edge, hand 5 cm from the handle, door still swinging."
+      - "Differential blur only: sharp subject against a streaked background; equal blur everywhere reads as a soft photo."
+      - "A fast still needs three of: low camera, ground streaking, a near foreground object passing the edge, sharp-on-blurred, a vibration cue."
+      - "No neutral panels: compose negative space ahead of the subject, in the direction it is about to move."
+      - "Flat illustrated looks use the same physics as pose, lean, motion arcs and debris trails, never photographic blur words."
+      - "For Remotion stills, the cue sets the Remotion move direction; push the way the pose points."
+    check: {type: judgment, test: "Covering the caption, would a viewer say what happens next?", how: "contact-sheet review of illustration and keyframe stills"}
+    sources: [vsk-animatic-keyframes, dsk-image-model-adapters, edit-anti-slideshow, prompt-keyframe-nine-slot]
+    confidence: craft-rule
+
+  - id: plan-emotion-without-faces
+    title: Emotion without faces
+    summary: Faceless frames carry feeling through a body part mid-decision, an object crossing a threshold, or the geometry of space; our narrator-led channel uses this for most shots.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Redistribute the face's jobs: decision goes to anatomy mid-action, inner state to an object changing state, looking or rivalry to space."
+      - "Show a hand only on a decision verb (grip, release, press, latch); a resting hand is filler."
+      - "Board an object's after state as it crosses a threshold: gauge pinned, lamp just lit, shelf half empty."
+      - "Angle carries the beat: low for power or force, eye level for parity, high or top-down for judgment and aftermath."
+      - "Keep an object only if it shows a state, advances the action or bridges to the next frame; cut the rest."
+      - "One focal point, one emotion, three working depth layers, no dead objects."
+      - "Light is character: name the source, its colour temperature in kelvin or plain words, and the plane held dark."
+      - "Kids: the series mascot may carry the face; photoreal human faces stay out of hooks (mode-hook-primal)."
+    check: {type: judgment, test: "With no face visible, can the intended emotion be named from one object state?", how: "verifier on keyframe text and contact sheet"}
+    example: "Worry about rising rent: top-down on a kitchen table, a hand stops halfway to a stack of unopened envelopes, the lamp pooled on the top one, the rest of the room dim."
+    sources: [vsk-animatic-keyframes, avg-faceless-channel, prompt-micro-expression, real-performance]
+    confidence: craft-rule
+
+  - id: plan-reference-assets
+    title: Reference sheets, location plates and the consistency ladder
+    summary: Build the cheapest references first (identity string, sheet, empty plate), climb the consistency ladder only as far as the shot needs, and know when drift is acceptable.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist, clip-prompt, qa]
+    rules:
+      - "Ladder, cheapest first: identity string, character sheet, subject reference, instruction edit, face repair, cut around it."
+      - "Sheet: neutral pose, flat frontal light near 1:1, plain mid-grey ground, no props, figure 80 percent of frame height."
+      - "If views drift on one canvas, generate them separately; crop three-quarter head for close shots, full body for wides."
+      - "Location plate: empty set at the master angle, no people; every setup in that location derives from it (cont-master-keyframe)."
+      - "Adding a figure to a plate, state its light, its contact with the floor and what it occludes."
+      - "Chain at most 2-3 edits from one master before regenerating from the master."
+      - "A pair differs by one body part, one object or one light; more than one change is two shots."
+      - "Accept drift when the head is under 10 percent of frame height or on screen under 1.5 s; otherwise fix or restage."
+      - "Generate the plate and the cheapest shot first; they settle palette and become the style key."
+    check: {type: mechanical, how: "lint: each continuity character in >=3 shots has canon_frame; each location used by a clip has a master plate path"}
+    sources: [dsk-image-model-adapters, dsk-tpl-keyframe-prompt, cont-canon-frame, cont-master-keyframe, prompt-first-last-chaining, "dialects/keyframe-image.md"]
+    confidence: craft-rule
+    supersedes: [dsk-tpl-keyframe-prompt, dsk-image-model-adapters]
+    notes: "Model-specific control-surface matrix (Midjourney, Nano Banana, Seedream), seeds and denoise values are dropped; MiniMax image-01 specifics live in dialects/keyframe-image.md. First/last templates and the nine-slot order stay in prompting.yaml. Storyboard-panel jobs moved to plan-keyframe-card."
+
+  - id: plan-shotlist-glossary
+    title: Connected shotlist (style prefix, asset glossary, named prompts)
+    summary: Lock the look once, declare every recurring asset once with a stable id, then write named per-scene prompts that inherit both, so one edit propagates everywhere.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist, clip-prompt]
+    rules:
+      - "Layer 1: one style prefix per style segment (cont-style-lock), pasted first, verbatim, in every prompt."
+      - "Layer 2: glossary in continuity.characters/locations/props, each with a stable id and a fidelity grade."
+      - "Fidelity grades: full-preserve, partial-preserve (name the parts), attribute-transfer (name the target), loose-guide."
+      - "Multi-state assets get their own locked entry built up front (char_vega_helmet_off); never ask a later prompt to change them."
+      - "Layer 3: prompts named by scene id; a split shot becomes s3a/s3b, never a renumber of later scenes."
+      - "Use style.cast {tokens} in prompts so run.py fill() propagates one descriptor edit to every scene."
+      - "A per-scene override replaces one prefix line (usually light), is logged as DEVIATE, and never edits the global prefix."
+      - "Thin scene description: fill neutral defaults (locked or slow push, one action, motivated practical light, a clear final frame), never meaning."
+    check: {type: mechanical, how: "lint: every shot.continuity_ids entry resolves; scene ids unique and stable across repairs; prefix substring present"}
+    sources: [hf-shotlist-director, cont-style-lock, cont-bible-schema, cont-off-screen-line, run.py]
+    confidence: craft-rule
+    supersedes: [hf-shotlist-director]
+    notes: "Seedance 15 s envelopes, the HTML artifact and Elements auto-attach are Higgsfield-specific and dropped; envelope grouping is re-derived for our 6 s Hailuo clip in plan-clip-envelope. Off-screen line is cont-off-screen-line; monotony audit is arch-conventions; tempo budget is edit-pacing-math. PROPOSED continuity asset key: fidelity."
+
+  - id: plan-clip-envelope
+    title: Grouping beats into clips
+    summary: Decide which beats share one generated clip and which need their own, using our 6 s Hailuo envelope rather than the vendor's 15 s.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [shotlist]
+    rules:
+      - "Group into one clip only when cast, location and camera setup match, it is one emotional unit, and it fits about 4.5 usable seconds."
+      - "Split on any location cut, cast entrance or exit, setup or lens change, insert, or a reaction that builds over several beats."
+      - "One continuous reaction stays one clip even if the script writes it as three lines; do not fragment it."
+      - "Split triggers inside one clip: two strong actions, two camera moves, three important subjects, one complex effect."
+      - "Size duration to the action plus a hold; a 2 s gesture gets a short clip trimmed, not 6 s of filler."
+      - "When in doubt, more and shorter clips: Hailuo holds one tight beat better than an overloaded one."
+      - "Re-score plan-shot-risk on both halves after any split."
+    check: {type: mechanical, how: "lint: a clip scene with two verbs in shot.action or two move words is flagged for split"}
+    sources: [hf-shotlist-director, cont-one-action, edit-handles-harvest, doc11#1A-5, config/providers.yaml]
+    confidence: craft-rule
+    notes: "Vendor grouping heuristic is for 15 s Seedance prompts with internal cuts; we generate one shot per clip, so the 'group' branch rarely applies outside held atmosphere shots."
+
+  - id: plan-story-arc
+    title: Choose the story arc before the beats
+    summary: Pick one of five arc shapes for the episode or cold open first; forcing a causal beat map onto a story with no causal spine makes it busy but empty.
+    mode_fit: [cold-open-drama, hybrid, documentary, montage, explainer]
+    stage: [script]
+    rules:
+      - "Causal chain: disruption, consequence, consequence, resolution; for a goal pursued or a process run to its end."
+      - "Turn without conflict: setup, widening, an unrelated element recontextualises, reconcile; for myth-busting where the misconception turns."
+      - "One peak moment: minimal context, the peak, its residue; break and impact share one beat; never invent an obstacle."
+      - "Conflict: opening image, trigger, midpoint reversal, low point, climax, closing image; only when an opposing force can win."
+      - "Hook and open end: fragment plus a standing question; for series part one or a teaser; the episode still answers its own hook."
+      - "Two arcs equally plausible means the brief is undecided: pick one and log RULING in director_notes."
+      - "Arc first, then archetype (arch-router), then beats (plan-beat-sheet); record PROPOSED direction.arc."
+    check: {type: judgment, test: "Does the beat sheet follow the named arc without a manufactured obstacle?", how: "verify.py PRE"}
+    sources: [vsk-patterns-genres, mode-story-circle, arch-router, hooks.md]
+    confidence: craft-rule
+    notes: "Story Circle (mode-story-circle) maps onto the causal and conflict arcs. Kids episodes default to causal chain or turn without conflict (no opponent needed)."
+
+  - id: plan-montage-patterns
+    title: Montage pattern sequences
+    summary: Ready shot orders for the montage patterns that arch-montage names, adapted so each run still tracks one advancing variable.
+    mode_fit: [montage, cold-open-drama, hybrid, explainer, documentary]
+    stage: [shotlist, edit]
+    rules:
+      - "Escalation: wide, medium, close, macro, reaction, impact; for builds and emphasis."
+      - "Anxiety: face or object, object, hand, object closer, sound cue, sudden stillness; for pressure before bad news."
+      - "Discovery: POV, empty space, searching hand, hidden object, focus shift, reaction; for reveals and search."
+      - "Catastrophe: anticipation, instability, reaction, fall, impact, silence, collapse; tiny failures play bigger than explosions."
+      - "Mechanism run: setup, part A moves, part B responds, macro on the contact, result, hero state; our explainer adaptation."
+      - "Loop: gesture A, cut, gesture A new angle, transformation, gesture A again, release; pairs with mode-loop-image."
+      - "Each pattern still obeys arch-montage: one advancing variable, one continuous sound bed, fixed head and tail frames."
+    avoid:
+      - "Prompting a pattern inside one clip; build it from separate shots in Remotion"
+    check: {type: judgment, test: "Does the run's order match a named pattern and advance one variable?", how: "verifier on montage shot rows"}
+    sources: [vsk-patterns-genres, arch-montage, arch-mechanism-demo, mode-montage]
+    confidence: craft-rule
+    supersedes: [vsk-patterns-genres]
+    notes: "Product-drama pattern rewritten as mechanism run. Genre modules (domestic tragedy, fashion, UGC, music video, race) are dropped: lenses.yaml and modes.yaml cover our registers. Multi-clip default splits (5 s each) and in-clip timecoded beats are superseded by cont-one-action for Hailuo."
+
+  - id: plan-hook-faceless
+    title: Faceless-channel hook addendum
+    summary: What the faceless and viral-hook sources add beyond the mode-hook-* cards; read those first and use this only for the gaps.
+    mode_fit: [explainer, cold-open-drama, hybrid, montage, documentary]
+    stage: [script, shotlist, edit]
+    rules:
+      - "Families stay as mode-hook-pattern-interrupt, -curiosity-gap, -sensory, -primal, -three-layer; routing in mode-hook-map."
+      - "First frame is the thumbnail: frame 1 must read alone at phone size and agree with packaging.thumbnail."
+      - "Visual metaphor hook: open on the one object that is the thesis, the analogy object or the real part, then reveal its context."
+      - "Impossible-scene hook only as a labelled what-if that the episode then explains; never a fake phenomenon."
+      - "Snap zoom, whip, drop and dutch snap are Remotion transforms on a still, at most 0.5 s; never asked of the video model."
+      - "Narration-first sound: cut on narration beats; the audio change leads the picture cut by 2-4 frames."
+      - "Never show one environment from the same angle twice in an episode, except a declared bookend or loop image."
+      - "Name light colour temperature per hook shot; without a face, light carries the mood."
+    avoid:
+      - "Retention numbers from these sources ('80% completion gives 2-3x reach', 'swipe in 1.5 s'); unverified vendor claims"
+      - "kids and older_adult: snap zooms, dutch snaps, strobe"
+    check: {type: mechanical, how: "lint: scene 1 visual is not a repeated setup; hook family recorded in director_notes"}
+    sources: [avg-viral-hook, avg-faceless-channel, mode-hook-map, hooks.md, prompt-thumbnail-protocol, DESIGN_SYSTEM]
+    confidence: weak
+    supersedes: [avg-viral-hook, avg-faceless-channel]
+    notes: "Confidence weak because the sources' retention stats and platform timings are unsourced; the craft rules above are plausible but untested on our channel. Their sound levels (music 10-15 percent) and UI safe zones (bottom 40 percent) conflict with DESIGN_SYSTEM, which wins. Lighting presets (neon contrast, strobe) and the four faceless style templates are covered by lenses.yaml or off-brand."

@@ -1,0 +1,85 @@
+# Ledger entries reviewed and NOT distilled into direction/craft/ (2026-10-05, model-specific/prompt-pattern pass).
+# Reason vocabulary: off-target, vendor-UI-specific, unsafe/filter-evasion, duplicate of X.
+# Ideas worth keeping from these files were folded into the cards named in each reason.
+- {id: hf-seedance-vfx, reason: "off-target: video-to-video transforms of user-shot footage; we shoot no footage. Its composite lighting-integration and change-one-thing ideas are in prompt-edit-hold-change. Its NON-IP 'generates more reliably' tip is filter-oriented and not carried."}
+- {id: hig-templates-seedance-footage-vfx-transform, reason: "off-target: v2v footage template; lock-down pattern duplicate of prompt-edit-hold-change; relies on a vendor linter script."}
+- {id: hig-templates-seedance-anime-animation, reason: "off-target (anime UGC) and unsafe/filter-evasion: its constraint line frames copyrighted manga references as style to stay inside content policy. Turnaround-sheet and one-variable iteration ideas duplicate cont-canon-frame and fail-retry-ladder."}
+- {id: hf-motion-design, reason: "vendor-UI-specific: Higgsfield MCP tool-call workflow for animated ads; the storyboard-first idea duplicates cont-master-keyframe / prompt-keyframe-nine-slot."}
+- {id: avg-viral-hook, reason: "duplicate of mode-hook-* cards (pattern interrupt, curiosity gap, primal, sensory); rest is Seedance 2.0 dialect. Unsafe parts rejected: 4 Hz strobe and 3-frame 'subliminal' flashes (photosensitivity, deceptive). Scale-with-human and named move durations folded into prompt-measurable-language."}
+- {id: avg-saas-launch, reason: "off-target (SaaS product demos); contains unsupported comparative claims and invented metrics."}
+- {id: avg-personal-brand, reason: "off-target (founder/authority video); lighting and push-in content duplicate prompt-light-source."}
+- {id: avg-course-promo, reason: "off-target (course sales) and unsafe: false scarcity, unreadable 'social proof flash' testimonials, placeholder proof stats captioned as real. The one-sentence hook test is in prompt-layer-order."}
+- {id: avg-luxury-aesthetic, reason: "off-target genre; its generic prompt rules (settle hold after a move, speed as fraction of frame, calm negative space) were folded into prompt-motion-fill, prompt-measurable-language and prompt-faceless-narrated. Its 'specify what is absent' rule conflicts with prompt-positive-phrasing and is not adopted."}
+- {id: avg-before-after, reason: "duplicate of arch-before-after; extras (physical cause for the transition, before as specific as after, end on the best after frame) are small and noted in prompt-faceless-narrated sources."}
+- {id: avg-testimonial, reason: "unsafe: fabricated customer faces and metrics, fake platform attribution for ratings, ads designed not to read as ads. Off-target for explainers."}
+- {id: avg-ai-avatar, reason: "off-target (synthetic spokespeople, no disclosure guidance); character-life ideas duplicate prompt-micro-expression and prompt-style-lock."}
+# 2026-10-05 second vendoring wave (content-skills platform files, shotkit docs/snapshots/adapters, video-prompting-skill off-pipeline models).
+# Platform files: we publish YouTube Shorts + long-form only; TikTok/Instagram mechanics, shop/monetization and trend-sound tactics are off-target. Figures in them are vendor claims.
+- {id: vcs-tt-shop-monetization, reason: "off-target: TikTok Creator Rewards / Shop affiliate monetization; vendor revenue figures; we sell nothing."}
+- {id: vcs-tt-native-features, reason: "off-target: TikTok-only features (duet, stitch, LIVE, Symphony AI vendor tools) we cannot use."}
+- {id: vcs-tt-hooks, reason: "duplicate of vcs-hook-archetypes / mode-hook-* cards; confession and product-withhold hooks do not fit explainers."}
+- {id: vcs-tt-sounds, reason: "off-target: TikTok trending-sound windows; our audio is TTS plus free/generated music."}
+- {id: vcs-tt-algorithm, reason: "off-target: TikTok ranking folklore (community heuristics, unverified)."}
+- {id: vcs-tt-anti-patterns, reason: "duplicate of vcs-bait-check / vcs-hook-anti-patterns; its 'pad to 60 s for Creator Rewards' advice is monetization-driven and rejected."}
+- {id: vcs-tt-sound-tracker, reason: "off-target: trending-sound tracker sheet."}
+- {id: vcs-tt-script-template, reason: "duplicate of vcs-sf-script-template at TikTok length."}
+- {id: vcs-tt-long-template, reason: "off-target: 60 s+ length chosen to meet TikTok Creator Rewards; our long-form follows mode-explainer rules."}
+- {id: vcs-tt-hook-checklist, reason: "duplicate of vcs-hook-checklist with TikTok-only extras."}
+- {id: vcs-tt-shop-video-template, reason: "off-target: TikTok Shop product-selling template with sales-urgency patterns."}
+- {id: vcs-reels-hook, reason: "duplicate of vcs-three-layer-hook and Shorts retention files; Reels thresholds are vendor claims."}
+- {id: vcs-reels-caption-search, reason: "off-target: Instagram caption/SEO and grid rules; general caption advice kept in vcs-captions-skill."}
+- {id: vcs-reels-sends-playbook, reason: "off-target: Meta 'sends' metric; send-style CTA wording already in vcs-cta-picker."}
+- {id: vcs-reels-insights, reason: "off-target: Instagram Insights analytics; retention-curve reading duplicates vcs-shorts-retention."}
+- {id: vcs-reels-trial-reels, reason: "off-target: Instagram-only Trial Reels feature."}
+- {id: vcs-reels-edits-app, reason: "vendor-UI-specific: Instagram Edits app; our edit stage is Remotion."}
+- {id: vcs-reels-originality-audio, reason: "off-target: Meta originality/audio policy paraphrase; YouTube reused-content policy is the one that applies to us."}
+- {id: vcs-reels-hook-checklist, reason: "duplicate of vcs-hook-checklist with Reels thresholds."}
+- {id: vcs-reels-trial-decision, reason: "off-target: Instagram Trial Reel decision sheet."}
+- {id: vcs-reels-script-template, reason: "duplicate skeleton of vcs-sf-script-template with a Meta sends CTA."}
+- {id: vcs-reels-insights-readout, reason: "off-target: Instagram Insights fill-in form."}
+- {id: vcs-reels-skill, reason: "off-target: Instagram Reels workflow router (sends, trial reels, Meta originality); quality 2."}
+- {id: vcs-reels-diagnose-flop, reason: "off-target: Reels-metric flop diagnosis; Shorts diagnosis lives in vcs-shorts-algorithm / vcs-shorts-retention."}
+- {id: vcs-tiktok-skill, reason: "off-target: TikTok workflow router (algorithm, sounds, shop); quality 2."}
+- {id: vcs-tiktok-retention-math, reason: "off-target: TikTok completion bands (unsourced); Shorts retention reading is in vcs-shorts-retention."}
+- {id: vcs-tiktok-script-structure, reason: "duplicate of vcs-sf-script-template / script_template.yaml at TikTok length."}
+- {id: vcs-ideas-pillars, reason: "off-target: generic creator pillar advice; our series are defined by audiences/ and format_catalog.yaml."}
+- {id: vcs-ideas-frameworks, reason: "off-target: newsletter/personal-brand ideation frameworks; a leaked-memo scoring scheme of unverified provenance."}
+- {id: vcs-ideas-anti-patterns, reason: "off-target: generic productivity advice for ideation."}
+- {id: vcs-ideas-repurposing-plan, reason: "duplicate of vcs-repurposing / vcs-shorts-longform-bridge (thin template)."}
+- {id: vcs-ideas-mining-checklist, reason: "duplicate of vcs-ideas-mining (kept raw) in checklist form."}
+- {id: vcs-ideas-idea-tracker, reason: "off-target: personal idea backlog; episodes are tracked in episode.json."}
+- {id: vcs-ideas-content-matrix, reason: "off-target and policy risk: volume ideation (75-100 ideas) encourages mass-produced repetitive content."}
+- {id: vcs-ideas-pillar-worksheet, reason: "off-target: generic pillar worksheet."}
+- {id: vcs-evergreen-vs-trend, reason: "off-target: generic evergreen-vs-trend creator advice; quality 2."}
+- {id: vcs-sf-formats, reason: "off-target: format menu (talking head, listicle, carousel) for creators who film themselves; our formats are in format_catalog.yaml."}
+- {id: vcs-sf-carousel-outline, reason: "off-target: Instagram carousel template; we publish video only."}
+- {id: vcs-cap-pinned-comments, reason: "unsafe in part: self-reply comment 'seeding' (astroturf-adjacent) and comment-to-DM bait automation; packaging.md already has a pinned-comment rule."}
+- {id: vcs-cap-hashtag-reality, reason: "duplicate of packaging.md hashtag rule (3-5, none in title); quoted platform-exec attributions unverified."}
+- {id: vcs-cap-pinned-comment-template, reason: "duplicate of vcs-cap-pinned-comments in template form; packaging.md covers it."}
+- {id: vcs-cap-caption-template, reason: "duplicate: per-platform caption skeleton; packaging.md covers YouTube descriptions."}
+# shotkit: install/surface docs, brand-lock material and image adapters for models we do not use.
+- {id: shk-doc-brand-lock-anatomy, reason: "off-target: brand-lock for client brands; our look is config/profiles + DESIGN_SYSTEM.md."}
+- {id: shk-doc-claude-ai-workflow, reason: "vendor-UI-specific: install/upload instructions for the vendor's skill pack."}
+- {id: shk-doc-claude-code-workflow, reason: "vendor-UI-specific and unsafe as instructions: installing third-party skills into ~/.claude; we never register vendored skills."}
+- {id: shk-doc-why-this-exists, reason: "off-target: vendor positioning essay, no direction rules."}
+- {id: shk-ex-brand-lock-30s, reason: "off-target: the author's own brand snapshot (names not usable per NOTICE)."}
+- {id: shk-ex-brand-lock-60s, reason: "duplicate of shk-ex-brand-lock-30s (byte-identical)."}
+- {id: shk-ex-brand-lock-critic, reason: "duplicate of shk-ex-brand-lock-30s (byte-identical)."}
+- {id: shk-forge-ex-all-adapters, reason: "duplicate: its lessons (camera clause first on video, text composited never prompted) are dialects/README cross-model rules 4 and 8; founder/SaaS demo content."}
+- {id: shk-generators-doc, reason: "vendor-UI-specific: how teams wire the pack's prompt files into generator UIs/APIs; our adapters/ already do this."}
+- {id: shk-architect-ex-60s, reason: "off-target: founder/SaaS self-promo explainer storyboard; shk-architect-ex-30s kept raw as the worked example."}
+- {id: shk-adapter-ideogram, reason: "off-target model: Ideogram not used; typography is rendered in Remotion."}
+- {id: shk-adapter-midjourney, reason: "off-target model: Midjourney has no API we use; flag-stack syntax irrelevant."}
+- {id: shk-adapter-seedream, reason: "off-target model: Seedream not wired; adapter is two lines of advice."}
+# video-prompting-skill: models we do not and will not call (one-line notes in craft/dialects/README.md 'Other models seen').
+- {id: vps-ltx2, reason: "off-target model: LTX-2 (open weights, ComfyUI); noted in dialects/README.md 'Other models seen'."}
+- {id: vps-ltx2-3, reason: "off-target model: LTX-2.3; noted in dialects/README.md."}
+- {id: vps-ltx2-5, reason: "off-target model: LTX-2.5 incl. Dub-It speech replacement (we never put speech in clips); noted in dialects/README.md."}
+- {id: vps-ltx2-examples, reason: "off-target model: sample LTX-2 prompts only."}
+- {id: vps-ovi, reason: "off-target model: Ovi 1.x speech-token prompting (5/10 s talking clips); noted in dialects/README.md."}
+- {id: vps-wan-animate2, reason: "off-target model: Wan Animate 2 character replacement from a driving video (we shoot no footage); noted in dialects/README.md."}
+- {id: vps-seedance2-examples, reason: "duplicate: sample Seedance 2.0 prompts; the guide itself (vps-seedance2) is absorbed by dialects/seedance.md."}
+- {id: h3s-skill-audio-edit-post, reason: "lip-sync / reference-audio-drives-mouth pipeline is off-target (we do not lip-sync clips); the reaction-insert idea is absorbed into edit-reaction-insert"}
+- {id: shk-architect-skill, reason: "tooling pipeline (run.json/shots.json/validators/text-overlays.json) is replaced by episode.json + brain.py + lint; ideas live in plan-artifact-map and plan-shot-fields"}
+- {id: shk-forge-skill, reason: "per-generator prompt-file tooling; our prompts are written once per dialect; revision-reemits-only-failed-shots idea is in fail-repair-or-regenerate"}
+- {id: vcs-shorts-anti-patterns, reason: "channel/publishing-level advice (subscribe CTA, foreign-watermark cropping advice is unsafe, monetization); hook anti-patterns absorbed into mode-hook-retention-shapes; CTA items belong in packaging.md"}
