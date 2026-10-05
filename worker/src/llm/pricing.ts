@@ -16,6 +16,9 @@ const PRICING: Record<string, ModelPricing> = {
   'gemini:gemini-1.5-flash': { inputPer1M: 0.075, outputPer1M: 0.30 },
   'gemini:gemini-1.5-pro': { inputPer1M: 1.25, outputPer1M: 5.00 },
   'gemini:gemini-2.5-flash': { inputPer1M: 0.15, outputPer1M: 0.60 },
+  // MiniMax
+  'minimax:MiniMax-M3': { inputPer1M: 0.80, outputPer1M: 2.20 },
+  'minimax:MiniMax-M2.7': { inputPer1M: 0.60, outputPer1M: 1.80 },
   // Grok
   'grok:grok-3': { inputPer1M: 3.00, outputPer1M: 15.00 },
   'grok:grok-3-mini': { inputPer1M: 0.30, outputPer1M: 0.50 },

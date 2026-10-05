@@ -14,6 +14,7 @@ export const STATIC_MODELS_BY_PROVIDER: Record<string, LlmModelOption[]> = {
     { value: 'grok-2-latest', label: 'Grok 2 Latest', provider: 'grok' },
   ],
   minimax: [
+    { value: 'MiniMax-M3', label: 'MiniMax M3', provider: 'minimax' },
     { value: 'MiniMax-M2.7', label: 'MiniMax M2.7', provider: 'minimax' },
     { value: 'MiniMax-M2.7-highspeed', label: 'MiniMax M2.7 Highspeed', provider: 'minimax' },
     { value: 'MiniMax-M2.5', label: 'MiniMax M2.5', provider: 'minimax' },
