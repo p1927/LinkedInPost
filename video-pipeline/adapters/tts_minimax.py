@@ -4,7 +4,7 @@ from pathlib import Path
 
 import requests
 
-from .common import download, minimax_check, minimax_headers
+from .common import download, guarded_get, minimax_check, minimax_headers
 
 URL = "https://api.minimax.io/v1/t2a_v2"
 
@@ -37,7 +37,7 @@ class MiniMaxTTS:
         r.raise_for_status()
         j = minimax_check(r.json(), "TTS")
         download(j["data"]["audio"], out_path)
-        sub = requests.get(j["data"]["subtitle_file"], timeout=60).json()
+        sub = guarded_get(j["data"]["subtitle_file"], timeout=60).json()  # provider-returned URL: SSRF-guarded
         pieces = [p for seg in sub for p in seg["timestamped_words"]]
         return {
             "audio": str(out_path),

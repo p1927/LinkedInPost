@@ -6,17 +6,57 @@ tts:
     model: speech-2.8-hd
     voice_id: English_WiseScholar
     speed: 0.95
-image:
-  class_path: adapters.image_minimax.MiniMaxImage
+image:                    # image-01 is still MiniMax's only image model (2026-10-05). width/height are used for 9:16
+  class_path: adapters.image_minimax.MiniMaxImage   # requests (aspect_ratio 9:16 alone gives only 720x1280). Changing this re-keys keyframe caches.
   init_args:
     model: image-01
-video:
-  class_path: adapters.video_minimax.MiniMaxVideo
+    width: 1152
+    height: 2048
+video:                    # MiniMax-H3 (v2 endpoint, released 2026-07-31) = current model; $0.08/s at 768P (6 s = $0.48).
+  class_path: adapters.video_minimax.MiniMaxVideo   # Fallback: model: MiniMax-Hailuo-2.3 (v1 endpoint, $0.28 per 6 s 768P;
+  init_args:                                        # durations 6|10, set prompt_optimizer there). Cheaper H3 option:
+    model: MiniMax-H3                               # MiniMax-H3-Max at 480P ($0.05/s, 5-15 s). Changing this re-keys clip caches.
+    resolution: 768P      # H3: 768P | 2K ; H3-Max: 480P | 768P
+    duration: 6           # H3: 4-15 s integer ; H3-Max: 5-15 s
+    ratio: "9:16"         # text-to-video only; with a keyframe the API uses 'adaptive' (the keyframe sets the aspect)
+  # Cost gate (run.py stage_clips). Not adapter args and excluded from clip cache keys, so editing them never re-keys clips.
+  price_per_second: 0.08  # USD, MiniMax-H3 768P per https://platform.minimax.io/docs/guides/pricing-paygo (2026-10-05).
+                          # H3 2K: 0.13. H3-Max 480P: 0.05. Hailuo-2.3 fallback 768P: 0.047 (= $0.28 per 6 s clip).
+                          # Missing price + a cap set = the clip stage refuses to run (budget cannot be checked).
+  max_clip_cost_usd: 6.0  # refuse a clip stage whose estimate (clips to generate x duration x price_per_second)
+                          # exceeds this; override once with `python run.py <ep> clips --force-cost`. Remove = no cap.
+llm:                      # used by director.py (topic pick + script). Fallback chain tries models in order.
+  class_path: adapters.llm_minimax.MiniMaxLLM
   init_args:
-    model: MiniMax-Hailuo-2.3
-    resolution: 768P
-    duration: 6
+    models: [MiniMax-M3, MiniMax-M2.7, MiniMax-M2.5]
+    temperature: 0.8
+llm_write:                # writer + repairer (director.py): strongest model first, analogies and accuracy matter most here
+  class_path: adapters.llm_minimax.MiniMaxLLM   # mirrors worker/src/llm/providers/minimax.ts (same endpoint/params/model ids)
+  init_args:
+    models: [MiniMax-M3, MiniMax-M2.7]
+    temperature: 0.7
+llm_verify:               # verifier agents (verify.py): a different, stronger model than the writer, low temperature
+  class_path: adapters.llm_minimax.MiniMaxLLM
+  init_args:
+    models: [MiniMax-M2.7, MiniMax-M2.5]
+    temperature: 0.2
+llm_gemini:               # DISABLED (enabled: false) but kept for future use. To use: uncomment GEMINI_API_KEY in ../.env,
+  enabled: false          # set enabled: true, and point `llm:` / `llm_verify:` at this class_path (or use load_provider("llm_gemini")).
+  class_path: adapters.llm_gemini.GeminiLLM
+  init_args:
+    models: [gemini-3.5-flash, gemini-2.5-flash, gemini-flash-latest]
+    temperature: 0.8
+news:                     # topic intake; the Director may only cite URLs fetched here (source catalog)
+  class_path: adapters.news_web.NewsWeb      # NewsRSS feeds + web search (MiniMax -> ddgs). Revert to adapters.news_rss.NewsRSS for feeds only.
+  init_args:
+    per_feed: 10
+    search_limit: 10
+    read_top: 5          # best web results carry a page excerpt to the writer (adapters/web_fetch.py)
+    feeds:
+      - {label: Federal Reserve, url: "https://www.federalreserve.gov/feeds/press_all.xml"}
+      - {label: BLS, url: "https://www.bls.gov/feed/bls_latest.rss"}
+      - {label: Google News Business, url: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en"}
 # Alternatives (add an adapter file with the same method names, then point class_path at it):
 #   tts:   adapters.tts_fish.FishTTS | adapters.tts_elevenlabs.ElevenLabsTTS | adapters.tts_gemini.GeminiTTS
-#   video: adapters.video_higgsfield.HiggsfieldVideo | adapters.video_veo.VeoVideo
+#   video: none written yet (a Veo/Higgsfield/Kling adapter must implement generate(prompt, out_path, first_frame=None, last_frame=None))
 #   image: adapters.image_gemini.GeminiImage

@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-10-05).** This cookbook is kept only for history and for files that still cite it. The authoritative reference is `direction/craft/dialects/hailuo.md`; where they disagree, that file wins. The pipeline now calls **MiniMax-H3** on the v2 endpoint (`config/providers.yaml` `video:`), with `MiniMax-Hailuo-2.3` as the fallback. Inline corrections below are marked **[Corrected]**.
+
 # Hailuo (MiniMax) Image-to-Video Prompt Cookbook
 
 Evidence: [E secondary] = secondary guide summaries (akool, segmind, runcomfy); [R] = widely reported craft rules.
@@ -12,13 +14,13 @@ For I2V the first frame fixes subject appearance. Describe **motion only**—do 
 [Camera command(s)] Subject + Action. Scene/setting detail. Style/lighting cue.
 ```
 
-- **Camera command:** one bracket at the clause where the move starts; max 2–3 commands per bracket for simultaneous moves; separate brackets for sequential moves. [E secondary]
+- **Camera command:** one bracket at the clause where the move starts; max 2–3 commands per bracket for simultaneous moves; separate brackets for sequential moves. [E secondary] **[Corrected]** house cap is 2 commands per clip in total (dialects/hailuo.md section 2).
 - **Subject + Action:** one subject (two at most), one concrete action. No complex multi-character scenes.
 - **Style/lighting cue:** keep it short—"warm amber light, painterly" is enough. The image already sets the style.
 
 ---
 
-## Documented Camera Commands (15) [E secondary — akool/runcomfy guides; verify against current Hailuo release]
+## Documented Camera Commands (15) [Corrected: now verified on the MiniMax docs for Hailuo-2.3 / 2.3-Fast / 02 / 01-Director; the H3 token list is undocumented, see dialects/hailuo.md 0b]
 
 `[Truck left]` `[Truck right]` `[Pan left]` `[Pan right]` `[Push in]` `[Pull out]`
 `[Pedestal up]` `[Pedestal down]` `[Tilt up]` `[Tilt down]` `[Zoom in]` `[Zoom out]`
@@ -29,6 +31,8 @@ Combination syntax: `[Push in, Tilt up]` runs both simultaneously. `[Push in] ..
 ---
 
 ## 8 Example Prompts (I2V, picture-book / illustration style)
+
+**[Corrected]** Example 8 stacks two beats in one clip and breaks the one-beat rule; split it into two clips.
 
 1. `[Push in] The little fox slowly lifts its lantern. Warm amber glow flickers across its face. Soft paper-grain storybook look.`
 
@@ -65,7 +69,7 @@ Combination syntax: `[Push in, Tilt up]` runs both simultaneously. `[Push in] ..
 
 - **Lock the keyframe:** generate a character-sheet illustration first; use it as the first frame for every clip featuring that character.
 - **Repeat descriptor verbatim:** copy the exact character description string into every image and video prompt. Do not paraphrase.
-- **Chain clips:** generate each clip from the last frame of the previous clip to maintain continuity.
-- **Short clips:** 5–6 s clips hold consistency better than 10 s.
+- **Chain clips:** generate each clip from the last frame of the previous clip to maintain continuity. **[Corrected]** H3 (and Hailuo-02) also accept an explicit last frame; 2.3 does not.
+- **Short clips:** 5–6 s clips hold consistency better than 10 s. **[Corrected]** Hailuo 2.3 offers only 6 s or 10 s (no 5 s); H3 takes any integer 4-15 s. One beat per clip (dialects/hailuo.md section 9).
 - **One style prefix:** prepend the same style phrase to every prompt (`soft gouache and colored pencil texture, thick friendly outlines`).
 - **Avoid showing the same character from an unseen angle** — the model will invent details that break consistency.

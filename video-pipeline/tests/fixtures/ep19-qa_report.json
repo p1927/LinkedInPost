@@ -1,0 +1,510 @@
+{
+ "episode": "ep19-moon-change-shape",
+ "at": "2026-10-05T14:08:25Z",
+ "fingerprint": "15ee61b661b5175a",
+ "passed": false,
+ "issues": [
+  [
+   "warn",
+   "analogy_misleads",
+   "analogy predicts 'The cookie analogy predicts that the illuminated portion changes shape only because of the viewer’s perspective, implying a straight‑edged boundary like that on a flat cookie.' but reality: The Moon’s sunlit side is a spherical surface; the terminator is a curved line (a semi‑ellipse), not a straight edge. [downgraded: no exact narration quote]"
+  ],
+  [
+   "warn",
+   "misleading_statement",
+   "The cookie never changes shape — just how lit it looks! (implies the Moon’s lit boundary is straight‑edged like a flat cookie, overlooking the curved terminator of a sphere)"
+  ],
+  [
+   "warn",
+   "claim_unverifiable",
+   "claim 0 'The Moon does not produce its own light; it reflects sunlight.' (article_text): human spot-check needed"
+  ],
+  [
+   "warn",
+   "claim_unverifiable",
+   "claim 1 'As the Moon orbits Earth, we see different portions of its sunlit side, creating' (article_text): human spot-check needed"
+  ],
+  [
+   "warn",
+   "claim_unverifiable",
+   "claim 2 'A full moon occurs when we see the entire sunlit side of the Moon from Earth.' (article_text): human spot-check needed"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: The Moon never changes shape! We see it from a new angle. Those different looks have a name: moon phases."
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: The cookie never changes — just how lit it looks! A cookie is flat, and nothing touches the Moon to change it!"
+  ],
+  [
+   "error",
+   "real-axis-screen-direction",
+   "s1,s2: Scene 'open' (scene_ids: ['s1', 's2']) contains two clips in location 'night_yard' but declares no action line or which side the subject hol -> fix: Add to shot metadata for s1 or in a scene-level declaration: action_line: 'child faces screen-right "
+  ],
+  [
+   "warn",
+   "real-eyeline",
+   "s1,s2: Neither s1 nor s2 states eyelines numerically (e.g., 'target: Moon, horizontal: center, vertical: 45° up'). The rules state: 'State eyelines -> fix: Add numerical eyeline to s1 and s2 shot metadata, e.g., eyeline: {target: 'Moon', horizontal: 'cente"
+  ],
+  [
+   "warn",
+   "real-scale",
+   "s1,s2,s8: In s1 keyframe_prompt: 'Moon glows softly above the low wooden fence' implies the Moon is immediately above a normal-sized fence, making it  -> fix: Reposition the Moon to appear as a distant small disc in the sky, perhaps with the fence framing it "
+  ],
+  [
+   "error",
+   "real-identity",
+   "s1,s2: The identity string is 'A curious child with round glasses, dark wavy hair, and a purple striped sweater.' In s1 keyframe_prompt: 'A child w -> fix: Add 'curious' to s1 and s2 keyframe_prompts: 'A curious child with round glasses, dark wavy hair, an"
+  ],
+  [
+   "warn",
+   "real-action-end-state",
+   "s1,s2: s1 motion_prompt ends: '...gazing up at the crescent Moon with quiet wonder.' No 'End with...' clause. s2 motion_prompt ends: '...mouth form -> fix: Add to s1 motion_prompt: 'End with child standing still, hands clasped, eyes fixed on the Moon.' Add"
+  ],
+  [
+   "warn",
+   "real-framing-safe",
+   "s1,s2,s3,s4,s6,s8: While 'vertical 9:16 composition' is stated in prompts, no shot specifies framing in frame terms (e.g., 'eyes on upper third', 'headroom ~10 -> fix: Add framing specifications to each shot, e.g., for s1: 'framing: eyes on upper third, headroom 10%, "
+  ],
+  [
+   "warn",
+   "real-look-drift",
+   "s1,s2,s3,s4,s5,s6,s7,s8: style_segments define 'open' and 'explain' but do not include a style prefix to be pasted verbatim into each clip prompt. The rules state: ' -> fix: Add a style_prefix to each style_segment, e.g., for 'open': 'style_prefix: {palette: \"deep blues and"
+  ],
+  [
+   "warn",
+   "viewer_would_call_fake",
+   "s1, s2: The Moon appears impossibly large in the child's backyard (comparable in size to the fence), violating real scale expectations and breaking immersion for an ast"
+  ],
+  [
+   "warn",
+   "viewer_would_call_fake",
+   "s1, s2: The child's identity description is missing 'curious' in these shots while present in s3 and s8, creating a subtle inconsistency in how the main character is de"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "phases (the word for the different looks of the Moon)"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "reflects / bounces light back (how the Moon sends light to us)"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "sunny bits (what that phrase means)"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "angle (the direction we view the Moon from)"
+  ]
+ ],
+ "analogy": {
+  "analogy_count": 1,
+  "worlds": [
+   "Cookie‑flashlight analogy"
+  ],
+  "breaks": [
+   {
+    "analogy_predicts": "The cookie analogy predicts that the illuminated portion changes shape only because of the viewer’s perspective, implying a straight‑edged boundary like that on a flat cookie.",
+    "reality": "The Moon’s sunlit side is a spherical surface; the terminator is a curved line (a semi‑ellipse), not a straight edge.",
+    "severity": "high",
+    "basis": "textbook",
+    "quote": "The cookie never changes shape — just how lit it looks!"
+   }
+  ],
+  "limitation_stated_in_script": true,
+  "misleading_claims": [
+   "The cookie never changes shape — just how lit it looks! (implies the Moon’s lit boundary is straight‑edged like a flat cookie, overlooking the curved terminator of a sphere)"
+  ],
+  "cannot_verify": []
+ },
+ "claims": {
+  "claims": [
+   {
+    "n": 0,
+    "verdict": "unverifiable",
+    "note": "The provided excerpt contains only navigation and heading text; there is no explicit statement that the Moon reflects sunlight.",
+    "evidence_kind": "article_text"
+   },
+   {
+    "n": 1,
+    "verdict": "unverifiable",
+    "note": "The excerpt does not include any description of the Moon orbiting Earth or of how different sunlit portions create phases.",
+    "evidence_kind": "article_text"
+   },
+   {
+    "n": 2,
+    "verdict": "unverifiable",
+    "note": "No content in the excerpt defines a full moon or explains when we see the entire sunlit side.",
+    "evidence_kind": "article_text"
+   }
+  ],
+  "uncovered_statements": [
+   "The Moon never changes shape! We see it from a new angle. Those different looks have a name: moon phases.",
+   "The cookie never changes — just how lit it looks! A cookie is flat, and nothing touches the Moon to change it!"
+  ]
+ },
+ "comprehension": {
+  "learner": {
+   "main_idea": "The Moon seems to change shape because we see different parts of the side that is lit by the Sun as it moves around Earth, but the Moon itself never actually changes shape.",
+   "how_it_works_steps": [
+    "The Sun shines light onto the Moon.",
+    "The Moon sends that light back toward Earth (the Moon reflects the light).",
+    "The Moon travels around Earth in a big loop.",
+    "As the Moon moves, a different part of its sunlit side faces Earth.",
+    "The change in the lit part we see makes the Moon look like it is changing shape; those different looks are called moon phases."
+   ],
+   "words_or_ideas_i_did_not_understand": [
+    "phases (the word for the different looks of the Moon)",
+    "reflects / bounces light back (how the Moon sends light to us)",
+    "sunny bits (what that phrase means)",
+    "angle (the direction we view the Moon from)",
+    "cookie and flashlight analogy (how it helps explain the idea)",
+    "different looks (the idea that we see the Moon from new angles)",
+    "moon phases (the term used for the changing shapes)"
+   ],
+   "questions_i_still_have": [
+    "How does the Moon move around Earth?",
+    "How long does it take for the Moon to go all the way around?",
+    "Why does the Sun always shine?",
+    "Why does the Moon sometimes not appear at night?",
+    "Can the Moon really change shape like a cookie?",
+    "What makes the Moon able to send light back to us?",
+    "How can I tell which phase the Moon is in tonight?",
+    "Why do we call them 'phases' instead of 'shapes'?",
+    "Does the Sun also seem to change shape when we look at it?",
+    "Is the Moon like a mirror?"
+   ]
+  },
+  "grade": {
+   "score": 5,
+   "missed_steps": [],
+   "misunderstood": [],
+   "note": "The viewer captured the main idea and every intended mechanism step. They correctly explained that the Sun illuminates the Moon, the Moon reflects that light back toward Earth, the Moon orbits Earth, and as it moves a different portion of its sun‑lit side faces us, producing the apparent changes in shape we call phases. No key steps were omitted and no fundamental misconceptions are present; any lingering questions are curiosity‑driven rather than misunderstandings."
+  }
+ },
+ "realism": {
+  "checks": [
+   {
+    "id": "real-axis-screen-direction",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "Scene 'open' (scene_ids: ['s1', 's2']) contains two clips in location 'night_yard' but declares no action line or which side the subject holds. The rules state: 'Every scene with 2+ clips in one location declares an action line and which side each subject holds (cont-axis-eyelines).'",
+    "fix": "Add to shot metadata for s1 or in a scene-level declaration: action_line: 'child faces screen-right toward Moon', and ensure screen direction is consistent across s1 and s2."
+   },
+   {
+    "id": "real-eyeline",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "Neither s1 nor s2 states eyelines numerically (e.g., 'target: Moon, horizontal: center, vertical: 45° up'). The rules state: 'State eyelines numerically: target id, horizontal side, degrees up or down (cont-axis-eyelines).'",
+    "fix": "Add numerical eyeline to s1 and s2 shot metadata, e.g., eyeline: {target: 'Moon', horizontal: 'center', vertical: 'above'}."
+   },
+   {
+    "id": "real-geography",
+    "verdict": "na",
+    "scenes": [],
+    "evidence": "Location 'night_yard' is a fictional backyard, not a real place. The rules state: 'For real places or machines, name verifiable features...'",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-scale",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2",
+     "s8"
+    ],
+    "evidence": "In s1 keyframe_prompt: 'Moon glows softly above the low wooden fence' implies the Moon is immediately above a normal-sized fence, making it appear enormous relative to real scale. In reality, the Moon is tiny as seen from Earth. The rules state: 'Relative sizes of people, vehicles, buildings, planets read as real.'",
+    "fix": "Reposition the Moon to appear as a distant small disc in the sky, perhaps with the fence framing it but not adjacent to it."
+   },
+   {
+    "id": "real-population",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s3",
+     "s8"
+    ],
+    "evidence": "Each clip shows only the child (kid) with at most 1 face/character. No crowds or extra faces.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-light-source",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "Both s1 and s2 keyframe_prompts include 'Source: Moon. Side: above. Quality: soft blue-white light from above.' This is consistent within the 'open' scene.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-time-weather",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "All shots consistently depict night under a starry sky with no weather changes or time progression.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-identity",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "The identity string is 'A curious child with round glasses, dark wavy hair, and a purple striped sweater.' In s1 keyframe_prompt: 'A child with round glasses, dark wavy hair, and a purple striped sweater' (missing 'curious'). In s2 keyframe_prompt: 'A child with round glasses, dark wavy hair, and a purple striped sweater' (missing 'curious'). The rules state: 'Paste the identity string verbatim in every prompt with that character (cont-identity-string).'",
+    "fix": "Add 'curious' to s1 and s2 keyframe_prompts: 'A curious child with round glasses, dark wavy hair, and a purple striped sweater'."
+   },
+   {
+    "id": "real-hands-anatomy",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s8"
+    ],
+    "evidence": "s1 motion_prompt: 'hands clasped at her sides' and s8: 'hands clasped at her sides' both describe closed/clasped hands, compliant with the rule.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-physics-contact",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "No violations of gravity or physical behavior; child stands still, camera moves slowly.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-morphing",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "s1 has camera push-in only (one motion source), s2 is static. No morphing or shape changes within clips.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-object-permanence",
+    "verdict": "pass",
+    "scenes": [],
+    "evidence": "No tracked props in the continuity bible or shot plan; the Moon is a celestial body not considered a prop here.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-text-counts",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s3",
+     "s4",
+     "s6",
+     "s8"
+    ],
+    "evidence": "All generation_prompts are free of text, numbers, logos, or watermarks. Text in s5, s6, s7, s8 is in renderer_overlays, which are rendered by Remotion, not the model.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-reentry-offscreen",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "No character exits or re-enters within any clip; s1 and s2 are both static or minimal movement.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-period-tech",
+    "verdict": "pass",
+    "scenes": [],
+    "evidence": "No period-specific vehicles, devices, or technology are depicted.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-action-end-state",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "s1 motion_prompt ends: '...gazing up at the crescent Moon with quiet wonder.' No 'End with...' clause. s2 motion_prompt ends: '...mouth forming a small O of surprise.' No 'End with...' clause. The rules state: 'End every motion prompt with \"End with ...\" naming the final pose or position.'",
+    "fix": "Add to s1 motion_prompt: 'End with child standing still, hands clasped, eyes fixed on the Moon.' Add to s2 motion_prompt: 'End with child holding the surprised expression, eyes wide, mouth in small O shape.'"
+   },
+   {
+    "id": "real-motion-quality",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "s1 camera push-in is 'slowly' and at 'small amplitude'; s2 is static. Durations (3s) are appropriate for the actions described.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-camera-behavior",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "s1: one named move 'pushes in, small amplitude, slow'; s2: 'static'. Exactly one camera behavior per clip.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-performance",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "Emotion is physicalized: s1 'gazing up... quiet wonder' (gazing is a physical action), s2 'gasps softly', 'eyes widen', 'mouth forming a small O'.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-framing-safe",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2",
+     "s3",
+     "s4",
+     "s6",
+     "s8"
+    ],
+    "evidence": "While 'vertical 9:16 composition' is stated in prompts, no shot specifies framing in frame terms (e.g., 'eyes on upper third', 'headroom ~10%', 'subject inside safe zone'). The rules state: 'State framing in frame terms: eyes on upper third, headroom ~10%, subject inside DESIGN_SYSTEM section 4 box.'",
+    "fix": "Add framing specifications to each shot, e.g., for s1: 'framing: eyes on upper third, headroom 10%, child centered horizontally'."
+   },
+   {
+    "id": "real-splice-continuity",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "s1 end state (child standing, hands clasped, looking up) matches s2 start state (same position, then reaction begins). Light source consistent (Moon light).",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-look-drift",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2",
+     "s3",
+     "s4",
+     "s5",
+     "s6",
+     "s7",
+     "s8"
+    ],
+    "evidence": "style_segments define 'open' and 'explain' but do not include a style prefix to be pasted verbatim into each clip prompt. The rules state: 'Every clip prompt in a segment starts with the segment's style prefix verbatim (cont-style-lock).' No prefix is defined in the plan.",
+    "fix": "Add a style_prefix to each style_segment, e.g., for 'open': 'style_prefix: {palette: \"deep blues and soft whites\", grain: \"cinematic\", tint: \"cool moonlit\"}'. Then prepend this to each generation_prompt in that segment."
+   },
+   {
+    "id": "real-audio-picture",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "Narration is separate from visual; on-screen mouths are closed (child looking up, not speaking). No generated speech or subtitles.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-dramatization-fidelity",
+    "verdict": "pass",
+    "scenes": [
+     "s4",
+     "s5",
+     "s6",
+     "s7"
+    ],
+    "evidence": "s4 dramatizes 'Moon reflects sunlight' with rays and arrows; s5 dramatizes orbital phases with steps; s6 dramatizes 'moon phases' with lit/shadow Moon; s7 uses cookie analogy consistent with mechanism. All claims are supported and depicted consistently.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-analogy-world",
+    "verdict": "pass",
+    "scenes": [
+     "s7"
+    ],
+    "evidence": "s7 compares cookie (lit by flashlight) to Moon (lit by Sun), showing both stay the same shape while only the lit part is visible. This follows the analogy's mapping without violating its limitation.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-no-unverified-drama",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s3",
+     "s4",
+     "s5",
+     "s6",
+     "s7",
+     "s8"
+    ],
+    "evidence": "All claims (Moon reflects sunlight, phases from orbit, full moon = entire lit side) are scientifically supported. No real named people appear; the child is a generic character.",
+    "fix": "N/A"
+   },
+   {
+    "id": "real-stranger-audit",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s3",
+     "s4",
+     "s5",
+     "s6",
+     "s7",
+     "s8"
+    ],
+    "evidence": "The lead character 'kid' is introduced visually in s1 and described as 'child' in narration. The causal chain is complete: observation (s1-s2), question (s3), mechanism explanation (s4-s6), analogy (s7), and call to action (s8). Each fact is paired with narration.",
+    "fix": "N/A"
+   }
+  ],
+  "viewer_would_call_fake": [
+   {
+    "scene": "s1, s2",
+    "why": "The Moon appears impossibly large in the child's backyard (comparable in size to the fence), violating real scale expectations and breaking immersion for an astronomy topic."
+   },
+   {
+    "scene": "s1, s2",
+    "why": "The child's identity description is missing 'curious' in these shots while present in s3 and s8, creating a subtle inconsistency in how the main character is described across the episode."
+   }
+  ],
+  "skipped_na": [
+   "real-reflections-glass",
+   "real-measured-evidence"
+  ]
+ },
+ "judge": {
+  "models": [
+   "MiniMax-M2.7",
+   "MiniMax-M2.5"
+  ],
+  "temperature": 0.01,
+  "seed": null
+ }
+}

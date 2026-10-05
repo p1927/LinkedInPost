@@ -19,3 +19,8 @@ voice: {voice_id: English_Trustworth_Man, speed: 1.05, emotion: null}
 music_mood: curious
 visuals: "diagrams, number scenes with sources, comparison tables, real product/hardware photos"
 cta: "save / share with a colleague"
+
+# Direction policy (read by brain.style_envelope; narrows what the profile allows; PROPOSAL, owner may edit)
+direction:
+  modes: [explainer, cold-open-drama, hybrid, montage, documentary]
+  dialects: [native, cinematic]

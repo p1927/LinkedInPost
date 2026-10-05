@@ -1,0 +1,420 @@
+{
+  "id": "ep19-moon-change-shape",
+  "title": "Why does the Moon change shape?",
+  "series": "Big Questions, Tiny Words",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "format_id": "why_is_x",
+  "topic_area": "science",
+  "one_idea": "The Moon doesn't change shape — we see different amounts of its sunlit side as it orbits Earth.",
+  "audience_misconception": "Kids often think the Moon physically grows and shrinks, or that clouds cover parts of it.",
+  "structure": "ABT",
+  "analogy": {
+    "source_term": "The Moon reflects sunlight and we see different amounts of its lit side as it orbits.",
+    "domain": "food",
+    "mapping": [
+      [
+        "Sun",
+        "A bright flashlight held by someone"
+      ],
+      [
+        "Moon",
+        "A round cookie held at arm's length"
+      ],
+      [
+        "Earth viewer position",
+        "A child walking around the table"
+      ],
+      [
+        "Lit portion we see",
+        "The part of the cookie the flashlight lights up"
+      ]
+    ],
+    "limitation": "A cookie is flat but the Moon is a ball — and unlike a cookie, nothing actually touches the Moon to change it.",
+    "true_term_reveal_beat": "s6"
+  },
+  "direction": {
+    "mode": "cold-open-drama",
+    "mode_reason": "A child gazing up at the changing Moon creates a relatable moment of wonder; the mystery hook suits the cold-open format.",
+    "lens": "lens-wonder-reaction",
+    "skills_used": [
+      "mode-cold-open-drama",
+      "arch-mystery",
+      "mode-bridge-question-card",
+      "lens-wonder-reaction",
+      "cont-identity-string",
+      "arch-conventions"
+    ],
+    "cold_open": {
+      "archetype": "mystery",
+      "duration_s": 6,
+      "bridge": "question-card",
+      "question": "Why does the Moon keep changing?",
+      "bridge_frames": 30,
+      "scene_ids": [
+        "s1",
+        "s2"
+      ]
+    },
+    "style_segments": [
+      {
+        "id": "open",
+        "medium": "native",
+        "scene_ids": [
+          "s1",
+          "s2"
+        ]
+      },
+      {
+        "id": "explain",
+        "medium": "native",
+        "scene_ids": [
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8"
+        ]
+      }
+    ]
+  },
+  "continuity": {
+    "characters": [
+      {
+        "id": "kid",
+        "identity_string": "A curious child with round glasses, dark wavy hair, and a purple striped sweater"
+      }
+    ],
+    "locations": [
+      {
+        "id": "night_yard",
+        "description": "A small backyard at night under a deep blue starry sky, a low wooden fence at the edge"
+      }
+    ],
+    "props": [],
+    "ledger": []
+  },
+  "claims": [
+    {
+      "claim": "The Moon does not produce its own light; it reflects sunlight.",
+      "url": "https://science.nasa.gov/moon/moon-phases/",
+      "verified": true
+    },
+    {
+      "claim": "As the Moon orbits Earth, we see different portions of its sunlit side, creating the phases.",
+      "url": "https://science.nasa.gov/moon/moon-phases/",
+      "verified": true
+    },
+    {
+      "claim": "A full moon occurs when we see the entire sunlit side of the Moon from Earth.",
+      "url": "https://science.nasa.gov/moon/moon-phases/",
+      "verified": true
+    }
+  ],
+  "sources": [
+    {
+      "claim": "Moon Phases - NASA Science",
+      "url": "https://science.nasa.gov/moon/moon-phases/"
+    },
+    {
+      "claim": "Lunar phase - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Lunar_phase"
+    }
+  ],
+  "mechanism": [
+    {
+      "step": "The Moon reflects sunlight rather than making its own light.",
+      "scene": "s4",
+      "source": "https://science.nasa.gov/moon/moon-phases/"
+    },
+    {
+      "step": "As the Moon travels around Earth, our view of the sunlit part changes.",
+      "scene": "s5",
+      "source": "https://science.nasa.gov/moon/moon-phases/"
+    },
+    {
+      "step": "Different amounts of the lit side face Earth, so the Moon looks like it changes shape.",
+      "scene": "s6",
+      "source": "https://science.nasa.gov/moon/moon-phases/"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "moon phases",
+      "kind": "term",
+      "definition": "The different shapes we see when we look at the Moon, from a tiny sliver to a full circle.",
+      "introduced_in": "s3",
+      "needed_in": [
+        "s5",
+        "s6"
+      ]
+    },
+    {
+      "name": "sunlight reflection",
+      "kind": "term",
+      "definition": "When the Moon bounces light from the Sun back toward Earth.",
+      "introduced_in": "s4",
+      "needed_in": [
+        "s5",
+        "s6"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "question": "Why does the Moon keep changing?",
+      "raised_in": "s1",
+      "paid_in": "s6"
+    }
+  ],
+  "news_hook": {
+    "event": "Recent news about young scientists studying the Moon and space exploration",
+    "date": "2026",
+    "url": "https://news.google.com/rss/articles/CBMisgJBVV95cUxNekZrYjNzU2ZRVmREQlNQZ3l5TG5IM3JYa205MHRXMjJtNmNPUGF1VkpMQ0lvYzFBakZzVWVhV1hUTThXRDMzTG5Zc2djNTg2S1BkUzJsSHhaODFEVzUzUS1nNzVIMmVESzBacXNZTTh3Sy11VFRmLUtiZVJIQmtEYzdXajd4dUJ6YmlpZU9fYlROV0VSYmp6bFFYNGd2LVYtUEtwNFlGZzRiR29ZaVRqdHlCY2ZjZlk2N2FQYWM2OVNEcm0ybDJ2MFpDUlJ1R2dqbmZPOUhPaXp1UDRXZzJPNWpqLWVIb0c2UjFuNmVETFBPQVJfNkZseG9XS0Y3QXdLVG9oaU0xTm1IM3RZUHdBUVY2dGxLenBFZGdUTEpRNlhUVFB5a1JUM0hoZkZoSHJRYnfSAbcCQVVfeXFMTVFUN0hnMkNXbjFlbnRUdE9oVVQ3Qnh3MG1NeGdSRjlORlRQcWJOQXZSbmZHR0pLSGJ6Y3F4YzBsM3BtNzJ2VDRCX2RjQXBTWV9QbG9lUHIyOGxxa1lja0RTQTd5UVZiNkMzLUUzOGNYYVlfRE1sMUJ1Q1czRXJHRFlNQ0h5NjQwdDlhVVUwQUxGdDZQNEFrYVhqYjhZTVZGMnZHbGd2ZEhoM04yVDA3b0oyUG9KSDZQR3lvWENuakxmRG5TNGY0MHpBNE56MWNpWDUzeTRraktmMkJPRVRrMERON1I0QlhHSnV2ekpZYW10Tm4wbWVGTE9RWXpkNThCdHZRVWZKeVAxdXlLZE9hSjlZeFg1cUhaSjhYQUFqLWRyamlOTXZ3Vm9FdmdKZHBId2lUTzRRdDg?oc=5"
+  },
+  "original_contribution": "This episode uses a flashlight-and-cookie analogy to make the geometry of Earth-Moon-Sun positions concrete and memorable for young children.",
+  "packaging": {
+    "primary_keyword": "why does the moon change shape",
+    "title": "Why does the Moon change shape?",
+    "title_options": [
+      "Why does the Moon change shape?",
+      "Why the Moon looks different each night",
+      "The Moon isn't really changing — here's why!",
+      "Why does the Moon keep changing?",
+      "What makes the Moon look different each night?"
+    ],
+    "title_rationale": "Question form directly matching the hook question; the word 'shape' is the key noun children use.",
+    "description": "The Moon looks different every night — but it's not actually changing! Find out why with a simple cookie trick. https://science.nasa.gov/moon/moon-phases/\n\n#Shorts #SpaceForKids #MoonPhases #ScienceExplained",
+    "tags": [
+      "moon phases for kids",
+      "why does the moon change shape",
+      "science for children",
+      "space explained simply",
+      "how the moon works"
+    ],
+    "instagram_caption": "The Moon looks different every night — but it's not actually changing! Find out why with a simple cookie trick. 🌙✨ #SpaceForKids #MoonPhases #ScienceExplained",
+    "pinned_comment": "What shape is the Moon tonight where you are? Tell me below! — Source: NASA Moon Phases https://science.nasa.gov/moon/moon-phases/",
+    "content_type": "explainer",
+    "thumbnail": {
+      "text": "MOON SHAPES!"
+    }
+  },
+  "sponsor": null,
+  "disclosure": null,
+  "posts": [
+    {
+      "platform": "youtube_shorts",
+      "scheduled": null
+    },
+    {
+      "platform": "instagram_reels",
+      "scheduled": null
+    },
+    {
+      "platform": "tiktok",
+      "scheduled": null
+    }
+  ],
+  "style": {
+    "palette": {
+      "bg": "#FFF3D6",
+      "ink": "#3B2F2F",
+      "sunny": "#FFC83D",
+      "coral": "#FF6F59",
+      "sky": "#4CC3F7",
+      "mint": "#2FD3A0",
+      "grape": "#8E6CEF",
+      "white": "#FFFFFF"
+    },
+    "character": "A curious child with round glasses, dark wavy hair, and a purple striped sweater",
+    "look": "cinematic, soft natural light, shallow depth of field, realistic, vertical 9:16 composition, no text overlays, no logos",
+    "illustration_style": "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words",
+    "cast": {
+      "kid": "A curious child with round glasses, dark wavy hair, and a purple striped sweater",
+      "flashlight": "A bright golden flashlight with a friendly face drawn on it, glowing warmly",
+      "cookie": "A large round chocolate chip cookie held at arm's length, golden brown with visible chips",
+      "moon": "A big bright Moon in the sky, glowing softly with a gentle smile"
+    }
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "beat": "hook",
+      "narration": "...",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Wide shot of a small backyard at night under a deep blue starry sky; a child with round glasses, dark wavy hair, and a purple striped sweater stands looking up at the sky; a bright crescent Moon glows softly above the low wooden fence. Source: Moon. Side: above. Quality: soft blue-white light from above.",
+        "motion_prompt": "The camera slowly pushes in with small amplitude. The child stands still with hands clasped at her sides, gazing up at the crescent Moon with quiet wonder."
+      },
+      "shot": {
+        "archetype": "mystery",
+        "size": "ews",
+        "move": "push in, small amplitude, slow",
+        "location_id": "night_yard",
+        "action": "child looks up at the Moon",
+        "duration_s": 3,
+        "continuity_ids": [
+          "kid"
+        ],
+        "style_segment": "open"
+      },
+      "intent": "Show the child noticing the crescent Moon and feeling curious."
+    },
+    {
+      "id": "s2",
+      "beat": "hook",
+      "narration": "The Moon keeps changing shape!",
+      "visual": {
+        "type": "clip",
+        "keyframe_prompt": "Close-up of a child with round glasses, dark wavy hair, and a purple striped sweater standing in a backyard at night, looking up in wonder; above her the same bright crescent Moon glows softly in a starry sky. Source: Moon. Side: above. Quality: soft blue-white light from above.",
+        "motion_prompt": "The camera holds a static shot. The child gasps softly and her eyes widen as she notices the Moon's shape, her mouth forming a small O of surprise."
+      },
+      "shot": {
+        "archetype": "mystery",
+        "size": "ms",
+        "move": "static",
+        "location_id": "night_yard",
+        "action": "child gasps at the Moon",
+        "duration_s": 3,
+        "continuity_ids": [
+          "kid"
+        ],
+        "style_segment": "open"
+      },
+      "intent": "Show the child puzzled by how the Moon looks different over time."
+    },
+    {
+      "id": "s3",
+      "beat": "question",
+      "narration": "Why does the Moon keep changing?",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A curious child with round glasses, dark wavy hair, and a purple striped sweater stands under a starry night sky, arms spread wide in wonder, looking up at the Moon; the Moon glows softly with different shapes floating around it in a circular pattern, simple starry background, vertical 9:16 composition"
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Pose the hook question clearly so the viewer wants to know the answer."
+    },
+    {
+      "id": "s4",
+      "beat": "cause_link_1",
+      "narration": "The Moon doesn't have a light inside it. The Sun shines on it, and the Moon bounces light back!",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A large glowing Moon with a friendly smiling face floats in a dark starry sky; golden rays of sunlight stream toward the Moon from the upper right; bright arrows show the light bouncing off the Moon toward Earth below, soft warm glow around the Moon, simple dark background with a few stars, vertical 9:16 composition"
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Explain that the Moon reflects sunlight."
+    },
+    {
+      "id": "s5",
+      "beat": "cause_link_2",
+      "narration": "As the Moon moves around Earth, we see different sunny bits. More sunny side facing us means a bigger shape!",
+      "visual": {
+        "type": "steps",
+        "title": "The Moon's journey",
+        "steps": [
+          "Moon orbits Earth",
+          "Sun lights one half",
+          "We see a new shape"
+        ]
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Show the Moon orbiting Earth and how our view of its lit side changes."
+    },
+    {
+      "id": "s6",
+      "beat": "term",
+      "narration": "The Moon never changes shape! We see it from a new angle. Those different looks have a name: moon phases.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A large glowing Moon with a friendly smiling face floating in the center of a dark starry sky, half of it brightly lit by sunlight and half in soft shadow; a warm golden glow surrounds the lit portion; soft starry background, clean simple composition, vertical 9:16 composition",
+        "term": {
+          "label": "MOON PHASES",
+          "sub": "different shapes from different angles",
+          "color": "sky"
+        }
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Reveal the true term 'moon phases' and confirm the Moon itself doesn't change."
+    },
+    {
+      "id": "s7",
+      "beat": "payoff",
+      "narration": "Think of it like a cookie and a flashlight. The cookie never changes — just how lit it looks! A cookie is flat, and nothing touches the Moon to change it!",
+      "visual": {
+        "type": "compare",
+        "colA": "Cookie",
+        "colB": "Moon",
+        "rows": [
+          {
+            "a": "Stays the same",
+            "b": "Stays the same"
+          },
+          {
+            "a": "Lit by flashlight",
+            "b": "Lit by Sun"
+          },
+          {
+            "a": "We see the lit part",
+            "b": "We see the lit part"
+          }
+        ]
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Use the cookie-and-flashlight analogy to make the geometry concrete, and clearly state the analogy's limitation."
+    },
+    {
+      "id": "s8",
+      "beat": "cta",
+      "narration": "Now you know! Look up tonight and spot the Moon's phase.",
+      "visual": {
+        "type": "illustration",
+        "prompt": "A curious child with round glasses, dark wavy hair, and a purple striped sweater stands smiling up at a bright glowing Moon in a starry night sky, hands clasped at her sides; the Moon has a friendly smiling face and glows warmly; small twinkling stars surround them both; warm cheerful glow, peaceful night sky, celebratory sparkles around the Moon, vertical 9:16 composition",
+        "term": {
+          "label": "NOW YOU KNOW!",
+          "sub": "look up tonight!",
+          "color": "mint"
+        }
+      },
+      "shot": {
+        "size": "ms",
+        "style_segment": "explain"
+      },
+      "intent": "Invite the child to go outside and observe the Moon, closing the curiosity loop."
+    }
+  ],
+  "audience": "kids",
+  "status": "scripted",
+  "topic": {
+    "headline": "Why does the Moon change shape",
+    "angle": "",
+    "why_now": "",
+    "source_urls": [
+      "https://science.nasa.gov/moon/moon-phases/",
+      "https://en.wikipedia.org/wiki/Lunar_phase",
+      "https://news.google.com/rss/articles/CBMixgFBVV95cUxNT29CQzE5N090bXB5ZzI1SWNtbHhPTlJFWkJPRnYwNzA3Rkpvc1BvdDY3MEV5Nmo5bmlQOW5KeFRxVXhxRXhqRmhsWEN4UUJSckducVpCSlJnZEF5WjBEMEZHclVKOElkR1F3WE5YTEtxSWp2b3ExcXJMSmFlSEhKQVFnYWQ0RmNhU1lSZzV5UTY0WU1JM1BUckpIejhlQjluNUJsX2diY0xqTW0yNWlpcVBsVzJ0SEROQjU0SmIyYVIzNk9YVUE?oc=5",
+      "https://news.google.com/rss/articles/CBMisgJBVV95cUxNekZrYjNzU2ZRVmREQlNQZ3l5TG5IM3JYa205MHRXMjJtNmNPUGF1VkpMQ0lvYzFBakZzVWVhV1hUTThXRDMzTG5Zc2djNTg2S1BkUzJsSHhaODFEVzUzUS1nNzVIMmVESzBacXNZTTh3Sy11VFRmLUtiZVJIQmtEYzdXajd4dUJ6YmlpZU9fYlROV0VSYmp6bFFYNGd2LVYtUEtwNFlGZzRiR29ZaVRqdHlCY2ZjZlk2N2FQYWM2OVNEcm0ybDJ2MFpDUlJ1R2dqbmZPOUhPaXp1UDRXZzJPNWpqLWVIb0c2UjFuNmVETFBPQVJfNkZseG9XS0Y3QXdLVG9oaU0xTm1IM3RZUHdBUVY2dGxLenBFZGdUTEpRNlhUVFB5a1JUM0hoZkZoSHJRYnfSAbcCQVVfeXFMTVFUN0hnMkNXbjFlbnRUdE9oVVQ3Qnh3MG1NeGdSRjlORlRQcWJOQXZSbmZHR0pLSGJ6Y3F4YzBsM3BtNzJ2VDRCX2RjQXBTWV9QbG9lUHIyOGxxa1lja0RTQTd5UVZiNkMzLUUzOGNYYVlfRE1sMUJ1Q1czRXJHRFlNQ0h5NjQwdDlhVVUwQUxGdDZQNEFrYVhqYjhZTVZGMnZHbGd2ZEhoM04yVDA3b0oyUG9KSDZQR3lvWENuakxmRG5TNGY0MHpBNE56MWNpWDUzeTRraktmMkJPRVRrMERON1I0QlhHSnV2ekpZYW10Tm4wbWVGTE9RWXpkNThCdHZRVWZKeVAxdXlLZE9hSjlZeFg1cUhaSjhYQUFqLWRyamlOTXZ3Vm9FdmdKZHBId2lUTzRRdDg?oc=5",
+      "https://news.google.com/rss/articles/CBMimgFBVV95cUxQR0xWN0RwQy11SVlHQWR4RndwRUVaSGhOR3JYTkthRWFaV2laNWd1cHhqNUN5S216VVhwcjl4QnR2ZkN0bUtVakZmeV9vUmFIdWNscUpPTl9tTVpGN0t0eWZaeVZXa0UtMFFfM0Q4Wm9CZ0JLQXNqV1RhWXA0TG9VV0N5R1R1QnlocGJES0paUDBsME5hc3FmMHlB?oc=5"
+    ]
+  },
+  "updated_at": "2026-10-05T14:00:26Z"
+}

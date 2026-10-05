@@ -1,0 +1,510 @@
+{
+ "episode": "ep17-crew13-reached-space",
+ "at": "2026-10-05T13:01:07Z",
+ "fingerprint": "d5158bdaf7439ab0",
+ "passed": false,
+ "issues": [
+  [
+   "error",
+   "analogy_misleads",
+   "analogy predicts 'Forward thrust raises altitude without increasing speed.' but reality: Forward thrust temporarily increases speed, raising the orbit; after the orbit is higher, the spacecraft's orbital speed is lower."
+  ],
+  [
+   "error",
+   "analogy_misleads",
+   "analogy predicts 'Spacecraft can passively wait in a higher orbit without further thrust.' but reality: Spacecraft must actively maintain orbit via thruster burns and station‑keeping; orbital decay and perturbations require ongoing control."
+  ],
+  [
+   "error",
+   "limitation_in_script",
+   "the narration never says where the analogy stops"
+  ],
+  [
+   "warn",
+   "misleading_statement",
+   "Forward thrust in orbit raises your altitude, not your speed."
+  ],
+  [
+   "warn",
+   "misleading_statement",
+   "Spacecraft do not race the station. They orbit ahead and wait."
+  ],
+  [
+   "warn",
+   "misleading_statement",
+   "That is exactly how Crew-13 reached the station in under 8 hours."
+  ],
+  [
+   "warn",
+   "analogy_cannot_verify",
+   "could not verify from the evidence (human spot-check): That is exactly how Crew-13 reached the station in under 8 hours."
+  ],
+  [
+   "warn",
+   "claim_unverifiable",
+   "claim 0 'SpaceX Crew-13 docked with the International Space Station in under 8 hours usin' (article_text): human spot-check needed"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: NASA's first attempt at rendezvous was made on June 3, 1965 (Gemini 4 mission)"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: Jim McDivitt was the astronaut who attempted the first rendezvous"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: The first attempt failed due to depth-perception problems and propellant venting from the target stage"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: The Soviet Union's Vostok program launched spacecraft 1-2 days apart but lacked maneuvering thrusters"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: Early Vostok missions had initial separations of 5 to 6.5 kilometers that diverged to thousands of kilometers"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: In 1964, the Soviet Union guided Polyot 1 and 2 satellites to within 5 km proximity"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: Buzz Aldrin submitted a doctoral thesis on orbital rendezvous guidance techniques in 1963"
+  ],
+  [
+   "warn",
+   "uncovered_statement",
+   "narration states a fact with no claim: The proper rendezvous technique requires changing orbits to let the target catch up or be caught up with"
+  ],
+  [
+   "error",
+   "real-axis-screen-direction",
+   "s1,s2: s1 motion_prompt: 'The capsule drifts forward toward frame right at a steady pace.' s2 motion_prompt: 'The camera holds a static shot. Brigh -> fix: Declare action line for scene (e.g., 'scene direction: left-to-right'), write travel direction verba"
+  ],
+  [
+   "warn",
+   "real-eyeline",
+   "s1,s2: No eyeline information provided in any shot. No target id, horizontal side, or degrees stated for any look. -> fix: Add eyeline data to each clip shot object, e.g., 'eyeline: {target: \"station\", side: \"screen-right\","
+  ],
+  [
+   "warn",
+   "real-geography",
+   "s7: s7 generation_prompts keyframe_prompt: 'a white and black SpaceX Crew Dragon capsule approaching a large space station structure from below' -> fix: Change s7 to show capsule approaching FROM ABOVE or BEHIND on the same orbital path, matching the me"
+  ],
+  [
+   "warn",
+   "real-scale",
+   "s1,s7: s1 'wide shot' and s7 'wide cinematic shot' show capsule vs space station without any known-size reference (person, door, car). Relative siz -> fix: Add a known-size reference in s1 or s7, such as a spacesuited astronaut silhouette or a visible airl"
+  ],
+  [
+   "warn",
+   "real-population",
+   "s1,s2,s7: No 'population' field declared in any shot object. Rules require 'Declare a count per shot; at most 2 identifiable faces and 3 tracked subje -> fix: Add 'population: {faces: 0, tracked: [capsule, station]}' to shot objects in s1, s2, and s7. [downgraded: blocker without an exact quote from the named scene]"
+  ],
+  [
+   "warn",
+   "real-physics-contact",
+   "s7: s7 motion_prompt: 'capsule drifts upward toward the station from below at a slow, controlled pace'. In orbital mechanics, a spacecraft in a  -> fix: Change s7 to show the capsule drifting HORIZONTALLY or STATIONARY relative to its orbit, with the st"
+  ],
+  [
+   "warn",
+   "real-camera-behavior",
+   "s7: s7 shot.move: 'push in, small amplitude, slow' BUT motion_prompt: 'The camera holds a static shot'. Self-contradicting camera behavior in th -> fix: Remove 'push in' from shot.move OR remove 'The camera holds a static shot' from motion_prompt. Keep "
+  ],
+  [
+   "warn",
+   "real-splice-continuity",
+   "s1,s2,s7: No end state recorded for s1 before s2, no start state for s2. No end state for s2 before s7. s1 ends with capsule 'drifts forward toward fr -> fix: Record s1's end state (capsule position, distance to station) as s2's start state. Record s2's end s"
+  ],
+  [
+   "warn",
+   "real-look-drift",
+   "s3,s4,s5,s6,s7,s8,s9,s10: s4, s9, s10 generation_prompts: 'deep navy background, teal and amber accents, flat vector illustration'. s5, s6 are orbit diagrams with dif -> fix: Ensure all explain segment clips use consistent palette. Either add 'cool teal ambient from Earth' t"
+  ],
+  [
+   "warn",
+   "real-dramatization-fidelity",
+   "s7: Mechanism step 3: 'The station in its lower, faster orbit catches up to the spacecraft from behind'. But s7 shows 'capsule drifts upward tow -> fix: Reorient s7 so the station catches up to the capsule from behind, not the capsule approaching from b [downgraded: blocker without an exact quote from the named scene]"
+  ],
+  [
+   "warn",
+   "real-stranger-audit",
+   "s1,s2: cold_open specifies question: 'Why can't you just speed up?' with scene_ids: ['s1', 's2'] and beats: {hook: 's1', obstacle: 's1', cost: 's2' -> fix: Add the question 'Why can't you just speed up?' as narration in s1 or s2, or adjust cold_open.scene_"
+  ],
+  [
+   "warn",
+   "viewer_would_call_fake",
+   "s7: The capsule approaching the station 'from below' violates orbital mechanics - a spacecraft that raised its orbit to get ahead would be ABOVE the station (farthe"
+  ],
+  [
+   "warn",
+   "viewer_would_call_fake",
+   "s7: Self-contradicting camera instructions ('static shot' vs 'push in') suggest production confusion, and the resulting visual of the capsule drifting downward towa"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "orbital mechanics"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "forward thrust"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "why a higher orbit takes longer to complete a lap"
+  ],
+  [
+   "warn",
+   "viewer_confused_by",
+   "rendezvous"
+  ]
+ ],
+ "analogy": {
+  "analogy_count": 1,
+  "worlds": [
+   "cars on a roundabout"
+  ],
+  "breaks": [
+   {
+    "analogy_predicts": "Forward thrust raises altitude without increasing speed.",
+    "reality": "Forward thrust temporarily increases speed, raising the orbit; after the orbit is higher, the spacecraft's orbital speed is lower.",
+    "severity": "high",
+    "basis": "textbook",
+    "quote": "Forward thrust in orbit raises your altitude, not your speed."
+   },
+   {
+    "analogy_predicts": "Spacecraft can passively wait in a higher orbit without further thrust.",
+    "reality": "Spacecraft must actively maintain orbit via thruster burns and station‑keeping; orbital decay and perturbations require ongoing control.",
+    "severity": "high",
+    "basis": "textbook",
+    "quote": "You do not chase the station. You get ahead and wait."
+   }
+  ],
+  "limitation_stated_in_script": false,
+  "misleading_claims": [
+   "Forward thrust in orbit raises your altitude, not your speed.",
+   "Spacecraft do not race the station. They orbit ahead and wait.",
+   "That is exactly how Crew-13 reached the station in under 8 hours."
+  ],
+  "cannot_verify": [
+   "That is exactly how Crew-13 reached the station in under 8 hours."
+  ]
+ },
+ "claims": {
+  "claims": [
+   {
+    "n": 0,
+    "verdict": "unverifiable",
+    "note": "The evidence consists only of navigation/menu content from the NASA page. The headline confirms Crew-13 docking occurred but provides no details about the time (under 8 hours) or method (orbital phasing). The actual article text that would contain these specifics is not present in the evidence.",
+    "evidence_kind": "article_text"
+   },
+   {
+    "n": 1,
+    "verdict": "supported",
+    "note": "The Wikipedia article on space rendezvous explicitly states: 'If the target is ahead in the orbit and the tracking vehicle increases speed, its altitude also increases, actually moving it away from the target.' It further explains that 'The higher altitude then increases orbital period due to Kepler's third law.' This directly supports the claim that forward thrust raises orbit altitude rather than directly increasing speed relative to the target.",
+    "evidence_kind": "article_text"
+   },
+   {
+    "n": 2,
+    "verdict": "supported",
+    "note": "The Wikipedia article on orbit phasing explains: 'If spacecraft is behind the final position on the same orbit, the spacecraft must slow down to enter a smaller, faster phasing orbit to catch up to final position.' This describes a spacecraft in a lower orbit being overtaken by or catching up to a target, matching the claim's description of orbital phasing.",
+    "evidence_kind": "article_text"
+   }
+  ],
+  "uncovered_statements": [
+   "NASA's first attempt at rendezvous was made on June 3, 1965 (Gemini 4 mission)",
+   "Jim McDivitt was the astronaut who attempted the first rendezvous",
+   "The first attempt failed due to depth-perception problems and propellant venting from the target stage",
+   "The Soviet Union's Vostok program launched spacecraft 1-2 days apart but lacked maneuvering thrusters",
+   "Early Vostok missions had initial separations of 5 to 6.5 kilometers that diverged to thousands of kilometers",
+   "In 1964, the Soviet Union guided Polyot 1 and 2 satellites to within 5 km proximity",
+   "Buzz Aldrin submitted a doctoral thesis on orbital rendezvous guidance techniques in 1963",
+   "The proper rendezvous technique requires changing orbits to let the target catch up or be caught up with"
+  ]
+ },
+ "comprehension": {
+  "learner": {
+   "main_idea": "Catching the space station is about getting into the right higher orbit ahead of it and letting the station catch up, not about speeding up to chase it.",
+   "how_it_works_steps": [
+    "Think of a roundabout: the inner lane (lower orbit) travels a shorter distance per lap and moves faster; the outer lane (higher orbit) travels a longer distance per lap and moves slower.",
+    "Apply forward thrust to raise the spacecraft to a higher orbit (outer lane).",
+    "In that higher orbit the spacecraft moves slower and can position itself ahead of the station.",
+    "The station, staying in a lower, faster orbit, will lap the Earth more quickly and eventually catch up to the spacecraft.",
+    "When both are in the same orbit they meet, allowing docking."
+   ],
+   "words_or_ideas_i_did_not_understand": [
+    "orbital mechanics",
+    "forward thrust",
+    "why a higher orbit takes longer to complete a lap",
+    "rendezvous",
+    "what \"crew‑13\" refers to",
+    "how a spacecraft can 'wait' in orbit without falling behind"
+   ],
+   "questions_i_still_have": [
+    "Why does adding forward thrust raise altitude instead of speed?",
+    "How does a spacecraft change from a lower to a higher orbit?",
+    "What determines how long it takes for the station to catch up once the spacecraft is ahead?",
+    "How does the spacecraft keep from drifting away while waiting in the higher orbit?",
+    "Why did the Crew‑13 mission reach the station in under 8 hours using this method?"
+   ]
+  },
+  "grade": {
+   "score": 5,
+   "missed_steps": [],
+   "misunderstood": [],
+   "note": "The viewer accurately captured the main idea and all intended mechanism steps, correctly describing how forward thrust raises the orbit, why a higher orbit moves slower, and how the lower‑orbit station catches up for docking. Their roundabout analogy and step‑by‑step description align perfectly with the intended explanation."
+  }
+ },
+ "realism": {
+  "checks": [
+   {
+    "id": "real-axis-screen-direction",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "s1 motion_prompt: 'The capsule drifts forward toward frame right at a steady pace.' s2 motion_prompt: 'The camera holds a static shot. Bright blue engine exhaust flares outward from the capsule rear.' No action line declared for the scene, no travel direction written verbatim in both prompts, and no neutral shot between them.",
+    "fix": "Declare action line for scene (e.g., 'scene direction: left-to-right'), write travel direction verbatim in each clip (e.g., 'scene direction: left-to-right' added to both s1 and s2), or add a neutral head-on insert between s1 and s2."
+   },
+   {
+    "id": "real-eyeline",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "No eyeline information provided in any shot. No target id, horizontal side, or degrees stated for any look.",
+    "fix": "Add eyeline data to each clip shot object, e.g., 'eyeline: {target: \"station\", side: \"screen-right\", degrees: 0}' for the capsule looking toward the station."
+   },
+   {
+    "id": "real-geography",
+    "verdict": "fail",
+    "scenes": [
+     "s7"
+    ],
+    "evidence": "s7 generation_prompts keyframe_prompt: 'a white and black SpaceX Crew Dragon capsule approaching a large space station structure from below' and motion_prompt: 'capsule drifts upward toward the station from below'. This contradicts orbital mechanics: the spacecraft raises its orbit (moves AWAY from Earth) to get ahead of the station. Approaching 'from below' implies the capsule is in a LOWER orbit, which cannot overtake a higher station.",
+    "fix": "Change s7 to show capsule approaching FROM ABOVE or BEHIND on the same orbital path, matching the mechanism 'station catches up from behind' not 'capsule approaches from below'."
+   },
+   {
+    "id": "real-scale",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s7"
+    ],
+    "evidence": "s1 'wide shot' and s7 'wide cinematic shot' show capsule vs space station without any known-size reference (person, door, car). Relative sizes of spacecraft and station cannot be verified as real.",
+    "fix": "Add a known-size reference in s1 or s7, such as a spacesuited astronaut silhouette or a visible airlock/module of known dimensions on the station."
+   },
+   {
+    "id": "real-population",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2",
+     "s7"
+    ],
+    "evidence": "No 'population' field declared in any shot object. Rules require 'Declare a count per shot; at most 2 identifiable faces and 3 tracked subjects per clip.'",
+    "fix": "Add 'population: {faces: 0, tracked: [capsule, station]}' to shot objects in s1, s2, and s7."
+   },
+   {
+    "id": "real-light-source",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s7"
+    ],
+    "evidence": "s1 and s2 both include 'cool teal ambient light from Earth below' and 'warm amber rim light on the capsule edge'. s7 includes 'cool blue ambient light from Earth fill, warm amber rim on both vehicles'. Consistent source (Earth), side (below), and quality across the open segment.",
+    "fix": "na"
+   },
+   {
+    "id": "real-time-weather",
+    "verdict": "na",
+    "scenes": [],
+    "evidence": "All scenes are in space (lEO) with no weather elements to track.",
+    "fix": "na"
+   },
+   {
+    "id": "real-identity",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s7"
+    ],
+    "evidence": "s1: 'white and black SpaceX Crew Dragon capsule with wide solar panels'. s2: 'Insert close on the white and black SpaceX Crew Dragon capsule'. s7: 'white and black SpaceX Crew Dragon capsule'. All match the identity string: 'a white and black SpaceX Crew Dragon capsule in Earth orbit, solar panels spread wide'.",
+    "fix": "na"
+   },
+   {
+    "id": "real-hands-anatomy",
+    "verdict": "na",
+    "scenes": [],
+    "evidence": "No visible hands in any clip or illustration.",
+    "fix": "na"
+   },
+   {
+    "id": "real-physics-contact",
+    "verdict": "fail",
+    "scenes": [
+     "s7"
+    ],
+    "evidence": "s7 motion_prompt: 'capsule drifts upward toward the station from below at a slow, controlled pace'. In orbital mechanics, a spacecraft in a higher orbit cannot drift DOWNWARD toward a station in a lower orbit. 'Drifts upward' suggests falling toward the station, which is not how orbit phasing works. The station should catch up from behind, not the capsule falling down.",
+    "fix": "Change s7 to show the capsule drifting HORIZONTALLY or STATIONARY relative to its orbit, with the station catching up from behind, not the capsule drifting upward."
+   },
+   {
+    "id": "real-morphing",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s7"
+    ],
+    "evidence": "No geometry morphing detected. Each clip has single motion source (subject drift). No orbits or fast rotations requested.",
+    "fix": "na"
+   },
+   {
+    "id": "real-camera-behavior",
+    "verdict": "fail",
+    "scenes": [
+     "s7"
+    ],
+    "evidence": "s7 shot.move: 'push in, small amplitude, slow' BUT motion_prompt: 'The camera holds a static shot'. Self-contradicting camera behavior in the same shot.",
+    "fix": "Remove 'push in' from shot.move OR remove 'The camera holds a static shot' from motion_prompt. Keep only one camera behavior."
+   },
+   {
+    "id": "real-performance",
+    "verdict": "na",
+    "scenes": [],
+    "evidence": "No emotional reactions or performance shots in the plan. Clips show spacecraft drift, illustrations show orbital diagrams.",
+    "fix": "na"
+   },
+   {
+    "id": "real-framing-safe",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s7"
+    ],
+    "evidence": "s1: 'Wide shot in deep space'. s2: 'Insert close on the white and black SpaceX Crew Dragon capsule'. s4, s9, s10 explicitly state 'vertical 9:16 composition'. No cropping issues detected.",
+    "fix": "na"
+   },
+   {
+    "id": "real-splice-continuity",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2",
+     "s7"
+    ],
+    "evidence": "No end state recorded for s1 before s2, no start state for s2. No end state for s2 before s7. s1 ends with capsule 'drifts forward toward frame right' but s2 starts with 'engines glowing bright blue' with no stated transition. s7 shows capsule 'from below' but s2 showed capsule in pursuit with station ahead.",
+    "fix": "Record s1's end state (capsule position, distance to station) as s2's start state. Record s2's end state (engine state, capsule position) as s7's start state. Ensure positions match across cuts."
+   },
+   {
+    "id": "real-look-drift",
+    "verdict": "fail",
+    "scenes": [
+     "s3",
+     "s4",
+     "s5",
+     "s6",
+     "s7",
+     "s8",
+     "s9",
+     "s10"
+    ],
+    "evidence": "s4, s9, s10 generation_prompts: 'deep navy background, teal and amber accents, flat vector illustration'. s5, s6 are orbit diagrams with different backgrounds. s7 generation_prompts: 'cool blue ambient light from Earth fill, warm amber rim'. This contradicts s4/s9/s10 'deep navy background' and differs from the open segment's 'cool teal ambient fill from Earth below'. Style is not locked within the explain segment.",
+    "fix": "Ensure all explain segment clips use consistent palette. Either add 'cool teal ambient from Earth' to s4/s9/s10 prompts, or add a style prefix to all explain segment generation_prompts matching the visual style."
+   },
+   {
+    "id": "real-audio-picture",
+    "verdict": "pass",
+    "scenes": [
+     "s1",
+     "s2",
+     "s3",
+     "s4",
+     "s5",
+     "s6",
+     "s7",
+     "s8",
+     "s9",
+     "s10"
+    ],
+    "evidence": "Narration provided for all scenes. No generated speech, music, or subtitles in generation_prompts. No lips moving to unheard words. VO is separate from visual content.",
+    "fix": "na"
+   },
+   {
+    "id": "real-dramatization-fidelity",
+    "verdict": "fail",
+    "scenes": [
+     "s7"
+    ],
+    "evidence": "Mechanism step 3: 'The station in its lower, faster orbit catches up to the spacecraft from behind'. But s7 shows 'capsule drifts upward toward the station from below... The distance between them shortens steadily'. This depicts the WRONG subject doing the catching up. The capsule should be stationary/waiting while the station catches up from behind, not the capsule drifting toward the station from below.",
+    "fix": "Reorient s7 so the station catches up to the capsule from behind, not the capsule approaching from below. Show the capsule ahead and stationary, the station approaching from behind."
+   },
+   {
+    "id": "real-analogy-world",
+    "verdict": "pass",
+    "scenes": [
+     "s3"
+    ],
+    "evidence": "s3 renderer_overlays steps: 'Think of two cars on a roundabout. The outer lane travels farther each lap, so it completes laps slower. The inner lane covers less distance, moving faster.' This is a car roundabout analogy correctly mapping outer lane = higher/slower orbit, inner lane = lower/faster orbit. No real-world elements in the analogy frame.",
+    "fix": "na"
+   },
+   {
+    "id": "real-no-unverified-drama",
+    "verdict": "pass",
+    "scenes": [
+     "s9"
+    ],
+    "evidence": "'SpaceX Crew-13 docked with the International Space Station in under 8 hours' is a verifiable historical claim (Crew Dragon missions do dock with ISS). The dramatization in s9 shows an illustration of docking with the capsule and station on the same orbit. No real person depicted - only spacecraft. 'crew-13' in renderer_overlay is a Remotion overlay, not generated image content.",
+    "fix": "na"
+   },
+   {
+    "id": "real-stranger-audit",
+    "verdict": "fail",
+    "scenes": [
+     "s1",
+     "s2"
+    ],
+    "evidence": "cold_open specifies question: 'Why can't you just speed up?' with scene_ids: ['s1', 's2'] and beats: {hook: 's1', obstacle: 's1', cost: 's2'}. But s1.narration: '' and s2.narration: '' are both empty. The question only appears in s3 narration, not in the cold open scenes as specified.",
+    "fix": "Add the question 'Why can't you just speed up?' as narration in s1 or s2, or adjust cold_open.scene_ids to include s3 where the question actually appears."
+   }
+  ],
+  "viewer_would_call_fake": [
+   {
+    "scene": "s7",
+    "why": "The capsule approaching the station 'from below' violates orbital mechanics - a spacecraft that raised its orbit to get ahead would be ABOVE the station (farther from Earth), not below it. Space-savvy viewers would recognize this as physically impossible."
+   },
+   {
+    "scene": "s7",
+    "why": "Self-contradicting camera instructions ('static shot' vs 'push in') suggest production confusion, and the resulting visual of the capsule drifting downward toward the station looks like chasing from below, which contradicts the stated mechanism of 'station catches up from behind.'"
+   }
+  ],
+  "skipped_na": [
+   "real-reflections-glass",
+   "real-measured-evidence"
+  ]
+ },
+ "judge": {
+  "models": [
+   "MiniMax-M2.7",
+   "MiniMax-M2.5"
+  ],
+  "temperature": 0.01,
+  "seed": null
+ }
+}

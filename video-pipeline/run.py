@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Episode pipeline CLI.
-  python run.py <episode> <stage|all> [--force] [--unapproved]   stages: tts illustrations keyframes clips props render carousel
-  python run.py list | sync | lint <ep> | status <ep> <status> | publish <ep> <youtube|instagram> [--confirm] [--visibility V]
+  python run.py <episode> <stage|all> [--force] [--unapproved] [--force-cost]   stages: tts illustrations keyframes clips props render carousel
+    (--force-cost: let the clips stage exceed providers.yaml video.max_clip_cost_usd; the estimate is always printed first)
+  python run.py list | sync | lint <ep> | schema-check [<ep>|all] | selfcheck | storyboard <ep> [--json] | status <ep> <status> | publish <ep> <youtube|instagram> [--confirm] [--visibility V]
   python run.py ig-me | ig-refresh | yt-auth
 Assets are cached per scene by CONTENT HASH in out/<id>/: edit a line and only that scene regenerates."""
 import json
@@ -20,6 +21,21 @@ PAID = {"tts", "illustrations", "keyframes", "clips"}  # stages that spend money
 
 PAD = 0.45  # seconds of air after each narration line
 TR = 9      # transition length in frames (scenes overlap by this much)
+
+
+def safe_zone(profile) -> dict:
+    """Resolve the profile's safe-zone preset (config/safe_zones.yaml) into renderer insets: {top, height, left, right, progressTop[, captionBottom, captionInset]}."""
+    cfg = yaml.safe_load((ROOT / "config" / "safe_zones.yaml").read_text())
+    name = (profile or {}).get("safeZone") or cfg["default"]
+    if name not in cfg["presets"]:
+        raise SystemExit(f"unknown safeZone '{name}' (presets: {', '.join(cfg['presets'])})")
+    z = cfg["presets"][name]
+    out = {"top": z["y_min"], "height": z["y_max"] - z["y_min"], "left": z["x_min"], "right": z["canvas"][0] - z["x_max"], "progressTop": z["progress_top"]}
+    if "caption_bottom" in z:  # optional caption band (minimum CSS bottom + side inset)
+        out |= {"captionBottom": z["caption_bottom"], "captionInset": z.get("caption_inset", 70)}
+    if "right_rail" in z:  # optional right action-rail notch (no text / key subject at x > railX below railFromY)
+        out |= {"railX": z["right_rail"]["x_min"], "railFromY": z["right_rail"]["y_from"]}
+    return out
 
 
 def load(ep_dir: Path):
@@ -83,17 +99,117 @@ def stage_tts(ep, out, force):
         print(f"tts {sc['id']}: {r['duration']:.2f}s, {r['characters']} chars")
 
 
+COST_KEYS = ("price_per_second", "max_clip_cost_usd")  # providers.yaml video block: cost gate only, never in a cache key
+FORCE_COST = False  # --force-cost (read from sys.argv in clip_cost_gate) lets one clip run exceed max_clip_cost_usd
+
+
+def _key_cfg(kind: str) -> dict:
+    """Provider config as used in cache keys: cost-gate fields dropped, so changing a price never re-keys (re-pays) assets."""
+    return {k: v for k, v in provider_cfg(kind).items() if k not in COST_KEYS}
+
+
+def _ep_dir(ep) -> Path:
+    if ep.get("_dir"):
+        return Path(ep["_dir"])
+    for d, o in registry.episodes():  # skips unreadable drafts
+        if o.get("id") == ep["id"]:
+            return d
+    return registry.resolve(ep["id"])
+
+
+def scene_refs(ep, sc) -> list:
+    """Reference stills for a scene (lint.scene_reference_images: visual.reference_images[] or the canon_frame/sheet of
+    characters in shot.continuity_ids), resolved against episodes/<dir>/ then the pipeline root. Only character stills we
+    made are allowed: files inside episodes/<dir>/refs/ or out/<id>/refs/ (never photos of real people).
+    Missing or misplaced file -> SystemExit before any paid call."""
+    import lint
+    raw = lint.scene_reference_images(ep, sc)
+    if not raw:
+        return []
+    ep_dir = _ep_dir(ep)
+    allowed = [(ep_dir / "refs").resolve(), (ROOT / "out" / ep["id"] / "refs").resolve()]
+    res = []
+    for r in raw:
+        p = Path(r)
+        cands = [p] if p.is_absolute() else [ep_dir / p, ROOT / p]
+        hit = next((c.resolve() for c in cands if c.is_file()), None)
+        if hit is None:
+            raise SystemExit(f"{sc['id']}: reference image not found: {r} (looked at {', '.join(str(c) for c in cands)})")
+        if not any(hit.is_relative_to(a) for a in allowed):
+            raise SystemExit(f"{sc['id']}: reference image {r} must be inside episodes/{ep_dir.name}/refs/ or out/{ep['id']}/refs/ "
+                             "(our own character stills only; never photos of real people)")
+        res.append(hit)
+    return res
+
+
+def clip_cost_gate(n_clips: int, cfg: dict | None = None):
+    """Print the estimated spend of the clips about to be generated and refuse (SystemExit) above
+    providers.yaml video.max_clip_cost_usd unless --force-cost. Returns the estimate in USD (None if no price)."""
+    cfg = cfg if cfg is not None else provider_cfg("video")
+    if not n_clips:
+        return 0.0
+    dur = (cfg.get("init_args") or {}).get("duration", 6)
+    model = (cfg.get("init_args") or {}).get("model", "?")
+    pps, cap = cfg.get("price_per_second"), cfg.get("max_clip_cost_usd")
+    forced = FORCE_COST or "--force-cost" in sys.argv
+    if pps is None:
+        print(f"cost: {n_clips} clip(s) x {dur}s on {model}, price unknown (no video.price_per_second in providers.yaml)")
+        if cap is not None and not forced:
+            raise SystemExit("refusing paid clips: max_clip_cost_usd is set but price_per_second is missing; "
+                             "add it to providers.yaml or pass --force-cost")
+        return None
+    est = n_clips * dur * pps
+    print(f"cost estimate: {n_clips} clip(s) x {dur}s x ${pps}/s ({model}) = ${est:.2f}"
+          + (f" (cap ${cap:.2f})" if cap is not None else " (no cap)"))
+    if cap is not None and est > cap + 1e-9:
+        if not forced:
+            raise SystemExit(f"refusing paid clips: estimate ${est:.2f} exceeds max_clip_cost_usd ${cap:.2f} "
+                             "(raise the cap in config/providers.yaml or pass --force-cost)")
+        print("--force-cost: proceeding above the cap")
+    return est
+
+
 def stage_keyframes(ep, out, force):
     img = load_provider("image")
-    for i, sc in enumerate(s for s in ep["scenes"] if s["visual"]["type"] == "clip" and s["visual"].get("keyframe_prompt")):
-        p = out / "keyframes" / f"{sc['id']}.png"
-        prompt = fill(sc["visual"]["keyframe_prompt"], ep["style"])
-        k = cache.key("kf", prompt, provider_cfg("image"), 1234)
-        if cache.fresh(p, k) and not force:
-            continue
-        img.generate(prompt, p, seed=1234)
-        cache.mark(p, k)
-        print(f"keyframe {sc['id']} -> {p.name}")
+    cfg = provider_cfg("image")
+    can_sub = bool(getattr(img, "supports_subject_reference", False))
+    can_last = None  # asked of the video adapter only when a scene wants a last frame
+    for sc in (s for s in ep["scenes"] if s["visual"]["type"] == "clip"
+               and (s["visual"].get("keyframe_prompt") or s["visual"].get("last_frame_prompt"))):
+        v = sc["visual"]
+        refs = scene_refs(ep, sc)
+        last_prompt = (v.get("last_frame_prompt") or "").strip()
+        if last_prompt and refs:
+            raise SystemExit(f"{sc['id']}: last_frame_prompt cannot be combined with reference images on H3 "
+                             "(lint rule last_frame_exclusive); drop one")
+        if v.get("keyframe_prompt"):
+            p = out / "keyframes" / f"{sc['id']}.png"
+            prompt = fill(v["keyframe_prompt"], ep["style"])
+            if refs and not can_sub:
+                print(f"WARNING {sc['id']}: image model {(cfg.get('init_args') or {}).get('model')} takes no subject_reference; "
+                      f"keyframe made WITHOUT {refs[0].name}")
+            sub = refs[0] if refs and can_sub else None
+            extra = [{"subject_reference": cache.file_hash(sub)}] if sub else []  # no ref -> same key as before
+            k = cache.key("kf", prompt, cfg, 1234, *extra)
+            if not (cache.fresh(p, k) and not force):
+                img.generate(prompt, p, seed=1234, **({"subject_reference": sub} if sub else {}))
+                cache.mark(p, k)
+                print(f"keyframe {sc['id']} -> {p.name}" + (f" (subject_reference {sub.name})" if sub else ""))
+        if last_prompt:
+            if can_last is None:
+                can_last = bool(getattr(load_provider("video"), "supports_last_frame", False))
+            if not can_last:
+                print(f"WARNING {sc['id']}: video model {(provider_cfg('video').get('init_args') or {}).get('model')} has no "
+                      "last_frame input; last_frame_prompt skipped (no end keyframe generated)")
+                continue
+            lp = out / "keyframes" / f"{sc['id']}_last.png"
+            lprompt = fill(last_prompt, ep["style"])
+            lk = cache.key("kf_last", lprompt, cfg, 1234)
+            if cache.fresh(lp, lk) and not force:
+                continue
+            img.generate(lprompt, lp, seed=1234)
+            cache.mark(lp, lk)
+            print(f"last frame {sc['id']} -> {lp.name}")
 
 
 def stage_illustrations(ep, out, force):
@@ -113,26 +229,93 @@ def stage_illustrations(ep, out, force):
 
 def stage_clips(ep, out, force):
     vid = load_provider("video")
+    kcfg = _key_cfg("video")
+    can_last = bool(getattr(vid, "supports_last_frame", False))
+    jobs = []  # plan first so the cost gate sees exactly the clips that will be paid for
     for sc in (s for s in ep["scenes"] if s["visual"]["type"] == "clip"):
         p = out / "clips" / f"{sc['id']}.mp4"
         kf = out / "keyframes" / f"{sc['id']}.png"
         prompt = fill(sc["visual"]["motion_prompt"], ep["style"])
-        k = cache.key("clip", prompt, cache.file_hash(kf), provider_cfg("video"))
+        lf = None
+        if (sc["visual"].get("last_frame_prompt") or "").strip():
+            import lint
+            if lint.scene_reference_images(ep, sc):
+                raise SystemExit(f"{sc['id']}: last_frame_prompt cannot be combined with reference images on H3 "
+                                 "(lint rule last_frame_exclusive); drop one")
+            if not can_last:
+                print(f"WARNING {sc['id']}: video model {(kcfg.get('init_args') or {}).get('model')} has no last_frame "
+                      "input; clip generated from the first frame only (last_frame_prompt ignored)")
+            else:
+                lf = out / "keyframes" / f"{sc['id']}_last.png"
+                if not lf.exists():
+                    raise SystemExit(f"{sc['id']}: last frame {lf.name} missing; run the keyframes stage first")
+        extra = [{"last_frame": cache.file_hash(lf)}] if lf else []  # no last frame -> same key as before
+        k = cache.key("clip", prompt, cache.file_hash(kf), kcfg, *extra)
         if cache.fresh(p, k) and not force:
             continue
-        vid.generate(prompt, p, first_frame=kf if kf.exists() else None)
+        jobs.append((sc, p, kf, lf, prompt, k))
+    clip_cost_gate(len(jobs))
+    for sc, p, kf, lf, prompt, k in jobs:
+        vid.generate(prompt, p, first_frame=kf if kf.exists() else None, **({"last_frame": lf} if lf else {}))
         cache.mark(p, k)
-        print(f"clip {sc['id']} -> {p.name}")
+        print(f"clip {sc['id']} -> {p.name}" + (f" (last_frame {lf.name})" if lf else ""))
 
 
 PROFILE = None  # set from --profile=<name>; see config/profiles/<name>.json
 SUFFIX = ""     # "" for the default look, "_<profile>" otherwise (keeps variants side by side)
+
+# Cold-open bridges the renderer draws (Episode.tsx + Bridges.tsx): default frames and the clamp the renderer honours.
+# freeze-rewind: hold + scrub-back segment (12-24 f); j-cut: narration lead under the cold-open tail (6-36 f); question-card: card hold 0.8-1.5 s.
+from brain import BRIDGE_FRAMES  # (default, min, max) per bridge; single source in brain.py
+
+
+def bridge_plan(cold_open, scenes, t, tr, fps):
+    """Resolve direction.cold_open into props.coldOpen and the timeline: segment bridges (freeze-rewind, question-card) insert their
+    frames at the seam with hard cuts (later scenes shift by frames + tr); a j-cut leads the first explainer narration and only
+    lengthens the last cold-open scene if its own voice would overlap the lead. Mutates scenes' from/frames; returns (coldOpen|None, t)."""
+    co = cold_open or {}
+    ids = [s["id"] for s in scenes]
+    sids = [i for i in co.get("scene_ids") or [] if i in ids]
+    if not co.get("bridge") or not sids:
+        return None, t
+    seam = ids.index(sids[-1])
+    plan = {"bridge": co["bridge"], "sceneIds": sids, "seam": seam, "frames": 0, "lead": 0}
+    if co.get("question"):
+        plan["question"] = co["question"]
+    if co["bridge"] not in BRIDGE_FRAMES or seam >= len(scenes) - 1:
+        return plan, t  # scene-built bridges (match-cut, pull-back, narrator-step-in) or no explainer after the cold open: nothing to insert
+    dflt, lo, hi = BRIDGE_FRAMES[co["bridge"]]
+    n = max(lo, min(hi, int(co.get("bridge_frames") or dflt)))
+
+    def shift(k, by):
+        for s in scenes[k:]:
+            s["from"] += by
+        return t + by
+
+    if co["bridge"] == "j-cut":
+        cur, nxt = scenes[seam], scenes[seam + 1]
+        voice_end = cur["from"] + (round(cur["words"][-1]["e"] * fps) + 4 if cur["words"] else 0)
+        ext = max(0, voice_end + 4 - (nxt["from"] - n))  # keep the cold open's own line clear of the lead
+        if ext:
+            cur["frames"] += ext
+            t = shift(seam + 1, ext)
+        plan["lead"] = max(0, min(n, nxt["from"]))
+    else:
+        plan["frames"] = n
+        t = shift(seam + 1, n + tr)  # hard cut in and out of the segment instead of one tr-frame overlap
+        if co["bridge"] == "freeze-rewind":
+            plan["hold"] = round(n * 0.4)
+            plan["lead"] = n - plan["hold"]  # VO enters on the scrub-back
+        elif co["bridge"] == "question-card" and not co.get("question"):
+            plan["question"] = ""  # lint dir_bridge_params errors on this; render an empty card rather than crash
+    return plan, t
 
 
 def stage_props(ep, out, force):
     fps = ep["format"]["fps"]
     pub = ROOT / "remotion-app" / "public" / ep["id"]
     pub.mkdir(parents=True, exist_ok=True)
+    tr = int((PROFILE or {}).get("transitionFrames", TR))  # profile owns the cut feel (storybook snappier, clean calmer)
     scenes, t = [], 0
     for sc in ep["scenes"]:
         a = json.loads((out / "audio" / f"{sc['id']}.json").read_text())
@@ -155,8 +338,14 @@ def stage_props(ep, out, force):
             v["still"] = f"{ep['id']}/{sc['id']}.png"
         scenes.append({"id": sc["id"], "beat": sc["beat"], "from": t, "frames": frames,
                        "audio": f"{ep['id']}/{sc['id']}.mp3", "words": a["words"], "visual": v})
-        t += frames - TR  # next scene overlaps by the transition length
-    t += TR
+        t += frames - tr  # next scene overlaps by the transition length
+    t += tr
+    cold_open, t = bridge_plan((ep.get("direction") or {}).get("cold_open"), scenes, t, tr, fps)
+    if cold_open and cold_open["bridge"] == "freeze-rewind":  # optional rewind sound: only if an asset exists, else silent
+        rw = next((p for p in sorted((ROOT / "assets" / "sfx").glob("rewind.*")) if p.suffix in (".wav", ".mp3")), None) if (ROOT / "assets" / "sfx").exists() else None
+        if rw:
+            shutil.copy(rw, pub / rw.name)
+            cold_open["sfx"] = f"{ep['id']}/{rw.name}"
     music = None
     mcfg = (PROFILE or {}).get("music") or ep.get("music")
     if (ep.get("_card") or {}).get("music_mood"):  # card decides the mood; profile/ep only supply volume
@@ -166,10 +355,12 @@ def stage_props(ep, out, force):
         shutil.copy(src, pub / ("music" + SUFFIX + src.suffix))
         music = {"src": f"{ep['id']}/music{SUFFIX}{src.suffix}", "volume": mcfg.get("volume", 0.13)}
     palette = (PROFILE or {}).get("palette") or ep["style"]["palette"]
-    props = {"title": ep["title"], "style": palette, "profile": {k: v for k, v in (PROFILE or {}).items() if k not in ("palette", "music") and not k.startswith("_")}, "disclosure": ep.get("disclosure"), "music": music,
-             "transition": TR,
+    props = {"title": ep["title"], "style": palette, "profile": {k: v for k, v in (PROFILE or {}).items() if k not in ("palette", "music") and not k.startswith("_")} | {"safe": safe_zone(PROFILE)}, "disclosure": ep.get("disclosure"), "music": music,
+             "transition": tr,
              "sponsor": ep.get("sponsor"), "scenes": scenes, "totalFrames": t, "fps": fps,
              "width": ep["format"]["width"], "height": ep["format"]["height"]}
+    if cold_open:
+        props["coldOpen"] = cold_open
     (out / f"props{SUFFIX}.json").write_text(json.dumps(props, indent=1))
     print(f"props: {t} frames = {t / fps:.1f}s")
 
@@ -184,6 +375,14 @@ def stage_render(ep, out, force):
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(final), "-c:v", "copy", "-af",
                     "loudnorm=I=-14:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "192k", str(loud)], check=True)
     loud.replace(final)
+    try:  # contact sheet + loudness/format report (DESIGN_SYSTEM.md sections 7-8); never blocks a render
+        import verify
+        rq = verify.render_qa(ep, final, SUFFIX)
+        print(f"render QA: {rq['duration_s']}s {rq['size']} {rq['lufs']} LUFS peak {rq['peak_dbfs']} dBFS; contact sheet {rq['contact_sheet']}")
+        for sev, rid, msg in rq["issues"]:
+            print(f"  [{sev.upper()}] {rid}: {msg}")
+    except Exception as e:
+        print(f"render QA skipped: {e}")
     print("rendered", final)
     registry.advance(ROOT / "episodes" / ep["id"], "rendered")
 
@@ -392,6 +591,36 @@ def main(argv):
     elif cmd == "lint":
         import lint
         sys.exit(lint.report(registry.read(registry.resolve(args[1]))))
+    elif cmd == "animatic":  # free placeholder preview of the whole episode before paid media: run.py animatic <ep> [--render]
+        import animatic
+        sys.exit(animatic.main(args[1:] + (["--render"] if "--render" in flags else [])))
+    elif cmd == "manifest":  # free plan of what a build would generate and cost: run.py manifest <ep> [--json]
+        import manifest
+        sys.exit(manifest.main(args[1:] + (["--json"] if "--json" in flags else [])))
+    elif cmd == "storyboard":  # generated scene-by-scene storyboard + decision map (read-only, free): out/<id>/storyboard.md
+        import storyboard
+        sys.exit(storyboard.main(args[1:]))
+    elif cmd == "scene":  # validated, reasoned, logged scene edit: run.py scene <ep> <sid> set|unset <path> [<value>] --reason "..."
+        import scene_edit
+        sys.exit(scene_edit.main(argv[argv.index("scene") + 1:]))
+    elif cmd == "decisions":  # the append-only decision log of one episode (optionally one scene)
+        import scene_edit
+        sys.exit(scene_edit.show(args[1], args[2] if len(args) > 2 else None))
+    elif cmd == "selfcheck":  # free consistency guard: schema + lint gate + checklist-vs-code + doc refs
+        import selfcheck
+        sys.exit(selfcheck.main())
+    elif cmd == "schema-check":  # shape check of every (or one) episode.json against direction/episode.schema.json
+        import lint
+        dirs = [registry.resolve(a) for a in args[1:] if a != "all"] or registry.episode_dirs()
+        bad = 0
+        for d in dirs:
+            ep_, err = registry.read_safe(d)
+            iss = lint.schema_issues(ep_, limit=20) if ep_ is not None else [("error", "schema", err)]
+            bad += bool(iss)
+            print(f"{'FAIL' if iss else 'ok  '} {d.name}")
+            for _, _, m in iss:
+                print(f"       {m}")
+        sys.exit(1 if bad else 0)
     elif cmd == "status":
         registry.set_status(registry.resolve(args[1]), args[2], skip_verify="--skip-verify" in flags)
         print("ok")
@@ -411,6 +640,9 @@ def main(argv):
     elif cmd == "verify":
         import verify
         sys.exit(verify.main(args[1]))
+    elif cmd == "direction":
+        import brain
+        sys.exit(brain.main(argv[argv.index("direction") + 1:]))
     elif cmd == "director":
         import director
         director.main(argv[argv.index("director") + 1:])

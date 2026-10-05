@@ -16,5 +16,13 @@ mechanism_steps: [3, 5]
 remotion_profile: storybook-v2
 voice: {voice_id: English_Kind-heartedGirl, speed: 0.95, emotion: null}
 music_mood: playful
+illustration_style: "children's picture book illustration, soft gouache and colored pencil texture, bright cheerful candy colors, thick friendly outlines, rounded cute shapes, simple uncluttered background, warm sunny light, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
 visuals: "picture-book illustrations plus a simple step-by-step animation; at least one animated 'how it works' scene"
 cta: "ask a grown-up / share with a friend"
+
+# Direction policy (read by brain.style_envelope; narrows what the profile allows; PROPOSAL, owner may edit)
+direction:
+  modes: [explainer, cold-open-drama, montage]   # drama only through a kids_variant archetype (arch-router); no documentary realism
+  dialects: [native]                              # storybook medium only; cinematic grammar stays inside the picture-book style
+  lenses: [lens-wonder-reaction, lens-frontal-diorama]
+  cold_open_max_s: 8

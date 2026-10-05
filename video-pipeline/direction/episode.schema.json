@@ -1,0 +1,1233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "episode.schema.json",
+  "description": "Structural contract for episode.json (shape only; semantics live in lint.py, packaging.py, direction/audiences/*.yaml and script_template.yaml). Used by director.py to reject/repair LLM output before QA. Field design informed by OpenMontage's artifact schemas (AGPL: ideas only, no text copied).",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "audience",
+    "format",
+    "style",
+    "scenes",
+    "claims",
+    "mechanism",
+    "packaging"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^ep[0-9]{2,3}-[a-z0-9-]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 100
+    },
+    "format_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "object",
+      "properties": {
+        "headline": {
+          "type": "string"
+        },
+        "angle": {
+          "type": "string"
+        },
+        "why_now": {
+          "type": "string"
+        },
+        "source_urls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "one_idea": {
+      "type": "string"
+    },
+    "analogy": {
+      "type": "object",
+      "required": [
+        "domain",
+        "mapping",
+        "limitation"
+      ],
+      "properties": {
+        "source_term": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "mapping": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "limitation": {
+          "type": "string"
+        },
+        "true_term_reveal_beat": {
+          "type": "string"
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "claim",
+          "url"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "verified": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "format": {
+      "type": "object",
+      "required": [
+        "width",
+        "height",
+        "fps"
+      ],
+      "properties": {
+        "width": {
+          "const": 1080
+        },
+        "height": {
+          "const": 1920
+        },
+        "fps": {
+          "type": "integer"
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "required": [
+        "palette"
+      ],
+      "properties": {
+        "palette": {
+          "type": "object"
+        },
+        "character": {
+          "type": "string"
+        },
+        "look": {
+          "type": "string"
+        },
+        "illustration_style": {
+          "type": "string"
+        },
+        "cast": {
+          "type": "object"
+        },
+        "photo_style": {
+          "type": "string"
+        }
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "beat",
+          "narration",
+          "visual"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "beat": {
+            "type": "string"
+          },
+          "narration": {
+            "type": "string",
+            "minLength": 3,
+            "pattern": "\\w",
+            "description": "spoken words; never empty, '...' or punctuation only (a cold-open scene carries one short in-scene line of 1-6 words)"
+          },
+          "visual": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "enum": [
+                  "clip",
+                  "illustration",
+                  "diagram",
+                  "steps",
+                  "remotion",
+                  "orbit",
+                  "number",
+                  "compare",
+                  "photo"
+                ]
+              },
+              "prompt": {
+                "type": "string"
+              },
+              "motion_prompt": {
+                "type": "string"
+              },
+              "keyframe_prompt": {
+                "type": "string"
+              },
+              "last_frame_prompt": {
+                "type": "string",
+                "description": "Clip scenes, optional. Image prompt for the clip's END frame; run.py keyframes writes out/<id>/keyframes/<scene>_last.png and clips passes it as last_frame when the video model supports it (H3). Not combinable with reference images (lint last_frame_exclusive)."
+              },
+              "reference_images": {
+                "type": "array",
+                "description": "Optional character reference stills (local paths inside episodes/<dir>/refs/ or out/<id>/refs/; never photos of real people). The first is sent to the image model as subject_reference when keyframes are generated.",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "term": {
+                "type": "object",
+                "required": [
+                  "label"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "sub": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  }
+                }
+              },
+              "src": {
+                "type": "string"
+              },
+              "still": {
+                "type": "string"
+              },
+              "rate": {
+                "type": "number"
+              },
+              "captions": {
+                "type": "boolean"
+              },
+              "nodes": {
+                "type": "array"
+              },
+              "edges": {
+                "type": "array"
+              },
+              "reveal": {
+                "type": "array"
+              },
+              "layout": {
+                "enum": [
+                  "row",
+                  "column",
+                  "cycle"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              },
+              "unit": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "animation": {
+                "enum": [
+                  "countup",
+                  "bar"
+                ]
+              },
+              "colA": {
+                "type": "string"
+              },
+              "colB": {
+                "type": "string"
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "a",
+                    "b"
+                  ],
+                  "properties": {
+                    "a": {
+                      "type": "string"
+                    },
+                    "b": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "winner": {
+                "enum": [
+                  "A",
+                  "B"
+                ]
+              },
+              "lowerThird": {
+                "type": "string"
+              },
+              "zoom": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "mode": {
+                "enum": [
+                  "orbit",
+                  "cannon",
+                  "groundtrack"
+                ]
+              },
+              "rings": {
+                "type": "array"
+              },
+              "bodies": {
+                "type": "array"
+              },
+              "gap": {
+                "type": "object"
+              },
+              "lapSec": {
+                "type": "number"
+              },
+              "arrows": {
+                "type": [
+                  "array",
+                  "boolean"
+                ]
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "boolean"
+                ]
+              },
+              "shots": {
+                "type": "array"
+              },
+              "site": {
+                "type": "object"
+              },
+              "inclination": {
+                "type": "number"
+              },
+              "laps": {
+                "type": "number"
+              },
+              "lapShift": {
+                "type": "number"
+              },
+              "template": {
+                "type": "string"
+              },
+              "props": {
+                "type": "object"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "illustration"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "prompt"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "clip"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "motion_prompt"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "diagram"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "nodes"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "steps"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "title",
+                    "steps"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "number"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "value",
+                    "label"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "compare"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "colA",
+                    "colB",
+                    "rows"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "photo"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "still"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "remotion"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "template"
+                  ]
+                }
+              }
+            ],
+            "additionalProperties": false,
+            "patternProperties": {
+              "^x-": {}
+            }
+          },
+          "shot": {
+            "type": "object",
+            "description": "Per-scene shot facts for lint/verify (cont-bible-schema, arch-conventions). Optional.",
+            "properties": {
+              "archetype": {
+                "type": "string"
+              },
+              "size": {
+                "enum": [
+                  "ews",
+                  "ws",
+                  "ms",
+                  "mcu",
+                  "cu",
+                  "ecu",
+                  "insert",
+                  "pov",
+                  "ots"
+                ]
+              },
+              "angle": {
+                "type": "string"
+              },
+              "move": {
+                "type": "string"
+              },
+              "lens_mm": {
+                "type": "number"
+              },
+              "location_id": {
+                "type": "string"
+              },
+              "axis_side": {
+                "type": "string"
+              },
+              "travel_dir": {
+                "type": "string"
+              },
+              "eyeline": {
+                "type": "string"
+              },
+              "light_source": {
+                "type": "string"
+              },
+              "action": {
+                "type": "string"
+              },
+              "action_s": {
+                "type": "number"
+              },
+              "start_state": {
+                "type": "string"
+              },
+              "end_state": {
+                "type": "string"
+              },
+              "duration_s": {
+                "type": "number"
+              },
+              "continuity_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "keyframe_from": {
+                "type": "string"
+              },
+              "style_segment": {
+                "type": "string"
+              },
+              "dramatizes": {
+                "type": "string"
+              },
+              "neutral": {
+                "type": "boolean"
+              },
+              "offscreen": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          },
+          "intent": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 120,
+            "description": "One sentence: what the viewer should understand or feel after this scene (why the scene exists). Not a restatement of the narration; lint checks length and overlap."
+          }
+        },
+        "additionalProperties": false,
+        "patternProperties": {
+          "^x-": {}
+        }
+      }
+    },
+    "audience": {
+      "enum": [
+        "kids",
+        "curious_adult",
+        "older_adult",
+        "techie"
+      ]
+    },
+    "profile": {
+      "type": "string",
+      "description": "optional override of the audience card's remotion_profile"
+    },
+    "mechanism": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "step",
+          "scene"
+        ],
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "scene": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "concepts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "introduced_in"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "introduced_in": {
+            "type": "string"
+          },
+          "needed_in": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "loops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "question",
+          "raised_in",
+          "paid_in"
+        ],
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "raised_in": {
+            "type": "string"
+          },
+          "paid_in": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "news_hook": {
+      "type": "object",
+      "required": [
+        "event",
+        "url"
+      ],
+      "properties": {
+        "event": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "original_contribution": {
+      "type": "string"
+    },
+    "packaging": {
+      "type": "object",
+      "required": [
+        "primary_keyword",
+        "title",
+        "description",
+        "thumbnail"
+      ],
+      "properties": {
+        "primary_keyword": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "title_options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "title_rationale": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "instagram_caption": {
+          "type": "string"
+        },
+        "pinned_comment": {
+          "type": "string"
+        },
+        "content_type": {
+          "enum": [
+            "explainer",
+            "recommendation",
+            "opinion",
+            "entertainment"
+          ]
+        },
+        "long_form": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "extra": {
+              "type": "string"
+            }
+          }
+        },
+        "thumbnail": {
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "series": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "idea",
+        "scripted",
+        "approved",
+        "rendered",
+        "reviewed",
+        "scheduled",
+        "posted"
+      ]
+    },
+    "topic_area": {
+      "type": "string"
+    },
+    "sponsor": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "disclosure_line": {
+          "type": "string"
+        }
+      },
+      "description": "null = no sponsor; object requires disclosure_line (lint)"
+    },
+    "disclosure": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "on-frame disclosure text; owner preference is null (use platform AI labels)"
+    },
+    "music": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "volume": {
+          "type": "number"
+        }
+      }
+    },
+    "carousel": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "h": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "tagColor": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "claim",
+          "url"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "publish": {
+      "type": "object",
+      "properties": {
+        "youtube": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "instagram": {
+          "type": "object",
+          "properties": {
+            "caption": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "posts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "platform"
+        ],
+        "properties": {
+          "platform": {
+            "type": "string"
+          },
+          "scheduled": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "posted_at": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "reviewed_sha256": {
+      "type": "string",
+      "description": "sha256 of the reviewed rendered video file (registry.sha256), not of episode.json"
+    },
+    "provenance_note": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "voice_override": {
+      "type": "object",
+      "properties": {
+        "speed": {
+          "type": "number"
+        }
+      }
+    },
+    "structure": {
+      "type": "string"
+    },
+    "audience_misconception": {
+      "type": "string"
+    },
+    "director_notes": {
+      "type": "string"
+    },
+    "waivers": {
+      "type": "array",
+      "description": "Recorded, reasoned exemptions from lint rules. Rule stays strict for every other episode.",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      }
+    },
+    "direction": {
+      "type": "object",
+      "description": "How this episode is directed (see direction/craft/, docs/plans/youtube-automation/DIRECTION-BRAIN-PLAN.md). Optional: absent = legacy explainer.",
+      "properties": {
+        "mode": {
+          "enum": [
+            "explainer",
+            "cold-open-drama",
+            "hybrid",
+            "montage",
+            "documentary"
+          ]
+        },
+        "mode_reason": {
+          "type": "string"
+        },
+        "lens": {
+          "type": "string",
+          "minLength": 1,
+          "description": "craft lens card id, e.g. lens-procedural-precision. Never null or empty: omit the key when no lens is used"
+        },
+        "skills_used": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "craft card ids (and ledger ids) the director actually applied; traceability"
+        },
+        "cold_open": {
+          "type": "object",
+          "properties": {
+            "archetype": {
+              "type": "string"
+            },
+            "duration_s": {
+              "type": "number"
+            },
+            "bridge": {
+              "enum": [
+                "freeze-rewind",
+                "j-cut",
+                "match-cut",
+                "question-card",
+                "pull-back",
+                "narrator-step-in"
+              ]
+            },
+            "question": {
+              "type": "string",
+              "description": "question-card text (<= 8 words, the same words the first explainer line speaks); required for bridge question-card"
+            },
+            "bridge_frames": {
+              "type": "integer",
+              "minimum": 6,
+              "maximum": 45,
+              "description": "bridge length in frames at 30 fps (6-45): freeze-rewind segment (renderer clamps 12-24, default 18), j-cut narration lead (6-36, default 15), question-card hold (renderer clamps 24-45, default 42)"
+            },
+            "scene_ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "description": "the first scenes of the episode, in order, that form the cold open (ends at the bridge)"
+            },
+            "beats": {
+              "type": "object",
+              "description": "mode-cold-open-beats: beat name (hook, want, obstacle, strategy_shift, power_turn, cost, cliffhanger) -> the cold-open scene id that shows it, or null",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "additionalProperties": false,
+          "patternProperties": {
+            "^x-": {}
+          }
+        },
+        "style_segments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "medium": {
+                "enum": [
+                  "native",
+                  "cinematic"
+                ],
+                "description": "dialect of this segment: native | cinematic (DESIGN_SYSTEM section 11)"
+              },
+              "scene_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "medium",
+              "scene_ids"
+            ],
+            "additionalProperties": false,
+            "patternProperties": {
+              "^x-": {}
+            }
+          }
+        },
+        "take_budget": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "enum": [
+                  "cold-open-drama",
+                  "hybrid"
+                ]
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "required": [
+              "cold_open"
+            ],
+            "properties": {
+              "cold_open": {
+                "required": [
+                  "archetype",
+                  "duration_s",
+                  "bridge",
+                  "scene_ids"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "continuity": {
+      "type": "object",
+      "description": "Continuity bible (cont-bible-schema): identity strings, locations, props, state ledger, style lock. Optional.",
+      "properties": {
+        "characters": {
+          "type": "array"
+        },
+        "locations": {
+          "type": "array"
+        },
+        "props": {
+          "type": "array"
+        },
+        "ledger": {
+          "type": "array"
+        },
+        "style_lock": {
+          "type": [
+            "string",
+            "object"
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": {}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "scenes": {
+            "contains": {
+              "required": [
+                "visual"
+              ],
+              "properties": {
+                "visual": {
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "illustration"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "style": {
+            "required": [
+              "illustration_style"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

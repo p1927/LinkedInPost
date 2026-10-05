@@ -20,3 +20,11 @@ voice: {voice_id: English_Gentle-voiced_man, speed: 0.9, emotion: null}
 music_mood: calm
 visuals: "large clear diagrams, big high-contrast captions (>=76px), few cuts, no flashing"
 cta: "share it with family"
+
+# Direction policy (read by brain.style_envelope; narrows what the profile allows; PROPOSAL, owner may edit)
+direction:
+  modes: [explainer, documentary, montage]        # no drama: clarity first, no jarring register changes
+  dialects: [native]
+
+# Illustration style (PROPOSAL, owner may edit): same editorial family as curious_adult but simpler and higher contrast for readability (profile explainer-large)
+illustration_style: "clean editorial flat vector illustration, large simple geometric shapes, high contrast dark ink on a white background, one strong accent colour, thick clear outlines, generous negative space, uncluttered single focal subject, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"

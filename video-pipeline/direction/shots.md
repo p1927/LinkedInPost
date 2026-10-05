@@ -38,7 +38,7 @@ All psychological effects are [R, film-craft convention, not experimentally prov
 | Tracking | Follow a moving subject | `[Tracking shot]` | `translateX` tracking |
 | Orbit | 3D importance of an object | natural language only; less reliable | not built-in |
 
-**Hailuo combination rule:** put commands in one bracket to run simultaneously (max 2–3), separate brackets run in sequence. Example: `[Push in, Tilt up] The coin stack grows.`
+**Bracket form (Hailuo 2.3; permitted on H3 but not the house default):** on MiniMax-H3 write the move as a natural camera sentence ("The camera pushes in with small amplitude at slow speed toward ..."), per `craft/dialects/hailuo.md` sections 0b and 12.6. Hailuo combination rule: put commands in one bracket to run simultaneously (max 2–3), separate brackets run in sequence. Example: `[Push in, Tilt up] The coin stack grows.`
 
 ---
 
@@ -56,22 +56,7 @@ All psychological effects are [R, film-craft convention, not experimentally prov
 
 ## Safe-Zone Constants
 
-> **Sources conflict; these are the strictest union of third-party guides (Tella, Argil, adcreative). Not read from official TikTok/Meta/YouTube documentation—tune against your own rendered previews before locking.**
-
-```yaml
-# video-pipeline/config/safe_zones.yaml — tune from real device previews
-canvas:
-  width: 1080
-  height: 1920
-safe_content:              # keep all text and key subjects inside this box
-  x_min_pct: 6
-  x_max_pct: 82
-  y_min_pct: 15
-  y_max_pct: 65
-# Pixel equivalents at 1080x1920:
-#   x: 65–885 px
-#   y: 288–1248 px
-```
+No numbers here: `video-pipeline/config/safe_zones.yaml` is the single source (owner: `DESIGN_SYSTEM.md` section 4). The value of record is the preset `shorts_9x16_platform` (decided 2026-10-05 from the platforms' own overlays, evidence in the yaml): a text box, a right-rail no-go notch, a caption band and a decoration-bleed box. Read it in code with `safe_zones.box("text" | "rail" | "caption" | "art")`. The third-party union that used to be inlined here is kept as `shorts_9x16_strict`.
 
 ---
 
@@ -102,7 +87,7 @@ Purpose of each shot: state in one sentence what question it answers or what fee
 2. **Wide → medium → close.** Each shot narrows the viewer's attention to the key detail.
 3. **Show concrete actions, not states.** "Bruno lifts the cookie" is storyboard-ready. "The cookie is expensive" is not.
 4. **Repeat character descriptors verbatim** across every prompt that includes the same character. Do not paraphrase the character description—AI image models drift.
-5. **Camera move is its own sentence.** Describe what the camera does separately from what the subject does. Example: `[Push in] Bruno lifts his lantern. Warm light spills over his face.` Not: `Push-in on Bruno lifting the lantern with warm light.`
+5. **Camera move is its own sentence.** Describe what the camera does separately from what the subject does. Example (H3 house form): `The camera pushes in at slow speed toward Bruno. Bruno lifts his lantern. Warm light spills over his face.` (2.3 form: `[Push in] Bruno lifts his lantern. ...`) Not: `Push-in on Bruno lifting the lantern with warm light.`
 6. **No text inside AI-generated images.** All text, numbers, labels, and captions are rendered in Remotion. Do not prompt an image model to show readable text.
 7. **One action per AI-video clip.** Complex simultaneous actions (character runs, crowd cheers, rain falls, dog barks) degrade quality. Split into sequential clips or simplify.
 8. **Hide hands when possible.** Hands are a known failure mode for current image/video models. Use pockets, behind-back, or out-of-frame compositions.

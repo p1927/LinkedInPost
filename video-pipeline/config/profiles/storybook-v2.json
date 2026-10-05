@@ -1,28 +1,94 @@
 {
   "name": "storybook-v2",
+  "safeZone": "shorts_9x16_platform",
   "_doc": "Kids / playful look, but beat-aware: hook and payoff hit harder, worry beat goes quiet, term beat flips in. Bouncy generated music ducked under narration.",
   "font": "fredoka",
-  "music": { "file": "assets/music/gen_playful.wav", "volume": 0.17 },
+  "music": {
+    "file": "assets/music/gen_playful.wav",
+    "volume": 0.17
+  },
   "musicDuck": 0.3,
   "transitions": {
-    "default": ["slide-right", "wipe-left", "slide-bottom"],
-    "story_hook": ["slide-right"],
-    "term": ["flip"],
-    "worry": ["fade"],
-    "story_payoff": ["iris"],
-    "cta": ["fade"]
+    "default": [
+      "slide-right",
+      "wipe-left",
+      "slide-bottom"
+    ],
+    "story_hook": [
+      "slide-right"
+    ],
+    "term": [
+      "flip"
+    ],
+    "worry": [
+      "fade"
+    ],
+    "story_payoff": [
+      "iris"
+    ],
+    "cta": [
+      "fade"
+    ]
   },
   "zoom": {
-    "default": [1.04, 1.14],
-    "story_hook": [1.08, 1.24],
-    "term": [1.05, 1.12],
-    "worry": [1.02, 1.08],
-    "story_payoff": [1.1, 1.22],
-    "cta": [1.0, 1.06]
+    "default": [
+      1.04,
+      1.14
+    ],
+    "story_hook": [
+      1.08,
+      1.24
+    ],
+    "term": [
+      1.05,
+      1.12
+    ],
+    "worry": [
+      1.02,
+      1.08
+    ],
+    "story_payoff": [
+      1.1,
+      1.22
+    ],
+    "cta": [
+      1.0,
+      1.06
+    ]
   },
-  "punch": { "story_hook": 0.08, "term": 0.04, "story_payoff": 0.07 },
-  "sparkles": { "default": 3, "worry": 1, "story_hook": 4, "story_payoff": 4, "cta": 4 },
-  "captions": { "style": "sticker", "size": 88, "bottom": 300 },
+  "punch": {
+    "story_hook": 0.08,
+    "term": 0.04,
+    "story_payoff": 0.07
+  },
+  "sparkles": {
+    "default": 3,
+    "worry": 1,
+    "story_hook": 4,
+    "story_payoff": 4,
+    "cta": 4
+  },
+  "captions": {
+    "style": "sticker",
+    "size": 88,
+    "bottom": 420
+  },
   "termStyle": "sticker",
-  "sfx": { "boundary": { "default": "whoosh", "worry": null, "cta": null, "term": "page", "story_payoff": "whip" }, "term": "ding" }
+  "sfx": {
+    "boundary": {
+      "default": "whoosh",
+      "worry": null,
+      "cta": null,
+      "term": "page",
+      "story_payoff": "whip"
+    },
+    "term": "ding"
+  },
+  "transitionFrames": 12,
+  "direction": {
+    "look": "Sunny Meadow",
+    "dialects": [
+      "native"
+    ]
+  }
 }

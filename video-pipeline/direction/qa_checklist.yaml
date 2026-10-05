@@ -1,35 +1,46 @@
 # QA Checklist — machine-checkable rules for the AI director linter
 # Each rule: id, severity (error|warn), description, check (named check type), threshold (if numeric)
 
+# enforced_by (required on every rule; tests/selfcheck verifies it):
+#   lint        implemented in lint.py (or packaging.py, which lint calls) under this same id (a waiver in episode.waivers[] can downgrade it per episode)
+#   schema      enforced by direction/episode.schema.json
+#   superseded  replaced by another check (see superseded_by)
+#   planned     not implemented yet (see owner)
+
 rules:
 
   # ── Pacing / word count ─────────────────────────────────────────────────
 
   - id: words_per_second_max
+    enforced_by: lint
     severity: error
     description: Total narration words / target runtime must not exceed 3.0 w/s (leaves pause budget)
     check: words_per_second_max
     threshold: 3.0
 
   - id: words_per_second_min
+    enforced_by: lint
     severity: warn
     description: Total narration words / target runtime should not be below 1.5 w/s (may feel sparse)
     check: words_per_second_min
     threshold: 1.5
 
   - id: sentence_words_max
+    enforced_by: lint
     severity: error
     description: No individual sentence exceeds 18 words
     check: sentence_words_max
     threshold: 18
 
   - id: sentence_words_avg
+    enforced_by: lint
     severity: warn
     description: Average sentence word count should be ≤ 12 words
     check: sentence_words_avg
     threshold: 12
 
   - id: total_duration_range
+    enforced_by: lint
     severity: error
     description: Sum of scene durations (derived from TTS or word-count estimate) must be 25–90 s
     check: total_duration_range
@@ -39,34 +50,47 @@ rules:
   # ── Scene count / structure ─────────────────────────────────────────────
 
   - id: scene_count_range
+    enforced_by: lint
     severity: error
     description: Episode must have between 4 and 16 scenes
     check: scene_count_range
     threshold_min: 4
     threshold_max: 16
 
+  - id: min_clip_scenes
+    enforced_by: lint
+    severity: error
+    description: Every video includes at least one MiniMax Hailuo clip (owner requirement 2026-10-05); the hook scene is the best place for it. Exceptions are recorded per episode in episode.waivers[{rule, reason}], never by loosening this rule.
+    check: min_clip_scenes
+    threshold: 1
+
   - id: hook_in_first_scene
+    enforced_by: lint
     severity: error
     description: First scene beat must be "hook" or "story_hook"
     check: hook_in_first_scene
 
   - id: one_idea_per_scene
+    enforced_by: lint
     severity: warn
     description: Each scene narration should contain at most one distinct claim or step
     check: one_idea_per_scene_heuristic   # heuristic: flag if sentence count > 4 in one scene
 
   - id: scene_duration_max
+    enforced_by: lint
     severity: warn
-    description: No single scene should exceed 8 s without a visual change (estimate from word count)
+    description: No single scene should exceed the audience card's scene_len_sec maximum without a visual change (flat 8 s only when the episode has no audience card). Uses real TTS duration when generated, else a word-count estimate.
     check: scene_duration_max_sec
     threshold: 8
 
   - id: cta_after_payoff
+    enforced_by: lint
     severity: error
     description: A scene with beat "cta" must not appear before a scene with beat "payoff" or "story_payoff"
     check: cta_after_payoff
 
   - id: repeated_structure
+    enforced_by: lint
     severity: warn
     description: At least 3 distinct beat types must be present (hook + 2 others) to avoid structural monotony
     check: distinct_beat_count
@@ -75,29 +99,34 @@ rules:
   # ── Analogy / term reveal ───────────────────────────────────────────────
 
   - id: term_after_picture
+    enforced_by: lint
     severity: error
     description: A scene with visual.term must have a preceding scene where the analogy was shown (beat "analogy" or "and" before beat "term")
     check: term_after_picture
 
   - id: analogy_limitation_present
+    enforced_by: lint
     severity: error
-    description: episode.analogy.limitation must be a non-empty string
+    description: When an analogy is declared, analogy.limitation must be a non-empty string (formats without an analogy, e.g. mechanism-first, skip it)
     check: analogy_limitation_present
 
   - id: analogy_mapping_present
+    enforced_by: lint
     severity: warn
-    description: episode.analogy.mapping must have at least 1 entry
+    description: When an analogy is declared, analogy.mapping must have at least 1 [from, to] pair
     check: analogy_mapping_min_entries
     threshold: 1
 
   # ── Claims / sources ─────────────────────────────────────────────────────
 
   - id: claims_have_sources
+    enforced_by: lint
     severity: error
     description: Every entry in episode.claims[] must have a non-empty source_url
     check: claims_have_sources
 
   - id: claims_array_present
+    enforced_by: schema
     severity: error
     description: episode.claims must be a non-empty array (at least 1 claim documented)
     check: claims_array_min_length
@@ -105,12 +134,14 @@ rules:
 
   # ── Sponsor / disclosure ─────────────────────────────────────────────────
 
-  - id: sponsor_disclosure_present_if_sponsor
+  - id: sponsor_disclosure_present
+    enforced_by: lint
     severity: error
-    description: If episode.sponsor is not null, episode.disclosure must be a non-empty string AND at least one scene narration must include the disclosure_line text
+    description: If episode.sponsor is set it needs sponsor.disclosure_line (error) and a publish block so the paid-promotion flag is ticked at upload (warn). On-frame/narrated disclosure is NOT required (owner preference is platform AI labels).
     check: sponsor_disclosure_present
 
   - id: sponsor_beat_placement
+    enforced_by: lint
     severity: warn
     description: If a sponsor beat is present, it should appear after beat "hook" and before or at beat "cta"
     check: sponsor_beat_after_hook
@@ -118,31 +149,52 @@ rules:
   # ── Image / video prompts ────────────────────────────────────────────────
 
   - id: no_text_in_image_prompts
+    enforced_by: lint
     severity: error
-    description: Illustration and keyframe prompts must not instruct the model to render text, letters, numbers, or words. Check for disallowed tokens.
+    description: >-
+      Illustration prompts must not ask the model to render text, letters, words, labels, signage, logos or captions (lint warns,
+      lint.asks_for_text). The universal no-text tail that the audience cards' illustration_style requires ("absolutely no text,
+      no letters, no numbers, no words") is exempt: lint strips it first with the same exemption positive_phrasing uses
+      (lint._NEG_OK, one source of truth), so the tail itself never triggers this rule. illustration_style must still carry the tail.
     check: no_text_in_image_prompts
-    disallowed_tokens: ["text", "letter", "number", "word", "sign that says", "label that reads", "caption", "subtitle", "writes"]
-    exception: "the string 'no text' and 'no letters' in a negative instruction are allowed"
+    disallowed_tokens: ["says", "reads", "text", "letters", "words", "logo", "caption", "headline", "label", "labeled", "signage", "lettering", "written"]
+    exception: "negated no-text phrases (no/not/without [any] [visible] text|letters|numbers|words|watermarks) are allowed"
 
   - id: character_descriptor_consistency
+    enforced_by: planned
+    owner: DIRECTION-BRAIN-PLAN phase 3   # needs identity-string checks; not mechanical today (run.py fill() substitutes {cast_key} tokens verbatim)
     severity: warn
     description: Every prompt referencing a character name from style.cast should include that character's full descriptor string
     check: cast_descriptor_in_prompt
 
   - id: camera_command_syntax
+    enforced_by: lint
     severity: warn
-    description: Clip motion_prompts should contain at least one [Camera command] bracket from the documented command list
+    description: >-
+      Clip motion_prompts must name one camera move, either as a natural camera sentence (the H3 house default,
+      direction/craft/dialects/hailuo.md sections 0b, 12.4 and 12.6, e.g. "The camera pushes in with small amplitude at slow speed toward the jar",
+      "The camera holds a static shot") or as a [Camera command] bracket from the list below (still accepted; the Hailuo 2.3 fallback form).
+      Warns only when neither is present, or when the only camera cue is a bracket with no known command
     check: camera_command_present
     known_commands: ["Push in","Pull out","Pan left","Pan right","Tilt up","Tilt down","Truck left","Truck right","Pedestal up","Pedestal down","Zoom in","Zoom out","Shake","Tracking shot","Static shot"]
+
+  - id: last_frame_exclusive
+    enforced_by: lint
+    severity: error
+    description: A clip scene may not set both visual.last_frame_prompt and reference images (visual.reference_images[], or a canon_frame/sheet of a character in shot.continuity_ids). MiniMax H3 cannot combine a last frame with reference images; run.py also refuses at stage time
+    check: last_frame_exclusive
 
   # ── Hook integrity ───────────────────────────────────────────────────────
 
   - id: hook_payoff_present
+    enforced_by: superseded
+    superseded_by: loop_paid_off   # beat-name matching is brittle; the `loops` ledger checks that every raised question is answered later
     severity: error
     description: If the first scene narration contains a question, a payoff beat must exist (beat is "payoff", "story_payoff", or "term")
     check: hook_payoff_present
 
   - id: hook_length_max
+    enforced_by: lint
     severity: warn
     description: First scene word count should not exceed 15 words (hook should be brief)
     check: first_scene_words_max
@@ -151,12 +203,14 @@ rules:
   # ── Format compliance ────────────────────────────────────────────────────
 
   - id: format_id_valid
+    enforced_by: lint
     severity: warn
     description: episode.format_id (if present) must match a known id in format_catalog.yaml
     check: format_id_in_catalog
     catalog_path: direction/format_catalog.yaml
 
   - id: one_idea_field_present
+    enforced_by: lint
     severity: warn
     description: episode.one_idea must be a non-empty string
     check: one_idea_present
@@ -164,25 +218,80 @@ rules:
   # ── Required scene fields ────────────────────────────────────────────────
 
   - id: scene_narration_present
+    enforced_by: schema
     severity: error
     description: Every scene must have a non-empty narration string
     check: scene_narration_present
 
   - id: scene_visual_type_valid
+    enforced_by: schema
     severity: error
-    description: Every scene visual.type must be "clip" or "illustration"
+    description: Every scene visual.type must be one of the types the renderer supports (authoritative list = enum in direction/episode.schema.json)
     check: scene_visual_type_valid
-    valid_values: ["clip", "illustration"]
 
   - id: scene_visual_prompt_present
+    enforced_by: schema
     severity: error
-    description: illustration scenes must have visual.prompt; clip scenes must have visual.motion_prompt
+    description: Per-type required visual fields (illustration prompt, clip motion_prompt, number value+label, compare colA/colB/rows, steps title+steps, diagram nodes, photo still, remotion template); defined as conditionals in direction/episode.schema.json
     check: scene_visual_prompt_present
 
   # ── Series / authenticity ────────────────────────────────────────────────
 
   - id: episode_id_unique_slug
+    enforced_by: lint
     severity: warn
     description: episode.id should follow the pattern ep##-slug (no spaces, no uppercase)
     check: episode_id_slug_format
     pattern: "^ep\\d{2,}-[a-z0-9-]+$"
+
+  # ── Prompt phrasing (added with the direction brain; craft card fail-describe-dont-negate) ──
+  - id: positive_phrasing
+    enforced_by: lint
+    severity: warn
+    description: Visual prompts describe what IS in frame. Our video (MiniMax H3) and image (image-01) models have no negative-prompt field, and a named unwanted thing in the prompt can be rendered. Rewrite "no writing on the sign" as "a plain blank board". The universal "no text / letters / numbers / words / watermark" tail is exempt.
+    check: positive_phrasing
+
+  # ── Packaging (packaging.py via lint; rules: direction/packaging.md) ──────
+  - id: packaging_bait
+    enforced_by: lint
+    severity: warn
+    description: No engagement bait (asks for the act of engagement) in title, description, captions, pinned comment, narration or on-screen text; "subscribe" in a Short only with a specific pointer. Each warning carries the rewrite (named recipient, moment or opinion).
+    check: packaging_bait
+
+  - id: cta_content_type
+    enforced_by: lint
+    severity: warn
+    description: The CTA matches packaging.content_type (explainer default = reshare/save or a specific next/long-form pointer; recommendation = send; opinion = stance; entertainment = none). Consistent with hooks.md one-CTA-after-payoff.
+    check: cta_content_type
+
+  - id: cta_recipient
+    enforced_by: lint
+    severity: warn
+    description: A send/share CTA names a recipient ("someone who thinks X"); kids audience exempt (card says "share with a friend").
+    check: cta_recipient
+
+  - id: bridge_pointer
+    enforced_by: lint
+    severity: warn
+    description: Any "full video / longer version / on my channel" promise needs packaging.long_form {title, url, extra} with a concrete extra not in the Short.
+    check: bridge_pointer
+
+  - id: pinned_comment
+    enforced_by: lint
+    severity: warn
+    description: packaging.pinned_comment, when set, is a genuine question or objection-killer plus a source URL (never self-seeded replies or comment-to-DM triggers).
+    check: pinned_comment
+
+  - id: keyword_surfaces
+    enforced_by: lint
+    severity: warn
+    description: Headline/on-screen text, voiceover and written caption each carry the primary keyword's main words.
+    check: keyword_surfaces
+
+  # ── Scene intent (added with the storyboard/decision map; kangarooking story_goal policy: a stated purpose per scene, lint-checked) ──
+  - id: scene_intent
+    enforced_by: lint
+    severity: warn
+    description: When a scene has `intent` (one sentence, what the viewer should understand or feel after it) it must be at most 120 characters and must not just repeat the narration. The field is optional for now; the storyboard shows it and the animatic prints it.
+    check: scene_intent
+    threshold: 120

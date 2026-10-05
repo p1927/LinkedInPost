@@ -17,5 +17,11 @@ mechanism_steps: [4, 7]
 remotion_profile: explainer-clean
 voice: {voice_id: English_WiseScholar, speed: 1.0, emotion: null}
 music_mood: calm
+illustration_style: "clean editorial flat vector illustration, geometric shapes, isometric everyday objects, restrained palette of deep navy, teal and one warm amber accent on an off-white background, subtle paper grain, generous negative space, soft long shadows, vertical 9:16 composition, absolutely no text, no letters, no numbers, no words"
 visuals: "realistic photos/clips for the real-world object, animated diagrams for the mechanism, one number/stat scene when a figure matters"
 cta: "save this / send it to someone who asks how this works"
+
+# Direction policy (read by brain.style_envelope; narrows what the profile allows; PROPOSAL, owner may edit)
+direction:
+  modes: [explainer, cold-open-drama, hybrid, montage, documentary]
+  dialects: [native, cinematic]                   # cinematic = graded AI clips, declared segment + bridge (DESIGN_SYSTEM section 11)

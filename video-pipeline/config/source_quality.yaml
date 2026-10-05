@@ -1,0 +1,63 @@
+# Source authority for director.py (topic grounding and the director's own claim check). Free, local, no network.
+# A source's domain is its publisher URL (Google News <source url=...>, kept by adapters/news_rss.py as `source_url`) or,
+# failing that, the item URL. A domain matches an entry when it equals it or ends with "." + entry (so "www.nasa.gov" matches "nasa.gov").
+# Tiers, best first. Score = tier score; ties broken by how many topic words the title shares.
+#   primary    government, space and science agencies, central banks, statistics offices, universities (TLD rules below)
+#   reference  encyclopedias and peer-reviewed publishers
+#   major      wire services and major outlets with a corrections policy
+# Anything else is `other` (score 0): usable for the news "why now", but a claim that cites ONLY such a source gets a
+# director warning `director_source_authority` (mechanism and fact claims should cite primary or reference sources).
+# Keep the list short and documented: add a domain only with a one-word reason in the comment.
+tiers:
+  primary:
+    score: 3
+    tld_suffixes: [".gov", ".mil", ".edu", ".gov.uk", ".ac.uk", ".gc.ca", ".gov.au", ".gov.in", ".europa.eu", ".int"]
+    domains:
+      - nasa.gov            # space agency
+      - esa.int             # space agency
+      - noaa.gov            # weather/oceans
+      - nih.gov             # health
+      - cdc.gov             # health
+      - who.int             # health
+      - federalreserve.gov  # central bank
+      - ecb.europa.eu       # central bank
+      - bankofengland.co.uk # central bank
+      - bls.gov             # statistics
+      - census.gov          # statistics
+      - imf.org             # international finance
+      - worldbank.org       # international finance
+      - oecd.org            # statistics
+      - usgs.gov            # geology
+      - nseindia.com        # exchange (India)
+      - bseindia.com        # exchange (India)
+      - sebi.gov.in         # market regulator (India)
+      - rbi.org.in          # central bank (India)
+      - nsdl.co.in          # depository, FPI data (India)
+      - jpl.nasa.gov        # space agency
+  reference:
+    score: 2
+    domains:
+      - wikipedia.org       # encyclopedia (check the article cites primary sources)
+      - britannica.com      # encyclopedia
+      - nature.com          # peer-reviewed
+      - science.org         # peer-reviewed
+      - pnas.org            # peer-reviewed
+      - sciencedirect.com   # peer-reviewed
+      - royalsociety.org    # learned society
+  major:
+    score: 1
+    domains: [reuters.com, apnews.com, bbc.com, bbc.co.uk, npr.org, nytimes.com, wsj.com, ft.com, bloomberg.com, economist.com,
+              theguardian.com, washingtonpost.com, cnbc.com, scientificamerican.com, newscientist.com, space.com]
+# Publisher NAMES as Google News prints them (item `source`), for items saved before `source_url` was captured.
+names:
+  primary: [NASA, ESA, NOAA, "Federal Reserve", BLS, "Bureau of Labor Statistics", "U.S. Census Bureau", IMF, "World Bank", WHO, CDC, NIH]
+  reference: [Wikipedia, Britannica, Nature, Science]
+  major: [Reuters, "Associated Press", "AP News", BBC, "BBC News", NPR, "The New York Times", "The Wall Street Journal", "Financial Times",
+          Bloomberg, "Bloomberg.com", "The Economist", "The Guardian", "The Washington Post", CNBC, "Scientific American", "New Scientist", Space.com]
+# Case-insensitive substrings of the publisher NAME (for Google News items without a source_url): universities are primary.
+name_patterns:
+  primary: [University, College, "Institute of Technology", "National Laboratory", "Space Agency"]
+# Explicit low-authority domains: lint.py reads this key (claims_low_authority, warn). The director's own check
+# (director_source_authority) is stricter: it warns on any claim domain not in a tier above. Add a domain with its reason.
+low_authority:
+  - teslarati.com   # fan news blog; ep10/ep11 cited it for orbital mechanics (DIRECTION-AB-ep03 D8)

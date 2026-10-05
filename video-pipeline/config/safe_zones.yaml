@@ -1,0 +1,79 @@
+# Safe-zone PRESETS. The media type decides the zone, not the scene code: a profile names a preset (`"safeZone": "<name>"` in
+# config/profiles/*.json), run.py resolves it into numbers (props.profile.safe) and the renderer lays out the content band and
+# progress bar from them. No `safeZone` in a profile = `default`. The audience card picks the profile (remotion_profile), so
+# audience -> profile -> preset; a different platform/format (long-form, cross-post) is a different preset, not a code change.
+default: shorts_9x16_platform
+
+presets:
+  # VALUE OF RECORD (decided 2026-10-05, FIX-PLAN S1). Organic posts on YouTube Shorts + Instagram Reels + TikTok (07-posting-options.md).
+  # Evidence ([V] official, [S] secondary quoting official, [W] third-party measurement):
+  #   YouTube [V] Google Ads vertical safe-zone overlay (support.google.com/google-ads/answer/13547298, PNG youtubesafezoneoverlay_vertical_final.png),
+  #     measured transparent box x 48-887, y 288-1247 (ADS; includes ad CTA). Organic Shorts [W]: top ~241, bottom ~381 (title/channel/subscribe),
+  #     right action rail ~201, left ~60.
+  #   TikTok [V] official in-feed safe-zone .zip templates exist (ads.tiktok.com/help/article/tiktok-auction-in-feed-ads; not downloaded);
+  #     [W] adkit.so reading of them: top 240, bottom 660, sides 120, wider right reserve below y 840; other [W]: top ~130, right ~140, bottom 370-560.
+  #   Reels [S] Meta ads guidance: top 14% (269), bottom 35% (672), sides 6% (65). [W] inro.social: Meta publishes nothing for organic Reels;
+  #     community organic values span top 108-269, bottom 250-672.
+  # Decision: the official templates are ad templates (their intersection ~x 120-888, y 288-1248 = shorts_9x16_strict below). For organic posts
+  # text/key subjects live in x 90-990, y 250-1500 (top clears Shorts ~241 and TikTok 240-252; sides clear Meta 6% and Shorts left), plus the
+  # right-rail notch and the caption band. Inset keys (x/y/progress/caption_*) are what run.py passes to the renderer; the rest is for lint/verify.
+  shorts_9x16_platform:
+    canvas: [1080, 1920]
+    x_min: 90            # text / key-subject box
+    x_max: 990
+    y_min: 250
+    y_max: 1460          # content band ends here; the caption band sits below / overlapping its bottom edge
+    text_y_max: 1500     # nothing important below this line (bottom platform UI)
+    progress_top: 140    # chrome, not content: allowed in the top band, may sit under platform UI
+    right_rail:          # like/comment/share/subscribe column: no text or key subject at x > x_min for y > y_from
+      x_min: 880
+      y_from: 840
+    caption_bottom: 420  # word captions: CSS bottom >= 420, i.e. bottom edge at y <= 1500
+    caption_inset: 200   # captions centred in x 200-880 (right edge on the rail line)
+    caption_band: [1280, 1500]   # y range a 2-line caption page must fit in
+    art_bleed:           # backgrounds may be full-bleed; decorations (sparkles, shapes) stay inside this box; never text
+      x_min: 24
+      x_max: 1056
+      y_min: 120
+      y_max: 1800
+    status: decided 2026-10-05, value of record for new and re-rendered episodes
+    note: "run.py passes x/y/progress plus caption_bottom/caption_inset and right_rail (railX/railFromY). Renderer fits the ground-track map into x_min..right_rail.x_min, scales the top-down orbit diagram so readout + note end above a 2-line caption page, and keeps compare columns / readouts / diagram reveal captions left of the rail. OrbitScene body labels/gap badge are clamped to the sides, top and rail; diagram row/column/grid layouts derive from safe + captionClearY. Checked at render time by tools/check_safe_zones.py (DOM text boxes, verify.render_qa). caption_inset 200 (resolved 2026-10-05) keeps the caption lane inside x 200-880, on the rail line."
+
+  # What the renderer was built and reviewed against (all existing episodes). Content band y 220-1460; word captions sit below it (~y 1480+).
+  shorts_9x16:
+    canvas: [1080, 1920]
+    x_min: 60
+    x_max: 1020
+    y_min: 220
+    y_max: 1460
+    progress_top: 140
+    status: superseded 2026-10-05 by shorts_9x16_platform (episodes rendered before that date used it)
+    note: Matches the pre-preset hard-coded layout; captions sat at y ~1490-1590 and wide text reached the right rail.
+
+  # Strictest union of third-party platform guides (Tella, Argil, adcreative): for cross-posting where right-rail buttons and bottom
+  # captions eat more of the frame. NOT from official TikTok/Meta/YouTube docs, so evidence tag [U]; tune from real device previews.
+  shorts_9x16_strict:
+    canvas: [1080, 1920]
+    x_min: 65
+    x_max: 885
+    y_min: 288
+    y_max: 1248
+    progress_top: 140
+    status: unrendered
+    note: Content must also fit the pixel box; scenes were not designed for a band this small (orbit geometry in OrbitScene.tsx is fixed to shorts_9x16).
+
+  # Long-form 16:9, from DESIGN_SYSTEM.md section 4 (margins 96 px sides / 108 px top-bottom). No 16:9 profile or layouts exist yet.
+  longform_16x9:
+    canvas: [1920, 1080]
+    x_min: 96
+    x_max: 1824
+    y_min: 108
+    y_max: 972
+    progress_top: 40
+    status: spec-only
+    note: The spec puts word captions at y ~880-980, which overlaps this band; resolve when the first 16:9 profile is built.
+
+# Earlier three-way disagreement, kept for provenance (resolved by the presets above):
+#   DESIGN_SYSTEM.md section 4 said a 900x1400 centred box (x 90-990, y 130-1560, >= 80 px sides);
+#   the renderer used x 60-1020, y 220-1500 (OrbitScene header) / band 220-1460 (NewScenes);
+#   shots.md carried the strict third-party union (x 65-885, y 288-1248).

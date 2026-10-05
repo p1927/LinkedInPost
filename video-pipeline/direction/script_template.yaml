@@ -10,7 +10,7 @@
 id: "ep##-slug"              # unique, filesystem-safe; used as output directory name
 title: "Title (question form preferred)"
 series: "Series Name"        # optional; e.g. "Big Questions, Tiny Words"
-status: draft                # draft | approved | produced | published
+status: scripted             # idea | scripted | approved | rendered | reviewed | scheduled | posted (registry.STATUSES; run.py status <ep> <status>)
 
 # NEW optional fields (run.py ignores unknown top-level keys)
 format_id: eli5_story        # id from format_catalog.yaml
@@ -28,7 +28,7 @@ structure: ABT               # ABT | Spine | Circle
 
 claims:                      # every factual assertion must appear here
   - claim: ""
-    source_url: ""
+    url: ""                  # must be a URL the Director actually fetched (lint.provenance); same key lint.py reads
     verified: false
 
 sponsor:                     # null if no sponsor
@@ -99,6 +99,17 @@ scenes:
       type: clip             # clip → run.py → stage_clips; illustration → stage_illustrations
       motion_prompt: ""      # for type: clip — Hailuo I2V prompt; use [Camera command] syntax
       keyframe_prompt: ""    # optional; for type: clip — generates the first frame image before the clip
+      last_frame_prompt: ""  # optional; for type: clip — END frame image (out/<id>/keyframes/<scene>_last.png), sent as
+                             #   last_frame when the video model supports it (MiniMax-H3; not Hailuo 2.3: run.py prints a
+                             #   WARNING and skips it). Write it as the first frame with ONE thing changed (prompt-first-last-chaining).
+                             #   Changing it re-keys the end keyframe and the clip. Cannot be combined with reference images
+                             #   (H3 rule; lint last_frame_exclusive = error).
+      reference_images: []   # optional; for type: clip — local character stills, e.g. ["refs/bruno_canon.png"], resolved
+                             #   against episodes/<dir>/ then the pipeline root, and only accepted inside episodes/<dir>/refs/
+                             #   or out/<id>/refs/. Never photos of real people. The FIRST is sent to image-01 as
+                             #   subject_reference for the keyframe (part of its cache key). Without this list, characters in
+                             #   shot.continuity_ids contribute continuity.characters[].canon_frame (or sheet). Missing file =
+                             #   the keyframes stage stops with an error before any paid call.
       # ── OR for type: illustration ──
       prompt: ""             # illustration prompt; {cast} tokens expanded; no text in AI images
       term:                  # optional; Remotion renders this as an on-screen label

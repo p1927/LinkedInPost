@@ -1,23 +1,91 @@
 {
   "name": "explainer-clean",
+  "safeZone": "shorts_9x16_platform",
   "_doc": "Curious-adult explainer: light off-white canvas, teal primary, warm coral highlight. Inter font, clean sentence-case captions, card terms, thin progress bar, hard music duck, no sparkles, restrained motion.",
   "font": "inter",
-  "palette": { "bg": "#F7F8FA", "ink": "#1A2332", "sunny": "#1DB8A0", "coral": "#E85B45", "sky": "#2986CC", "mint": "#1DB8A0", "grape": "#5A4FCF", "white": "#FFFFFF" },
-  "music": { "file": "assets/music/gen_calm.wav", "volume": 0.12 },
+  "palette": {
+    "bg": "#F7F8FA",
+    "ink": "#1A2332",
+    "sunny": "#1DB8A0",
+    "coral": "#E85B45",
+    "sky": "#2986CC",
+    "mint": "#1DB8A0",
+    "grape": "#5A4FCF",
+    "white": "#FFFFFF"
+  },
+  "music": {
+    "file": "assets/music/gen_calm.wav",
+    "volume": 0.12
+  },
   "musicDuck": 0.25,
   "transitions": {
-    "default": ["fade", "slide-left"],
-    "story_hook": ["fade"],
-    "term": ["wipe-left"],
-    "story_payoff": ["fade"],
-    "cta": ["fade"]
+    "default": [
+      "fade",
+      "slide-left"
+    ],
+    "story_hook": [
+      "fade"
+    ],
+    "term": [
+      "wipe-left"
+    ],
+    "story_payoff": [
+      "fade"
+    ],
+    "cta": [
+      "fade"
+    ]
   },
-  "zoom": { "default": [1.01, 1.07], "story_hook": [1.03, 1.10], "story_payoff": [1.03, 1.09], "cta": [1.0, 1.03] },
-  "punch": { "story_hook": 0.03 },
-  "sparkles": { "default": 0 },
-  "captions": { "style": "clean", "size": 62, "bottom": 330 },
+  "zoom": {
+    "default": [
+      1.01,
+      1.07
+    ],
+    "story_hook": [
+      1.03,
+      1.1
+    ],
+    "story_payoff": [
+      1.03,
+      1.09
+    ],
+    "cta": [
+      1.0,
+      1.03
+    ]
+  },
+  "punch": {
+    "story_hook": 0.03
+  },
+  "sparkles": {
+    "default": 0
+  },
+  "captions": {
+    "style": "clean",
+    "size": 62,
+    "bottom": 420
+  },
   "termStyle": "card",
-  "grade": { "saturate": 0.95, "contrast": 1.04, "vignette": 0.25 },
+  "grade": {
+    "saturate": 0.95,
+    "contrast": 1.04,
+    "vignette": 0.25
+  },
   "progress": true,
-  "sfx": { "boundary": { "default": null, "term": "page", "story_payoff": "whoosh" }, "term": "switch" }
+  "sfx": {
+    "boundary": {
+      "default": null,
+      "term": "page",
+      "story_payoff": "whoosh"
+    },
+    "term": "switch"
+  },
+  "transitionFrames": 18,
+  "direction": {
+    "look": "Paper Clean",
+    "dialects": [
+      "native",
+      "cinematic"
+    ]
+  }
 }
