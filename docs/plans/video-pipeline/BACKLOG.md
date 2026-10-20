@@ -67,6 +67,16 @@ Tags: **V** = value (H/M/L), **E** = effort (S/M/L), **Trig** = what should make
 - B-L6-3 Promote repeated warnings to blocking after N episodes. V M, E S.
 - B-L6-4 Episode fingerprint distance threshold tuned on real history (master design 6). V M, E S.
 
+## Added from Slice 1 (see SLICE1-RESULTS)
+- B-L6-5 Source and figure gate: every narrated figure must carry a dated source from an allowed domain (no social/video/forum); reject 'illustrative' or synthetic data series. V H, E M. Trig: first fabricated figure caught by hand (done in ep25).
+- B-L4-4 Derive `mechanism` and `one_idea` from the final script, never keep the writer's draft copy. V H, E S.
+- B-L6-6 Run the comprehension learner twice and take the median to cut judge noise (scores varied 3 to 4 on identical text). V M, E S.
+- B-M1-7 Diagram scenes: minimum node width (no mid-word wrap), edge labels clear of nodes, use more of the frame. V H, E M.
+- B-F1-6 Clipping check exempts light-background identities (every frame of a light look was flagged). V M, E S.
+- B-G1-5 Voice speed in the genre pack (explainer 1.05). V M, E S.
+- B-G1-6 Enforce the genre pack's archetype pool in `identity.py` (a finance default silently escaped it). V M, E S.
+- B-X1-4 Verify is the slowest stage (M2.7 cannot disable thinking): evaluate M3 thinking-off for verify passes against the writer-bias risk. V H, E S.
+
 ## F1 Frame QA
 - B-F1-1 Banding detection tuned on a known-good render. V M, E M.
 - B-F1-2 Seam gate for transitions (R-27). V L, E M.
