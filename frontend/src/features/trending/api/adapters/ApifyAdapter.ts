@@ -20,20 +20,20 @@ export class ApifyAdapter extends BaseAdapter {
 
     const actorId = this.platform === 'youtube'
       ? 'apify/youtube-scraper'  // YouTube trending scraper
-      : 'apify/linkedin-viral-posts-finder';  // LinkedIn viral posts
+      : 'johnvc/linkedin-post-search-api';  // LinkedIn posts by keyword
+
+    const input = this.platform === 'youtube'
+      ? { searchTerm: topic, maxItems: 10, language: 'en' }
+      : { keywords: [topic], maxPostsPerKeyword: 10 };
 
     // Start the actor run
-    const startResponse = await fetch(`https://api.apify.com/v2/acts/${actorId}/runs`, {
+    const startResponse = await fetch(`https://api.apify.com/v2/acts/${actorId.replace('/', '~')}/runs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        searchTerm: topic,
-        maxItems: 10,
-        language: 'en',
-      }),
+      body: JSON.stringify(input),
     });
 
     if (!startResponse.ok) {
@@ -50,13 +50,13 @@ export class ApifyAdapter extends BaseAdapter {
     // Poll for completion
     let status = 'running';
     let attempts = 0;
-    while (status === 'running' && attempts < 30) {
+    while ((status === 'running' || status === 'ready') && attempts < 30) {
       await this.delay(2000);
       const statusResponse = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
         headers: { 'Authorization': `Bearer ${apiKey}` },
       });
       const statusData = await statusResponse.json();
-      status = statusData.data?.status;
+      status = statusData.data?.status?.toLowerCase();
       attempts++;
     }
 
@@ -100,22 +100,26 @@ export class ApifyAdapter extends BaseAdapter {
         } as any),
       }));
     } else {
-      // LinkedIn
-      return items.map((item: any) => ({
-        id: item.postId || item.url || Math.random().toString(),
+      // LinkedIn: skip error rows, which carry error_message or errorMessage
+      const posts = items.filter(item => {
+        const row = item as Record<string, unknown>;
+        return !row.error_message && !row.errorMessage;
+      });
+      return posts.map((item: any) => ({
+        id: item.postId || item.postUrl || Math.random().toString(),
         title: item.text?.slice(0, 100) || 'LinkedIn Post',
-        url: item.url || item.postUrl,
-        thumbnailUrl: item.image || item.media,
-        likeCount: this.formatCount(item.likes || item.reactions || '0'),
-        commentsCount: this.formatCount(item.comments || '0'),
-        publishedAt: this.formatDate(item.date || item.createdAt),
+        url: item.postUrl,
+        thumbnailUrl: item.images?.[0],
+        likeCount: this.formatCount(item.numLikes || '0'),
+        commentsCount: this.formatCount(item.numComments || '0'),
+        publishedAt: this.formatDate(item.datePosted),
         platform: 'linkedin' as const,
-        authorName: item.authorName || item.author,
-        authorHeadline: item.authorHeadline || item.authorDescription,
+        authorName: item.authorName,
+        authorHeadline: item.authorHeadline,
         hashtags: item.text?.match(/#[a-zA-Z]+/g) || [],
         engagement: this.calculateEngagement({
-          likeCount: item.likes || item.reactions || '0',
-          commentsCount: item.comments || '0',
+          likeCount: item.numLikes || '0',
+          commentsCount: item.numComments || '0',
         } as any),
       }));
     }
